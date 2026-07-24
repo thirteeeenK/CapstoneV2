@@ -34,12 +34,16 @@ class RegisteredUserController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            //address
+            //phone number
         ]);
 
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            //address =>$request->address,
+            //phone_number => $request->phone_number
         ]);
 
         event(new Registered($user));
@@ -47,5 +51,10 @@ class RegisteredUserController extends Controller
         Auth::login($user);
 
         return redirect(route('dashboard', absolute: false));
+
+        // return redirect(route('dashboard', absolute: false));
+        // instead of redirection to the dashboard after creating account, force the user to login their newly created credentials
+        
+        // return redirect(route('login', absolute: false))->with('success', 'Account created successfully. Please login to continue.');
     }
 }
