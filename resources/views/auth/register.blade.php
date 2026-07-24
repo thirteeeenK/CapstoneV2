@@ -2,7 +2,7 @@
 
     {{-- Page heading --}}
     <div class="mb-8">
-        <h1 class="font-display text-[1.875rem] font-semibold text-ink-900 leading-tight">
+        <h1 class="font-headline text-[1.875rem] font-semibold text-ink-900 leading-tight">
             Create your account.
         </h1>
         <p class="mt-2 text-sm text-ink-500 leading-relaxed">

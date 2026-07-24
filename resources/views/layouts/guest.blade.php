@@ -8,11 +8,11 @@
 
     <title>{{ config('app.name', 'SunnyTrips') }}</title>
 
-    {{-- Google Fonts: Inter (body) + Playfair Display (headings) --}}
+    {{-- Google Fonts: Sora (headlines) + DM Sans (body) --}}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,300;1,9..40,400;1,9..40,500&display=swap"
         rel="stylesheet">
 
     {{-- Material Symbols --}}
@@ -40,9 +40,9 @@
 
             {{-- Bottom brand statement --}}
             <div class="relative z-10 self-end w-full px-12 pb-14">
-                <p class="font-display text-white/90 text-[1.75rem] leading-snug">
+                <p class="font-headline text-white/90 text-[1.75rem] leading-snug font-semibold">
                     "Discover the Islands<br>
-                    <em>Worth Getting Lost In."</em>
+                    <em class="font-light">Worth Getting Lost In."</em>
                 </p>
                 <div class="mt-4 flex items-center gap-2">
                     <span class="block w-6 h-px bg-white/40"></span>
@@ -65,7 +65,7 @@
                     <span class="material-symbols-outlined text-ocean-500 text-[22px] leading-none"
                         aria-hidden="true">wb_sunny</span>
                     <span
-                        class="font-display text-[1.35rem] font-semibold text-ocean-600 tracking-tight group-hover:text-ocean-700 transition-colors duration-150">
+                        class="font-headline text-[1.35rem] font-bold text-ocean-600 tracking-tight group-hover:text-ocean-700 transition-colors duration-150">
                         SunnyTrips
                     </span>
                 </a>

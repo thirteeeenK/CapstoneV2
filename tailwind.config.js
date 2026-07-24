@@ -12,8 +12,13 @@ export default {
     theme: {
         extend: {
             fontFamily: {
-                sans:    ['Inter', ...defaultTheme.fontFamily.sans],
-                display: ['"Playfair Display"', ...defaultTheme.fontFamily.serif],
+                // Primary sans-serif for body copy, UI, and labels
+                sans:     ['"DM Sans"', ...defaultTheme.fontFamily.sans],
+                body:     ['"DM Sans"', ...defaultTheme.fontFamily.sans],
+                label:    ['"DM Sans"', ...defaultTheme.fontFamily.sans],
+                // Geometric display font for headlines and hero text
+                display:  ['Sora', ...defaultTheme.fontFamily.sans],
+                headline: ['Sora', ...defaultTheme.fontFamily.sans],
             },
 
             colors: {
