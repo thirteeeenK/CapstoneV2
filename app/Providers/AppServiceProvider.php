@@ -18,7 +18,13 @@ class AppServiceProvider extends ServiceProvider
         // Blueprint::macro('vector',function(string $column, int $dimensions){
         //     return $this->addColumn('vector', $column, ['dimensions' => $dimensions]);
         // });
-        
+    }
+
+    /**
+     * Bootstrap any application services.
+     */
+    public function boot(): void
+    {
         // ESTABLISH RATE LIMITIONS FOR THE APPLICATION - IP BASED FOR NOW BUT SHOULD BE IP AND ID IN THE FUTURE
 
         // -- ADMIN RATE LIMIT -- (*CHANGES POSSIBLE)
@@ -40,13 +46,5 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('chatbot', function(Request $request){
             return Limit::perMinute(10)->by($request->ip());
         });
-    }
-
-    /**
-     * Bootstrap any application services.
-     */
-    public function boot(): void
-    {
-        //
     }
 }
