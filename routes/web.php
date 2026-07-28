@@ -19,4 +19,6 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::get('/check', [ConnectionController::class, 'checkConnection']);
-require __DIR__.'/auth.php';
+
+require __DIR__ . '/auth.php';
+require __DIR__ . '/adminAuth.php';
