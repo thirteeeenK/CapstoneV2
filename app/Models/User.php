@@ -11,7 +11,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
 
-#[Fillable(['name', 'email', 'phone_number', 'address', 'password'])]
+#[Fillable(['name', 'email', 'phone_number', 'address', 'password', 'is_banned', 'chatbot_flag_count', 'ban_reason'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -28,6 +28,13 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_banned' => 'boolean',
+            'chatbot_flag_count' => 'integer',
         ];
+    }
+
+    public function abuseReports()
+    {
+        return $this->hasMany(ChatbotAbuseReport::class, 'user_id');
     }
 }

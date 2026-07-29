@@ -25,3 +25,5 @@ require __DIR__ . '/adminAuth.php';
 require __DIR__ . '/destinationRoute.php';
 require __DIR__ . '/hotelRoute.php';
 require __DIR__ . '/RoomRoute.php';
+require __DIR__ . '/activityRoute.php';
+require __DIR__ . '/userManagementRoute.php';

@@ -16,7 +16,7 @@
             ],
             'Operations' => [
                 ['route' => 'admin.bookings.*', 'icon' => 'calendar_month', 'label' => 'Bookings', 'href' => '#'],
-                ['route' => 'render-users', 'icon' => 'group', 'label' => 'Registered Users', 'href' => Route::has('render-users') ? route('render-users') : '#'],
+                ['route' => 'admin.users.*', 'icon' => 'group', 'label' => 'Registered Users', 'href' => route('admin.users.index')],
                 ['route' => 'admin.inventory.*', 'icon' => 'inventory', 'label' => 'Manage Inventory', 'href' => '#'],
             ],
             'Catalog' => [

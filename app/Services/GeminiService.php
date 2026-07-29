@@ -6,6 +6,8 @@ use App\Models\HotelModel;
 use App\Models\RoomType;
 use App\Models\ActivityModel;
 use App\Models\DestinationModel;
+use App\Models\User;
+use App\Models\ChatbotAbuseReport;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -24,6 +26,7 @@ class GeminiService
         $dest = $destinationName ?? 'Unknown Destination';
         $desc = trim(preg_replace('/\s+/', ' ', strip_tags($activity->description ?? '')));
         $notes = trim(preg_replace('/\s+/', ' ', strip_tags($activity->notes ?? '')));
+        $reqs = trim(preg_replace('/\s+/', ' ', strip_tags($activity->requirements ?? '')));
         $vibeList = is_array($activity->vibe_tags) ? implode(', ', $activity->vibe_tags) : $activity->vibe_tags;
 
         return implode("\n", array_filter([
@@ -31,11 +34,14 @@ class GeminiService
             "Category: {$activity->category}",
             "Activity Level: {$activity->activity_level}",
             "Destination: {$dest}",
-            $vibeList ? "Experience Vibes & Tags: {$vibeList}" : null,
-            $activity->ideal_for ? "Ideal Travelers: {$activity->ideal_for}" : null,
+            $activity->duration ? "Duration: {$activity->duration}" : null,
+            $activity->capacity ? "Group Capacity: {$activity->capacity}" : null,
+            $activity->ideal_for ? "Ideal Participants: {$activity->ideal_for}" : null,
             "Rate / Pricing: {$activity->rate}",
+            $reqs ? "Requirements & Restrictions: {$reqs}" : null,
+            $vibeList ? "Experience Vibes & Tags: {$vibeList}" : null,
+            $notes ? "Inclusions & Notes: {$notes}" : null,
             $desc ? "Detailed Experience Description: {$desc}" : null,
-            $notes ? "Notes / Inclusions: {$notes}" : null,
         ]));
     }
 
@@ -115,7 +121,7 @@ class GeminiService
             return null;
         }
 
-        $modelName = config('services.gemini.embedding_model') ?? 'models/text-embedding-004';
+        $modelName = config('services.gemini.embedding_model') ?? 'models/text-embedding-001';
         $url = "https://generativelanguage.googleapis.com/v1beta/{$modelName}:embedContent?key={$apiKey}";
 
         $payload = [
@@ -510,5 +516,184 @@ class GeminiService
         }
 
         return $this->rankRecommendations($userPreferenceVector, $rooms, $limit);
+    }
+
+    // =========================================================================
+    //  Activity & Tour RAG & Recommendation Methods
+    // =========================================================================
+
+    /**
+     * Semantic search: generates a RETRIEVAL_QUERY embedding from the user's query,
+     * then ranks all embedded activities by cosine similarity.
+     *
+     * @param  string  $query   User's search query (e.g. "sunset island hopping in Boracay")
+     * @param  int     $limit   Maximum results to return
+     * @return array   Scored results: [['item' => ActivityModel, 'score' => float], ...]
+     */
+    public function searchActivities(string $query, int $limit = 5): array
+    {
+        $queryVector = $this->generateEmbedding($query, 'RETRIEVAL_QUERY');
+
+        if (!$queryVector) {
+            Log::warning('searchActivities: Failed to generate query embedding.', ['query' => $query]);
+            return [];
+        }
+
+        $activities = ActivityModel::with('destination')
+            ->whereNotNull('embedding')
+            ->where('embedding', '!=', '')
+            ->get();
+
+        if ($activities->isEmpty()) {
+            return [];
+        }
+
+        return $this->rankRecommendations($queryVector, $activities, $limit);
+    }
+
+    /**
+     * Formats scored activity results into structured context text for RAG prompt injection.
+     *
+     * @param  array  $scoredActivities  Output from searchActivities() or rankRecommendations()
+     * @return string  Formatted context string ready for prompt injection
+     */
+    public function getActivityContext(array $scoredActivities): string
+    {
+        if (empty($scoredActivities)) {
+            return '';
+        }
+
+        $blocks = [];
+
+        foreach ($scoredActivities as $index => $entry) {
+            /** @var ActivityModel $activity */
+            $activity = $entry['item'];
+            $score    = round($entry['score'], 4);
+            $rank     = $index + 1;
+
+            $destName = $activity->destination->name ?? 'Unknown Destination';
+
+            $vibes = is_array($activity->vibe_tags)
+                ? implode(', ', $activity->vibe_tags)
+                : ($activity->vibe_tags ?? '');
+
+            $desc  = trim(preg_replace('/\s+/', ' ', strip_tags($activity->description ?? '')));
+            $notes = trim(preg_replace('/\s+/', ' ', strip_tags($activity->notes ?? '')));
+            $reqs  = trim(preg_replace('/\s+/', ' ', strip_tags($activity->requirements ?? '')));
+
+            $lines = array_filter([
+                "--- Activity #{$rank} (relevance: {$score}) ---",
+                "Activity Name: {$activity->activity_name}",
+                "Destination: {$destName}",
+                "Category: {$activity->category}",
+                "Activity Level: {$activity->activity_level}",
+                $activity->duration ? "Duration: {$activity->duration}" : null,
+                $activity->capacity ? "Group Capacity: {$activity->capacity}" : null,
+                "Rate / Pricing: {$activity->rate}",
+                $activity->ideal_for ? "Ideal Participants: {$activity->ideal_for}" : null,
+                $vibes ? "Vibes & Tags: {$vibes}" : null,
+                $reqs ? "Requirements & Restrictions: {$reqs}" : null,
+                $notes ? "Inclusions & Notes: {$notes}" : null,
+                $desc ? "Description: {$desc}" : null,
+            ]);
+
+            $blocks[] = implode("\n", $lines);
+        }
+
+        return "=== ACTIVITY & TOUR DATABASE RESULTS ===\n\n" . implode("\n\n", $blocks) . "\n\n=== END ACTIVITY RESULTS ===";
+    }
+
+    /**
+     * Recommendation engine entry point for Activities & Tours.
+     *
+     * @param  array  $userPreferenceVector  L2-normalized preference vector
+     * @param  int    $limit                 Maximum results to return
+     * @return array  Scored results: [['item' => ActivityModel, 'score' => float], ...]
+     */
+    public function getActivityRecommendations(array $userPreferenceVector, int $limit = 5): array
+    {
+        $activities = ActivityModel::with('destination')
+            ->whereNotNull('embedding')
+            ->where('embedding', '!=', '')
+            ->get();
+
+        if ($activities->isEmpty()) {
+            return [];
+        }
+
+        return $this->rankRecommendations($userPreferenceVector, $activities, $limit);
+    }
+
+    // =========================================================================
+    //  Chatbot Abuse Detection & Safety Guard System
+    // =========================================================================
+
+    /**
+     * Chatbot Safety Guard & Abuse Detection System.
+     *
+     * Analyzes user input queries for inappropriate/sexual terms, prompt injection hacks,
+     * sensitive prohibited content, or off-topic system abuse.
+     *
+     * @param  User    $user     Authenticated registered user
+     * @param  string  $message  User's chat input query
+     * @return array|null        Returns violation response payload if flagged/blocked, or null if clean
+     */
+    public function detectAbuseAndGuard(User $user, string $message): ?array
+    {
+        // 1. Account Suspension Check
+        if ($user->is_banned) {
+            return [
+                'blocked' => true,
+                'response' => 'Your account has been suspended from using the AI Chatbot due to terms of service violations. Reason: ' . ($user->ban_reason ?? 'Repeated community guideline violations.'),
+            ];
+        }
+
+        $lowerMsg = mb_strtolower($message);
+
+        // 2. Category Detection Patterns
+        $categories = [
+            'Sexual/Inappropriate' => [
+                'nsfw', 'porn', 'naked', 'nude', 'sexual', 'sex', 'strip', 'erotic', 'boobs', 'penis', 'vagina'
+            ],
+            'Sensitive/Prohibited' => [
+                'suicide', 'bomb', 'terrorist', 'hack bank', 'credit card fraud', 'illegal drugs', 'kill', 'murder'
+            ],
+            'Prompt Injection' => [
+                'ignore previous instructions', 'ignore all rules', 'system prompt', 'you are now DAN', 'bypass restriction'
+            ],
+        ];
+
+        $flaggedCategory = null;
+        $flaggedReason = null;
+
+        foreach ($categories as $category => $keywords) {
+            foreach ($keywords as $kw) {
+                if (preg_match('/\b' . preg_quote($kw, '/') . '\b/i', $lowerMsg)) {
+                    $flaggedCategory = $category;
+                    $flaggedReason = "Query contains prohibited phrase: '{$kw}'";
+                    break 2;
+                }
+            }
+        }
+
+        // 3. If flagged, log abuse report and increment user flag count
+        if ($flaggedCategory) {
+            ChatbotAbuseReport::create([
+                'user_id' => $user->id,
+                'message' => $message,
+                'category' => $flaggedCategory,
+                'reason' => $flaggedReason,
+                'status' => 'pending',
+            ]);
+
+            $user->increment('chatbot_flag_count');
+
+            return [
+                'blocked' => true,
+                'response' => 'Your message contains content that violates our community guidelines. This incident has been logged for administrator review.',
+            ];
+        }
+
+        return null; // Clean query
     }
 }
