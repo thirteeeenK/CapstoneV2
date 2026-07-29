@@ -25,12 +25,14 @@ class RoomType extends Model
         'room_amenities',
         'additional_notes',
         'images',
-        'embedding'
+        'embedding',
+        'is_shown'
     ];
 
     protected $casts = [
         'room_amenities' => 'array',
-        'images' => 'array'
+        'images' => 'array',
+        'is_shown' => 'boolean'
     ];
 
     public function getIdealGuestAttribute($value)

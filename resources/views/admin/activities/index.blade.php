@@ -93,6 +93,7 @@
                             <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 whitespace-nowrap">Level</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 whitespace-nowrap">Rate</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Notes / Inclusions</th>
+                            <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 whitespace-nowrap">Visibility</th>
                             <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500 whitespace-nowrap">Actions</th>
                         </tr>
                     </thead>
@@ -115,7 +116,7 @@
                                     $counter = 0;
                                 @endphp
                                 <tr class="bg-slate-100/80">
-                                    <td colspan="7" class="px-6 py-2.5 text-xs font-bold text-slate-700 tracking-wide uppercase border-y border-slate-200">
+                                    <td colspan="8" class="px-6 py-2.5 text-xs font-bold text-slate-700 tracking-wide uppercase border-y border-slate-200">
                                         <div class="flex items-center gap-1.5">
                                             <span class="material-symbols-outlined text-[16px] text-ocean-600">location_on</span>
                                             <span>{{ $currentDestination }} Activities</span>
@@ -225,6 +226,18 @@
 
                                 <td class="px-6 py-4 text-sm text-slate-600 max-w-xs truncate" title="{{ $act->notes }}">
                                     {{ $act->notes ?? 'N/A' }}
+                                </td>
+
+                                <td class="px-6 py-4 text-sm">
+                                    @if($act->is_shown)
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Visible
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Hidden
+                                        </span>
+                                    @endif
                                 </td>
 
                                 <td class="px-6 py-4 whitespace-nowrap">

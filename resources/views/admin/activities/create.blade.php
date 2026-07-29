@@ -222,6 +222,13 @@
                                 <span class="text-[10px] font-bold uppercase tracking-wider">More Photos</span>
                             </div>
                         </div>
+                    <!-- Public Visibility Toggle -->
+                    <div class="p-3 rounded-lg bg-slate-50 border border-slate-200 md:col-span-2 space-y-1.5">
+                        <label class="flex items-center justify-between cursor-pointer">
+                            <span class="text-xs font-bold text-slate-800">Show to Public Users</span>
+                            <input type="checkbox" name="is_shown" value="1" @checked(old('is_shown', true)) class="w-4 h-4 text-ocean-600 rounded border-slate-300 focus:ring-ocean-500">
+                        </label>
+                        <p class="text-[11px] text-slate-500 leading-tight">If unchecked, this activity remains hidden from public website and AI search.</p>
                     </div>
                 </div>
 

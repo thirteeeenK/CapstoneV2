@@ -23,7 +23,8 @@ class HotelModel extends Model
         'latitude',
         'longitude',
         'images',
-        'embedding'
+        'embedding',
+        'is_shown'
     ];
 
     // I-cast natin ang embedding para maging array sa PHP side
@@ -32,7 +33,8 @@ class HotelModel extends Model
         'longitude' => 'decimal:8',
         'vibe_tags' => 'array',
         'featured_amenities' => 'array',
-        'images' => 'array'
+        'images' => 'array',
+        'is_shown' => 'boolean'
     ];
 
     public function rooms()

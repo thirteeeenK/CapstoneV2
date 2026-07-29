@@ -71,6 +71,16 @@
                                             <span class="material-symbols-outlined text-[14px]">sensors_off</span> Pending AI
                                         </span>
                                     @endif
+
+                                    @if($room->is_shown)
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Visible to Public
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Hidden from Public
+                                        </span>
+                                    @endif
                                     <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
                                         <span class="material-symbols-outlined text-[14px]">inventory_2</span>
                                         {{ $room->total_rooms }} {{ Str::plural('Unit', $room->total_rooms) }} Total

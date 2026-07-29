@@ -196,7 +196,16 @@
             <div class="hidden lg:block lg:col-span-4">
                 <div class="sticky top-6 bg-white rounded-lg p-6 border border-slate-200">
                     <h3 class="text-sm font-semibold text-slate-900 mb-2">Publishing</h3>
-                    <p class="text-xs text-slate-500 mb-6 leading-relaxed">Review your changes and click the button below to update the room details.</p>
+                    <p class="text-xs text-slate-500 mb-4 leading-relaxed">Review your changes and click the button below to update the room details.</p>
+
+                    <!-- Public Visibility Toggle -->
+                    <div class="mb-6 p-3 rounded-lg bg-slate-50 border border-slate-200 space-y-1.5">
+                        <label class="flex items-center justify-between cursor-pointer">
+                            <span class="text-xs font-bold text-slate-800">Show to Public Users</span>
+                            <input type="checkbox" name="is_shown" value="1" @checked(old('is_shown', $room->is_shown ?? true)) class="w-4 h-4 text-ocean-600 rounded border-slate-300 focus:ring-ocean-500">
+                        </label>
+                        <p class="text-[11px] text-slate-500 leading-tight">If unchecked, this room type remains hidden from public website and AI search.</p>
+                    </div>
                     <button type="submit"
                         class="w-full h-10 px-4 bg-ocean-600 hover:bg-ocean-700 text-white rounded-md font-semibold text-sm transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ocean-500 flex items-center justify-center gap-2">
                         <span class="material-symbols-outlined text-[18px]">save</span>

@@ -98,6 +98,7 @@ class ActivityController extends Controller
             'ideal_for' => $request->ideal_for,
             'notes' => $request->notes,
             'images' => $imagePaths,
+            'is_shown' => $request->has('is_shown') ? $request->boolean('is_shown') : true,
         ]);
 
         // Retrieve destination name for semantic grounding
@@ -162,6 +163,7 @@ class ActivityController extends Controller
         $activity->vibe_tags = $vibeTags;
         $activity->ideal_for = $request->ideal_for;
         $activity->notes = $request->notes;
+        $activity->is_shown = $request->has('is_shown') ? $request->boolean('is_shown') : false;
 
         $currentImages = $activity->images;
         if (!is_array($currentImages)) {

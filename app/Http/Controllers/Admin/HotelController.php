@@ -57,7 +57,8 @@ class HotelController extends Controller
             'specific_address' => $request->specific_address,
             'latitude' => $request->latitude,
             'longitude' => $request->longitude,
-            'images' => $imagePaths
+            'images' => $imagePaths,
+            'is_shown' => $request->has('is_shown') ? $request->boolean('is_shown') : true,
         ]);
 
         // Retrieve destination name for semantic grounding
@@ -143,6 +144,7 @@ class HotelController extends Controller
         $hotel->specific_address = $request->specific_address;
         $hotel->latitude = $request->latitude;
         $hotel->longitude = $request->longitude;
+        $hotel->is_shown = $request->has('is_shown') ? $request->boolean('is_shown') : false;
 
         $currentImages = $hotel->images;
         if (!is_array($currentImages)) {

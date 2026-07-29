@@ -77,6 +77,7 @@ class RoomController extends Controller
             'room_amenities' => $amenities,
             'images' => $imagePaths,
             'embedding' => null,
+            'is_shown' => $request->has('is_shown') ? $request->boolean('is_shown') : true,
         ]);
 
         // Build structured embedding text and generate normalized vector embedding
@@ -144,6 +145,7 @@ class RoomController extends Controller
         $room->bed_configuration = $request->bed_configuration;
         $room->room_size = $request->room_size;
         $room->base_price = $request->base_price;
+        $room->is_shown = $request->has('is_shown') ? $request->boolean('is_shown') : false;
 
         $amenities = [];
         if ($request->filled('room_amenities')) {

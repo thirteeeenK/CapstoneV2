@@ -25,12 +25,14 @@ class ActivityModel extends Model
         'rate',
         'notes',
         'images',
-        'embedding'
+        'embedding',
+        'is_shown'
     ];
 
     protected $casts = [
         'vibe_tags' => 'array',
-        'images' => 'array'
+        'images' => 'array',
+        'is_shown' => 'boolean'
     ];
 
     public function destination()

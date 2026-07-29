@@ -316,6 +316,7 @@ class GeminiService
         }
 
         $hotels = HotelModel::with('destination')
+            ->where('is_shown', true)
             ->whereNotNull('embedding')
             ->where('embedding', '!=', '')
             ->get();
@@ -393,6 +394,7 @@ class GeminiService
     public function getHotelRecommendations(array $userPreferenceVector, int $limit = 5): array
     {
         $hotels = HotelModel::with('destination')
+            ->where('is_shown', true)
             ->whereNotNull('embedding')
             ->where('embedding', '!=', '')
             ->get();
@@ -426,6 +428,7 @@ class GeminiService
         }
 
         $rooms = RoomType::with('hotel.destination')
+            ->where('is_shown', true)
             ->whereNotNull('embedding')
             ->where('embedding', '!=', '')
             ->get();
@@ -507,6 +510,7 @@ class GeminiService
     public function getRoomRecommendations(array $userPreferenceVector, int $limit = 5): array
     {
         $rooms = RoomType::with('hotel.destination')
+            ->where('is_shown', true)
             ->whereNotNull('embedding')
             ->where('embedding', '!=', '')
             ->get();
@@ -540,6 +544,7 @@ class GeminiService
         }
 
         $activities = ActivityModel::with('destination')
+            ->where('is_shown', true)
             ->whereNotNull('embedding')
             ->where('embedding', '!=', '')
             ->get();
@@ -613,6 +618,7 @@ class GeminiService
     public function getActivityRecommendations(array $userPreferenceVector, int $limit = 5): array
     {
         $activities = ActivityModel::with('destination')
+            ->where('is_shown', true)
             ->whereNotNull('embedding')
             ->where('embedding', '!=', '')
             ->get();
