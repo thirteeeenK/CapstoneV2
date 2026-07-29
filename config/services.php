@@ -36,7 +36,7 @@ return [
     ],
     'gemini' => [
         'api_key' => env('GEMINI_API_KEY'),
-        'embedding_model' => env('EMBEDDING_MODEL'),
+        'embedding_model' => env('EMBEDDING_MODEL', 'models/text-embedding-001'),
     ],
 
 ];
