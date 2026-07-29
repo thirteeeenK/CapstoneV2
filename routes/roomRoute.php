@@ -1,0 +1,22 @@
+<?php
+
+use App\Http\Controllers\Admin\RoomController;
+use Illuminate\Support\Facades\Route;
+
+Route::prefix('admin')->group(function () {
+    Route::middleware(['auth:admin', 'no.cache'])->group(function () {
+        // Room Listing per Hotel
+        Route::get('/hotels/{hotelId}/rooms', [RoomController::class, 'renderRoomsPerHotel'])->name('manage-rooms');
+
+        // Create & Store
+        Route::get('/rooms/create/{hotelId}', [RoomController::class, 'showHotelInformation'])->name('create-room');
+        Route::post('/rooms/store/{hotelId}', [RoomController::class, 'storeRoom'])->name('store-room');
+
+        // Edit & Update
+        Route::get('/rooms/{id}/edit', [RoomController::class, 'editRoom'])->name('edit-room');
+        Route::put('/rooms/{id}', [RoomController::class, 'updateRoom'])->name('update-room');
+
+        // Delete
+        Route::delete('/rooms/{id}', [RoomController::class, 'deleteRoom'])->name('delete-room');
+    });
+});
