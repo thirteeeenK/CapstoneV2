@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ $title ?? 'Admin Dashboard — ' . config('app.name', 'SunnyTrips') }}</title>
+    <title>@yield('title', $title ?? 'Admin Dashboard — ' . config('app.name', 'SunnyTrips'))</title>
 
     {{-- Google Fonts: Sora (headlines) + DM Sans (body) --}}
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -31,7 +31,7 @@
     <x-admin-components::sidebar />
 
     {{-- Main Content --}}
-    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+    <main class="flex-1 sm:ml-64 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
         {{ $slot ?? '' }}
         @yield('content')
     </main>
