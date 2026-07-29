@@ -16,7 +16,8 @@ class DestinationModel extends Model
         return $this->hasMany(HotelModel::class, 'destination_id');
     }
 
-    // public function activities(){
-    //     return $this->hasMany(ActivityModel::class, 'destination_id');
-    // }
+    public function activities()
+    {
+        return $this->hasMany(ActivityModel::class, 'destination_id');
+    }
 }
