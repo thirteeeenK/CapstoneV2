@@ -348,7 +348,7 @@ class GeminiService
             /** @var HotelModel $hotel */
             $hotel = $entry['item'];
             $score = round($entry['score'], 4);
-            $rank  = $index + 1;
+            $rank = $index + 1;
 
             $destName = $hotel->destination->name ?? 'Unknown Destination';
             $typeLabel = ucwords(str_replace('-', ' ', $hotel->type ?? 'N/A'));
@@ -372,8 +372,8 @@ class GeminiService
                 $amenities ? "Featured Amenities: {$amenities}" : null,
                 "Address: {$hotel->specific_address}",
                 ($hotel->latitude && $hotel->longitude)
-                    ? "Coordinates: {$hotel->latitude}, {$hotel->longitude}"
-                    : null,
+                ? "Coordinates: {$hotel->latitude}, {$hotel->longitude}"
+                : null,
                 $desc ? "Description: {$desc}" : null,
             ]);
 
@@ -458,13 +458,13 @@ class GeminiService
 
         foreach ($scoredRooms as $index => $entry) {
             /** @var RoomType $room */
-            $room  = $entry['item'];
+            $room = $entry['item'];
             $score = round($entry['score'], 4);
-            $rank  = $index + 1;
+            $rank = $index + 1;
 
-            $hotel     = $room->hotel;
+            $hotel = $room->hotel;
             $hotelName = $hotel->hotel_name ?? 'Unknown Hotel';
-            $destName  = $hotel->destination->name ?? 'Unknown Destination';
+            $destName = $hotel->destination->name ?? 'Unknown Destination';
 
             $amenities = is_array($room->room_amenities)
                 ? implode(', ', $room->room_amenities)
@@ -573,8 +573,8 @@ class GeminiService
         foreach ($scoredActivities as $index => $entry) {
             /** @var ActivityModel $activity */
             $activity = $entry['item'];
-            $score    = round($entry['score'], 4);
-            $rank     = $index + 1;
+            $score = round($entry['score'], 4);
+            $rank = $index + 1;
 
             $destName = $activity->destination->name ?? 'Unknown Destination';
 
@@ -582,9 +582,9 @@ class GeminiService
                 ? implode(', ', $activity->vibe_tags)
                 : ($activity->vibe_tags ?? '');
 
-            $desc  = trim(preg_replace('/\s+/', ' ', strip_tags($activity->description ?? '')));
+            $desc = trim(preg_replace('/\s+/', ' ', strip_tags($activity->description ?? '')));
             $notes = trim(preg_replace('/\s+/', ' ', strip_tags($activity->notes ?? '')));
-            $reqs  = trim(preg_replace('/\s+/', ' ', strip_tags($activity->requirements ?? '')));
+            $reqs = trim(preg_replace('/\s+/', ' ', strip_tags($activity->requirements ?? '')));
 
             $lines = array_filter([
                 "--- Activity #{$rank} (relevance: {$score}) ---",
@@ -659,13 +659,34 @@ class GeminiService
         // 2. Category Detection Patterns
         $categories = [
             'Sexual/Inappropriate' => [
-                'nsfw', 'porn', 'naked', 'nude', 'sexual', 'sex', 'strip', 'erotic', 'boobs', 'penis', 'vagina'
+                'nsfw',
+                'porn',
+                'naked',
+                'nude',
+                'sexual',
+                'sex',
+                'strip',
+                'erotic',
+                'boobs',
+                'penis',
+                'vagina'
             ],
             'Sensitive/Prohibited' => [
-                'suicide', 'bomb', 'terrorist', 'hack bank', 'credit card fraud', 'illegal drugs', 'kill', 'murder'
+                'suicide',
+                'bomb',
+                'terrorist',
+                'hack bank',
+                'credit card fraud',
+                'illegal drugs',
+                'kill',
+                'murder'
             ],
             'Prompt Injection' => [
-                'ignore previous instructions', 'ignore all rules', 'system prompt', 'you are now DAN', 'bypass restriction'
+                'ignore previous instructions',
+                'ignore all rules',
+                'system prompt',
+                'you are now DAN',
+                'bypass restriction'
             ],
         ];
 
