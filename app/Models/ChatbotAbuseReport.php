@@ -27,6 +27,6 @@ class ChatbotAbuseReport extends Model
 
     public function admin()
     {
-        return $this->belongsTo(Admin::class, 'reviewed_by');
+        return $this->belongsTo(AdminModel::class, 'reviewed_by');
     }
 }

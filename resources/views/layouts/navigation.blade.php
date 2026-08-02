@@ -6,35 +6,21 @@
                 <!-- Logo -->
                 <div class="shrink-0 flex items-center">
                     <a href="{{ route('dashboard') }}">
-                        <x-breeze.application-logo />
+                        <x-application-logo />
                     </a>
                 </div>
 
                 <!-- Navigation Links -->
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-breeze.nav-link :href="route('user.dashboard')" :active="request()->routeIs('user.dashboard')">
+                    <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                         {{ __('Dashboard') }}
-                    </x-breeze.nav-link>
-
-                    <x-breeze.nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                        {{ __('Recommendations') }}
-                    </x-breeze.nav-link>
-
-                    <x-breeze.nav-link :href="route('accommodation.index')"
-                        :active="request()->routeIs('accommodation.*')">
-                        {{ __('Accommodation') }}
-                    </x-breeze.nav-link>
-
-                    <x-breeze.nav-link :href="route('activities.user.index')"
-                        :active="request()->routeIs('activities.user.*')">
-                        {{ __('Activities') }}
-                    </x-breeze.nav-link>
+                    </x-nav-link>
                 </div>
             </div>
 
             <!-- Settings Dropdown -->
             <div class="hidden sm:flex sm:items-center sm:ms-6">
-                <x-breeze.dropdown align="right" width="48">
+                <x-dropdown align="right" width="48">
                     <x-slot name="trigger">
                         <button
                             class="inline-flex items-center px-3.5 py-2 border border-slate-200 text-xs font-bold rounded-lg text-slate-700 bg-slate-50 hover:bg-slate-100 hover:text-slate-900 focus:outline-none transition ease-in-out duration-150 shadow-sm">
@@ -53,21 +39,21 @@
                     </x-slot>
 
                     <x-slot name="content">
-                        <x-breeze.dropdown-link :href="route('profile.edit')">
-                            {{ __('Profile & AI Preferences') }}
-                        </x-breeze.dropdown-link>
+                        <x-dropdown-link :href="route('profile.edit')">
+                            {{ __('Profile') }}
+                        </x-dropdown-link>
 
                         <!-- Authentication -->
                         <form method="POST" action="{{ route('logout') }}">
                             @csrf
 
-                            <x-breeze.dropdown-link :href="route('logout')" onclick="event.preventDefault();
+                            <x-dropdown-link :href="route('logout')" onclick="event.preventDefault();
                                                 this.closest('form').submit();">
                                 {{ __('Log Out') }}
-                            </x-breeze.dropdown-link>
+                            </x-dropdown-link>
                         </form>
                     </x-slot>
-                </x-breeze.dropdown>
+                </x-dropdown>
             </div>
 
             <!-- Hamburger -->
@@ -90,24 +76,9 @@
     <div :class="{'block': open, 'hidden': ! open}"
         class="hidden sm:hidden bg-white border-t border-slate-100 shadow-lg">
         <div class="pt-2 pb-3 space-y-1">
-            <x-breeze.responsive-nav-link :href="route('user.dashboard')"
-                :active="request()->routeIs('user.dashboard')">
+            <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                 {{ __('Dashboard') }}
-            </x-breeze.responsive-nav-link>
-
-            <x-breeze.responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                {{ __('Recommendations') }}
-            </x-breeze.responsive-nav-link>
-
-            <x-breeze.responsive-nav-link :href="route('accommodation.index')"
-                :active="request()->routeIs('accommodation.*')">
-                {{ __('Accommodation') }}
-            </x-breeze.responsive-nav-link>
-
-            <x-breeze.responsive-nav-link :href="route('activities.user.index')"
-                :active="request()->routeIs('activities.user.*')">
-                {{ __('Activities') }}
-            </x-breeze.responsive-nav-link>
+            </x-responsive-nav-link>
         </div>
 
         <!-- Responsive Settings Options -->
@@ -118,18 +89,18 @@
             </div>
 
             <div class="mt-3 space-y-1">
-                <x-breeze.responsive-nav-link :href="route('profile.edit')">
-                    {{ __('Profile & AI Preferences') }}
-                </x-breeze.responsive-nav-link>
+                <x-responsive-nav-link :href="route('profile.edit')">
+                    {{ __('Profile') }}
+                </x-responsive-nav-link>
 
                 <!-- Authentication -->
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
 
-                    <x-breeze.responsive-nav-link :href="route('logout')" onclick="event.preventDefault();
+                    <x-responsive-nav-link :href="route('logout')" onclick="event.preventDefault();
                                         this.closest('form').submit();">
                         {{ __('Log Out') }}
-                    </x-breeze.responsive-nav-link>
+                    </x-responsive-nav-link>
                 </form>
             </div>
         </div>

@@ -1,0 +1,84 @@
+- generic [active] [ref=f5e1]:
+  - banner [ref=f5e2]:
+    - generic [ref=f5e3]:
+      - generic [ref=f5e4]:
+        - generic [ref=f5e5]: admin_panel_settings
+        - generic [ref=f5e6]:
+          - generic [ref=f5e7]: SunnyTrips
+          - generic [ref=f5e8]: Admin
+      - generic [ref=f5e9]:
+        - generic [ref=f5e10]:
+          - generic [ref=f5e11]: A
+          - generic "sunnytrips@gmail.com" [ref=f5e12]: Administrator
+        - button "logout Sign out" [ref=f5e15] [cursor=pointer]:
+          - generic [ref=f5e16]: logout
+          - generic [ref=f5e17]: Sign out
+  - complementary [ref=f5e18]:
+    - generic [ref=f5e19]:
+      - heading "SunnyTrips" [level=1] [ref=f5e20]
+      - paragraph [ref=f5e21]: Admin Portal
+    - navigation [ref=f5e22]:
+      - generic [ref=f5e23]:
+        - heading "Overview" [level=2] [ref=f5e24]
+        - generic [ref=f5e25]:
+          - link "dashboard Dashboard" [ref=f5e26] [cursor=pointer]:
+            - /url: http://localhost/SunnyTripsCapstoneV2/public/admin/dashboard
+            - generic [ref=f5e27]: dashboard
+            - generic [ref=f5e28]: Dashboard
+          - link "psychology AI Insights" [ref=f5e29] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=f5e30]: psychology
+            - generic [ref=f5e31]: AI Insights
+          - link "analytics Generate Reports" [ref=f5e32] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=f5e33]: analytics
+            - generic [ref=f5e34]: Generate Reports
+      - generic [ref=f5e35]:
+        - heading "Operations" [level=2] [ref=f5e36]
+        - generic [ref=f5e37]:
+          - link "calendar_month Bookings" [ref=f5e38] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=f5e39]: calendar_month
+            - generic [ref=f5e40]: Bookings
+          - link "group Registered Users" [ref=f5e41] [cursor=pointer]:
+            - /url: http://localhost/SunnyTripsCapstoneV2/public/admin/registered-users
+            - generic [ref=f5e42]: group
+            - generic [ref=f5e43]: Registered Users
+          - link "inventory Manage Inventory" [ref=f5e44] [cursor=pointer]:
+            - /url: http://localhost/SunnyTripsCapstoneV2/public/admin/inventory
+            - generic [ref=f5e45]: inventory
+            - generic [ref=f5e46]: Manage Inventory
+      - generic [ref=f5e47]:
+        - heading "Catalog" [level=2] [ref=f5e48]
+        - generic [ref=f5e49]:
+          - link "place Destinations" [ref=f5e50] [cursor=pointer]:
+            - /url: http://localhost/SunnyTripsCapstoneV2/public/admin/destinations
+            - generic [ref=f5e51]: place
+            - generic [ref=f5e52]: Destinations
+          - link "house Add Hotel Information" [ref=f5e53] [cursor=pointer]:
+            - /url: http://localhost/SunnyTripsCapstoneV2/public/admin/hotels/manage
+            - generic [ref=f5e54]: house
+            - generic [ref=f5e55]: Add Hotel Information
+          - link "hotel Show Hotel Listing" [ref=f5e56] [cursor=pointer]:
+            - /url: http://localhost/SunnyTripsCapstoneV2/public/admin/hotels
+            - generic [ref=f5e57]: hotel
+            - generic [ref=f5e58]: Show Hotel Listing
+          - link "explore Activities & Tours" [ref=f5e59] [cursor=pointer]:
+            - /url: http://localhost/SunnyTripsCapstoneV2/public/admin/activities
+            - generic [ref=f5e60]: explore
+            - generic [ref=f5e61]: Activities & Tours
+          - link "extension Add-ons" [ref=f5e62] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=f5e63]: extension
+            - generic [ref=f5e64]: Add-ons
+          - link "psychology Manage AI" [ref=f5e65] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=f5e66]: psychology
+            - generic [ref=f5e67]: Manage AI
+      - generic [ref=f5e68]:
+        - heading "Legal" [level=2] [ref=f5e69]
+        - link "gavel Legal Documents" [ref=f5e71] [cursor=pointer]:
+          - /url: http://localhost/SunnyTripsCapstoneV2/public/admin/legal
+          - generic [ref=f5e72]: gavel
+          - generic [ref=f5e73]: Legal Documents
+  - main [ref=f5e74]

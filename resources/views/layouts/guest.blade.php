@@ -60,7 +60,7 @@
             <div class="w-full max-w-md mx-auto">
 
                 {{-- Brand wordmark --}}
-                <a href="/" class="inline-flex items-baseline gap-1.5 mb-10 group"
+                <a href="/" class="inline-flex items-baseline gap-1.5 mb-4 group"
                     aria-label="SunnyTrips — Go to homepage">
                     <span class="material-symbols-outlined text-ocean-500 text-[22px] leading-none"
                         aria-hidden="true">wb_sunny</span>
