@@ -31,9 +31,11 @@
     <x-admin-components::sidebar />
 
     {{-- Main Content --}}
-    <main class="flex-1 sm:ml-64 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-        {{ $slot ?? '' }}
-        @yield('content')
+    <main class="flex-1 sm:pl-64 py-8 w-full">
+        <div class="w-full max-w-7xl mx-auto space-y-6 min-w-0 px-4 sm:px-6 lg:px-8">
+            {{ $slot ?? '' }}
+            @yield('content')
+        </div>
     </main>
 </body>
 

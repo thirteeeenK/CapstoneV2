@@ -1,0 +1,589 @@
+- generic [active] [ref=f8e1]:
+  - banner [ref=f8e2]:
+    - generic [ref=f8e3]:
+      - generic [ref=f8e4]:
+        - generic [ref=f8e5]: admin_panel_settings
+        - generic [ref=f8e6]:
+          - generic [ref=f8e7]: SunnyTrips
+          - generic [ref=f8e8]: Admin
+      - generic [ref=f8e9]:
+        - generic [ref=f8e10]:
+          - generic [ref=f8e11]: A
+          - generic "sunnytrips@gmail.com" [ref=f8e12]: Administrator
+        - button "logout Sign out" [ref=f8e15] [cursor=pointer]:
+          - generic [ref=f8e16]: logout
+          - generic [ref=f8e17]: Sign out
+  - complementary [ref=f8e18]:
+    - generic [ref=f8e19]:
+      - heading "SunnyTrips" [level=1] [ref=f8e20]
+      - paragraph [ref=f8e21]: Admin Portal
+    - navigation [ref=f8e22]:
+      - generic [ref=f8e23]:
+        - heading "Overview" [level=2] [ref=f8e24]
+        - generic [ref=f8e25]:
+          - link "dashboard Dashboard" [ref=f8e26] [cursor=pointer]:
+            - /url: http://localhost/SunnyTripsCapstoneV2/public/admin/dashboard
+            - generic [ref=f8e27]: dashboard
+            - generic [ref=f8e28]: Dashboard
+          - link "psychology AI Insights" [ref=f8e29] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=f8e30]: psychology
+            - generic [ref=f8e31]: AI Insights
+          - link "analytics Generate Reports" [ref=f8e32] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=f8e33]: analytics
+            - generic [ref=f8e34]: Generate Reports
+      - generic [ref=f8e35]:
+        - heading "Operations" [level=2] [ref=f8e36]
+        - generic [ref=f8e37]:
+          - link "calendar_month Bookings" [ref=f8e38] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=f8e39]: calendar_month
+            - generic [ref=f8e40]: Bookings
+          - link "group Registered Users" [ref=f8e41] [cursor=pointer]:
+            - /url: http://localhost/SunnyTripsCapstoneV2/public/admin/registered-users
+            - generic [ref=f8e42]: group
+            - generic [ref=f8e43]: Registered Users
+          - link "inventory Manage Inventory" [ref=f8e44] [cursor=pointer]:
+            - /url: http://localhost/SunnyTripsCapstoneV2/public/admin/inventory
+            - generic [ref=f8e45]: inventory
+            - generic [ref=f8e46]: Manage Inventory
+      - generic [ref=f8e47]:
+        - heading "Catalog" [level=2] [ref=f8e48]
+        - generic [ref=f8e49]:
+          - link "place Destinations" [ref=f8e50] [cursor=pointer]:
+            - /url: http://localhost/SunnyTripsCapstoneV2/public/admin/destinations
+            - generic [ref=f8e51]: place
+            - generic [ref=f8e52]: Destinations
+          - link "house Add Hotel Information" [ref=f8e53] [cursor=pointer]:
+            - /url: http://localhost/SunnyTripsCapstoneV2/public/admin/hotels/manage
+            - generic [ref=f8e54]: house
+            - generic [ref=f8e55]: Add Hotel Information
+          - link "hotel Show Hotel Listing" [ref=f8e56] [cursor=pointer]:
+            - /url: http://localhost/SunnyTripsCapstoneV2/public/admin/hotels
+            - generic [ref=f8e57]: hotel
+            - generic [ref=f8e58]: Show Hotel Listing
+          - link "explore Activities & Tours" [ref=f8e59] [cursor=pointer]:
+            - /url: http://localhost/SunnyTripsCapstoneV2/public/admin/activities
+            - generic [ref=f8e60]: explore
+            - generic [ref=f8e61]: Activities & Tours
+          - link "extension Add-ons" [ref=f8e62] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=f8e63]: extension
+            - generic [ref=f8e64]: Add-ons
+          - link "psychology Manage AI" [ref=f8e65] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=f8e66]: psychology
+            - generic [ref=f8e67]: Manage AI
+      - generic [ref=f8e68]:
+        - heading "Legal" [level=2] [ref=f8e69]
+        - link "gavel Legal Documents" [ref=f8e71] [cursor=pointer]:
+          - /url: http://localhost/SunnyTripsCapstoneV2/public/admin/legal
+          - generic [ref=f8e72]: gavel
+          - generic [ref=f8e73]: Legal Documents
+  - main [ref=f8e74]:
+    - generic [ref=f8e76]:
+      - generic [ref=f8e78]:
+        - heading "Central Inventory Management" [level=1] [ref=f8e79]
+        - paragraph [ref=f8e80]:
+          - text: Control public visibility (
+          - code [ref=f8e81]: is_shown
+          - text: ) and monitor inventory availability for hotels, room types, and activities.
+      - generic [ref=f8e82]:
+        - generic [ref=f8e83]:
+          - generic [ref=f8e84]: inventory_2
+          - generic [ref=f8e86]:
+            - paragraph [ref=f8e87]: Hotels Inventory
+            - generic [ref=f8e88]:
+              - generic [ref=f8e89]: "28"
+              - generic [ref=f8e90]: 28 Visible
+              - generic [ref=f8e91]: •
+              - generic [ref=f8e92]: 0 Hidden
+        - generic [ref=f8e93]:
+          - generic [ref=f8e94]: king_bed
+          - generic [ref=f8e96]:
+            - paragraph [ref=f8e97]: Rooms Inventory
+            - generic [ref=f8e98]:
+              - generic [ref=f8e99]: "12"
+              - generic [ref=f8e100]: 12 Visible
+              - generic [ref=f8e101]: •
+              - generic [ref=f8e102]: 0 Hidden
+        - generic [ref=f8e103]:
+          - generic [ref=f8e104]: explore
+          - generic [ref=f8e106]:
+            - paragraph [ref=f8e107]: Activities Inventory
+            - generic [ref=f8e108]:
+              - generic [ref=f8e109]: "23"
+              - generic [ref=f8e110]: 23 Visible
+              - generic [ref=f8e111]: •
+              - generic [ref=f8e112]: 0 Hidden
+      - generic [ref=f8e113]:
+        - generic [ref=f8e115]:
+          - generic [ref=f8e116]:
+            - generic [ref=f8e117]: place
+            - text: "Location:"
+          - link "All Locations" [ref=f8e118] [cursor=pointer]:
+            - /url: http://localhost/SunnyTripsCapstoneV2/public/admin/inventory?tab=hotels
+          - link "Boracay" [ref=f8e119] [cursor=pointer]:
+            - /url: http://localhost/SunnyTripsCapstoneV2/public/admin/inventory?tab=hotels&destination_id=1
+          - link "El Nido" [ref=f8e120] [cursor=pointer]:
+            - /url: http://localhost/SunnyTripsCapstoneV2/public/admin/inventory?tab=hotels&destination_id=2
+        - generic [ref=f8e121]:
+          - generic [ref=f8e122]:
+            - generic [ref=f8e123]:
+              - generic [ref=f8e124]: visibility
+              - text: "Visibility:"
+            - link "All Statuses" [ref=f8e125] [cursor=pointer]:
+              - /url: http://localhost/SunnyTripsCapstoneV2/public/admin/inventory?tab=hotels
+            - link "Visible Only" [ref=f8e126] [cursor=pointer]:
+              - /url: http://localhost/SunnyTripsCapstoneV2/public/admin/inventory?tab=hotels&visibility=visible
+            - link "Hidden Only" [ref=f8e128] [cursor=pointer]:
+              - /url: http://localhost/SunnyTripsCapstoneV2/public/admin/inventory?tab=hotels&visibility=hidden
+          - generic [ref=f8e130]:
+            - generic [ref=f8e131]:
+              - generic [ref=f8e132]: search
+              - textbox "Search inventory items..." [ref=f8e133]
+            - button "Search" [ref=f8e134] [cursor=pointer]
+      - navigation [ref=f8e136]:
+        - link "house Hotels Inventory (28)" [ref=f8e137] [cursor=pointer]:
+          - /url: http://localhost/SunnyTripsCapstoneV2/public/admin/inventory?tab=hotels
+          - generic [ref=f8e138]: house
+          - text: Hotels Inventory (28)
+        - link "bed Room Types Inventory (12)" [ref=f8e139] [cursor=pointer]:
+          - /url: http://localhost/SunnyTripsCapstoneV2/public/admin/inventory?tab=rooms
+          - generic [ref=f8e140]: bed
+          - text: Room Types Inventory (12)
+        - link "explore Activities Inventory (23)" [ref=f8e141] [cursor=pointer]:
+          - /url: http://localhost/SunnyTripsCapstoneV2/public/admin/inventory?tab=activities
+          - generic [ref=f8e142]: explore
+          - text: Activities Inventory (23)
+      - table [ref=f8e145]:
+        - rowgroup [ref=f8e146]:
+          - row [ref=f8e147]:
+            - columnheader "Hotel Name" [ref=f8e148]
+            - columnheader "Destination" [ref=f8e149]
+            - columnheader "Category / Type" [ref=f8e150]
+            - columnheader "Address" [ref=f8e151]
+            - columnheader "Public Visibility" [ref=f8e152]
+            - columnheader "Actions" [ref=f8e153]
+        - rowgroup [ref=f8e154]:
+          - row [ref=f8e155]:
+            - cell "Hennan Palm Beach Resort" [ref=f8e156]
+            - cell "place Boracay" [ref=f8e157]:
+              - generic [ref=f8e158]:
+                - generic [ref=f8e159]: place
+                - text: Boracay
+            - cell "High End Luxury Hotels" [ref=f8e160]
+            - cell "Station 2, White Beach" [ref=f8e161]
+            - cell [ref=f8e162]:
+              - button "Visible to Users" [ref=f8e164] [cursor=pointer]
+            - cell [ref=f8e166]:
+              - link "edit Edit" [ref=f8e167] [cursor=pointer]:
+                - /url: http://localhost/SunnyTripsCapstoneV2/public/admin/hotels/1/edit
+                - generic [ref=f8e168]: edit
+                - text: Edit
+          - row [ref=f8e169]:
+            - cell "Henann Palm Beach Resort" [ref=f8e170]
+            - cell "place Boracay" [ref=f8e171]:
+              - generic [ref=f8e172]:
+                - generic [ref=f8e173]: place
+                - text: Boracay
+            - cell "High End Luxury Hotels" [ref=f8e174]
+            - cell "Station 2, White Beach" [ref=f8e175]
+            - cell [ref=f8e176]:
+              - button "Visible to Users" [ref=f8e178] [cursor=pointer]
+            - cell [ref=f8e180]:
+              - link "edit Edit" [ref=f8e181] [cursor=pointer]:
+                - /url: http://localhost/SunnyTripsCapstoneV2/public/admin/hotels/2/edit
+                - generic [ref=f8e182]: edit
+                - text: Edit
+          - row [ref=f8e183]:
+            - cell "Canyon Hotels & Resorts Boracay" [ref=f8e184]
+            - cell "place Boracay" [ref=f8e185]:
+              - generic [ref=f8e186]:
+                - generic [ref=f8e187]: place
+                - text: Boracay
+            - cell "High End Luxury Hotels" [ref=f8e188]
+            - cell "Station 2 (Near D'Mall)" [ref=f8e189]
+            - cell [ref=f8e190]:
+              - button "Visible to Users" [ref=f8e192] [cursor=pointer]
+            - cell [ref=f8e194]:
+              - link "edit Edit" [ref=f8e195] [cursor=pointer]:
+                - /url: http://localhost/SunnyTripsCapstoneV2/public/admin/hotels/3/edit
+                - generic [ref=f8e196]: edit
+                - text: Edit
+          - row [ref=f8e197]:
+            - cell "Boracay Ocean Club Beach Resort" [ref=f8e198]
+            - cell "place Boracay" [ref=f8e199]:
+              - generic [ref=f8e200]:
+                - generic [ref=f8e201]: place
+                - text: Boracay
+            - cell "High End Luxury Hotels" [ref=f8e202]
+            - cell "Station 3, White Beach" [ref=f8e203]
+            - cell [ref=f8e204]:
+              - button "Visible to Users" [ref=f8e206] [cursor=pointer]
+            - cell [ref=f8e208]:
+              - link "edit Edit" [ref=f8e209] [cursor=pointer]:
+                - /url: http://localhost/SunnyTripsCapstoneV2/public/admin/hotels/4/edit
+                - generic [ref=f8e210]: edit
+                - text: Edit
+          - row [ref=f8e211]:
+            - cell "Henann Garden Resort" [ref=f8e212]
+            - cell "place Boracay" [ref=f8e213]:
+              - generic [ref=f8e214]:
+                - generic [ref=f8e215]: place
+                - text: Boracay
+            - cell "High End Luxury Hotels" [ref=f8e216]
+            - cell "Station 2, White Beach" [ref=f8e217]
+            - cell [ref=f8e218]:
+              - button "Visible to Users" [ref=f8e220] [cursor=pointer]
+            - cell [ref=f8e222]:
+              - link "edit Edit" [ref=f8e223] [cursor=pointer]:
+                - /url: http://localhost/SunnyTripsCapstoneV2/public/admin/hotels/5/edit
+                - generic [ref=f8e224]: edit
+                - text: Edit
+          - row [ref=f8e225]:
+            - cell "My Station Hotel" [ref=f8e226]
+            - cell "place Boracay" [ref=f8e227]:
+              - generic [ref=f8e228]:
+                - generic [ref=f8e229]: place
+                - text: Boracay
+            - cell "Mid Affordable Hotels" [ref=f8e230]
+            - cell "Station 1" [ref=f8e231]
+            - cell [ref=f8e232]:
+              - button "Visible to Users" [ref=f8e234] [cursor=pointer]
+            - cell [ref=f8e236]:
+              - link "edit Edit" [ref=f8e237] [cursor=pointer]:
+                - /url: http://localhost/SunnyTripsCapstoneV2/public/admin/hotels/6/edit
+                - generic [ref=f8e238]: edit
+                - text: Edit
+          - row [ref=f8e239]:
+            - cell "Frendz Resort & Hostel" [ref=f8e240]
+            - cell "place Boracay" [ref=f8e241]:
+              - generic [ref=f8e242]:
+                - generic [ref=f8e243]: place
+                - text: Boracay
+            - cell "Mid Affordable Hotels" [ref=f8e244]
+            - cell "Station 1" [ref=f8e245]
+            - cell [ref=f8e246]:
+              - button "Visible to Users" [ref=f8e248] [cursor=pointer]
+            - cell [ref=f8e250]:
+              - link "edit Edit" [ref=f8e251] [cursor=pointer]:
+                - /url: http://localhost/SunnyTripsCapstoneV2/public/admin/hotels/7/edit
+                - generic [ref=f8e252]: edit
+                - text: Edit
+          - row [ref=f8e253]:
+            - cell "Lazy Dog Bed & Breakfast" [ref=f8e254]
+            - cell "place Boracay" [ref=f8e255]:
+              - generic [ref=f8e256]:
+                - generic [ref=f8e257]: place
+                - text: Boracay
+            - cell "Mid Affordable Hotels" [ref=f8e258]
+            - cell "Bulabog Beach" [ref=f8e259]
+            - cell [ref=f8e260]:
+              - button "Visible to Users" [ref=f8e262] [cursor=pointer]
+            - cell [ref=f8e264]:
+              - link "edit Edit" [ref=f8e265] [cursor=pointer]:
+                - /url: http://localhost/SunnyTripsCapstoneV2/public/admin/hotels/8/edit
+                - generic [ref=f8e266]: edit
+                - text: Edit
+          - row [ref=f8e267]:
+            - cell "Happiness Hostel" [ref=f8e268]
+            - cell "place Boracay" [ref=f8e269]:
+              - generic [ref=f8e270]:
+                - generic [ref=f8e271]: place
+                - text: Boracay
+            - cell "Mid Affordable Hotels" [ref=f8e272]
+            - cell "Station 2 / Bulabog" [ref=f8e273]
+            - cell [ref=f8e274]:
+              - button "Visible to Users" [ref=f8e276] [cursor=pointer]
+            - cell [ref=f8e278]:
+              - link "edit Edit" [ref=f8e279] [cursor=pointer]:
+                - /url: http://localhost/SunnyTripsCapstoneV2/public/admin/hotels/9/edit
+                - generic [ref=f8e280]: edit
+                - text: Edit
+          - row [ref=f8e281]:
+            - cell "The Muse Hotel" [ref=f8e282]
+            - cell "place Boracay" [ref=f8e283]:
+              - generic [ref=f8e284]:
+                - generic [ref=f8e285]: place
+                - text: Boracay
+            - cell "Mid Affordable Hotels" [ref=f8e286]
+            - cell "Station 1" [ref=f8e287]
+            - cell [ref=f8e288]:
+              - button "Visible to Users" [ref=f8e290] [cursor=pointer]
+            - cell [ref=f8e292]:
+              - link "edit Edit" [ref=f8e293] [cursor=pointer]:
+                - /url: http://localhost/SunnyTripsCapstoneV2/public/admin/hotels/10/edit
+                - generic [ref=f8e294]: edit
+                - text: Edit
+          - row [ref=f8e295]:
+            - cell "Henann Palm Beach Resort" [ref=f8e296]
+            - cell "place Boracay" [ref=f8e297]:
+              - generic [ref=f8e298]:
+                - generic [ref=f8e299]: place
+                - text: Boracay
+            - cell "High End Luxury Hotels" [ref=f8e300]
+            - cell "Station 2, White Beach" [ref=f8e301]
+            - cell [ref=f8e302]:
+              - button "Visible to Users" [ref=f8e304] [cursor=pointer]
+            - cell [ref=f8e306]:
+              - link "edit Edit" [ref=f8e307] [cursor=pointer]:
+                - /url: http://localhost/SunnyTripsCapstoneV2/public/admin/hotels/11/edit
+                - generic [ref=f8e308]: edit
+                - text: Edit
+          - row [ref=f8e309]:
+            - cell "Canyon Hotels & Resorts Boracay" [ref=f8e310]
+            - cell "place Boracay" [ref=f8e311]:
+              - generic [ref=f8e312]:
+                - generic [ref=f8e313]: place
+                - text: Boracay
+            - cell "High End Luxury Hotels" [ref=f8e314]
+            - cell "Station 2 (Near D'Mall)" [ref=f8e315]
+            - cell [ref=f8e316]:
+              - button "Visible to Users" [ref=f8e318] [cursor=pointer]
+            - cell [ref=f8e320]:
+              - link "edit Edit" [ref=f8e321] [cursor=pointer]:
+                - /url: http://localhost/SunnyTripsCapstoneV2/public/admin/hotels/12/edit
+                - generic [ref=f8e322]: edit
+                - text: Edit
+          - row [ref=f8e323]:
+            - cell "Boracay Ocean Club Beach Resort" [ref=f8e324]
+            - cell "place Boracay" [ref=f8e325]:
+              - generic [ref=f8e326]:
+                - generic [ref=f8e327]: place
+                - text: Boracay
+            - cell "High End Luxury Hotels" [ref=f8e328]
+            - cell "Station 3, White Beach" [ref=f8e329]
+            - cell [ref=f8e330]:
+              - button "Visible to Users" [ref=f8e332] [cursor=pointer]
+            - cell [ref=f8e334]:
+              - link "edit Edit" [ref=f8e335] [cursor=pointer]:
+                - /url: http://localhost/SunnyTripsCapstoneV2/public/admin/hotels/13/edit
+                - generic [ref=f8e336]: edit
+                - text: Edit
+          - row [ref=f8e337]:
+            - cell "Henann Garden Resort" [ref=f8e338]
+            - cell "place Boracay" [ref=f8e339]:
+              - generic [ref=f8e340]:
+                - generic [ref=f8e341]: place
+                - text: Boracay
+            - cell "High End Luxury Hotels" [ref=f8e342]
+            - cell "Station 2, White Beach" [ref=f8e343]
+            - cell [ref=f8e344]:
+              - button "Visible to Users" [ref=f8e346] [cursor=pointer]
+            - cell [ref=f8e348]:
+              - link "edit Edit" [ref=f8e349] [cursor=pointer]:
+                - /url: http://localhost/SunnyTripsCapstoneV2/public/admin/hotels/14/edit
+                - generic [ref=f8e350]: edit
+                - text: Edit
+          - row [ref=f8e351]:
+            - cell "My Station Hotel" [ref=f8e352]
+            - cell "place Boracay" [ref=f8e353]:
+              - generic [ref=f8e354]:
+                - generic [ref=f8e355]: place
+                - text: Boracay
+            - cell "Mid Affordable Hotels" [ref=f8e356]
+            - cell "Station 1" [ref=f8e357]
+            - cell [ref=f8e358]:
+              - button "Visible to Users" [ref=f8e360] [cursor=pointer]
+            - cell [ref=f8e362]:
+              - link "edit Edit" [ref=f8e363] [cursor=pointer]:
+                - /url: http://localhost/SunnyTripsCapstoneV2/public/admin/hotels/15/edit
+                - generic [ref=f8e364]: edit
+                - text: Edit
+          - row [ref=f8e365]:
+            - cell "Frendz Resort & Hostel" [ref=f8e366]
+            - cell "place Boracay" [ref=f8e367]:
+              - generic [ref=f8e368]:
+                - generic [ref=f8e369]: place
+                - text: Boracay
+            - cell "Mid Affordable Hotels" [ref=f8e370]
+            - cell "Station 1" [ref=f8e371]
+            - cell [ref=f8e372]:
+              - button "Visible to Users" [ref=f8e374] [cursor=pointer]
+            - cell [ref=f8e376]:
+              - link "edit Edit" [ref=f8e377] [cursor=pointer]:
+                - /url: http://localhost/SunnyTripsCapstoneV2/public/admin/hotels/16/edit
+                - generic [ref=f8e378]: edit
+                - text: Edit
+          - row [ref=f8e379]:
+            - cell "Lazy Dog Bed & Breakfast" [ref=f8e380]
+            - cell "place Boracay" [ref=f8e381]:
+              - generic [ref=f8e382]:
+                - generic [ref=f8e383]: place
+                - text: Boracay
+            - cell "Mid Affordable Hotels" [ref=f8e384]
+            - cell "Bulabog Beach" [ref=f8e385]
+            - cell [ref=f8e386]:
+              - button "Visible to Users" [ref=f8e388] [cursor=pointer]
+            - cell [ref=f8e390]:
+              - link "edit Edit" [ref=f8e391] [cursor=pointer]:
+                - /url: http://localhost/SunnyTripsCapstoneV2/public/admin/hotels/17/edit
+                - generic [ref=f8e392]: edit
+                - text: Edit
+          - row [ref=f8e393]:
+            - cell "Happiness Hostel" [ref=f8e394]
+            - cell "place Boracay" [ref=f8e395]:
+              - generic [ref=f8e396]:
+                - generic [ref=f8e397]: place
+                - text: Boracay
+            - cell "Mid Affordable Hotels" [ref=f8e398]
+            - cell "Station 2 / Bulabog" [ref=f8e399]
+            - cell [ref=f8e400]:
+              - button "Visible to Users" [ref=f8e402] [cursor=pointer]
+            - cell [ref=f8e404]:
+              - link "edit Edit" [ref=f8e405] [cursor=pointer]:
+                - /url: http://localhost/SunnyTripsCapstoneV2/public/admin/hotels/18/edit
+                - generic [ref=f8e406]: edit
+                - text: Edit
+          - row [ref=f8e407]:
+            - cell "The Muse Hotel" [ref=f8e408]
+            - cell "place Boracay" [ref=f8e409]:
+              - generic [ref=f8e410]:
+                - generic [ref=f8e411]: place
+                - text: Boracay
+            - cell "Mid Affordable Hotels" [ref=f8e412]
+            - cell "Station 1" [ref=f8e413]
+            - cell [ref=f8e414]:
+              - button "Visible to Users" [ref=f8e416] [cursor=pointer]
+            - cell [ref=f8e418]:
+              - link "edit Edit" [ref=f8e419] [cursor=pointer]:
+                - /url: http://localhost/SunnyTripsCapstoneV2/public/admin/hotels/19/edit
+                - generic [ref=f8e420]: edit
+                - text: Edit
+          - row [ref=f8e421]:
+            - cell "Henann Palm Beach Resort" [ref=f8e422]
+            - cell "place Boracay" [ref=f8e423]:
+              - generic [ref=f8e424]:
+                - generic [ref=f8e425]: place
+                - text: Boracay
+            - cell "High End Luxury Hotels" [ref=f8e426]
+            - cell "Station 2, White Beach" [ref=f8e427]
+            - cell [ref=f8e428]:
+              - button "Visible to Users" [ref=f8e430] [cursor=pointer]
+            - cell [ref=f8e432]:
+              - link "edit Edit" [ref=f8e433] [cursor=pointer]:
+                - /url: http://localhost/SunnyTripsCapstoneV2/public/admin/hotels/20/edit
+                - generic [ref=f8e434]: edit
+                - text: Edit
+          - row [ref=f8e435]:
+            - cell "Canyon Hotels & Resorts Boracay" [ref=f8e436]
+            - cell "place Boracay" [ref=f8e437]:
+              - generic [ref=f8e438]:
+                - generic [ref=f8e439]: place
+                - text: Boracay
+            - cell "High End Luxury Hotels" [ref=f8e440]
+            - cell "Station 2 (Near D'Mall)" [ref=f8e441]
+            - cell [ref=f8e442]:
+              - button "Visible to Users" [ref=f8e444] [cursor=pointer]
+            - cell [ref=f8e446]:
+              - link "edit Edit" [ref=f8e447] [cursor=pointer]:
+                - /url: http://localhost/SunnyTripsCapstoneV2/public/admin/hotels/21/edit
+                - generic [ref=f8e448]: edit
+                - text: Edit
+          - row [ref=f8e449]:
+            - cell "Boracay Ocean Club Beach Resort" [ref=f8e450]
+            - cell "place Boracay" [ref=f8e451]:
+              - generic [ref=f8e452]:
+                - generic [ref=f8e453]: place
+                - text: Boracay
+            - cell "High End Luxury Hotels" [ref=f8e454]
+            - cell "Station 3, White Beach" [ref=f8e455]
+            - cell [ref=f8e456]:
+              - button "Visible to Users" [ref=f8e458] [cursor=pointer]
+            - cell [ref=f8e460]:
+              - link "edit Edit" [ref=f8e461] [cursor=pointer]:
+                - /url: http://localhost/SunnyTripsCapstoneV2/public/admin/hotels/22/edit
+                - generic [ref=f8e462]: edit
+                - text: Edit
+          - row [ref=f8e463]:
+            - cell "Henann Garden Resort" [ref=f8e464]
+            - cell "place Boracay" [ref=f8e465]:
+              - generic [ref=f8e466]:
+                - generic [ref=f8e467]: place
+                - text: Boracay
+            - cell "High End Luxury Hotels" [ref=f8e468]
+            - cell "Station 2, White Beach" [ref=f8e469]
+            - cell [ref=f8e470]:
+              - button "Visible to Users" [ref=f8e472] [cursor=pointer]
+            - cell [ref=f8e474]:
+              - link "edit Edit" [ref=f8e475] [cursor=pointer]:
+                - /url: http://localhost/SunnyTripsCapstoneV2/public/admin/hotels/23/edit
+                - generic [ref=f8e476]: edit
+                - text: Edit
+          - row [ref=f8e477]:
+            - cell "My Station Hotel" [ref=f8e478]
+            - cell "place Boracay" [ref=f8e479]:
+              - generic [ref=f8e480]:
+                - generic [ref=f8e481]: place
+                - text: Boracay
+            - cell "Mid Affordable Hotels" [ref=f8e482]
+            - cell "Station 1" [ref=f8e483]
+            - cell [ref=f8e484]:
+              - button "Visible to Users" [ref=f8e486] [cursor=pointer]
+            - cell [ref=f8e488]:
+              - link "edit Edit" [ref=f8e489] [cursor=pointer]:
+                - /url: http://localhost/SunnyTripsCapstoneV2/public/admin/hotels/24/edit
+                - generic [ref=f8e490]: edit
+                - text: Edit
+          - row [ref=f8e491]:
+            - cell "Frendz Resort & Hostel" [ref=f8e492]
+            - cell "place Boracay" [ref=f8e493]:
+              - generic [ref=f8e494]:
+                - generic [ref=f8e495]: place
+                - text: Boracay
+            - cell "Mid Affordable Hotels" [ref=f8e496]
+            - cell "Station 1" [ref=f8e497]
+            - cell [ref=f8e498]:
+              - button "Visible to Users" [ref=f8e500] [cursor=pointer]
+            - cell [ref=f8e502]:
+              - link "edit Edit" [ref=f8e503] [cursor=pointer]:
+                - /url: http://localhost/SunnyTripsCapstoneV2/public/admin/hotels/25/edit
+                - generic [ref=f8e504]: edit
+                - text: Edit
+          - row [ref=f8e505]:
+            - cell "Lazy Dog Bed & Breakfast" [ref=f8e506]
+            - cell "place Boracay" [ref=f8e507]:
+              - generic [ref=f8e508]:
+                - generic [ref=f8e509]: place
+                - text: Boracay
+            - cell "Mid Affordable Hotels" [ref=f8e510]
+            - cell "Bulabog Beach" [ref=f8e511]
+            - cell [ref=f8e512]:
+              - button "Visible to Users" [ref=f8e514] [cursor=pointer]
+            - cell [ref=f8e516]:
+              - link "edit Edit" [ref=f8e517] [cursor=pointer]:
+                - /url: http://localhost/SunnyTripsCapstoneV2/public/admin/hotels/26/edit
+                - generic [ref=f8e518]: edit
+                - text: Edit
+          - row [ref=f8e519]:
+            - cell "Happiness Hostel" [ref=f8e520]
+            - cell "place Boracay" [ref=f8e521]:
+              - generic [ref=f8e522]:
+                - generic [ref=f8e523]: place
+                - text: Boracay
+            - cell "Mid Affordable Hotels" [ref=f8e524]
+            - cell "Station 2 / Bulabog" [ref=f8e525]
+            - cell [ref=f8e526]:
+              - button "Visible to Users" [ref=f8e528] [cursor=pointer]
+            - cell [ref=f8e530]:
+              - link "edit Edit" [ref=f8e531] [cursor=pointer]:
+                - /url: http://localhost/SunnyTripsCapstoneV2/public/admin/hotels/27/edit
+                - generic [ref=f8e532]: edit
+                - text: Edit
+          - row [ref=f8e533]:
+            - cell "The Muse Hotel" [ref=f8e534]
+            - cell "place Boracay" [ref=f8e535]:
+              - generic [ref=f8e536]:
+                - generic [ref=f8e537]: place
+                - text: Boracay
+            - cell "Mid Affordable Hotels" [ref=f8e538]
+            - cell "Station 1" [ref=f8e539]
+            - cell [ref=f8e540]:
+              - button "Visible to Users" [ref=f8e542] [cursor=pointer]
+            - cell [ref=f8e544]:
+              - link "edit Edit" [ref=f8e545] [cursor=pointer]:
+                - /url: http://localhost/SunnyTripsCapstoneV2/public/admin/hotels/28/edit
+                - generic [ref=f8e546]: edit
+                - text: Edit

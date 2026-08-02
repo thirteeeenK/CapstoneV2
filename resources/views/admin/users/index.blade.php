@@ -76,8 +76,8 @@
         </div>
 
         <!-- Users Table -->
-        <div class="bg-white border border-slate-200 rounded-lg shadow-sm">
-            <div class="w-full">
+        <div class="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
+            <div class="overflow-x-auto">
                 <table class="w-full divide-y divide-slate-200 text-xs">
                     <thead class="bg-slate-50">
                         <tr>
