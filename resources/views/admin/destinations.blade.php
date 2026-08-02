@@ -59,33 +59,18 @@
                                                                         }" class="pb-12">
 
         <!-- Header Section -->
-        <div class="max-w-5xl mx-auto">
-            <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
-                <div>
-                    <div class="flex items-center gap-3 mb-1">
-                        <div
-                            class="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064" />
-                            </svg>
-                        </div>
-                        <div>
-                            <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Destinations</h1>
-                            <p class="text-sm text-slate-500 mt-0.5">Manage your travel destinations</p>
-                        </div>
-                    </div>
-                </div>
-
-                <button @click="openCreate()"
-                    class="group inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-5 py-2.5 rounded-lg font-medium text-sm transition-all duration-200 shadow-lg shadow-slate-900/20 hover:shadow-slate-900/30 hover:-translate-y-0.5">
-                    <svg class="w-4 h-4 transition-transform group-hover:rotate-90 duration-200" fill="none"
-                        stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
-                    </svg>
-                    Add Destination
-                </button>
+        <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+                <h1 class="text-xl font-bold text-slate-900">Destinations</h1>
+                <p class="text-xs text-slate-500 mt-1">Manage your travel destinations</p>
             </div>
+
+            <button @click="openCreate()"
+                class="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-ocean-600 hover:bg-ocean-700 text-white text-xs font-semibold shadow-sm transition-colors self-start sm:self-auto">
+                <span class="material-symbols-outlined text-[16px]">add</span>
+                Add Destination
+            </button>
+        </div>
 
             <!-- Alerts -->
             @if (session('success'))

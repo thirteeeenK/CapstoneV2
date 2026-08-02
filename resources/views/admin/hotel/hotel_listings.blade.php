@@ -3,7 +3,7 @@
 @section('title', 'Hotel Listing | SunnyTrips Admin')
 
 @section('content')
-    <div class="p-8">
+    <div class="pb-12">
         <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
                 <h1 class="text-xl font-bold text-slate-900">Hotel Listings</h1>

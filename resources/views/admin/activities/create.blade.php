@@ -3,7 +3,7 @@
 @section('title', 'Add New Activity | SunnyTrips Admin')
 
 @section('content')
-    <div class="p-8 max-w-4xl mx-auto">
+    <div class="pb-12 max-w-4xl mx-auto">
         <div class="mb-6 flex items-center justify-between">
             <div>
                 <a href="{{ route('admin.activities.index') }}"
