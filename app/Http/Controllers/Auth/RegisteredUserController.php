@@ -35,16 +35,32 @@ class RegisteredUserController extends Controller
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
             'address' => ['required', 'string', 'max:255'],
-            'phone number' => ['max: 12'] 
-            //'phone_number => ['max: 11'] if number format is 091111...
+            'phone_number' => ['required', 'string', 'regex:/^09\d{9}$/'],
+
+            // Legal age and consent agreements
+            'age_confirmed' => ['required', 'accepted'],
+            'terms_accepted' => ['required', 'accepted'],
+            'privacy_accepted' => ['required', 'accepted'],
+            'ai_disclosure_accepted' => ['required', 'accepted'],
         ]);
 
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'address' =>$request->address,
-            'phone_number' => $request->phone_number
+            'address' => $request->address,
+            'phone_number' => $request->phone_number,
+
+            'terms_accepted_at' => now(),
+            'privacy_accepted_at' => now(),
+            'ai_disclosure_accepted_at' => now(),
+
+            'terms_version' => config('legal.documents.terms.version'),
+            'privacy_version' => config('legal.documents.privacy.version'),
+            'ai_disclosure_version' => config('legal.documents.ai_disclosure.version'),
+
+            'consent_ip_address' => $request->ip(),
+            'consent_user_agent' => $request->userAgent(),
         ]);
 
         event(new Registered($user));
