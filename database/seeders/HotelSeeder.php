@@ -141,5 +141,168 @@ class HotelSeeder extends Seeder
             'longitude' => 121.8335292,
             'images' => ['hotels/sample9.jpg'],
         ]);
+
+        $elNido = DestinationModel::where('name', 'El Nido')->first();
+        $destinationId = $elNido->id;
+
+        // 1. El Nido Resorts - Pangulasian Island
+        HotelModel::create([
+            'hotel_name' => 'El Nido Resorts - Pangulasian Island',
+            'destination_id' => $destinationId,
+            'type' => 'Luxury Eco-Resort',
+            'vibe_tags' => ['Luxury', 'Eco-Friendly', 'Honeymoon', 'Beachfront', 'Secluded'],
+            'featured_amenities' => ['Private Beach', 'Infinity Pool', 'Spa & Wellness Center', 'PADI Dive Center', 'On-site Restaurant & Bar'],
+            'hotel_description' => 'Pangulasian Island is El Nido Resorts’ luxury island hideaway in Bacuit Bay, offering breathtaking views of both the sunrise and sunset.',
+            'specific_address' => 'Pangulasian Island, Bacuit Bay, El Nido, Palawan',
+            'latitude' => 11.1167,
+            'longitude' => 119.3361,
+            'images' => ['https://images.unsplash.com/photo-1540555700478-4be289fbecef'],
+            'embedding' => null,
+            'is_shown' => true,
+        ]);
+
+        // 2. Seda Lio
+        HotelModel::create([
+            'hotel_name' => 'Seda Lio',
+            'destination_id' => $destinationId,
+            'type' => 'Beach Resort Hotel',
+            'vibe_tags' => ['Family-Friendly', 'Modern', 'Accessible', 'Eco-Tourism', 'Relaxing'],
+            'featured_amenities' => ['Large Outdoor Pool', 'Kids Club', 'Fitness Center', 'Misto Restaurant', 'Direct Beach Access'],
+            'hotel_description' => 'Situated within the Lio Tourism Estate, Seda Lio offers modern comforts and seamless access to nature. Perfect for families and leisure travelers.',
+            'specific_address' => 'Lio Tourism Estate, Barangay Villa Libertad, El Nido, Palawan',
+            'latitude' => 11.2031,
+            'longitude' => 119.4218,
+            'images' => ['https://images.unsplash.com/photo-1520250497591-112f2f40a3f4'],
+            'embedding' => null,
+            'is_shown' => true,
+        ]);
+
+        // 3. Cauayan Island Resort
+        HotelModel::create([
+            'hotel_name' => 'Cauayan Island Resort',
+            'destination_id' => $destinationId,
+            'type' => 'Boutique Island Resort',
+            'vibe_tags' => ['Luxury', 'Tropical', 'Romance', 'Wellness', 'Private Island'],
+            'featured_amenities' => ['Infinity Pool', 'Overwater Spa', 'Cauayan Restaurant', 'Diving & Snorkeling'],
+            'hotel_description' => 'A premier luxury resort surrounded by pristine marine life and lush tropical greenery, famous for its iconic overwater villas.',
+            'specific_address' => 'Cauayan Island, Bacuit Bay, El Nido, Palawan',
+            'latitude' => 11.2828,
+            'longitude' => 119.3486,
+            'images' => ['https://images.unsplash.com/photo-1544551763-46a013bb70d5'],
+            'embedding' => null,
+            'is_shown' => true,
+        ]);
+
+        // 4. El Nido Resorts - Miniloc Island
+        HotelModel::create([
+            'hotel_name' => 'El Nido Resorts - Miniloc Island',
+            'destination_id' => $destinationId,
+            'type' => 'Eco-Discovery Resort',
+            'vibe_tags' => ['Eco-Friendly', 'Adventure', 'Family-Friendly', 'Rustic', 'Snorkeling'],
+            'featured_amenities' => ['House Reef', 'Kayaking', 'Marine Sports Guide', 'Open-air Restaurant', 'Kids Activity Center'],
+            'hotel_description' => 'Designed like a coastal village, Miniloc Island is the gateway to discovering the famous Big and Small Lagoons of El Nido.',
+            'specific_address' => 'Miniloc Island, Bacuit Bay, El Nido, Palawan',
+            'latitude' => 11.1528,
+            'longitude' => 119.3172,
+            'images' => ['https://images.unsplash.com/photo-1499793983690-e29da59ef1c2'],
+            'embedding' => null,
+            'is_shown' => true,
+        ]);
+
+        // 5. Spin Designer Hostel
+        HotelModel::create([
+            'hotel_name' => 'Spin Designer Hostel',
+            'destination_id' => $destinationId,
+            'type' => 'Boutique Hostel',
+            'vibe_tags' => ['Youthful', 'Social', 'Budget-Friendly', 'Backpacker', 'Trendy'],
+            'featured_amenities' => ['Shared Lounge', 'Communal Kitchen', 'BBQ Facilities', 'Game Room', 'Laundry Services'],
+            'hotel_description' => 'An award-winning designer hostel in El Nido town proper, offering a vibrant, social atmosphere for solo travelers and young groups.',
+            'specific_address' => 'Balinsasayaw Road, Maligaya, El Nido, Palawan',
+            'latitude' => 11.1786,
+            'longitude' => 119.3905,
+            'images' => ['https://images.unsplash.com/photo-1555854877-bab0e564b8d5'],
+            'embedding' => null,
+            'is_shown' => true,
+        ]);
+
+        // 6. Charlie's El Nido
+        HotelModel::create([
+            'hotel_name' => 'Charlie\'s El Nido',
+            'destination_id' => $destinationId,
+            'type' => 'Boutique Hotel',
+            'vibe_tags' => ['Modern', 'Chic', 'Relaxing', 'Tropical Design', 'Accessible'],
+            'featured_amenities' => ['Outdoor Swimming Pool', 'Yoga Pavilion', 'Restaurant', 'Fitness Center', 'Spa Services'],
+            'hotel_description' => 'A beautifully designed boutique hotel set slightly inland, providing a tranquil and lush escape away from the busy town center.',
+            'specific_address' => 'National Highway, Barangay Villa Libertad, El Nido, Palawan',
+            'latitude' => 11.1925,
+            'longitude' => 119.4147,
+            'images' => ['https://images.unsplash.com/photo-1566073771259-6a8506099945'],
+            'embedding' => null,
+            'is_shown' => true,
+        ]);
+
+        // 7. Panorama Resort
+        HotelModel::create([
+            'hotel_name' => 'Panorama Resort',
+            'destination_id' => $destinationId,
+            'type' => 'Boutique Beach Resort',
+            'vibe_tags' => ['Adults Only', 'Sunset Views', 'Aesthetic', 'Beachfront', 'Bohemian'],
+            'featured_amenities' => ['Beach Club', 'Outdoor Pool', 'Sunset Lounge', 'Restaurant', 'Water Sports'],
+            'hotel_description' => 'An adults-only boutique resort in Corong-Corong known for its iconic dome-shaped architecture, chill beach club, and stunning sunset views.',
+            'specific_address' => 'Corong-Corong Beach, El Nido, Palawan',
+            'latitude' => 11.1661,
+            'longitude' => 119.3942,
+            'images' => ['https://images.unsplash.com/photo-1498654896293-37aacf113fd9'],
+            'embedding' => null,
+            'is_shown' => true,
+        ]);
+
+        // 8. Buko Beach Resort
+        HotelModel::create([
+            'hotel_name' => 'Buko Beach Resort',
+            'destination_id' => $destinationId,
+            'type' => 'Native Boutique Resort',
+            'vibe_tags' => ['Rustic Charm', 'Intimate', 'Sunset Views', 'Beachfront', 'Tropical'],
+            'featured_amenities' => ['Infinity Plunge Pool', 'Open-air Bar', 'Massage Services', 'Tour Desk'],
+            'hotel_description' => 'A small, intimate beachfront resort offering native-style luxury cottages and grand villas. Perfect for watching the famous Corong-Corong sunsets.',
+            'specific_address' => 'Sitio Lugadia, Barangay Corong-Corong, El Nido, Palawan',
+            'latitude' => 11.1633,
+            'longitude' => 119.3951,
+            'images' => ['https://images.unsplash.com/photo-1510414842594-a61c69b5ae57'],
+            'embedding' => null,
+            'is_shown' => true,
+        ]);
+
+        // 9. Matinloc Resort
+        HotelModel::create([
+            'hotel_name' => 'Matinloc Resort',
+            'destination_id' => $destinationId,
+            'type' => 'Luxury Resort',
+            'vibe_tags' => ['Exclusive', 'Nature Integration', 'Private Island', 'Secluded', 'Luxury'],
+            'featured_amenities' => ['Private Beach', 'Infinity Pool', 'Library', 'Fitness Center', 'Spa'],
+            'hotel_description' => 'Nestled along the limestone cliffs of Matinloc Island, this resort offers unparalleled luxury and exclusivity in the heart of Bacuit Bay.',
+            'specific_address' => 'Matinloc Island, El Nido, Palawan',
+            'latitude' => 11.2001,
+            'longitude' => 119.2933,
+            'images' => ['https://images.unsplash.com/photo-1582719478250-c89cae4dc85b'],
+            'embedding' => null,
+            'is_shown' => true,
+        ]);
+
+        // 10. Lihim Resorts
+        HotelModel::create([
+            'hotel_name' => 'Lihim Resorts',
+            'destination_id' => $destinationId,
+            'type' => 'Ultra-Luxury Resort',
+            'vibe_tags' => ['Ultra-Luxury', 'Secluded', 'Nature Immersion', 'Exclusive', 'Personalized'],
+            'featured_amenities' => ['Butler Service', 'Private Lounge', 'Luxury Spa', 'Gourmet Dining', 'Private Yachts'],
+            'hotel_description' => 'A hidden gem tucked in the lush forests of El Nido. Lihim (meaning "secret") offers an exclusive, highly personalized luxury experience.',
+            'specific_address' => 'Sitio Caalan, Barangay Masagana, El Nido, Palawan',
+            'latitude' => 11.1895,
+            'longitude' => 119.3921,
+            'images' => ['https://images.unsplash.com/photo-1571896349842-33c89424de2d'],
+            'embedding' => null,
+            'is_shown' => true,
+        ]);
     }
 }
