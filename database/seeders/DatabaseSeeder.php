@@ -32,6 +32,7 @@ class DatabaseSeeder extends Seeder
         $this->call(RoomSeeder::class);
         $this->call(ElNidoRoomSeeder::class);
         $this->call(ActivitySeeder::class);
+        $this->call(ElNidoActivitySeeder::class);
         $this->call(LegalDocumentsSeeder::class);
     }
 }
