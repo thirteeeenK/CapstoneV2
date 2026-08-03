@@ -137,8 +137,8 @@ class RoomController extends Controller
         $room->description = $request->description;
         $room->view_type = $request->view_type;
         $idealGuest = $request->ideal_guest ?? $request->ideal_for;
-        $room->ideal_guest = $idealGuest;
-        $room->ideal_for = $idealGuest;
+        $room->setAttribute('ideal_guest', $idealGuest);
+        $room->setAttribute('ideal_for', $idealGuest);
         $room->additional_notes = $request->additional_notes;
         $room->total_rooms = $request->total_rooms;
         $room->occupancy = $request->occupancy;
