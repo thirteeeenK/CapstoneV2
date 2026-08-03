@@ -51,10 +51,10 @@
 
         <div class="flex flex-col md:flex-row justify-between items-center gap-4 text-slate-400 text-xs font-medium">
             <p>© {{date('Y')}} {{ config('app.name', 'SunnyTrips') }}. All rights reserved. Made for the sun-seekers.</p>
-            <div class="flex gap-6">
-                <a href="{{ route('privacy-policy') }}" class="hover:text-slate-600 transition-colors duration-150">Privacy Policy</a>
-                <a href="{{ route('terms') }}" class="hover:text-slate-600 transition-colors duration-150">Terms of Use</a>
-                <a href="{{ route('ai-disclosure') }}" class="hover:text-slate-600 transition-colors duration-150">AI Disclosure</a>
+            <div class="flex flex-wrap gap-6">
+                @foreach(\App\Models\LegalDocument::orderBy('title')->get() as $doc)
+                    <a href="{{ route('legal.show', $doc->key) }}" class="hover:text-slate-600 transition-colors duration-150">{{ $doc->title }}</a>
+                @endforeach
             </div>
         </div>
     </div>

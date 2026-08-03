@@ -12,6 +12,7 @@ Route::get('/', function () {
 Route::get('/terms-and-conditions', [LegalContentController::class, 'show'])->defaults('slug', 'terms')->name('terms');
 Route::get('/privacy-policy', [LegalContentController::class, 'show'])->defaults('slug', 'privacy-policy')->name('privacy-policy');
 Route::get('/ai-disclosure', [LegalContentController::class, 'show'])->defaults('slug', 'ai-disclosure')->name('ai-disclosure');
+Route::get('/legal/{slug}', [LegalContentController::class, 'show'])->name('legal.show');
 
 Route::get('/dashboard', function () {
     return view('dashboard');
