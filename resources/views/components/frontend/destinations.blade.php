@@ -15,19 +15,13 @@
         </p>
     </div>
 
-    @php
-        $destinations = \App\Models\DestinationModel::all();
-    @endphp
-
     {{-- Dynamic Grid Layout --}}
     <div class="grid grid-cols-1 gap-8 md:gap-10"
         style="grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));">
 
         @foreach($destinations as $index => $dest)
             @php
-                $imgSrc = !empty($dest->image)
-                    ? (str_starts_with($dest->image, 'http') ? $dest->image : asset('storage/' . $dest->image))
-                    : 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80';
+                $imgSrc = $resolveDestinationImage($dest->image);
             @endphp
             <div class="group relative flex flex-col bg-white border border-slate-200/60 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 reveal-on-scroll"
                 style="transition-delay: {{ $index * 100 }}ms;">
@@ -44,7 +38,7 @@
                         {{ $dest->description }}
                     </p>
                     <div class="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
-                        <a href="{{ route('view-listings', ['destination_id' => $dest->id]) }}"
+                        <a href="{{ route('destinations.show', $dest->id) }}"
                             class="text-xs font-bold text-slate-950 group-hover:text-primary transition-colors flex items-center gap-1">
                             <span>Discover Sanctuary</span>
                             <span

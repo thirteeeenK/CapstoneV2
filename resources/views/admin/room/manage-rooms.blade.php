@@ -3,7 +3,7 @@
 @section('title', 'Listed Rooms | SunnyTrips Admin')
 
 @section('content')
-    <div class="pb-12">
+    <div x-data="{ previewRoom: null, activePreviewImgIndex: 0 }" class="pb-12">
         <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
                 <h1 class="text-xl font-bold text-slate-900">Manage Rooms — {{ $hotel->hotel_name }}</h1>
@@ -41,23 +41,37 @@
             <div class="grid grid-cols-1 gap-4">
                 @foreach($rooms as $room)
                     @php
-                        $images = is_string($room->images) ? json_decode($room->images, true) : $room->images;
-                        $firstImage = is_array($images) && count($images) > 0 ? $images[0] : null;
-                        $amenities = is_array($room->room_amenities) ? $room->room_amenities : (is_string($room->room_amenities) ? array_filter(explode(',', $room->room_amenities)) : []);
+                        $imagesRaw = is_string($room->images) ? json_decode($room->images, true) : (is_array($room->images) ? $room->images : []);
+                        $resolvedImages = array_map(function($img) {
+                            return App\Concerns\ResolvesImages::resolveImg($img);
+                        }, $imagesRaw);
+                        if (empty($resolvedImages)) {
+                            $resolvedImages = [App\Concerns\ResolvesImages::resolveImg(null)];
+                        }
+                        $firstImage = $resolvedImages[0];
+                        $amenitiesRaw = is_array($room->room_amenities) ? $room->room_amenities : (is_string($room->room_amenities) ? array_filter(array_map('trim', explode(',', $room->room_amenities))) : []);
+
+                        $adminRoomPayload = [
+                            'id' => $room->id,
+                            'room_name' => $room->room_name,
+                            'base_price' => (float)$room->base_price,
+                            'occupancy' => $room->occupancy,
+                            'bed_configuration' => $room->bed_configuration,
+                            'room_size' => $room->room_size,
+                            'view_type' => $room->view_type,
+                            'description' => $room->description,
+                            'ideal_guest' => $room->ideal_guest ?? $room->ideal_for ?? null,
+                            'total_rooms' => $room->total_rooms ?? 1,
+                            'is_shown' => (bool)$room->is_shown,
+                            'has_embedding' => !empty($room->embedding),
+                            'images' => $resolvedImages,
+                            'amenities' => array_values($amenitiesRaw),
+                        ];
                     @endphp
                     <div class="bg-white border border-slate-200 rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col md:flex-row gap-6 items-start md:items-center justify-between">
                         
-                        <!-- Left: Thumbnail & Details -->
-                        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-5 flex-1">
-                            <!-- Image Thumbnail -->
-                            <div class="w-28 h-24 rounded-lg bg-slate-100 border border-slate-200 overflow-hidden flex-shrink-0 flex items-center justify-center">
-                                @if($firstImage)
-                                    <img src="{{ asset('storage/' . $firstImage) }}" alt="{{ $room->room_name }}" class="w-full h-full object-cover">
-                                @else
-                                    <span class="material-symbols-outlined text-slate-400 text-3xl">bed</span>
-                                @endif
-                            </div>
-
+                        <!-- Left: Details -->
+                        <div class="flex items-start sm:items-center gap-5 flex-1">
                             <!-- Information block -->
                             <div class="space-y-1.5 flex-1">
                                 <div class="flex items-center gap-3 flex-wrap">
@@ -150,6 +164,20 @@
                             </div>
 
                             <div class="flex items-center gap-2">
+                                <a href="{{ route('hotels.show', ['id' => $hotel->id, 'preview_room' => $room->id]) }}" target="_blank"
+                                    class="inline-flex items-center gap-1 h-8 px-3 rounded bg-white border border-emerald-300 hover:border-emerald-600 text-emerald-700 hover:bg-emerald-50 text-xs font-semibold transition-colors shadow-2xs"
+                                    title="Preview user-facing room page in new tab">
+                                    <span class="material-symbols-outlined text-[15px]">open_in_new</span>
+                                    Live Preview
+                                </a>
+
+                                <button type="button" @click="previewRoom = {{ json_encode($adminRoomPayload) }}; activePreviewImgIndex = 0;"
+                                    class="inline-flex items-center gap-1 h-8 px-3 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors border border-slate-200/80 shadow-2xs"
+                                    title="Quick Modal Preview">
+                                    <span class="material-symbols-outlined text-[15px]">visibility</span>
+                                    Modal
+                                </button>
+
                                 <a href="{{ route('edit-room', $room->id) }}"
                                     class="inline-flex items-center gap-1 h-8 px-3 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium transition-colors">
                                     <span class="material-symbols-outlined text-[15px]">edit</span>
@@ -186,5 +214,123 @@
                 </a>
             </div>
         @endif
+
+        {{-- Admin Room Preview Modal --}}
+        <div x-show="previewRoom" x-transition.opacity @keydown.escape.window="previewRoom = null"
+            class="fixed inset-0 z-[100] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
+            style="display: none;">
+            <div @click.away="previewRoom = null"
+                class="bg-white rounded-2xl shadow-2xl max-w-3xl w-full overflow-hidden border border-slate-200 my-auto transform transition-all">
+                
+                {{-- Modal Header --}}
+                <div class="bg-slate-900 text-white p-6 relative">
+                    <button @click="previewRoom = null"
+                        class="absolute top-4 right-4 text-slate-400 hover:text-white bg-white/10 hover:bg-white/20 p-1.5 rounded-full transition-colors">
+                        <span class="material-symbols-outlined text-[18px]">close</span>
+                    </button>
+
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="px-2.5 py-0.5 rounded-full bg-ocean-500/20 text-ocean-300 text-[10px] font-bold uppercase tracking-wider border border-ocean-400/30">
+                            Admin Room Preview
+                        </span>
+                        <template x-if="previewRoom?.has_embedding">
+                            <span class="px-2.5 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 text-[10px] font-semibold border border-indigo-400/30 flex items-center gap-1">
+                                <span class="material-symbols-outlined text-[12px]">psychology</span> AI Embedded
+                            </span>
+                        </template>
+                        <template x-if="previewRoom?.is_shown">
+                            <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-semibold border border-emerald-400/30">
+                                Visible
+                            </span>
+                        </template>
+                    </div>
+
+                    <h2 class="text-xl font-bold font-headline" x-text="previewRoom?.room_name"></h2>
+                    <p class="text-xs text-slate-400 mt-1">Base Price: <span class="text-emerald-400 font-bold text-sm">₱<span x-text="Number(previewRoom?.base_price || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})"></span></span> / night</p>
+                </div>
+
+                {{-- Modal Content --}}
+                <div class="p-6 space-y-5 max-h-[60vh] overflow-y-auto text-xs text-slate-700">
+                    
+                    {{-- Images --}}
+                    <template x-if="previewRoom?.images && previewRoom.images.length > 0">
+                        <div class="space-y-2">
+                            <div class="h-56 sm:h-64 rounded-xl overflow-hidden bg-slate-100 border border-slate-200">
+                                <img :src="previewRoom.images[activePreviewImgIndex]" class="w-full h-full object-cover">
+                            </div>
+                            <template x-if="previewRoom.images.length > 1">
+                                <div class="flex items-center gap-2 overflow-x-auto">
+                                    <template x-for="(img, idx) in previewRoom.images" :key="idx">
+                                        <button @click="activePreviewImgIndex = idx"
+                                            :class="activePreviewImgIndex === idx ? 'ring-2 ring-ocean-600 scale-105' : 'opacity-70 hover:opacity-100'"
+                                            class="w-16 h-12 rounded-lg overflow-hidden border border-slate-200 shrink-0 transition-all">
+                                            <img :src="img" class="w-full h-full object-cover">
+                                        </button>
+                                    </template>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+
+                    {{-- Key Specs Grid --}}
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                        <div>
+                            <span class="text-[10px] text-slate-400 uppercase font-semibold block">Bed Layout</span>
+                            <span class="font-bold text-slate-900" x-text="previewRoom?.bed_configuration || 'Standard'"></span>
+                        </div>
+                        <div>
+                            <span class="text-[10px] text-slate-400 uppercase font-semibold block">Max Occupancy</span>
+                            <span class="font-bold text-slate-900" x-text="(previewRoom?.occupancy || 2) + ' Guests'"></span>
+                        </div>
+                        <div>
+                            <span class="text-[10px] text-slate-400 uppercase font-semibold block">Room Size</span>
+                            <span class="font-bold text-slate-900" x-text="previewRoom?.room_size || 'N/A'"></span>
+                        </div>
+                        <div>
+                            <span class="text-[10px] text-slate-400 uppercase font-semibold block">Total Units</span>
+                            <span class="font-bold text-slate-900" x-text="(previewRoom?.total_rooms || 1) + ' Units'"></span>
+                        </div>
+                    </div>
+
+                    {{-- Description --}}
+                    <template x-if="previewRoom?.description">
+                        <div>
+                            <h4 class="font-bold text-slate-900 mb-1">Description</h4>
+                            <p class="text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-lg border border-slate-100" x-text="previewRoom.description"></p>
+                        </div>
+                    </template>
+
+                    {{-- Amenities --}}
+                    <template x-if="previewRoom?.amenities && previewRoom.amenities.length > 0">
+                        <div>
+                            <h4 class="font-bold text-slate-900 mb-1.5">Amenities</h4>
+                            <div class="flex flex-wrap gap-1.5">
+                                <template x-for="(amenity, idx) in previewRoom.amenities" :key="idx">
+                                    <span class="px-2.5 py-1 bg-ocean-50 text-ocean-800 rounded-md text-[11px] font-semibold border border-ocean-100 flex items-center gap-1">
+                                        <span class="material-symbols-outlined text-[14px] text-ocean-600">check_circle</span>
+                                        <span x-text="amenity"></span>
+                                    </span>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+
+                </div>
+
+                {{-- Footer --}}
+                <div class="bg-slate-50 p-4 border-t border-slate-200 flex items-center justify-between">
+                    <button type="button" @click="previewRoom = null"
+                        class="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 font-semibold text-xs hover:bg-slate-200 transition-colors">
+                        Close
+                    </button>
+                    <a :href="'/admin/rooms/' + previewRoom?.id + '/edit'"
+                        class="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-ocean-600 hover:bg-ocean-700 text-white font-semibold text-xs shadow-sm transition-colors">
+                        <span class="material-symbols-outlined text-[15px]">edit</span> Edit Room
+                    </a>
+                </div>
+
+            </div>
+        </div>
+
     </div>
 @endsection

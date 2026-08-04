@@ -19,57 +19,32 @@
     @endif
 
     @php
-        // Image path resolution helper
-        $resolveImg = function ($imgPath) {
-            if (empty($imgPath)) {
-                return 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80';
-            }
-            if (str_starts_with($imgPath, 'http://') || str_starts_with($imgPath, 'https://')) {
-                return $imgPath;
-            }
-            return asset('storage/' . $imgPath);
-        };
-
-        $heroImage = !empty($hotel->images) && is_array($hotel->images) && isset($hotel->images[0])
-            ? $resolveImg($hotel->images[0])
-            : 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80';
-
-        // Amenity icon mapping helper
-        $getAmenityIcon = function ($amenity) {
-            $a = strtolower($amenity);
-            if (str_contains($a, 'pool'))
-                return 'pool';
-            if (str_contains($a, 'wifi') || str_contains($a, 'internet'))
-                return 'wifi';
-            if (str_contains($a, 'bar') || str_contains($a, 'drink'))
-                return 'local_bar';
-            if (str_contains($a, 'restaurant') || str_contains($a, 'food') || str_contains($a, 'dining') || str_contains($a, 'breakfast'))
-                return 'restaurant';
-            if (str_contains($a, 'spa') || str_contains($a, 'massage'))
-                return 'spa';
-            if (str_contains($a, 'beach') || str_contains($a, 'ocean'))
-                return 'beach_access';
-            if (str_contains($a, 'air') || str_contains($a, 'climate') || str_contains($a, 'ac'))
-                return 'ac_unit';
-            if (str_contains($a, 'gym') || str_contains($a, 'fitness'))
-                return 'fitness_center';
-            if (str_contains($a, 'balcony') || str_contains($a, 'terrace') || str_contains($a, 'patio'))
-                return 'deck';
-            if (str_contains($a, 'bath') || str_contains($a, 'shower') || str_contains($a, 'tub'))
-                return 'bathtub';
-            if (str_contains($a, 'tour') || str_contains($a, 'desk'))
-                return 'concierge';
-            if (str_contains($a, 'coffee') || str_contains($a, 'tea') || str_contains($a, 'espresso'))
-                return 'coffee_maker';
-            if (str_contains($a, 'tv') || str_contains($a, 'screen'))
-                return 'tv';
-            return 'star';
-        };
+        $heroImage = App\Concerns\ResolvesImages::resolveImg(
+            $hotel->images[0] ?? null,
+            'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80'
+        );
     @endphp
 
     <div x-data="{
         selectedRoom: null,
         activeModalImg: null,
+        previewRoom: null,
+        activePreviewImgIndex: 0,
+        autoPreviewRoomId: {{ request('preview_room') ? (int)request('preview_room') : 'null' }},
+        init() {
+            if (this.autoPreviewRoomId) {
+                this.$nextTick(() => {
+                    const card = document.getElementById('room-card-' + this.autoPreviewRoomId);
+                    if (card) {
+                        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                    const btn = document.getElementById('preview-btn-' + this.autoPreviewRoomId);
+                    if (btn) {
+                        btn.click();
+                    }
+                });
+            }
+        },
         selectRoom(room) {
             this.selectedRoom = room;
             $nextTick(() => {
@@ -78,6 +53,17 @@
                     el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                 }
             });
+        },
+        openRoomPreview(room) {
+            this.previewRoom = room;
+            this.activePreviewImgIndex = 0;
+        },
+        closeRoomPreview() {
+            this.previewRoom = null;
+        },
+        confirmRoomSelection(room) {
+            this.selectRoom(room);
+            this.closeRoomPreview();
         }
     }" class="pt-32 sm:pt-36 pb-24 bg-slate-50 min-h-screen">
 
@@ -170,7 +156,7 @@
                                         <div
                                             class="w-10 h-10 rounded-lg bg-white shadow-xs border border-slate-200 text-ocean-600 flex items-center justify-center group-hover:scale-110 transition-transform">
                                             <span class="material-symbols-outlined text-[22px]">
-                                                {{ $getAmenityIcon($amenity) }}
+                                                {{ App\Concerns\ResolvesImages::getAmenityIcon($amenity) }}
                                             </span>
                                         </div>
                                         <div>
@@ -323,17 +309,58 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         @foreach($hotel->rooms as $room)
                             @php
-                                $roomImg = !empty($room->images) && is_array($room->images) && isset($room->images[0])
-                                    ? $resolveImg($room->images[0])
-                                    : $heroImage;
+                                $roomImagesRaw = is_array($room->images) ? $room->images : (is_string($room->images) ? (json_decode($room->images, true) ?: []) : []);
+                                $resolvedRoomImages = array_map(function($img) use ($heroImage) {
+                                    return App\Concerns\ResolvesImages::resolveImg($img, $heroImage);
+                                }, $roomImagesRaw);
+                                if (empty($resolvedRoomImages)) {
+                                    $resolvedRoomImages = [
+                                        App\Concerns\ResolvesImages::resolveImg(null, $heroImage)
+                                    ];
+                                }
+                                $roomImg = $resolvedRoomImages[0];
+
+                                $roomAmenitiesRaw = is_array($room->room_amenities) ? $room->room_amenities : (is_string($room->room_amenities) ? array_filter(array_map('trim', explode(',', $room->room_amenities))) : []);
+
+                                $roomPayload = [
+                                    'id' => $room->id,
+                                    'room_name' => $room->room_name,
+                                    'base_price' => (float)$room->base_price,
+                                    'occupancy' => $room->occupancy,
+                                    'bed_configuration' => $room->bed_configuration,
+                                    'room_size' => $room->room_size,
+                                    'view_type' => $room->view_type,
+                                    'description' => $room->description,
+                                    'ideal_guest' => $room->ideal_guest ?? $room->ideal_for ?? null,
+                                    'total_rooms' => $room->total_rooms ?? null,
+                                    'is_shown' => (bool)$room->is_shown,
+                                    'images' => $resolvedRoomImages,
+                                    'amenities' => array_values($roomAmenitiesRaw),
+                                ];
                             @endphp
-                            <div
+                            <div id="room-card-{{ $room->id }}"
                                 class="bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-xs hover:shadow-md transition-all duration-300 flex flex-col justify-between group">
                                 <div>
-                                    {{-- Room Image --}}
-                                    <div class="relative h-56 sm:h-64 overflow-hidden bg-slate-100">
+                                    {{-- Room Image with Hover Preview Overlay --}}
+                                    <div @click="openRoomPreview({{ json_encode($roomPayload) }})"
+                                        class="relative h-56 sm:h-64 overflow-hidden bg-slate-100 cursor-pointer">
                                         <img src="{{ $roomImg }}" alt="{{ $room->room_name }}"
                                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                                        
+                                        <div class="absolute inset-0 bg-slate-950/0 group-hover:bg-slate-950/20 transition-colors flex items-center justify-center">
+                                            <span class="bg-white/90 backdrop-blur-md text-slate-900 font-bold text-xs px-3 py-1.5 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-all transform scale-95 group-hover:scale-100 flex items-center gap-1">
+                                                <span class="material-symbols-outlined text-[16px]">visibility</span>
+                                                Quick Preview
+                                            </span>
+                                        </div>
+
+                                        @if($isAdminPreview && !$room->is_shown)
+                                            <div class="absolute top-3 left-3 bg-amber-500 text-slate-950 text-[10px] font-extrabold uppercase px-2 py-0.5 rounded shadow-md z-10 flex items-center gap-1">
+                                                <span class="material-symbols-outlined text-[13px]">visibility_off</span>
+                                                Hidden from Public
+                                            </div>
+                                        @endif
+
                                         <div
                                             class="absolute top-3 right-3 bg-slate-950/80 backdrop-blur-md text-emerald-400 font-extrabold text-xs px-2.5 py-1 rounded-lg border border-white/20">
                                             ₱{{ number_format($room->base_price, 2) }} / night
@@ -349,10 +376,12 @@
 
                                     {{-- Room Information --}}
                                     <div class="p-5 space-y-3">
-                                        <h3
-                                            class="text-base font-bold text-slate-900 group-hover:text-ocean-600 transition-colors font-headline">
-                                            {{ $room->room_name }}
-                                        </h3>
+                                        <div class="flex items-center justify-between gap-2">
+                                            <h3 @click="openRoomPreview({{ json_encode($roomPayload) }})"
+                                                class="text-base font-bold text-slate-900 group-hover:text-ocean-600 transition-colors font-headline cursor-pointer">
+                                                {{ $room->room_name }}
+                                            </h3>
+                                        </div>
 
                                         <p class="text-xs text-slate-500 line-clamp-2 leading-relaxed">
                                             {{ $room->description }}
@@ -383,12 +412,17 @@
                                     </div>
                                 </div>
 
-                                {{-- Card Footer / Select Button --}}
-                                <div class="p-5 pt-0">
-                                    <button type="button" @click="selectRoom({{ json_encode($room) }})"
-                                        class="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-ocean-600 hover:text-white text-slate-800 font-bold text-xs transition-colors flex items-center justify-center gap-1.5 shadow-2xs">
-                                        <span class="material-symbols-outlined text-[16px]">touch_app</span>
-                                        <span>Select Room</span>
+                                {{-- Card Footer / Action Buttons --}}
+                                <div class="p-5 pt-0 grid grid-cols-2 gap-2">
+                                    <button type="button" id="preview-btn-{{ $room->id }}" @click="openRoomPreview({{ json_encode($roomPayload) }})"
+                                        class="w-full py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-colors flex items-center justify-center gap-1">
+                                        <span class="material-symbols-outlined text-[15px]">visibility</span>
+                                        <span>Preview</span>
+                                    </button>
+                                    <button type="button" @click="selectRoom({{ json_encode($roomPayload) }})"
+                                        class="w-full py-2.5 px-3 rounded-xl bg-ocean-50 hover:bg-ocean-600 hover:text-white text-ocean-700 font-bold text-xs transition-colors flex items-center justify-center gap-1">
+                                        <span class="material-symbols-outlined text-[15px]">touch_app</span>
+                                        <span>Select</span>
                                     </button>
                                 </div>
                             </div>
@@ -413,7 +447,7 @@
 
                     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                         @foreach($hotel->images as $idx => $img)
-                            @php $fullUrl = $resolveImg($img); @endphp
+                            @php $fullUrl = App\Concerns\ResolvesImages::resolveImg($img); @endphp
                             <div @click="activeModalImg = '{{ $fullUrl }}'"
                                 class="relative h-40 sm:h-48 rounded-xl overflow-hidden cursor-pointer group bg-slate-200">
                                 <img src="{{ $fullUrl }}" alt="Hotel photo {{ $idx + 1 }}"
@@ -431,17 +465,143 @@
 
         </div>
 
-        {{-- Lightbox Modal --}}
-        <div x-show="activeModalImg" x-transition.opacity @keydown.escape.window="activeModalImg = null"
-            class="fixed inset-0 z-[100] bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4"
+        {{-- Dynamic Room Preview Modal --}}
+        <div x-show="previewRoom" x-transition.opacity @keydown.escape.window="closeRoomPreview()"
+            class="fixed inset-0 z-[110] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
             style="display: none;">
-            <div class="relative max-w-5xl max-h-[90vh] w-full">
-                <button @click="activeModalImg = null"
-                    class="absolute -top-10 right-0 text-white hover:text-slate-300 flex items-center gap-1 text-xs font-bold bg-white/10 px-3 py-1 rounded-full">
-                    <span class="material-symbols-outlined text-[16px]">close</span> Close (Esc)
-                </button>
-                <img :src="activeModalImg"
-                    class="w-full h-auto max-h-[85vh] object-contain rounded-2xl shadow-2xl mx-auto border border-white/10">
+            <div @click.away="closeRoomPreview()"
+                class="bg-white rounded-3xl shadow-2xl max-w-4xl w-full overflow-hidden border border-slate-200/80 my-auto transform transition-all">
+                
+                {{-- Modal Header --}}
+                <div class="relative bg-slate-900 text-white p-6 sm:p-8 overflow-hidden">
+                    <div class="absolute top-0 right-0 w-64 h-64 bg-ocean-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                    
+                    <button @click="closeRoomPreview()"
+                        class="absolute top-4 right-4 text-slate-400 hover:text-white bg-white/10 hover:bg-white/20 p-2 rounded-full transition-colors">
+                        <span class="material-symbols-outlined text-[20px]">close</span>
+                    </button>
+
+                    <div class="flex flex-wrap items-center gap-2 mb-2">
+                        <span class="px-2.5 py-0.5 rounded-full bg-ocean-500/20 text-ocean-300 text-[10px] font-bold uppercase tracking-wider border border-ocean-400/30">
+                            Room Details & Overview
+                        </span>
+                        <template x-if="previewRoom?.view_type">
+                            <span class="px-2.5 py-0.5 rounded-full bg-white/10 text-slate-200 text-[10px] font-medium flex items-center gap-1">
+                                <span class="material-symbols-outlined text-[12px]">visibility</span>
+                                <span x-text="previewRoom.view_type"></span>
+                            </span>
+                        </template>
+                    </div>
+
+                    <h2 class="text-2xl sm:text-3xl font-black text-white font-headline" x-text="previewRoom?.room_name"></h2>
+                    
+                    <div class="mt-3 flex items-baseline gap-2">
+                        <span class="text-2xl sm:text-3xl font-black text-emerald-400 font-headline">
+                            ₱<span x-text="Number(previewRoom?.base_price || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})"></span>
+                        </span>
+                        <span class="text-xs text-slate-300 font-medium">/ night</span>
+                    </div>
+                </div>
+
+                {{-- Modal Body --}}
+                <div class="p-6 sm:p-8 space-y-6 max-h-[65vh] overflow-y-auto">
+                    
+                    {{-- Image Carousel / Selector --}}
+                    <template x-if="previewRoom?.images && previewRoom.images.length > 0">
+                        <div class="space-y-3">
+                            <div class="relative h-64 sm:h-80 rounded-2xl overflow-hidden bg-slate-900 group">
+                                <img :src="previewRoom.images[activePreviewImgIndex]" 
+                                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                                <div class="absolute bottom-3 right-3 bg-slate-950/70 backdrop-blur-md text-white text-xs px-3 py-1 rounded-lg border border-white/20">
+                                    Photo <span x-text="activePreviewImgIndex + 1"></span> of <span x-text="previewRoom.images.length"></span>
+                                </div>
+                            </div>
+
+                            <template x-if="previewRoom.images.length > 1">
+                                <div class="flex items-center gap-2 overflow-x-auto pb-2">
+                                    <template x-for="(img, idx) in previewRoom.images" :key="idx">
+                                        <button @click="activePreviewImgIndex = idx"
+                                            :class="activePreviewImgIndex === idx ? 'ring-2 ring-ocean-600 scale-105' : 'opacity-70 hover:opacity-100'"
+                                            class="w-16 h-12 rounded-lg overflow-hidden border border-slate-200 shrink-0 transition-all">
+                                            <img :src="img" class="w-full h-full object-cover">
+                                        </button>
+                                    </template>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+
+                    {{-- Specs Quick Grid --}}
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/80 space-y-1">
+                            <span class="text-slate-400 text-[10px] block uppercase font-bold tracking-wider">Bed Layout</span>
+                            <span class="font-bold text-slate-800 flex items-center gap-1">
+                                <span class="material-symbols-outlined text-[16px] text-ocean-600">bed</span>
+                                <span x-text="previewRoom?.bed_configuration || 'Standard'"></span>
+                            </span>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/80 space-y-1">
+                            <span class="text-slate-400 text-[10px] block uppercase font-bold tracking-wider">Max Occupancy</span>
+                            <span class="font-bold text-slate-800 flex items-center gap-1">
+                                <span class="material-symbols-outlined text-[16px] text-ocean-600">group</span>
+                                <span x-text="(previewRoom?.occupancy || 2) + ' Guests'"></span>
+                            </span>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/80 space-y-1" x-show="previewRoom?.room_size">
+                            <span class="text-slate-400 text-[10px] block uppercase font-bold tracking-wider">Room Size</span>
+                            <span class="font-bold text-slate-800 flex items-center gap-1">
+                                <span class="material-symbols-outlined text-[16px] text-ocean-600">straighten</span>
+                                <span x-text="previewRoom?.room_size"></span>
+                            </span>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/80 space-y-1" x-show="previewRoom?.ideal_guest">
+                            <span class="text-slate-400 text-[10px] block uppercase font-bold tracking-wider">Ideal For</span>
+                            <span class="font-bold text-slate-800 flex items-center gap-1">
+                                <span class="material-symbols-outlined text-[16px] text-ocean-600">face</span>
+                                <span x-text="previewRoom?.ideal_guest"></span>
+                            </span>
+                        </div>
+                    </div>
+
+                    {{-- Description --}}
+                    <template x-if="previewRoom?.description">
+                        <div class="space-y-2">
+                            <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Room Description</h4>
+                            <p class="text-xs sm:text-sm text-slate-600 leading-relaxed bg-slate-50/70 p-4 rounded-xl border border-slate-200/60"
+                                x-text="previewRoom.description"></p>
+                        </div>
+                    </template>
+
+                    {{-- Amenities Badges --}}
+                    <template x-if="previewRoom?.amenities && previewRoom.amenities.length > 0">
+                        <div class="space-y-3">
+                            <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Included Amenities</h4>
+                            <div class="flex flex-wrap gap-2">
+                                <template x-for="(amenity, idx) in previewRoom.amenities" :key="idx">
+                                    <span class="px-3 py-1.5 bg-ocean-50 text-ocean-800 rounded-lg text-xs font-semibold border border-ocean-100 flex items-center gap-1.5">
+                                        <span class="material-symbols-outlined text-[16px] text-ocean-600">check_circle</span>
+                                        <span x-text="amenity"></span>
+                                    </span>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+
+                </div>
+
+                {{-- Modal Footer --}}
+                <div class="bg-slate-50 p-4 sm:p-6 border-t border-slate-200/80 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <button type="button" @click="closeRoomPreview()"
+                        class="w-full sm:w-auto px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-bold text-xs hover:bg-slate-200 transition-colors">
+                        Close Preview
+                    </button>
+                    <button type="button" @click="confirmRoomSelection(previewRoom)"
+                        class="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-ocean-600 to-ocean-700 hover:from-ocean-700 hover:to-ocean-800 text-white font-bold text-xs shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2">
+                        <span class="material-symbols-outlined text-[18px]">check_circle</span>
+                        <span>Select & Book This Room</span>
+                    </button>
+                </div>
+
             </div>
         </div>
 

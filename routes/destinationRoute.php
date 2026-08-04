@@ -1,8 +1,10 @@
 <?php
 use App\Http\Controllers\Admin\DestinationController;
 use App\Http\Controllers\AdminAuth\AdminAuth;
+use App\Http\Controllers\DestinationShowController;
 use Illuminate\Support\Facades\Route;
 
+Route::get('/destinations/{id}', [DestinationShowController::class, 'show'])->name('destinations.show');
 
 Route::prefix('admin')->group(function () {
     Route::middleware('guest:admin')->group(function () {
