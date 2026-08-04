@@ -137,7 +137,10 @@
 
                                 <td class="px-6 py-4 text-sm font-semibold text-slate-900">
                                     <div class="flex items-center gap-2 flex-wrap">
-                                        <span>{{ $hotel->hotel_name }}</span>
+                                        <a href="{{ route('hotels.show', $hotel->id) }}" target="_blank" class="hover:text-ocean-600 hover:underline transition-colors flex items-center gap-1 group/link">
+                                            <span>{{ $hotel->hotel_name }}</span>
+                                            <span class="material-symbols-outlined text-[15px] opacity-0 group-hover/link:opacity-100 text-ocean-500 transition-opacity">open_in_new</span>
+                                        </a>
                                         @if(!empty($hotel->embedding))
                                             <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200/60" title="AI Vector Embedding Active">
                                                 <span class="material-symbols-outlined text-[13px]">psychology</span> AI Embedded
@@ -182,6 +185,11 @@
 
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="flex items-center gap-2">
+                                        <a href="{{ route('hotels.show', $hotel->id) }}" target="_blank"
+                                            class="inline-flex items-center gap-1.5 h-8 px-3 rounded bg-white border border-emerald-300 hover:border-emerald-600 text-emerald-700 hover:bg-emerald-50 text-xs font-medium transition-colors shadow-sm" title="Preview user-facing hotel page">
+                                            <span class="material-symbols-outlined text-[16px]">visibility</span>
+                                            Preview
+                                        </a>
                                         <a href="{{ route('edit-view', $hotel->id) }}"
                                             class="inline-flex items-center gap-1.5 h-8 px-3 rounded bg-white border border-ocean-300 hover:border-ocean-600 text-ocean-600 hover:bg-ocean-50 text-xs font-medium transition-colors shadow-sm">
                                             <span class="material-symbols-outlined text-[16px]">edit</span>

@@ -8,7 +8,9 @@ class DestinationModel extends Model
 {
     protected $table = 'destinations';
     protected $fillable = [
-        'name'
+        'name',
+        'description',
+        'image',
     ];
 
     public function hotels()

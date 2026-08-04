@@ -13,14 +13,25 @@ class DestinationSeeder extends Seeder
     public function run(): void
     {
         $destinations = [
-            ['name' => 'Boracay'],
-            ['name' => 'El Nido'],
+            [
+                'name' => 'El Nido',
+                'description' => 'Whispers of limestone giants and hidden lagoons. Explore secret beaches accessible only by swimming through subterranean tunnels.',
+                'image' => 'https://images.unsplash.com/photo-1518509562904-e7ef99cdcc86?auto=format&fit=crop&w=1000&q=80',
+            ],
+            [
+                'name' => 'Boracay',
+                'description' => 'Where the sun greets the softest flour-white sands on Earth. A perfect balance of island energy and serene wellness retreats.',
+                'image' => 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1000&q=80',
+            ],
         ];
 
         foreach ($destinations as $destination) {
-            DestinationModel::firstOrCreate(
+            DestinationModel::updateOrCreate(
                 ['name' => $destination['name']],
-                $destination
+                [
+                    'description' => $destination['description'],
+                    'image' => $destination['image'],
+                ]
             );
         }
     }

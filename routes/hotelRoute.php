@@ -1,7 +1,11 @@
 <?php
 
 use App\Http\Controllers\Admin\HotelController;
+use App\Http\Controllers\HotelShowController;
 use Illuminate\Support\Facades\Route;
+
+// Public Hotel Details Page (accessible by users, guests, and admins)
+Route::get('/hotels/{id}', [HotelShowController::class, 'show'])->name('hotels.show');
 
 Route::prefix('admin')->group(function () {
     Route::middleware(['auth:admin', 'no.cache'])->group(function () {

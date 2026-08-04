@@ -38,7 +38,7 @@ class RoomSeeder extends Seeder
                 'room_size' => '40 sq.m',
                 'room_amenities' => ['Balcony', 'Ocean View', 'Air Conditioning', 'Free Wi-Fi', 'Marble Bathroom', 'Rainfall Shower', 'Minibar', 'Smart TV'],
                 'base_price' => 9500.00,
-                'images' => ['rooms/sample1.jpg'],
+                'images' => ['hotels/hennan-palm-beach-resort/hen bed.jpg'],
             ],
             [
                 'hotel_id' => $henannPalm?->id,
