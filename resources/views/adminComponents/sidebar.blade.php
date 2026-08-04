@@ -24,7 +24,7 @@
                 ['route' => 'manage-hotels', 'icon' => 'house', 'label' => 'Add Hotel Information', 'href' => Route::has('manage-hotels') ? route('manage-hotels') : '#'],
                 ['route' => 'view-listings', 'icon' => 'hotel', 'label' => 'Show Hotel Listing', 'href' => route('view-listings')],
                 ['route' => 'admin.activities.*', 'icon' => 'explore', 'label' => 'Activities & Tours', 'href' => Route::has('admin.activities.index') ? route('admin.activities.index') : '#'],
-                ['route' => 'admin.addons.*', 'icon' => 'extension', 'label' => 'Add-ons', 'href' => '#'],
+                ['route' => 'admin.addons.*', 'icon' => 'extension', 'label' => 'Transfers and Add-ons', 'href' => route('admin.addons.index')],
                 ['route' => 'admin.ai.*', 'icon' => 'psychology', 'label' => 'Manage AI', 'href' => '#'],
             ],
             'Legal' => [
@@ -46,7 +46,7 @@
                                 $isActive = request()->routeIs($item['route']);
                             @endphp
                             <a href="{{ $item['href'] }}" class="flex items-center gap-3 w-full h-9 px-3 rounded-md transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ocean-500 group
-                                                                                                                            {{ $isActive
+                                                                                                                                        {{ $isActive
                         ? 'bg-ocean-50 text-ocean-600 font-semibold'
                         : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 font-medium' }}">
                                 <span

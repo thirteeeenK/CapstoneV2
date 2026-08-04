@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\HotelModel;
 use App\Models\RoomType;
 use App\Models\ActivityModel;
+use App\Models\AddOnModel;
 use App\Models\DestinationModel;
 use App\Models\User;
 use App\Models\ChatbotAbuseReport;
@@ -27,7 +28,17 @@ class GeminiService
         $desc = trim(preg_replace('/\s+/', ' ', strip_tags($activity->description ?? '')));
         $notes = trim(preg_replace('/\s+/', ' ', strip_tags($activity->notes ?? '')));
         $reqs = trim(preg_replace('/\s+/', ' ', strip_tags($activity->requirements ?? '')));
-        $vibeList = is_array($activity->vibe_tags) ? implode(', ', $activity->vibe_tags) : $activity->vibe_tags;
+        $vibeList = $this->formatListToString($activity->vibe_tags);
+        $inclusionsList = $this->formatListToString($activity->inclusions);
+        $exclusionsList = $this->formatListToString($activity->exclusions);
+        $itineraryList = '';
+        if (is_array($activity->itinerary)) {
+            foreach ($activity->itinerary as $step) {
+                if (isset($step['title'])) {
+                    $itineraryList .= $step['title'] . (isset($step['duration']) ? ' (' . $step['duration'] . ')' : '') . '. ';
+                }
+            }
+        }
 
         return implode("\n", array_filter([
             "Activity Name: {$activity->activity_name}",
@@ -40,8 +51,56 @@ class GeminiService
             "Rate / Pricing: {$activity->rate}",
             $reqs ? "Requirements & Restrictions: {$reqs}" : null,
             $vibeList ? "Experience Vibes & Tags: {$vibeList}" : null,
-            $notes ? "Inclusions & Notes: {$notes}" : null,
+            $inclusionsList ? "Inclusions: {$inclusionsList}" : null,
+            $exclusionsList ? "Exclusions: {$exclusionsList}" : null,
+            $itineraryList ? "Itinerary: {$itineraryList}" : null,
+            $notes ? "Additional Notes: {$notes}" : null,
             $desc ? "Detailed Experience Description: {$desc}" : null,
+        ]));
+    }
+
+    /**
+     * Builds structured, semantically optimized text for AddOnModel embedding generation.
+     */
+    public function buildAddOnEmbeddingText(AddOnModel $addon, ?string $destinationName = null): string
+    {
+        if (!$destinationName && $addon->destination_id) {
+            $destination = DestinationModel::find($addon->destination_id);
+            $destinationName = $destination ? $destination->name : null;
+        }
+
+        $dest = $destinationName ?? 'Unknown Destination';
+        $desc = trim(preg_replace('/\s+/', ' ', strip_tags($addon->description ?? '')));
+        $inclusionsList = $this->formatListToString($addon->inclusions);
+
+        $pricingList = '';
+        if (is_array($addon->pricing_tiers)) {
+            foreach ($addon->pricing_tiers as $tier) {
+                if (isset($tier['rate'])) {
+                    $min = $tier['min_pax'] ?? 1;
+                    $max = $tier['max_pax'] ?? $min;
+                    $pricingList .= "{$min}-{$max} pax: ₱{$tier['rate']}/person. ";
+                }
+            }
+        }
+
+        $surchargeList = '';
+        if (is_array($addon->surcharges)) {
+            foreach ($addon->surcharges as $sur) {
+                if (isset($sur['name'], $sur['amount'])) {
+                    $surchargeList .= "{$sur['name']} (₱{$sur['amount']}" . (isset($sur['type']) ? ' ' . $sur['type'] : '') . "). ";
+                }
+            }
+        }
+
+        return implode("\n", array_filter([
+            "Add-on / Service Name: {$addon->name}",
+            "Service Type: {$addon->type}",
+            "Destination: {$dest}",
+            $inclusionsList ? "Inclusions & Features: {$inclusionsList}" : null,
+            $pricingList ? "Tiered Pricing Rates: {$pricingList}" : null,
+            $surchargeList ? "Surcharges & Additional Fees: {$surchargeList}" : null,
+            $desc ? "Detailed Overview: {$desc}" : null,
         ]));
     }
 
@@ -57,8 +116,8 @@ class GeminiService
 
         $dest = $destinationName ?? 'Unknown Destination';
         $desc = trim(preg_replace('/\s+/', ' ', strip_tags($hotel->hotel_description ?? '')));
-        $vibeList = is_array($hotel->vibe_tags) ? implode(', ', $hotel->vibe_tags) : $hotel->vibe_tags;
-        $amenitiesList = is_array($hotel->featured_amenities) ? implode(', ', $hotel->featured_amenities) : $hotel->featured_amenities;
+        $vibeList = $this->formatListToString($hotel->vibe_tags);
+        $amenitiesList = $this->formatListToString($hotel->featured_amenities);
 
         return implode("\n", array_filter([
             "Hotel Name: {$hotel->hotel_name}",
@@ -88,9 +147,7 @@ class GeminiService
         $idealGuest = $room->ideal_guest ?? $room->ideal_for;
         $desc = trim(preg_replace('/\s+/', ' ', strip_tags($room->description ?? '')));
         $notes = trim(preg_replace('/\s+/', ' ', strip_tags($room->additional_notes ?? '')));
-        $amenitiesList = is_array($room->room_amenities)
-            ? implode(', ', array_filter(array_map('trim', $room->room_amenities)))
-            : (is_string($room->room_amenities) ? trim($room->room_amenities) : '');
+        $amenitiesList = $this->formatListToString($room->room_amenities);
 
         return implode("\n", array_filter([
             $hotelName ? "Hotel Name: {$hotelName}" : null,
@@ -107,6 +164,46 @@ class GeminiService
             "Inventory Capacity: {$room->total_rooms} total rooms available",
             $desc ? "Detailed Room Description: {$desc}" : null,
         ]));
+    }
+
+    /**
+     * Safely formats an array or string list of items (e.g. amenities, tags, inclusions) into a clean, comma-separated string.
+     * Prevents TypeError when items inside arrays are sub-arrays or non-string types.
+     */
+    public function formatListToString(mixed $data): string
+    {
+        if (empty($data)) {
+            return '';
+        }
+
+        if (is_string($data)) {
+            return trim($data);
+        }
+
+        if (is_array($data)) {
+            $items = [];
+            foreach ($data as $item) {
+                if (is_string($item)) {
+                    $trimmed = trim($item);
+                    if ($trimmed !== '') {
+                        $items[] = $trimmed;
+                    }
+                } elseif (is_array($item)) {
+                    $val = $item['name'] ?? $item['title'] ?? implode(', ', array_filter(array_map(fn($v) => is_string($v) ? trim($v) : null, $item)));
+                    if (is_string($val) && trim($val) !== '') {
+                        $items[] = trim($val);
+                    }
+                } elseif (is_scalar($item)) {
+                    $trimmed = trim((string) $item);
+                    if ($trimmed !== '') {
+                        $items[] = $trimmed;
+                    }
+                }
+            }
+            return implode(', ', $items);
+        }
+
+        return '';
     }
 
     /**
@@ -353,13 +450,8 @@ class GeminiService
             $destName = $hotel->destination->name ?? 'Unknown Destination';
             $typeLabel = ucwords(str_replace('-', ' ', $hotel->type ?? 'N/A'));
 
-            $vibes = is_array($hotel->vibe_tags)
-                ? implode(', ', $hotel->vibe_tags)
-                : ($hotel->vibe_tags ?? '');
-
-            $amenities = is_array($hotel->featured_amenities)
-                ? implode(', ', $hotel->featured_amenities)
-                : ($hotel->featured_amenities ?? '');
+            $vibes = $this->formatListToString($hotel->vibe_tags);
+            $amenities = $this->formatListToString($hotel->featured_amenities);
 
             $desc = trim(preg_replace('/\s+/', ' ', strip_tags($hotel->hotel_description ?? '')));
 
@@ -466,9 +558,7 @@ class GeminiService
             $hotelName = $hotel->hotel_name ?? 'Unknown Hotel';
             $destName = $hotel->destination->name ?? 'Unknown Destination';
 
-            $amenities = is_array($room->room_amenities)
-                ? implode(', ', $room->room_amenities)
-                : ($room->room_amenities ?? '');
+            $amenities = $this->formatListToString($room->room_amenities);
 
             $desc = trim(preg_replace('/\s+/', ' ', strip_tags($room->description ?? '')));
 
@@ -578,9 +668,7 @@ class GeminiService
 
             $destName = $activity->destination->name ?? 'Unknown Destination';
 
-            $vibes = is_array($activity->vibe_tags)
-                ? implode(', ', $activity->vibe_tags)
-                : ($activity->vibe_tags ?? '');
+            $vibes = $this->formatListToString($activity->vibe_tags);
 
             $desc = trim(preg_replace('/\s+/', ' ', strip_tags($activity->description ?? '')));
             $notes = trim(preg_replace('/\s+/', ' ', strip_tags($activity->notes ?? '')));

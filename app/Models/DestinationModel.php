@@ -20,4 +20,9 @@ class DestinationModel extends Model
     {
         return $this->hasMany(ActivityModel::class, 'destination_id');
     }
+
+    public function packages()
+    {
+        return $this->hasMany(Package::class, 'destination_id');
+    }
 }

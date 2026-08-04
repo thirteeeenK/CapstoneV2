@@ -23,6 +23,9 @@ class ActivityModel extends Model
         'vibe_tags',
         'ideal_for',
         'rate',
+        'inclusions',
+        'exclusions',
+        'itinerary',
         'notes',
         'images',
         'embedding',
@@ -31,6 +34,9 @@ class ActivityModel extends Model
 
     protected $casts = [
         'vibe_tags' => 'array',
+        'inclusions' => 'array',
+        'exclusions' => 'array',
+        'itinerary' => 'array',
         'images' => 'array',
         'is_shown' => 'boolean'
     ];
@@ -39,4 +45,10 @@ class ActivityModel extends Model
     {
         return $this->belongsTo(DestinationModel::class, 'destination_id');
     }
+
+    public function packages()
+    {
+        return $this->belongsToMany(Package::class, 'package_activity', 'activity_id', 'package_id');
+    }
 }
+        

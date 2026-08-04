@@ -27,7 +27,7 @@ class HotelSeeder extends Seeder
             'specific_address' => 'Station 2, White Beach',
             'latitude' => 11.95644170,
             'longitude' => 121.92574660,
-            'images' => ['hotels/sample1.jpg'],
+            'images' => ['hotels/hennan-palm-beach-resort/hen.jpg', 'hotels/hennan-palm-beach-resort/hen out.jpg'],
         ]);
 
         // 2
@@ -41,7 +41,7 @@ class HotelSeeder extends Seeder
             'specific_address' => "Station 2 (Near D'Mall)",
             'latitude' => 11.958562,
             'longitude' => 121.927231,
-            'images' => ['hotels/sample2.jpg'],
+            'images' => ['hotels/canyon-hotel/canyon.jpg', 'hotels/canyon-hotel/out.jpg'],
         ]);
 
         // 3
@@ -55,7 +55,7 @@ class HotelSeeder extends Seeder
             'specific_address' => "Station 3, White Beach",
             'latitude' => 11.9509299,
             'longitude' => 121.9257116,
-            'images' => ['hotels/sample3.jpg'],
+            'images' => ['hotels/Boracay-Ocean-Club-Beach-Resort/ocean_outside.webp', 'hotels/Boracay-Ocean-Club-Beach-Resort/ocean pool_.jpg', 'hotels/Boracay-Ocean-Club-Beach-Resort/ocean_hall.webp'],
         ]);
 
         // 4
@@ -69,7 +69,7 @@ class HotelSeeder extends Seeder
             'specific_address' => "Station 2, White Beach",
             'latitude' => 11.9591852,
             'longitude' => 121.9252052,
-            'images' => ['hotels/sample4.jpg'],
+            'images' => ['hotels/Henann-Garden-Resort/hennann.jpg', 'hotels/Henann-Garden-Resort/outside hen.jpg'],
         ]);
 
         // 5
@@ -83,7 +83,7 @@ class HotelSeeder extends Seeder
             'specific_address' => "Station 1",
             'latitude' => 11.9653679,
             'longitude' => 121.9200853,
-            'images' => ['hotels/sample5.jpg'],
+            'images' => ['hotels/My-Station-Hotel/station out.jpg', 'hotels/My-Station-Hotel/station beach.webp'],
         ]);
 
         // 6
@@ -97,7 +97,7 @@ class HotelSeeder extends Seeder
             'specific_address' => "Station 1",
             'latitude' => 11.9641647,
             'longitude' => 121.9223174,
-            'images' => ['hotels/sample6.jpg'],
+            'images' => ['hotels/Frendz-Hostel-Boracay/frendz pool.jpg', 'hotels/Frendz-Hostel-Boracay/frends.jpg',],
         ]);
 
         // 7
@@ -111,7 +111,7 @@ class HotelSeeder extends Seeder
             'specific_address' => "Bulabog Beach",
             'latitude' => 11.9646558,
             'longitude' => 121.9261436,
-            'images' => ['hotels/sample7.jpg'],
+            'images' => ['hotels/Lazy-Dog/lazy dog.jpg', 'hotels/Lazy-Dog/outside.jpg'],
         ]);
 
         // 8
@@ -125,7 +125,7 @@ class HotelSeeder extends Seeder
             'specific_address' => "Station 2 / Bulabog",
             'latitude' => 11.9343383,
             'longitude' => 121.8881044,
-            'images' => ['hotels/sample8.jpg'],
+            'images' => ['hotels/happiness-hotel/pool.jpg', 'hotels/happiness-hotel/happiness.jpg'],
         ]);
 
         // 9
@@ -139,7 +139,7 @@ class HotelSeeder extends Seeder
             'specific_address' => "Station 1",
             'latitude' => 11.9450172,
             'longitude' => 121.8335292,
-            'images' => ['hotels/sample9.jpg'],
+            'images' => ['hotels/muse-hotel/muse.webp', 'hotels/muse-hotel/muse lounge.webp'],
         ]);
 
         $elNido = DestinationModel::where('name', 'El Nido')->first();

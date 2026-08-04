@@ -68,6 +68,9 @@ class ActivityController extends Controller
             'description' => 'nullable|string',
             'vibe_tags' => 'nullable|string',
             'ideal_for' => 'nullable|string',
+            'inclusions' => 'nullable|array',
+            'exclusions' => 'nullable|array',
+            'itinerary' => 'nullable|array',
             'notes' => 'nullable|string',
             'images' => 'nullable|array',
             'images.*' => 'image|mimes:jpeg,png,jpg,webp|max:5120',
@@ -96,6 +99,9 @@ class ActivityController extends Controller
             'description' => $request->description,
             'vibe_tags' => $vibeTags,
             'ideal_for' => $request->ideal_for,
+            'inclusions' => $request->inclusions,
+            'exclusions' => $request->exclusions,
+            'itinerary' => $request->itinerary,
             'notes' => $request->notes,
             'images' => $imagePaths,
             'is_shown' => $request->has('is_shown') ? $request->boolean('is_shown') : true,
@@ -139,6 +145,9 @@ class ActivityController extends Controller
             'description' => 'nullable|string',
             'vibe_tags' => 'nullable|string',
             'ideal_for' => 'nullable|string',
+            'inclusions' => 'nullable|array',
+            'exclusions' => 'nullable|array',
+            'itinerary' => 'nullable|array',
             'notes' => 'nullable|string',
             'images' => 'nullable|array',
             'images.*' => 'image|mimes:jpeg,png,jpg,webp|max:5120',
@@ -162,6 +171,9 @@ class ActivityController extends Controller
         $activity->description = $request->description;
         $activity->vibe_tags = $vibeTags;
         $activity->ideal_for = $request->ideal_for;
+        $activity->inclusions = $request->inclusions;
+        $activity->exclusions = $request->exclusions;
+        $activity->itinerary = $request->itinerary;
         $activity->notes = $request->notes;
         $activity->is_shown = $request->has('is_shown') ? $request->boolean('is_shown') : false;
 

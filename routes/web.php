@@ -35,3 +35,4 @@ require __DIR__ . '/activityRoute.php';
 require __DIR__ . '/userManagementRoute.php';
 require __DIR__ . '/inventoryRoute.php';
 require __DIR__ . '/legalRoute.php';
+require __DIR__ . '/addonRoute.php';

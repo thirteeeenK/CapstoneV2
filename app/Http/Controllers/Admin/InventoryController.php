@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\HotelModel;
 use App\Models\RoomType;
 use App\Models\ActivityModel;
+use App\Models\AddOnModel;
 use App\Models\DestinationModel;
 use Illuminate\Http\Request;
 
@@ -24,6 +25,7 @@ class InventoryController extends Controller
         $allHotels = HotelModel::all();
         $allRooms = RoomType::all();
         $allActivities = ActivityModel::all();
+        $allAddons = AddOnModel::all();
 
         $stats = [
             'total_hotels' => $allHotels->count(),
@@ -37,6 +39,10 @@ class InventoryController extends Controller
             'total_activities' => $allActivities->count(),
             'shown_activities' => $allActivities->where('is_shown', true)->count(),
             'hidden_activities' => $allActivities->where('is_shown', false)->count(),
+
+            'total_addons' => $allAddons->count(),
+            'shown_addons' => $allAddons->where('is_shown', true)->count(),
+            'hidden_addons' => $allAddons->where('is_shown', false)->count(),
         ];
 
         // 2. Filtered Queries
@@ -97,10 +103,30 @@ class InventoryController extends Controller
         }
         $activities = $activityQuery->orderBy('id', 'asc')->get();
 
+        // Add-ons & Transfers Query
+        $addonQuery = AddOnModel::with('destination');
+        if ($selectedDestinationId) {
+            $addonQuery->where('destination_id', $selectedDestinationId);
+        }
+        if ($visibility === 'visible') {
+            $addonQuery->where('is_shown', true);
+        } elseif ($visibility === 'hidden') {
+            $addonQuery->where('is_shown', false);
+        }
+        if ($search) {
+            $addonQuery->where(function ($q) use ($search) {
+                $q->where('name', 'like', '%' . $search . '%')
+                    ->orWhere('type', 'like', '%' . $search . '%')
+                    ->orWhere('description', 'like', '%' . $search . '%');
+            });
+        }
+        $addons = $addonQuery->orderBy('id', 'asc')->get();
+
         return view('admin.inventory.index', compact(
             'hotels',
             'rooms',
             'activities',
+            'addons',
             'destinations',
             'stats',
             'activeTab',
@@ -113,7 +139,7 @@ class InventoryController extends Controller
     public function toggleVisibility(Request $request)
     {
         $request->validate([
-            'type' => 'required|in:hotel,room,activity',
+            'type' => 'required|in:hotel,room,activity,addon,add_on',
             'id' => 'required|integer',
             'is_shown' => 'required|boolean'
         ]);
@@ -126,6 +152,8 @@ class InventoryController extends Controller
             $item = HotelModel::findOrFail($id);
         } elseif ($type === 'room') {
             $item = RoomType::findOrFail($id);
+        } elseif ($type === 'addon' || $type === 'add_on') {
+            $item = AddOnModel::findOrFail($id);
         } else {
             $item = ActivityModel::findOrFail($id);
         }

@@ -7,7 +7,7 @@
         <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
                 <h1 class="text-xl font-bold text-slate-900">Central Inventory Management</h1>
-                <p class="text-xs text-slate-500 mt-1">Control public visibility (<code class="text-ocean-600 font-mono">is_shown</code>) and monitor inventory availability for hotels, room types, and activities.</p>
+                <p class="text-xs text-slate-500 mt-1">Control public visibility (<code class="text-ocean-600 font-mono">is_shown</code>) and monitor inventory availability for hotels, room types, activities, and add-ons/transfers.</p>
             </div>
         </div>
 
@@ -20,7 +20,7 @@
         @endif
 
         <!-- Stat Cards -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
                 <div class="w-10 h-10 rounded-lg bg-ocean-50 text-ocean-600 flex items-center justify-center shrink-0">
                     <span class="material-symbols-outlined text-[20px]">inventory_2</span>
@@ -62,6 +62,21 @@
                         <span class="text-xs text-emerald-600 font-medium">{{ $stats['shown_activities'] }} Visible</span>
                         <span class="text-xs text-slate-400">•</span>
                         <span class="text-xs text-amber-600 font-medium">{{ $stats['hidden_activities'] }} Hidden</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
+                <div class="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
+                    <span class="material-symbols-outlined text-[20px]">extension</span>
+                </div>
+                <div>
+                    <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Add-ons & Transfers</p>
+                    <div class="flex items-baseline gap-2 mt-0.5">
+                        <span class="text-lg font-bold text-slate-900">{{ $stats['total_addons'] }}</span>
+                        <span class="text-xs text-emerald-600 font-medium">{{ $stats['shown_addons'] }} Visible</span>
+                        <span class="text-xs text-slate-400">•</span>
+                        <span class="text-xs text-amber-600 font-medium">{{ $stats['hidden_addons'] }} Hidden</span>
                     </div>
                 </div>
             </div>
@@ -148,21 +163,26 @@
 
         <!-- Inventory Navigation Tabs -->
         <div class="mb-6 border-b border-slate-200 bg-white px-4 pt-3 rounded-t-xl">
-            <nav class="flex space-x-6">
+            <nav class="flex space-x-6 overflow-x-auto">
                 <a href="{{ route('admin.inventory.index', array_filter(['tab' => 'hotels', 'destination_id' => $selectedDestinationId, 'visibility' => $visibility, 'search' => $search])) }}"
-                   class="pb-3 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 {{ $activeTab === 'hotels' ? 'border-ocean-600 text-ocean-600 font-semibold' : 'border-transparent text-slate-500 hover:text-slate-700' }}">
+                   class="pb-3 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 shrink-0 {{ $activeTab === 'hotels' ? 'border-ocean-600 text-ocean-600 font-semibold' : 'border-transparent text-slate-500 hover:text-slate-700' }}">
                     <span class="material-symbols-outlined text-[18px]">house</span>
                     Hotels Inventory ({{ $hotels->count() }})
                 </a>
                 <a href="{{ route('admin.inventory.index', array_filter(['tab' => 'rooms', 'destination_id' => $selectedDestinationId, 'visibility' => $visibility, 'search' => $search])) }}"
-                   class="pb-3 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 {{ $activeTab === 'rooms' ? 'border-ocean-600 text-ocean-600 font-semibold' : 'border-transparent text-slate-500 hover:text-slate-700' }}">
+                   class="pb-3 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 shrink-0 {{ $activeTab === 'rooms' ? 'border-ocean-600 text-ocean-600 font-semibold' : 'border-transparent text-slate-500 hover:text-slate-700' }}">
                     <span class="material-symbols-outlined text-[18px]">bed</span>
                     Room Types Inventory ({{ $rooms->count() }})
                 </a>
                 <a href="{{ route('admin.inventory.index', array_filter(['tab' => 'activities', 'destination_id' => $selectedDestinationId, 'visibility' => $visibility, 'search' => $search])) }}"
-                   class="pb-3 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 {{ $activeTab === 'activities' ? 'border-ocean-600 text-ocean-600 font-semibold' : 'border-transparent text-slate-500 hover:text-slate-700' }}">
+                   class="pb-3 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 shrink-0 {{ $activeTab === 'activities' ? 'border-ocean-600 text-ocean-600 font-semibold' : 'border-transparent text-slate-500 hover:text-slate-700' }}">
                     <span class="material-symbols-outlined text-[18px]">explore</span>
                     Activities Inventory ({{ $activities->count() }})
+                </a>
+                <a href="{{ route('admin.inventory.index', array_filter(['tab' => 'addons', 'destination_id' => $selectedDestinationId, 'visibility' => $visibility, 'search' => $search])) }}"
+                   class="pb-3 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 shrink-0 {{ $activeTab === 'addons' ? 'border-ocean-600 text-ocean-600 font-semibold' : 'border-transparent text-slate-500 hover:text-slate-700' }}">
+                    <span class="material-symbols-outlined text-[18px]">extension</span>
+                    Transfers & Add-ons ({{ $addons->count() }})
                 </a>
             </nav>
         </div>
@@ -286,7 +306,7 @@
                     </table>
                 </div>
 
-            @else
+            @elseif ($activeTab === 'activities')
                 {{-- ACTIVITIES TABLE --}}
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
@@ -339,6 +359,71 @@
                             @empty
                                 <tr>
                                     <td colspan="6" class="py-8 text-center text-slate-400 text-xs">No activities matching the current filters.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+
+            @else
+                {{-- ADD-ONS & TRANSFERS TABLE --}}
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                                <th class="py-3 px-4">Service Name</th>
+                                <th class="py-3 px-4">Type</th>
+                                <th class="py-3 px-4">Destination</th>
+                                <th class="py-3 px-4">Details / Inclusions</th>
+                                <th class="py-3 px-4 text-center">Public Visibility</th>
+                                <th class="py-3 px-4 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 text-xs text-slate-700">
+                            @forelse ($addons as $addon)
+                                <tr class="hover:bg-slate-50/80 transition-colors">
+                                    <td class="py-3 px-4 font-semibold text-slate-900">
+                                        {{ $addon->name }}
+                                    </td>
+                                    <td class="py-3 px-4">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-indigo-50 text-indigo-700">
+                                            {{ $addon->type }}
+                                        </span>
+                                    </td>
+                                    <td class="py-3 px-4 font-medium text-slate-700">
+                                        {{ $addon->destination->name ?? 'N/A' }}
+                                    </td>
+                                    <td class="py-3 px-4 text-slate-600 truncate max-w-[220px]">
+                                        @if (!empty($addon->inclusions) && is_array($addon->inclusions))
+                                            {{ implode(', ', $addon->inclusions) }}
+                                        @elseif (!empty($addon->description))
+                                            {{ Str::limit($addon->description, 40) }}
+                                        @else
+                                            —
+                                        @endif
+                                    </td>
+                                    <td class="py-3 px-4 text-center">
+                                        <form action="{{ route('admin.inventory.toggle-visibility') }}" method="POST" class="inline-block">
+                                            @csrf
+                                            <input type="hidden" name="type" value="addon">
+                                            <input type="hidden" name="id" value="{{ $addon->id }}">
+                                            <input type="hidden" name="is_shown" value="{{ $addon->is_shown ? '0' : '1' }}">
+                                            <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold transition-all cursor-pointer shadow-2xs {{ $addon->is_shown ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-emerald-200' : 'bg-amber-100 text-amber-800 border border-amber-300 hover:bg-amber-200' }}">
+                                                <span class="w-2 h-2 rounded-full {{ $addon->is_shown ? 'bg-emerald-500' : 'bg-amber-500' }}"></span>
+                                                {{ $addon->is_shown ? 'Visible to Users' : 'Hidden from Users' }}
+                                            </button>
+                                        </form>
+                                    </td>
+                                    <td class="py-3 px-4 text-right space-x-2">
+                                        <a href="{{ route('admin.addons.edit', $addon->id) }}" class="text-ocean-600 hover:text-ocean-800 font-semibold inline-flex items-center gap-1">
+                                            <span class="material-symbols-outlined text-[15px]">edit</span>
+                                            Edit Add-on
+                                        </a>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="6" class="py-8 text-center text-slate-400 text-xs">No add-ons or transfers matching the current filters.</td>
                                 </tr>
                             @endforelse
                         </tbody>

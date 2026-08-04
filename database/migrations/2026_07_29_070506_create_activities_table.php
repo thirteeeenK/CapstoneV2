@@ -23,6 +23,9 @@ return new class extends Migration {
             $table->string('ideal_for')->nullable(); // Target audience / ideal participants
             $table->json('vibe_tags')->nullable();
             $table->text('description')->nullable();
+            $table->json('inclusions')->nullable();
+            $table->json('exclusions')->nullable();
+            $table->json('itinerary')->nullable();
             $table->text('notes')->nullable(); // Inclusions / details
             $table->json('images')->nullable();
             $table->vector('embedding', 3072)->nullable();

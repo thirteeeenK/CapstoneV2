@@ -26,13 +26,17 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
-        $this->call(DestinationSeeder::class);
-        $this->call(AdminSeeder::class);
-        $this->call(HotelSeeder::class);
-        $this->call(RoomSeeder::class);
-        $this->call(ElNidoRoomSeeder::class);
-        $this->call(ActivitySeeder::class);
-        $this->call(ElNidoActivitySeeder::class);
-        $this->call(LegalDocumentsSeeder::class);
+        $this->call([
+            DestinationSeeder::class,
+            AdminSeeder::class,
+            HotelSeeder::class,
+            RoomSeeder::class,
+            ElNidoRoomSeeder::class,
+            ActivitySeeder::class,
+            ElNidoActivitySeeder::class,
+            LegalDocumentsSeeder::class,
+            AddOnSeeder::class,
+            PackageSeeder::class,
+        ]);
     }
 }

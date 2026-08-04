@@ -46,4 +46,9 @@ class HotelModel extends Model
     {
         return $this->belongsTo(DestinationModel::class, 'destination_id');
     }
+
+    public function packages()
+    {
+        return $this->belongsToMany(Package::class, 'package_hotel', 'hotel_id', 'package_id');
+    }
 }

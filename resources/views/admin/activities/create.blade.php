@@ -3,18 +3,16 @@
 @section('title', 'Add New Activity | SunnyTrips Admin')
 
 @section('content')
-    <div class="pb-12 max-w-4xl mx-auto">
-        <div class="mb-6 flex items-center justify-between">
+    <div class="pb-12">
+        <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-                <a href="{{ route('admin.activities.index') }}"
-                    class="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-slate-700 font-semibold transition-colors mb-2">
-                    <span class="material-symbols-outlined text-[16px]">arrow_back</span>
-                    Back to Activities
-                </a>
                 <h1 class="text-xl font-bold text-slate-900">Add New Activity</h1>
-                <p class="text-xs text-slate-500 mt-1">Create an activity, set pricing and activity level, and generate its
-                    AI embedding vector.</p>
+                <p class="text-xs text-slate-500 mt-1">Create an activity, set pricing and activity level, and generate its AI embedding vector.</p>
             </div>
+            <a href="{{ route('admin.activities.index') }}" class="inline-flex items-center gap-1.5 h-9 px-3 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors self-start sm:self-auto">
+                <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+                Back to Activities
+            </a>
         </div>
 
         @if ($errors->any())
@@ -28,12 +26,18 @@
             </div>
         @endif
 
-        <div class="bg-white border border-slate-200 rounded-lg shadow-sm p-6">
-            <form action="{{ route('admin.activities.store') }}" method="POST" enctype="multipart/form-data"
-                class="space-y-6">
-                @csrf
+        <form action="{{ route('admin.activities.store') }}" method="POST" enctype="multipart/form-data"
+            class="grid grid-cols-12 gap-8 items-start">
+            @csrf
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Management Form (Wide Column) -->
+            <div class="col-span-8 space-y-6">
+                <section class="bg-white rounded-lg p-6 border border-slate-200">
+                    <h2 class="text-base font-semibold text-slate-900 border-b border-slate-100 pb-3 mb-5 flex items-center gap-2">
+                        <span class="inline-block w-1.5 h-4 bg-primary rounded-full"></span>
+                        General Information
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- Destination Dropdown -->
                     <div class="space-y-1.5">
                         <label for="destination_id" class="block text-xs font-semibold text-slate-700">
@@ -164,17 +168,63 @@
                             class="w-full bg-slate-50 border border-slate-300 rounded-md p-3 text-xs text-slate-900 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all">{{ old('description') }}</textarea>
                     </div>
 
-                    <!-- Notes / Inclusions -->
+                    <!-- Inclusions -->
+                    <div class="space-y-1.5 md:col-span-2">
+                        <label class="block text-xs font-semibold text-slate-700 flex justify-between items-center">
+                            Inclusions
+                            <button type="button" onclick="addInclusion()" class="text-ocean-600 hover:text-ocean-700 font-bold">+ Add Item</button>
+                        </label>
+                        <div id="inclusions_container" class="space-y-2">
+                            <div class="flex items-center gap-2">
+                                <input type="text" name="inclusions[]" placeholder="e.g. Island hopping boat tour" class="w-full bg-slate-50 border border-slate-300 rounded-md px-3 py-2 text-xs text-slate-900 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all">
+                                <button type="button" onclick="this.parentElement.remove()" class="text-rose-500 hover:text-rose-700"><span class="material-symbols-outlined text-[16px]">delete</span></button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Exclusions -->
+                    <div class="space-y-1.5 md:col-span-2">
+                        <label class="block text-xs font-semibold text-slate-700 flex justify-between items-center">
+                            Exclusions / Optional Add-ons
+                            <button type="button" onclick="addExclusion()" class="text-ocean-600 hover:text-ocean-700 font-bold">+ Add Item</button>
+                        </label>
+                        <div id="exclusions_container" class="space-y-2">
+                            <div class="flex items-center gap-2">
+                                <input type="text" name="exclusions[]" placeholder="e.g. Snorkeling fee - ₱100/person" class="w-full bg-slate-50 border border-slate-300 rounded-md px-3 py-2 text-xs text-slate-900 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all">
+                                <button type="button" onclick="this.parentElement.remove()" class="text-rose-500 hover:text-rose-700"><span class="material-symbols-outlined text-[16px]">delete</span></button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Itinerary -->
+                    <div class="space-y-1.5 md:col-span-2">
+                        <label class="block text-xs font-semibold text-slate-700 flex justify-between items-center">
+                            Itinerary
+                            <button type="button" onclick="addItinerary()" class="text-ocean-600 hover:text-ocean-700 font-bold">+ Add Step</button>
+                        </label>
+                        <div id="itinerary_container" class="space-y-3">
+                            <div class="flex flex-col gap-2 p-3 border border-slate-200 rounded-md bg-slate-50 relative">
+                                <button type="button" onclick="this.parentElement.remove()" class="absolute top-2 right-2 text-rose-500 hover:text-rose-700"><span class="material-symbols-outlined text-[16px]">close</span></button>
+                                <input type="text" name="itinerary[0][title]" placeholder="Step Title (e.g. Puka Beach)" class="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-xs text-slate-900 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all">
+                                <input type="text" name="itinerary[0][duration]" placeholder="Duration (e.g. 30-40 minutes)" class="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-xs text-slate-900 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Additional Notes -->
                     <div class="space-y-1.5 md:col-span-2">
                         <label for="notes" class="block text-xs font-semibold text-slate-700">
-                            Notes / Inclusions
+                            Additional Notes
                         </label>
                         <textarea id="notes" name="notes" rows="2"
-                            placeholder="e.g. Includes free buffet lunch + kawa bath; free Insta360 camera use"
+                            placeholder="e.g. No Sharon policy (no sharing of meals)"
                             class="w-full bg-slate-50 border border-slate-300 rounded-md p-3 text-xs text-slate-900 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all">{{ old('notes') }}</textarea>
                     </div>
 
-                    <!-- Image Gallery Upload (Pattern from add_hotel.blade.php) -->
+                    </div>
+                </section>
+
+                <section class="bg-white rounded-lg p-6 border border-slate-200">
                     <div class="space-y-3 md:col-span-2 pt-2 border-t border-slate-100">
                         {{-- Hidden file input --}}
                         <input type="file" id="activityImageUpload" name="images[]" multiple accept="image/*" class="hidden"
@@ -222,30 +272,41 @@
                                 <span class="text-[10px] font-bold uppercase tracking-wider">More Photos</span>
                             </div>
                         </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Desktop Save Button (Sticky Sidebar Card) -->
+            <div class="hidden lg:block lg:col-span-4">
+                <div class="sticky top-6 bg-white rounded-lg p-6 border border-slate-200">
+                    <h3 class="text-sm font-semibold text-slate-900 mb-2">Publishing</h3>
+                    <p class="text-xs text-slate-500 mb-4 leading-relaxed">Review your changes and click the button below to publish the new activity.</p>
+
                     <!-- Public Visibility Toggle -->
-                    <div class="p-3 rounded-lg bg-slate-50 border border-slate-200 md:col-span-2 space-y-1.5">
+                    <div class="mb-6 p-3 rounded-lg bg-slate-50 border border-slate-200 space-y-1.5">
                         <label class="flex items-center justify-between cursor-pointer">
                             <span class="text-xs font-bold text-slate-800">Show to Public Users</span>
                             <input type="checkbox" name="is_shown" value="1" @checked(old('is_shown', true)) class="w-4 h-4 text-ocean-600 rounded border-slate-300 focus:ring-ocean-500">
                         </label>
                         <p class="text-[11px] text-slate-500 leading-tight">If unchecked, this activity remains hidden from public website and AI search.</p>
                     </div>
-                </div>
-
-                <!-- Footer Action Bar -->
-                <div class="pt-4 flex items-center justify-end gap-3 border-t border-slate-100">
-                    <a href="{{ route('admin.activities.index') }}"
-                        class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-md transition-colors">
-                        Cancel
-                    </a>
                     <button type="submit"
-                        class="px-5 py-2 bg-ocean-600 hover:bg-ocean-700 text-white text-xs font-semibold rounded-md shadow-sm transition-colors flex items-center gap-1.5">
-                        <span class="material-symbols-outlined text-[16px]">save</span>
+                        class="w-full h-10 px-4 bg-ocean-600 hover:bg-ocean-700 text-white rounded-md font-semibold text-sm transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ocean-500 flex items-center justify-center gap-2">
+                        <span class="material-symbols-outlined text-[18px]">save</span>
                         Save & Generate Embedding
                     </button>
                 </div>
-            </form>
-        </div>
+            </div>
+
+            <!-- Mobile Floating Save Button -->
+            <div class="fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-t border-slate-200 p-4 lg:hidden">
+                <button type="submit"
+                    class="w-full h-11 bg-ocean-600 hover:bg-ocean-700 text-white rounded-md font-semibold text-sm transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ocean-500 flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-[18px]">save</span>
+                    Save Activity
+                </button>
+            </div>
+        </form>
     </div>
 
     {{-- Instant Image Preview & Removal Script (Adapted from add_hotel.blade.php) --}}
@@ -321,6 +382,44 @@
                     removeBtn.onclick = null;
                 }
             });
+        }
+
+        // Dynamic fields for Inclusions, Exclusions, Itinerary
+        let itineraryIndex = 1;
+
+        function addInclusion() {
+            const container = document.getElementById('inclusions_container');
+            const div = document.createElement('div');
+            div.className = 'flex items-center gap-2';
+            div.innerHTML = `
+                <input type="text" name="inclusions[]" placeholder="e.g. Island hopping boat tour" class="w-full bg-slate-50 border border-slate-300 rounded-md px-3 py-2 text-xs text-slate-900 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all">
+                <button type="button" onclick="this.parentElement.remove()" class="text-rose-500 hover:text-rose-700"><span class="material-symbols-outlined text-[16px]">delete</span></button>
+            `;
+            container.appendChild(div);
+        }
+
+        function addExclusion() {
+            const container = document.getElementById('exclusions_container');
+            const div = document.createElement('div');
+            div.className = 'flex items-center gap-2';
+            div.innerHTML = `
+                <input type="text" name="exclusions[]" placeholder="e.g. Snorkeling fee - ₱100/person" class="w-full bg-slate-50 border border-slate-300 rounded-md px-3 py-2 text-xs text-slate-900 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all">
+                <button type="button" onclick="this.parentElement.remove()" class="text-rose-500 hover:text-rose-700"><span class="material-symbols-outlined text-[16px]">delete</span></button>
+            `;
+            container.appendChild(div);
+        }
+
+        function addItinerary() {
+            const container = document.getElementById('itinerary_container');
+            const div = document.createElement('div');
+            div.className = 'flex flex-col gap-2 p-3 border border-slate-200 rounded-md bg-slate-50 relative';
+            div.innerHTML = `
+                <button type="button" onclick="this.parentElement.remove()" class="absolute top-2 right-2 text-rose-500 hover:text-rose-700"><span class="material-symbols-outlined text-[16px]">close</span></button>
+                <input type="text" name="itinerary[${itineraryIndex}][title]" placeholder="Step Title (e.g. Puka Beach)" class="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-xs text-slate-900 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all">
+                <input type="text" name="itinerary[${itineraryIndex}][duration]" placeholder="Duration (e.g. 30-40 minutes)" class="w-full bg-white border border-slate-300 rounded-md px-3 py-2 text-xs text-slate-900 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all">
+            `;
+            container.appendChild(div);
+            itineraryIndex++;
         }
     </script>
 @endsection
