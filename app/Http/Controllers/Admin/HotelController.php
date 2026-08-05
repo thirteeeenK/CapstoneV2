@@ -152,10 +152,15 @@ class HotelController extends Controller
         }
 
         if ($request->has('removed_images')) {
+            $normalize = fn ($p) => str_replace('storage/', '', ltrim((string) $p, '/'));
+            $owned = array_map($normalize, $currentImages);
             foreach ($request->removed_images as $removedPath) {
+                if (!in_array($normalize($removedPath), $owned, true)) {
+                    continue;
+                }
                 Storage::disk('public')->delete($removedPath);
-                $currentImages = array_filter($currentImages, function ($img) use ($removedPath) {
-                    return $img !== $removedPath;
+                $currentImages = array_filter($currentImages, function ($img) use ($normalize, $removedPath) {
+                    return $normalize($img) !== $normalize($removedPath);
                 });
             }
         }

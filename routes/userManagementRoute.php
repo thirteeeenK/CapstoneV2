@@ -4,7 +4,7 @@ use App\Http\Controllers\Admin\RegisteredUserController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('admin')->group(function () {
-    Route::middleware(['auth:admin', 'no.cache'])->group(function () {
+    Route::middleware(['auth:admin', 'no.cache', 'throttle:admin'])->group(function () {
         // Registered User Management & Chatbot Moderation Routes
         Route::get('/registered-users', [RegisteredUserController::class, 'index'])->name('admin.users.index');
         Route::get('/registered-users/{id}', [RegisteredUserController::class, 'show'])->name('admin.users.show');

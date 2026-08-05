@@ -146,7 +146,7 @@ class CartController extends Controller
 
                     $bookedCount = \App\Models\BookingItem::where('item_type', 'room')
                         ->where('item_id', $room->id)
-                        ->whereHas('booking', fn($q) => $q->whereIn('status', ['confirmed', 'pending']))
+                        ->whereHas('booking', fn($q) => $q->whereIn('status', \App\Models\Booking::HOLD_STATUSES))
                         ->where(function ($q) use ($checkIn, $checkOut) {
                             $q->whereBetween('check_in_date', [$checkIn, $checkOut->copy()->subDay()])
                               ->orWhereBetween('check_out_date', [$checkIn->copy()->addDay(), $checkOut]);

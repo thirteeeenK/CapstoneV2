@@ -5,7 +5,7 @@ use App\Http\Controllers\AdminAuth\AdminPasswordResetLinkController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('admin')->group(function () {
-    Route::middleware('guest:admin')->group(function () {
+    Route::middleware(['guest:admin', 'throttle:admin'])->group(function () {
         Route::get('/login', [AdminAuth::class, 'create'])->name('admin.login');
         Route::post('/login', [AdminAuth::class, 'store']);
 

@@ -1,0 +1,214 @@
+- generic [active] [ref=e1]:
+  - complementary [ref=e2]:
+    - generic [ref=e4]:
+      - link "SunnyTrips" [ref=e5] [cursor=pointer]:
+        - /url: http://localhost:8000/dashboard
+      - paragraph [ref=e7]:
+        - generic [ref=e9]: Traveler Portal
+    - navigation [ref=e10]:
+      - generic [ref=e11]:
+        - heading "Main Navigation" [level=2] [ref=e12]
+        - generic [ref=e13]:
+          - link "space_dashboard Dashboard" [ref=e14] [cursor=pointer]:
+            - /url: http://localhost:8000/dashboard
+            - generic [ref=e15]: space_dashboard
+            - generic [ref=e16]: Dashboard
+          - link "shopping_basket My Trip Basket" [ref=e17] [cursor=pointer]:
+            - /url: http://localhost:8000/cart
+            - generic [ref=e18]: shopping_basket
+            - generic [ref=e19]: My Trip Basket
+          - link "auto_stories My Bookings" [ref=e20] [cursor=pointer]:
+            - /url: http://localhost:8000/bookings
+            - generic [ref=e21]: auto_stories
+            - generic [ref=e22]: My Bookings
+      - generic [ref=e23]:
+        - heading "Explore Catalog" [level=2] [ref=e24]
+        - generic [ref=e25]:
+          - link "location_on Island Destinations" [ref=e26] [cursor=pointer]:
+            - /url: http://localhost:8000/destinations
+            - generic [ref=e27]: location_on
+            - generic [ref=e28]: Island Destinations
+          - link "hotel Hotels & Sanctuaries" [ref=e29] [cursor=pointer]:
+            - /url: http://localhost:8000/hotels
+            - generic [ref=e30]: hotel
+            - generic [ref=e31]: Hotels & Sanctuaries
+          - link "king_bed Rooms & Stays" [ref=e32] [cursor=pointer]:
+            - /url: http://localhost:8000/rooms
+            - generic [ref=e33]: king_bed
+            - generic [ref=e34]: Rooms & Stays
+          - link "explore Activities & Tours" [ref=e35] [cursor=pointer]:
+            - /url: http://localhost:8000/activities
+            - generic [ref=e36]: explore
+            - generic [ref=e37]: Activities & Tours
+          - link "extension Transfers & Add-ons" [ref=e38] [cursor=pointer]:
+            - /url: http://localhost:8000/addons
+            - generic [ref=e39]: extension
+            - generic [ref=e40]: Transfers & Add-ons
+          - link "card_travel Tour Packages & Promos" [ref=e41] [cursor=pointer]:
+            - /url: http://localhost:8000/packages
+            - generic [ref=e42]: card_travel
+            - generic [ref=e43]: Tour Packages & Promos
+      - generic [ref=e44]:
+        - heading "Personalization" [level=2] [ref=e45]
+        - generic [ref=e46]:
+          - link "tune AI Preferences Quiz" [ref=e47] [cursor=pointer]:
+            - /url: http://localhost:8000/onboarding
+            - generic [ref=e48]: tune
+            - generic [ref=e49]: AI Preferences Quiz
+          - link "manage_accounts Account Profile" [ref=e50] [cursor=pointer]:
+            - /url: http://localhost:8000/profile
+            - generic [ref=e51]: manage_accounts
+            - generic [ref=e52]: Account Profile
+    - generic [ref=e53]:
+      - generic [ref=e54]:
+        - generic [ref=e55]: T
+        - generic [ref=e56]:
+          - generic [ref=e57]: Test User
+          - generic [ref=e58]: test@example.com
+      - button "logout Log Out" [ref=e60] [cursor=pointer]:
+        - generic [ref=e61]: logout
+        - generic [ref=e62]: Log Out
+  - main [ref=e63]:
+    - generic [ref=e65]:
+      - generic [ref=e66]:
+        - paragraph [ref=e67]: SunnyTrips · Traveler Journal
+        - paragraph [ref=e68]: Aug 5, 2026
+      - generic [ref=e85]:
+        - paragraph [ref=e86]: Journal No. ST-2026-NNNJ4
+        - generic [ref=e87]: hourglass_top
+        - heading "Your request is on the captain's desk" [level=1] [ref=e91]
+        - paragraph [ref=e92]:
+          - text: We received your itinerary and are verifying availability right now. No payment is required yet — we'll email
+          - strong [ref=e93]: test@example.com
+          - text: the moment your reservation is approved.
+        - link "home Return to Dashboard" [ref=e95] [cursor=pointer]:
+          - /url: http://localhost:8000/dashboard
+          - generic [ref=e96]: home
+          - generic [ref=e97]: Return to Dashboard
+      - generic [ref=e98]:
+        - generic [ref=e99]:
+          - generic [ref=e100]:
+            - generic [ref=e101]:
+              - heading "luggage Expedition Itinerary" [level=2] [ref=e102]:
+                - generic [ref=e103]: luggage
+                - text: Expedition Itinerary
+              - generic [ref=e105]: 1 item
+            - generic [ref=e107]:
+              - generic [ref=e108]:
+                - generic [ref=e109]: hotel
+                - generic [ref=e111]:
+                  - paragraph [ref=e112]: El Nido Resorts - Pangulasian Island
+                  - heading "El Nido Resorts - Pangulasian Island — Canopy Villa" [level=3] [ref=e113]
+                  - paragraph [ref=e114]: Aug 10, 2026 – Aug 12, 2026 · 2 nights
+              - generic [ref=e115]:
+                - generic [ref=e116]: Qty × 1
+                - text: ₱90,000.00
+          - generic [ref=e117]:
+            - generic [ref=e118]:
+              - heading "groups Ship Manifest" [level=2] [ref=e119]:
+                - generic [ref=e120]: groups
+                - text: Ship Manifest
+              - generic [ref=e122]: 1 guest
+            - generic [ref=e124]:
+              - generic [ref=e125]:
+                - generic [ref=e126]: "01"
+                - generic [ref=e127]:
+                  - heading "Test User" [level=4] [ref=e128]
+                  - paragraph [ref=e129]: Lead Traveler
+              - generic [ref=e130]: Adult
+          - generic [ref=e131]:
+            - heading "explore The Journey Ahead" [level=2] [ref=e132]:
+              - generic [ref=e133]: explore
+              - text: The Journey Ahead
+            - list [ref=e135]:
+              - listitem [ref=e136]:
+                - generic [ref=e137]:
+                  - generic [ref=e138]: check
+                  - generic [ref=e141]:
+                    - paragraph [ref=e142]: Request received
+                    - paragraph [ref=e143]: Your journal landed on our desk.
+              - listitem [ref=e144]:
+                - generic [ref=e145]:
+                  - generic [ref=e146]: schedule
+                  - generic [ref=e151]:
+                    - paragraph [ref=e152]: Availability check
+                    - paragraph [ref=e153]: Crew verifies dates, rooms & tours.
+              - listitem [ref=e154]:
+                - generic [ref=e155]:
+                  - generic [ref=e156]: circle
+                  - generic [ref=e159]:
+                    - paragraph [ref=e160]: Approved & notified
+                    - paragraph [ref=e161]: You'll get an email with your payment link.
+              - listitem [ref=e162]:
+                - generic [ref=e163]:
+                  - generic [ref=e164]: circle
+                  - generic [ref=e167]:
+                    - paragraph [ref=e168]: Pay to confirm
+                    - paragraph [ref=e169]: Settle the balance within 48 hours.
+        - generic [ref=e170]:
+          - generic [ref=e171]:
+            - heading "menu_book Captain's Ledger" [level=2] [ref=e172]:
+              - generic [ref=e173]: menu_book
+              - text: Captain's Ledger
+            - generic [ref=e175]:
+              - generic [ref=e176]:
+                - term [ref=e177]: Status
+                - definition [ref=e178]:
+                  - generic [ref=e179]: Pending
+              - generic [ref=e181]:
+                - term [ref=e182]: Payment
+                - definition [ref=e183]: unpaid
+              - generic [ref=e184]:
+                - term [ref=e185]: Submitted
+                - definition [ref=e186]: Aug 5, 2026
+          - generic [ref=e187]:
+            - heading "sailing Lead Traveler" [level=2] [ref=e188]:
+              - generic [ref=e189]: sailing
+              - text: Lead Traveler
+            - paragraph [ref=e191]: Test User
+            - generic [ref=e192]:
+              - paragraph [ref=e193]:
+                - generic [ref=e194]: mail
+                - generic [ref=e195]: test@example.com
+              - paragraph [ref=e196]:
+                - generic [ref=e197]: call
+                - text: "09171234567"
+          - generic [ref=e198]:
+            - heading "receipt_long Settlement" [level=2] [ref=e199]:
+              - generic [ref=e200]: receipt_long
+              - text: Settlement
+            - generic [ref=e202]:
+              - generic [ref=e203]:
+                - term [ref=e204]: Subtotal
+                - definition [ref=e205]: ₱90,000.00
+              - generic [ref=e206]:
+                - term [ref=e207]: Total due
+                - definition [ref=e208]: ₱90,000.00
+          - generic [ref=e209]:
+            - heading "fact_check What we're checking" [level=2] [ref=e210]:
+              - generic [ref=e211]: fact_check
+              - text: What we're checking
+            - list [ref=e213]:
+              - listitem [ref=e214]:
+                - generic [ref=e215]: calendar_month
+                - generic [ref=e216]: Dates are open for every room, tour & add-on in your journal.
+              - listitem [ref=e217]:
+                - generic [ref=e218]: scale
+                - generic [ref=e219]: Pricing matches our current rates, promos & passenger rules.
+              - listitem [ref=e220]:
+                - generic [ref=e221]: mark_email_read
+                - generic [ref=e222]:
+                  - text: We'll email
+                  - strong [ref=e223]: test@example.com
+                  - text: the moment it's approved — usually within the day.
+      - generic [ref=e224]:
+        - generic [ref=e225]:
+          - generic [ref=e226]:
+            - generic [ref=e227]: event_busy
+            - generic [ref=e229]:
+              - heading "Cancel this booking?" [level=3] [ref=e230]
+              - paragraph [ref=e231]: No payment has been taken — cancelling releases your reserved dates immediately.
+          - button "close Cancel Booking" [ref=e233] [cursor=pointer]:
+            - generic [ref=e234]: close
+            - generic [ref=e235]: Cancel Booking
+        - paragraph [ref=e236]: SunnyTrips · Curated island escapes, verified before payment

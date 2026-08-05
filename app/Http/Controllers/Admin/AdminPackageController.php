@@ -75,7 +75,7 @@ class AdminPackageController extends Controller
             'valid_to' => 'nullable|date|after_or_equal:valid_from',
             'inclusions_text' => 'nullable|string',
             'image' => 'nullable|image|max:4096',
-            'image_url' => 'nullable|string|max:500',
+            'image_url' => 'nullable|url|max:500',
             'is_active' => 'required|boolean',
         ]);
 
@@ -156,7 +156,7 @@ class AdminPackageController extends Controller
             'valid_to' => 'nullable|date|after_or_equal:valid_from',
             'inclusions_text' => 'nullable|string',
             'image' => 'nullable|image|max:4096',
-            'image_url' => 'nullable|string|max:500',
+            'image_url' => 'nullable|url|max:500',
             'is_active' => 'required|boolean',
         ]);
 

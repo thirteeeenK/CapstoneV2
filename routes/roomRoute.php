@@ -9,7 +9,7 @@ Route::get('/rooms', [RoomShowController::class, 'index'])->name('rooms.index');
 Route::get('/rooms/{id}/availability', [RoomAvailabilityController::class, 'check'])->name('rooms.availability');
 
 Route::prefix('admin')->group(function () {
-    Route::middleware(['auth:admin', 'no.cache'])->group(function () {
+    Route::middleware(['auth:admin', 'no.cache', 'throttle:admin'])->group(function () {
         // Room Listing per Hotel
         Route::get('/hotels/{hotelId}/rooms', [RoomController::class, 'renderRoomsPerHotel'])->name('manage-rooms');
 

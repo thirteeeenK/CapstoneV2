@@ -54,7 +54,7 @@
         </div>
 
         {{-- Main 2-Column Grid --}}
-        <form @submit.prevent="submitCheckout()" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <form id="checkoutForm" @submit.prevent="submitCheckout()" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             @csrf
 
             {{-- LEFT COLUMN: Forms (2/3) --}}
@@ -68,83 +68,32 @@
                     :lead-email="Auth::user()->email ?? ''" 
                     :lead-phone="Auth::user()->phone_number ?? (Auth::user()->phone ?? '')" />
 
-                {{-- 2. Payment Method Selection --}}
+                {{-- 2. How Booking Confirmation Works --}}
                 <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-5">
                     <div class="flex items-center gap-3 border-b border-slate-100 pb-4">
-                        <div class="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center font-bold">
-                            <span class="material-symbols-outlined text-xl">payments</span>
+                        <div class="w-10 h-10 rounded-2xl bg-sky-50 text-sky-600 border border-sky-200 flex items-center justify-center font-bold">
+                            <span class="material-symbols-outlined text-xl">fact_check</span>
                         </div>
                         <div>
-                            <h3 class="text-base sm:text-lg font-bold text-slate-900 font-headline">Payment Method</h3>
-                            <p class="text-xs text-slate-500">Select how you would like to settle your travel booking.</p>
+                            <h3 class="text-base sm:text-lg font-bold text-slate-900 font-headline">How Booking Works</h3>
+                            <p class="text-xs text-slate-500">Your reservation is verified before any payment is taken.</p>
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {{-- GCash --}}
-                        <label class="relative flex items-center p-4 rounded-2xl border cursor-pointer transition-all"
-                               :class="paymentMethod === 'GCash' ? 'border-sky-500 bg-sky-50/50 ring-2 ring-sky-500/20' : 'border-slate-200 bg-white hover:bg-slate-50'">
-                            <input type="radio" name="payment_method" value="GCash" x-model="paymentMethod" class="sr-only">
-                            <div class="flex items-center gap-3 w-full">
-                                <div class="w-10 h-10 rounded-xl bg-blue-600 text-white font-black text-xs flex items-center justify-center shrink-0">
-                                    G
-                                </div>
-                                <div class="flex-1">
-                                    <h4 class="text-xs font-bold text-slate-900">GCash E-Wallet</h4>
-                                    <p class="text-[11px] text-slate-500">Instant QR payment via GCash app</p>
-                                </div>
-                                <span class="material-symbols-outlined text-sky-600" x-show="paymentMethod === 'GCash'">check_circle</span>
-                            </div>
-                        </label>
-
-                        {{-- Maya --}}
-                        <label class="relative flex items-center p-4 rounded-2xl border cursor-pointer transition-all"
-                               :class="paymentMethod === 'Maya' ? 'border-sky-500 bg-sky-50/50 ring-2 ring-sky-500/20' : 'border-slate-200 bg-white hover:bg-slate-50'">
-                            <input type="radio" name="payment_method" value="Maya" x-model="paymentMethod" class="sr-only">
-                            <div class="flex items-center gap-3 w-full">
-                                <div class="w-10 h-10 rounded-xl bg-emerald-600 text-white font-black text-xs flex items-center justify-center shrink-0">
-                                    M
-                                </div>
-                                <div class="flex-1">
-                                    <h4 class="text-xs font-bold text-slate-900">Maya / Smart Money</h4>
-                                    <p class="text-[11px] text-slate-500">Instant QR & card payments</p>
-                                </div>
-                                <span class="material-symbols-outlined text-sky-600" x-show="paymentMethod === 'Maya'">check_circle</span>
-                            </div>
-                        </label>
-
-                        {{-- Credit Card --}}
-                        <label class="relative flex items-center p-4 rounded-2xl border cursor-pointer transition-all"
-                               :class="paymentMethod === 'Credit Card' ? 'border-sky-500 bg-sky-50/50 ring-2 ring-sky-500/20' : 'border-slate-200 bg-white hover:bg-slate-50'">
-                            <input type="radio" name="payment_method" value="Credit Card" x-model="paymentMethod" class="sr-only">
-                            <div class="flex items-center gap-3 w-full">
-                                <div class="w-10 h-10 rounded-xl bg-slate-900 text-white font-black text-xs flex items-center justify-center shrink-0">
-                                    <span class="material-symbols-outlined text-lg">credit_card</span>
-                                </div>
-                                <div class="flex-1">
-                                    <h4 class="text-xs font-bold text-slate-900">Credit / Debit Card</h4>
-                                    <p class="text-[11px] text-slate-500">Visa, Mastercard, JCB</p>
-                                </div>
-                                <span class="material-symbols-outlined text-sky-600" x-show="paymentMethod === 'Credit Card'">check_circle</span>
-                            </div>
-                        </label>
-
-                        {{-- Pay at Hotel --}}
-                        <label class="relative flex items-center p-4 rounded-2xl border cursor-pointer transition-all"
-                               :class="paymentMethod === 'Pay at Hotel' ? 'border-sky-500 bg-sky-50/50 ring-2 ring-sky-500/20' : 'border-slate-200 bg-white hover:bg-slate-50'">
-                            <input type="radio" name="payment_method" value="Pay at Hotel" x-model="paymentMethod" class="sr-only">
-                            <div class="flex items-center gap-3 w-full">
-                                <div class="w-10 h-10 rounded-xl bg-amber-500 text-slate-950 font-black text-xs flex items-center justify-center shrink-0">
-                                    <span class="material-symbols-outlined text-lg">storefront</span>
-                                </div>
-                                <div class="flex-1">
-                                    <h4 class="text-xs font-bold text-slate-900">Pay Upon Check-in</h4>
-                                    <p class="text-[11px] text-slate-500">Reserve now, pay at venue frontdesk</p>
-                                </div>
-                                <span class="material-symbols-outlined text-sky-600" x-show="paymentMethod === 'Pay at Hotel'">check_circle</span>
-                            </div>
-                        </label>
-                    </div>
+                    <ol class="space-y-3">
+                        <li class="flex items-start gap-3">
+                            <span class="w-6 h-6 rounded-full bg-sky-600 text-white text-[11px] font-black flex items-center justify-center shrink-0 mt-0.5">1</span>
+                            <p class="text-xs text-slate-600 font-medium"><strong class="text-slate-900">Submit your request.</strong> We receive your itinerary and hold your selected items.</p>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="w-6 h-6 rounded-full bg-sky-600 text-white text-[11px] font-black flex items-center justify-center shrink-0 mt-0.5">2</span>
+                            <p class="text-xs text-slate-600 font-medium"><strong class="text-slate-900">Availability check.</strong> Our team verifies rooms, activities, and packages for your dates.</p>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="w-6 h-6 rounded-full bg-sky-600 text-white text-[11px] font-black flex items-center justify-center shrink-0 mt-0.5">3</span>
+                            <p class="text-xs text-slate-600 font-medium"><strong class="text-slate-900">Pay to confirm.</strong> Once approved, you get an email with a secure payment link — pay within <strong class="text-slate-900">48 hours</strong> to lock in your booking.</p>
+                        </li>
+                    </ol>
                 </div>
 
             </div>
@@ -232,7 +181,7 @@
                             class="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-sky-600 to-sky-700 text-white font-extrabold text-sm transition-all flex items-center justify-center gap-2">
                         <span class="material-symbols-outlined" x-show="!isSubmitting">verified</span>
                         <span class="material-symbols-outlined animate-spin" x-show="isSubmitting" x-cloak>progress_activity</span>
-                        <span x-text="isSubmitting ? 'Processing Booking Order...' : 'Confirm & Place Booking Order'"></span>
+                        <span x-text="isSubmitting ? 'Submitting Booking Request...' : 'Submit Booking Request'"></span>
                     </button>
 
                     <p class="text-[11px] text-center text-slate-400 font-medium">
@@ -247,7 +196,6 @@
     <script>
     function checkoutEngine(baseSubtotal, roomsMetadata) {
         return {
-            paymentMethod: 'GCash',
             isSubmitting: false,
             baseSubtotal: baseSubtotal || 0,
             roomsMetadata: roomsMetadata || [],
@@ -320,7 +268,7 @@
 
             async submitCheckout() {
                 this.isSubmitting = true;
-                const form = document.querySelector('form');
+                const form = document.getElementById('checkoutForm');
                 const formData = new FormData(form);
 
                 try {
@@ -332,6 +280,11 @@
                         },
                         body: formData
                     });
+
+                    if (res.redirected) {
+                        window.location.href = res.url;
+                        return;
+                    }
 
                     const data = await res.json();
                     if (data.success) {

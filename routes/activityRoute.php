@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/activities', [ActivityShowController::class, 'index'])->name('activities.index');
 
 Route::prefix('admin')->group(function () {
-    Route::middleware(['auth:admin', 'no.cache'])->group(function () {
+    Route::middleware(['auth:admin', 'no.cache', 'throttle:admin'])->group(function () {
         // Activity & Tour Management
         Route::get('/activities', [ActivityController::class, 'index'])->name('admin.activities.index');
         Route::get('/activities/create', [ActivityController::class, 'create'])->name('admin.activities.create');

@@ -15,7 +15,7 @@
                 ['route' => 'admin.reports.*', 'icon' => 'analytics', 'label' => 'Generate Reports', 'href' => '#'],
             ],
             'Operations' => [
-                ['route' => 'admin.bookings.*', 'icon' => 'calendar_month', 'label' => 'Bookings', 'href' => '#'],
+                ['route' => 'admin.bookings.*', 'icon' => 'calendar_month', 'label' => 'Bookings', 'href' => route('admin.bookings.index')],
                 ['route' => 'admin.users.*', 'icon' => 'group', 'label' => 'Registered Users', 'href' => route('admin.users.index')],
                 ['route' => 'admin.inventory.*', 'icon' => 'inventory', 'label' => 'Manage Inventory', 'href' => Route::has('admin.inventory.index') ? route('admin.inventory.index') : '#'],
                 ['route' => 'admin.passenger-rules.*', 'icon' => 'tune', 'label' => 'Passenger Rules & Discounts', 'href' => route('admin.passenger-rules.index')],

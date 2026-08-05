@@ -58,7 +58,26 @@ class AdminAuth extends Controller
 
         $request->session()->regenerate();
 
+        $redirect = $request->input('redirect');
+        if (is_string($redirect) && $this->isSafeLocalRedirect($redirect)) {
+            return redirect($redirect);
+        }
+
         return redirect()->intended(route('admin.dashboard', absolute: false));
+    }
+
+    /**
+     * Only allow redirects that point back into this application's own host.
+     */
+    protected function isSafeLocalRedirect(string $url): bool
+    {
+        if (filter_var($url, FILTER_VALIDATE_URL) === false) {
+            return false;
+        }
+
+        $base = url('/');
+
+        return $url === $base || Str::startsWith($url, $base . '/');
     }
 
     /**

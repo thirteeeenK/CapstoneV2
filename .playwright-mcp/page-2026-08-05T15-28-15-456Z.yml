@@ -1,0 +1,184 @@
+- generic [active] [ref=f8e1]:
+  - complementary [ref=f8e2]:
+    - generic [ref=f8e4]:
+      - link "SunnyTrips" [ref=f8e5] [cursor=pointer]:
+        - /url: http://localhost:8000/dashboard
+      - paragraph [ref=f8e7]:
+        - generic [ref=f8e9]: Traveler Portal
+    - navigation [ref=f8e10]:
+      - generic [ref=f8e11]:
+        - heading "Main Navigation" [level=2] [ref=f8e12]
+        - generic [ref=f8e13]:
+          - link "space_dashboard Dashboard" [ref=f8e14] [cursor=pointer]:
+            - /url: http://localhost:8000/dashboard
+            - generic [ref=f8e15]: space_dashboard
+            - generic [ref=f8e16]: Dashboard
+          - link "shopping_basket My Trip Basket" [ref=f8e17] [cursor=pointer]:
+            - /url: http://localhost:8000/cart
+            - generic [ref=f8e18]: shopping_basket
+            - generic [ref=f8e19]: My Trip Basket
+      - generic [ref=f8e20]:
+        - heading "Explore Catalog" [level=2] [ref=f8e21]
+        - generic [ref=f8e22]:
+          - link "location_on Island Destinations" [ref=f8e23] [cursor=pointer]:
+            - /url: http://localhost:8000/destinations
+            - generic [ref=f8e24]: location_on
+            - generic [ref=f8e25]: Island Destinations
+          - link "hotel Hotels & Sanctuaries" [ref=f8e26] [cursor=pointer]:
+            - /url: http://localhost:8000/hotels
+            - generic [ref=f8e27]: hotel
+            - generic [ref=f8e28]: Hotels & Sanctuaries
+          - link "king_bed Rooms & Stays" [ref=f8e29] [cursor=pointer]:
+            - /url: http://localhost:8000/rooms
+            - generic [ref=f8e30]: king_bed
+            - generic [ref=f8e31]: Rooms & Stays
+          - link "explore Activities & Tours" [ref=f8e32] [cursor=pointer]:
+            - /url: http://localhost:8000/activities
+            - generic [ref=f8e33]: explore
+            - generic [ref=f8e34]: Activities & Tours
+          - link "extension Transfers & Add-ons" [ref=f8e35] [cursor=pointer]:
+            - /url: http://localhost:8000/addons
+            - generic [ref=f8e36]: extension
+            - generic [ref=f8e37]: Transfers & Add-ons
+          - link "card_travel Tour Packages & Promos" [ref=f8e38] [cursor=pointer]:
+            - /url: http://localhost:8000/packages
+            - generic [ref=f8e39]: card_travel
+            - generic [ref=f8e40]: Tour Packages & Promos
+      - generic [ref=f8e41]:
+        - heading "Personalization" [level=2] [ref=f8e42]
+        - generic [ref=f8e43]:
+          - link "tune AI Preferences Quiz" [ref=f8e44] [cursor=pointer]:
+            - /url: http://localhost:8000/onboarding
+            - generic [ref=f8e45]: tune
+            - generic [ref=f8e46]: AI Preferences Quiz
+          - link "manage_accounts Account Profile" [ref=f8e47] [cursor=pointer]:
+            - /url: http://localhost:8000/profile
+            - generic [ref=f8e48]: manage_accounts
+            - generic [ref=f8e49]: Account Profile
+    - generic [ref=f8e50]:
+      - generic [ref=f8e51]:
+        - generic [ref=f8e52]: T
+        - generic [ref=f8e53]:
+          - generic [ref=f8e54]: Test User
+          - generic [ref=f8e55]: test@example.com
+      - button "logout Log Out" [ref=f8e57] [cursor=pointer]:
+        - generic [ref=f8e58]: logout
+        - generic [ref=f8e59]: Log Out
+  - main [ref=f8e60]:
+    - generic [ref=f8e61]:
+      - generic [ref=f8e62]:
+        - generic [ref=f8e63]:
+          - generic [ref=f8e64]:
+            - link "Home" [ref=f8e65] [cursor=pointer]:
+              - /url: http://localhost:8000/dashboard
+            - generic [ref=f8e66]: /
+            - link "Trip Basket" [ref=f8e67] [cursor=pointer]:
+              - /url: http://localhost:8000/cart
+            - generic [ref=f8e68]: /
+            - generic [ref=f8e69]: Final Checkout
+          - heading "Finalize Travel Booking" [level=1] [ref=f8e70]
+        - generic [ref=f8e71]:
+          - generic [ref=f8e72]: lock
+          - generic [ref=f8e73]: Secure 256-Bit SSL Checkout
+      - generic [ref=f8e74]:
+        - generic [ref=f8e75]:
+          - generic [ref=f8e76]:
+            - generic [ref=f8e77]:
+              - generic [ref=f8e78]:
+                - generic [ref=f8e79]: contact_mail
+                - generic [ref=f8e81]:
+                  - heading "Lead Traveler Information" [level=3] [ref=f8e82]
+                  - paragraph [ref=f8e83]: Primary contact for booking vouchers, status updates, and vouchers.
+              - generic [ref=f8e84]:
+                - generic [ref=f8e85]:
+                  - generic [ref=f8e86]: Full Name *
+                  - textbox "e.g. Juan Dela Cruz" [ref=f8e87]: Test User
+                - generic [ref=f8e88]:
+                  - generic [ref=f8e89]: Email Address *
+                  - textbox "e.g. juan@example.com" [ref=f8e90]: test@example.com
+                - generic [ref=f8e91]:
+                  - generic [ref=f8e92]: Mobile Phone Number *
+                  - textbox "e.g. 0917 123 4567" [ref=f8e93]
+                - generic [ref=f8e94]:
+                  - generic [ref=f8e95]: Special Instructions / Requests
+                  - textbox "e.g. Non-smoking room, extra towels, early check-in" [ref=f8e96]
+            - generic [ref=f8e97]:
+              - generic [ref=f8e99]:
+                - generic [ref=f8e100]: badge
+                - generic [ref=f8e102]:
+                  - heading "Passenger & Guest Manifest" [level=3] [ref=f8e103]
+                  - paragraph [ref=f8e104]: Provide full names and passenger categories for all guests joining this travel booking.
+              - generic [ref=f8e106]:
+                - generic [ref=f8e108]:
+                  - generic [ref=f8e109]: person
+                  - generic [ref=f8e110]: Lead Traveler
+                - generic [ref=f8e111]:
+                  - generic [ref=f8e112]:
+                    - generic [ref=f8e113]: Full Name *
+                    - textbox "Full Name as in ID" [ref=f8e114]: Test User
+                  - generic [ref=f8e115]:
+                    - generic [ref=f8e116]: Passenger Category *
+                    - combobox [ref=f8e117]:
+                      - option "Regular Adult" [selected]
+                      - option "Student (-₱50 Discount)"
+                      - option "Senior Citizen (-₱50 Discount)"
+                      - option "PWD (Person with Disability) (-₱50 Discount)"
+                      - option "Child (3-17) (-₱50 Discount)"
+                      - option "Infant (0-2) (-₱50 Discount)"
+                      - option "Foreign Tourist (+₱150 Surcharge)"
+                  - generic [ref=f8e118]:
+                    - generic [ref=f8e119]: Dietary / Notes
+                    - 'textbox "e.g. Senior ID #, Vegetarian" [ref=f8e120]': Lead Traveler
+              - generic [ref=f8e121]:
+                - button "person_add + Add Accompanying Guest" [ref=f8e122] [cursor=pointer]:
+                  - generic [ref=f8e123]: person_add
+                  - generic [ref=f8e124]: + Add Accompanying Guest
+                - generic [ref=f8e125]:
+                  - text: "Max room capacity:"
+                  - strong [ref=f8e126]: 4 Guests
+          - generic [ref=f8e127]:
+            - generic [ref=f8e128]:
+              - generic [ref=f8e129]: fact_check
+              - generic [ref=f8e131]:
+                - heading "How Booking Works" [level=3] [ref=f8e132]
+                - paragraph [ref=f8e133]: Your reservation is verified before any payment is taken.
+            - list [ref=f8e134]:
+              - listitem [ref=f8e135]:
+                - generic [ref=f8e136]: "1"
+                - paragraph [ref=f8e137]:
+                  - strong [ref=f8e138]: Submit your request.
+                  - text: We receive your itinerary and hold your selected items.
+              - listitem [ref=f8e139]:
+                - generic [ref=f8e140]: "2"
+                - paragraph [ref=f8e141]:
+                  - strong [ref=f8e142]: Availability check.
+                  - text: Our team verifies rooms, activities, and packages for your dates.
+              - listitem [ref=f8e143]:
+                - generic [ref=f8e144]: "3"
+                - paragraph [ref=f8e145]:
+                  - strong [ref=f8e146]: Pay to confirm.
+                  - text: Once approved, you get an email with a secure payment link — pay within
+                  - strong [ref=f8e147]: 48 hours
+                  - text: to lock in your booking.
+        - generic [ref=f8e149]:
+          - heading "receipt_long Itinerary Order Breakdown" [level=3] [ref=f8e150]:
+            - generic [ref=f8e151]: receipt_long
+            - generic [ref=f8e152]: Itinerary Order Breakdown
+          - generic [ref=f8e154]:
+            - generic [ref=f8e155]:
+              - img "El Nido Resorts - Pangulasian Island — Canopy Villa" [ref=f8e156]
+              - generic [ref=f8e157]:
+                - heading "El Nido Resorts - Pangulasian Island — Canopy Villa" [level=4] [ref=f8e158]
+                - paragraph [ref=f8e159]: Aug 10 - Aug 12, 2026 (2 nights)
+            - generic [ref=f8e160]: ₱90,000.00
+          - generic [ref=f8e161]:
+            - generic [ref=f8e162]:
+              - generic [ref=f8e163]: Subtotal
+              - generic [ref=f8e164]: ₱90,000.00
+            - generic [ref=f8e165]:
+              - generic [ref=f8e166]: Total Net Amount
+              - generic [ref=f8e167]: ₱90,000.00
+          - button "verified Submit Booking Request" [ref=f8e168] [cursor=pointer]:
+            - generic [ref=f8e169]: verified
+            - generic [ref=f8e170]: Submit Booking Request
+          - paragraph [ref=f8e171]: By confirming, you agree to SunnyTrips terms, room cancellation policies, and traveler guidelines.

@@ -1,0 +1,242 @@
+- generic [active] [ref=f4e1]:
+  - complementary [ref=f4e2]:
+    - generic [ref=f4e4]:
+      - link "SunnyTrips" [ref=f4e5] [cursor=pointer]:
+        - /url: http://localhost:8000/dashboard
+      - paragraph [ref=f4e7]:
+        - generic [ref=f4e9]: Traveler Portal
+    - navigation [ref=f4e10]:
+      - generic [ref=f4e11]:
+        - heading "Main Navigation" [level=2] [ref=f4e12]
+        - generic [ref=f4e13]:
+          - link "space_dashboard Dashboard" [ref=f4e14] [cursor=pointer]:
+            - /url: http://localhost:8000/dashboard
+            - generic [ref=f4e15]: space_dashboard
+            - generic [ref=f4e16]: Dashboard
+          - link "shopping_basket My Trip Basket" [ref=f4e17] [cursor=pointer]:
+            - /url: http://localhost:8000/cart
+            - generic [ref=f4e18]: shopping_basket
+            - generic [ref=f4e19]: My Trip Basket
+      - generic [ref=f4e20]:
+        - heading "Explore Catalog" [level=2] [ref=f4e21]
+        - generic [ref=f4e22]:
+          - link "location_on Island Destinations" [ref=f4e23] [cursor=pointer]:
+            - /url: http://localhost:8000/destinations
+            - generic [ref=f4e24]: location_on
+            - generic [ref=f4e25]: Island Destinations
+          - link "hotel Hotels & Sanctuaries" [ref=f4e26] [cursor=pointer]:
+            - /url: http://localhost:8000/hotels
+            - generic [ref=f4e27]: hotel
+            - generic [ref=f4e28]: Hotels & Sanctuaries
+          - link "king_bed Rooms & Stays" [ref=f4e29] [cursor=pointer]:
+            - /url: http://localhost:8000/rooms
+            - generic [ref=f4e30]: king_bed
+            - generic [ref=f4e31]: Rooms & Stays
+          - link "explore Activities & Tours" [ref=f4e32] [cursor=pointer]:
+            - /url: http://localhost:8000/activities
+            - generic [ref=f4e33]: explore
+            - generic [ref=f4e34]: Activities & Tours
+          - link "extension Transfers & Add-ons" [ref=f4e35] [cursor=pointer]:
+            - /url: http://localhost:8000/addons
+            - generic [ref=f4e36]: extension
+            - generic [ref=f4e37]: Transfers & Add-ons
+          - link "card_travel Tour Packages & Promos" [ref=f4e38] [cursor=pointer]:
+            - /url: http://localhost:8000/packages
+            - generic [ref=f4e39]: card_travel
+            - generic [ref=f4e40]: Tour Packages & Promos
+      - generic [ref=f4e41]:
+        - heading "Personalization" [level=2] [ref=f4e42]
+        - generic [ref=f4e43]:
+          - link "tune AI Preferences Quiz" [ref=f4e44] [cursor=pointer]:
+            - /url: http://localhost:8000/onboarding
+            - generic [ref=f4e45]: tune
+            - generic [ref=f4e46]: AI Preferences Quiz
+          - link "manage_accounts Account Profile" [ref=f4e47] [cursor=pointer]:
+            - /url: http://localhost:8000/profile
+            - generic [ref=f4e48]: manage_accounts
+            - generic [ref=f4e49]: Account Profile
+    - generic [ref=f4e50]:
+      - generic [ref=f4e51]:
+        - generic [ref=f4e52]: T
+        - generic [ref=f4e53]:
+          - generic [ref=f4e54]: Test User
+          - generic [ref=f4e55]: test@example.com
+      - button "logout Log Out" [ref=f4e57] [cursor=pointer]:
+        - generic [ref=f4e58]: logout
+        - generic [ref=f4e59]: Log Out
+  - main [ref=f4e60]:
+    - generic [ref=f4e62]:
+      - generic [ref=f4e64]:
+        - generic [ref=f4e65]:
+          - generic [ref=f4e66]:
+            - generic [ref=f4e67]: verified
+            - generic [ref=f4e68]: Traveler Account
+          - generic [ref=f4e69]:
+            - generic [ref=f4e70]: travel_explore
+            - generic [ref=f4e71]: Popular Highlights Active
+        - heading "Welcome back, Test User!" [level=1] [ref=f4e72]
+        - paragraph [ref=f4e73]: Logged in as test@example.com. Explore your island recommendations below.
+      - generic [ref=f4e74]:
+        - generic [ref=f4e75]:
+          - generic [ref=f4e76]:
+            - generic [ref=f4e77]:
+              - button "auto_awesome AI Recommendations" [ref=f4e78] [cursor=pointer]:
+                - generic [ref=f4e79]: auto_awesome
+                - generic [ref=f4e80]: AI Recommendations
+              - button "travel_explore Default Listings" [ref=f4e81] [cursor=pointer]:
+                - generic [ref=f4e82]: travel_explore
+                - generic [ref=f4e83]: Default Listings
+              - button "card_travel Tour Packages" [ref=f4e84] [cursor=pointer]:
+                - generic [ref=f4e85]: card_travel
+                - generic [ref=f4e86]: Tour Packages
+            - paragraph [ref=f4e87]: Popular island highlights across top destinations.
+          - generic [ref=f4e88]:
+            - link "tune Personalize My Profile" [ref=f4e89] [cursor=pointer]:
+              - /url: http://localhost:8000/onboarding/reset
+              - generic [ref=f4e90]: tune
+              - generic [ref=f4e91]: Personalize My Profile
+            - generic [ref=f4e92]:
+              - generic [ref=f4e93]:
+                - generic [ref=f4e94]: filter_alt
+                - generic [ref=f4e95]: "Sanctuary:"
+              - button "location_on Boracay" [ref=f4e96] [cursor=pointer]:
+                - generic [ref=f4e97]: location_on
+                - generic [ref=f4e98]: Boracay
+              - button "location_on El Nido" [ref=f4e99] [cursor=pointer]:
+                - generic [ref=f4e100]: location_on
+                - generic [ref=f4e101]: El Nido
+        - generic [ref=f4e103]:
+          - generic [ref=f4e104]:
+            - generic [ref=f4e105]:
+              - generic [ref=f4e106]:
+                - generic [ref=f4e107]: hotel
+                - heading "Popular Hotels in Boracay" [level=3] [ref=f4e108]
+              - generic [ref=f4e109]: Popular Stays
+            - generic [ref=f4e110]:
+              - link "Henann Palm Beach Resort High End Luxury Hotels Henann Palm Beach Resort Henann Palm Beach is located in Station 2, right along White Beach, offering direct beachfront access. The resort features a stunning beachfront infinity pool, swim-up bar, and spacious modern rooms. It's an ideal spot for travelers looking to enjoy luxury and ocean views in the heart of Boracay. Explore Sanctuary arrow_forward" [ref=f4e111] [cursor=pointer]:
+                - /url: http://localhost:8000/hotels/3
+                - generic [ref=f4e112]:
+                  - generic [ref=f4e113]:
+                    - img "Henann Palm Beach Resort" [ref=f4e114]
+                    - generic [ref=f4e116]: High End Luxury Hotels
+                  - generic [ref=f4e117]:
+                    - heading "Henann Palm Beach Resort" [level=4] [ref=f4e118]
+                    - paragraph [ref=f4e119]: Henann Palm Beach is located in Station 2, right along White Beach, offering direct beachfront access. The resort features a stunning beachfront infinity pool, swim-up bar, and spacious modern rooms. It's an ideal spot for travelers looking to enjoy luxury and ocean views in the heart of Boracay.
+                - generic [ref=f4e121]:
+                  - generic [ref=f4e122]: Explore Sanctuary
+                  - generic [ref=f4e123]: arrow_forward
+              - link "Canyon Hotels & Resorts Boracay High End Luxury Hotels Canyon Hotels & Resorts Boracay Canyon is nestled in Station 2, just a short walk from White Beach and D'Mall. This boutique hotel offers cozy, well-appointed rooms and a peaceful atmosphere. With its quiet location yet easy access to shops and restaurants, it's great for couples and families seeking a balance of relaxation and convenience. Explore Sanctuary arrow_forward" [ref=f4e124] [cursor=pointer]:
+                - /url: http://localhost:8000/hotels/4
+                - generic [ref=f4e125]:
+                  - generic [ref=f4e126]:
+                    - img "Canyon Hotels & Resorts Boracay" [ref=f4e127]
+                    - generic [ref=f4e129]: High End Luxury Hotels
+                  - generic [ref=f4e130]:
+                    - heading "Canyon Hotels & Resorts Boracay" [level=4] [ref=f4e131]
+                    - paragraph [ref=f4e132]: Canyon is nestled in Station 2, just a short walk from White Beach and D'Mall. This boutique hotel offers cozy, well-appointed rooms and a peaceful atmosphere. With its quiet location yet easy access to shops and restaurants, it's great for couples and families seeking a balance of relaxation and convenience.
+                - generic [ref=f4e134]:
+                  - generic [ref=f4e135]: Explore Sanctuary
+                  - generic [ref=f4e136]: arrow_forward
+              - link "Boracay Ocean Club Beach Resort High End Luxury Hotels Boracay Ocean Club Beach Resort Boracay Ocean Club is located in Station 3, right along White Beach with direct beachfront access. The resort features a beachfront pool, spa services, and dive center, making it ideal for adventure seekers and beach lovers. With ocean-view rooms and a quieter location, it's perfect for travelers who want a more laid-back Boracay experience. Explore Sanctuary arrow_forward" [ref=f4e137] [cursor=pointer]:
+                - /url: http://localhost:8000/hotels/5
+                - generic [ref=f4e138]:
+                  - generic [ref=f4e139]:
+                    - img "Boracay Ocean Club Beach Resort" [ref=f4e140]
+                    - generic [ref=f4e142]: High End Luxury Hotels
+                  - generic [ref=f4e143]:
+                    - heading "Boracay Ocean Club Beach Resort" [level=4] [ref=f4e144]
+                    - paragraph [ref=f4e145]: Boracay Ocean Club is located in Station 3, right along White Beach with direct beachfront access. The resort features a beachfront pool, spa services, and dive center, making it ideal for adventure seekers and beach lovers. With ocean-view rooms and a quieter location, it's perfect for travelers who want a more laid-back Boracay experience.
+                - generic [ref=f4e147]:
+                  - generic [ref=f4e148]: Explore Sanctuary
+                  - generic [ref=f4e149]: arrow_forward
+              - link "Henann Garden Resort High End Luxury Hotels Henann Garden Resort Henann Garden is located in Station 2, just a 2-minute walk from White Beach and close to D'Mall. It has several lagoon-style pools and lush landscaping. With spacious rooms and on-site dining, it's perfect for travelers seeking comfort and convenience in the island's center. Explore Sanctuary arrow_forward" [ref=f4e150] [cursor=pointer]:
+                - /url: http://localhost:8000/hotels/6
+                - generic [ref=f4e151]:
+                  - generic [ref=f4e152]:
+                    - img "Henann Garden Resort" [ref=f4e153]
+                    - generic [ref=f4e155]: High End Luxury Hotels
+                  - generic [ref=f4e156]:
+                    - heading "Henann Garden Resort" [level=4] [ref=f4e157]
+                    - paragraph [ref=f4e158]: Henann Garden is located in Station 2, just a 2-minute walk from White Beach and close to D'Mall. It has several lagoon-style pools and lush landscaping. With spacious rooms and on-site dining, it's perfect for travelers seeking comfort and convenience in the island's center.
+                - generic [ref=f4e160]:
+                  - generic [ref=f4e161]: Explore Sanctuary
+                  - generic [ref=f4e162]: arrow_forward
+              - link "My Station Hotel Mid Affordable Hotels My Station Hotel Located in Station 1, My Station Hotel is just a short walk from the pristine White Beach. With modern, comfortable rooms and a welcoming atmosphere, this hotel offers a relaxing stay while being close to local attractions. Guests can enjoy easy access to restaurants, shopping, and the island's nightlife, making it perfect for both relaxation and adventure seekers. Explore Sanctuary arrow_forward" [ref=f4e163] [cursor=pointer]:
+                - /url: http://localhost:8000/hotels/7
+                - generic [ref=f4e164]:
+                  - generic [ref=f4e165]:
+                    - img "My Station Hotel" [ref=f4e166]
+                    - generic [ref=f4e168]: Mid Affordable Hotels
+                  - generic [ref=f4e169]:
+                    - heading "My Station Hotel" [level=4] [ref=f4e170]
+                    - paragraph [ref=f4e171]: Located in Station 1, My Station Hotel is just a short walk from the pristine White Beach. With modern, comfortable rooms and a welcoming atmosphere, this hotel offers a relaxing stay while being close to local attractions. Guests can enjoy easy access to restaurants, shopping, and the island's nightlife, making it perfect for both relaxation and adventure seekers.
+                - generic [ref=f4e173]:
+                  - generic [ref=f4e174]: Explore Sanctuary
+                  - generic [ref=f4e175]: arrow_forward
+          - generic [ref=f4e176]:
+            - generic [ref=f4e177]:
+              - generic [ref=f4e178]:
+                - generic [ref=f4e179]: explore
+                - heading "Popular Experiences in Boracay" [level=3] [ref=f4e180]
+              - generic [ref=f4e181]: Top Highlights
+            - generic [ref=f4e182]:
+              - generic [ref=f4e183]:
+                - generic [ref=f4e184]:
+                  - generic [ref=f4e185]:
+                    - img "6–7 Destinations (Aircon Van)" [ref=f4e186]
+                    - generic [ref=f4e188]: ₱₱3,700
+                  - generic [ref=f4e189]:
+                    - heading "6–7 Destinations (Aircon Van)" [level=4] [ref=f4e190]
+                    - paragraph [ref=f4e191]: Travel around Boracay in climate-controlled luxury. Visit Keyhole, Puka Beach, Mangrove Park, and scenic heights without breaking a sweat.
+                - link "View Experience arrow_forward" [ref=f4e193] [cursor=pointer]:
+                  - /url: http://localhost:8000/activities
+                  - generic [ref=f4e194]: View Experience
+                  - generic [ref=f4e195]: arrow_forward
+              - generic [ref=f4e196]:
+                - generic [ref=f4e197]:
+                  - generic [ref=f4e198]:
+                    - img "Parasailing" [ref=f4e199]
+                    - generic [ref=f4e201]: ₱₱1,700/person
+                  - generic [ref=f4e202]:
+                    - heading "Parasailing" [level=4] [ref=f4e203]
+                    - paragraph [ref=f4e204]: Soar 150 meters above the azure waters of Boracay! Experience breathtaking 360-degree aerial views of the entire 7km island while strapped securely into a parachute canopy.
+                - link "View Experience arrow_forward" [ref=f4e206] [cursor=pointer]:
+                  - /url: http://localhost:8000/activities
+                  - generic [ref=f4e207]: View Experience
+                  - generic [ref=f4e208]: arrow_forward
+              - generic [ref=f4e209]:
+                - generic [ref=f4e210]:
+                  - generic [ref=f4e211]:
+                    - img "6–7 Destinations (E-Trike)" [ref=f4e212]
+                    - generic [ref=f4e214]: ₱₱2,000
+                  - generic [ref=f4e215]:
+                    - heading "6–7 Destinations (E-Trike)" [level=4] [ref=f4e216]
+                    - paragraph [ref=f4e217]: Hop on an eco-friendly electric trike for an intimate island tour covering Keyhole, Newcoast Beach, Puka Beach, Mt. Luho viewpoint, and Ilig-Iligan Beach at your own pace.
+                - link "View Experience arrow_forward" [ref=f4e219] [cursor=pointer]:
+                  - /url: http://localhost:8000/activities
+                  - generic [ref=f4e220]: View Experience
+                  - generic [ref=f4e221]: arrow_forward
+              - generic [ref=f4e222]:
+                - generic [ref=f4e223]:
+                  - generic [ref=f4e224]:
+                    - img "6–7 Destinations (FB Van/Multicab)" [ref=f4e225]
+                    - generic [ref=f4e227]: ₱₱3,000
+                  - generic [ref=f4e228]:
+                    - heading "6–7 Destinations (FB Van/Multicab)" [level=4] [ref=f4e229]
+                    - paragraph [ref=f4e230]: Group land tour around Boracay's famous spots in an open-air multicab. Ideal for medium-sized barkadas exploring the island's northern beaches and coastal views.
+                - link "View Experience arrow_forward" [ref=f4e232] [cursor=pointer]:
+                  - /url: http://localhost:8000/activities
+                  - generic [ref=f4e233]: View Experience
+                  - generic [ref=f4e234]: arrow_forward
+              - generic [ref=f4e235]:
+                - generic [ref=f4e236]:
+                  - generic [ref=f4e237]:
+                    - img "Parasailing (Solo)" [ref=f4e238]
+                    - generic [ref=f4e240]: ₱₱2,500
+                  - generic [ref=f4e241]:
+                    - heading "Parasailing (Solo)" [level=4] [ref=f4e242]
+                    - paragraph [ref=f4e243]: Command the skies alone on a dedicated solo parasail flight over White Beach. Ultimate freedom and adrenaline in the air.
+                - link "View Experience arrow_forward" [ref=f4e245] [cursor=pointer]:
+                  - /url: http://localhost:8000/activities
+                  - generic [ref=f4e246]: View Experience
+                  - generic [ref=f4e247]: arrow_forward

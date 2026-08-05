@@ -39,4 +39,15 @@ return [
         'embedding_model' => env('EMBEDDING_MODEL', 'models/text-embedding-001'),
     ],
 
+    'payment' => [
+        // 'auto' | 'stripe' | 'simulator'
+        'provider' => env('PAYMENT_PROVIDER', 'auto'),
+    ],
+
+    'stripe' => [
+        'secret_key' => env('STRIPE_SECRET_KEY'),
+        'publishable_key' => env('STRIPE_PUBLISHABLE_KEY'),
+        'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
+    ],
+
 ];

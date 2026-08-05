@@ -16,10 +16,10 @@ class ConnectionController extends Controller
                 'message' => 'Database Connected Successfully'
             ]);
         }catch(\Exception $e){
+            \Illuminate\Support\Facades\Log::error('Connection check failed: ' . $e->getMessage());
             return response()->json([
                 'status' => 'error',
                 'message' => 'Database Connection FAILED',
-                'error' => $e->getMessage(),
             ], 500);
         }
     }

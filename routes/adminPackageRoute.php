@@ -4,7 +4,7 @@ use App\Http\Controllers\Admin\AdminPackageController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('admin')->group(function () {
-    Route::middleware(['auth:admin', 'no.cache'])->group(function () {
+    Route::middleware(['auth:admin', 'no.cache', 'throttle:admin'])->group(function () {
         Route::get('/packages', [AdminPackageController::class, 'index'])->name('admin.packages.index');
         Route::get('/packages/create', [AdminPackageController::class, 'create'])->name('admin.packages.create');
         Route::post('/packages', [AdminPackageController::class, 'store'])->name('admin.packages.store');

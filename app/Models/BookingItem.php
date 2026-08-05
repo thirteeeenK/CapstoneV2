@@ -11,6 +11,10 @@ class BookingItem extends Model
 
     protected $table = 'booking_items';
 
+    public const AVAIL_PENDING = 'pending';
+    public const AVAIL_AVAILABLE = 'available';
+    public const AVAIL_UNAVAILABLE = 'unavailable';
+
     protected $fillable = [
         'booking_id',
         'item_type',
@@ -26,6 +30,8 @@ class BookingItem extends Model
         'nights',
         'subtotal',
         'item_snapshot',
+        'availability_status',
+        'admin_note',
     ];
 
     protected $casts = [

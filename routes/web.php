@@ -17,12 +17,12 @@ Route::get('/legal/{slug}', [LegalContentController::class, 'show'])->name('lega
 use App\Http\Controllers\RecommendationController;
 
 Route::get('/dashboard', [RecommendationController::class, 'index'])
-    ->middleware(['auth', 'verified'])
+    ->middleware(['auth', 'verified', 'throttle:ai'])
     ->name('dashboard');
 
 use App\Http\Controllers\OnboardingController;
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'throttle:users'])->group(function () {
     Route::get('/onboarding', [OnboardingController::class, 'index'])->name('onboarding.index');
     Route::post('/onboarding', [OnboardingController::class, 'store'])->name('onboarding.store');
     Route::match(['get', 'post'], '/onboarding/reset', [OnboardingController::class, 'reset'])->name('onboarding.reset');
@@ -33,7 +33,15 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-Route::get('/check', [ConnectionController::class, 'checkConnection']);
+use App\Http\Controllers\NotificationController;
+
+Route::middleware(['auth', 'throttle:users'])->group(function () {
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
+});
+
+Route::get('/check', [ConnectionController::class, 'checkConnection'])->middleware('throttle:users');
 
 require __DIR__ . '/auth.php';
 require __DIR__ . '/adminAuth.php';
@@ -50,4 +58,7 @@ require __DIR__ . '/cartRoute.php';
 require __DIR__ . '/checkoutRoute.php';
 require __DIR__ . '/passengerRulesRoute.php';
 require __DIR__ . '/adminPackageRoute.php';
+require __DIR__ . '/bookingRoute.php';
+require __DIR__ . '/adminBookingRoute.php';
+require __DIR__ . '/paymentWebhookRoute.php';
 

@@ -1,0 +1,139 @@
+- generic [active] [ref=f12e1]:
+  - complementary [ref=f12e2]:
+    - generic [ref=f12e4]:
+      - link "SunnyTrips" [ref=f12e5] [cursor=pointer]:
+        - /url: http://localhost:8000/dashboard
+      - paragraph [ref=f12e7]:
+        - generic [ref=f12e9]: Traveler Portal
+    - navigation [ref=f12e10]:
+      - generic [ref=f12e11]:
+        - heading "Main Navigation" [level=2] [ref=f12e12]
+        - generic [ref=f12e13]:
+          - link "space_dashboard Dashboard" [ref=f12e14] [cursor=pointer]:
+            - /url: http://localhost:8000/dashboard
+            - generic [ref=f12e15]: space_dashboard
+            - generic [ref=f12e16]: Dashboard
+          - link "shopping_basket My Trip Basket" [ref=f12e17] [cursor=pointer]:
+            - /url: http://localhost:8000/cart
+            - generic [ref=f12e18]: shopping_basket
+            - generic [ref=f12e19]: My Trip Basket
+      - generic [ref=f12e20]:
+        - heading "Explore Catalog" [level=2] [ref=f12e21]
+        - generic [ref=f12e22]:
+          - link "location_on Island Destinations" [ref=f12e23] [cursor=pointer]:
+            - /url: http://localhost:8000/destinations
+            - generic [ref=f12e24]: location_on
+            - generic [ref=f12e25]: Island Destinations
+          - link "hotel Hotels & Sanctuaries" [ref=f12e26] [cursor=pointer]:
+            - /url: http://localhost:8000/hotels
+            - generic [ref=f12e27]: hotel
+            - generic [ref=f12e28]: Hotels & Sanctuaries
+          - link "king_bed Rooms & Stays" [ref=f12e29] [cursor=pointer]:
+            - /url: http://localhost:8000/rooms
+            - generic [ref=f12e30]: king_bed
+            - generic [ref=f12e31]: Rooms & Stays
+          - link "explore Activities & Tours" [ref=f12e32] [cursor=pointer]:
+            - /url: http://localhost:8000/activities
+            - generic [ref=f12e33]: explore
+            - generic [ref=f12e34]: Activities & Tours
+          - link "extension Transfers & Add-ons" [ref=f12e35] [cursor=pointer]:
+            - /url: http://localhost:8000/addons
+            - generic [ref=f12e36]: extension
+            - generic [ref=f12e37]: Transfers & Add-ons
+          - link "card_travel Tour Packages & Promos" [ref=f12e38] [cursor=pointer]:
+            - /url: http://localhost:8000/packages
+            - generic [ref=f12e39]: card_travel
+            - generic [ref=f12e40]: Tour Packages & Promos
+      - generic [ref=f12e41]:
+        - heading "Personalization" [level=2] [ref=f12e42]
+        - generic [ref=f12e43]:
+          - link "tune AI Preferences Quiz" [ref=f12e44] [cursor=pointer]:
+            - /url: http://localhost:8000/onboarding
+            - generic [ref=f12e45]: tune
+            - generic [ref=f12e46]: AI Preferences Quiz
+          - link "manage_accounts Account Profile" [ref=f12e47] [cursor=pointer]:
+            - /url: http://localhost:8000/profile
+            - generic [ref=f12e48]: manage_accounts
+            - generic [ref=f12e49]: Account Profile
+    - generic [ref=f12e50]:
+      - generic [ref=f12e51]:
+        - generic [ref=f12e52]: T
+        - generic [ref=f12e53]:
+          - generic [ref=f12e54]: Test User
+          - generic [ref=f12e55]: test@example.com
+      - button "logout Log Out" [ref=f12e57] [cursor=pointer]:
+        - generic [ref=f12e58]: logout
+        - generic [ref=f12e59]: Log Out
+  - main [ref=f12e60]:
+    - generic [ref=f12e61]:
+      - generic [ref=f12e62]:
+        - generic [ref=f12e63]: hourglass_top
+        - generic [ref=f12e65]: Request Under Review
+        - heading "ST-2026-NNNJ4" [level=1] [ref=f12e66]
+        - paragraph [ref=f12e67]: Your booking request has been received. Our team is verifying availability — you'll receive an email once it's approved. No payment is required yet.
+        - link "home Return to Dashboard" [ref=f12e69] [cursor=pointer]:
+          - /url: http://localhost:8000/dashboard
+          - generic [ref=f12e70]: home
+          - generic [ref=f12e71]: Return to Dashboard
+      - generic [ref=f12e72]:
+        - generic [ref=f12e73]:
+          - generic [ref=f12e74]:
+            - heading "person Lead Guest Details" [level=3] [ref=f12e75]:
+              - generic [ref=f12e76]: person
+              - generic [ref=f12e77]: Lead Guest Details
+            - generic [ref=f12e78]:
+              - paragraph [ref=f12e79]: Test User
+              - paragraph [ref=f12e80]:
+                - generic [ref=f12e81]: mail
+                - text: test@example.com
+              - paragraph [ref=f12e82]:
+                - generic [ref=f12e83]: call
+                - text: "09171234567"
+          - generic [ref=f12e84]:
+            - heading "payments Payment & Status" [level=3] [ref=f12e85]:
+              - generic [ref=f12e86]: payments
+              - generic [ref=f12e87]: Payment & Status
+            - generic [ref=f12e89]:
+              - generic [ref=f12e90]: UNPAID
+              - generic [ref=f12e91]: PENDING
+        - generic [ref=f12e92]:
+          - heading "groups Registered Passenger Manifest (1 Guest)" [level=3] [ref=f12e93]:
+            - generic [ref=f12e94]: groups
+            - generic [ref=f12e95]: Registered Passenger Manifest (1 Guest)
+          - generic [ref=f12e97]:
+            - generic [ref=f12e98]:
+              - generic [ref=f12e99]: "1"
+              - generic [ref=f12e100]:
+                - heading "Test User" [level=4] [ref=f12e101]
+                - paragraph [ref=f12e102]: Lead Traveler
+            - generic [ref=f12e103]: Adult
+        - generic [ref=f12e104]:
+          - heading "luggage Booked Reserved Items" [level=3] [ref=f12e105]:
+            - generic [ref=f12e106]: luggage
+            - generic [ref=f12e107]: Booked Reserved Items
+          - generic [ref=f12e109]:
+            - generic [ref=f12e110]:
+              - generic [ref=f12e111]: hotel
+              - generic [ref=f12e113]:
+                - paragraph [ref=f12e114]: El Nido Resorts - Pangulasian Island
+                - heading "El Nido Resorts - Pangulasian Island — Canopy Villa" [level=4] [ref=f12e115]
+                - paragraph [ref=f12e116]: Aug 10, 2026 – Aug 12, 2026 (2 Nights)
+            - generic [ref=f12e117]:
+              - generic [ref=f12e118]: "Qty: 1"
+              - text: ₱90,000.00
+          - generic [ref=f12e119]:
+            - generic [ref=f12e120]:
+              - generic [ref=f12e121]: Subtotal
+              - generic [ref=f12e122]: ₱90,000.00
+            - generic [ref=f12e123]:
+              - generic [ref=f12e124]: Total Net Amount
+              - generic [ref=f12e125]: ₱90,000.00
+        - generic [ref=f12e126]:
+          - generic [ref=f12e127]:
+            - generic [ref=f12e128]: event_busy
+            - generic [ref=f12e130]:
+              - heading "Cancel this booking?" [level=3] [ref=f12e131]
+              - paragraph [ref=f12e132]: No payment has been taken — cancelling releases your reserved dates immediately.
+          - button "close Cancel Booking" [ref=f12e134] [cursor=pointer]:
+            - generic [ref=f12e135]: close
+            - generic [ref=f12e136]: Cancel Booking

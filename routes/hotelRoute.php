@@ -9,7 +9,7 @@ Route::get('/hotels', [HotelShowController::class, 'index'])->name('hotels.index
 Route::get('/hotels/{id}', [HotelShowController::class, 'show'])->name('hotels.show');
 
 Route::prefix('admin')->group(function () {
-    Route::middleware(['auth:admin', 'no.cache'])->group(function () {
+    Route::middleware(['auth:admin', 'no.cache', 'throttle:admin'])->group(function () {
         // Hotel Listings & Create Form
         Route::get('/hotels', [HotelController::class, 'showListing'])->name('view-listings');
         Route::get('/hotels/manage', [HotelController::class, 'create'])->name('manage-hotels');

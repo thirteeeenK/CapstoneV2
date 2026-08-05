@@ -4,7 +4,7 @@ use App\Http\Controllers\Admin\LegalDocumentController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('admin')->group(function () {
-    Route::middleware(['auth:admin', 'no.cache'])->group(function () {
+    Route::middleware(['auth:admin', 'no.cache', 'throttle:admin'])->group(function () {
         Route::get('/legal', [LegalDocumentController::class, 'index'])->name('admin.legal.index');
         Route::get('/legal/create', [LegalDocumentController::class, 'create'])->name('admin.legal.create');
         Route::post('/legal', [LegalDocumentController::class, 'store'])->name('admin.legal.store');
