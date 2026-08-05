@@ -1,0 +1,160 @@
+- generic [active] [ref=f11e1]:
+  - banner [ref=f11e2]:
+    - navigation [ref=f11e3]:
+      - link "SunnyTrips Travel Services" [ref=f11e4] [cursor=pointer]:
+        - /url: /
+      - generic [ref=f11e6]:
+        - button "View Trip Basket" [ref=f11e7] [cursor=pointer]
+        - link "Login" [ref=f11e10] [cursor=pointer]:
+          - /url: http://localhost:8000/login
+        - link "Register" [ref=f11e11] [cursor=pointer]:
+          - /url: http://localhost:8000/register
+  - main [ref=f11e12]:
+    - generic [ref=f11e14]:
+      - generic [ref=f11e15]:
+        - generic [ref=f11e16]:
+          - navigation "Breadcrumb" [ref=f11e17]:
+            - link "Home" [ref=f11e18] [cursor=pointer]:
+              - /url: /
+            - generic [ref=f11e21]: Trip Basket
+          - heading "Your Trip Basket" [level=1] [ref=f11e22]
+          - paragraph [ref=f11e23]: 3 items in your basket — 3 selected for booking.
+        - link "Continue exploring" [ref=f11e24] [cursor=pointer]:
+          - /url: http://localhost:8000/destinations
+      - generic [ref=f11e28]:
+        - generic [ref=f11e29]:
+          - generic [ref=f11e30]:
+            - checkbox "Select 6–7 Destinations (Aircon Van)" [checked] [ref=f11e32] [cursor=pointer]
+            - img "6–7 Destinations (Aircon Van)" [ref=f11e33]
+            - generic [ref=f11e34]:
+              - generic [ref=f11e35]:
+                - generic [ref=f11e36]: Activity
+                - generic [ref=f11e37]:
+                  - generic [ref=f11e38]: location_on
+                  - generic [ref=f11e39]: Boracay
+              - heading "6–7 Destinations (Aircon Van)" [level=3] [ref=f11e40]
+              - generic [ref=f11e42]:
+                - generic [ref=f11e43]: person
+                - generic [ref=f11e44]: 2 Pax
+              - generic [ref=f11e45]:
+                - generic [ref=f11e46]:
+                  - generic [ref=f11e47]: Qty
+                  - generic [ref=f11e48]:
+                    - button "Decrease quantity of 6–7 Destinations (Aircon Van)" [disabled] [ref=f11e49]
+                    - generic [ref=f11e51]: "1"
+                    - button "Increase quantity of 6–7 Destinations (Aircon Van)" [ref=f11e52] [cursor=pointer]
+                - generic [ref=f11e55]: ₱7,400.00
+            - button "Remove 6–7 Destinations (Aircon Van)" [ref=f11e58] [cursor=pointer]
+          - generic [ref=f11e61]:
+            - checkbox "Select El Nido Resorts - Pangulasian Island — Canopy Villa" [checked] [ref=f11e63] [cursor=pointer]
+            - img "El Nido Resorts - Pangulasian Island — Canopy Villa" [ref=f11e64]
+            - generic [ref=f11e65]:
+              - generic [ref=f11e66]:
+                - generic [ref=f11e67]: Room
+                - generic [ref=f11e68]:
+                  - generic [ref=f11e69]: location_on
+                  - generic [ref=f11e70]: El Nido
+              - generic [ref=f11e71]:
+                - generic [ref=f11e72]: hotel
+                - generic [ref=f11e73]: El Nido Resorts - Pangulasian Island
+              - heading "Canopy Villa" [level=3] [ref=f11e74]
+              - generic [ref=f11e75]:
+                - generic [ref=f11e76]:
+                  - generic [ref=f11e77]: group
+                  - generic [ref=f11e78]: Base 2 • Max 4 Pax
+                - generic [ref=f11e79]:
+                  - generic [ref=f11e80]: king_bed
+                  - generic [ref=f11e81]: 1 King Bed
+                - generic [ref=f11e82]:
+                  - generic [ref=f11e83]: calendar_month
+                  - generic [ref=f11e84]: Sep 10 - Sep 13, 2026 (3 nights)
+              - generic [ref=f11e85]:
+                - generic [ref=f11e86]:
+                  - generic [ref=f11e87]: Qty
+                  - generic [ref=f11e88]:
+                    - button "Decrease quantity of El Nido Resorts - Pangulasian Island — Canopy Villa" [disabled] [ref=f11e89]
+                    - generic [ref=f11e91]: "1"
+                    - button "Increase quantity of El Nido Resorts - Pangulasian Island — Canopy Villa" [ref=f11e92] [cursor=pointer]
+                - generic [ref=f11e95]: ₱135,000.00
+            - button "Remove El Nido Resorts - Pangulasian Island — Canopy Villa" [ref=f11e98] [cursor=pointer]
+          - generic [ref=f11e101]:
+            - checkbox "Select Parasailing" [checked] [ref=f11e103] [cursor=pointer]
+            - img "Parasailing" [ref=f11e104]
+            - generic [ref=f11e105]:
+              - generic [ref=f11e106]:
+                - generic [ref=f11e107]: Activity
+                - generic [ref=f11e108]:
+                  - generic [ref=f11e109]: location_on
+                  - generic [ref=f11e110]: Boracay
+              - heading "Parasailing" [level=3] [ref=f11e111]
+              - generic [ref=f11e113]:
+                - generic [ref=f11e114]: person
+                - generic [ref=f11e115]: 1 Pax
+              - generic [ref=f11e116]:
+                - generic [ref=f11e117]:
+                  - generic [ref=f11e118]: Qty
+                  - generic [ref=f11e119]:
+                    - button "Decrease quantity of Parasailing" [ref=f11e120] [cursor=pointer]
+                    - generic [ref=f11e122]: "4"
+                    - button "Increase quantity of Parasailing" [ref=f11e123] [cursor=pointer]
+                - generic [ref=f11e126]:
+                  - generic [ref=f11e127]: ₱1,700.00 each
+                  - generic [ref=f11e128]: ₱1,700.00
+            - button "Remove Parasailing" [ref=f11e130] [cursor=pointer]
+        - generic [ref=f11e134]:
+          - heading "Booking Summary" [level=2] [ref=f11e135]
+          - generic [ref=f11e136]:
+            - generic [ref=f11e137]:
+              - generic [ref=f11e138]: Selected items
+              - generic [ref=f11e139]: 3 of 3
+            - generic [ref=f11e140]:
+              - generic [ref=f11e141]: Subtotal
+              - generic [ref=f11e142]: ₱144,100.00
+            - generic [ref=f11e143]:
+              - generic [ref=f11e144]: Service & booking fee
+              - generic [ref=f11e145]: Waived (Promo)
+          - generic [ref=f11e146]:
+            - generic [ref=f11e147]: Estimated total
+            - generic [ref=f11e148]: ₱144,100.00
+          - link "Proceed to Booking Checkout" [ref=f11e149] [cursor=pointer]:
+            - /url: http://localhost:8000/checkout
+          - paragraph [ref=f11e153]: You'll add your guest details and confirm your stay at checkout.
+  - contentinfo [ref=f11e154]:
+    - generic [ref=f11e155]:
+      - generic [ref=f11e156]:
+        - generic [ref=f11e157]:
+          - generic [ref=f11e158]: SunnyTrips
+          - paragraph [ref=f11e159]: Redefining tropical exploration through curated luxury and local intelligence. We are the modern navigator for the Philippine archipelago.
+        - generic [ref=f11e160]:
+          - heading "JOURNEY" [level=4] [ref=f11e161]
+          - generic [ref=f11e162]:
+            - link "Curations" [ref=f11e163] [cursor=pointer]:
+              - /url: "#"
+            - link "Navigators" [ref=f11e164] [cursor=pointer]:
+              - /url: "#"
+            - link "Private Charters" [ref=f11e165] [cursor=pointer]:
+              - /url: "#"
+            - link "Eco-Projects" [ref=f11e166] [cursor=pointer]:
+              - /url: "#"
+        - generic [ref=f11e167]:
+          - heading "CONCIERGE" [level=4] [ref=f11e168]
+          - generic [ref=f11e169]:
+            - link "Help Center" [ref=f11e170] [cursor=pointer]:
+              - /url: "#"
+            - link "Safe Travel" [ref=f11e171] [cursor=pointer]:
+              - /url: "#"
+            - link "Booking Policy" [ref=f11e172] [cursor=pointer]:
+              - /url: "#"
+        - generic [ref=f11e173]:
+          - heading "THE OFFICE" [level=4] [ref=f11e174]
+          - paragraph [ref=f11e175]: Brgy. San Agustin, Pili, Camarines Sur Philippines, 4418
+      - separator [ref=f11e176]
+      - generic [ref=f11e177]:
+        - paragraph [ref=f11e178]: © 2026 SunnyTrips. All rights reserved. Made for the sun-seekers.
+        - generic [ref=f11e179]:
+          - link "AI Usage Disclosure" [ref=f11e180] [cursor=pointer]:
+            - /url: http://localhost:8000/legal/ai_disclosure
+          - link "Privacy Policy" [ref=f11e181] [cursor=pointer]:
+            - /url: http://localhost:8000/legal/privacy
+          - link "Terms and Conditions" [ref=f11e182] [cursor=pointer]:
+            - /url: http://localhost:8000/legal/terms
