@@ -17,6 +17,7 @@ class ActivityController extends Controller
         $selectedDestinationId = $request->query('destination_id');
         $search = $request->query('search');
         $selectedCategory = $request->query('category');
+        $selectedLevel = $request->query('level');
 
         $query = ActivityModel::with('destination');
 
@@ -28,11 +29,17 @@ class ActivityController extends Controller
             $query->where('category', $selectedCategory);
         }
 
+        if ($selectedLevel) {
+            $query->where('activity_level', $selectedLevel);
+        }
+
         if ($search) {
             $query->where(function ($q) use ($search) {
                 $q->where('activity_name', 'like', '%' . $search . '%')
                     ->orWhere('category', 'like', '%' . $search . '%')
                     ->orWhere('activity_level', 'like', '%' . $search . '%')
+                    ->orWhere('description', 'like', '%' . $search . '%')
+                    ->orWhere('vibe_tags', 'like', '%' . $search . '%')
                     ->orWhere('notes', 'like', '%' . $search . '%');
             });
         }
@@ -44,7 +51,8 @@ class ActivityController extends Controller
             'destinations',
             'selectedDestinationId',
             'search',
-            'selectedCategory'
+            'selectedCategory',
+            'selectedLevel'
         ));
     }
 

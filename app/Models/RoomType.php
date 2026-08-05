@@ -45,6 +45,11 @@ class RoomType extends Model
         return $value ?? ($this->attributes['total_rooms'] ?? null);
     }
 
+    public function getRatePerNightAttribute()
+    {
+        return $this->attributes['base_price'] ?? null;
+    }
+
     public function hotel()
     {
         return $this->belongsTo(HotelModel::class, 'hotel_id');

@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\Admin\RoomController;
-use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\RoomShowController;
+
+Route::get('/rooms', [RoomShowController::class, 'index'])->name('rooms.index');
 
 Route::prefix('admin')->group(function () {
     Route::middleware(['auth:admin', 'no.cache'])->group(function () {

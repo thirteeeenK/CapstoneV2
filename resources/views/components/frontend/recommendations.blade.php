@@ -61,13 +61,17 @@
             {{-- Destination Filter Tabs for AI Mode --}}
             @if($hasAi)
                 <div x-show="mode === 'ai'"
-                    class="flex items-center gap-2 overflow-x-auto pb-1 lg:pb-0 max-w-full p-1 bg-slate-100/80 rounded-2xl border border-slate-200">
+                    class="flex items-center gap-2 overflow-x-auto pb-1 lg:pb-0 max-w-full p-1.5 bg-slate-100/90 rounded-2xl border border-slate-200">
+                    <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-2 shrink-0 flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[15px] text-slate-400">filter_alt</span>
+                        <span>Sanctuary:</span>
+                    </span>
                     @foreach($aiRecommendations as $item)
                         @php $dest = $item['destination']; @endphp
                         <button type="button" @click="activeAiDestId = {{ $dest->id }}"
-                            :class="activeAiDestId === {{ $dest->id }} ? 'bg-white text-slate-900 font-bold shadow-xs border-slate-200' : 'text-slate-600 hover:text-slate-900 font-medium border-transparent'"
-                            class="px-3.5 py-1.5 rounded-xl text-xs transition-all shrink-0 flex items-center gap-2 border cursor-pointer">
-                            <span class="material-symbols-outlined text-[16px] text-sky-600">location_on</span>
+                            :class="activeAiDestId === {{ $dest->id }} ? 'bg-sky-600 text-white font-extrabold shadow-xs border-sky-600' : 'bg-white text-slate-600 hover:bg-slate-200/80 hover:text-slate-900 font-semibold border-slate-200/80'"
+                            class="px-3.5 py-1.5 rounded-xl text-xs transition-all shrink-0 flex items-center gap-1.5 border cursor-pointer">
+                            <span class="material-symbols-outlined text-[15px]" :class="activeAiDestId === {{ $dest->id }} ? 'text-white' : 'text-sky-600'">location_on</span>
                             <span>{{ $dest->name }}</span>
                         </button>
                     @endforeach
@@ -77,13 +81,17 @@
             {{-- Destination Filter Tabs for Default Mode --}}
             @if($hasDefault)
                 <div x-show="mode === 'default'"
-                    class="flex items-center gap-2 overflow-x-auto pb-1 lg:pb-0 max-w-full p-1 bg-slate-100/80 rounded-2xl border border-slate-200">
+                    class="flex items-center gap-2 overflow-x-auto pb-1 lg:pb-0 max-w-full p-1.5 bg-slate-100/90 rounded-2xl border border-slate-200">
+                    <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-2 shrink-0 flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[15px] text-slate-400">filter_alt</span>
+                        <span>Sanctuary:</span>
+                    </span>
                     @foreach($defaultRecommendations as $item)
                         @php $dest = $item['destination']; @endphp
                         <button type="button" @click="activeDefaultDestId = {{ $dest->id }}"
-                            :class="activeDefaultDestId === {{ $dest->id }} ? 'bg-white text-slate-900 font-bold shadow-xs border-slate-200' : 'text-slate-600 hover:text-slate-900 font-medium border-transparent'"
-                            class="px-3.5 py-1.5 rounded-xl text-xs transition-all shrink-0 flex items-center gap-2 border cursor-pointer">
-                            <span class="material-symbols-outlined text-[16px] text-sky-600">location_on</span>
+                            :class="activeDefaultDestId === {{ $dest->id }} ? 'bg-sky-600 text-white font-extrabold shadow-xs border-sky-600' : 'bg-white text-slate-600 hover:bg-slate-200/80 hover:text-slate-900 font-semibold border-slate-200/80'"
+                            class="px-3.5 py-1.5 rounded-xl text-xs transition-all shrink-0 flex items-center gap-1.5 border cursor-pointer">
+                            <span class="material-symbols-outlined text-[15px]" :class="activeDefaultDestId === {{ $dest->id }} ? 'text-white' : 'text-sky-600'">location_on</span>
                             <span>{{ $dest->name }}</span>
                         </button>
                     @endforeach

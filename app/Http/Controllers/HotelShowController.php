@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Concerns\ResolvesImages;
+use App\Models\DestinationModel;
 use App\Models\HotelModel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -11,6 +12,27 @@ class HotelShowController extends Controller
 {
     use ResolvesImages;
 
+    /**
+     * Display full catalog listing of all Hotels & Sanctuary Stays.
+     */
+    public function index(Request $request)
+    {
+        $destinations = DestinationModel::orderBy('name', 'asc')->get();
+
+        $query = HotelModel::where('is_shown', true)->with(['destination', 'rooms']);
+
+        if ($request->has('destination_id') && !empty($request->destination_id)) {
+            $query->where('destination_id', $request->destination_id);
+        }
+
+        $hotels = $query->orderBy('hotel_name', 'asc')->get();
+
+        return view('hotel.index', compact('hotels', 'destinations'));
+    }
+
+    /**
+     * Display dynamic details for a specific Hotel / Sanctuary.
+     */
     public function show(Request $request, $id)
     {
         $isAdmin = Auth::guard('admin')->check();
@@ -27,9 +49,7 @@ class HotelShowController extends Controller
             abort(404, 'Hotel not found or currently unavailable.');
         }
 
-        // Show Admin Preview Banner ONLY if:
-        // 1) Explicitly requested via query parameter (?preview=1 or ?preview_room=X)
-        // 2) OR the hotel is hidden from public (so admin understands why they can view it)
+        // Show Admin Preview Banner ONLY if explicitly requested or hidden
         $hasPreviewQuery = $request->has('preview') || $request->has('preview_room');
         $isAdminPreview = $isAdmin && ($hasPreviewQuery || !$hotel->is_shown);
 

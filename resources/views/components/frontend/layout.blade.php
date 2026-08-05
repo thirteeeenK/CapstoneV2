@@ -13,6 +13,9 @@
 
     <!-- Custom inline styles for material icons -->
     <style>
+        [x-cloak] {
+            display: none !important;
+        }
         .material-symbols-outlined {
             font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
             vertical-align: middle;

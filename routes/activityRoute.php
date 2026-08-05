@@ -1,7 +1,11 @@
 <?php
 
 use App\Http\Controllers\Admin\ActivityController;
+use App\Http\Controllers\ActivityShowController;
 use Illuminate\Support\Facades\Route;
+
+// Public Activities & Tours Catalog Listing
+Route::get('/activities', [ActivityShowController::class, 'index'])->name('activities.index');
 
 Route::prefix('admin')->group(function () {
     Route::middleware(['auth:admin', 'no.cache'])->group(function () {

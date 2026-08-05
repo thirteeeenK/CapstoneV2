@@ -12,9 +12,9 @@
             <!-- Desktop Links -->
             <div
                 class="hidden md:flex items-center gap-1.5 bg-white/30 p-1.5 rounded-full border border-white/50 backdrop-blur-md">
-                <a href="/#destinations" data-nav-target="destinations"
+                <a href="{{ route('destinations.index') }}"
                     class="px-5 py-2 text-slate-600 hover:bg-white/60 hover:text-sky-700 rounded-full font-semibold text-sm transition-all duration-200">Destinations</a>
-                <a href="/#experiences" data-nav-target="experiences"
+                <a href="{{ route('activities.index') }}"
                     class="px-5 py-2 text-slate-600 hover:bg-white/60 hover:text-sky-700 rounded-full font-semibold text-sm transition-all duration-200">Experiences</a>
                 <!-- <a href="#"
                     class="px-5 py-2 text-slate-600 hover:bg-white/60 hover:text-sky-700 rounded-full font-semibold text-sm transition-all">Stays</a> -->

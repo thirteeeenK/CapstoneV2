@@ -2,6 +2,10 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\AddOnController;
+use App\Http\Controllers\AddOnShowController;
+
+// Public Transfers & Add-ons Catalog Listing
+Route::get('/addons', [AddOnShowController::class, 'index'])->name('addons.index');
 
 Route::prefix('admin/addons')->middleware(['auth:admin'])->name('admin.addons.')->group(function () {
     Route::get('/', [AddOnController::class, 'index'])->name('index');

@@ -31,23 +31,23 @@
             </div>
         @endif
 
-        <!-- Destination Filter & Search Bar -->
-        <div class="mb-6 bg-white p-4 border border-slate-200 rounded-lg shadow-sm space-y-4">
+        <!-- Destination & Activity Level Filter & Search Bar -->
+        <div class="mb-6 bg-white p-4 border border-slate-200 rounded-lg shadow-sm space-y-3">
             <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                 <!-- Location Tabs -->
                 <div class="flex items-center gap-2 overflow-x-auto pb-1 lg:pb-0">
                     <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider mr-1 flex items-center gap-1 shrink-0">
-                        <span class="material-symbols-outlined text-[16px] text-slate-400">filter_alt</span>
+                        <span class="material-symbols-outlined text-[16px] text-slate-400">location_on</span>
                         LOCATION:
                     </span>
                     
-                    <a href="{{ route('admin.activities.index', array_filter(['search' => $search, 'category' => $selectedCategory])) }}"
+                    <a href="{{ route('admin.activities.index', array_filter(['search' => $search, 'category' => $selectedCategory, 'level' => $selectedLevel])) }}"
                        class="px-3 py-1.5 rounded-md text-xs font-medium transition-colors shrink-0 {{ !$selectedDestinationId ? 'bg-ocean-600 text-white font-semibold' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}">
                         All Locations
                     </a>
 
                     @foreach($destinations as $dest)
-                        <a href="{{ route('admin.activities.index', array_filter(['destination_id' => $dest->id, 'search' => $search, 'category' => $selectedCategory])) }}"
+                        <a href="{{ route('admin.activities.index', array_filter(['destination_id' => $dest->id, 'search' => $search, 'category' => $selectedCategory, 'level' => $selectedLevel])) }}"
                            class="px-3 py-1.5 rounded-md text-xs font-medium transition-colors shrink-0 {{ $selectedDestinationId == $dest->id ? 'bg-ocean-600 text-white font-semibold' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}">
                             {{ $dest->name }}
                         </a>
@@ -59,14 +59,20 @@
                     @if($selectedDestinationId)
                         <input type="hidden" name="destination_id" value="{{ $selectedDestinationId }}" />
                     @endif
+                    @if($selectedLevel)
+                        <input type="hidden" name="level" value="{{ $selectedLevel }}" />
+                    @endif
+                    @if($selectedCategory)
+                        <input type="hidden" name="category" value="{{ $selectedCategory }}" />
+                    @endif
 
                     <div class="relative w-full sm:w-64">
                         <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">search</span>
                         <input type="text" name="search" value="{{ $search }}"
-                               placeholder="Search activity or notes..."
+                               placeholder="Search activity, level, or tags..."
                                class="w-full bg-slate-50 hover:bg-white focus:bg-white border border-slate-300 rounded-md py-1.5 pl-9 pr-8 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-ocean-500/20 focus:border-ocean-600 transition-all" />
                         @if($search)
-                            <a href="{{ route('admin.activities.index', array_filter(['destination_id' => $selectedDestinationId])) }}"
+                            <a href="{{ route('admin.activities.index', array_filter(['destination_id' => $selectedDestinationId, 'level' => $selectedLevel, 'category' => $selectedCategory])) }}"
                                class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" title="Clear search">
                                 <span class="material-symbols-outlined text-[16px]">close</span>
                             </a>
@@ -78,6 +84,33 @@
                         Search
                     </button>
                 </form>
+            </div>
+
+            <!-- Activity Level Filter Tabs (5 Levels) -->
+            <div class="pt-2 border-t border-slate-100 flex items-center gap-2 overflow-x-auto">
+                <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider mr-1 flex items-center gap-1 shrink-0">
+                    <span class="material-symbols-outlined text-[16px] text-slate-400">signal_cellular_alt</span>
+                    ACTIVITY LEVEL:
+                </span>
+
+                <a href="{{ route('admin.activities.index', array_filter(['destination_id' => $selectedDestinationId, 'search' => $search, 'category' => $selectedCategory])) }}"
+                   class="px-2.5 py-1 rounded-md text-xs font-medium transition-colors shrink-0 {{ !$selectedLevel ? 'bg-slate-800 text-white font-semibold' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}">
+                    All Levels
+                </a>
+
+                @foreach(['Relaxing' => 'emerald', 'Sightseeing' => 'sky', 'Adventure' => 'amber', 'Extreme' => 'rose', 'Underwater' => 'cyan'] as $lvl => $color)
+                    <a href="{{ route('admin.activities.index', array_filter(['level' => $lvl, 'destination_id' => $selectedDestinationId, 'search' => $search, 'category' => $selectedCategory])) }}"
+                       class="px-2.5 py-1 rounded-md text-xs font-medium transition-colors shrink-0 {{ $selectedLevel === $lvl ? 'bg-ocean-600 text-white font-bold shadow-xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}">
+                        {{ $lvl }}
+                    </a>
+                @endforeach
+
+                @if($selectedDestinationId || $selectedLevel || $search || $selectedCategory)
+                    <a href="{{ route('admin.activities.index') }}" class="ml-auto text-xs font-semibold text-rose-600 hover:text-rose-700 flex items-center gap-0.5 shrink-0">
+                        <span class="material-symbols-outlined text-[14px]">restart_alt</span>
+                        Reset Filters
+                    </a>
+                @endif
             </div>
         </div>
 

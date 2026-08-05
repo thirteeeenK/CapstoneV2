@@ -7,7 +7,23 @@
         );
     @endphp
 
-    <div x-data="{ previewActivity: null, activePreviewImgIdx: 0 }"
+    <div x-data="{
+        previewActivity: null,
+        activePreviewImgIdx: 0,
+        levelFilter: 'all',
+        searchQuery: '',
+        matchesActivity(level, searchableText) {
+            if (this.levelFilter !== 'all' && String(this.levelFilter).toLowerCase() !== String(level).toLowerCase()) {
+                return false;
+            }
+            if (this.searchQuery.trim() !== '') {
+                let terms = this.searchQuery.toLowerCase().trim().split(/\s+/);
+                let sText = (searchableText || '').toLowerCase();
+                return terms.every(term => sText.includes(term));
+            }
+            return true;
+        }
+    }"
         class="pt-32 sm:pt-36 pb-24 bg-slate-50 min-h-screen">
 
         {{-- HERO BANNER --}}
@@ -161,11 +177,11 @@
             {{-- ══════════════════════════════════════════
             ACTIVITIES SECTION
             ══════════════════════════════════════════ --}}
-            <section class="space-y-8">
+            <section class="space-y-6">
                 <div class="flex items-center justify-between border-b border-slate-200 pb-4">
                     <div>
                         <h2 class="text-xl sm:text-2xl font-bold text-slate-900 font-headline">
-                            Experiences
+                            Experiences & Tours
                         </h2>
                         <p class="text-xs sm:text-sm text-slate-500">
                             Unforgettable activities waiting for you at {{ $destination->name }}
@@ -177,6 +193,49 @@
                         {{ Str::plural('Activity', $destination->activities->count()) }}
                     </span>
                 </div>
+
+                @if($destination->activities->isNotEmpty())
+                    {{-- Activity Filter Toolbar (5 Levels & Search) --}}
+                    <div class="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div class="relative w-full sm:w-72">
+                            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">search</span>
+                            <input type="text" x-model="searchQuery" placeholder="Search activity, level, or tags..."
+                                class="w-full bg-slate-50 border border-slate-200 focus:border-sky-500 focus:bg-white rounded-xl py-1.5 pl-9 pr-8 text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none transition-all shadow-xs" />
+                            <button x-show="searchQuery" @click="searchQuery = ''" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer">
+                                <span class="material-symbols-outlined text-xs">cancel</span>
+                            </button>
+                        </div>
+
+                        <div class="flex flex-wrap items-center gap-1.5 overflow-x-auto w-full sm:w-auto justify-start sm:justify-end">
+                            <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1 shrink-0 mr-1">
+                                <span class="material-symbols-outlined text-[15px] text-sky-600">signal_cellular_alt</span>
+                                <span>Level:</span>
+                            </span>
+
+                            <button type="button" @click="levelFilter = 'all'"
+                                :class="levelFilter === 'all' ? 'bg-sky-600 text-white font-bold shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 font-medium'"
+                                class="px-2.5 py-1 rounded-xl text-xs transition-all cursor-pointer shrink-0">
+                                All
+                            </button>
+
+                            @foreach(['Relaxing' => '🧘', 'Sightseeing' => '🗺️', 'Adventure' => '🏔️', 'Extreme' => '⚡', 'Underwater' => '🤿'] as $lvl => $icon)
+                                <button type="button" @click="levelFilter = '{{ $lvl }}'"
+                                    :class="levelFilter === '{{ $lvl }}' ? 'bg-sky-600 text-white font-bold shadow-xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200 font-medium'"
+                                    class="px-2.5 py-1 rounded-xl text-xs transition-all cursor-pointer shrink-0 flex items-center gap-1">
+                                    <span>{{ $icon }}</span>
+                                    <span>{{ $lvl }}</span>
+                                </button>
+                            @endforeach
+
+                            <button x-show="searchQuery || levelFilter !== 'all'"
+                                @click="searchQuery = ''; levelFilter = 'all';"
+                                class="text-[11px] font-bold text-rose-600 hover:text-rose-700 ml-1 flex items-center gap-0.5 cursor-pointer shrink-0">
+                                <span class="material-symbols-outlined text-[14px]">restart_alt</span>
+                                <span>Clear</span>
+                            </button>
+                        </div>
+                    </div>
+                @endif
 
                 @if($destination->activities->isEmpty())
                     <div class="bg-white p-8 rounded-2xl border border-slate-200 text-center text-slate-400 text-sm">
@@ -218,6 +277,17 @@
                                 $itineraryRaw = is_array($activity->itinerary) ? $activity->itinerary : (is_string($activity->itinerary) ? (json_decode($activity->itinerary, true) ?: []) : []);
                                 $vibeTagsRaw = is_array($activity->vibe_tags) ? $activity->vibe_tags : (is_string($activity->vibe_tags) ? array_filter(array_map('trim', explode(',', $activity->vibe_tags))) : []);
 
+                                $searchablePayload = implode(' ', [
+                                    $activity->activity_name,
+                                    $activity->category ?? '',
+                                    $activity->activity_level ?? '',
+                                    $activity->description ?? '',
+                                    $activity->requirements ?? '',
+                                    $activity->ideal_for ?? '',
+                                    implode(' ', $inclusionsRaw),
+                                    implode(' ', $vibeTagsRaw)
+                                ]);
+
                                 $actPayload = [
                                     'id' => $activity->id,
                                     'activity_name' => $activity->activity_name,
@@ -240,7 +310,7 @@
                                     'vibe_tags' => array_values($vibeTagsRaw),
                                 ];
                             @endphp
-                            <div
+                            <div x-show="matchesActivity('{{ addslashes($activity->activity_level ?? '') }}', {{ json_encode($searchablePayload) }})"
                                 class="bg-white rounded-3xl border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between group hover:-translate-y-1">
                                 <div>
                                     <div class="relative h-48 sm:h-56 overflow-hidden bg-slate-950">
