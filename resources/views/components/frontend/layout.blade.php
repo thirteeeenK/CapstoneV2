@@ -3,6 +3,7 @@
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <meta name="csrf-token" content="{{ csrf_token() }}"/>
     <title>{{ $title ?? 'SunnyTrips | Travel Made Easy' }}</title>
     <!-- Fonts & Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,300;1,9..40,400;1,9..40,500&display=swap" rel="stylesheet"/>
@@ -10,6 +11,10 @@
     
     <!-- Vite for Tailwind/Local CSS -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    <!-- Flatpickr Date Picker CDN -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
     <!-- Custom inline styles for material icons -->
     <style>
@@ -86,6 +91,49 @@
                 observer.observe(el);
             });
         });
+
+        window.addToCart = async function(itemType, itemId, options = {}) {
+            try {
+                const bodyData = {
+                    item_type: itemType,
+                    item_id: Number(itemId),
+                    quantity: options.quantity || 1,
+                    selected_pax: options.selected_pax || 1,
+                    check_in_date: options.check_in_date || null,
+                    check_out_date: options.check_out_date || null,
+                    notes: options.notes || null,
+                };
+
+                const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '{{ csrf_token() }}';
+
+                const res = await fetch('/cart/add', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(bodyData)
+                });
+
+                const data = await res.json();
+                if (data.success) {
+                    window.dispatchEvent(new CustomEvent('cart-updated'));
+                    window.dispatchEvent(new CustomEvent('show-cart-modal', {
+                        detail: { itemData: data.cart_item }
+                    }));
+                } else {
+                    alert(data.message || 'Could not add item to basket.');
+                }
+            } catch (err) {
+                console.error('Error adding to cart:', err);
+                alert('Could not add item to your basket. Please try again.');
+            }
+        };
     </script>
+    
+    <x-frontend.cart-drawer />
+    <x-frontend.cart-success-modal />
 </body>
 </html>

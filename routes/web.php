@@ -45,3 +45,6 @@ require __DIR__ . '/userManagementRoute.php';
 require __DIR__ . '/inventoryRoute.php';
 require __DIR__ . '/legalRoute.php';
 require __DIR__ . '/addonRoute.php';
+require __DIR__ . '/packageRoute.php';
+require __DIR__ . '/cartRoute.php';
+

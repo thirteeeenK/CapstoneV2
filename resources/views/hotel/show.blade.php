@@ -27,6 +27,9 @@
 
     <div x-data="{
         selectedRoom: null,
+        roomCheckIn: '',
+        roomCheckOut: '',
+        roomAvailable: true,
         activeModalImg: null,
         previewRoom: null,
         activePreviewImgIndex: 0,
@@ -47,6 +50,9 @@
         },
         selectRoom(room) {
             this.selectedRoom = room;
+            this.roomCheckIn = '';
+            this.roomCheckOut = '';
+            this.roomAvailable = true;
             $nextTick(() => {
                 const el = document.getElementById('selected-room-sidebar');
                 if (el) {
@@ -56,10 +62,15 @@
         },
         openRoomPreview(room) {
             this.previewRoom = room;
+            this.roomCheckIn = '';
+            this.roomCheckOut = '';
+            this.roomAvailable = true;
             this.activePreviewImgIndex = 0;
         },
         closeRoomPreview() {
             this.previewRoom = null;
+            this.roomCheckIn = '';
+            this.roomCheckOut = '';
         },
         confirmRoomSelection(room) {
             this.selectRoom(room);
@@ -268,11 +279,19 @@
                                     <p x-text="selectedRoom.description"></p>
                                 </div>
 
+                                {{-- Date Range Picker Component --}}
+                                <div class="pt-2" @date-range-changed.stop="roomCheckIn = $event.detail.checkIn; roomCheckOut = $event.detail.checkOut; roomAvailable = $event.detail.available">
+                                    <x-frontend.date-range-picker :room-id="null" :base-price="0" />
+                                </div>
+
                                 {{-- Action Button --}}
-                                <button type="button"
-                                    class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-ocean-600 to-ocean-700 hover:from-ocean-700 hover:to-ocean-800 text-white font-bold text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2">
-                                    <span class="material-symbols-outlined text-[18px]">bookmark</span>
-                                    <span>Select & Continue</span>
+                                <button type="button" 
+                                    @click="if (!roomCheckIn || !roomCheckOut) { alert('Please select your stay check-in and check-out dates first!'); return; } window.addToCart('room', selectedRoom.id, { check_in_date: roomCheckIn, check_out_date: roomCheckOut })"
+                                    :disabled="!roomAvailable || !roomCheckIn || !roomCheckOut"
+                                    :class="(!roomAvailable || !roomCheckIn || !roomCheckOut) ? 'opacity-50 cursor-not-allowed bg-slate-400' : 'bg-gradient-to-r from-sky-600 to-sky-700 hover:from-sky-500 hover:to-sky-600 shadow-md shadow-sky-600/20 hover:shadow-lg cursor-pointer'"
+                                    class="w-full py-3 px-4 rounded-xl text-white font-bold text-sm transition-all flex items-center justify-center gap-2">
+                                    <span class="material-symbols-outlined text-[18px]">shopping_cart</span>
+                                    <span x-text="(!roomCheckIn || !roomCheckOut) ? 'Select Dates to Add' : 'Add to Trip Basket'"></span>
                                 </button>
                             </div>
                         </template>
@@ -412,15 +431,15 @@
                                     </div>
                                 </div>
 
-                                {{-- Card Footer / Action Buttons --}}
+                                 {{-- Card Footer / Action Buttons --}}
                                 <div class="p-5 pt-0 grid grid-cols-2 gap-2">
-                                    <button type="button" id="preview-btn-{{ $room->id }}" @click="openRoomPreview({{ json_encode($roomPayload) }})"
-                                        class="w-full py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-colors flex items-center justify-center gap-1">
+                                    <button type="button" id="preview-btn-{{ $room->id }}" @click.stop="openRoomPreview({{ json_encode($roomPayload) }})"
+                                        class="w-full py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-colors flex items-center justify-center gap-1 cursor-pointer">
                                         <span class="material-symbols-outlined text-[15px]">visibility</span>
                                         <span>Preview</span>
                                     </button>
-                                    <button type="button" @click="selectRoom({{ json_encode($roomPayload) }})"
-                                        class="w-full py-2.5 px-3 rounded-xl bg-ocean-50 hover:bg-ocean-600 hover:text-white text-ocean-700 font-bold text-xs transition-colors flex items-center justify-center gap-1">
+                                    <button type="button" @click.stop="selectRoom({{ json_encode($roomPayload) }})"
+                                        class="w-full py-2.5 px-3 rounded-xl bg-ocean-50 hover:bg-ocean-600 hover:text-white text-ocean-700 font-bold text-xs transition-colors flex items-center justify-center gap-1 cursor-pointer">
                                         <span class="material-symbols-outlined text-[15px]">touch_app</span>
                                         <span>Select</span>
                                     </button>
@@ -587,6 +606,11 @@
                         </div>
                     </template>
 
+                    {{-- Date Picker Section --}}
+                    <div class="pt-3 border-t border-slate-200" @date-range-changed.stop="roomCheckIn = $event.detail.checkIn; roomCheckOut = $event.detail.checkOut; roomAvailable = $event.detail.available">
+                        <x-frontend.date-range-picker :room-id="null" :base-price="0" />
+                    </div>
+
                 </div>
 
                 {{-- Modal Footer --}}
@@ -595,10 +619,13 @@
                         class="w-full sm:w-auto px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-bold text-xs hover:bg-slate-200 transition-colors">
                         Close Preview
                     </button>
-                    <button type="button" @click="confirmRoomSelection(previewRoom)"
-                        class="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-ocean-600 to-ocean-700 hover:from-ocean-700 hover:to-ocean-800 text-white font-bold text-xs shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2">
-                        <span class="material-symbols-outlined text-[18px]">check_circle</span>
-                        <span>Select & Book This Room</span>
+                    <button type="button" 
+                        @click="if (!roomCheckIn || !roomCheckOut) { alert('Please select your stay check-in and check-out dates first!'); return; } window.addToCart('room', previewRoom.id, { check_in_date: roomCheckIn, check_out_date: roomCheckOut }); closeRoomPreview();"
+                        :disabled="!roomAvailable || !roomCheckIn || !roomCheckOut"
+                        :class="(!roomAvailable || !roomCheckIn || !roomCheckOut) ? 'opacity-50 cursor-not-allowed bg-slate-400' : 'bg-gradient-to-r from-sky-600 to-sky-700 hover:from-sky-500 hover:to-sky-600 shadow-md shadow-sky-600/20 hover:shadow-lg cursor-pointer'"
+                        class="w-full sm:w-auto px-6 py-2.5 rounded-xl text-white font-bold text-xs transition-all flex items-center justify-center gap-2">
+                        <span class="material-symbols-outlined text-[18px]">shopping_cart</span>
+                        <span x-text="(!roomCheckIn || !roomCheckOut) ? 'Select Dates to Add' : 'Add to Trip Basket'"></span>
                     </button>
                 </div>
 

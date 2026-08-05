@@ -12,22 +12,27 @@
             <!-- Desktop Links -->
             <div
                 class="hidden md:flex items-center gap-1.5 bg-white/30 p-1.5 rounded-full border border-white/50 backdrop-blur-md">
-                <a href="{{ route('destinations.index') }}"
+                <a href="/#destinations" data-nav-target="destinations"
                     class="px-5 py-2 text-slate-600 hover:bg-white/60 hover:text-sky-700 rounded-full font-semibold text-sm transition-all duration-200">Destinations</a>
                 <a href="{{ route('activities.index') }}"
-                    class="px-5 py-2 text-slate-600 hover:bg-white/60 hover:text-sky-700 rounded-full font-semibold text-sm transition-all duration-200">Experiences</a>
+                    class="px-5 py-2 text-slate-600 hover:bg-white/60 hover:text-sky-700 rounded-full font-semibold text-sm transition-all duration-200 {{ request()->routeIs('activities.*') ? 'nav-active' : '' }}">Experiences</a>
+                <a href="{{ route('packages.index') }}"
+                    class="px-5 py-2 text-slate-600 hover:bg-white/60 hover:text-sky-700 rounded-full font-semibold text-sm transition-all duration-200 {{ request()->routeIs('packages.*') ? 'nav-active' : '' }}">Packages</a>
                 <!-- <a href="#"
                     class="px-5 py-2 text-slate-600 hover:bg-white/60 hover:text-sky-700 rounded-full font-semibold text-sm transition-all">Stays</a> -->
                 <a href="/#brand-story" data-nav-target="brand-story"
                     class="px-5 py-2 text-slate-600 hover:bg-white/60 hover:text-sky-700 rounded-full font-semibold text-sm transition-all duration-200">Journals</a>
             </div>
 
-            <!-- Auth Buttons -->
+            <!-- Auth Buttons & Cart -->
             <div class="flex items-center gap-2 sm:gap-3">
-                <!-- <a href="{{ route('login') }}"
-                    class="hidden sm:inline-flex items-center justify-center font-semibold text-sm px-5 py-2.5 rounded-full text-slate-700 hover:bg-white/60 transition-all border border-transparent hover:border-white/60 backdrop-blur-sm">
-                    Login
-                </a> -->
+                <button onclick="window.dispatchEvent(new CustomEvent('open-cart-drawer'))"
+                        title="View Trip Basket"
+                        class="p-2.5 text-slate-700 hover:text-sky-600 hover:bg-white/60 rounded-full transition relative flex items-center justify-center border border-transparent hover:border-white/60">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                    </svg>
+                </button>
 
                 <a href="{{ route('login') }}"
                     class="inline-flex items-center justify-center px-5 sm:px-6 py-2.5 rounded-full font-bold text-sm bg-gradient-to-br from-sky-500 to-sky-700 text-white shadow-md shadow-sky-500/30 hover:shadow-lg hover:shadow-sky-500/40 hover:-translate-y-0.5 duration-200 transition-all border border-sky-400/50">
@@ -38,8 +43,6 @@
                     class="inline-flex items-center justify-center px-5 sm:px-6 py-2.5 rounded-full font-bold text-sm bg-gradient-to-br from-sky-500 to-sky-700 text-white shadow-md shadow-sky-500/30 hover:shadow-lg hover:shadow-sky-500/40 hover:-translate-y-0.5 duration-200 transition-all border border-sky-400/50">
                     Register
                 </a>
-
-
             </div>
 
     </nav>

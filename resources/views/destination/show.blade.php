@@ -375,12 +375,18 @@
                                 </div>
 
                                 {{-- Footer Action --}}
-                                <div class="p-5 pt-0">
+                                <div class="p-5 pt-0 grid grid-cols-2 gap-2">
                                     <button type="button"
                                         @click="previewActivity = {{ json_encode($actPayload) }}; activePreviewImgIdx = 0;"
-                                        class="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-ocean-600 hover:text-white text-slate-800 font-bold text-xs transition-colors flex items-center justify-center gap-1.5 shadow-2xs">
-                                        <span class="material-symbols-outlined text-[16px]">visibility</span>
-                                        <span>View Details & Itinerary</span>
+                                        class="w-full py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition-colors flex items-center justify-center gap-1">
+                                        <span class="material-symbols-outlined text-[15px]">visibility</span>
+                                        <span>Details</span>
+                                    </button>
+                                    <button type="button"
+                                        @click="window.addToCart('activity', {{ $act->id }})"
+                                        class="w-full py-2.5 px-3 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs transition-colors flex items-center justify-center gap-1 shadow-xs cursor-pointer">
+                                        <span class="material-symbols-outlined text-[15px]">shopping_cart</span>
+                                        <span>Add to Trip Basket</span>
                                     </button>
                                 </div>
                             </div>
@@ -612,10 +618,10 @@
                         class="w-full sm:w-auto px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-bold text-xs hover:bg-slate-200 transition-colors">
                         Close Preview
                     </button>
-                    <button type="button" @click="previewActivity = null"
-                        class="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-ocean-600 to-ocean-700 hover:from-ocean-700 hover:to-ocean-800 text-white font-bold text-xs shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2">
-                        <span class="material-symbols-outlined text-[18px]">check_circle</span>
-                        <span>Select & Book Experience</span>
+                    <button type="button" @click="window.addToCart('activity', previewActivity.id); previewActivity = null;"
+                        class="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-sky-600 to-sky-700 hover:from-sky-500 hover:to-sky-600 text-white font-bold text-xs shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2">
+                        <span class="material-symbols-outlined text-[18px]">shopping_cart</span>
+                        <span>Add to Trip Basket</span>
                     </button>
                 </div>
 

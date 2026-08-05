@@ -26,6 +26,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        \Illuminate\Database\Eloquent\Relations\Relation::morphMap([
+            'room' => \App\Models\RoomType::class,
+            'activity' => \App\Models\ActivityModel::class,
+            'addon' => \App\Models\AddOnModel::class,
+            'package' => \App\Models\Package::class,
+        ]);
+
         Blade::anonymousComponentPath(resource_path('views/adminComponents'), 'admin-components');
         Blade::anonymousComponentPath(resource_path('views/adminComponents'), 'adminComponents');
 

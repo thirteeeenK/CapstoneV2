@@ -8,10 +8,16 @@
             <span
                 class="text-[10px] font-bold uppercase tracking-widest text-sky-600 bg-sky-50 px-2 py-0.5 rounded border border-sky-200">Traveler</span>
         </a>
-        <button @click="sidebarOpen = !sidebarOpen"
-            class="p-2 rounded-lg text-slate-600 hover:bg-slate-100 focus:outline-none">
-            <span class="material-symbols-outlined text-2xl">menu</span>
-        </button>
+        <div class="flex items-center gap-2">
+            <button onclick="window.dispatchEvent(new CustomEvent('open-cart-drawer'))"
+                    class="p-2 rounded-lg text-slate-600 hover:bg-slate-100 focus:outline-none flex items-center justify-center">
+                <span class="material-symbols-outlined text-2xl">shopping_basket</span>
+            </button>
+            <button @click="sidebarOpen = !sidebarOpen"
+                class="p-2 rounded-lg text-slate-600 hover:bg-slate-100 focus:outline-none">
+                <span class="material-symbols-outlined text-2xl">menu</span>
+            </button>
+        </div>
     </div>
 
     {{-- Mobile Backdrop --}}
@@ -47,6 +53,7 @@
             $navGroups = [
                 'Main Navigation' => [
                     ['route' => 'dashboard', 'icon' => 'space_dashboard', 'label' => 'Dashboard', 'href' => route('dashboard')],
+                    ['route' => 'cart.*', 'icon' => 'shopping_basket', 'label' => 'My Trip Basket', 'href' => route('cart.index'), 'drawer' => true],
                 ],
                 'Explore Catalog' => [
                     ['route' => 'destinations.*', 'icon' => 'location_on', 'label' => 'Island Destinations', 'href' => route('destinations.index')],
@@ -54,6 +61,7 @@
                     ['route' => 'rooms.*', 'icon' => 'king_bed', 'label' => 'Rooms & Stays', 'href' => route('rooms.index')],
                     ['route' => 'activities.*', 'icon' => 'explore', 'label' => 'Activities & Tours', 'href' => route('activities.index')],
                     ['route' => 'addons.*', 'icon' => 'extension', 'label' => 'Transfers & Add-ons', 'href' => route('addons.index')],
+                    ['route' => 'packages.*', 'icon' => 'card_travel', 'label' => 'Tour Packages & Promos', 'href' => route('packages.index')],
                 ],
                 'Personalization' => [
                     ['route' => 'onboarding.*', 'icon' => 'tune', 'label' => 'AI Preferences Quiz', 'href' => route('onboarding.index')],
@@ -73,14 +81,16 @@
                         @foreach ($items as $item)
                             @php
                                 $isActive = request()->routeIs($item['route']);
+                                $isCart = isset($item['drawer']) && $item['drawer'];
                             @endphp
                             <a href="{{ $item['href'] }}"
+                                @if($isCart) onclick="window.dispatchEvent(new CustomEvent('open-cart-drawer')); return false;" @endif
                                 class="flex items-center gap-3 w-full h-10 px-3 rounded-xl transition-all duration-200 group {{ $isActive ? 'bg-sky-50 text-sky-700 font-bold border border-sky-200/80 shadow-xs' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900 font-semibold' }}">
                                 <span
                                     class="material-symbols-outlined text-[20px] shrink-0 {{ $isActive ? 'text-sky-600' : 'text-slate-400 group-hover:text-sky-600' }}">
                                     {{ $item['icon'] }}
                                 </span>
-                                <span class="font-sans text-xs tracking-tight">
+                                <span class="font-sans text-xs tracking-tight flex-1">
                                     {{ $item['label'] }}
                                 </span>
                             </a>

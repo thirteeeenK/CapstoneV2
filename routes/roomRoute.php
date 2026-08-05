@@ -3,7 +3,10 @@
 use App\Http\Controllers\Admin\RoomController;
 use App\Http\Controllers\RoomShowController;
 
+use App\Http\Controllers\RoomAvailabilityController;
+
 Route::get('/rooms', [RoomShowController::class, 'index'])->name('rooms.index');
+Route::get('/rooms/{id}/availability', [RoomAvailabilityController::class, 'check'])->name('rooms.availability');
 
 Route::prefix('admin')->group(function () {
     Route::middleware(['auth:admin', 'no.cache'])->group(function () {

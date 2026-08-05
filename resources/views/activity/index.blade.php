@@ -25,7 +25,7 @@
             }
             return true;
         }
-    }" class="py-12 bg-slate-50 text-slate-900 min-h-screen relative overflow-hidden">
+    }" class="pt-28 pb-12 bg-slate-50 text-slate-900 min-h-screen relative overflow-hidden">
         
         {{-- Background Soft Ambient Mesh Glows --}}
         <div class="absolute top-10 left-1/3 w-[500px] h-[300px] bg-sky-200/40 blur-3xl rounded-full pointer-events-none"></div>
@@ -278,15 +278,12 @@
                                 <span>Preview</span>
                             </button>
 
-                            @if($act->destination_id)
-                                <a href="{{ route('destinations.show', $act->destination_id) }}"
-                                    class="w-full py-2 px-3 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs transition-colors flex items-center justify-center gap-1 shadow-xs cursor-pointer">
-                                    <span>Explore</span>
-                                    <span class="material-symbols-outlined text-[15px]">arrow_forward</span>
-                                </a>
-                            @else
-                                <span class="w-full py-2 px-3 text-center text-xs font-bold text-slate-400">Curated</span>
-                            @endif
+                            <button type="button"
+                                @click="window.addToCart('activity', {{ $act->id }})"
+                                class="w-full py-2 px-3 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs transition-colors flex items-center justify-center gap-1 shadow-xs cursor-pointer">
+                                <span class="material-symbols-outlined text-[15px]">shopping_cart</span>
+                                <span>Add to Trip Basket</span>
+                            </button>
                         </div>
                     </div>
                 @endforeach
@@ -403,13 +400,12 @@
                         Close Preview
                     </button>
 
-                    <template x-if="previewActivity?.destination_id">
-                        <a :href="'/destinations/' + previewActivity.destination_id"
-                            class="px-6 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs shadow-md transition-colors flex items-center gap-1.5">
-                            <span>Explore Island Destination</span>
-                            <span class="material-symbols-outlined text-sm">arrow_forward</span>
-                        </a>
-                    </template>
+                    <button type="button"
+                        @click="window.addToCart('activity', previewActivity.id); previewActivity = null;"
+                        class="px-6 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs shadow-md transition-colors flex items-center gap-1.5 cursor-pointer">
+                        <span class="material-symbols-outlined text-sm">shopping_cart</span>
+                        <span>Add to Trip Basket</span>
+                    </button>
                 </div>
 
             </div>

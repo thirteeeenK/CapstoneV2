@@ -11,6 +11,7 @@
 1. [Project Overview](#1-project-overview)
 2. [System Architecture](#2-system-architecture)
 3. [Hybrid Retrieval Strategy](#3-hybrid-retrieval-strategy)
+   - [3.3 Real-Time Date & Room Availability Tool Calling](#33-real-time-date--room-availability-tool-calling-function-execution)
 4. [Knowledge Sources & Data Mapping](#4-knowledge-sources--data-mapping)
 5. [Embedding Strategy & Pipeline](#5-embedding-strategy--pipeline)
 6. [Recommendation System Engine](#6-recommendation-system-engine)
@@ -126,6 +127,16 @@ $scoredRooms = $geminiService->searchRoomsHybrid($userQuery, $constraints, $limi
 $contextText = $geminiService->getRoomContext($scoredRooms);
 return $geminiService->generateGroundedResponse($systemInstruction, $contextText, $userQuery);
 ```
+
+### 3.3 Real-Time Date & Room Availability Tool Calling (Function Execution)
+
+The AI Chatbot is empowered with real-time tool calling (`check_room_availability`) to handle natural language date availability inquiries (e.g., *"What hotels or rooms in El Nido are available from August 10 to August 13 for 2 guests?"*).
+
+#### Execution Architecture:
+1. **Intent & Constraint Extraction**: `IntentRouter` extracts `destination_name`, `check_in_date`, `check_out_date`, and `pax_count`.
+2. **Availability API Query**: Executes backend availability validation (`RoomAvailabilityController@check`) against active `booking_items` and `cart_items` for the requested date window.
+3. **Inventory Filtering**: Filters out sold-out room types where `remaining_rooms <= 0`.
+4. **Conversational Synthesis & Interactive Cards**: Gemini generates a grounded response listing available rooms, total stay cost ($\text{Nights} \times \text{Rate/Night}$), remaining inventory badges, and interactive **"Add to Trip Basket"** buttons.
 
 ---
 

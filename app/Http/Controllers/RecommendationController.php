@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\ActivityModel;
 use App\Models\DestinationModel;
 use App\Models\HotelModel;
+use App\Models\Package;
 use App\Services\GeminiService;
 use Illuminate\Support\Facades\Auth;
 
@@ -38,11 +39,18 @@ class RecommendationController extends Controller
                 ->take(5)
                 ->get();
 
-            if ($defaultHotels->isNotEmpty() || $defaultActivities->isNotEmpty()) {
+            $defaultPackages = Package::where('is_active', true)
+                ->where('destination_id', $destination->id)
+                ->with('destination')
+                ->take(4)
+                ->get();
+
+            if ($defaultHotels->isNotEmpty() || $defaultActivities->isNotEmpty() || $defaultPackages->isNotEmpty()) {
                 $defaultRecommendations[] = [
                     'destination' => $destination,
                     'hotels' => $defaultHotels,
                     'activities' => $defaultActivities,
+                    'packages' => $defaultPackages,
                 ];
             }
 
@@ -72,11 +80,18 @@ class RecommendationController extends Controller
                     ->take(5)
                     ->values();
 
-                if ($aiHotels->isNotEmpty() || $aiActivities->isNotEmpty()) {
+                $aiPackages = Package::where('is_active', true)
+                    ->where('destination_id', $destination->id)
+                    ->with('destination')
+                    ->take(4)
+                    ->get();
+
+                if ($aiHotels->isNotEmpty() || $aiActivities->isNotEmpty() || $aiPackages->isNotEmpty()) {
                     $aiRecommendations[] = [
                         'destination' => $destination,
                         'hotels' => $aiHotels,
                         'activities' => $aiActivities,
+                        'packages' => $aiPackages,
                     ];
                 }
             }
