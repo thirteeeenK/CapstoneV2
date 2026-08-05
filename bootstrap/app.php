@@ -15,6 +15,11 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'no.cache' => NoCacheHeaders::class,
+            'check.onboarding' => \App\Http\Middleware\CheckUserOnboarding::class,
+        ]);
+
+        $middleware->web(append: [
+            \App\Http\Middleware\CheckUserOnboarding::class,
         ]);
 
         $middleware->redirectGuestsTo(function (Request $request) {

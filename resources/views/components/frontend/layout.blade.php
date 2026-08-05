@@ -21,6 +21,13 @@
             backdrop-filter: blur(20px);
             -webkit-backdrop-filter: blur(20px);
         }
+        .nav-active {
+            background: linear-gradient(135deg, #0ea5e9 0%, #0369a1 100%) !important;
+            color: #ffffff !important;
+            font-weight: 700 !important;
+            box-shadow: 0 4px 14px rgba(14, 165, 233, 0.35) !important;
+            border: 1px solid rgba(56, 189, 248, 0.5) !important;
+        }
         .signature-gradient {
             background: linear-gradient(135deg, #005f99 0%, #5eb1fc 100%);
         }
@@ -39,14 +46,22 @@
     </style>
 </head>
 <body class="bg-surface font-body text-on-surface antialiased">
-    <x-frontend.navbar />
+    @unless($hideNavFooter ?? false)
+        @auth
+            @include('layouts.user-sidebar')
+        @else
+            <x-frontend.navbar />
+        @endauth
+    @endunless
     
-    <main>
+    <main class="{{ (!($hideNavFooter ?? false) && Auth::check()) ? 'md:ms-64 transition-all duration-300' : '' }}">
         {{ $slot }}
     </main>
 
-    <x-frontend.footer />
-    <x-frontend.mobile-nav />
+    @unless(($hideNavFooter ?? false) || Auth::check())
+        <x-frontend.footer />
+        <x-frontend.mobile-nav />
+    @endunless
 
     <!-- Scroll Reveal Animation Script -->
     <script>

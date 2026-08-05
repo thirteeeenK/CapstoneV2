@@ -14,11 +14,20 @@ Route::get('/privacy-policy', [LegalContentController::class, 'show'])->defaults
 Route::get('/ai-disclosure', [LegalContentController::class, 'show'])->defaults('slug', 'ai-disclosure')->name('ai-disclosure');
 Route::get('/legal/{slug}', [LegalContentController::class, 'show'])->name('legal.show');
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+use App\Http\Controllers\RecommendationController;
+
+Route::get('/dashboard', [RecommendationController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('dashboard');
+
+use App\Http\Controllers\OnboardingController;
 
 Route::middleware('auth')->group(function () {
+    Route::get('/onboarding', [OnboardingController::class, 'index'])->name('onboarding.index');
+    Route::post('/onboarding', [OnboardingController::class, 'store'])->name('onboarding.store');
+    Route::match(['get', 'post'], '/onboarding/reset', [OnboardingController::class, 'reset'])->name('onboarding.reset');
+    Route::match(['get', 'post'], '/onboarding/skip', [OnboardingController::class, 'skip'])->name('onboarding.skip');
+
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
