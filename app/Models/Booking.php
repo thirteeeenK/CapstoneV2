@@ -26,6 +26,7 @@ class Booking extends Model
         'contact_email',
         'contact_phone',
         'special_requests',
+        'guest_manifest',
     ];
 
     protected $casts = [
@@ -33,6 +34,7 @@ class Booking extends Model
         'discount_amount' => 'decimal:2',
         'tax_amount' => 'decimal:2',
         'net_amount' => 'decimal:2',
+        'guest_manifest' => 'array',
     ];
 
     public function user()

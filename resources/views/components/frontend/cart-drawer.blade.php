@@ -141,17 +141,20 @@
                     </div>
                 </div>
 
+                <a href="{{ route('checkout.index') }}" 
+                   class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-sky-600 to-sky-700 hover:from-sky-500 hover:to-sky-600 text-white font-extrabold text-xs shadow-md shadow-sky-600/30 transition text-center flex items-center justify-center gap-1.5 cursor-pointer">
+                    <span class="material-symbols-outlined text-[16px]">lock</span>
+                    <span>Proceed to Checkout</span>
+                </a>
+
                 <div class="grid grid-cols-2 gap-2.5">
                     <button @click="clearCart()" 
-                            class="px-4 py-3 rounded-xl border border-slate-300 font-bold text-xs text-slate-600 hover:bg-slate-50 transition text-center">
-                        Clear All
+                            class="px-3 py-2 rounded-xl border border-slate-300 font-bold text-xs text-slate-600 hover:bg-slate-50 transition text-center cursor-pointer">
+                        Clear Basket
                     </button>
                     <a href="{{ route('cart.index') }}" 
-                       class="px-4 py-3 rounded-xl bg-gradient-to-r from-sky-600 to-sky-700 hover:from-sky-500 hover:to-sky-600 text-white font-bold text-xs shadow-md shadow-sky-600/30 transition text-center flex items-center justify-center gap-1.5">
-                        <span>View Trip Summary</span>
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                        </svg>
+                       class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition text-center flex items-center justify-center gap-1 cursor-pointer">
+                        <span>Full Basket View</span>
                     </a>
                 </div>
             </div>

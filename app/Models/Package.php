@@ -19,6 +19,7 @@ class Package extends Model
         'generic_inclusions',
         'images',
         'is_active',
+        'embedding',
     ];
 
     protected $casts = [
@@ -28,6 +29,16 @@ class Package extends Model
         'valid_to' => 'date',
         'is_active' => 'boolean',
     ];
+
+    public function getIsShownAttribute(): bool
+    {
+        return (bool)$this->is_active;
+    }
+
+    public function setIsShownAttribute($value): void
+    {
+        $this->attributes['is_active'] = (bool)$value;
+    }
 
     public function destination()
     {

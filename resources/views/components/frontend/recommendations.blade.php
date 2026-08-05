@@ -184,7 +184,7 @@
                                             'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80'
                                         );
                                     @endphp
-                                    <a href="{{ route('destinations.show', $dest->id) }}"
+                                    <a href="{{ route('hotels.show', $hotel->id) }}"
                                         class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs hover:shadow-md hover:border-sky-300 transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between group">
                                         <div>
                                             <div class="relative h-40 overflow-hidden bg-slate-100">
@@ -345,7 +345,7 @@
                                             'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80'
                                         );
                                     @endphp
-                                    <a href="{{ route('destinations.show', $dest->id) }}"
+                                    <a href="{{ route('hotels.show', $hotel->id) }}"
                                         class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs hover:shadow-md hover:border-sky-300 transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between group">
                                         <div>
                                             <div class="relative h-40 overflow-hidden bg-slate-100">

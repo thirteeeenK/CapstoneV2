@@ -27,6 +27,7 @@
 
     <div x-data="{
         selectedRoom: null,
+        selectedPax: 2,
         roomCheckIn: '',
         roomCheckOut: '',
         roomAvailable: true,
@@ -34,6 +35,30 @@
         previewRoom: null,
         activePreviewImgIndex: 0,
         autoPreviewRoomId: {{ request('preview_room') ? (int)request('preview_room') : 'null' }},
+
+        get computedNightlyRate() {
+            const target = this.previewRoom || this.selectedRoom;
+            if (!target) return 0;
+            const basePrice = Number(target.base_price) || 0;
+            const basePax = Number(target.base_occupancy) || 2;
+            const extraFee = Number(target.extra_person_fee) || 0;
+            const pax = Number(this.selectedPax) || basePax;
+            if (pax > basePax) {
+                return basePrice + ((pax - basePax) * extraFee);
+            }
+            return basePrice;
+        },
+
+        getPaxOptions(room) {
+            if (!room) return [1, 2];
+            const max = Math.max(1, Number(room.max_occupancy) || Number(room.occupancy) || 3);
+            const opts = [];
+            for (let i = 1; i <= max; i++) {
+                opts.push(i);
+            }
+            return opts;
+        },
+
         init() {
             if (this.autoPreviewRoomId) {
                 this.$nextTick(() => {
@@ -50,10 +75,11 @@
         },
         selectRoom(room) {
             this.selectedRoom = room;
+            this.selectedPax = Number(room.base_occupancy) || 2;
             this.roomCheckIn = '';
             this.roomCheckOut = '';
             this.roomAvailable = true;
-            $nextTick(() => {
+            this.$nextTick(() => {
                 const el = document.getElementById('selected-room-sidebar');
                 if (el) {
                     el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -62,6 +88,7 @@
         },
         openRoomPreview(room) {
             this.previewRoom = room;
+            this.selectedPax = Number(room.base_occupancy) || 2;
             this.roomCheckIn = '';
             this.roomCheckOut = '';
             this.roomAvailable = true;
@@ -232,44 +259,31 @@
                                     </button>
                                 </div>
 
-                                {{-- Price Display --}}
-                                <div class="bg-slate-900 text-white p-4 rounded-xl space-y-1">
-                                    <p class="text-[11px] text-slate-400 uppercase font-semibold tracking-wider">Base
-                                        Room Rate</p>
+                                {{-- Dynamic Calculated Price Display --}}
+                                <div class="bg-slate-900 text-white p-4 rounded-xl space-y-2">
+                                    <div class="flex items-center justify-between">
+                                        <p class="text-[11px] text-slate-400 uppercase font-semibold tracking-wider">Calculated Room Rate</p>
+                                        <span x-show="selectedPax > (selectedRoom.base_occupancy || 2)" class="text-[10px] font-bold bg-amber-400 text-slate-950 px-2 py-0.5 rounded-full" x-cloak>
+                                            +₱<span x-text="((selectedPax - (selectedRoom.base_occupancy || 2)) * (selectedRoom.extra_person_fee || 0)).toLocaleString('en-US')"></span> Extra Guest Fee
+                                        </span>
+                                    </div>
                                     <div class="flex items-baseline gap-1">
                                         <span class="text-2xl sm:text-3xl font-black text-emerald-400 font-headline">
-                                            ₱<span
-                                                x-text="Number(selectedRoom.base_price).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})"></span>
+                                            ₱<span x-text="Number(computedNightlyRate).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})"></span>
                                         </span>
                                         <span class="text-xs text-slate-400 font-medium">/ night</span>
                                     </div>
                                 </div>
 
-                                {{-- Specs Grid --}}
+                                 {{-- Specs Grid --}}
                                 <div class="grid grid-cols-2 gap-3 text-xs">
                                     <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-100 space-y-0.5">
-                                        <span class="text-slate-400 text-[10px] block uppercase font-medium">Bed
-                                            Layout</span>
-                                        <span class="font-bold text-slate-800"
-                                            x-text="selectedRoom.bed_configuration || 'Standard'"></span>
+                                        <span class="text-slate-400 text-[10px] block uppercase font-medium">Bed Layout</span>
+                                        <span class="font-bold text-slate-800 truncate block" x-text="selectedRoom.bed_configuration || 'Standard'"></span>
                                     </div>
                                     <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-100 space-y-0.5">
-                                        <span class="text-slate-400 text-[10px] block uppercase font-medium">Max
-                                            Guests</span>
-                                        <span class="font-bold text-slate-800"
-                                            x-text="(selectedRoom.occupancy || 2) + ' Persons'"></span>
-                                    </div>
-                                    <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-100 space-y-0.5"
-                                        x-show="selectedRoom.room_size">
-                                        <span class="text-slate-400 text-[10px] block uppercase font-medium">Room
-                                            Size</span>
-                                        <span class="font-bold text-slate-800" x-text="selectedRoom.room_size"></span>
-                                    </div>
-                                    <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-100 space-y-0.5"
-                                        x-show="selectedRoom.view_type">
-                                        <span class="text-slate-400 text-[10px] block uppercase font-medium">View
-                                            Type</span>
-                                        <span class="font-bold text-slate-800" x-text="selectedRoom.view_type"></span>
+                                        <span class="text-slate-400 text-[10px] block uppercase font-medium">Capacity (Base / Max)</span>
+                                        <span class="font-bold text-slate-800 block" x-text="'Base: ' + (selectedRoom.base_occupancy || 2) + ' • Max: ' + (selectedRoom.max_occupancy || selectedRoom.occupancy || 4) + ' Pax'"></span>
                                     </div>
                                 </div>
 
@@ -286,7 +300,7 @@
 
                                 {{-- Action Button --}}
                                 <button type="button" 
-                                    @click="if (!roomCheckIn || !roomCheckOut) { alert('Please select your stay check-in and check-out dates first!'); return; } window.addToCart('room', selectedRoom.id, { check_in_date: roomCheckIn, check_out_date: roomCheckOut })"
+                                    @click="if (!roomCheckIn || !roomCheckOut) { alert('Please select your stay check-in and check-out dates first!'); return; } window.addToCart('room', selectedRoom.id, { check_in_date: roomCheckIn, check_out_date: roomCheckOut, selected_pax: selectedPax })"
                                     :disabled="!roomAvailable || !roomCheckIn || !roomCheckOut"
                                     :class="(!roomAvailable || !roomCheckIn || !roomCheckOut) ? 'opacity-50 cursor-not-allowed bg-slate-400' : 'bg-gradient-to-r from-sky-600 to-sky-700 hover:from-sky-500 hover:to-sky-600 shadow-md shadow-sky-600/20 hover:shadow-lg cursor-pointer'"
                                     class="w-full py-3 px-4 rounded-xl text-white font-bold text-sm transition-all flex items-center justify-center gap-2">
@@ -414,12 +428,10 @@
                                                     {{ $room->bed_configuration }}
                                                 </span>
                                             @endif
-                                            @if($room->occupancy)
-                                                <span class="bg-slate-100 px-2 py-1 rounded-md flex items-center gap-1 font-medium">
-                                                    <span class="material-symbols-outlined text-[14px] text-slate-400">person</span>
-                                                    {{ $room->occupancy }} Guests
-                                                </span>
-                                            @endif
+                                            <span class="bg-slate-100 px-2.5 py-1 rounded-md flex items-center gap-1 font-medium text-slate-700">
+                                                <span class="material-symbols-outlined text-[14px] text-sky-600">group</span>
+                                                Base: {{ $room->base_occupancy ?: 2 }} • Max: {{ $room->max_occupancy ?: ($room->occupancy ?: 4) }} Guests
+                                            </span>
                                             @if($room->room_size)
                                                 <span class="bg-slate-100 px-2 py-1 rounded-md flex items-center gap-1 font-medium">
                                                     <span
@@ -516,9 +528,12 @@
                     
                     <div class="mt-3 flex items-baseline gap-2">
                         <span class="text-2xl sm:text-3xl font-black text-emerald-400 font-headline">
-                            ₱<span x-text="Number(previewRoom?.base_price || 0).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})"></span>
+                            ₱<span x-text="Number(computedNightlyRate).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})"></span>
                         </span>
                         <span class="text-xs text-slate-300 font-medium">/ night</span>
+                        <span x-show="selectedPax > (previewRoom?.base_occupancy || 2)" class="text-[10px] font-bold bg-amber-400 text-slate-950 px-2 py-0.5 rounded-full ml-2" x-cloak>
+                            +₱<span x-text="((selectedPax - (previewRoom?.base_occupancy || 2)) * (previewRoom?.extra_person_fee || 0)).toLocaleString('en-US')"></span> Extra Guest Fee
+                        </span>
                     </div>
                 </div>
 
@@ -560,10 +575,17 @@
                             </span>
                         </div>
                         <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/80 space-y-1">
+                            <span class="text-slate-400 text-[10px] block uppercase font-bold tracking-wider">Base Occupancy</span>
+                            <span class="font-bold text-slate-800 flex items-center gap-1">
+                                <span class="material-symbols-outlined text-[16px] text-ocean-600">person</span>
+                                <span x-text="(previewRoom?.base_occupancy || 2) + ' Guests'"></span>
+                            </span>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/80 space-y-1">
                             <span class="text-slate-400 text-[10px] block uppercase font-bold tracking-wider">Max Occupancy</span>
                             <span class="font-bold text-slate-800 flex items-center gap-1">
                                 <span class="material-symbols-outlined text-[16px] text-ocean-600">group</span>
-                                <span x-text="(previewRoom?.occupancy || 2) + ' Guests'"></span>
+                                <span x-text="(previewRoom?.max_occupancy || previewRoom?.occupancy || 4) + ' Guests'"></span>
                             </span>
                         </div>
                         <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/80 space-y-1" x-show="previewRoom?.room_size">
@@ -573,12 +595,6 @@
                                 <span x-text="previewRoom?.room_size"></span>
                             </span>
                         </div>
-                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/80 space-y-1" x-show="previewRoom?.ideal_guest">
-                            <span class="text-slate-400 text-[10px] block uppercase font-bold tracking-wider">Ideal For</span>
-                            <span class="font-bold text-slate-800 flex items-center gap-1">
-                                <span class="material-symbols-outlined text-[16px] text-ocean-600">face</span>
-                                <span x-text="previewRoom?.ideal_guest"></span>
-                            </span>
                         </div>
                     </div>
 
@@ -620,7 +636,7 @@
                         Close Preview
                     </button>
                     <button type="button" 
-                        @click="if (!roomCheckIn || !roomCheckOut) { alert('Please select your stay check-in and check-out dates first!'); return; } window.addToCart('room', previewRoom.id, { check_in_date: roomCheckIn, check_out_date: roomCheckOut }); closeRoomPreview();"
+                        @click="if (!roomCheckIn || !roomCheckOut) { alert('Please select your stay check-in and check-out dates first!'); return; } window.addToCart('room', previewRoom.id, { check_in_date: roomCheckIn, check_out_date: roomCheckOut, selected_pax: selectedPax }); closeRoomPreview();"
                         :disabled="!roomAvailable || !roomCheckIn || !roomCheckOut"
                         :class="(!roomAvailable || !roomCheckIn || !roomCheckOut) ? 'opacity-50 cursor-not-allowed bg-slate-400' : 'bg-gradient-to-r from-sky-600 to-sky-700 hover:from-sky-500 hover:to-sky-600 shadow-md shadow-sky-600/20 hover:shadow-lg cursor-pointer'"
                         class="w-full sm:w-auto px-6 py-2.5 rounded-xl text-white font-bold text-xs transition-all flex items-center justify-center gap-2">

@@ -128,6 +128,9 @@ class CartItem extends Model
 
         switch ($this->item_type) {
             case 'room':
+                if (method_exists($item, 'calculateNightlyRate')) {
+                    return $item->calculateNightlyRate(max(1, (int)($this->selected_pax ?: 2)));
+                }
                 return $this->parseCurrency($item->base_price ?? $item->rate_per_night ?? 0);
 
             case 'activity':

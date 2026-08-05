@@ -17,9 +17,12 @@ class RoomType extends Model
         'total_rooms',
         'total_number_of_rooms',
         'occupancy',
+        'base_occupancy',
+        'max_occupancy',
         'bed_configuration',
         'room_size',
         'base_price',
+        'extra_person_fee',
         'description',
         'view_type',
         'room_amenities',
@@ -32,8 +35,20 @@ class RoomType extends Model
     protected $casts = [
         'room_amenities' => 'array',
         'images' => 'array',
-        'is_shown' => 'boolean'
+        'is_shown' => 'boolean',
+        'base_price' => 'decimal:2',
+        'extra_person_fee' => 'decimal:2',
     ];
+
+    public function getBaseOccupancyAttribute($value)
+    {
+        return (int)($value ?: 2);
+    }
+
+    public function getMaxOccupancyAttribute($value)
+    {
+        return (int)($value ?: ($this->attributes['occupancy'] ?? 2));
+    }
 
     public function getIdealGuestAttribute($value)
     {
@@ -48,6 +63,23 @@ class RoomType extends Model
     public function getRatePerNightAttribute()
     {
         return $this->attributes['base_price'] ?? null;
+    }
+
+    /**
+     * Calculate nightly rate dynamically based on selected pax.
+     */
+    public function calculateNightlyRate(int $selectedPax = 2): float
+    {
+        $basePrice = (float) $this->base_price;
+        $basePax = $this->base_occupancy;
+        $extraFee = (float) ($this->extra_person_fee ?: 0.00);
+
+        if ($selectedPax > $basePax) {
+            $extraGuests = $selectedPax - $basePax;
+            return $basePrice + ($extraGuests * $extraFee);
+        }
+
+        return $basePrice;
     }
 
     public function hotel()

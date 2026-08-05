@@ -383,7 +383,7 @@
                                         <span>Details</span>
                                     </button>
                                     <button type="button"
-                                        @click="window.addToCart('activity', {{ $act->id }})"
+                                        @click="window.addToCart('activity', {{ $activity->id }})"
                                         class="w-full py-2.5 px-3 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs transition-colors flex items-center justify-center gap-1 shadow-xs cursor-pointer">
                                         <span class="material-symbols-outlined text-[15px]">shopping_cart</span>
                                         <span>Add to Trip Basket</span>

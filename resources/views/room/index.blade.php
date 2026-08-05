@@ -204,12 +204,10 @@
                                 </p>
 
                                 <div class="flex items-center gap-3 pt-1 text-[11px] text-slate-600 font-medium flex-wrap">
-                                    @if($room->occupancy || $room->capacity)
-                                        <span class="flex items-center gap-1">
-                                            <span class="material-symbols-outlined text-[14px] text-sky-600">group</span>
-                                            <span>Max {{ $room->occupancy ?: $room->capacity }} Guests</span>
-                                        </span>
-                                    @endif
+                                    <span class="flex items-center gap-1">
+                                        <span class="material-symbols-outlined text-[14px] text-sky-600">group</span>
+                                        <span>Base: {{ $room->base_occupancy ?: 2 }} • Max: {{ $room->max_occupancy ?: ($room->occupancy ?: 4) }} Guests</span>
+                                    </span>
 
                                     @if($room->view_type)
                                         <span class="flex items-center gap-1">

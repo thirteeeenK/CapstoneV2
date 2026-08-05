@@ -139,7 +139,7 @@ class InventoryController extends Controller
     public function toggleVisibility(Request $request)
     {
         $request->validate([
-            'type' => 'required|in:hotel,room,activity,addon,add_on',
+            'type' => 'required|in:hotel,room,activity,addon,add_on,package',
             'id' => 'required|integer',
             'is_shown' => 'required|boolean'
         ]);
@@ -154,6 +154,8 @@ class InventoryController extends Controller
             $item = RoomType::findOrFail($id);
         } elseif ($type === 'addon' || $type === 'add_on') {
             $item = AddOnModel::findOrFail($id);
+        } elseif ($type === 'package') {
+            $item = \App\Models\Package::findOrFail($id);
         } else {
             $item = ActivityModel::findOrFail($id);
         }

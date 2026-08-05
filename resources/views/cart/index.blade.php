@@ -89,12 +89,10 @@
                                     {{-- Feature Badges & Specs --}}
                                     <div class="flex flex-wrap gap-1.5 mt-2">
                                         @if($item->item_type === 'room' && $item->itemable)
-                                            @if($item->itemable->occupancy)
-                                                <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200/60">
-                                                    <span class="material-symbols-outlined text-[13px] text-slate-500">group</span>
-                                                    <span>Max {{ $item->itemable->occupancy }} Guests</span>
-                                                </span>
-                                            @endif
+                                            <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200/60">
+                                                <span class="material-symbols-outlined text-[13px] text-slate-500">group</span>
+                                                <span>Base: {{ $item->itemable->base_occupancy }} • Max: {{ $item->itemable->max_occupancy }} Pax</span>
+                                            </span>
                                             @if($item->itemable->bed_configuration)
                                                 <span class="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200/60">
                                                     <span class="material-symbols-outlined text-[13px] text-slate-500">king_bed</span>
@@ -180,12 +178,12 @@
                             <span class="text-2xl font-black text-sky-700">₱{{ number_format($selectedSubtotal, 2) }}</span>
                         </div>
 
-                        <button class="w-full py-4 bg-gradient-to-r from-sky-600 to-sky-700 hover:from-sky-500 hover:to-sky-600 text-white rounded-2xl font-extrabold text-sm shadow-lg shadow-sky-600/30 transition flex items-center justify-center gap-2">
+                        <a href="{{ route('checkout.index') }}" class="w-full py-4 bg-gradient-to-r from-sky-600 to-sky-700 hover:from-sky-500 hover:to-sky-600 text-white rounded-2xl font-extrabold text-sm shadow-lg shadow-sky-600/30 transition flex items-center justify-center gap-2 cursor-pointer">
                             <span>Proceed to Booking Checkout</span>
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                             </svg>
-                        </button>
+                        </a>
                     </div>
 
                 </div>

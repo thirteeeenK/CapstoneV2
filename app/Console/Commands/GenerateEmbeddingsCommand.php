@@ -86,6 +86,27 @@ class GenerateEmbeddingsCommand extends Command
             }
         }
 
+        // 4. Process Tour Packages
+        $queryPackages = \App\Models\Package::with('destination');
+        if (!$force) {
+            $queryPackages->whereNull('embedding');
+        }
+        $packages = $queryPackages->get();
+
+        $this->info("Processing {$packages->count()} tour packages...");
+        foreach ($packages as $package) {
+            $text = $geminiService->buildPackageEmbeddingText($package);
+            $vector = $geminiService->generateEmbedding($text, 'RETRIEVAL_DOCUMENT', $package->name);
+
+            if ($vector) {
+                $package->embedding = $geminiService->formatVectorForDb($vector);
+                $package->save();
+                $this->line("  ✓ Embedded Package: {$package->name}");
+            } else {
+                $this->error("  ✗ Failed Package: {$package->name}");
+            }
+        }
+
         $this->info('AI Embedding process completed successfully!');
         return Command::SUCCESS;
     }

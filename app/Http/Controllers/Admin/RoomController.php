@@ -39,9 +39,12 @@ class RoomController extends Controller
             'additional_notes' => 'nullable|string',
             'total_rooms' => 'required|integer|min:1',
             'occupancy' => 'required|integer|min:1',
+            'base_occupancy' => 'nullable|integer|min:1',
+            'max_occupancy' => 'nullable|integer|min:1',
             'bed_configuration' => 'required|string|max:255',
             'room_size' => 'nullable|string|max:255',
             'base_price' => 'required|numeric|min:0',
+            'extra_person_fee' => 'nullable|numeric|min:0',
             'room_amenities' => 'nullable|string',
             'images' => 'nullable|array',
             'images.*' => 'image|mimes:jpeg,png,jpg,webp|max:5120',
@@ -71,9 +74,12 @@ class RoomController extends Controller
             'additional_notes' => $request->additional_notes,
             'total_rooms' => $request->total_rooms,
             'occupancy' => $request->occupancy,
+            'base_occupancy' => $request->base_occupancy ?: 2,
+            'max_occupancy' => $request->max_occupancy ?: $request->occupancy,
             'bed_configuration' => $request->bed_configuration,
             'room_size' => $request->room_size,
             'base_price' => $request->base_price,
+            'extra_person_fee' => $request->extra_person_fee ?: 0.00,
             'room_amenities' => $amenities,
             'images' => $imagePaths,
             'embedding' => null,
@@ -124,9 +130,12 @@ class RoomController extends Controller
             'additional_notes' => 'nullable|string',
             'total_rooms' => 'required|integer|min:1',
             'occupancy' => 'required|integer|min:1',
+            'base_occupancy' => 'nullable|integer|min:1',
+            'max_occupancy' => 'nullable|integer|min:1',
             'bed_configuration' => 'required|string|max:255',
             'room_size' => 'nullable|string|max:255',
             'base_price' => 'required|numeric|min:0',
+            'extra_person_fee' => 'nullable|numeric|min:0',
             'room_amenities' => 'nullable|string',
             'images' => 'nullable|array',
             'images.*' => 'image|mimes:jpeg,png,jpg,webp|max:5120',
@@ -142,9 +151,12 @@ class RoomController extends Controller
         $room->additional_notes = $request->additional_notes;
         $room->total_rooms = $request->total_rooms;
         $room->occupancy = $request->occupancy;
+        $room->base_occupancy = $request->base_occupancy ?: 2;
+        $room->max_occupancy = $request->max_occupancy ?: $request->occupancy;
         $room->bed_configuration = $request->bed_configuration;
         $room->room_size = $request->room_size;
         $room->base_price = $request->base_price;
+        $room->extra_person_fee = $request->extra_person_fee ?: 0.00;
         $room->is_shown = $request->has('is_shown') ? $request->boolean('is_shown') : false;
 
         $amenities = [];

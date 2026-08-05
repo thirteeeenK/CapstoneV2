@@ -105,6 +105,25 @@ class GeminiService
     }
 
     /**
+     * Builds structured, semantically optimized text for Package embedding generation.
+     */
+    public function buildPackageEmbeddingText(\App\Models\Package $package): string
+    {
+        $destinationName = $package->destination ? $package->destination->name : 'Philippines';
+        $inclusions = is_array($package->generic_inclusions) ? implode(', ', $package->generic_inclusions) : '';
+
+        return implode("\n", array_filter([
+            "Tour Package Name: {$package->name}",
+            "Package Type: " . ($package->type ?: 'Standard Tour Promo'),
+            "Destination: {$destinationName}",
+            "Rate / Price: ₱" . number_format($package->price, 2),
+            "Duration: " . ($package->days ?: 3) . " Days / " . ($package->nights ?: 2) . " Nights",
+            "Minimum Guests Required: " . ($package->min_pax ?: 2) . " Pax",
+            $inclusions ? "Included Inclusions & Features: {$inclusions}" : "All-inclusive promo package",
+        ]));
+    }
+
+    /**
      * Builds structured, semantically optimized text for Hotel embedding generation.
      */
     public function buildHotelEmbeddingText(HotelModel $hotel, ?string $destinationName = null): string

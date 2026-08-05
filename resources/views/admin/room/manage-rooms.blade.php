@@ -279,8 +279,8 @@
                             <span class="font-bold text-slate-900" x-text="previewRoom?.bed_configuration || 'Standard'"></span>
                         </div>
                         <div>
-                            <span class="text-[10px] text-slate-400 uppercase font-semibold block">Max Occupancy</span>
-                            <span class="font-bold text-slate-900" x-text="(previewRoom?.occupancy || 2) + ' Guests'"></span>
+                            <span class="text-[10px] text-slate-400 uppercase font-semibold block">Capacity (Base / Max)</span>
+                            <span class="font-bold text-slate-900" x-text="'Base: ' + (previewRoom?.base_occupancy || 2) + ' • Max: ' + (previewRoom?.max_occupancy || previewRoom?.occupancy || 4)"></span>
                         </div>
                         <div>
                             <span class="text-[10px] text-slate-400 uppercase font-semibold block">Room Size</span>

@@ -103,13 +103,23 @@
                                 value="{{ old('total_rooms', $room->total_rooms) }}" />
                         </div>
 
-                        <div class="space-y-1.5">
-                            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">Occupancy</label>
-                            <input
-                                class="w-full bg-white border border-slate-300 hover:border-slate-400 rounded-md py-2 px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
-                                name="occupancy" type="number"
-                                value="{{ old('occupancy', $room->occupancy) }}" placeholder="e.g., 2"/>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="space-y-1.5">
+                                <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">Base Included Guests</label>
+                                <input class="w-full bg-white border border-slate-300 hover:border-slate-400 rounded-md py-2 px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+                                       name="base_occupancy" type="number" min="1" value="{{ old('base_occupancy', $room->base_occupancy ?: 2) }}" placeholder="e.g., 2"/>
+                                <p class="text-[11px] text-slate-400">Number of guests included in the base rate.</p>
+                            </div>
+
+                            <div class="space-y-1.5">
+                                <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">Max Capacity (Max Pax)</label>
+                                <input class="w-full bg-white border border-slate-300 hover:border-slate-400 rounded-md py-2 px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+                                       name="max_occupancy" type="number" min="1" value="{{ old('max_occupancy', $room->max_occupancy ?: $room->occupancy) }}" placeholder="e.g., 3"/>
+                                <p class="text-[11px] text-slate-400">Maximum allowed guests in this room.</p>
+                            </div>
                         </div>
+
+                        <input type="hidden" name="occupancy" value="{{ $room->max_occupancy ?: $room->occupancy ?: 3 }}">
 
                         <div class="space-y-1.5">
                             <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">Bed Configuration</label>
@@ -127,12 +137,19 @@
                                 value="{{ old('room_size', $room->room_size) }}" />
                         </div>
 
-                        <div class="space-y-1.5">
-                            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">Base Price</label>
-                            <input
-                                class="w-full bg-white border border-slate-300 hover:border-slate-400 rounded-md py-2 px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
-                                name="base_price" type="number" step="0.01" placeholder="e.g., 4000.00"
-                                value="{{ old('base_price', $room->base_price) }}" />
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div class="space-y-1.5">
+                                <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">Base Rate (₱ / night)</label>
+                                <input class="w-full bg-white border border-slate-300 hover:border-slate-400 rounded-md py-2 px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+                                       name="base_price" type="number" step="0.01" min="0" placeholder="e.g., 6000.00" value="{{ old('base_price', (float)$room->base_price) }}" />
+                            </div>
+
+                            <div class="space-y-1.5">
+                                <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">Extra Person Fee (₱ / night)</label>
+                                <input class="w-full bg-white border border-slate-300 hover:border-slate-400 rounded-md py-2 px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+                                       name="extra_person_fee" type="number" step="0.01" min="0" placeholder="e.g., 500.00" value="{{ old('extra_person_fee', (float)$room->extra_person_fee) }}" />
+                                <p class="text-[11px] text-slate-400">Nightly fee per guest exceeding base capacity.</p>
+                            </div>
                         </div>
 
                         <!-- Room Amenities -->

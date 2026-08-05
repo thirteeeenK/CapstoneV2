@@ -18,11 +18,13 @@
                 ['route' => 'admin.bookings.*', 'icon' => 'calendar_month', 'label' => 'Bookings', 'href' => '#'],
                 ['route' => 'admin.users.*', 'icon' => 'group', 'label' => 'Registered Users', 'href' => route('admin.users.index')],
                 ['route' => 'admin.inventory.*', 'icon' => 'inventory', 'label' => 'Manage Inventory', 'href' => Route::has('admin.inventory.index') ? route('admin.inventory.index') : '#'],
+                ['route' => 'admin.passenger-rules.*', 'icon' => 'tune', 'label' => 'Passenger Rules & Discounts', 'href' => route('admin.passenger-rules.index')],
             ],
             'Catalog' => [
                 ['route' => 'admin.destinations', 'icon' => 'place', 'label' => 'Destinations', 'href' => route('admin.destinations')],
                 ['route' => 'manage-hotels', 'icon' => 'house', 'label' => 'Add Hotel Information', 'href' => Route::has('manage-hotels') ? route('manage-hotels') : '#'],
                 ['route' => 'view-listings', 'icon' => 'hotel', 'label' => 'Show Hotel Listing', 'href' => route('view-listings')],
+                ['route' => 'admin.packages.*', 'icon' => 'card_travel', 'label' => 'Tour Packages & Promos', 'href' => route('admin.packages.index')],
                 ['route' => 'admin.activities.*', 'icon' => 'explore', 'label' => 'Activities & Tours', 'href' => Route::has('admin.activities.index') ? route('admin.activities.index') : '#'],
                 ['route' => 'admin.addons.*', 'icon' => 'extension', 'label' => 'Transfers and Add-ons', 'href' => route('admin.addons.index')],
                 ['route' => 'admin.ai.*', 'icon' => 'psychology', 'label' => 'Manage AI', 'href' => '#'],
