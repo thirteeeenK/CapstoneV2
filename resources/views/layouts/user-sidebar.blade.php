@@ -55,6 +55,7 @@
                     ['route' => 'dashboard', 'icon' => 'space_dashboard', 'label' => 'Dashboard', 'href' => route('dashboard')],
                     ['route' => 'cart.*', 'icon' => 'shopping_basket', 'label' => 'My Trip Basket', 'href' => route('cart.index'), 'drawer' => true],
                     ['route' => 'booking.*', 'icon' => 'auto_stories', 'label' => 'My Bookings', 'href' => route('booking.index')],
+                        ['route' => 'reviews.*', 'icon' => 'reviews', 'label' => 'Guest Reviews', 'href' => route('reviews.index')],
                 ],
                 'Explore Catalog' => [
                     ['route' => 'destinations.*', 'icon' => 'location_on', 'label' => 'Island Destinations', 'href' => route('destinations.index')],
@@ -63,6 +64,7 @@
                     ['route' => 'activities.*', 'icon' => 'explore', 'label' => 'Activities & Tours', 'href' => route('activities.index')],
                     ['route' => 'addons.*', 'icon' => 'extension', 'label' => 'Transfers & Add-ons', 'href' => route('addons.index')],
                     ['route' => 'packages.*', 'icon' => 'card_travel', 'label' => 'Tour Packages & Promos', 'href' => route('packages.index')],
+                   
                 ],
                 'Personalization' => [
                     ['route' => 'onboarding.*', 'icon' => 'tune', 'label' => 'AI Preferences Quiz', 'href' => route('onboarding.index')],

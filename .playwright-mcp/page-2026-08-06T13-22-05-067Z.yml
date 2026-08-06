@@ -1,0 +1,456 @@
+- generic [ref=f79e1]:
+  - banner [ref=f79e2]:
+    - navigation [ref=f79e3]:
+      - link "SunnyTrips Travel Services" [ref=f79e4] [cursor=pointer]:
+        - /url: /
+      - generic [ref=f79e6]:
+        - link:
+          - /url: /
+        - link "Destinations" [ref=f79e7] [cursor=pointer]:
+          - /url: /#destinations
+        - link "Experiences" [ref=f79e8] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/activities
+        - link "Packages" [ref=f79e9] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/packages
+        - link "Journals" [ref=f79e10] [cursor=pointer]:
+          - /url: /#brand-story
+      - generic [ref=f79e11]:
+        - button "View Trip Basket" [ref=f79e12] [cursor=pointer]
+        - link "Login" [ref=f79e15] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/login
+        - link "Register" [ref=f79e16] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/register
+  - main [ref=f79e17]:
+    - generic [ref=f79e19]:
+      - generic [ref=f79e20]:
+        - paragraph [ref=f79e21]: SunnyTrips · Traveler Insights Hub
+        - paragraph [ref=f79e22]: Aug 6, 2026
+      - generic [ref=f79e23]:
+        - heading "Verified Guest Reviews" [level=1] [ref=f79e24]
+        - paragraph [ref=f79e25]: Honest, booking-verified feedback across hotels, rooms, activities, and packages — distilled with our AI Decision Support System.
+      - generic [ref=f79e26]:
+        - generic [ref=f79e27]:
+          - heading "reviews SunnyTrips Platform Overall" [level=2] [ref=f79e28]:
+            - generic [ref=f79e29]: reviews
+            - text: SunnyTrips Platform Overall
+          - paragraph [ref=f79e31]: AI-assisted · updated Aug 6, 2026
+        - generic [ref=f79e32]:
+          - generic [ref=f79e33]:
+            - paragraph [ref=f79e34]: "4.1"
+            - generic [ref=f79e35]:
+              - generic "4.14 out of 5 stars" [ref=f79e36]:
+                - generic [ref=f79e37]: star
+                - generic [ref=f79e38]: star
+                - generic [ref=f79e39]: star
+                - generic [ref=f79e40]: star
+                - generic [ref=f79e41]: star
+              - paragraph [ref=f79e42]: 56 verified reviews
+          - generic [ref=f79e43]:
+            - generic [ref=f79e44]:
+              - generic [ref=f79e45]: sentiment_satisfied
+              - text: 68% Positive
+            - generic [ref=f79e46]:
+              - generic [ref=f79e47]: sentiment_neutral
+              - text: 23% Neutral
+            - generic [ref=f79e48]:
+              - generic [ref=f79e49]: sentiment_dissatisfied
+              - text: 9% Negative
+          - generic [ref=f79e50]:
+            - paragraph [ref=f79e51]:
+              - generic [ref=f79e52]: smart_toy
+              - text: AI Summary Consensus
+            - list [ref=f79e53]:
+              - listitem [ref=f79e54]:
+                - generic [ref=f79e56]: Guests consistently praise the cleanliness of rooms and facilities, as well as the exceptional friendliness and helpfulness of the staff.
+              - listitem [ref=f79e57]:
+                - generic [ref=f79e59]: Many reviewers highlight the beautiful views, particularly ocean and sunset vistas from balconies and rooms.
+              - listitem [ref=f79e60]:
+                - generic [ref=f79e62]: Positive feedback is frequent for breakfast offerings and the quality of various tours and activities, especially island hopping and ATV tours.
+              - listitem [ref=f79e63]:
+                - generic [ref=f79e65]: Some recurring minor issues include inconsistent Wi-Fi, occasional low water pressure, and some rooms being described as dated or noisy.
+      - generic [ref=f79e66]:
+        - generic [ref=f79e67]:
+          - button "All Reviews" [ref=f79e68] [cursor=pointer]
+          - button "Hotels & Rooms" [ref=f79e69] [cursor=pointer]
+          - button "Activities" [active] [ref=f79e70] [cursor=pointer]
+          - button "Packages" [ref=f79e71] [cursor=pointer]
+        - generic [ref=f79e72]:
+          - generic [ref=f79e73]:
+            - generic [ref=f79e74]:
+              - paragraph [ref=f79e75]: Rating
+              - generic [ref=f79e76]:
+                - button "All" [ref=f79e77] [cursor=pointer]
+                - button "5 Stars" [ref=f79e78] [cursor=pointer]
+                - button "4 Stars" [ref=f79e79] [cursor=pointer]
+                - button "3 Stars" [ref=f79e80] [cursor=pointer]
+                - button "2 Stars" [ref=f79e81] [cursor=pointer]
+                - button "1 Star" [ref=f79e82] [cursor=pointer]
+            - generic [ref=f79e83]:
+              - paragraph [ref=f79e84]: Sentiment
+              - generic [ref=f79e85]:
+                - button "All Sentiments" [ref=f79e86] [cursor=pointer]
+                - button "Positive" [ref=f79e87] [cursor=pointer]
+                - button "Neutral" [ref=f79e88] [cursor=pointer]
+                - button "Negative" [ref=f79e89] [cursor=pointer]
+            - generic [ref=f79e90]:
+              - paragraph [ref=f79e91]: Sort
+              - combobox [ref=f79e92]:
+                - option "Most Recent" [selected]
+                - option "Highest Rating"
+                - option "Lowest Rating"
+                - option "Most Helpful"
+          - generic [ref=f79e93]:
+            - generic [ref=f79e94]: search
+            - searchbox "Search by hotel, room, activity, or package name..." [ref=f79e95]
+        - paragraph [ref=f79e96]: 12 reviews shown
+        - generic [ref=f79e97]:
+          - article [ref=f79e1616]:
+            - generic [ref=f79e1617]:
+              - generic [ref=f79e1618]:
+                - generic [ref=f79e1619]: explore
+                - generic [ref=f79e1621]:
+                  - paragraph [ref=f79e1622]: 6–7 Destinations (E-Trike)
+                  - paragraph [ref=f79e1623]: Boracay · Paolo G. · Jun 12, 2026
+              - generic [ref=f79e1624]:
+                - generic [ref=f79e1625]:
+                  - generic [ref=f79e1626]: star
+                  - generic [ref=f79e1627]: star
+                  - generic [ref=f79e1628]: star
+                  - generic [ref=f79e1629]: star
+                  - generic [ref=f79e1630]: star
+                - generic [ref=f79e1631]:
+                  - generic [ref=f79e1632]: sentiment_satisfied
+                  - generic [ref=f79e1633]: Positive
+            - paragraph [ref=f79e1634]: From booking to checkout, everything was perfect. Will recommend SunnyTrips to all my friends!
+            - generic [ref=f79e1635]:
+              - generic [ref=f79e1636]: "#booking"
+              - generic [ref=f79e1637]: "#checkout"
+              - generic [ref=f79e1638]: "#perfect"
+              - generic [ref=f79e1639]: "#recommend"
+              - generic [ref=f79e1640]:
+                - generic [ref=f79e1641]: verified
+                - text: Verified Booking
+          - article [ref=f79e2276]:
+            - generic [ref=f79e2277]:
+              - generic [ref=f79e2278]:
+                - generic [ref=f79e2279]: explore
+                - generic [ref=f79e2281]:
+                  - paragraph [ref=f79e2282]: Joiners Island Hopping
+                  - paragraph [ref=f79e2283]: Boracay · Kaye V. · Jun 13, 2026
+              - generic [ref=f79e2284]:
+                - generic [ref=f79e2285]:
+                  - generic [ref=f79e2286]: star
+                  - generic [ref=f79e2287]: star
+                  - generic [ref=f79e2288]: star
+                  - generic [ref=f79e2289]: star
+                  - generic [ref=f79e2290]: star
+                - generic [ref=f79e2291]:
+                  - generic [ref=f79e2292]: sentiment_neutral
+                  - generic [ref=f79e2293]: Neutral
+            - paragraph [ref=f79e2294]: Average tour — nothing wrong but nothing extraordinary either. Decent value.
+            - generic [ref=f79e2295]:
+              - generic [ref=f79e2296]: "#average tour"
+              - generic [ref=f79e2297]: "#decent value"
+              - generic [ref=f79e2298]: "#nothing extraordinary"
+              - generic [ref=f79e2299]:
+                - generic [ref=f79e2300]: verified
+                - text: Verified Booking
+          - article [ref=f79e2637]:
+            - generic [ref=f79e2638]:
+              - generic [ref=f79e2639]:
+                - generic [ref=f79e2640]: explore
+                - generic [ref=f79e2642]:
+                  - paragraph [ref=f79e2643]: Jet Ski (30 mins)
+                  - paragraph [ref=f79e2644]: Boracay · Kaye V. · Jul 7, 2026
+              - generic [ref=f79e2645]:
+                - generic [ref=f79e2646]:
+                  - generic [ref=f79e2647]: star
+                  - generic [ref=f79e2648]: star
+                  - generic [ref=f79e2649]: star
+                  - generic [ref=f79e2650]: star
+                  - generic [ref=f79e2651]: star
+                - generic [ref=f79e2652]:
+                  - generic [ref=f79e2653]: sentiment_satisfied
+                  - generic [ref=f79e2654]: Positive
+            - paragraph [ref=f79e2655]: Solid package overall. Minor hiccup with the voucher redemption but support fixed it fast.
+            - generic [ref=f79e2656]:
+              - generic [ref=f79e2657]: "#package"
+              - generic [ref=f79e2658]: "#voucher redemption"
+              - generic [ref=f79e2659]: "#support"
+              - generic [ref=f79e2660]: "#fast"
+              - generic [ref=f79e2661]:
+                - generic [ref=f79e2662]: verified
+                - text: Verified Booking
+          - article [ref=f79e1908]:
+            - generic [ref=f79e1909]:
+              - generic [ref=f79e1910]:
+                - generic [ref=f79e1911]: explore
+                - generic [ref=f79e1913]:
+                  - paragraph [ref=f79e1914]: Jet Ski (15 mins)
+                  - paragraph [ref=f79e1915]: Boracay · Michael T. · Jul 8, 2026
+              - generic [ref=f79e1916]:
+                - generic [ref=f79e1917]:
+                  - generic [ref=f79e1918]: star
+                  - generic [ref=f79e1919]: star
+                  - generic [ref=f79e1920]: star
+                  - generic [ref=f79e1921]: star
+                  - generic [ref=f79e1922]: star
+                - generic [ref=f79e1923]:
+                  - generic [ref=f79e1924]: sentiment_satisfied
+                  - generic [ref=f79e1925]: Positive
+            - paragraph [ref=f79e1926]: Ang ganda ng package! Sulit, hassle-free, and the customer service was outstanding.
+            - generic [ref=f79e1927]:
+              - generic [ref=f79e1928]: "#package"
+              - generic [ref=f79e1929]: "#sulit"
+              - generic [ref=f79e1930]: "#hassle-free"
+              - generic [ref=f79e1931]: "#customer service"
+              - generic [ref=f79e1932]: "#outstanding"
+              - generic [ref=f79e1933]:
+                - generic [ref=f79e1934]: verified
+                - text: Verified Booking
+          - article [ref=f79e2663]:
+            - generic [ref=f79e2664]:
+              - generic [ref=f79e2665]:
+                - generic [ref=f79e2666]: explore
+                - generic [ref=f79e2668]:
+                  - paragraph [ref=f79e2669]: UFO Ride
+                  - paragraph [ref=f79e2670]: Boracay · Ana R. · Jul 9, 2026
+              - generic [ref=f79e2671]:
+                - generic [ref=f79e2672]:
+                  - generic [ref=f79e2673]: star
+                  - generic [ref=f79e2674]: star
+                  - generic [ref=f79e2675]: star
+                  - generic [ref=f79e2676]: star
+                  - generic [ref=f79e2677]: star
+                - generic [ref=f79e2678]:
+                  - generic [ref=f79e2679]: sentiment_neutral
+                  - generic [ref=f79e2680]: Neutral
+            - paragraph [ref=f79e2681]: The itinerary was good but one activity got cancelled due to weather without a same-day replacement.
+            - generic [ref=f79e2682]:
+              - generic [ref=f79e2683]: "#itinerary good"
+              - generic [ref=f79e2684]: "#activity cancelled"
+              - generic [ref=f79e2685]: "#weather"
+              - generic [ref=f79e2686]: "#no replacement"
+              - generic [ref=f79e2687]:
+                - generic [ref=f79e2688]: verified
+                - text: Verified Booking
+          - article [ref=f79e1935]:
+            - generic [ref=f79e1936]:
+              - generic [ref=f79e1937]:
+                - generic [ref=f79e1938]: explore
+                - generic [ref=f79e1940]:
+                  - paragraph [ref=f79e1941]: Banana Boat
+                  - paragraph [ref=f79e1942]: Boracay · Jose R. · Jul 10, 2026
+              - generic [ref=f79e1943]:
+                - generic [ref=f79e1944]:
+                  - generic [ref=f79e1945]: star
+                  - generic [ref=f79e1946]: star
+                  - generic [ref=f79e1947]: star
+                  - generic [ref=f79e1948]: star
+                  - generic [ref=f79e1949]: star
+                - generic [ref=f79e1950]:
+                  - generic [ref=f79e1951]: sentiment_satisfied
+                  - generic [ref=f79e1952]: Positive
+            - paragraph [ref=f79e1953]: Everything matched the description perfectly. Smooth transaction and responsive support.
+            - generic [ref=f79e1954]:
+              - generic [ref=f79e1955]: "#matched description"
+              - generic [ref=f79e1956]: "#smooth transaction"
+              - generic [ref=f79e1957]: "#responsive support"
+              - generic [ref=f79e1958]:
+                - generic [ref=f79e1959]: verified
+                - text: Verified Booking
+          - article [ref=f79e2689]:
+            - generic [ref=f79e2690]:
+              - generic [ref=f79e2691]:
+                - generic [ref=f79e2692]: explore
+                - generic [ref=f79e2694]:
+                  - paragraph [ref=f79e2695]: Parasailing (Solo)
+                  - paragraph [ref=f79e2696]: Boracay · John C. · Jul 11, 2026
+              - generic [ref=f79e2697]:
+                - generic [ref=f79e2698]:
+                  - generic [ref=f79e2699]: star
+                  - generic [ref=f79e2700]: star
+                  - generic [ref=f79e2701]: star
+                  - generic [ref=f79e2702]: star
+                  - generic [ref=f79e2703]: star
+                - generic [ref=f79e2704]:
+                  - generic [ref=f79e2705]: sentiment_satisfied
+                  - generic [ref=f79e2706]: Positive
+            - paragraph [ref=f79e2707]: Great promo package! The hotel + tour combo saved us a lot. Just wish transfer was included.
+            - generic [ref=f79e2708]:
+              - generic [ref=f79e2709]: "#promo package"
+              - generic [ref=f79e2710]: "#hotel + tour combo"
+              - generic [ref=f79e2711]: "#saved a lot"
+              - generic [ref=f79e2712]: "#transfer not included"
+              - generic [ref=f79e2713]:
+                - generic [ref=f79e2714]: verified
+                - text: Verified Booking
+          - article [ref=f79e1960]:
+            - generic [ref=f79e1961]:
+              - generic [ref=f79e1962]:
+                - generic [ref=f79e1963]: explore
+                - generic [ref=f79e1965]:
+                  - paragraph [ref=f79e1966]: Parasailing
+                  - paragraph [ref=f79e1967]: Boracay · Maria S. · Jul 12, 2026
+              - generic [ref=f79e1968]:
+                - generic [ref=f79e1969]:
+                  - generic [ref=f79e1970]: star
+                  - generic [ref=f79e1971]: star
+                  - generic [ref=f79e1972]: star
+                  - generic [ref=f79e1973]: star
+                  - generic [ref=f79e1974]: star
+                - generic [ref=f79e1975]:
+                  - generic [ref=f79e1976]: sentiment_satisfied
+                  - generic [ref=f79e1977]: Positive
+            - paragraph [ref=f79e1978]: Seamless booking from start to finish. The package included everything we expected and more.
+            - generic [ref=f79e1979]:
+              - generic [ref=f79e1980]: "#seamless booking"
+              - generic [ref=f79e1981]: "#package inclusions"
+              - generic [ref=f79e1982]: "#exceeded expectations"
+              - generic [ref=f79e1983]:
+                - generic [ref=f79e1984]: verified
+                - text: Verified Booking
+          - article [ref=f79e2715]:
+            - generic [ref=f79e2716]:
+              - generic [ref=f79e2717]:
+                - generic [ref=f79e2718]: explore
+                - generic [ref=f79e2720]:
+                  - paragraph [ref=f79e2721]: 6–7 Destinations (Aircon Van)
+                  - paragraph [ref=f79e2722]: Boracay · Nicole B. · Jul 13, 2026
+              - generic [ref=f79e2723]:
+                - generic [ref=f79e2724]:
+                  - generic [ref=f79e2725]: star
+                  - generic [ref=f79e2726]: star
+                  - generic [ref=f79e2727]: star
+                  - generic [ref=f79e2728]: star
+                  - generic [ref=f79e2729]: star
+                - generic [ref=f79e2730]:
+                  - generic [ref=f79e2731]: sentiment_dissatisfied
+                  - generic [ref=f79e2732]: Negative
+            - paragraph [ref=f79e2733]: Boat was crowded and the lunch was underwhelming. Scenery was the saving grace.
+            - generic [ref=f79e2734]:
+              - generic [ref=f79e2735]: "#crowded boat"
+              - generic [ref=f79e2736]: "#underwhelming lunch"
+              - generic [ref=f79e2737]: "#scenery"
+              - generic [ref=f79e2738]:
+                - generic [ref=f79e2739]: verified
+                - text: Verified Booking
+          - article [ref=f79e2740]:
+            - generic [ref=f79e2741]:
+              - generic [ref=f79e2742]:
+                - generic [ref=f79e2743]: explore
+                - generic [ref=f79e2745]:
+                  - paragraph [ref=f79e2746]: 6–7 Destinations (FB Van/Multicab)
+                  - paragraph [ref=f79e2747]: Boracay · Paolo G. · Jul 14, 2026
+              - generic [ref=f79e2748]:
+                - generic [ref=f79e2749]:
+                  - generic [ref=f79e2750]: star
+                  - generic [ref=f79e2751]: star
+                  - generic [ref=f79e2752]: star
+                  - generic [ref=f79e2753]: star
+                  - generic [ref=f79e2754]: star
+                - generic [ref=f79e2755]:
+                  - generic [ref=f79e2756]: sentiment_satisfied
+                  - generic [ref=f79e2757]: Positive
+            - paragraph [ref=f79e2758]: Great value, well-planned itinerary. Bring sunscreen, sobrang init pero worth it.
+            - generic [ref=f79e2759]:
+              - generic [ref=f79e2760]: "#great value"
+              - generic [ref=f79e2761]: "#well-planned itinerary"
+              - generic [ref=f79e2762]: "#sobrang init"
+              - generic [ref=f79e2763]: "#worth it"
+              - generic [ref=f79e2764]:
+                - generic [ref=f79e2765]: verified
+                - text: Verified Booking
+          - article [ref=f79e1985]:
+            - generic [ref=f79e1986]:
+              - generic [ref=f79e1987]:
+                - generic [ref=f79e1988]: explore
+                - generic [ref=f79e1990]:
+                  - paragraph [ref=f79e1991]: 6–7 Destinations (E-Trike)
+                  - paragraph [ref=f79e1992]: Boracay · Kaye V. · Jul 15, 2026
+              - generic [ref=f79e1993]:
+                - generic [ref=f79e1994]:
+                  - generic [ref=f79e1995]: star
+                  - generic [ref=f79e1996]: star
+                  - generic [ref=f79e1997]: star
+                  - generic [ref=f79e1998]: star
+                  - generic [ref=f79e1999]: star
+                - generic [ref=f79e2000]:
+                  - generic [ref=f79e2001]: sentiment_satisfied
+                  - generic [ref=f79e2002]: Positive
+            - paragraph [ref=f79e2003]: Ang galing ng guide namin! Very informative and patient with the kids. Five stars talaga.
+            - generic [ref=f79e2004]:
+              - generic [ref=f79e2005]: "#galing ng guide"
+              - generic [ref=f79e2006]: "#informative"
+              - generic [ref=f79e2007]: "#patient"
+              - generic [ref=f79e2008]: "#kids"
+              - generic [ref=f79e2009]: "#five stars"
+              - generic [ref=f79e2010]:
+                - generic [ref=f79e2011]: verified
+                - text: Verified Booking
+          - article [ref=f79e2766]:
+            - generic [ref=f79e2767]:
+              - generic [ref=f79e2768]:
+                - generic [ref=f79e2769]: explore
+                - generic [ref=f79e2771]:
+                  - paragraph [ref=f79e2772]: Joiners Island Hopping
+                  - paragraph [ref=f79e2773]: Boracay · Michael T. · Jul 16, 2026
+              - generic [ref=f79e2774]:
+                - generic [ref=f79e2775]:
+                  - generic [ref=f79e2776]: star
+                  - generic [ref=f79e2777]: star
+                  - generic [ref=f79e2778]: star
+                  - generic [ref=f79e2779]: star
+                  - generic [ref=f79e2780]: star
+                - generic [ref=f79e2781]:
+                  - generic [ref=f79e2782]: sentiment_neutral
+                  - generic [ref=f79e2783]: Neutral
+            - paragraph [ref=f79e2784]: The tour itself was good but the pickup was delayed by 30 minutes. Communicate better please.
+            - generic [ref=f79e2785]:
+              - generic [ref=f79e2786]: "#tour was good"
+              - generic [ref=f79e2787]: "#pickup delayed"
+              - generic [ref=f79e2788]: "#30 minutes"
+              - generic [ref=f79e2789]: "#communicate better"
+              - generic [ref=f79e2790]:
+                - generic [ref=f79e2791]: verified
+                - text: Verified Booking
+      - paragraph [ref=f79e1556]: SunnyTrips · AI-assisted sentiment analysis on verified bookings
+  - contentinfo [ref=f79e1557]:
+    - generic [ref=f79e1558]:
+      - generic [ref=f79e1559]:
+        - generic [ref=f79e1560]:
+          - generic [ref=f79e1561]: SunnyTrips
+          - paragraph [ref=f79e1562]: Redefining tropical exploration through curated luxury and local intelligence. We are the modern navigator for the Philippine archipelago.
+        - generic [ref=f79e1564]:
+          - heading "JOURNEY" [level=4] [ref=f79e1565]
+          - generic [ref=f79e1566]:
+            - link "Curations" [ref=f79e1567] [cursor=pointer]:
+              - /url: "#"
+            - link "Navigators" [ref=f79e1568] [cursor=pointer]:
+              - /url: "#"
+            - link "Private Charters" [ref=f79e1569] [cursor=pointer]:
+              - /url: "#"
+            - link "Eco-Projects" [ref=f79e1570] [cursor=pointer]:
+              - /url: "#"
+        - generic [ref=f79e1571]:
+          - heading "CONCIERGE" [level=4] [ref=f79e1572]
+          - generic [ref=f79e1573]:
+            - link "Help Center" [ref=f79e1574] [cursor=pointer]:
+              - /url: "#"
+            - link "Safe Travel" [ref=f79e1575] [cursor=pointer]:
+              - /url: "#"
+            - link "Booking Policy" [ref=f79e1576] [cursor=pointer]:
+              - /url: "#"
+        - generic [ref=f79e1577]:
+          - heading "THE OFFICE" [level=4] [ref=f79e1578]
+          - paragraph [ref=f79e1579]: Brgy. San Agustin, Pili, Camarines Sur Philippines, 4418
+      - separator [ref=f79e1580]
+      - generic [ref=f79e1581]:
+        - paragraph [ref=f79e1582]: © 2026 SunnyTrips. All rights reserved. Made for the sun-seekers.
+        - generic [ref=f79e1583]:
+          - link "AI Usage Disclosure" [ref=f79e1584] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/legal/ai_disclosure
+          - link "Privacy Policy" [ref=f79e1585] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/legal/privacy
+          - link "Terms and Conditions" [ref=f79e1586] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/legal/terms

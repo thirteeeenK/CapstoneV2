@@ -37,12 +37,17 @@ class HotelShowController extends Controller
     {
         $isAdmin = Auth::guard('admin')->check();
 
-        $hotel = HotelModel::with(['destination', 'rooms' => function ($query) use ($isAdmin) {
-            if (!$isAdmin) {
-                $query->where('is_shown', true);
-            }
-            $query->orderBy('id', 'asc');
-        }])->findOrFail($id);
+        $hotel = HotelModel::with([
+            'destination',
+            'rooms' => function ($query) use ($isAdmin) {
+                if (!$isAdmin) {
+                    $query->where('is_shown', true);
+                }
+                $query->orderBy('id', 'asc')->with('reviews.user');
+            },
+            'reviews.user',
+            'reviewSummary',
+        ])->findOrFail($id);
 
         // If hotel is hidden and visitor is not an admin, return 404
         if (!$hotel->is_shown && !$isAdmin) {

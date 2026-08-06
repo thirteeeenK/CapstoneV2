@@ -197,6 +197,10 @@
                         </div>
                     </div>
 
+                    {{-- DSS Review Summary & Verified Guest Reviews --}}
+                    <x-reviews.summary-box :summary="$hotel->reviewSummary" title="Guest Reviews & Sentiment" />
+                    <x-reviews.list :reviews="$hotel->reviews->where('is_published', true)" :limit="4" />
+
                     {{-- Exclusive Amenities Grid --}}
                     @if(!empty($hotel->featured_amenities) && is_array($hotel->featured_amenities))
                         <div class="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-6">
@@ -375,6 +379,20 @@
 
                                 $roomAmenitiesRaw = is_array($room->room_amenities) ? $room->room_amenities : (is_string($room->room_amenities) ? array_filter(array_map('trim', explode(',', $room->room_amenities))) : []);
 
+                                $roomPublishedReviews = $room->reviews->where('is_published', true)
+                                    ->sortByDesc('created_at')->take(3)->values();
+
+                                $roomReviewPayload = $roomPublishedReviews->map(fn($rv) => [
+                                    'reviewer_alias' => $rv->reviewer_alias,
+                                    'rating' => (int) $rv->rating,
+                                    'sentiment' => $rv->sentiment,
+                                    'comment' => $rv->comment,
+                                    'keywords' => $rv->extracted_keywords ?? [],
+                                    'created_at_label' => $rv->created_at?->format('M j, Y'),
+                                ]);
+
+                                $roomSummary = $room->reviewSummary;
+
                                 $roomPayload = [
                                     'id' => $room->id,
                                     'room_name' => $room->room_name,
@@ -389,6 +407,15 @@
                                     'is_shown' => (bool)$room->is_shown,
                                     'images' => $resolvedRoomImages,
                                     'amenities' => array_values($roomAmenitiesRaw),
+                                    'review_summary' => $roomSummary && $roomSummary->total_reviews > 0 ? [
+                                        'average_rating' => (float) $roomSummary->average_rating,
+                                        'total_reviews' => (int) $roomSummary->total_reviews,
+                                        'positive_percentage' => (float) $roomSummary->positive_percentage,
+                                        'neutral_percentage' => (float) $roomSummary->neutral_percentage,
+                                        'negative_percentage' => (float) $roomSummary->negative_percentage,
+                                        'ai_summary_text' => $roomSummary->ai_summary_text,
+                                    ] : null,
+                                    'reviews' => $roomReviewPayload,
                                 ];
                             @endphp
                             <div id="room-card-{{ $room->id }}"
@@ -638,6 +665,49 @@
                                     </span>
                                 </template>
                             </div>
+                        </div>
+                    </template>
+
+                    {{-- Room Review Summary (DSS) --}}
+                    <template x-if="previewRoom?.review_summary">
+                        <div class="space-y-3 rounded-2xl bg-gradient-to-br from-ocean-50/70 to-sand-50/70 border border-ocean-100 p-4">
+                            <div class="flex items-center justify-between gap-2 flex-wrap">
+                                <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                                    <span class="material-symbols-outlined text-[15px] text-ocean-600">reviews</span>
+                                    Guest Reviews & Sentiment
+                                </h4>
+                                <span class="flex items-center gap-1 text-amber-400">
+                                    <template x-for="i in 5" :key="i">
+                                        <span class="material-symbols-outlined text-[14px]" :style="'font-variation-settings: \'FILL\' ' + (i <= Math.round(previewRoom.review_summary.average_rating) ? 1 : 0)">star</span>
+                                    </template>
+                                </span>
+                            </div>
+                            <p class="text-[11px] text-slate-600 font-bold">
+                                <span x-text="previewRoom.review_summary.average_rating.toFixed(1)"></span> / 5.0 ·
+                                <span x-text="previewRoom.review_summary.total_reviews"></span> verified reviews
+                            </p>
+                            <p class="text-[11px] text-slate-500" x-text="previewRoom.review_summary.ai_summary_text"></p>
+                        </div>
+                    </template>
+
+                    {{-- Room Recent Reviews --}}
+                    <template x-if="previewRoom?.reviews && previewRoom.reviews.length > 0">
+                        <div class="space-y-3">
+                            <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Recent Verified Reviews</h4>
+                            <template x-for="(rv, idx) in previewRoom.reviews" :key="idx">
+                                <div class="bg-white border border-sand-200 rounded-xl p-3.5 space-y-1.5">
+                                    <div class="flex items-center justify-between gap-2">
+                                        <p class="text-xs font-bold text-slate-900" x-text="rv.reviewer_alias"></p>
+                                        <span class="flex items-center gap-0.5 text-amber-400">
+                                            <template x-for="i in 5" :key="i">
+                                                <span class="material-symbols-outlined text-[13px]" :style="'font-variation-settings: \'FILL\' ' + (i <= rv.rating ? 1 : 0)">star</span>
+                                            </template>
+                                        </span>
+                                    </div>
+                                    <p class="text-[11px] text-slate-600 leading-relaxed" x-text="rv.comment"></p>
+                                    <p class="text-[9px] font-label uppercase tracking-[0.15em] text-slate-400 font-bold" x-text="rv.created_at_label"></p>
+                                </div>
+                            </template>
                         </div>
                     </template>
 

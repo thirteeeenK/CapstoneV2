@@ -1,0 +1,292 @@
+<?php
+
+namespace App\Services;
+
+use App\Jobs\ProcessReviewSentimentJob;
+use App\Jobs\UpdateEntityReviewSummaryJob;
+use App\Models\ActivityModel;
+use App\Models\Booking;
+use App\Models\BookingItem;
+use App\Models\HotelModel;
+use App\Models\Package;
+use App\Models\Review;
+use App\Models\ReviewSummary;
+use App\Models\RoomType;
+use App\Models\User;
+use Illuminate\Support\Collection;
+
+class ReviewService
+{
+    /**
+     * Map of BookingItem item_type => reviewable class.
+     * Add-ons/transfers are intentionally not reviewable per the spec.
+     */
+    public const REVIEWABLE_ITEM_TYPES = [
+        'room' => RoomType::class,
+        'activity' => ActivityModel::class,
+        'package' => Package::class,
+    ];
+
+    /**
+     * Resolve the reviewable entity + direct FK columns from a booking item.
+     *
+     * @return array{type: string, id: int, hotel_id: ?int, room_id: ?int, activity_id: ?int, package_id: ?int, label: string}|null
+     */
+    public function resolveReviewableFromItem(BookingItem $item): ?array
+    {
+        $class = self::REVIEWABLE_ITEM_TYPES[$item->item_type] ?? null;
+
+        if (!$class) {
+            return null;
+        }
+
+        $target = $item->itemable;
+
+        if (!$target) {
+            return null;
+        }
+
+        $payload = [
+            'type' => (new $class)->getMorphClass(),
+            'id' => (int) $target->getKey(),
+            'hotel_id' => null,
+            'room_id' => null,
+            'activity_id' => null,
+            'package_id' => null,
+            'label' => $target->hotel_name ?? $target->room_name ?? $target->activity_name ?? $target->name ?? 'Listing',
+        ];
+
+        if ($target instanceof RoomType) {
+            $payload['hotel_id'] = $target->hotel_id;
+            $payload['room_id'] = $target->getKey();
+        } elseif ($target instanceof ActivityModel) {
+            $payload['activity_id'] = $target->getKey();
+        } elseif ($target instanceof Package) {
+            $payload['package_id'] = $target->getKey();
+        }
+
+        return $payload;
+    }
+
+    /**
+     * Validate that a booking is eligible for review submission by this user.
+     */
+    public function assertEligible(User $user, Booking $booking): void
+    {
+        abort_unless($booking->user_id === $user->id, 403, 'This booking does not belong to you.');
+        abort_unless($booking->status === Booking::STATUS_COMPLETED, 422, 'Only completed bookings can be reviewed.');
+        abort_if(Review::where('booking_id', $booking->id)->exists(), 422, 'This booking has already been reviewed.');
+    }
+
+    /**
+     * Store a verified review, then kick off async AI sentiment + summary jobs.
+     */
+    public function store(User $user, Booking $booking, int $rating, string $comment, ?int $bookingItemId = null): Review
+    {
+        $this->assertEligible($user, $booking);
+
+        $item = null;
+
+        if ($bookingItemId) {
+            $item = $booking->items()->whereKey($bookingItemId)->first();
+        }
+
+        if (!$item) {
+            $item = $booking->items()
+                ->whereIn('item_type', array_keys(self::REVIEWABLE_ITEM_TYPES))
+                ->first();
+        }
+
+        abort_unless($item, 422, 'This booking has no reviewable items.');
+
+        $target = $this->resolveReviewableFromItem($item);
+
+        abort_unless($target, 422, 'This booking has no reviewable items.');
+
+        $review = Review::create([
+            'booking_id' => $booking->id,
+            'user_id' => $user->id,
+            'reviewable_type' => $target['type'],
+            'reviewable_id' => $target['id'],
+            'hotel_id' => $target['hotel_id'],
+            'room_id' => $target['room_id'],
+            'activity_id' => $target['activity_id'],
+            'package_id' => $target['package_id'],
+            'rating' => $rating,
+            'comment' => $comment,
+            'sentiment' => Review::SENTIMENT_NEUTRAL,
+            'sentiment_score' => 0.5000,
+            'extracted_keywords' => [],
+            'is_verified_booking' => true,
+            'is_published' => true,
+        ]);
+
+        dispatch(new ProcessReviewSentimentJob($review->id));
+
+        dispatch(new UpdateEntityReviewSummaryJob($target['type'], $target['id'], $target['label']));
+        dispatch(new UpdateEntityReviewSummaryJob(ReviewSummary::PLATFORM_OVERALL_TYPE, null, 'SunnyTrips Overall Platform'));
+
+        return $review->fresh(['user']);
+    }
+
+    /**
+     * Completed bookings of the user that still have no review, with their
+     * reviewable items for the dynamic modal picker.
+     */
+    public function eligibleBookings(User $user): Collection
+    {
+        $reviewedBookingIds = Review::where('user_id', $user->id)->pluck('booking_id');
+
+        return Booking::with(['items'])
+            ->where('user_id', $user->id)
+            ->where('status', Booking::STATUS_COMPLETED)
+            ->when($reviewedBookingIds->isNotEmpty(), fn($q) => $q->whereNotIn('id', $reviewedBookingIds))
+            ->latest()
+            ->get()
+            ->map(function (Booking $booking) {
+                $items = $booking->items
+                    ->filter(fn($item) => array_key_exists($item->item_type, self::REVIEWABLE_ITEM_TYPES))
+                    ->map(fn(BookingItem $item) => [
+                        'id' => $item->id,
+                        'item_type' => $item->item_type,
+                        'item_title' => $item->item_title,
+                        'item_subtitle' => $item->item_subtitle,
+                        'hotel_name' => $item->hotel_name,
+                        'check_in_date' => $item->check_in_date?->format('Y-m-d'),
+                        'check_out_date' => $item->check_out_date?->format('Y-m-d'),
+                    ])
+                    ->values();
+
+                return [
+                    'booking_id' => $booking->id,
+                    'booking_code' => $booking->booking_code,
+                    'reviewable_items' => $items,
+                ];
+            });
+    }
+
+    /**
+     * Published reviews feed for the /reviews discovery hub.
+     */
+    public function feed(string $tab = 'all', ?string $sentiment = null, int $minRating = 0, string $sort = 'recent', int $limit = 100): Collection
+    {
+        $query = Review::published()->with(['user', 'reviewable']);
+
+        if ($tab !== 'all') {
+            $typeMap = [
+                'hotels' => [HotelModel::class, (new RoomType)->getMorphClass()],
+                'rooms' => [(new RoomType)->getMorphClass()],
+                'activities' => [(new ActivityModel)->getMorphClass()],
+                'packages' => [(new Package)->getMorphClass()],
+            ];
+
+            $classes = $typeMap[$tab] ?? null;
+            if ($classes) {
+                $query->whereIn('reviewable_type', $classes);
+            }
+        }
+
+        if ($sentiment && in_array($sentiment, [Review::SENTIMENT_POSITIVE, Review::SENTIMENT_NEUTRAL, Review::SENTIMENT_NEGATIVE], true)) {
+            $query->where('sentiment', $sentiment);
+        }
+
+        if ($minRating > 0) {
+            $query->where('rating', $minRating);
+        }
+
+        switch ($sort) {
+            case 'highest':
+                $query->orderByDesc('rating')->orderByDesc('id');
+                break;
+            case 'lowest':
+                $query->orderBy('rating')->orderByDesc('id');
+                break;
+            case 'helpful':
+                $query->latest();
+                break;
+            default:
+                $query->latest();
+        }
+
+        $reviews = $query->limit($limit)->get();
+
+        if ($sort === 'helpful') {
+            $reviews = $reviews->sortByDesc(fn(Review $review) => count($review->extracted_keywords ?? []))->values();
+        }
+
+        return $reviews->map(fn(Review $review) => $this->presentForFeed($review));
+    }
+
+    /**
+     * Present a review as a flat, JSON-friendly payload for the hub + modals.
+     */
+    public function presentForFeed(Review $review): array
+    {
+        $target = $review->reviewable;
+
+        $label = 'Listing';
+        $location = null;
+
+        if ($target instanceof RoomType) {
+            $label = $target->room_name;
+            $location = $target->hotel?->hotel_name;
+        } elseif ($target instanceof HotelModel) {
+            $label = $target->hotel_name;
+            $location = $target->destination?->name;
+        } elseif ($target instanceof ActivityModel) {
+            $label = $target->activity_name;
+            $location = $target->destination?->name;
+        } elseif ($target instanceof Package) {
+            $label = $target->name;
+            $location = $target->destination?->name;
+        }
+
+        return [
+            'id' => $review->id,
+            'entity_type' => $review->reviewable_type,
+            'entity_label' => $label,
+            'entity_location' => $location,
+            'rating' => (int) $review->rating,
+            'comment' => $review->comment,
+            'sentiment' => $review->sentiment,
+            'sentiment_score' => (float) $review->sentiment_score,
+            'keywords' => $review->extracted_keywords ?? [],
+            'reviewer_alias' => $review->reviewer_alias,
+            'is_verified_booking' => (bool) $review->is_verified_booking,
+            'created_at' => $review->created_at?->toIso8601String(),
+            'created_at_label' => $review->created_at?->format('M j, Y'),
+        ];
+    }
+
+    /**
+     * Latest published reviews for an entity (used on detail views).
+     */
+    public function recentFor(string $entityType, int $entityId, int $limit = 5): Collection
+    {
+        return Review::published()
+            ->ofEntity($entityType, $entityId)
+            ->with('user')
+            ->latest()
+            ->limit($limit)
+            ->get()
+            ->map(fn(Review $review) => $this->presentForFeed($review));
+    }
+
+    /**
+     * Summary cache record for an entity (null = no reviews yet).
+     */
+    public function summaryFor(string $entityType, ?int $entityId = null): ?ReviewSummary
+    {
+        return ReviewSummary::where('summarizable_type', $entityType)
+            ->where('summarizable_id', $entityId)
+            ->first();
+    }
+
+    /**
+     * Platform-wide overall summary.
+     */
+    public function platformSummary(): ?ReviewSummary
+    {
+        return $this->summaryFor(ReviewSummary::PLATFORM_OVERALL_TYPE);
+    }
+}

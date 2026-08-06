@@ -244,6 +244,10 @@
                             </button>
                         @endif
 
+                        @if ($status === 'completed')
+                            <x-review-modal :booking-id="$booking->id" />
+                        @endif
+
                         <a href="{{ route('dashboard') }}" class="px-5 py-3 rounded-2xl bg-white/60 hover:bg-white/90 backdrop-blur text-slate-900 font-bold text-xs transition flex items-center gap-1.5 cursor-pointer">
                             <span class="material-symbols-outlined text-[16px]">home</span>
                             <span>Return to Dashboard</span>

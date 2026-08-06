@@ -51,4 +51,14 @@ class HotelModel extends Model
     {
         return $this->belongsToMany(Package::class, 'package_hotel', 'hotel_id', 'package_id');
     }
+
+    public function reviews()
+    {
+        return $this->morphMany(Review::class, 'reviewable', 'reviewable_type', 'reviewable_id');
+    }
+
+    public function reviewSummary()
+    {
+        return $this->morphOne(ReviewSummary::class, 'summarizable', 'summarizable_type', 'summarizable_id');
+    }
 }

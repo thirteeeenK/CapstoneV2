@@ -31,6 +31,9 @@
             ],
             'Legal' => [
                 ['route' => 'admin.legal.*', 'icon' => 'gavel', 'label' => 'Legal Documents', 'href' => route('admin.legal.index')],
+            ],
+            'Community' => [
+                ['route' => 'admin.reviews.*', 'icon' => 'reviews', 'label' => 'Reviews & Sentiment', 'href' => route('admin.reviews.index')],
             ]
         ];
     @endphp

@@ -51,6 +51,16 @@ class ActivityModel extends Model
         return $this->belongsToMany(Package::class, 'package_activity', 'activity_id', 'package_id');
     }
 
+    public function reviews()
+    {
+        return $this->morphMany(Review::class, 'reviewable', 'reviewable_type', 'reviewable_id');
+    }
+
+    public function reviewSummary()
+    {
+        return $this->morphOne(ReviewSummary::class, 'summarizable', 'summarizable_type', 'summarizable_id');
+    }
+
     /**
      * Determine if the activity rate is priced per person/participant.
      */

@@ -7,6 +7,8 @@ use App\Models\RoomType;
 use App\Models\ActivityModel;
 use App\Models\AddOnModel;
 use App\Models\DestinationModel;
+use App\Models\Review;
+use App\Models\ReviewSummary;
 use App\Models\User;
 use App\Models\ChatbotAbuseReport;
 use Illuminate\Support\Facades\Http;
@@ -735,6 +737,386 @@ class GeminiService
         }
 
         return $this->rankRecommendations($userPreferenceVector, $activities, $limit);
+    }
+
+    // =========================================================================
+    //  Reviews: Sentiment Analysis & Multi-Level Summarization (DSS)
+    // =========================================================================
+
+    /**
+     * Sends a text generation request to the configured Gemini chat model.
+     *
+     * @return string|null The raw model output text, or null on failure.
+     */
+    public function generateContent(string $systemInstruction, string $prompt): ?string
+    {
+        $apiKey = config('services.gemini.api_key');
+        if (!$apiKey) {
+            Log::warning('Gemini API key is not configured in services.gemini.api_key.');
+            return null;
+        }
+
+        $modelName = config('services.gemini.chat_model') ?? 'models/gemini-2.5-flash-lite';
+        $url = "https://generativelanguage.googleapis.com/v1beta/{$modelName}:generateContent?key={$apiKey}";
+
+        $payload = [
+            'systemInstruction' => [
+                'parts' => [['text' => $systemInstruction]],
+            ],
+            'contents' => [
+                ['role' => 'user', 'parts' => [['text' => $prompt]]],
+            ],
+            'generationConfig' => [
+                'responseMimeType' => 'application/json',
+                'temperature' => 0.2,
+            ],
+        ];
+
+        try {
+            $response = Http::withHeaders([
+                'Content-Type' => 'application/json',
+            ])->timeout(30)->post($url, $payload);
+
+            if ($response->successful()) {
+                $text = $response->json('candidates.0.content.parts.0.text');
+                if (is_string($text) && trim($text) !== '') {
+                    return trim($text);
+                }
+            }
+
+            Log::error('Gemini GenerateContent Failed: ', ['response' => $response->body()]);
+        } catch (\Exception $e) {
+            Log::error('Gemini GenerateContent Exception: ' . $e->getMessage());
+        }
+
+        return null;
+    }
+
+    /**
+     * Runs Gemini sentiment analysis + keyword extraction on a single review comment.
+     *
+     * @param  string  $comment  The review comment text (supports Taglish).
+     * @return array  ['sentiment' => 'positive'|'neutral'|'negative',
+     *                'confidence_score' => float,
+     *                'extracted_keywords' => string[]]
+     */
+    public function analyzeReviewSentiment(string $comment): array
+    {
+        $systemInstruction = 'You are an expert NLP sentiment analysis model for the SunnyTrips travel platform (Philippines, Taglish-friendly). Analyze the user review and respond ONLY with valid JSON matching the schema: {"sentiment": "positive"|"neutral"|"negative", "confidence_score": number between 0 and 1, "extracted_keywords": ["keyword", ...]}. Extract 3-6 concise, factual keywords (English or Tagalog) describing what guests praise or complain about.';
+
+        $prompt = "Review Text: '{$comment}'";
+
+        $raw = $this->generateContent($systemInstruction, $prompt);
+
+        if ($raw) {
+            $decoded = json_decode($raw, true);
+            if (is_array($decoded)) {
+                $sentiment = in_array($decoded['sentiment'] ?? null, [
+                    Review::SENTIMENT_POSITIVE,
+                    Review::SENTIMENT_NEUTRAL,
+                    Review::SENTIMENT_NEGATIVE,
+                ], true) ? $decoded['sentiment'] : Review::SENTIMENT_NEUTRAL;
+
+                $score = (float) ($decoded['confidence_score'] ?? 0.5);
+                $score = max(0.0, min(1.0, $score));
+
+                $keywords = array_values(array_filter(array_map(
+                    fn($kw) => is_string($kw) ? mb_substr(trim($kw), 0, 40) : null,
+                    $decoded['extracted_keywords'] ?? []
+                )));
+
+                return [
+                    'sentiment' => $sentiment,
+                    'confidence_score' => round($score, 4),
+                    'extracted_keywords' => array_slice($keywords, 0, 6),
+                ];
+            }
+        }
+
+        return $this->fallbackSentimentAnalysis($comment);
+    }
+
+    /**
+     * Rule-based Taglish sentiment fallback used when the Gemini API is unavailable
+     * (no API key, timeout, or malformed response). Keeps AI columns non-null and
+     * makes the system fully demo-able offline.
+     */
+    public function fallbackSentimentAnalysis(string $comment): array
+    {
+        $lower = mb_strtolower($comment);
+
+        $positiveTerms = [
+            'ganda', 'maganda', 'super', 'clean', 'spotless', 'linis', 'friendly',
+            'polite', 'mabait', 'amazing', 'breathtaking', 'love', 'loved',
+            'recommend', 'excellent', 'great', 'nice', 'good', 'perfect',
+            'beautiful', 'comfortable', 'worth', 'masarap', 'sulit', 'fun',
+            'enjoy', 'best', 'awesome', 'courteous', 'delicious', 'quiet',
+            'spacious', 'cozy', 'helpful', 'fast', 'mabilis', 'bait', 'ang galing',
+        ];
+
+        $negativeTerms = [
+            'bad', 'poor', 'slow', 'spotty', 'dirty', 'rude', 'terrible',
+            'worst', 'expensive', 'mahal', 'pangit', 'mabagal', 'bagal',
+            'maingay', 'noisy', 'broken', 'mold', 'smell', 'smelled',
+            'disappoint', 'late', 'delay', 'delayed', 'uncomfortable', 'awful',
+            'sucks', 'problem', 'issue', 'masama', 'mainit', 'reklamo', 'antipatiko',
+        ];
+
+        $matchedPositive = [];
+        $matchedNegative = [];
+
+        foreach ($positiveTerms as $term) {
+            if (str_contains($lower, $term)) {
+                $matchedPositive[] = $term;
+            }
+        }
+
+        foreach ($negativeTerms as $term) {
+            if (str_contains($lower, $term)) {
+                $matchedNegative[] = $term;
+            }
+        }
+
+        $posCount = count($matchedPositive);
+        $negCount = count($matchedNegative);
+
+        if ($posCount > $negCount) {
+            $sentiment = Review::SENTIMENT_POSITIVE;
+            $score = min(0.95, 0.65 + ($posCount * 0.08));
+        } elseif ($negCount > $posCount) {
+            $sentiment = Review::SENTIMENT_NEGATIVE;
+            $score = min(0.95, 0.65 + ($negCount * 0.08));
+        } else {
+            $sentiment = Review::SENTIMENT_NEUTRAL;
+            $score = 0.5;
+        }
+
+        return [
+            'sentiment' => $sentiment,
+            'confidence_score' => round($score, 4),
+            'extracted_keywords' => $this->extractKeywordsFallback($comment, array_merge($matchedPositive, $matchedNegative)),
+        ];
+    }
+
+    /**
+     * Naive keyword extraction for the offline fallback: picks meaningful
+     * frequent tokens (len > 2, non-stopword) from the comment.
+     */
+    public function extractKeywordsFallback(string $comment, array $seedTerms = []): array
+    {
+        $stopwords = [
+            'the', 'and', 'was', 'were', 'with', 'that', 'this', 'have', 'has', 'had',
+            'for', 'not', 'but', 'you', 'our', 'your', 'from', 'they', 'there', 'were',
+            'ang', 'ng', 'sa', 'at', 'ako', 'kami', 'namin', 'naman', 'kasi', 'kaya',
+            'na', 'si', 'sila', 'daw', 'rin', 'din', 'po', 'yung', 'pero', 'then', 'also',
+        ];
+
+        $tokens = preg_split('/[^\p{L}\p{N}]+/u', mb_strtolower($comment)) ?: [];
+
+        $freq = [];
+        foreach ($tokens as $token) {
+            $token = trim($token);
+            if (mb_strlen($token) > 2 && !in_array($token, $stopwords, true)) {
+                $freq[$token] = ($freq[$token] ?? 0) + 1;
+            }
+        }
+
+        foreach ($seedTerms as $seed) {
+            $freq[$seed] = ($freq[$seed] ?? 0) + 2;
+        }
+
+        arsort($freq);
+
+        return array_slice(array_keys($freq), 0, 6);
+    }
+
+    /**
+     * Generates an AI consensus summary for an entity from its recent reviews.
+     *
+     * @param  array  $reviews   Collection of Review models (or arrays) to summarize.
+     * @param  string $entityLabel  Human label of the entity (e.g. "Deluxe Ocean View Room at Villa Maria Resort").
+     * @return array  ['ai_summary_text' => string|null,
+     *                'top_positive_highlights' => string[],
+     *                'top_negative_highlights' => string[],
+     *                'most_frequent_keywords' => ['keyword' => count, ...]]
+     */
+    public function summarizeReviews($reviews, string $entityLabel): array
+    {
+        $reviews = collect($reviews)->values();
+
+        if ($reviews->isEmpty()) {
+            return [
+                'ai_summary_text' => null,
+                'top_positive_highlights' => [],
+                'top_negative_highlights' => [],
+                'most_frequent_keywords' => [],
+            ];
+        }
+
+        $lines = $reviews->take(50)->map(function ($review) {
+            $rating = $review->rating ?? 0;
+            $comment = $review->comment ?? '';
+            return "[{$rating}/5] {$comment}";
+        })->implode("\n");
+
+        $systemInstruction = 'You are an AI consensus summarizer for the SunnyTrips travel platform. Read the verified guest reviews for one entity and produce a concise 4-bullet consensus summary of what guests consistently praise or complain about. Respond ONLY with valid JSON matching: {"ai_summary_text": "4 bullet lines starting with a dash (-), one per line, in English", "top_positive_highlights": ["short phrase", ... 1-4 items], "top_negative_highlights": ["short phrase", ... 0-4 items], "most_frequent_keywords": [{"keyword": "phrase", "count": number}, ... max 8 items]}. Do not invent facts not present in the reviews.';
+
+        $prompt = "Entity: {$entityLabel}\n\nReviews:\n{$lines}";
+
+        $raw = $this->generateContent($systemInstruction, $prompt);
+
+        if ($raw) {
+            $decoded = json_decode($raw, true);
+            if (is_array($decoded)) {
+                return $this->normalizeSummaryOutput($decoded, $reviews);
+            }
+        }
+
+        return $this->fallbackSummarizeReviews($reviews);
+    }
+
+    /**
+     * Sanitizes/normalizes raw Gemini summary JSON into DB-ready arrays.
+     */
+    protected function normalizeSummaryOutput(array $decoded, $reviews): array
+    {
+        $stringList = fn($list) => array_values(array_filter(array_map(
+            fn($item) => is_string($item) ? mb_substr(trim($item), 0, 160) : null,
+            is_array($list) ? $list : []
+        )));
+
+        $keywords = [];
+        foreach ((is_array($decoded['most_frequent_keywords'] ?? null) ? $decoded['most_frequent_keywords'] : []) as $item) {
+            if (is_array($item) && isset($item['keyword'])) {
+                $keyword = mb_substr(trim((string) $item['keyword']), 0, 60);
+                $keywords[$keyword] = (int) ($item['count'] ?? 1);
+            }
+        }
+
+        if (empty($keywords)) {
+            foreach ($reviews as $review) {
+                foreach (($review->extracted_keywords ?? []) as $kw) {
+                    $kw = trim((string) $kw);
+                    if ($kw !== '') {
+                        $keywords[$kw] = ($keywords[$kw] ?? 0) + 1;
+                    }
+                }
+            }
+        }
+
+        return [
+            'ai_summary_text' => isset($decoded['ai_summary_text']) && is_string($decoded['ai_summary_text'])
+                ? mb_substr(trim($decoded['ai_summary_text']), 0, 3000)
+                : null,
+            'top_positive_highlights' => $stringList($decoded['top_positive_highlights'] ?? []),
+            'top_negative_highlights' => $stringList($decoded['top_negative_highlights'] ?? []),
+            'most_frequent_keywords' => $keywords,
+        ];
+    }
+
+    /**
+     * Deterministic offline fallback for consensus summarization (no API needed).
+     */
+    public function fallbackSummarizeReviews($reviews): array
+    {
+        $reviews = collect($reviews)->values();
+
+        $avg = (float) round($reviews->avg('rating'), 2);
+        $positive = $reviews->where('sentiment', Review::SENTIMENT_POSITIVE)->count();
+        $negative = $reviews->where('sentiment', Review::SENTIMENT_NEGATIVE)->count();
+        $total = max(1, $reviews->count());
+
+        $keywordCounts = [];
+        foreach ($reviews as $review) {
+            foreach (($review->extracted_keywords ?? []) as $kw) {
+                $kw = trim((string) $kw);
+                if ($kw !== '') {
+                    $keywordCounts[$kw] = ($keywordCounts[$kw] ?? 0) + 1;
+                }
+            }
+        }
+        arsort($keywordCounts);
+
+        $topKeywords = array_slice(array_keys($keywordCounts), 0, 5);
+
+        $lines = [];
+        $lines[] = "- Guests rate this experience {$avg}/5 across {$total} verified review" . ($total > 1 ? 's' : '') . ".";
+        if ($positive > 0) {
+            $lines[] = "- " . round(($positive / $total) * 100) . "% of guests shared positive feedback" . (count($topKeywords) ? ", often highlighting: " . implode(', ', array_slice($topKeywords, 0, 3)) . "." : ".");
+        }
+        if ($negative > 0) {
+            $lines[] = "- A minority (" . round(($negative / $total) * 100) . "%) noted concerns worth checking at check-in.";
+        }
+        $lines[] = "- Newest guest comments are available below for first-hand detail.";
+
+        $positiveHighlights = [];
+        $negativeHighlights = [];
+
+        $reviews->take(20)->each(function ($review) use (&$positiveHighlights, &$negativeHighlights) {
+            $headline = mb_substr(trim($review->comment ?? ''), 0, 90);
+            if ($headline === '') {
+                return;
+            }
+            if (($review->sentiment ?? null) === Review::SENTIMENT_POSITIVE && count($positiveHighlights) < 4) {
+                $positiveHighlights[] = $headline;
+            } elseif (($review->sentiment ?? null) === Review::SENTIMENT_NEGATIVE && count($negativeHighlights) < 4) {
+                $negativeHighlights[] = $headline;
+            }
+        });
+
+        return [
+            'ai_summary_text' => implode("\n", $lines),
+            'top_positive_highlights' => $positiveHighlights,
+            'top_negative_highlights' => $negativeHighlights,
+            'most_frequent_keywords' => array_slice($keywordCounts, 0, 10, true),
+        ];
+    }
+
+    /**
+     * Builds a ready-to-inject RAG context block for the (future) SunnyTrips
+     * chatbot: entity summary + recent review snippets.
+     */
+    public function buildReviewRagContext(string $entityType, int $entityId, int $recentLimit = 3): string
+    {
+        $summary = ReviewSummary::where('summarizable_type', $entityType)
+            ->where('summarizable_id', $entityId)
+            ->first();
+
+        $reviews = Review::published()
+            ->ofEntity($entityType, $entityId)
+            ->with('user')
+            ->latest()
+            ->limit($recentLimit)
+            ->get();
+
+        $entityLabel = 'Listing';
+        $instance = null;
+
+        if (class_exists($entityType)) {
+            $instance = $entityType::find($entityId);
+        }
+
+        if ($instance) {
+            $entityLabel = $instance->hotel_name ?? $instance->room_name ?? $instance->activity_name ?? $instance->name ?? "Listing #{$entityId}";
+        }
+
+        $lines = [
+            "Entity: {$entityLabel}",
+        ];
+
+        if ($summary) {
+            $lines[] = "Average Rating: {$summary->average_rating} / 5.0 ({$summary->total_reviews} reviews)";
+            $lines[] = "Sentiment Split: {$summary->positive_percentage}% positive / {$summary->neutral_percentage}% neutral / {$summary->negative_percentage}% negative";
+            if ($summary->ai_summary_text) {
+                $lines[] = "AI Consensus Summary:\n" . $summary->ai_summary_text;
+            }
+        }
+
+        foreach ($reviews as $review) {
+            $lines[] = "Review snippet ({$review->rating}/5, {$review->sentiment}): \"{$review->comment}\"";
+        }
+
+        return "=== REVIEW INSIGHTS ===\n\n" . implode("\n", $lines) . "\n\n=== END REVIEW INSIGHTS ===";
     }
 
     // =========================================================================
