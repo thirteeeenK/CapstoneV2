@@ -1,0 +1,171 @@
+- generic [active] [ref=f2e1]:
+  - complementary [ref=f2e2]:
+    - generic [ref=f2e4]:
+      - link "SunnyTrips" [ref=f2e5] [cursor=pointer]:
+        - /url: http://localhost:8000/dashboard
+      - paragraph [ref=f2e7]:
+        - generic [ref=f2e9]: Traveler Portal
+    - navigation [ref=f2e10]:
+      - generic [ref=f2e11]:
+        - heading "Main Navigation" [level=2] [ref=f2e12]
+        - generic [ref=f2e13]:
+          - link "space_dashboard Dashboard" [ref=f2e14] [cursor=pointer]:
+            - /url: http://localhost:8000/dashboard
+            - generic [ref=f2e15]: space_dashboard
+            - generic [ref=f2e16]: Dashboard
+          - link "shopping_basket My Trip Basket" [ref=f2e17] [cursor=pointer]:
+            - /url: http://localhost:8000/cart
+            - generic [ref=f2e18]: shopping_basket
+            - generic [ref=f2e19]: My Trip Basket
+          - link "auto_stories My Bookings" [ref=f2e20] [cursor=pointer]:
+            - /url: http://localhost:8000/bookings
+            - generic [ref=f2e21]: auto_stories
+            - generic [ref=f2e22]: My Bookings
+      - generic [ref=f2e23]:
+        - heading "Explore Catalog" [level=2] [ref=f2e24]
+        - generic [ref=f2e25]:
+          - link "location_on Island Destinations" [ref=f2e26] [cursor=pointer]:
+            - /url: http://localhost:8000/destinations
+            - generic [ref=f2e27]: location_on
+            - generic [ref=f2e28]: Island Destinations
+          - link "hotel Hotels & Sanctuaries" [ref=f2e29] [cursor=pointer]:
+            - /url: http://localhost:8000/hotels
+            - generic [ref=f2e30]: hotel
+            - generic [ref=f2e31]: Hotels & Sanctuaries
+          - link "king_bed Rooms & Stays" [ref=f2e32] [cursor=pointer]:
+            - /url: http://localhost:8000/rooms
+            - generic [ref=f2e33]: king_bed
+            - generic [ref=f2e34]: Rooms & Stays
+          - link "explore Activities & Tours" [ref=f2e35] [cursor=pointer]:
+            - /url: http://localhost:8000/activities
+            - generic [ref=f2e36]: explore
+            - generic [ref=f2e37]: Activities & Tours
+          - link "extension Transfers & Add-ons" [ref=f2e38] [cursor=pointer]:
+            - /url: http://localhost:8000/addons
+            - generic [ref=f2e39]: extension
+            - generic [ref=f2e40]: Transfers & Add-ons
+          - link "card_travel Tour Packages & Promos" [ref=f2e41] [cursor=pointer]:
+            - /url: http://localhost:8000/packages
+            - generic [ref=f2e42]: card_travel
+            - generic [ref=f2e43]: Tour Packages & Promos
+      - generic [ref=f2e44]:
+        - heading "Personalization" [level=2] [ref=f2e45]
+        - generic [ref=f2e46]:
+          - link "tune AI Preferences Quiz" [ref=f2e47] [cursor=pointer]:
+            - /url: http://localhost:8000/onboarding
+            - generic [ref=f2e48]: tune
+            - generic [ref=f2e49]: AI Preferences Quiz
+          - link "manage_accounts Account Profile" [ref=f2e50] [cursor=pointer]:
+            - /url: http://localhost:8000/profile
+            - generic [ref=f2e51]: manage_accounts
+            - generic [ref=f2e52]: Account Profile
+    - generic [ref=f2e53]:
+      - generic [ref=f2e54]:
+        - generic [ref=f2e55]: T
+        - generic [ref=f2e56]:
+          - generic [ref=f2e57]: Test User
+          - generic [ref=f2e58]: test@example.com
+      - button "logout Log Out" [ref=f2e60] [cursor=pointer]:
+        - generic [ref=f2e61]: logout
+        - generic [ref=f2e62]: Log Out
+  - main [ref=f2e63]:
+    - generic [ref=f2e64]:
+      - generic [ref=f2e66]:
+        - generic [ref=f2e67]:
+          - link "Home" [ref=f2e68] [cursor=pointer]:
+            - /url: http://localhost:8000/dashboard
+          - generic [ref=f2e69]: /
+          - link "Trip Basket" [ref=f2e70] [cursor=pointer]:
+            - /url: http://localhost:8000/cart
+          - generic [ref=f2e71]: /
+          - generic [ref=f2e72]: Final Checkout
+        - heading "Finalize Travel Booking" [level=1] [ref=f2e73]
+      - generic [ref=f2e74]:
+        - generic [ref=f2e75]:
+          - generic [ref=f2e76]:
+            - generic [ref=f2e77]:
+              - generic [ref=f2e78]:
+                - generic [ref=f2e79]: badge
+                - generic [ref=f2e81]:
+                  - heading "Lead Guest Contact Details" [level=3] [ref=f2e82]
+                  - paragraph [ref=f2e83]: We will send your voucher, payment updates, and itinerary here.
+              - generic [ref=f2e84]: Primary Contact
+            - generic [ref=f2e85]:
+              - generic [ref=f2e86]:
+                - generic [ref=f2e87]: Lead Traveler Full Name *
+                - textbox [ref=f2e88]: Test User
+              - generic [ref=f2e89]:
+                - generic [ref=f2e90]: Email Address *
+                - textbox "e.g. name@example.com" [ref=f2e91]: test@example.com
+              - generic [ref=f2e92]:
+                - generic [ref=f2e93]: Mobile Phone Number *
+                - textbox "e.g. 09171234567" [ref=f2e94]
+          - generic [ref=f2e95]:
+            - generic [ref=f2e96]:
+              - generic [ref=f2e97]: card_travel
+              - generic [ref=f2e99]:
+                - generic [ref=f2e100]:
+                  - heading "Package 1" [level=3] [ref=f2e101]
+                  - generic [ref=f2e102]: Lead Traveler
+                  - generic [ref=f2e103]: of 2
+                - paragraph [ref=f2e104]: Boracay Tipid Deal — full name as it appears on ID
+            - generic [ref=f2e107]:
+              - generic [ref=f2e108]: Traveler Full Name *
+              - textbox [ref=f2e109]: Test User
+          - generic [ref=f2e110]:
+            - generic [ref=f2e111]:
+              - generic [ref=f2e112]: card_travel
+              - generic [ref=f2e114]:
+                - generic [ref=f2e115]:
+                  - heading "Package 2" [level=3] [ref=f2e116]
+                  - generic [ref=f2e117]: of 2
+                - paragraph [ref=f2e118]: Boracay Tipid Deal — full name as it appears on ID
+            - generic [ref=f2e121]:
+              - generic [ref=f2e122]: Traveler Full Name *
+              - textbox [ref=f2e123]
+          - generic [ref=f2e124]:
+            - generic [ref=f2e125]:
+              - generic [ref=f2e126]: fact_check
+              - generic [ref=f2e128]:
+                - heading "How Booking Works" [level=3] [ref=f2e129]
+                - paragraph [ref=f2e130]: Your reservation is verified before any payment is taken.
+            - list [ref=f2e131]:
+              - listitem [ref=f2e132]:
+                - generic [ref=f2e133]: "1"
+                - paragraph [ref=f2e134]:
+                  - strong [ref=f2e135]: Submit your request.
+                  - text: We receive your itinerary and hold your selected items.
+              - listitem [ref=f2e136]:
+                - generic [ref=f2e137]: "2"
+                - paragraph [ref=f2e138]:
+                  - strong [ref=f2e139]: Availability check.
+                  - text: Our team verifies rooms, activities, and packages for your dates.
+              - listitem [ref=f2e140]:
+                - generic [ref=f2e141]: "3"
+                - paragraph [ref=f2e142]:
+                  - strong [ref=f2e143]: Pay to confirm.
+                  - text: Once approved, you get an email with a secure payment link — pay within
+                  - strong [ref=f2e144]: 48 hours
+                  - text: to lock in your booking.
+        - generic [ref=f2e146]:
+          - heading "receipt_long Itinerary Order Breakdown" [level=3] [ref=f2e147]:
+            - generic [ref=f2e148]: receipt_long
+            - generic [ref=f2e149]: Itinerary Order Breakdown
+          - generic [ref=f2e151]:
+            - generic [ref=f2e152]:
+              - img "Boracay Tipid Deal" [ref=f2e153]
+              - generic [ref=f2e154]:
+                - heading "Boracay Tipid Deal" [level=4] [ref=f2e155]
+                - paragraph [ref=f2e156]: Boracay • 3D2N Package
+            - generic [ref=f2e157]: ₱13,998.00
+          - generic [ref=f2e158]:
+            - generic [ref=f2e159]:
+              - generic [ref=f2e160]: Subtotal
+              - generic [ref=f2e161]: ₱13,998.00
+            - generic [ref=f2e162]:
+              - generic [ref=f2e163]: Total Net Amount
+              - generic [ref=f2e164]: ₱13,998.00
+          - button "verified Submit Booking Request" [ref=f2e165] [cursor=pointer]:
+            - generic [ref=f2e166]: verified
+            - generic [ref=f2e167]: Submit Booking Request
+          - paragraph [ref=f2e168]: By confirming, you agree to SunnyTrips terms, room cancellation policies, and traveler guidelines.

@@ -592,11 +592,10 @@
                             <span class="text-slate-400 text-[10px] block uppercase font-bold tracking-wider">Room Size</span>
                             <span class="font-bold text-slate-800 flex items-center gap-1">
                                 <span class="material-symbols-outlined text-[16px] text-ocean-600">straighten</span>
-                                <span x-text="previewRoom?.room_size"></span>
-                            </span>
+                                    <span x-text="previewRoom?.room_size"></span>
+                                </span>
+                            </div>
                         </div>
-                        </div>
-                    </div>
 
                     {{-- Description --}}
                     <template x-if="previewRoom?.description">

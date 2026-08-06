@@ -117,7 +117,7 @@
                                 </div>
                                 <button @click="removeItem(item.id)"
                                         :aria-label="'Remove ' + item.title"
-                                        class="shrink-0 p-1.5 rounded-full text-ink-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer">
+                                        class="shrink-0 p-1.5 rounded-full text-rose-600 bg-rose-50 border border-rose-100 hover:bg-rose-100 hover:text-rose-700 transition cursor-pointer">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                                     </svg>
@@ -125,30 +125,58 @@
                             </div>
 
                             <div class="flex items-center justify-between mt-3.5">
-                                {{-- Quantity Stepper --}}
-                                <div class="flex items-center rounded-full border border-sand-200 bg-white p-1">
-                                    <button @click="updateQty(item.id, item.quantity - 1)"
-                                            :disabled="item.quantity <= 1"
-                                            :aria-label="'Decrease ' + item.title + ' quantity'"
-                                            class="w-7 h-7 rounded-full flex items-center justify-center text-ink-600 hover:bg-sand-100 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer">
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 12H6"/>
-                                        </svg>
-                                    </button>
-                                    <span class="w-8 text-center text-sm font-semibold text-ink-900" x-text="item.quantity"></span>
-                                    <button @click="updateQty(item.id, item.quantity + 1)"
-                                            :aria-label="'Increase ' + item.title + ' quantity'"
-                                            class="w-7 h-7 rounded-full flex items-center justify-center text-ink-600 hover:bg-sand-100 transition cursor-pointer">
-                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v12M6 12h12"/>
-                                        </svg>
-                                    </button>
-                                </div>
+                                {{-- Pax Stepper for Addons/Transfers/Activities/Packages --}}
+                                <template x-if="item.item_type === 'addon' || item.item_type === 'activity' || item.item_type === 'package'">
+                                    <div class="flex items-center rounded-full border border-sand-200 bg-white p-1">
+                                        <button @click="updatePax(item.id, (item.selected_pax || 1) - 1)"
+                                                :disabled="item.selected_pax <= 1"
+                                                :aria-label="'Decrease ' + item.title + ' passenger count'"
+                                                class="w-7 h-7 rounded-full flex items-center justify-center text-ink-600 hover:bg-sand-100 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 12H6"/>
+                                            </svg>
+                                        </button>
+                                        <span class="w-10 text-center text-xs font-semibold text-ink-900" x-text="item.selected_pax + ' pax'"></span>
+                                        <button @click="updatePax(item.id, (item.selected_pax || 1) + 1)"
+                                                :aria-label="'Increase ' + item.title + ' passenger count'"
+                                                class="w-7 h-7 rounded-full flex items-center justify-center text-ink-600 hover:bg-sand-100 transition cursor-pointer">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v12M6 12h12"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </template>
+
+                                {{-- Quantity Stepper for Rooms --}}
+                                <template x-if="item.item_type !== 'addon' && item.item_type !== 'activity' && item.item_type !== 'package'">
+                                    <div class="flex items-center rounded-full border border-sand-200 bg-white p-1">
+                                        <button @click="updateQty(item.id, item.quantity - 1)"
+                                                :disabled="item.quantity <= 1"
+                                                :aria-label="'Decrease ' + item.title + ' quantity'"
+                                                class="w-7 h-7 rounded-full flex items-center justify-center text-ink-600 hover:bg-sand-100 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 12H6"/>
+                                            </svg>
+                                        </button>
+                                        <span class="w-8 text-center text-sm font-semibold text-ink-900" x-text="item.quantity"></span>
+                                        <button @click="updateQty(item.id, item.quantity + 1)"
+                                                :aria-label="'Increase ' + item.title + ' quantity'"
+                                                class="w-7 h-7 rounded-full flex items-center justify-center text-ink-600 hover:bg-sand-100 transition cursor-pointer">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v12M6 12h12"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </template>
 
                                 {{-- Price --}}
                                 <div class="text-right">
-                                    <span class="block text-xs text-ink-400" x-show="item.quantity > 1"
-                                          x-text="item.quantity + ' × ' + item.formatted_unit_rate"></span>
+                                    <template x-if="item.item_type === 'addon' || item.item_type === 'activity' || item.item_type === 'package'">
+                                        <span class="block text-xs text-ink-500 font-medium" x-text="item.formatted_unit_rate + ' / pax'"></span>
+                                    </template>
+                                    <template x-if="item.item_type !== 'addon' && item.item_type !== 'activity' && item.item_type !== 'package' && item.quantity > 1">
+                                        <span class="block text-xs text-ink-400" x-text="item.quantity + ' × ' + item.formatted_unit_rate"></span>
+                                    </template>
                                     <span class="block text-sm font-bold text-ink-900" x-text="item.formatted_subtotal"></span>
                                 </div>
                             </div>
@@ -170,7 +198,7 @@
                     </div>
                 </div>
 
-                <a href="{{ route('checkout.index') }}"
+                <a href="{{ route('checkout.index') }}" @click.prevent="proceedToCheckout()"
                    class="w-full py-3.5 rounded-full bg-ocean-600 hover:bg-ocean-500 text-white text-sm font-semibold shadow-sm shadow-ocean-600/25 transition flex items-center justify-center gap-2 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ocean-500 focus-visible:ring-offset-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
@@ -244,6 +272,20 @@ function cartDrawer() {
             }
         },
 
+        proceedToCheckout() {
+            const violations = this.items.filter(i =>
+                i.item_type === 'package' && i.is_selected &&
+                Number(i.min_pax) > 1 && Number(i.selected_pax) < Number(i.min_pax)
+            );
+            if (violations.length) {
+                alert(violations.map(v =>
+                    `"${v.title}" requires a minimum of ${v.min_pax} participants. Please increase the number of participants to continue with your booking.`
+                ).join('\n\n'));
+                return;
+            }
+            window.location.href = '{{ route('checkout.index') }}';
+        },
+
         async toggleSelect(id) {
             try {
                 const res = await fetch(`/cart/toggle/${id}`, {
@@ -262,6 +304,31 @@ function cartDrawer() {
                 }
             } catch (err) {
                 console.error('Error toggling cart item:', err);
+            }
+        },
+
+        async updatePax(id, newPax) {
+            if (newPax < 1) return;
+            try {
+                const res = await fetch(`/cart/update/${id}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ selected_pax: newPax })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    this.items = data.items;
+                    this.totalCount = data.total_count;
+                    this.selectedCount = data.selected_count;
+                    this.subtotal = data.subtotal;
+                    this.formattedSubtotal = data.formatted_subtotal;
+                }
+            } catch (err) {
+                console.error('Error updating pax:', err);
             }
         },
 

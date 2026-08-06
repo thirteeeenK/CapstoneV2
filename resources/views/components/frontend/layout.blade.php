@@ -121,7 +121,11 @@
                 if (data.success) {
                     window.dispatchEvent(new CustomEvent('cart-updated'));
                     window.dispatchEvent(new CustomEvent('show-cart-modal', {
-                        detail: { itemData: data.cart_item }
+                        detail: {
+                            itemData: data.cart_item,
+                            alreadyInCart: data.already_in_cart || false,
+                            message: data.already_in_cart ? data.message : null
+                        }
                     }));
                 } else {
                     alert(data.message || 'Could not add item to basket.');

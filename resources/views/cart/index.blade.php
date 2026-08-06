@@ -35,6 +35,7 @@
             'item_id' => $item->item_id,
             'quantity' => (int) $item->quantity,
             'selected_pax' => (int) ($item->selected_pax ?: 1),
+            'min_pax' => ($item->item_type === 'package' && $item->itemable) ? (int) $item->itemable->min_pax : null,
             'is_selected' => (bool) $item->is_selected,
             'title' => $item->item_title,
             'subtitle' => $item->item_subtitle,
@@ -186,40 +187,68 @@
                                 </div>
 
                                 <div class="mt-4 flex flex-wrap items-center justify-between gap-4">
-                                    {{-- AJAX Quantity Stepper --}}
-                                    <div class="flex items-center gap-1.5">
-                                        <span class="text-xs font-medium text-ink-500">Qty</span>
-                                        <div class="flex items-center rounded-full border border-sand-200 bg-white p-1">
-                                            <button type="button"
-                                                    @click="updateQty(item.id, -1)"
-                                                    :disabled="item.quantity <= 1"
-                                                    class="w-7 h-7 rounded-full flex items-center justify-center text-ink-600 hover:bg-sand-100 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer">
-                                                <span class="text-xs font-bold">-</span>
-                                            </button>
-                                            <span class="w-7 text-center text-xs font-semibold text-ink-900" x-text="item.quantity"></span>
-                                            <button type="button"
-                                                    @click="updateQty(item.id, 1)"
-                                                    :disabled="item.quantity >= item.max_qty"
-                                                    class="w-7 h-7 rounded-full flex items-center justify-center text-ink-600 hover:bg-sand-100 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer">
-                                                <span class="text-xs font-bold">+</span>
-                                            </button>
+                                    {{-- Steppers: Pax for Activities/Transfers/Addons/Packages, Qty for Rooms --}}
+                                    <template x-if="item.item_type === 'addon' || item.item_type === 'activity' || item.item_type === 'package'">
+                                        <div class="flex items-center gap-1.5 flex-wrap">
+                                            <span class="text-xs font-medium text-ink-500">Pax</span>
+                                            <div class="flex items-center rounded-full border border-sand-200 bg-white p-1">
+                                                <button type="button"
+                                                        @click="updatePax(item.id, -1)"
+                                                        :disabled="item.selected_pax <= 1"
+                                                        class="w-7 h-7 rounded-full flex items-center justify-center text-ink-600 hover:bg-sand-100 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer">
+                                                    <span class="text-xs font-bold">-</span>
+                                                </button>
+                                                <span class="w-7 text-center text-xs font-semibold text-ink-900" x-text="item.selected_pax"></span>
+                                                <button type="button"
+                                                        @click="updatePax(item.id, 1)"
+                                                        class="w-7 h-7 rounded-full flex items-center justify-center text-ink-600 hover:bg-sand-100 transition cursor-pointer">
+                                                    <span class="text-xs font-bold">+</span>
+                                                </button>
+                                            </div>
+                                            <template x-if="item.item_type === 'package'">
+                                                <span class="text-[11px] font-medium text-amber-700 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-full">Min 2 Pax</span>
+                                            </template>
                                         </div>
-                                         <template x-if="item.item_type === 'room'">
-                                             <div class="flex flex-col gap-0.5">
-                                                 <span class="text-[11px] font-medium text-ink-500" x-text="item.available_notice"></span>
-                                                 <template x-if="item.booked_count > 0">
-                                                     <span class="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-800 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-full w-fit">
-                                                         <span class="material-symbols-outlined text-[12px] text-amber-600">info</span>
-                                                         <span>Note: <span x-text="item.booked_count"></span> room<span x-text="item.booked_count > 1 ? 's are' : ' is'"></span> pending admin approval or active holds for these dates.</span>
-                                                     </span>
-                                                 </template>
-                                             </div>
-                                         </template>
-                                    </div>
+                                    </template>
 
-                                    {{-- Subtotal --}}
+                                    <template x-if="item.item_type !== 'addon' && item.item_type !== 'activity' && item.item_type !== 'package'">
+                                        <div class="flex items-center gap-1.5">
+                                            <span class="text-xs font-medium text-ink-500">Qty</span>
+                                            <div class="flex items-center rounded-full border border-sand-200 bg-white p-1">
+                                                <button type="button"
+                                                        @click="updateQty(item.id, -1)"
+                                                        :disabled="item.quantity <= 1"
+                                                        class="w-7 h-7 rounded-full flex items-center justify-center text-ink-600 hover:bg-sand-100 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer">
+                                                    <span class="text-xs font-bold">-</span>
+                                                </button>
+                                                <span class="w-7 text-center text-xs font-semibold text-ink-900" x-text="item.quantity"></span>
+                                                <button type="button"
+                                                        @click="updateQty(item.id, 1)"
+                                                        :disabled="item.quantity >= item.max_qty"
+                                                        class="w-7 h-7 rounded-full flex items-center justify-center text-ink-600 hover:bg-sand-100 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer">
+                                                    <span class="text-xs font-bold">+</span>
+                                                </button>
+                                            </div>
+                                            <template x-if="item.item_type === 'room'">
+                                                <div class="flex flex-col gap-0.5">
+                                                    <span class="text-[11px] font-medium text-ink-500" x-text="item.available_notice"></span>
+                                                    <template x-if="item.booked_count > 0">
+                                                        <span class="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-800 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-full w-fit">
+                                                            <span class="material-symbols-outlined text-[12px] text-amber-600">info</span>
+                                                            <span>Note: <span x-text="item.booked_count"></span> room<span x-text="item.booked_count > 1 ? 's are' : ' is'"></span> pending admin approval or active holds for these dates.</span>
+                                                        </span>
+                                                    </template>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </template>
+
+                                    {{-- Subtotal & Rate Display --}}
                                     <div class="text-right">
-                                        <template x-if="item.quantity > 1">
+                                        <template x-if="item.item_type === 'addon' || item.item_type === 'activity' || item.item_type === 'package'">
+                                            <span class="block text-xs text-ink-500 font-medium" x-text="item.formatted_unit_rate + ' / pax'"></span>
+                                        </template>
+                                        <template x-if="item.item_type !== 'addon' && item.item_type !== 'activity' && item.item_type !== 'package' && item.quantity > 1">
                                             <span class="block text-xs text-ink-400" x-text="item.formatted_unit_rate + ' each'"></span>
                                         </template>
                                         <span class="block text-lg font-bold text-ink-900" x-text="item.formatted_subtotal"></span>
@@ -232,7 +261,7 @@
                                 <button type="button"
                                         @click="removeItem(item.id)"
                                         :aria-label="'Remove ' + item.title"
-                                        class="w-9 h-9 rounded-full flex items-center justify-center text-ink-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer">
+                                        class="w-9 h-9 rounded-full flex items-center justify-center text-rose-600 bg-rose-50 border border-rose-100 hover:bg-rose-100 hover:text-rose-700 transition cursor-pointer shadow-2xs">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                                     </svg>
@@ -270,7 +299,7 @@
                             <span class="font-display text-2xl font-bold text-ocean-700" x-text="formattedSelectedSubtotal"></span>
                         </div>
 
-                        <a href="{{ route('checkout.index') }}"
+                        <a href="{{ route('checkout.index') }}" @click.prevent="proceedToCheckout()"
                            class="w-full py-3.5 rounded-full bg-ocean-600 hover:bg-ocean-500 text-white text-sm font-semibold shadow-sm shadow-ocean-600/25 transition flex items-center justify-center gap-2 cursor-pointer">
                             <span>Proceed to Booking Checkout</span>
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -310,6 +339,57 @@
 
             get formattedSelectedSubtotal() {
                 return '₱' + this.selectedSubtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            },
+
+            proceedToCheckout() {
+                const violations = this.items.filter(i =>
+                    i.item_type === 'package' && i.is_selected &&
+                    Number(i.min_pax) > 1 && Number(i.selected_pax) < Number(i.min_pax)
+                );
+                if (violations.length) {
+                    alert(violations.map(v =>
+                        `"${v.title}" requires a minimum of ${v.min_pax} participants. Please increase the number of participants to continue with your booking.`
+                    ).join('\n\n'));
+                    return;
+                }
+                window.location.href = '{{ route('checkout.index') }}';
+            },
+
+            async updatePax(itemId, delta) {
+                const item = this.items.find(i => i.id === itemId);
+                if (!item) return;
+
+                const targetPax = Math.max(1, (Number(item.selected_pax) || 1) + delta);
+                if (targetPax === item.selected_pax) return;
+
+                const prevPax = item.selected_pax;
+                item.selected_pax = targetPax;
+
+                try {
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+                    const res = await fetch('/cart/update/' + itemId, {
+                        method: 'PATCH',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken,
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: JSON.stringify({ selected_pax: targetPax })
+                    });
+
+                    const data = await res.json();
+                    if (data.success && data.items) {
+                        this.syncWithBackend(data.items);
+                        window.dispatchEvent(new CustomEvent('cart-updated'));
+                    } else {
+                        item.selected_pax = prevPax;
+                        alert(data.message || 'Could not update passenger count.');
+                    }
+                } catch (err) {
+                    console.error('Error updating pax:', err);
+                    item.selected_pax = prevPax;
+                }
             },
 
             async updateQty(itemId, delta) {
@@ -411,8 +491,10 @@
                     const local = this.items.find(i => i.id === bItem.id);
                     if (local) {
                         local.quantity = bItem.quantity;
+                        local.selected_pax = bItem.selected_pax;
                         local.subtotal = bItem.subtotal;
                         local.unit_rate = bItem.unit_rate;
+                        local.formatted_unit_rate = bItem.formatted_unit_rate;
                         local.formatted_subtotal = bItem.formatted_subtotal;
                         local.is_selected = bItem.is_selected;
                     }

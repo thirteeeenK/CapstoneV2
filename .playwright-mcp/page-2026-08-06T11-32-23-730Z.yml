@@ -1,0 +1,123 @@
+- generic [active] [ref=f12e1]:
+  - complementary [ref=f12e2]:
+    - generic [ref=f12e4]:
+      - link "SunnyTrips" [ref=f12e5] [cursor=pointer]:
+        - /url: http://localhost:8000/dashboard
+      - paragraph [ref=f12e7]:
+        - generic [ref=f12e9]: Traveler Portal
+    - navigation [ref=f12e10]:
+      - generic [ref=f12e11]:
+        - heading "Main Navigation" [level=2] [ref=f12e12]
+        - generic [ref=f12e13]:
+          - link "space_dashboard Dashboard" [ref=f12e14] [cursor=pointer]:
+            - /url: http://localhost:8000/dashboard
+            - generic [ref=f12e15]: space_dashboard
+            - generic [ref=f12e16]: Dashboard
+          - link "shopping_basket My Trip Basket" [ref=f12e17] [cursor=pointer]:
+            - /url: http://localhost:8000/cart
+            - generic [ref=f12e18]: shopping_basket
+            - generic [ref=f12e19]: My Trip Basket
+          - link "auto_stories My Bookings" [ref=f12e20] [cursor=pointer]:
+            - /url: http://localhost:8000/bookings
+            - generic [ref=f12e21]: auto_stories
+            - generic [ref=f12e22]: My Bookings
+      - generic [ref=f12e23]:
+        - heading "Explore Catalog" [level=2] [ref=f12e24]
+        - generic [ref=f12e25]:
+          - link "location_on Island Destinations" [ref=f12e26] [cursor=pointer]:
+            - /url: http://localhost:8000/destinations
+            - generic [ref=f12e27]: location_on
+            - generic [ref=f12e28]: Island Destinations
+          - link "hotel Hotels & Sanctuaries" [ref=f12e29] [cursor=pointer]:
+            - /url: http://localhost:8000/hotels
+            - generic [ref=f12e30]: hotel
+            - generic [ref=f12e31]: Hotels & Sanctuaries
+          - link "king_bed Rooms & Stays" [ref=f12e32] [cursor=pointer]:
+            - /url: http://localhost:8000/rooms
+            - generic [ref=f12e33]: king_bed
+            - generic [ref=f12e34]: Rooms & Stays
+          - link "explore Activities & Tours" [ref=f12e35] [cursor=pointer]:
+            - /url: http://localhost:8000/activities
+            - generic [ref=f12e36]: explore
+            - generic [ref=f12e37]: Activities & Tours
+          - link "extension Transfers & Add-ons" [ref=f12e38] [cursor=pointer]:
+            - /url: http://localhost:8000/addons
+            - generic [ref=f12e39]: extension
+            - generic [ref=f12e40]: Transfers & Add-ons
+          - link "card_travel Tour Packages & Promos" [ref=f12e41] [cursor=pointer]:
+            - /url: http://localhost:8000/packages
+            - generic [ref=f12e42]: card_travel
+            - generic [ref=f12e43]: Tour Packages & Promos
+      - generic [ref=f12e44]:
+        - heading "Personalization" [level=2] [ref=f12e45]
+        - generic [ref=f12e46]:
+          - link "tune AI Preferences Quiz" [ref=f12e47] [cursor=pointer]:
+            - /url: http://localhost:8000/onboarding
+            - generic [ref=f12e48]: tune
+            - generic [ref=f12e49]: AI Preferences Quiz
+          - link "manage_accounts Account Profile" [ref=f12e50] [cursor=pointer]:
+            - /url: http://localhost:8000/profile
+            - generic [ref=f12e51]: manage_accounts
+            - generic [ref=f12e52]: Account Profile
+    - generic [ref=f12e53]:
+      - generic [ref=f12e54]:
+        - generic [ref=f12e55]: T
+        - generic [ref=f12e56]:
+          - generic [ref=f12e57]: Test User
+          - generic [ref=f12e58]: test@example.com
+      - button "logout Log Out" [ref=f12e60] [cursor=pointer]:
+        - generic [ref=f12e61]: logout
+        - generic [ref=f12e62]: Log Out
+  - main [ref=f12e63]:
+    - generic [ref=f12e65]:
+      - generic [ref=f12e66]:
+        - generic [ref=f12e67]:
+          - navigation "Breadcrumb" [ref=f12e68]:
+            - link "Home" [ref=f12e69] [cursor=pointer]:
+              - /url: /
+            - generic [ref=f12e72]: Trip Basket
+          - heading "Your Trip Basket" [level=1] [ref=f12e73]
+          - paragraph [ref=f12e74]: 1 item in your basket — 1 selected for booking.
+        - link "Continue exploring" [ref=f12e75] [cursor=pointer]:
+          - /url: http://localhost:8000/destinations
+      - generic [ref=f12e79]:
+        - generic [ref=f12e81]:
+          - checkbox "Select Boracay Tipid Deal" [checked] [ref=f12e83] [cursor=pointer]
+          - img "Boracay Tipid Deal" [ref=f12e84]
+          - generic [ref=f12e85]:
+            - generic [ref=f12e86]:
+              - generic [ref=f12e87]: package
+              - generic [ref=f12e88]:
+                - generic [ref=f12e89]: location_on
+                - generic [ref=f12e90]: Boracay
+            - heading "Boracay Tipid Deal" [level=3] [ref=f12e91]
+            - generic [ref=f12e92]:
+              - generic [ref=f12e93]:
+                - generic [ref=f12e94]: Pax
+                - generic [ref=f12e95]:
+                  - button "-" [ref=f12e96] [cursor=pointer]
+                  - generic [ref=f12e98]: "2"
+                  - button "+" [ref=f12e99] [cursor=pointer]
+                - generic [ref=f12e101]: Min 2 Pax
+              - generic [ref=f12e102]:
+                - generic [ref=f12e103]: ₱6,999.00 / pax
+                - generic [ref=f12e104]: ₱13,998.00
+          - button "Remove Boracay Tipid Deal" [ref=f12e106] [cursor=pointer]
+        - generic [ref=f12e110]:
+          - heading "Booking Summary" [level=2] [ref=f12e111]
+          - generic [ref=f12e112]:
+            - generic [ref=f12e113]:
+              - generic [ref=f12e114]: Selected items
+              - generic [ref=f12e115]: 1 of 1
+            - generic [ref=f12e116]:
+              - generic [ref=f12e117]: Subtotal
+              - generic [ref=f12e118]: ₱13,998.00
+            - generic [ref=f12e119]:
+              - generic [ref=f12e120]: Service & booking fee
+              - generic [ref=f12e121]: Waived (Promo)
+          - generic [ref=f12e122]:
+            - generic [ref=f12e123]: Estimated total
+            - generic [ref=f12e124]: ₱13,998.00
+          - link "Proceed to Booking Checkout" [ref=f12e125] [cursor=pointer]:
+            - /url: http://localhost:8000/checkout
+          - paragraph [ref=f12e129]: You'll add your guest details and confirm your stay at checkout.

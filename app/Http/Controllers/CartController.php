@@ -137,6 +137,7 @@ class CartController extends Controller
                     'item_id' => $item->item_id,
                     'quantity' => $item->quantity,
                     'selected_pax' => $item->selected_pax,
+                    'min_pax' => ($item->item_type === 'package' && $item->itemable) ? (int) $item->itemable->min_pax : null,
                     'check_in_date' => $item->check_in_date ? Carbon::parse($item->check_in_date)->format('Y-m-d') : null,
                     'check_out_date' => $item->check_out_date ? Carbon::parse($item->check_out_date)->format('Y-m-d') : null,
                     'is_selected' => $item->is_selected,
@@ -233,12 +234,46 @@ class CartController extends Controller
                 $query->where('check_in_date', $validated['check_in_date']);
             }
 
+            if (in_array($validated['item_type'], ['activity', 'addon'])) {
+                $paxVal = max((int) ($validated['quantity'] ?? 1), (int) ($validated['selected_pax'] ?? 1));
+                $validated['quantity'] = $paxVal;
+                $validated['selected_pax'] = $paxVal;
+            } elseif ($validated['item_type'] === 'package') {
+                // min_pax only gates booking eligibility at checkout, never inflates pax
+                $paxVal = max(1, (int) ($validated['quantity'] ?? 1), (int) ($validated['selected_pax'] ?? 1));
+                $validated['quantity'] = $paxVal;
+                $validated['selected_pax'] = $paxVal;
+            }
+
             $existingItem = $query->first();
 
             if ($existingItem) {
+                // Packages are non-stackable — each package is a single booking entry.
+                // Re-adding a package that's already in the cart just notifies the user.
+                if ($existingItem->item_type === 'package') {
+                    $existingItem->load('itemable');
+                    return response()->json([
+                        'success' => true,
+                        'already_in_cart' => true,
+                        'message' => '"' . $existingItem->item_title . '" is already in your Trip Basket. Adjust the traveler count from your cart.',
+                        'cart_item' => [
+                            'id' => $existingItem->id,
+                            'title' => $existingItem->item_title,
+                            'subtitle' => $existingItem->item_subtitle,
+                            'image' => $existingItem->item_image,
+                            'quantity' => $existingItem->quantity,
+                            'formatted_subtotal' => '₱' . number_format($existingItem->subtotal, 2),
+                        ],
+                    ]);
+                }
+
                 $existingItem->quantity += ($validated['quantity'] ?? 1);
                 if (!empty($validated['selected_pax'])) {
                     $existingItem->selected_pax = $validated['selected_pax'];
+                }
+                if (in_array($existingItem->item_type, ['activity', 'addon'])) {
+                    $existingItem->selected_pax = max($existingItem->quantity, $existingItem->selected_pax);
+                    $existingItem->quantity = $existingItem->selected_pax;
                 }
                 $existingItem->save();
                 $cartItem = $existingItem;
@@ -360,10 +395,23 @@ class CartController extends Controller
                     $available = max(1, $totalRooms - $bookedCount);
                     $newQty = min($newQty, $available);
                 }
+                if ($cartItem->item_type === 'package') {
+                    $newQty = max(1, $newQty);
+                }
                 $cartItem->quantity = $newQty;
+                if (in_array($cartItem->item_type, ['activity', 'addon', 'package'])) {
+                    $cartItem->selected_pax = $newQty;
+                }
             }
             if (isset($validated['selected_pax'])) {
-                $cartItem->selected_pax = $validated['selected_pax'];
+                $newPax = (int) $validated['selected_pax'];
+                if ($cartItem->item_type === 'package') {
+                    $newPax = max(1, $newPax);
+                }
+                $cartItem->selected_pax = $newPax;
+                if (in_array($cartItem->item_type, ['activity', 'addon', 'package'])) {
+                    $cartItem->quantity = $newPax;
+                }
             }
             if (array_key_exists('check_in_date', $validated)) {
                 $cartItem->check_in_date = $validated['check_in_date'];

@@ -81,6 +81,32 @@ class BookingRequestService
             }
         }
 
+        // Process any itemized manifests (room, package, activity, addon)
+        foreach ($request->all() as $reqKey => $reqVal) {
+            if (str_starts_with($reqKey, 'package_manifest_') || str_starts_with($reqKey, 'room_manifest_')) {
+                if (is_string($reqVal) && !empty($reqVal)) {
+                    $decoded = json_decode($reqVal, true);
+                    if (is_array($decoded)) {
+                        foreach ($decoded as $g) {
+                            if (!empty($g['full_name'])) {
+                                $guestManifest[] = $g;
+                                $cat = $g['category'] ?? 'Adult';
+
+                                if (isset($rulesMap[$cat])) {
+                                    $rule = $rulesMap[$cat];
+                                    if ($rule->adjustment_type === 'discount') {
+                                        $discountAmount += (float) $rule->amount;
+                                    } elseif ($rule->adjustment_type === 'surcharge') {
+                                        $surchargeAmount += (float) $rule->amount;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         $bookingCode = $this->generateBookingCode();
         $manifestCount = count($guestManifest);
         $totalAmount = 0.00;

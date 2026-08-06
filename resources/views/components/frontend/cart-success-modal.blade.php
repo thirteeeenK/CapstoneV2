@@ -3,16 +3,19 @@ window.cartSuccessModal = function() {
     return {
         isOpen: false,
         itemData: null,
+        alreadyInCart: false,
+        customMessage: null,
 
         initModal() {
             window.addEventListener('show-cart-modal', (e) => {
-                console.log('Cart modal received event:', e.detail);
                 this.openModal(e.detail);
             });
         },
 
         openModal(detail) {
             this.itemData = (detail && detail.itemData) ? detail.itemData : null;
+            this.alreadyInCart = detail?.alreadyInCart || false;
+            this.customMessage = detail?.message || null;
             this.isOpen = true;
         },
 
@@ -73,13 +76,18 @@ window.cartSuccessModal = function() {
 
             {{-- Header --}}
             <div class="p-6 sm:p-7 bg-sand-50 border-b border-sand-200 text-center">
-                <div class="w-14 h-14 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center mx-auto mb-4">
+                <div x-show="alreadyInCart" class="w-14 h-14 rounded-full bg-amber-50 border border-amber-100 flex items-center justify-center mx-auto mb-4">
+                    <span class="material-symbols-outlined text-amber-500 text-3xl">info</span>
+                </div>
+                <div x-show="!alreadyInCart" class="w-14 h-14 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center mx-auto mb-4">
                     <svg class="w-7 h-7 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
                     </svg>
                 </div>
-                <h3 class="font-display text-lg font-bold tracking-tight text-ink-900">Added to your trip basket</h3>
-                <p class="text-xs text-ink-500 mt-1 font-medium">This piece of your journey is ready when you are.</p>
+                <h3 class="font-display text-lg font-bold tracking-tight text-ink-900"
+                    x-text="alreadyInCart ? 'Already in Your Basket' : 'Added to your trip basket'"></h3>
+                <p class="text-xs text-ink-500 mt-1 font-medium"
+                    x-text="alreadyInCart ? (customMessage || 'This package is already in your Trip Basket. Adjust the traveler count from your cart.') : 'This piece of your journey is ready when you are.'"></p>
             </div>
 
             {{-- Item Details Body --}}

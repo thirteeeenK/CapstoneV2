@@ -1,0 +1,123 @@
+- generic [ref=f1e1]:
+  - complementary [ref=f1e2]:
+    - generic [ref=f1e4]:
+      - link "SunnyTrips" [ref=f1e5] [cursor=pointer]:
+        - /url: http://localhost:8000/dashboard
+      - paragraph [ref=f1e7]:
+        - generic [ref=f1e9]: Traveler Portal
+    - navigation [ref=f1e10]:
+      - generic [ref=f1e11]:
+        - heading "Main Navigation" [level=2] [ref=f1e12]
+        - generic [ref=f1e13]:
+          - link "space_dashboard Dashboard" [ref=f1e14] [cursor=pointer]:
+            - /url: http://localhost:8000/dashboard
+            - generic [ref=f1e15]: space_dashboard
+            - generic [ref=f1e16]: Dashboard
+          - link "shopping_basket My Trip Basket" [ref=f1e17] [cursor=pointer]:
+            - /url: http://localhost:8000/cart
+            - generic [ref=f1e18]: shopping_basket
+            - generic [ref=f1e19]: My Trip Basket
+          - link "auto_stories My Bookings" [ref=f1e20] [cursor=pointer]:
+            - /url: http://localhost:8000/bookings
+            - generic [ref=f1e21]: auto_stories
+            - generic [ref=f1e22]: My Bookings
+      - generic [ref=f1e23]:
+        - heading "Explore Catalog" [level=2] [ref=f1e24]
+        - generic [ref=f1e25]:
+          - link "location_on Island Destinations" [ref=f1e26] [cursor=pointer]:
+            - /url: http://localhost:8000/destinations
+            - generic [ref=f1e27]: location_on
+            - generic [ref=f1e28]: Island Destinations
+          - link "hotel Hotels & Sanctuaries" [ref=f1e29] [cursor=pointer]:
+            - /url: http://localhost:8000/hotels
+            - generic [ref=f1e30]: hotel
+            - generic [ref=f1e31]: Hotels & Sanctuaries
+          - link "king_bed Rooms & Stays" [ref=f1e32] [cursor=pointer]:
+            - /url: http://localhost:8000/rooms
+            - generic [ref=f1e33]: king_bed
+            - generic [ref=f1e34]: Rooms & Stays
+          - link "explore Activities & Tours" [ref=f1e35] [cursor=pointer]:
+            - /url: http://localhost:8000/activities
+            - generic [ref=f1e36]: explore
+            - generic [ref=f1e37]: Activities & Tours
+          - link "extension Transfers & Add-ons" [ref=f1e38] [cursor=pointer]:
+            - /url: http://localhost:8000/addons
+            - generic [ref=f1e39]: extension
+            - generic [ref=f1e40]: Transfers & Add-ons
+          - link "card_travel Tour Packages & Promos" [ref=f1e41] [cursor=pointer]:
+            - /url: http://localhost:8000/packages
+            - generic [ref=f1e42]: card_travel
+            - generic [ref=f1e43]: Tour Packages & Promos
+      - generic [ref=f1e44]:
+        - heading "Personalization" [level=2] [ref=f1e45]
+        - generic [ref=f1e46]:
+          - link "tune AI Preferences Quiz" [ref=f1e47] [cursor=pointer]:
+            - /url: http://localhost:8000/onboarding
+            - generic [ref=f1e48]: tune
+            - generic [ref=f1e49]: AI Preferences Quiz
+          - link "manage_accounts Account Profile" [ref=f1e50] [cursor=pointer]:
+            - /url: http://localhost:8000/profile
+            - generic [ref=f1e51]: manage_accounts
+            - generic [ref=f1e52]: Account Profile
+    - generic [ref=f1e53]:
+      - generic [ref=f1e54]:
+        - generic [ref=f1e55]: T
+        - generic [ref=f1e56]:
+          - generic [ref=f1e57]: Test User
+          - generic [ref=f1e58]: test@example.com
+      - button "logout Log Out" [ref=f1e60] [cursor=pointer]:
+        - generic [ref=f1e61]: logout
+        - generic [ref=f1e62]: Log Out
+  - main [ref=f1e63]:
+    - generic [ref=f1e65]:
+      - generic [ref=f1e66]:
+        - generic [ref=f1e67]:
+          - navigation "Breadcrumb" [ref=f1e68]:
+            - link "Home" [ref=f1e69] [cursor=pointer]:
+              - /url: /
+            - generic [ref=f1e72]: Trip Basket
+          - heading "Your Trip Basket" [level=1] [ref=f1e73]
+          - paragraph [ref=f1e74]: 1 item in your basket — 1 selected for booking.
+        - link "Continue exploring" [ref=f1e75] [cursor=pointer]:
+          - /url: http://localhost:8000/destinations
+      - generic [ref=f1e79]:
+        - generic [ref=f1e81]:
+          - checkbox "Select Boracay Tipid Deal" [checked] [ref=f1e83] [cursor=pointer]
+          - img "Boracay Tipid Deal" [ref=f1e84]
+          - generic [ref=f1e85]:
+            - generic [ref=f1e86]:
+              - generic [ref=f1e87]: package
+              - generic [ref=f1e88]:
+                - generic [ref=f1e89]: location_on
+                - generic [ref=f1e90]: Boracay
+            - heading "Boracay Tipid Deal" [level=3] [ref=f1e91]
+            - generic [ref=f1e92]:
+              - generic [ref=f1e93]:
+                - generic [ref=f1e94]: Pax
+                - generic [ref=f1e95]:
+                  - button "-" [ref=f1e96] [cursor=pointer]
+                  - generic [ref=f1e98]: "2"
+                  - button "+" [active] [ref=f1e99] [cursor=pointer]
+                - generic [ref=f1e101]: Min 2 Pax
+              - generic [ref=f1e102]:
+                - generic [ref=f1e103]: ₱6,999.00 / pax
+                - generic [ref=f1e104]: ₱13,998.00
+          - button "Remove Boracay Tipid Deal" [ref=f1e106] [cursor=pointer]
+        - generic [ref=f1e110]:
+          - heading "Booking Summary" [level=2] [ref=f1e111]
+          - generic [ref=f1e112]:
+            - generic [ref=f1e113]:
+              - generic [ref=f1e114]: Selected items
+              - generic [ref=f1e115]: 1 of 1
+            - generic [ref=f1e116]:
+              - generic [ref=f1e117]: Subtotal
+              - generic [ref=f1e118]: ₱13,998.00
+            - generic [ref=f1e119]:
+              - generic [ref=f1e120]: Service & booking fee
+              - generic [ref=f1e121]: Waived (Promo)
+          - generic [ref=f1e122]:
+            - generic [ref=f1e123]: Estimated total
+            - generic [ref=f1e124]: ₱13,998.00
+          - link "Proceed to Booking Checkout" [ref=f1e125] [cursor=pointer]:
+            - /url: http://localhost:8000/checkout
+          - paragraph [ref=f1e129]: You'll add your guest details and confirm your stay at checkout.

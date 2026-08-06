@@ -411,3 +411,177 @@ it('correctly calculates activity range pricing and airport transfer tier pricin
         ->and($booking->total_amount)->toBe('3900.00')
         ->and($booking->guest_manifest)->toHaveCount(2);
 });
+
+test('transfer add-on pax count update dynamically calculates tier rates in cart endpoint', function () {
+    $dest = DestinationModel::first();
+    $addon = \App\Models\AddOnModel::create([
+        'destination_id' => $dest->id,
+        'name' => 'Airport to Hotel Roundtrip Transfer',
+        'type' => 'Transfer',
+        'description' => 'Roundtrip transfer',
+        'pricing_tiers' => [
+            ['min_pax' => 1, 'max_pax' => 1, 'rate' => 1850],
+            ['min_pax' => 2, 'max_pax' => 2, 'rate' => 1450],
+            ['min_pax' => 3, 'max_pax' => 3, 'rate' => 1250],
+            ['min_pax' => 4, 'max_pax' => 4, 'rate' => 1150],
+        ],
+        'is_shown' => true,
+    ]);
+
+    $cartItem = CartItem::create([
+        'user_id' => $this->user->id,
+        'item_type' => 'addon',
+        'item_id' => $addon->id,
+        'quantity' => 1,
+        'selected_pax' => 1,
+        'is_selected' => true,
+    ]);
+
+    expect($cartItem->unit_rate)->toBe(1850.0)
+        ->and($cartItem->subtotal)->toBe(1850.0);
+
+    // Update to 2 pax via PATCH request
+    $res2 = $this->actingAs($this->user)->patchJson(route('cart.update', $cartItem->id), [
+        'selected_pax' => 2,
+    ]);
+
+    $res2->assertOk()->assertJson(['success' => true]);
+    $cartItem->refresh();
+    expect($cartItem->selected_pax)->toBe(2)
+        ->and($cartItem->unit_rate)->toBe(1450.0)
+        ->and($cartItem->subtotal)->toBe(2900.0);
+
+    // Update to 3 pax
+    $res3 = $this->actingAs($this->user)->patchJson(route('cart.update', $cartItem->id), [
+        'selected_pax' => 3,
+    ]);
+
+    $res3->assertOk()->assertJson(['success' => true]);
+    $cartItem->refresh();
+    expect($cartItem->selected_pax)->toBe(3)
+        ->and($cartItem->unit_rate)->toBe(1250.0)
+        ->and($cartItem->subtotal)->toBe(3750.0);
+});
+
+test('activity item quantity update syncs pax count and displays matching participant count on checkout page', function () {
+    $dest = DestinationModel::first();
+    $activity = \App\Models\ActivityModel::create([
+        'destination_id' => $dest->id,
+        'activity_name' => 'Crystal Kayak',
+        'category' => 'Water Sports',
+        'activity_level' => 'Easy',
+        'rate' => '₱300 per person',
+        'is_shown' => true,
+    ]);
+
+    $cartItem = CartItem::create([
+        'user_id' => $this->user->id,
+        'item_type' => 'activity',
+        'item_id' => $activity->id,
+        'quantity' => 1,
+        'selected_pax' => 1,
+        'is_selected' => true,
+    ]);
+
+    // Update quantity to 3 in cart
+    $res = $this->actingAs($this->user)->patchJson(route('cart.update', $cartItem->id), [
+        'quantity' => 3,
+    ]);
+
+    $res->assertOk()->assertJson(['success' => true]);
+    $cartItem->refresh();
+
+    expect($cartItem->selected_pax)->toBe(3)
+        ->and($cartItem->subtotal)->toBe(900.0);
+
+    // Render Checkout Page
+    $checkoutRes = $this->actingAs($this->user)->get(route('checkout.index'));
+    $checkoutRes->assertOk()
+        ->assertSee('Booked for 3 Pax')
+        ->assertSee('Participants: 3');
+});
+
+test('package item keeps requested pax while min_pax only gates checkout eligibility', function () {
+    $dest = DestinationModel::first();
+    $package = \App\Models\Package::create([
+        'destination_id' => $dest->id,
+        'name' => 'Boracay Sulit Deal 3D2N',
+        'type' => 'Vacation Deal',
+        'price' => 3000.00,
+        'days' => 3,
+        'nights' => 2,
+        'min_pax' => 2,
+        'is_active' => true,
+    ]);
+
+    // Store package in cart with 1 pax requested -> pax stays 1, min_pax does not inflate it
+    $storeRes = $this->actingAs($this->user)->postJson(route('cart.add'), [
+        'item_type' => 'package',
+        'item_id' => $package->id,
+        'quantity' => 1,
+        'selected_pax' => 1,
+    ]);
+
+    $storeRes->assertOk()->assertJson(['success' => true]);
+
+    $cartItem = CartItem::where('user_id', $this->user->id)->where('item_type', 'package')->first();
+    expect($cartItem)->not->toBeNull()
+        ->and($cartItem->selected_pax)->toBe(1)
+        ->and($cartItem->subtotal)->toBe(3000.0);
+
+    // Booking below min_pax is rejected at checkout (eligibility gate only)
+    $processRes = $this->actingAs($this->user)->postJson(route('checkout.process'), [
+        'contact_name' => 'Test User',
+        'contact_email' => 'test@example.com',
+        'contact_phone' => '09171234567',
+    ]);
+    $processRes->assertStatus(422)
+        ->assertJson(['success' => false]);
+
+    // Updating pax to 2 is allowed
+    $updateRes = $this->actingAs($this->user)->patchJson(route('cart.update', $cartItem->id), [
+        'selected_pax' => 2,
+    ]);
+    $updateRes->assertOk();
+    $cartItem->refresh();
+    expect($cartItem->selected_pax)->toBe(2);
+
+    // Render Checkout Page -> one manifest container per pax
+    $checkoutRes = $this->actingAs($this->user)->get(route('checkout.index'));
+    $checkoutRes->assertOk()
+        ->assertSee('Package 1')
+        ->assertSee('Package 2')
+        ->assertSee('Boracay Sulit Deal 3D2N');
+});
+
+test('cart data payload exposes min_pax for package items so checkout can be pre-validated', function () {
+    $dest = DestinationModel::first();
+    $package = \App\Models\Package::create([
+        'destination_id' => $dest->id,
+        'name' => 'Palawan Explorer',
+        'type' => 'Tour Package',
+        'price' => 4500.00,
+        'days' => 4,
+        'nights' => 3,
+        'min_pax' => 3,
+        'is_active' => true,
+    ]);
+
+    $this->actingAs($this->user)->postJson(route('cart.add'), [
+        'item_type' => 'package',
+        'item_id' => $package->id,
+        'quantity' => 1,
+        'selected_pax' => 1,
+    ])->assertOk();
+
+    $dataRes = $this->actingAs($this->user)->getJson(route('cart.data'));
+    $dataRes->assertOk()->assertJson(['success' => true]);
+
+    $packageItem = collect($dataRes->json('items'))->firstWhere('item_type', 'package');
+    expect($packageItem)->not->toBeNull()
+        ->and($packageItem['min_pax'])->toBe(3)
+        ->and($packageItem['selected_pax'])->toBe(1);
+});
+
+
+

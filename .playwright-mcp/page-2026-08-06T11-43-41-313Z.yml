@@ -1,0 +1,161 @@
+- generic [ref=f3e1]:
+  - complementary [ref=f3e2]:
+    - generic [ref=f3e4]:
+      - link "SunnyTrips" [ref=f3e5] [cursor=pointer]:
+        - /url: http://localhost:8000/dashboard
+      - paragraph [ref=f3e7]:
+        - generic [ref=f3e9]: Traveler Portal
+    - navigation [ref=f3e10]:
+      - generic [ref=f3e11]:
+        - heading "Main Navigation" [level=2] [ref=f3e12]
+        - generic [ref=f3e13]:
+          - link "space_dashboard Dashboard" [ref=f3e14] [cursor=pointer]:
+            - /url: http://localhost:8000/dashboard
+            - generic [ref=f3e15]: space_dashboard
+            - generic [ref=f3e16]: Dashboard
+          - link "shopping_basket My Trip Basket" [ref=f3e17] [cursor=pointer]:
+            - /url: http://localhost:8000/cart
+            - generic [ref=f3e18]: shopping_basket
+            - generic [ref=f3e19]: My Trip Basket
+          - link "auto_stories My Bookings" [ref=f3e20] [cursor=pointer]:
+            - /url: http://localhost:8000/bookings
+            - generic [ref=f3e21]: auto_stories
+            - generic [ref=f3e22]: My Bookings
+      - generic [ref=f3e23]:
+        - heading "Explore Catalog" [level=2] [ref=f3e24]
+        - generic [ref=f3e25]:
+          - link "location_on Island Destinations" [ref=f3e26] [cursor=pointer]:
+            - /url: http://localhost:8000/destinations
+            - generic [ref=f3e27]: location_on
+            - generic [ref=f3e28]: Island Destinations
+          - link "hotel Hotels & Sanctuaries" [ref=f3e29] [cursor=pointer]:
+            - /url: http://localhost:8000/hotels
+            - generic [ref=f3e30]: hotel
+            - generic [ref=f3e31]: Hotels & Sanctuaries
+          - link "king_bed Rooms & Stays" [ref=f3e32] [cursor=pointer]:
+            - /url: http://localhost:8000/rooms
+            - generic [ref=f3e33]: king_bed
+            - generic [ref=f3e34]: Rooms & Stays
+          - link "explore Activities & Tours" [ref=f3e35] [cursor=pointer]:
+            - /url: http://localhost:8000/activities
+            - generic [ref=f3e36]: explore
+            - generic [ref=f3e37]: Activities & Tours
+          - link "extension Transfers & Add-ons" [ref=f3e38] [cursor=pointer]:
+            - /url: http://localhost:8000/addons
+            - generic [ref=f3e39]: extension
+            - generic [ref=f3e40]: Transfers & Add-ons
+          - link "card_travel Tour Packages & Promos" [ref=f3e41] [cursor=pointer]:
+            - /url: http://localhost:8000/packages
+            - generic [ref=f3e42]: card_travel
+            - generic [ref=f3e43]: Tour Packages & Promos
+      - generic [ref=f3e44]:
+        - heading "Personalization" [level=2] [ref=f3e45]
+        - generic [ref=f3e46]:
+          - link "tune AI Preferences Quiz" [ref=f3e47] [cursor=pointer]:
+            - /url: http://localhost:8000/onboarding
+            - generic [ref=f3e48]: tune
+            - generic [ref=f3e49]: AI Preferences Quiz
+          - link "manage_accounts Account Profile" [ref=f3e50] [cursor=pointer]:
+            - /url: http://localhost:8000/profile
+            - generic [ref=f3e51]: manage_accounts
+            - generic [ref=f3e52]: Account Profile
+    - generic [ref=f3e53]:
+      - generic [ref=f3e54]:
+        - generic [ref=f3e55]: T
+        - generic [ref=f3e56]:
+          - generic [ref=f3e57]: Test User
+          - generic [ref=f3e58]: test@example.com
+      - button "logout Log Out" [ref=f3e60] [cursor=pointer]:
+        - generic [ref=f3e61]: logout
+        - generic [ref=f3e62]: Log Out
+  - main [ref=f3e63]:
+    - generic [ref=f3e65]:
+      - generic [ref=f3e66]:
+        - generic [ref=f3e67]:
+          - navigation "Breadcrumb" [ref=f3e68]:
+            - link "Home" [ref=f3e69] [cursor=pointer]:
+              - /url: /
+            - generic [ref=f3e72]: Trip Basket
+          - heading "Your Trip Basket" [level=1] [ref=f3e73]
+          - paragraph [ref=f3e74]: 1 item in your basket — 1 selected for booking.
+        - link "Continue exploring" [ref=f3e75] [cursor=pointer]:
+          - /url: http://localhost:8000/destinations
+      - generic [ref=f3e79]:
+        - generic [ref=f3e81]:
+          - checkbox "Select Boracay Tipid Deal" [checked] [ref=f3e83] [cursor=pointer]
+          - img "Boracay Tipid Deal" [ref=f3e84]
+          - generic [ref=f3e85]:
+            - generic [ref=f3e86]:
+              - generic [ref=f3e87]: package
+              - generic [ref=f3e88]:
+                - generic [ref=f3e89]: location_on
+                - generic [ref=f3e90]: Boracay
+            - heading "Boracay Tipid Deal" [level=3] [ref=f3e91]
+            - generic [ref=f3e92]:
+              - generic [ref=f3e93]:
+                - generic [ref=f3e94]: Pax
+                - generic [ref=f3e95]:
+                  - button "-" [disabled] [ref=f3e96]
+                  - generic [ref=f3e98]: "1"
+                  - button "+" [ref=f3e99] [cursor=pointer]
+                - generic [ref=f3e101]: Min 2 Pax
+              - generic [ref=f3e102]:
+                - generic [ref=f3e103]: ₱6,999.00 / pax
+                - generic [ref=f3e104]: ₱6,999.00
+          - button "Remove Boracay Tipid Deal" [ref=f3e106] [cursor=pointer]
+        - generic [ref=f3e110]:
+          - heading "Booking Summary" [level=2] [ref=f3e111]
+          - generic [ref=f3e112]:
+            - generic [ref=f3e113]:
+              - generic [ref=f3e114]: Selected items
+              - generic [ref=f3e115]: 1 of 1
+            - generic [ref=f3e116]:
+              - generic [ref=f3e117]: Subtotal
+              - generic [ref=f3e118]: ₱6,999.00
+            - generic [ref=f3e119]:
+              - generic [ref=f3e120]: Service & booking fee
+              - generic [ref=f3e121]: Waived (Promo)
+          - generic [ref=f3e122]:
+            - generic [ref=f3e123]: Estimated total
+            - generic [ref=f3e124]: ₱6,999.00
+          - link "Proceed to Booking Checkout" [ref=f3e125] [cursor=pointer]:
+            - /url: http://localhost:8000/checkout
+          - paragraph [ref=f3e129]: You'll add your guest details and confirm your stay at checkout.
+  - dialog "Trip basket" [ref=f3e131]:
+    - generic [ref=f3e132]:
+      - generic [ref=f3e133]:
+        - generic [ref=f3e138]:
+          - heading "Trip Basket" [level=2] [ref=f3e139]
+          - paragraph [ref=f3e140]: 2 items
+        - button "Close basket" [ref=f3e141] [cursor=pointer]
+      - generic [ref=f3e145]:
+        - checkbox "Select Boracay Tipid Deal" [checked] [ref=f3e147] [cursor=pointer]
+        - img "Boracay Tipid Deal" [ref=f3e148]
+        - generic [ref=f3e149]:
+          - generic [ref=f3e150]:
+            - generic [ref=f3e151]:
+              - heading "Boracay Tipid Deal" [level=4] [ref=f3e152]
+              - paragraph [ref=f3e153]: Boracay • 3D2N Package
+            - button "Remove Boracay Tipid Deal" [ref=f3e154] [cursor=pointer]
+          - generic [ref=f3e157]:
+            - generic [ref=f3e158]:
+              - button "Decrease Boracay Tipid Deal passenger count" [ref=f3e159] [cursor=pointer]
+              - generic [ref=f3e161]: 2 pax
+              - button "Increase Boracay Tipid Deal passenger count" [active] [ref=f3e162] [cursor=pointer]
+            - generic [ref=f3e165]:
+              - generic [ref=f3e166]: ₱6,999.00 / pax
+              - generic [ref=f3e167]: ₱13,998.00
+      - generic [ref=f3e168]:
+        - generic [ref=f3e169]:
+          - generic [ref=f3e170]:
+            - generic [ref=f3e171]: Selected items
+            - generic [ref=f3e172]: 1 of 1
+          - generic [ref=f3e173]:
+            - generic [ref=f3e174]: Trip total
+            - generic [ref=f3e175]: ₱13,998.00
+        - link "Proceed to Checkout" [ref=f3e176] [cursor=pointer]:
+          - /url: http://localhost:8000/checkout
+        - generic [ref=f3e180]:
+          - link "Full basket view" [ref=f3e181] [cursor=pointer]:
+            - /url: http://localhost:8000/cart
+          - button "Clear basket" [ref=f3e185] [cursor=pointer]

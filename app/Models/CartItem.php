@@ -144,6 +144,12 @@ class CartItem extends Model
         }
 
         $pax = max(1, (int) ($this->selected_pax ?: 1));
+        if (in_array($this->item_type, ['activity', 'addon'])) {
+            $pax = max(1, (int) ($this->selected_pax ?: 1), (int) ($this->quantity ?: 1));
+        } elseif ($this->item_type === 'package') {
+            // min_pax only gates booking eligibility at checkout, never inflates pax
+            $pax = max(1, (int) ($this->selected_pax ?: 1), (int) ($this->quantity ?: 1));
+        }
 
         switch ($this->item_type) {
             case 'room':
@@ -219,21 +225,28 @@ class CartItem extends Model
         }
 
         if ($this->item_type === 'addon') {
-            // Transfers/Add-ons: pax count * unit rate * quantity
-            return $unitRate * max(1, $this->selected_pax) * max(1, $this->quantity);
+            // Transfers/Add-ons: effective pax * unit rate
+            $effectivePax = max(1, (int) ($this->selected_pax ?: 1), (int) ($this->quantity ?: 1));
+            return $unitRate * $effectivePax;
         }
 
         if ($this->item_type === 'activity') {
             $item = $this->itemable;
-            $pax = max(1, (int) ($this->selected_pax ?: 1));
+            $effectivePax = max(1, (int) ($this->selected_pax ?: 1), (int) ($this->quantity ?: 1));
 
             if ($item && method_exists($item, 'isPerPersonRate') && !$item->isPerPersonRate()) {
                 // Flat group rate (e.g. ₱2,000 for E-Trike 1-6 persons)
                 return $unitRate * max(1, $this->quantity);
             }
 
-            // Default activity tickets: unit rate per pax * selected pax * quantity
-            return $unitRate * $pax * max(1, $this->quantity);
+            // Default activity tickets: unit rate per pax * effective pax
+            return $unitRate * $effectivePax;
+        }
+
+        if ($this->item_type === 'package') {
+            // min_pax only gates booking eligibility at checkout, never inflates pax
+            $effectivePax = max(1, (int) ($this->selected_pax ?: 1), (int) ($this->quantity ?: 1));
+            return $unitRate * $effectivePax;
         }
 
         return $unitRate * max(1, $this->quantity);
@@ -284,7 +297,8 @@ class CartItem extends Model
             $parts = [];
             if ($this->location_name) $parts[] = $this->location_name;
             if (!empty($item->duration)) $parts[] = $item->duration;
-            if ($this->selected_pax) $parts[] = $this->selected_pax . ' pax';
+            $effPax = max(1, (int) ($this->selected_pax ?: 1), (int) ($this->quantity ?: 1));
+            $parts[] = $effPax . ' pax';
             return implode(' • ', $parts);
         }
 
@@ -300,7 +314,8 @@ class CartItem extends Model
             $parts = [];
             if ($this->location_name) $parts[] = $this->location_name;
             $parts[] = 'Transfer & Add-on';
-            if ($this->selected_pax) $parts[] = $this->selected_pax . ' pax';
+            $effPax = max(1, (int) ($this->selected_pax ?: 1), (int) ($this->quantity ?: 1));
+            $parts[] = $effPax . ' pax';
             return implode(' • ', $parts);
         }
 
