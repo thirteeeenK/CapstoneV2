@@ -1,0 +1,843 @@
+- generic [active] [ref=f52e1]:
+  - banner [ref=f52e2]:
+    - generic [ref=f52e3]:
+      - generic [ref=f52e4]:
+        - generic [ref=f52e5]: admin_panel_settings
+        - generic [ref=f52e6]:
+          - generic [ref=f52e7]: SunnyTrips
+          - generic [ref=f52e8]: Admin
+      - generic [ref=f52e9]:
+        - generic [ref=f52e10]:
+          - generic [ref=f52e11]: A
+          - generic "sunnytrips@gmail.com" [ref=f52e12]: Administrator
+        - button "logout Sign out" [ref=f52e15] [cursor=pointer]:
+          - generic [ref=f52e16]: logout
+          - generic [ref=f52e17]: Sign out
+  - complementary [ref=f52e18]:
+    - generic [ref=f52e19]:
+      - heading "SunnyTrips" [level=1] [ref=f52e20]
+      - paragraph [ref=f52e21]: Admin Portal
+    - navigation [ref=f52e22]:
+      - generic [ref=f52e23]:
+        - heading "Overview" [level=2] [ref=f52e24]
+        - generic [ref=f52e25]:
+          - link "dashboard Dashboard" [ref=f52e26] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/dashboard
+            - generic [ref=f52e27]: dashboard
+            - generic [ref=f52e28]: Dashboard
+          - link "psychology AI Insights" [ref=f52e29] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=f52e30]: psychology
+            - generic [ref=f52e31]: AI Insights
+          - link "analytics Generate Reports" [ref=f52e32] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=f52e33]: analytics
+            - generic [ref=f52e34]: Generate Reports
+      - generic [ref=f52e35]:
+        - heading "Operations" [level=2] [ref=f52e36]
+        - generic [ref=f52e37]:
+          - link "calendar_month Bookings" [ref=f52e38] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/bookings
+            - generic [ref=f52e39]: calendar_month
+            - generic [ref=f52e40]: Bookings
+          - link "group Registered Users" [ref=f52e41] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/registered-users
+            - generic [ref=f52e42]: group
+            - generic [ref=f52e43]: Registered Users
+          - link "inventory Manage Inventory" [ref=f52e44] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/inventory
+            - generic [ref=f52e45]: inventory
+            - generic [ref=f52e46]: Manage Inventory
+          - link "tune Passenger Rules & Discounts" [ref=f52e47] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/passenger-rules
+            - generic [ref=f52e48]: tune
+            - generic [ref=f52e49]: Passenger Rules & Discounts
+      - generic [ref=f52e50]:
+        - heading "Catalog" [level=2] [ref=f52e51]
+        - generic [ref=f52e52]:
+          - link "place Destinations" [ref=f52e53] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/destinations
+            - generic [ref=f52e54]: place
+            - generic [ref=f52e55]: Destinations
+          - link "house Add Hotel Information" [ref=f52e56] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/hotels/manage
+            - generic [ref=f52e57]: house
+            - generic [ref=f52e58]: Add Hotel Information
+          - link "hotel Show Hotel Listing" [ref=f52e59] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/hotels
+            - generic [ref=f52e60]: hotel
+            - generic [ref=f52e61]: Show Hotel Listing
+          - link "card_travel Tour Packages & Promos" [ref=f52e62] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/packages
+            - generic [ref=f52e63]: card_travel
+            - generic [ref=f52e64]: Tour Packages & Promos
+          - link "explore Activities & Tours" [ref=f52e65] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/activities
+            - generic [ref=f52e66]: explore
+            - generic [ref=f52e67]: Activities & Tours
+          - link "extension Transfers and Add-ons" [ref=f52e68] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/addons
+            - generic [ref=f52e69]: extension
+            - generic [ref=f52e70]: Transfers and Add-ons
+          - link "psychology Manage AI" [ref=f52e71] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=f52e72]: psychology
+            - generic [ref=f52e73]: Manage AI
+      - generic [ref=f52e74]:
+        - heading "Legal" [level=2] [ref=f52e75]
+        - link "gavel Legal Documents" [ref=f52e77] [cursor=pointer]:
+          - /url: http://localhost:8000/admin/legal
+          - generic [ref=f52e78]: gavel
+          - generic [ref=f52e79]: Legal Documents
+      - generic [ref=f52e80]:
+        - heading "Community" [level=2] [ref=f52e81]
+        - link "reviews Reviews & Sentiment" [ref=f52e83] [cursor=pointer]:
+          - /url: http://localhost:8000/admin/reviews
+          - generic [ref=f52e84]: reviews
+          - generic [ref=f52e85]: Reviews & Sentiment
+  - main [ref=f52e86]:
+    - generic [ref=f52e88]:
+      - generic [ref=f52e89]:
+        - generic [ref=f52e90]:
+          - heading "Review Analytics & Sentiment" [level=1] [ref=f52e91]
+          - paragraph [ref=f52e92]: AI-assisted DSS metrics across all verified guest feedback.
+        - generic [ref=f52e93]:
+          - generic [ref=f52e94]: 59 reviews
+          - generic [ref=f52e95]: ★ 4.19 avg
+      - generic [ref=f52e96]:
+        - generic [ref=f52e97]:
+          - heading "donut_small Sentiment Distribution" [level=2] [ref=f52e98]:
+            - generic [ref=f52e99]: donut_small
+            - text: Sentiment Distribution
+          - generic [ref=f52e103]:
+            - generic [ref=f52e104]:
+              - generic [ref=f52e106]: Positive
+              - generic [ref=f52e107]: "41"
+              - generic [ref=f52e108]: 69%
+            - generic [ref=f52e109]:
+              - generic [ref=f52e111]: Neutral
+              - generic [ref=f52e112]: "13"
+              - generic [ref=f52e113]: 22%
+            - generic [ref=f52e114]:
+              - generic [ref=f52e116]: Negative
+              - generic [ref=f52e117]: "5"
+              - generic [ref=f52e118]: 8%
+        - generic [ref=f52e119]:
+          - heading "notification_important Needs Improvement Alerts" [level=2] [ref=f52e120]:
+            - generic [ref=f52e121]: notification_important
+            - text: Needs Improvement Alerts
+          - generic [ref=f52e123]:
+            - generic [ref=f52e124]:
+              - generic [ref=f52e125]:
+                - paragraph [ref=f52e126]: 6–7 Destinations (Aircon Van)
+                - paragraph [ref=f52e127]: 1 reviews · 2.0 ★ avg
+              - generic [ref=f52e128]: 100% negative
+            - generic [ref=f52e129]:
+              - generic [ref=f52e130]:
+                - paragraph [ref=f52e131]: Frendz Resort & Hostel
+                - paragraph [ref=f52e132]: 2 reviews · 2.5 ★ avg
+              - generic [ref=f52e133]: 50% negative
+            - generic [ref=f52e134]:
+              - generic [ref=f52e135]:
+                - paragraph [ref=f52e136]: The Muse Hotel
+                - paragraph [ref=f52e137]: 2 reviews · 3.0 ★ avg
+              - generic [ref=f52e138]: 50% negative
+            - generic [ref=f52e139]:
+              - generic [ref=f52e140]:
+                - paragraph [ref=f52e141]: Premier Family Room
+                - paragraph [ref=f52e142]: 2 reviews · 2.5 ★ avg
+              - generic [ref=f52e143]: 50% negative
+            - generic [ref=f52e144]:
+              - generic [ref=f52e145]:
+                - paragraph [ref=f52e146]: Breeze Garden Room
+                - paragraph [ref=f52e147]: 2 reviews · 3.5 ★ avg
+              - generic [ref=f52e148]: 50% negative
+        - generic [ref=f52e149]:
+          - heading "workspace_premium Top Rated Listings" [level=2] [ref=f52e150]:
+            - generic [ref=f52e151]: workspace_premium
+            - text: Top Rated Listings
+          - generic [ref=f52e153]:
+            - generic [ref=f52e154]:
+              - paragraph [ref=f52e155]: Hotels
+              - list [ref=f52e156]:
+                - listitem [ref=f52e157]:
+                  - generic [ref=f52e158]: "1"
+                  - generic [ref=f52e159]:
+                    - paragraph [ref=f52e160]: Happiness Hostel
+                    - paragraph [ref=f52e161]: 2 reviews
+                  - generic [ref=f52e162]: 5.0 ★
+                - listitem [ref=f52e163]:
+                  - generic [ref=f52e164]: "2"
+                  - generic [ref=f52e165]:
+                    - paragraph [ref=f52e166]: Boracay Ocean Club Beach Resort
+                    - paragraph [ref=f52e167]: 2 reviews
+                  - generic [ref=f52e168]: 5.0 ★
+                - listitem [ref=f52e169]:
+                  - generic [ref=f52e170]: "3"
+                  - generic [ref=f52e171]:
+                    - paragraph [ref=f52e172]: My Station Hotel
+                    - paragraph [ref=f52e173]: 2 reviews
+                  - generic [ref=f52e174]: 5.0 ★
+                - listitem [ref=f52e175]:
+                  - generic [ref=f52e176]: "4"
+                  - generic [ref=f52e177]:
+                    - paragraph [ref=f52e178]: Henann Garden Resort
+                    - paragraph [ref=f52e179]: 2 reviews
+                  - generic [ref=f52e180]: 4.0 ★
+                - listitem [ref=f52e181]:
+                  - generic [ref=f52e182]: "5"
+                  - generic [ref=f52e183]:
+                    - paragraph [ref=f52e184]: Canyon Hotels & Resorts Boracay
+                    - paragraph [ref=f52e185]: 2 reviews
+                  - generic [ref=f52e186]: 4.0 ★
+            - generic [ref=f52e187]:
+              - paragraph [ref=f52e188]: Rooms
+              - list [ref=f52e189]:
+                - listitem [ref=f52e190]:
+                  - generic [ref=f52e191]: "1"
+                  - generic [ref=f52e192]:
+                    - paragraph [ref=f52e193]: Social Mixed Dormitory Bed
+                    - paragraph [ref=f52e194]: 1 reviews
+                  - generic [ref=f52e195]: 5.0 ★
+                - listitem [ref=f52e196]:
+                  - generic [ref=f52e197]: "2"
+                  - generic [ref=f52e198]:
+                    - paragraph [ref=f52e199]: Premier Ocean View Room
+                    - paragraph [ref=f52e200]: 1 reviews
+                  - generic [ref=f52e201]: 5.0 ★
+                - listitem [ref=f52e202]:
+                  - generic [ref=f52e203]: "3"
+                  - generic [ref=f52e204]:
+                    - paragraph [ref=f52e205]: Social Mixed Dormitory Bed
+                    - paragraph [ref=f52e206]: 3 reviews
+                  - generic [ref=f52e207]: 4.7 ★
+                - listitem [ref=f52e208]:
+                  - generic [ref=f52e209]: "4"
+                  - generic [ref=f52e210]:
+                    - paragraph [ref=f52e211]: Deluxe Room
+                    - paragraph [ref=f52e212]: 2 reviews
+                  - generic [ref=f52e213]: 4.5 ★
+                - listitem [ref=f52e214]:
+                  - generic [ref=f52e215]: "5"
+                  - generic [ref=f52e216]:
+                    - paragraph [ref=f52e217]: Deluxe Suite
+                    - paragraph [ref=f52e218]: 2 reviews
+                  - generic [ref=f52e219]: 4.5 ★
+            - generic [ref=f52e220]:
+              - paragraph [ref=f52e221]: Activities
+              - list [ref=f52e222]:
+                - listitem [ref=f52e223]:
+                  - generic [ref=f52e224]: "1"
+                  - generic [ref=f52e225]:
+                    - paragraph [ref=f52e226]: 6–7 Destinations (E-Trike)
+                    - paragraph [ref=f52e227]: 2 reviews
+                  - generic [ref=f52e228]: 5.0 ★
+                - listitem [ref=f52e229]:
+                  - generic [ref=f52e230]: "2"
+                  - generic [ref=f52e231]:
+                    - paragraph [ref=f52e232]: Parasailing
+                    - paragraph [ref=f52e233]: 1 reviews
+                  - generic [ref=f52e234]: 5.0 ★
+                - listitem [ref=f52e235]:
+                  - generic [ref=f52e236]: "3"
+                  - generic [ref=f52e237]:
+                    - paragraph [ref=f52e238]: Crystal Kayak
+                    - paragraph [ref=f52e239]: 1 reviews
+                  - generic [ref=f52e240]: 5.0 ★
+                - listitem [ref=f52e241]:
+                  - generic [ref=f52e242]: "4"
+                  - generic [ref=f52e243]:
+                    - paragraph [ref=f52e244]: Jet Ski (15 mins)
+                    - paragraph [ref=f52e245]: 1 reviews
+                  - generic [ref=f52e246]: 5.0 ★
+                - listitem [ref=f52e247]:
+                  - generic [ref=f52e248]: "5"
+                  - generic [ref=f52e249]:
+                    - paragraph [ref=f52e250]: Banana Boat
+                    - paragraph [ref=f52e251]: 1 reviews
+                  - generic [ref=f52e252]: 5.0 ★
+        - generic [ref=f52e253]:
+          - heading "cloud Keyword Cloud" [level=2] [ref=f52e254]:
+            - generic [ref=f52e255]: cloud
+            - text: Keyword Cloud
+          - generic [ref=f52e257]:
+            - generic [ref=f52e258]: room ×32
+            - generic [ref=f52e260]: staff ×28
+            - generic [ref=f52e262]: clean ×16
+            - generic [ref=f52e264]: view ×13
+            - generic [ref=f52e266]: tour ×10
+            - generic [ref=f52e268]: friendly ×8
+            - generic [ref=f52e270]: pool ×7
+            - generic [ref=f52e272]: great ×5
+            - generic [ref=f52e274]: ocean view ×4
+            - generic [ref=f52e276]: guide ×4
+            - generic [ref=f52e278]: check-in ×3
+            - generic [ref=f52e280]: boat ×3
+            - generic [ref=f52e282]: super ×3
+            - generic [ref=f52e284]: sulit ×3
+            - generic [ref=f52e286]: booking ×3
+            - generic [ref=f52e288]: package ×3
+            - generic [ref=f52e290]: AC ×2
+            - generic [ref=f52e292]: bait ×2
+            - generic [ref=f52e294]: quiet ×2
+            - generic [ref=f52e296]: spotless ×2
+            - generic [ref=f52e298]: beautiful ×2
+            - generic [ref=f52e300]: worth it ×2
+            - generic [ref=f52e302]: location ×2
+            - generic [ref=f52e304]: experience ×2
+            - generic [ref=f52e306]: bathroom ×2
+            - generic [ref=f52e308]: kids ×2
+            - generic [ref=f52e310]: organized ×2
+            - generic [ref=f52e312]: smooth ×2
+            - generic [ref=f52e314]: lagoons ×2
+            - generic [ref=f52e316]: activities ×2
+      - generic [ref=f52e318]:
+        - generic [ref=f52e319]:
+          - heading "All Reviews" [level=2] [ref=f52e320]
+          - generic [ref=f52e321]:
+            - generic [ref=f52e322]: 59 total
+            - link "add_comment Create review" [ref=f52e323] [cursor=pointer]:
+              - /url: http://localhost:8000/admin/reviews/create
+              - generic [ref=f52e324]: add_comment
+              - text: Create review
+        - generic [ref=f52e325]:
+          - generic [ref=f52e326]:
+            - generic [ref=f52e327]:
+              - generic [ref=f52e328]: Star
+              - button "All" [ref=f52e329] [cursor=pointer]
+              - button "5★" [ref=f52e330] [cursor=pointer]
+              - button "4★" [ref=f52e331] [cursor=pointer]
+              - button "3★" [ref=f52e332] [cursor=pointer]
+              - button "2★" [ref=f52e333] [cursor=pointer]
+              - button "1★" [ref=f52e334] [cursor=pointer]
+            - generic [ref=f52e336]:
+              - generic [ref=f52e337]: Sentiment
+              - button "All" [ref=f52e338] [cursor=pointer]
+              - button "Positive" [ref=f52e339] [cursor=pointer]
+              - button "Neutral" [ref=f52e340] [cursor=pointer]
+              - button "Negative" [ref=f52e341] [cursor=pointer]
+          - generic [ref=f52e342]:
+            - generic [ref=f52e343]:
+              - generic [ref=f52e344]: Entity
+              - button "All" [ref=f52e345] [cursor=pointer]
+              - button "Hotel" [ref=f52e346] [cursor=pointer]
+              - button "Room" [ref=f52e347] [cursor=pointer]
+              - button "Activity" [ref=f52e348] [cursor=pointer]
+              - button "Package" [ref=f52e349] [cursor=pointer]
+            - generic [ref=f52e351]:
+              - generic [ref=f52e352]: Destination
+              - combobox [ref=f52e353] [cursor=pointer]:
+                - option "All" [selected]
+                - option "Boracay"
+                - option "El Nido"
+            - generic [ref=f52e354]:
+              - generic [ref=f52e355]: Hotel
+              - combobox [ref=f52e356] [cursor=pointer]:
+                - option "All" [selected]
+                - option "Boracay Ocean Club Beach Resort"
+                - option "Buko Beach Resort"
+                - option "Canyon Hotels & Resorts Boracay"
+                - option "Cauayan Island Resort"
+                - option "Charlie's El Nido"
+                - option "El Nido Resorts - Miniloc Island"
+                - option "El Nido Resorts - Pangulasian Island"
+                - option "Frendz Resort & Hostel"
+                - option "Happiness Hostel"
+                - option "Henann Garden Resort"
+                - option "Henann Palm Beach Resort"
+                - option "Lazy Dog Bed & Breakfast"
+                - option "Lihim Resorts"
+                - option "Matinloc Resort"
+                - option "My Station Hotel"
+                - option "Panorama Resort"
+                - option "Seda Lio"
+                - option "Spin Designer Hostel"
+                - option "The Muse Hotel"
+            - generic [ref=f52e357]:
+              - generic [ref=f52e358]: Room
+              - combobox [ref=f52e359] [cursor=pointer]:
+                - option "All" [selected]
+                - option "Beach Villa"
+                - option "Beachfront Executive Suite"
+                - option "Boho Private Double Room"
+                - option "Breeze Garden Room"
+                - option "Canopy Villa"
+                - option "Deluxe Room"
+                - option "Deluxe Room with Pool Access"
+                - option "Deluxe Suite"
+                - option "Diamond Oceanfront Room"
+                - option "Direct Pool Access Suite"
+                - option "Luxury Villa"
+                - option "Panoramic Beach Villa"
+                - option "Premier Family Room"
+                - option "Premier Ocean View Room"
+                - option "Social Mixed Dormitory Bed"
+                - option "Social Mixed Dormitory Bed"
+                - option "Standard Double Room"
+                - option "Water Cottage"
+                - option "Water Villa"
+        - generic [ref=f52e360]:
+          - table [ref=f52e362]:
+            - rowgroup [ref=f52e363]:
+              - row [ref=f52e364]:
+                - columnheader "#" [ref=f52e365]
+                - columnheader "Guest" [ref=f52e366]
+                - columnheader "Listing" [ref=f52e367]
+                - columnheader "Rating" [ref=f52e368]
+                - columnheader "Sentiment" [ref=f52e369]
+                - columnheader "Comment" [ref=f52e370]
+                - columnheader "Status" [ref=f52e371]
+                - columnheader "Actions" [ref=f52e372]
+            - rowgroup [ref=f52e373]:
+              - row [ref=f52e374]:
+                - cell "1" [ref=f52e375]
+                - cell [ref=f52e376]:
+                  - paragraph [ref=f52e377]: John P.
+                  - paragraph [ref=f52e378]: Aug 6, 2026 · 3:37 PM
+                - cell [ref=f52e379]:
+                  - paragraph [ref=f52e380]: Crystal Kayak
+                - cell "star star star star star" [ref=f52e381]:
+                  - generic [ref=f52e382]:
+                    - generic [ref=f52e383]: star
+                    - generic [ref=f52e384]: star
+                    - generic [ref=f52e385]: star
+                    - generic [ref=f52e386]: star
+                    - generic [ref=f52e387]: star
+                - cell "sentiment_satisfied Positive 0.99" [ref=f52e388]:
+                  - generic [ref=f52e389]:
+                    - generic [ref=f52e390]: sentiment_satisfied
+                    - text: Positive
+                    - generic [ref=f52e391]: "0.99"
+                - cell [ref=f52e392]:
+                  - paragraph [ref=f52e393]: very gooooooodasdad
+                - cell "Published" [ref=f52e394]
+                - cell [ref=f52e396]:
+                  - generic [ref=f52e397]:
+                    - button "Hide" [ref=f52e399] [cursor=pointer]
+                    - button "star Feature" [ref=f52e401] [cursor=pointer]:
+                      - generic [ref=f52e402]: star
+                      - text: Feature
+                    - button "Delete" [ref=f52e404] [cursor=pointer]
+              - row [ref=f52e405]:
+                - cell "2" [ref=f52e406]
+                - cell [ref=f52e407]:
+                  - paragraph [ref=f52e408]: adasdad
+                  - paragraph [ref=f52e409]: Aug 6, 2026 · 3:21 PM
+                - cell [ref=f52e410]:
+                  - paragraph [ref=f52e411]: Social Mixed Dormitory Bed · Spin Designer Hostel
+                - cell "star star star star star" [ref=f52e412]:
+                  - generic [ref=f52e413]:
+                    - generic [ref=f52e414]: star
+                    - generic [ref=f52e415]: star
+                    - generic [ref=f52e416]: star
+                    - generic [ref=f52e417]: star
+                    - generic [ref=f52e418]: star
+                - cell "sentiment_satisfied Positive 0.98" [ref=f52e419]:
+                  - generic [ref=f52e420]:
+                    - generic [ref=f52e421]: sentiment_satisfied
+                    - text: Positive
+                    - generic [ref=f52e422]: "0.98"
+                - cell [ref=f52e423]:
+                  - paragraph [ref=f52e424]: The room was fantastic with a great ocean view. Very happy with the stay and the staff were extremely friendly and accommodating.
+                - cell "Published" [ref=f52e425]
+                - cell [ref=f52e427]:
+                  - generic [ref=f52e428]:
+                    - button "Hide" [ref=f52e430] [cursor=pointer]
+                    - button "star Feature" [ref=f52e432] [cursor=pointer]:
+                      - generic [ref=f52e433]: star
+                      - text: Feature
+                    - button "Delete" [ref=f52e435] [cursor=pointer]
+              - row [ref=f52e436]:
+                - cell "3" [ref=f52e437]
+                - cell [ref=f52e438]:
+                  - paragraph [ref=f52e439]: John P.
+                  - paragraph [ref=f52e440]: Aug 6, 2026 · 1:54 PM
+                - cell [ref=f52e441]:
+                  - paragraph [ref=f52e442]: Premier Ocean View Room · Henann Palm Beach Resort
+                - cell "star star star star star" [ref=f52e443]:
+                  - generic [ref=f52e444]:
+                    - generic [ref=f52e445]: star
+                    - generic [ref=f52e446]: star
+                    - generic [ref=f52e447]: star
+                    - generic [ref=f52e448]: star
+                    - generic [ref=f52e449]: star
+                - cell "sentiment_satisfied Positive 0.95" [ref=f52e450]:
+                  - generic [ref=f52e451]:
+                    - generic [ref=f52e452]: sentiment_satisfied
+                    - text: Positive
+                    - generic [ref=f52e453]: "0.95"
+                - cell [ref=f52e454]:
+                  - paragraph [ref=f52e455]: Admin-created backfill review. The guest stayed at Henann Palm Beach and loved the ocean view room. Test of the admin review creation flow.
+                - cell "Published" [ref=f52e456]
+                - cell [ref=f52e458]:
+                  - generic [ref=f52e459]:
+                    - button "Hide" [ref=f52e461] [cursor=pointer]
+                    - button "star Feature" [ref=f52e463] [cursor=pointer]:
+                      - generic [ref=f52e464]: star
+                      - text: Feature
+                    - button "Delete" [ref=f52e466] [cursor=pointer]
+              - row [ref=f52e467]:
+                - cell "4" [ref=f52e468]
+                - cell [ref=f52e469]:
+                  - paragraph [ref=f52e470]: John P.
+                  - paragraph [ref=f52e471]: Aug 6, 2026 · 1:00 PM
+                - cell [ref=f52e472]:
+                  - paragraph [ref=f52e473]: Social Mixed Dormitory Bed · Frendz Resort & Hostel
+                - cell "star star star star star" [ref=f52e474]:
+                  - generic [ref=f52e475]:
+                    - generic [ref=f52e476]: star
+                    - generic [ref=f52e477]: star
+                    - generic [ref=f52e478]: star
+                    - generic [ref=f52e479]: star
+                    - generic [ref=f52e480]: star
+                - cell "sentiment_satisfied Positive 0.98" [ref=f52e481]:
+                  - generic [ref=f52e482]:
+                    - generic [ref=f52e483]: sentiment_satisfied
+                    - text: Positive
+                    - generic [ref=f52e484]: "0.98"
+                - cell [ref=f52e485]:
+                  - paragraph [ref=f52e486]: very good hotel
+                - cell "Published" [ref=f52e487]
+                - cell [ref=f52e489]:
+                  - generic [ref=f52e490]:
+                    - button "Hide" [ref=f52e492] [cursor=pointer]
+                    - button "star Unfeature" [ref=f52e494] [cursor=pointer]:
+                      - generic [ref=f52e495]: star
+                      - text: Unfeature
+                    - button "Delete" [ref=f52e497] [cursor=pointer]
+              - row [ref=f52e498]:
+                - cell "5" [ref=f52e499]
+                - cell [ref=f52e500]:
+                  - paragraph [ref=f52e501]: Maria S.
+                  - paragraph [ref=f52e502]: Aug 5, 2026 · 2:59 AM
+                - cell [ref=f52e503]:
+                  - paragraph [ref=f52e504]: Canyon Hotels & Resorts Boracay
+                - cell "star star star star star" [ref=f52e505]:
+                  - generic [ref=f52e506]:
+                    - generic [ref=f52e507]: star
+                    - generic [ref=f52e508]: star
+                    - generic [ref=f52e509]: star
+                    - generic [ref=f52e510]: star
+                    - generic [ref=f52e511]: star
+                - cell "sentiment_satisfied Positive 0.98" [ref=f52e512]:
+                  - generic [ref=f52e513]:
+                    - generic [ref=f52e514]: sentiment_satisfied
+                    - text: Positive
+                    - generic [ref=f52e515]: "0.98"
+                - cell [ref=f52e516]:
+                  - paragraph [ref=f52e517]: Super ganda ng room! Clean bed, working AC, and ang bait ng staff. Will definitely book again next summer.
+                - cell "Published" [ref=f52e518]
+                - cell [ref=f52e520]:
+                  - generic [ref=f52e521]:
+                    - button "Hide" [ref=f52e523] [cursor=pointer]
+                    - button "star Feature" [ref=f52e525] [cursor=pointer]:
+                      - generic [ref=f52e526]: star
+                      - text: Feature
+                    - button "Delete" [ref=f52e528] [cursor=pointer]
+              - row [ref=f52e529]:
+                - cell "6" [ref=f52e530]
+                - cell [ref=f52e531]:
+                  - paragraph [ref=f52e532]: John C.
+                  - paragraph [ref=f52e533]: Aug 4, 2026 · 7:59 AM
+                - cell [ref=f52e534]:
+                  - paragraph [ref=f52e535]: Boracay Ocean Club Beach Resort
+                - cell "star star star star star" [ref=f52e536]:
+                  - generic [ref=f52e537]:
+                    - generic [ref=f52e538]: star
+                    - generic [ref=f52e539]: star
+                    - generic [ref=f52e540]: star
+                    - generic [ref=f52e541]: star
+                    - generic [ref=f52e542]: star
+                - cell "sentiment_satisfied Positive 0.98" [ref=f52e543]:
+                  - generic [ref=f52e544]:
+                    - generic [ref=f52e545]: sentiment_satisfied
+                    - text: Positive
+                    - generic [ref=f52e546]: "0.98"
+                - cell [ref=f52e547]:
+                  - paragraph [ref=f52e548]: The ocean view was breathtaking and spotless. Staff were super polite and always smiling.
+                - cell "Published" [ref=f52e549]
+                - cell [ref=f52e551]:
+                  - generic [ref=f52e552]:
+                    - button "Hide" [ref=f52e554] [cursor=pointer]
+                    - button "star Feature" [ref=f52e556] [cursor=pointer]:
+                      - generic [ref=f52e557]: star
+                      - text: Feature
+                    - button "Delete" [ref=f52e559] [cursor=pointer]
+              - row [ref=f52e560]:
+                - cell "7" [ref=f52e561]
+                - cell [ref=f52e562]:
+                  - paragraph [ref=f52e563]: Jose R.
+                  - paragraph [ref=f52e564]: Aug 3, 2026 · 5:59 AM
+                - cell [ref=f52e565]:
+                  - paragraph [ref=f52e566]: Henann Garden Resort
+                - cell "star star star star star" [ref=f52e567]:
+                  - generic [ref=f52e568]:
+                    - generic [ref=f52e569]: star
+                    - generic [ref=f52e570]: star
+                    - generic [ref=f52e571]: star
+                    - generic [ref=f52e572]: star
+                    - generic [ref=f52e573]: star
+                - cell "sentiment_neutral Neutral 0.75" [ref=f52e574]:
+                  - generic [ref=f52e575]:
+                    - generic [ref=f52e576]: sentiment_neutral
+                    - text: Neutral
+                    - generic [ref=f52e577]: "0.75"
+                - cell [ref=f52e578]:
+                  - paragraph [ref=f52e579]: Spacious balcony with a perfect beachfront view. Water pressure can be low during peak hours though.
+                - cell "Published" [ref=f52e580]
+                - cell [ref=f52e582]:
+                  - generic [ref=f52e583]:
+                    - button "Hide" [ref=f52e585] [cursor=pointer]
+                    - button "star Feature" [ref=f52e587] [cursor=pointer]:
+                      - generic [ref=f52e588]: star
+                      - text: Feature
+                    - button "Delete" [ref=f52e590] [cursor=pointer]
+              - row [ref=f52e591]:
+                - cell "8" [ref=f52e592]
+                - cell [ref=f52e593]:
+                  - paragraph [ref=f52e594]: Ana R.
+                  - paragraph [ref=f52e595]: Aug 2, 2026 · 3:59 AM
+                - cell [ref=f52e596]:
+                  - paragraph [ref=f52e597]: My Station Hotel
+                - cell "star star star star star" [ref=f52e598]:
+                  - generic [ref=f52e599]:
+                    - generic [ref=f52e600]: star
+                    - generic [ref=f52e601]: star
+                    - generic [ref=f52e602]: star
+                    - generic [ref=f52e603]: star
+                    - generic [ref=f52e604]: star
+                - cell "sentiment_satisfied Positive 0.98" [ref=f52e605]:
+                  - generic [ref=f52e606]:
+                    - generic [ref=f52e607]: sentiment_satisfied
+                    - text: Positive
+                    - generic [ref=f52e608]: "0.98"
+                - cell [ref=f52e609]:
+                  - paragraph [ref=f52e610]: Breakfast buffet was fantastic, lobby spotless, and check-in took under five minutes.
+                - cell "Published" [ref=f52e611]
+                - cell [ref=f52e613]:
+                  - generic [ref=f52e614]:
+                    - button "Hide" [ref=f52e616] [cursor=pointer]
+                    - button "star Feature" [ref=f52e618] [cursor=pointer]:
+                      - generic [ref=f52e619]: star
+                      - text: Feature
+                    - button "Delete" [ref=f52e621] [cursor=pointer]
+              - row [ref=f52e622]:
+                - cell "9" [ref=f52e623]
+                - cell [ref=f52e624]:
+                  - paragraph [ref=f52e625]: Michael T.
+                  - paragraph [ref=f52e626]: Aug 1, 2026 · 2:59 AM
+                - cell [ref=f52e627]:
+                  - paragraph [ref=f52e628]: Frendz Resort & Hostel
+                - cell "star star star star star" [ref=f52e629]:
+                  - generic [ref=f52e630]:
+                    - generic [ref=f52e631]: star
+                    - generic [ref=f52e632]: star
+                    - generic [ref=f52e633]: star
+                    - generic [ref=f52e634]: star
+                    - generic [ref=f52e635]: star
+                - cell "sentiment_neutral Neutral 0.75" [ref=f52e636]:
+                  - generic [ref=f52e637]:
+                    - generic [ref=f52e638]: sentiment_neutral
+                    - text: Neutral
+                    - generic [ref=f52e639]: "0.75"
+                - cell [ref=f52e640]:
+                  - paragraph [ref=f52e641]: Nice pool area and friendly front desk, but the Wi-Fi in the secondary building was spotty.
+                - cell "Published" [ref=f52e642]
+                - cell [ref=f52e644]:
+                  - generic [ref=f52e645]:
+                    - button "Hide" [ref=f52e647] [cursor=pointer]
+                    - button "star Feature" [ref=f52e649] [cursor=pointer]:
+                      - generic [ref=f52e650]: star
+                      - text: Feature
+                    - button "Delete" [ref=f52e652] [cursor=pointer]
+              - row [ref=f52e653]:
+                - cell "10" [ref=f52e654]
+                - cell [ref=f52e655]:
+                  - paragraph [ref=f52e656]: Kaye V.
+                  - paragraph [ref=f52e657]: Jul 31, 2026 · 1:59 AM
+                - cell [ref=f52e658]:
+                  - paragraph [ref=f52e659]: Lazy Dog Bed & Breakfast
+                - cell "star star star star star" [ref=f52e660]:
+                  - generic [ref=f52e661]:
+                    - generic [ref=f52e662]: star
+                    - generic [ref=f52e663]: star
+                    - generic [ref=f52e664]: star
+                    - generic [ref=f52e665]: star
+                    - generic [ref=f52e666]: star
+                - cell "sentiment_satisfied Positive 0.95" [ref=f52e667]:
+                  - generic [ref=f52e668]:
+                    - generic [ref=f52e669]: sentiment_satisfied
+                    - text: Positive
+                    - generic [ref=f52e670]: "0.95"
+                - cell [ref=f52e671]:
+                  - paragraph [ref=f52e672]: Quiet AC, comfortable king bed, daily housekeeping was top notch.
+                - cell "Published" [ref=f52e673]
+                - cell [ref=f52e675]:
+                  - generic [ref=f52e676]:
+                    - button "Hide" [ref=f52e678] [cursor=pointer]
+                    - button "star Feature" [ref=f52e680] [cursor=pointer]:
+                      - generic [ref=f52e681]: star
+                      - text: Feature
+                    - button "Delete" [ref=f52e683] [cursor=pointer]
+              - row [ref=f52e684]:
+                - cell "11" [ref=f52e685]
+                - cell [ref=f52e686]:
+                  - paragraph [ref=f52e687]: Paolo G.
+                  - paragraph [ref=f52e688]: Jul 30, 2026 · 3:59 AM
+                - cell [ref=f52e689]:
+                  - paragraph [ref=f52e690]: Happiness Hostel
+                - cell "star star star star star" [ref=f52e691]:
+                  - generic [ref=f52e692]:
+                    - generic [ref=f52e693]: star
+                    - generic [ref=f52e694]: star
+                    - generic [ref=f52e695]: star
+                    - generic [ref=f52e696]: star
+                    - generic [ref=f52e697]: star
+                - cell "sentiment_satisfied Positive 0.98" [ref=f52e698]:
+                  - generic [ref=f52e699]:
+                    - generic [ref=f52e700]: sentiment_satisfied
+                    - text: Positive
+                    - generic [ref=f52e701]: "0.98"
+                - cell [ref=f52e702]:
+                  - paragraph [ref=f52e703]: Amazing sunset views from the balcony, super worth it! The staff even surprised us on our anniversary.
+                - cell "Published" [ref=f52e704]
+                - cell [ref=f52e706]:
+                  - generic [ref=f52e707]:
+                    - button "Hide" [ref=f52e709] [cursor=pointer]
+                    - button "star Feature" [ref=f52e711] [cursor=pointer]:
+                      - generic [ref=f52e712]: star
+                      - text: Feature
+                    - button "Delete" [ref=f52e714] [cursor=pointer]
+              - row [ref=f52e715]:
+                - cell "12" [ref=f52e716]
+                - cell [ref=f52e717]:
+                  - paragraph [ref=f52e718]: Nicole B.
+                  - paragraph [ref=f52e719]: Jul 29, 2026 · 12:59 AM
+                - cell [ref=f52e720]:
+                  - paragraph [ref=f52e721]: The Muse Hotel
+                - cell "star star star star star" [ref=f52e722]:
+                  - generic [ref=f52e723]:
+                    - generic [ref=f52e724]: star
+                    - generic [ref=f52e725]: star
+                    - generic [ref=f52e726]: star
+                    - generic [ref=f52e727]: star
+                    - generic [ref=f52e728]: star
+                - cell "sentiment_dissatisfied Negative 0.75" [ref=f52e729]:
+                  - generic [ref=f52e730]:
+                    - generic [ref=f52e731]: sentiment_dissatisfied
+                    - text: Negative
+                    - generic [ref=f52e732]: "0.75"
+                - cell [ref=f52e733]:
+                  - paragraph [ref=f52e734]: Room smelled a bit musty and the air conditioner was noisy. Location is great though.
+                - cell "Published" [ref=f52e735]
+                - cell [ref=f52e737]:
+                  - generic [ref=f52e738]:
+                    - button "Hide" [ref=f52e740] [cursor=pointer]
+                    - button "star Feature" [ref=f52e742] [cursor=pointer]:
+                      - generic [ref=f52e743]: star
+                      - text: Feature
+                    - button "Delete" [ref=f52e745] [cursor=pointer]
+              - row [ref=f52e746]:
+                - cell "13" [ref=f52e747]
+                - cell [ref=f52e748]:
+                  - paragraph [ref=f52e749]: Maria S.
+                  - paragraph [ref=f52e750]: Jul 28, 2026 · 3:59 AM
+                - cell [ref=f52e751]:
+                  - paragraph [ref=f52e752]: Direct Pool Access Suite · Henann Palm Beach Resort
+                - cell "star star star star star" [ref=f52e753]:
+                  - generic [ref=f52e754]:
+                    - generic [ref=f52e755]: star
+                    - generic [ref=f52e756]: star
+                    - generic [ref=f52e757]: star
+                    - generic [ref=f52e758]: star
+                    - generic [ref=f52e759]: star
+                - cell "sentiment_satisfied Positive 0.98" [ref=f52e760]:
+                  - generic [ref=f52e761]:
+                    - generic [ref=f52e762]: sentiment_satisfied
+                    - text: Positive
+                    - generic [ref=f52e763]: "0.98"
+                - cell [ref=f52e764]:
+                  - paragraph [ref=f52e765]: Very clean and cozy. Ang sarap ng breakfast at mabait ang lahat ng staff.
+                - cell "Published" [ref=f52e766]
+                - cell [ref=f52e768]:
+                  - generic [ref=f52e769]:
+                    - button "Hide" [ref=f52e771] [cursor=pointer]
+                    - button "star Feature" [ref=f52e773] [cursor=pointer]:
+                      - generic [ref=f52e774]: star
+                      - text: Feature
+                    - button "Delete" [ref=f52e776] [cursor=pointer]
+              - row [ref=f52e777]:
+                - cell "14" [ref=f52e778]
+                - cell [ref=f52e779]:
+                  - paragraph [ref=f52e780]: John C.
+                  - paragraph [ref=f52e781]: Jul 27, 2026 · 2:59 AM
+                - cell [ref=f52e782]:
+                  - paragraph [ref=f52e783]: Deluxe Suite · Canyon Hotels & Resorts Boracay
+                - cell "star star star star star" [ref=f52e784]:
+                  - generic [ref=f52e785]:
+                    - generic [ref=f52e786]: star
+                    - generic [ref=f52e787]: star
+                    - generic [ref=f52e788]: star
+                    - generic [ref=f52e789]: star
+                    - generic [ref=f52e790]: star
+                - cell "sentiment_satisfied Positive 0.95" [ref=f52e791]:
+                  - generic [ref=f52e792]:
+                    - generic [ref=f52e793]: sentiment_satisfied
+                    - text: Positive
+                    - generic [ref=f52e794]: "0.95"
+                - cell [ref=f52e795]:
+                  - paragraph [ref=f52e796]: Good value for money, great location near D'Mall. Bed was comfortable and room was quiet.
+                - cell "Published" [ref=f52e797]
+                - cell [ref=f52e799]:
+                  - generic [ref=f52e800]:
+                    - button "Hide" [ref=f52e802] [cursor=pointer]
+                    - button "star Feature" [ref=f52e804] [cursor=pointer]:
+                      - generic [ref=f52e805]: star
+                      - text: Feature
+                    - button "Delete" [ref=f52e807] [cursor=pointer]
+              - row [ref=f52e808]:
+                - cell "15" [ref=f52e809]
+                - cell [ref=f52e810]:
+                  - paragraph [ref=f52e811]: Jose R.
+                  - paragraph [ref=f52e812]: Jul 26, 2026 · 12:59 PM
+                - cell [ref=f52e813]:
+                  - paragraph [ref=f52e814]: Diamond Oceanfront Room · Boracay Ocean Club Beach Resort
+                - cell "star star star star star" [ref=f52e815]:
+                  - generic [ref=f52e816]:
+                    - generic [ref=f52e817]: star
+                    - generic [ref=f52e818]: star
+                    - generic [ref=f52e819]: star
+                    - generic [ref=f52e820]: star
+                    - generic [ref=f52e821]: star
+                - cell "sentiment_satisfied Positive 0.98" [ref=f52e822]:
+                  - generic [ref=f52e823]:
+                    - generic [ref=f52e824]: sentiment_satisfied
+                    - text: Positive
+                    - generic [ref=f52e825]: "0.98"
+                - cell [ref=f52e826]:
+                  - paragraph [ref=f52e827]: Loved every minute. The infinity pool with direct beach access was the highlight of our stay.
+                - cell "Published" [ref=f52e828]
+                - cell [ref=f52e830]:
+                  - generic [ref=f52e831]:
+                    - button "Hide" [ref=f52e833] [cursor=pointer]
+                    - button "star Feature" [ref=f52e835] [cursor=pointer]:
+                      - generic [ref=f52e836]: star
+                      - text: Feature
+                    - button "Delete" [ref=f52e838] [cursor=pointer]
+          - navigation "Pagination Navigation" [ref=f52e840]:
+            - generic [ref=f52e841]:
+              - paragraph [ref=f52e843]: Showing 1 to 15 of 59 results
+              - generic [ref=f52e845]:
+                - generic "&laquo; Previous" [ref=f52e846]
+                - generic [ref=f52e850]: "1"
+                - link "Go to page 2" [ref=f52e852] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/reviews?page=2
+                  - text: "2"
+                - link "Go to page 3" [ref=f52e853] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/reviews?page=3
+                  - text: "3"
+                - link "Go to page 4" [ref=f52e854] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/reviews?page=4
+                  - text: "4"
+                - link "Next &raquo;" [ref=f52e855] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/reviews?page=2

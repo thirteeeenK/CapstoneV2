@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\ActivityModel;
+use App\Models\DestinationModel;
 use App\Models\HotelModel;
+use App\Models\Package;
 use App\Models\Review;
 use App\Models\ReviewSummary;
 use App\Models\RoomType;
@@ -75,11 +77,54 @@ class AdminReviewController extends Controller
         arsort($keywordCounts);
         $keywordCloud = array_slice($keywordCounts, 0, 30, true);
 
-        // Recent reviews table
-        $reviews = Review::with(['user', 'reviewable'])
-            ->latest()
-            ->paginate(15)
-            ->withQueryString();
+        // Recent reviews table with filters
+        $reviewsQuery = Review::with(['user', 'reviewable'])
+            ->latest();
+
+        if ($request->filled('star')) {
+            $reviewsQuery->where('rating', (int) $request->query('star'));
+        }
+
+        if ($request->filled('sentiment')) {
+            $reviewsQuery->where('sentiment', $request->query('sentiment'));
+        }
+
+        if ($request->filled('entity_type')) {
+            $reviewsQuery->where('reviewable_type', $request->query('entity_type'));
+        }
+
+        if ($request->filled('destination_id')) {
+            $destId = $request->query('destination_id');
+            $reviewsQuery->where(function ($q) use ($destId) {
+                $q->whereIn('hotel_id', HotelModel::where('destination_id', $destId)->pluck('id'))
+                  ->orWhereIn('activity_id', ActivityModel::where('destination_id', $destId)->pluck('id'))
+                  ->orWhereIn('package_id', Package::where('destination_id', $destId)->pluck('id'));
+            });
+        }
+
+        if ($request->filled('hotel_id')) {
+            $reviewsQuery->where('hotel_id', $request->query('hotel_id'));
+        }
+
+        if ($request->filled('room_id')) {
+            $reviewsQuery->where('room_id', $request->query('room_id'));
+        }
+
+        $reviews = $reviewsQuery->paginate(15)->withQueryString();
+
+        $sentimentMeta = [
+            'positive' => ['label' => 'Positive', 'icon' => 'sentiment_satisfied', 'bar' => 'bg-emerald-500'],
+            'neutral' => ['label' => 'Neutral', 'icon' => 'sentiment_neutral', 'bar' => 'bg-amber-400'],
+            'negative' => ['label' => 'Negative', 'icon' => 'sentiment_dissatisfied', 'bar' => 'bg-rose-500'],
+        ];
+
+        if ($request->boolean('partial')) {
+            return view('admin.reviews._table', compact('reviews', 'sentimentMeta'));
+        }
+
+        $destinations = DestinationModel::orderBy('name')->get(['id', 'name']);
+        $hotels = HotelModel::orderBy('hotel_name')->get(['id', 'hotel_name', 'destination_id']);
+        $rooms = RoomType::orderBy('room_name')->get(['id', 'hotel_id', 'room_name']);
 
         return view('admin.reviews.index', compact(
             'totalReviews',
@@ -89,7 +134,10 @@ class AdminReviewController extends Controller
             'leaderboards',
             'needsImprovement',
             'keywordCloud',
-            'reviews'
+            'reviews',
+            'destinations',
+            'hotels',
+            'rooms'
         ));
     }
 
@@ -142,6 +190,113 @@ class AdminReviewController extends Controller
             'success',
             "Review #{$review->id} " . ($review->is_published ? 'published.' : 'hidden from public.')
         );
+    }
+
+    /**
+     * Toggle whether a review is featured on the landing page.
+     */
+    public function toggleFeatured($id)
+    {
+        $review = Review::findOrFail($id);
+        $review->is_featured = !$review->is_featured;
+        $review->save();
+
+        return back()->with(
+            'success',
+            "Review #{$review->id} " . ($review->is_featured ? 'featured on the landing page.' : 'removed from the landing page.')
+        );
+    }
+
+    /**
+     * Form for creating reviews — booking backfill or manual entry.
+     */
+    public function create()
+    {
+        $reviewedBookingIds = Review::pluck('booking_id')->filter();
+
+        $bookings = \App\Models\Booking::with(['user', 'items'])
+            ->withCount('items')
+            ->where('status', \App\Models\Booking::STATUS_COMPLETED)
+            ->when($reviewedBookingIds->isNotEmpty(), fn($q) => $q->whereNotIn('id', $reviewedBookingIds))
+            ->latest()
+            ->limit(100)
+            ->get()
+            ->map(function (\App\Models\Booking $booking) {
+                return [
+                    'id' => $booking->id,
+                    'booking_code' => $booking->booking_code,
+                    'contact_name' => $booking->contact_name,
+                    'guest_name' => $booking->user?->name ?? '—',
+                    'items' => $booking->items
+                        ->filter(fn($item) => array_key_exists($item->item_type, \App\Services\ReviewService::REVIEWABLE_ITEM_TYPES))
+                        ->map(fn($item) => [
+                            'id' => $item->id,
+                            'item_type' => $item->item_type,
+                            'item_title' => $item->item_title,
+                            'item_subtitle' => $item->item_subtitle,
+                        ])
+                        ->values(),
+                ];
+            });
+
+        $hotels = HotelModel::orderBy('hotel_name')->get(['id', 'hotel_name']);
+        $rooms = RoomType::with('hotel:id,hotel_name')->orderBy('room_name')->get(['id', 'hotel_id', 'room_name']);
+        $activities = ActivityModel::orderBy('activity_name')->get(['id', 'activity_name']);
+        $packages = Package::orderBy('name')->get(['id', 'name']);
+
+        $threshold = (int) config('services.gemini.review_summary_threshold', 3);
+
+        return view('admin.reviews.create', compact('bookings', 'hotels', 'rooms', 'activities', 'packages', 'threshold'));
+    }
+
+    /**
+     * Persist an admin-authored review — booking backfill or manual entry.
+     */
+    public function store(Request $request)
+    {
+        $isManual = $request->input('review_mode') === 'manual';
+
+        if ($isManual) {
+            $validated = $request->validate([
+                'reviewer_name' => ['required', 'string', 'max:255'],
+                'manual_entity_type' => ['required', 'string', 'in:hotel,room,activity,package'],
+                'manual_entity_id' => ['required', 'integer'],
+                'rating' => ['required', 'integer', 'between:1,5'],
+                'comment' => ['required', 'string', 'min:10', 'max:2000'],
+            ]);
+
+            $review = app(\App\Services\ReviewService::class)->manualAdminStore(
+                $validated['reviewer_name'],
+                $validated['manual_entity_type'],
+                (int) $validated['manual_entity_id'],
+                (int) $validated['rating'],
+                $validated['comment']
+            );
+
+            return redirect()
+                ->route('admin.reviews.index')
+                ->with('success', "Manual review #{$review->id} created for {$validated['manual_entity_type']} #{$validated['manual_entity_id']}. Sentiment analysis and summary updates are queued.");
+        }
+
+        $validated = $request->validate([
+            'booking_id' => ['required', 'integer', 'exists:bookings,id'],
+            'booking_item_id' => ['nullable', 'integer'],
+            'rating' => ['required', 'integer', 'between:1,5'],
+            'comment' => ['required', 'string', 'min:10', 'max:2000'],
+        ]);
+
+        $booking = \App\Models\Booking::findOrFail($validated['booking_id']);
+
+        $review = app(\App\Services\ReviewService::class)->adminStore(
+            $booking,
+            (int) $validated['rating'],
+            $validated['comment'],
+            !empty($validated['booking_item_id']) ? (int) $validated['booking_item_id'] : null
+        );
+
+        return redirect()
+            ->route('admin.reviews.index')
+            ->with('success', "Review #{$review->id} created for booking {$booking->booking_code}. Sentiment analysis and summary updates are queued.");
     }
 
     /**

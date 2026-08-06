@@ -21,6 +21,24 @@ class UpdateEntityReviewSummaryJob implements ShouldQueue
 
     public function handle(GeminiService $gemini): void
     {
+        $existing = ReviewSummary::where('summarizable_type', $this->entityType)
+            ->where('summarizable_id', $this->entityId)
+            ->first();
+
+        if ($existing && $existing->last_analyzed_at !== null) {
+            $threshold = (int) config('services.gemini.review_summary_threshold', 3);
+
+            $sinceQuery = Review::published()->where('created_at', '>', $existing->last_analyzed_at);
+
+            if ($this->entityId !== null) {
+                $sinceQuery = $sinceQuery->ofEntity($this->entityType, $this->entityId);
+            }
+
+            if ($sinceQuery->count() < $threshold) {
+                return;
+            }
+        }
+
         $query = Review::published();
 
         if ($this->entityId === null) {

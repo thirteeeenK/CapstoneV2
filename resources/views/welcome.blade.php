@@ -3,5 +3,5 @@
     <x-frontend.destinations />
     <x-frontend.experiences />
     <x-frontend.brand-story />
-    <x-frontend.testimonials />
+    <x-frontend.reviews-highlight :summary="$platformSummary" :reviews="$featuredReviews" />
 </x-frontend.layout>

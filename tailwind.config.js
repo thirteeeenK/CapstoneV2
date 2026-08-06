@@ -22,6 +22,20 @@ export default {
             },
 
             colors: {
+                // Primary alias — matches ocean-600 brand teal, used in admin forms
+                primary: {
+                    DEFAULT: '#0a78a8',
+                    50:  '#f0f9ff',
+                    100: '#dff1fb',
+                    200: '#b8e3f6',
+                    300: '#79cbed',
+                    400: '#38b0e3',
+                    500: '#1294c8',
+                    600: '#0a78a8',
+                    700: '#085e85',
+                    800: '#074e6d',
+                    900: '#063f58',
+                },
                 // Philippine-ocean inspired blues — no purple anywhere
                 ocean: {
                     50:  '#f0f9ff',

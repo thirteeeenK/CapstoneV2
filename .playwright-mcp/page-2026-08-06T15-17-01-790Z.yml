@@ -1,0 +1,203 @@
+- generic [ref=f4e1]:
+  - banner [ref=f4e2]:
+    - generic [ref=f4e3]:
+      - generic [ref=f4e4]:
+        - generic [ref=f4e5]: admin_panel_settings
+        - generic [ref=f4e6]:
+          - generic [ref=f4e7]: SunnyTrips
+          - generic [ref=f4e8]: Admin
+      - generic [ref=f4e9]:
+        - generic [ref=f4e10]:
+          - generic [ref=f4e11]: A
+          - generic "sunnytrips@gmail.com" [ref=f4e12]: Administrator
+        - button "logout Sign out" [ref=f4e15] [cursor=pointer]:
+          - generic [ref=f4e16]: logout
+          - generic [ref=f4e17]: Sign out
+  - complementary [ref=f4e18]:
+    - generic [ref=f4e19]:
+      - heading "SunnyTrips" [level=1] [ref=f4e20]
+      - paragraph [ref=f4e21]: Admin Portal
+    - navigation [ref=f4e22]:
+      - generic [ref=f4e23]:
+        - heading "Overview" [level=2] [ref=f4e24]
+        - generic [ref=f4e25]:
+          - link "dashboard Dashboard" [ref=f4e26] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/admin/dashboard
+            - generic [ref=f4e27]: dashboard
+            - generic [ref=f4e28]: Dashboard
+          - link "psychology AI Insights" [ref=f4e29] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=f4e30]: psychology
+            - generic [ref=f4e31]: AI Insights
+          - link "analytics Generate Reports" [ref=f4e32] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=f4e33]: analytics
+            - generic [ref=f4e34]: Generate Reports
+      - generic [ref=f4e35]:
+        - heading "Operations" [level=2] [ref=f4e36]
+        - generic [ref=f4e37]:
+          - link "calendar_month Bookings" [ref=f4e38] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/admin/bookings
+            - generic [ref=f4e39]: calendar_month
+            - generic [ref=f4e40]: Bookings
+          - link "group Registered Users" [ref=f4e41] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/admin/registered-users
+            - generic [ref=f4e42]: group
+            - generic [ref=f4e43]: Registered Users
+          - link "inventory Manage Inventory" [ref=f4e44] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/admin/inventory
+            - generic [ref=f4e45]: inventory
+            - generic [ref=f4e46]: Manage Inventory
+          - link "tune Passenger Rules & Discounts" [ref=f4e47] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/admin/passenger-rules
+            - generic [ref=f4e48]: tune
+            - generic [ref=f4e49]: Passenger Rules & Discounts
+      - generic [ref=f4e50]:
+        - heading "Catalog" [level=2] [ref=f4e51]
+        - generic [ref=f4e52]:
+          - link "place Destinations" [ref=f4e53] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/admin/destinations
+            - generic [ref=f4e54]: place
+            - generic [ref=f4e55]: Destinations
+          - link "house Add Hotel Information" [ref=f4e56] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/admin/hotels/manage
+            - generic [ref=f4e57]: house
+            - generic [ref=f4e58]: Add Hotel Information
+          - link "hotel Show Hotel Listing" [ref=f4e59] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/admin/hotels
+            - generic [ref=f4e60]: hotel
+            - generic [ref=f4e61]: Show Hotel Listing
+          - link "card_travel Tour Packages & Promos" [ref=f4e62] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/admin/packages
+            - generic [ref=f4e63]: card_travel
+            - generic [ref=f4e64]: Tour Packages & Promos
+          - link "explore Activities & Tours" [ref=f4e65] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/admin/activities
+            - generic [ref=f4e66]: explore
+            - generic [ref=f4e67]: Activities & Tours
+          - link "extension Transfers and Add-ons" [ref=f4e68] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/admin/addons
+            - generic [ref=f4e69]: extension
+            - generic [ref=f4e70]: Transfers and Add-ons
+          - link "psychology Manage AI" [ref=f4e71] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=f4e72]: psychology
+            - generic [ref=f4e73]: Manage AI
+      - generic [ref=f4e74]:
+        - heading "Legal" [level=2] [ref=f4e75]
+        - link "gavel Legal Documents" [ref=f4e77] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/admin/legal
+          - generic [ref=f4e78]: gavel
+          - generic [ref=f4e79]: Legal Documents
+      - generic [ref=f4e80]:
+        - heading "Community" [level=2] [ref=f4e81]
+        - link "reviews Reviews & Sentiment" [ref=f4e83] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/admin/reviews
+          - generic [ref=f4e84]: reviews
+          - generic [ref=f4e85]: Reviews & Sentiment
+  - main [ref=f4e86]:
+    - generic [ref=f4e88]:
+      - generic [ref=f4e89]:
+        - generic [ref=f4e90]:
+          - heading "Create Review" [level=1] [ref=f4e91]
+          - paragraph [ref=f4e92]: Backfill a review from a past booking, or manually add feedback from pre-system customers. Sentiment analysis and summaries are generated automatically.
+        - link "arrow_back Back to Reviews" [ref=f4e93] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/admin/reviews
+          - generic [ref=f4e94]: arrow_back
+          - text: Back to Reviews
+      - generic [ref=f4e95]:
+        - button "receipt_long From Booking" [ref=f4e96] [cursor=pointer]:
+          - generic [ref=f4e97]: receipt_long
+          - text: From Booking
+        - button "edit_note Manual Entry" [active] [ref=f4e98] [cursor=pointer]:
+          - generic [ref=f4e99]: edit_note
+          - text: Manual Entry
+      - generic [ref=f4e100]:
+        - generic [ref=f4e101]:
+          - generic [ref=f4e154]:
+            - heading "Reviewer & Entity" [level=2] [ref=f4e155]
+            - generic [ref=f4e157]:
+              - generic [ref=f4e158]: Reviewer name *
+              - textbox "Reviewer name *" [ref=f4e159]:
+                - /placeholder: e.g. Maria Santos
+              - paragraph [ref=f4e160]: The name shown publicly on the review card.
+            - generic [ref=f4e161]:
+              - generic [ref=f4e162]: Entity type *
+              - generic [ref=f4e163]:
+                - generic [ref=f4e164] [cursor=pointer]:
+                  - radio "Hotel" [checked] [ref=f4e165]
+                  - text: Hotel
+                - generic [ref=f4e166] [cursor=pointer]:
+                  - radio "Room" [ref=f4e167]
+                  - text: Room
+                - generic [ref=f4e168] [cursor=pointer]:
+                  - radio "Activity" [ref=f4e169]
+                  - text: Activity
+                - generic [ref=f4e170] [cursor=pointer]:
+                  - radio "Package" [ref=f4e171]
+                  - text: Package
+            - generic [ref=f4e174]:
+              - generic [ref=f4e175]: Hotel *
+              - combobox "Hotel *" [ref=f4e176]:
+                - option "Select hotel..." [selected]
+                - option "Boracay Ocean Club Beach Resort"
+                - option "Buko Beach Resort"
+                - option "Canyon Hotels & Resorts Boracay"
+                - option "Cauayan Island Resort"
+                - option "Charlie's El Nido"
+                - option "El Nido Resorts - Miniloc Island"
+                - option "El Nido Resorts - Pangulasian Island"
+                - option "Frendz Resort & Hostel"
+                - option "Happiness Hostel"
+                - option "Henann Garden Resort"
+                - option "Henann Palm Beach Resort"
+                - option "Lazy Dog Bed & Breakfast"
+                - option "Lihim Resorts"
+                - option "Matinloc Resort"
+                - option "My Station Hotel"
+                - option "Panorama Resort"
+                - option "Seda Lio"
+                - option "Spin Designer Hostel"
+                - option "The Muse Hotel"
+          - generic [ref=f4e112]:
+            - heading "Review" [level=2] [ref=f4e113]
+            - generic [ref=f4e115]:
+              - generic [ref=f4e116]: Rating *
+              - generic [ref=f4e117]:
+                - button "star" [ref=f4e118] [cursor=pointer]
+                - button "star" [ref=f4e120] [cursor=pointer]
+                - button "star" [ref=f4e122] [cursor=pointer]
+                - button "star" [ref=f4e124] [cursor=pointer]
+                - button "star" [ref=f4e126] [cursor=pointer]
+                - generic [ref=f4e128]: 5 / 5
+            - generic [ref=f4e129]:
+              - generic [ref=f4e130]: Comment *
+              - textbox "Comment *" [ref=f4e131]:
+                - /placeholder: Write the guest's feedback...
+              - paragraph [ref=f4e132]: 10–2000 characters. This text is sent to the Gemini sentiment analyzer.
+        - complementary [ref=f4e133]:
+          - generic [ref=f4e134]:
+            - heading "What happens next" [level=2] [ref=f4e135]
+            - list [ref=f4e137]:
+              - listitem [ref=f4e138]:
+                - generic [ref=f4e139]: sentiment_satisfied
+                - text: Gemini analyzes the comment and stores sentiment + confidence + keywords on the review.
+              - listitem [ref=f4e140]:
+                - generic [ref=f4e141]: summarize
+                - text: The entity and platform summaries regenerate automatically.
+              - listitem [ref=f4e142]:
+                - generic [ref=f4e143]: star
+                - text: You can feature this review on the landing page from the Reviews dashboard.
+          - generic [ref=f4e144]:
+            - heading "Selected review" [level=2] [ref=f4e145]
+            - generic [ref=f4e177]:
+              - paragraph [ref=f4e178]: "Reviewer: —"
+              - paragraph [ref=f4e179]: "Type: Hotel"
+              - paragraph [ref=f4e180]: "Entity: —"
+              - paragraph [ref=f4e181]:
+                - generic [ref=f4e182]:
+                  - generic [ref=f4e183]: info
+                  - text: Not a verified booking
+          - button "check_circle Create review" [ref=f4e152] [cursor=pointer]:
+            - generic [ref=f4e153]: check_circle
+            - text: Create review

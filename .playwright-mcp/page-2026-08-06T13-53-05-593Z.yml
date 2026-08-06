@@ -1,0 +1,29 @@
+- generic [ref=f2e3]:
+  - link "SunnyTrips — Go to homepage" [ref=f2e5] [cursor=pointer]:
+    - /url: /
+    - generic [ref=f2e6]: admin_panel_settings
+    - generic [ref=f2e7]: SunnyTrips Admin
+  - generic [ref=f2e8]:
+    - heading "Admin Portal" [level=1] [ref=f2e9]
+    - paragraph [ref=f2e10]: Sign in with your administrator credentials.
+  - generic [ref=f2e11]:
+    - generic [ref=f2e12]:
+      - generic [ref=f2e13]: Email Address
+      - textbox "Email Address" [active] [ref=f2e14]:
+        - /placeholder: sunnytrips@gmail.com
+        - text: sunnytrips@gmail.com
+      - list [ref=f2e15]:
+        - listitem [ref=f2e16]: These credentials do not match our records.
+    - generic [ref=f2e17]:
+      - generic [ref=f2e18]: Password
+      - generic [ref=f2e19]:
+        - textbox "Password" [ref=f2e20]:
+          - /placeholder: ••••••••
+        - button "Toggle password visibility" [ref=f2e21] [cursor=pointer]:
+          - generic [ref=f2e22]: visibility
+      - link "Forgot your password?" [ref=f2e24] [cursor=pointer]:
+        - /url: http://127.0.0.1:8000/admin/forgot-password
+    - generic [ref=f2e25]:
+      - checkbox "Keep me signed in" [ref=f2e26] [cursor=pointer]
+      - generic [ref=f2e27] [cursor=pointer]: Keep me signed in
+    - button "Sign in to Admin Portal" [ref=f2e29] [cursor=pointer]

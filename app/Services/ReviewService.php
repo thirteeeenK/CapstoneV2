@@ -13,6 +13,7 @@ use App\Models\Review;
 use App\Models\ReviewSummary;
 use App\Models\RoomType;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Collection;
 
 class ReviewService
@@ -130,12 +131,134 @@ class ReviewService
     }
 
     /**
+     * Admin-authored backfill review for a past booking that was never
+     * reviewed. Bypasses user ownership checks but still requires a
+     * completed booking with no existing review.
+     */
+    public function adminStore(Booking $booking, int $rating, string $comment, ?int $bookingItemId = null, ?User $user = null): Review
+    {
+        abort_unless($booking->status === Booking::STATUS_COMPLETED, 422, 'Only completed bookings can be reviewed.');
+        abort_if(Review::where('booking_id', $booking->id)->exists(), 422, 'This booking has already been reviewed.');
+
+        $reviewer = $user ?? $booking->user;
+
+        abort_unless($reviewer, 422, 'This booking has no guest account to attribute the review to.');
+
+        $item = null;
+
+        if ($bookingItemId) {
+            $item = $booking->items()->whereKey($bookingItemId)->first();
+        }
+
+        if (!$item) {
+            $item = $booking->items()
+                ->whereIn('item_type', array_keys(self::REVIEWABLE_ITEM_TYPES))
+                ->first();
+        }
+
+        abort_unless($item, 422, 'This booking has no reviewable items.');
+
+        $target = $this->resolveReviewableFromItem($item);
+
+        abort_unless($target, 422, 'This booking has no reviewable items.');
+
+        $review = Review::create([
+            'booking_id' => $booking->id,
+            'user_id' => $reviewer->id,
+            'reviewable_type' => $target['type'],
+            'reviewable_id' => $target['id'],
+            'hotel_id' => $target['hotel_id'],
+            'room_id' => $target['room_id'],
+            'activity_id' => $target['activity_id'],
+            'package_id' => $target['package_id'],
+            'rating' => $rating,
+            'comment' => $comment,
+            'sentiment' => Review::SENTIMENT_NEUTRAL,
+            'sentiment_score' => 0.5000,
+            'extracted_keywords' => [],
+            'is_verified_booking' => true,
+            'is_published' => true,
+        ]);
+
+        dispatch(new ProcessReviewSentimentJob($review->id));
+
+        dispatch(new UpdateEntityReviewSummaryJob($target['type'], $target['id'], $target['label']));
+        dispatch(new UpdateEntityReviewSummaryJob(ReviewSummary::PLATFORM_OVERALL_TYPE, null, 'SunnyTrips Overall Platform'));
+
+        return $review->fresh(['user']);
+    }
+
+    /**
+     * Manually authored review by an admin for pre-system bookings
+     * or external feedback. No booking or user record required.
+     */
+    public function manualAdminStore(string $reviewerName, string $entityType, int $entityId, int $rating, string $comment): Review
+    {
+        $class = Relation::getMorphedModel($entityType) ?? $entityType;
+
+        abort_unless(class_exists($class), 422, "Unknown entity type: {$entityType}");
+
+        $entity = $class::find($entityId);
+
+        abort_unless($entity, 422, "Entity not found: {$entityType} #{$entityId}");
+
+        $label = $entity->hotel_name ?? $entity->room_name ?? $entity->activity_name ?? $entity->name ?? 'Listing';
+
+        $payload = [
+            'type' => $entityType,
+            'id' => $entityId,
+            'hotel_id' => null,
+            'room_id' => null,
+            'activity_id' => null,
+            'package_id' => null,
+            'label' => $label,
+        ];
+
+        if ($entity instanceof RoomType) {
+            $payload['hotel_id'] = $entity->hotel_id;
+            $payload['room_id'] = $entity->getKey();
+        } elseif ($entity instanceof ActivityModel) {
+            $payload['activity_id'] = $entity->getKey();
+        } elseif ($entity instanceof Package) {
+            $payload['package_id'] = $entity->getKey();
+        } elseif ($entity instanceof HotelModel) {
+            $payload['hotel_id'] = $entity->getKey();
+        }
+
+        $review = Review::create([
+            'booking_id' => null,
+            'user_id' => null,
+            'reviewer_name' => $reviewerName,
+            'reviewable_type' => $payload['type'],
+            'reviewable_id' => $payload['id'],
+            'hotel_id' => $payload['hotel_id'],
+            'room_id' => $payload['room_id'],
+            'activity_id' => $payload['activity_id'],
+            'package_id' => $payload['package_id'],
+            'rating' => $rating,
+            'comment' => $comment,
+            'sentiment' => Review::SENTIMENT_NEUTRAL,
+            'sentiment_score' => 0.5000,
+            'extracted_keywords' => [],
+            'is_verified_booking' => false,
+            'is_published' => true,
+        ]);
+
+        dispatch(new ProcessReviewSentimentJob($review->id));
+
+        dispatch(new UpdateEntityReviewSummaryJob($payload['type'], $payload['id'], $payload['label']));
+        dispatch(new UpdateEntityReviewSummaryJob(ReviewSummary::PLATFORM_OVERALL_TYPE, null, 'SunnyTrips Overall Platform'));
+
+        return $review;
+    }
+
+    /**
      * Completed bookings of the user that still have no review, with their
      * reviewable items for the dynamic modal picker.
      */
     public function eligibleBookings(User $user): Collection
     {
-        $reviewedBookingIds = Review::where('user_id', $user->id)->pluck('booking_id');
+        $reviewedBookingIds = Review::where('user_id', $user->id)->pluck('booking_id')->filter();
 
         return Booking::with(['items'])
             ->where('user_id', $user->id)

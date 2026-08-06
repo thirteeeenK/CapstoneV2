@@ -28,8 +28,10 @@ class Review extends Model
         'sentiment',
         'sentiment_score',
         'extracted_keywords',
+        'reviewer_name',
         'is_verified_booking',
         'is_published',
+        'is_featured',
     ];
 
     protected $casts = [
@@ -38,6 +40,7 @@ class Review extends Model
         'extracted_keywords' => 'array',
         'is_verified_booking' => 'boolean',
         'is_published' => 'boolean',
+        'is_featured' => 'boolean',
     ];
 
     public function reviewable()
@@ -77,9 +80,14 @@ class Review extends Model
 
     /**
      * First name + last initial for guest privacy (e.g. "John D.").
+     * Manual admin reviews return the provided reviewer_name as-is.
      */
     public function getReviewerAliasAttribute(): string
     {
+        if ($this->reviewer_name) {
+            return $this->reviewer_name;
+        }
+
         $name = $this->user?->name ?? '';
 
         $parts = preg_split('/\s+/', trim($name));
@@ -100,6 +108,11 @@ class Review extends Model
     public function scopePublished(Builder $query): Builder
     {
         return $query->where('is_published', true);
+    }
+
+    public function scopeFeatured(Builder $query): Builder
+    {
+        return $query->where('is_featured', true);
     }
 
     public function scopeOfEntity(Builder $query, string $type, int $id): Builder

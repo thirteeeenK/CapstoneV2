@@ -1,0 +1,379 @@
+- generic [ref=f49e1]:
+  - banner [ref=f49e2]:
+    - generic [ref=f49e3]:
+      - generic [ref=f49e4]:
+        - generic [ref=f49e5]: admin_panel_settings
+        - generic [ref=f49e6]:
+          - generic [ref=f49e7]: SunnyTrips
+          - generic [ref=f49e8]: Admin
+      - generic [ref=f49e9]:
+        - generic [ref=f49e10]:
+          - generic [ref=f49e11]: A
+          - generic "sunnytrips@gmail.com" [ref=f49e12]: Administrator
+        - button "logout Sign out" [ref=f49e15] [cursor=pointer]:
+          - generic [ref=f49e16]: logout
+          - generic [ref=f49e17]: Sign out
+  - complementary [ref=f49e18]:
+    - generic [ref=f49e19]:
+      - heading "SunnyTrips" [level=1] [ref=f49e20]
+      - paragraph [ref=f49e21]: Admin Portal
+    - navigation [ref=f49e22]:
+      - generic [ref=f49e23]:
+        - heading "Overview" [level=2] [ref=f49e24]
+        - generic [ref=f49e25]:
+          - link "dashboard Dashboard" [ref=f49e26] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/dashboard
+            - generic [ref=f49e27]: dashboard
+            - generic [ref=f49e28]: Dashboard
+          - link "psychology AI Insights" [ref=f49e29] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=f49e30]: psychology
+            - generic [ref=f49e31]: AI Insights
+          - link "analytics Generate Reports" [ref=f49e32] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=f49e33]: analytics
+            - generic [ref=f49e34]: Generate Reports
+      - generic [ref=f49e35]:
+        - heading "Operations" [level=2] [ref=f49e36]
+        - generic [ref=f49e37]:
+          - link "calendar_month Bookings" [ref=f49e38] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/bookings
+            - generic [ref=f49e39]: calendar_month
+            - generic [ref=f49e40]: Bookings
+          - link "group Registered Users" [ref=f49e41] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/registered-users
+            - generic [ref=f49e42]: group
+            - generic [ref=f49e43]: Registered Users
+          - link "inventory Manage Inventory" [ref=f49e44] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/inventory
+            - generic [ref=f49e45]: inventory
+            - generic [ref=f49e46]: Manage Inventory
+          - link "tune Passenger Rules & Discounts" [ref=f49e47] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/passenger-rules
+            - generic [ref=f49e48]: tune
+            - generic [ref=f49e49]: Passenger Rules & Discounts
+      - generic [ref=f49e50]:
+        - heading "Catalog" [level=2] [ref=f49e51]
+        - generic [ref=f49e52]:
+          - link "place Destinations" [ref=f49e53] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/destinations
+            - generic [ref=f49e54]: place
+            - generic [ref=f49e55]: Destinations
+          - link "house Add Hotel Information" [ref=f49e56] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/hotels/manage
+            - generic [ref=f49e57]: house
+            - generic [ref=f49e58]: Add Hotel Information
+          - link "hotel Show Hotel Listing" [ref=f49e59] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/hotels
+            - generic [ref=f49e60]: hotel
+            - generic [ref=f49e61]: Show Hotel Listing
+          - link "card_travel Tour Packages & Promos" [ref=f49e62] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/packages
+            - generic [ref=f49e63]: card_travel
+            - generic [ref=f49e64]: Tour Packages & Promos
+          - link "explore Activities & Tours" [ref=f49e65] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/activities
+            - generic [ref=f49e66]: explore
+            - generic [ref=f49e67]: Activities & Tours
+          - link "extension Transfers and Add-ons" [ref=f49e68] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/addons
+            - generic [ref=f49e69]: extension
+            - generic [ref=f49e70]: Transfers and Add-ons
+          - link "psychology Manage AI" [ref=f49e71] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=f49e72]: psychology
+            - generic [ref=f49e73]: Manage AI
+      - generic [ref=f49e74]:
+        - heading "Legal" [level=2] [ref=f49e75]
+        - link "gavel Legal Documents" [ref=f49e77] [cursor=pointer]:
+          - /url: http://localhost:8000/admin/legal
+          - generic [ref=f49e78]: gavel
+          - generic [ref=f49e79]: Legal Documents
+      - generic [ref=f49e80]:
+        - heading "Community" [level=2] [ref=f49e81]
+        - link "reviews Reviews & Sentiment" [ref=f49e83] [cursor=pointer]:
+          - /url: http://localhost:8000/admin/reviews
+          - generic [ref=f49e84]: reviews
+          - generic [ref=f49e85]: Reviews & Sentiment
+  - main [ref=f49e86]:
+    - generic [ref=f49e88]:
+      - generic [ref=f49e89]:
+        - generic [ref=f49e90]:
+          - heading "Review Analytics & Sentiment" [level=1] [ref=f49e91]
+          - paragraph [ref=f49e92]: AI-assisted DSS metrics across all verified guest feedback.
+        - generic [ref=f49e93]:
+          - generic [ref=f49e94]: 59 reviews
+          - generic [ref=f49e95]: ★ 4.19 avg
+      - generic [ref=f49e96]:
+        - generic [ref=f49e97]:
+          - heading "donut_small Sentiment Distribution" [level=2] [ref=f49e98]:
+            - generic [ref=f49e99]: donut_small
+            - text: Sentiment Distribution
+          - generic [ref=f49e103]:
+            - generic [ref=f49e104]:
+              - generic [ref=f49e106]: Positive
+              - generic [ref=f49e107]: "41"
+              - generic [ref=f49e108]: 69%
+            - generic [ref=f49e109]:
+              - generic [ref=f49e111]: Neutral
+              - generic [ref=f49e112]: "13"
+              - generic [ref=f49e113]: 22%
+            - generic [ref=f49e114]:
+              - generic [ref=f49e116]: Negative
+              - generic [ref=f49e117]: "5"
+              - generic [ref=f49e118]: 8%
+        - generic [ref=f49e119]:
+          - heading "notification_important Needs Improvement Alerts" [level=2] [ref=f49e120]:
+            - generic [ref=f49e121]: notification_important
+            - text: Needs Improvement Alerts
+          - generic [ref=f49e123]:
+            - generic [ref=f49e124]:
+              - generic [ref=f49e125]:
+                - paragraph [ref=f49e126]: 6–7 Destinations (Aircon Van)
+                - paragraph [ref=f49e127]: 1 reviews · 2.0 ★ avg
+              - generic [ref=f49e128]: 100% negative
+            - generic [ref=f49e129]:
+              - generic [ref=f49e130]:
+                - paragraph [ref=f49e131]: Frendz Resort & Hostel
+                - paragraph [ref=f49e132]: 2 reviews · 2.5 ★ avg
+              - generic [ref=f49e133]: 50% negative
+            - generic [ref=f49e134]:
+              - generic [ref=f49e135]:
+                - paragraph [ref=f49e136]: The Muse Hotel
+                - paragraph [ref=f49e137]: 2 reviews · 3.0 ★ avg
+              - generic [ref=f49e138]: 50% negative
+            - generic [ref=f49e139]:
+              - generic [ref=f49e140]:
+                - paragraph [ref=f49e141]: Premier Family Room
+                - paragraph [ref=f49e142]: 2 reviews · 2.5 ★ avg
+              - generic [ref=f49e143]: 50% negative
+            - generic [ref=f49e144]:
+              - generic [ref=f49e145]:
+                - paragraph [ref=f49e146]: Breeze Garden Room
+                - paragraph [ref=f49e147]: 2 reviews · 3.5 ★ avg
+              - generic [ref=f49e148]: 50% negative
+        - generic [ref=f49e149]:
+          - heading "workspace_premium Top Rated Listings" [level=2] [ref=f49e150]:
+            - generic [ref=f49e151]: workspace_premium
+            - text: Top Rated Listings
+          - generic [ref=f49e153]:
+            - generic [ref=f49e154]:
+              - paragraph [ref=f49e155]: Hotels
+              - list [ref=f49e156]:
+                - listitem [ref=f49e157]:
+                  - generic [ref=f49e158]: "1"
+                  - generic [ref=f49e159]:
+                    - paragraph [ref=f49e160]: Happiness Hostel
+                    - paragraph [ref=f49e161]: 2 reviews
+                  - generic [ref=f49e162]: 5.0 ★
+                - listitem [ref=f49e163]:
+                  - generic [ref=f49e164]: "2"
+                  - generic [ref=f49e165]:
+                    - paragraph [ref=f49e166]: Boracay Ocean Club Beach Resort
+                    - paragraph [ref=f49e167]: 2 reviews
+                  - generic [ref=f49e168]: 5.0 ★
+                - listitem [ref=f49e169]:
+                  - generic [ref=f49e170]: "3"
+                  - generic [ref=f49e171]:
+                    - paragraph [ref=f49e172]: My Station Hotel
+                    - paragraph [ref=f49e173]: 2 reviews
+                  - generic [ref=f49e174]: 5.0 ★
+                - listitem [ref=f49e175]:
+                  - generic [ref=f49e176]: "4"
+                  - generic [ref=f49e177]:
+                    - paragraph [ref=f49e178]: Henann Garden Resort
+                    - paragraph [ref=f49e179]: 2 reviews
+                  - generic [ref=f49e180]: 4.0 ★
+                - listitem [ref=f49e181]:
+                  - generic [ref=f49e182]: "5"
+                  - generic [ref=f49e183]:
+                    - paragraph [ref=f49e184]: Canyon Hotels & Resorts Boracay
+                    - paragraph [ref=f49e185]: 2 reviews
+                  - generic [ref=f49e186]: 4.0 ★
+            - generic [ref=f49e187]:
+              - paragraph [ref=f49e188]: Rooms
+              - list [ref=f49e189]:
+                - listitem [ref=f49e190]:
+                  - generic [ref=f49e191]: "1"
+                  - generic [ref=f49e192]:
+                    - paragraph [ref=f49e193]: Social Mixed Dormitory Bed
+                    - paragraph [ref=f49e194]: 1 reviews
+                  - generic [ref=f49e195]: 5.0 ★
+                - listitem [ref=f49e196]:
+                  - generic [ref=f49e197]: "2"
+                  - generic [ref=f49e198]:
+                    - paragraph [ref=f49e199]: Premier Ocean View Room
+                    - paragraph [ref=f49e200]: 1 reviews
+                  - generic [ref=f49e201]: 5.0 ★
+                - listitem [ref=f49e202]:
+                  - generic [ref=f49e203]: "3"
+                  - generic [ref=f49e204]:
+                    - paragraph [ref=f49e205]: Social Mixed Dormitory Bed
+                    - paragraph [ref=f49e206]: 3 reviews
+                  - generic [ref=f49e207]: 4.7 ★
+                - listitem [ref=f49e208]:
+                  - generic [ref=f49e209]: "4"
+                  - generic [ref=f49e210]:
+                    - paragraph [ref=f49e211]: Deluxe Room
+                    - paragraph [ref=f49e212]: 2 reviews
+                  - generic [ref=f49e213]: 4.5 ★
+                - listitem [ref=f49e214]:
+                  - generic [ref=f49e215]: "5"
+                  - generic [ref=f49e216]:
+                    - paragraph [ref=f49e217]: Deluxe Suite
+                    - paragraph [ref=f49e218]: 2 reviews
+                  - generic [ref=f49e219]: 4.5 ★
+            - generic [ref=f49e220]:
+              - paragraph [ref=f49e221]: Activities
+              - list [ref=f49e222]:
+                - listitem [ref=f49e223]:
+                  - generic [ref=f49e224]: "1"
+                  - generic [ref=f49e225]:
+                    - paragraph [ref=f49e226]: 6–7 Destinations (E-Trike)
+                    - paragraph [ref=f49e227]: 2 reviews
+                  - generic [ref=f49e228]: 5.0 ★
+                - listitem [ref=f49e229]:
+                  - generic [ref=f49e230]: "2"
+                  - generic [ref=f49e231]:
+                    - paragraph [ref=f49e232]: Parasailing
+                    - paragraph [ref=f49e233]: 1 reviews
+                  - generic [ref=f49e234]: 5.0 ★
+                - listitem [ref=f49e235]:
+                  - generic [ref=f49e236]: "3"
+                  - generic [ref=f49e237]:
+                    - paragraph [ref=f49e238]: Crystal Kayak
+                    - paragraph [ref=f49e239]: 1 reviews
+                  - generic [ref=f49e240]: 5.0 ★
+                - listitem [ref=f49e241]:
+                  - generic [ref=f49e242]: "4"
+                  - generic [ref=f49e243]:
+                    - paragraph [ref=f49e244]: Jet Ski (15 mins)
+                    - paragraph [ref=f49e245]: 1 reviews
+                  - generic [ref=f49e246]: 5.0 ★
+                - listitem [ref=f49e247]:
+                  - generic [ref=f49e248]: "5"
+                  - generic [ref=f49e249]:
+                    - paragraph [ref=f49e250]: Banana Boat
+                    - paragraph [ref=f49e251]: 1 reviews
+                  - generic [ref=f49e252]: 5.0 ★
+        - generic [ref=f49e253]:
+          - heading "cloud Keyword Cloud" [level=2] [ref=f49e254]:
+            - generic [ref=f49e255]: cloud
+            - text: Keyword Cloud
+          - generic [ref=f49e257]:
+            - generic [ref=f49e258]: room ×32
+            - generic [ref=f49e260]: staff ×28
+            - generic [ref=f49e262]: clean ×16
+            - generic [ref=f49e264]: view ×13
+            - generic [ref=f49e266]: tour ×10
+            - generic [ref=f49e268]: friendly ×8
+            - generic [ref=f49e270]: pool ×7
+            - generic [ref=f49e272]: great ×5
+            - generic [ref=f49e274]: ocean view ×4
+            - generic [ref=f49e276]: guide ×4
+            - generic [ref=f49e278]: check-in ×3
+            - generic [ref=f49e280]: boat ×3
+            - generic [ref=f49e282]: super ×3
+            - generic [ref=f49e284]: sulit ×3
+            - generic [ref=f49e286]: booking ×3
+            - generic [ref=f49e288]: package ×3
+            - generic [ref=f49e290]: AC ×2
+            - generic [ref=f49e292]: bait ×2
+            - generic [ref=f49e294]: quiet ×2
+            - generic [ref=f49e296]: spotless ×2
+            - generic [ref=f49e298]: beautiful ×2
+            - generic [ref=f49e300]: worth it ×2
+            - generic [ref=f49e302]: location ×2
+            - generic [ref=f49e304]: experience ×2
+            - generic [ref=f49e306]: bathroom ×2
+            - generic [ref=f49e308]: kids ×2
+            - generic [ref=f49e310]: organized ×2
+            - generic [ref=f49e312]: smooth ×2
+            - generic [ref=f49e314]: lagoons ×2
+            - generic [ref=f49e316]: activities ×2
+      - generic [ref=f49e318]:
+        - generic [ref=f49e319]:
+          - heading "All Reviews" [level=2] [ref=f49e320]
+          - generic [ref=f49e321]:
+            - generic [ref=f49e322]: 59 total
+            - link "add_comment Create review" [ref=f49e323] [cursor=pointer]:
+              - /url: http://localhost:8000/admin/reviews/create
+              - generic [ref=f49e324]: add_comment
+              - text: Create review
+        - generic [ref=f49e325]:
+          - generic [ref=f49e326]:
+            - generic [ref=f49e327]:
+              - generic [ref=f49e328]: Star
+              - button "All" [ref=f49e329] [cursor=pointer]
+              - button "5★" [active] [ref=f49e330] [cursor=pointer]
+              - button "4★" [ref=f49e331] [cursor=pointer]
+              - button "3★" [ref=f49e332] [cursor=pointer]
+              - button "2★" [ref=f49e333] [cursor=pointer]
+              - button "1★" [ref=f49e334] [cursor=pointer]
+            - generic [ref=f49e336]:
+              - generic [ref=f49e337]: Sentiment
+              - button "All" [ref=f49e338] [cursor=pointer]
+              - button "Positive" [ref=f49e339] [cursor=pointer]
+              - button "Neutral" [ref=f49e340] [cursor=pointer]
+              - button "Negative" [ref=f49e341] [cursor=pointer]
+          - generic [ref=f49e342]:
+            - generic [ref=f49e343]:
+              - generic [ref=f49e344]: Entity
+              - button "All" [ref=f49e345] [cursor=pointer]
+              - button "Hotel" [ref=f49e346] [cursor=pointer]
+              - button "Room" [ref=f49e347] [cursor=pointer]
+              - button "Activity" [ref=f49e348] [cursor=pointer]
+              - button "Package" [ref=f49e349] [cursor=pointer]
+            - generic [ref=f49e351]:
+              - generic [ref=f49e352]: Destination
+              - combobox [ref=f49e353] [cursor=pointer]:
+                - option "All" [selected]
+                - option "Boracay"
+                - option "El Nido"
+            - generic [ref=f49e354]:
+              - generic [ref=f49e355]: Hotel
+              - combobox [ref=f49e356] [cursor=pointer]:
+                - option "All" [selected]
+                - option "Boracay Ocean Club Beach Resort"
+                - option "Buko Beach Resort"
+                - option "Canyon Hotels & Resorts Boracay"
+                - option "Cauayan Island Resort"
+                - option "Charlie's El Nido"
+                - option "El Nido Resorts - Miniloc Island"
+                - option "El Nido Resorts - Pangulasian Island"
+                - option "Frendz Resort & Hostel"
+                - option "Happiness Hostel"
+                - option "Henann Garden Resort"
+                - option "Henann Palm Beach Resort"
+                - option "Lazy Dog Bed & Breakfast"
+                - option "Lihim Resorts"
+                - option "Matinloc Resort"
+                - option "My Station Hotel"
+                - option "Panorama Resort"
+                - option "Seda Lio"
+                - option "Spin Designer Hostel"
+                - option "The Muse Hotel"
+            - generic [ref=f49e357]:
+              - generic [ref=f49e358]: Room
+              - combobox [ref=f49e359] [cursor=pointer]:
+                - option "All" [selected]
+                - option "Beach Villa"
+                - option "Beachfront Executive Suite"
+                - option "Boho Private Double Room"
+                - option "Breeze Garden Room"
+                - option "Canopy Villa"
+                - option "Deluxe Room"
+                - option "Deluxe Room with Pool Access"
+                - option "Deluxe Suite"
+                - option "Diamond Oceanfront Room"
+                - option "Direct Pool Access Suite"
+                - option "Luxury Villa"
+                - option "Panoramic Beach Villa"
+                - option "Premier Family Room"
+                - option "Premier Ocean View Room"
+                - option "Social Mixed Dormitory Bed"
+                - option "Social Mixed Dormitory Bed"
+                - option "Standard Double Room"
+                - option "Water Cottage"
+                - option "Water Villa"
+        - generic [ref=f49e360]: "{ \"message\": \"compact(): Undefined variable $sentimentMeta\", \"exception\": \"ErrorException\", \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\app\\\\Http\\\\Controllers\\\\Admin\\\\AdminReviewController.php\", \"line\": 116, \"trace\": [ { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Foundation\\\\Bootstrap\\\\HandleExceptions.php\", \"line\": 263, \"function\": \"handleError\", \"class\": \"Illuminate\\\\Foundation\\\\Bootstrap\\\\HandleExceptions\", \"type\": \"->\" }, { \"function\": \"{closure:Illuminate\\\\Foundation\\\\Bootstrap\\\\HandleExceptions::forwardsTo():262}\", \"class\": \"Illuminate\\\\Foundation\\\\Bootstrap\\\\HandleExceptions\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\app\\\\Http\\\\Controllers\\\\Admin\\\\AdminReviewController.php\", \"line\": 116, \"function\": \"compact\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Routing\\\\ControllerDispatcher.php\", \"line\": 46, \"function\": \"index\", \"class\": \"App\\\\Http\\\\Controllers\\\\Admin\\\\AdminReviewController\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Routing\\\\Route.php\", \"line\": 276, \"function\": \"dispatch\", \"class\": \"Illuminate\\\\Routing\\\\ControllerDispatcher\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Routing\\\\Route.php\", \"line\": 216, \"function\": \"runController\", \"class\": \"Illuminate\\\\Routing\\\\Route\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Routing\\\\Router.php\", \"line\": 822, \"function\": \"run\", \"class\": \"Illuminate\\\\Routing\\\\Route\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Pipeline\\\\Pipeline.php\", \"line\": 180, \"function\": \"{closure:Illuminate\\\\Routing\\\\Router::runRouteWithinStack():821}\", \"class\": \"Illuminate\\\\Routing\\\\Router\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\app\\\\Http\\\\Middleware\\\\NoCacheHeaders.php\", \"line\": 19, \"function\": \"{closure:Illuminate\\\\Pipeline\\\\Pipeline::prepareDestination():178}\", \"class\": \"Illuminate\\\\Pipeline\\\\Pipeline\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Pipeline\\\\Pipeline.php\", \"line\": 219, \"function\": \"handle\", \"class\": \"App\\\\Http\\\\Middleware\\\\NoCacheHeaders\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\app\\\\Http\\\\Middleware\\\\CheckUserOnboarding.php\", \"line\": 31, \"function\": \"{closure:{closure:Illuminate\\\\Pipeline\\\\Pipeline::carry():194}:195}\", \"class\": \"Illuminate\\\\Pipeline\\\\Pipeline\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Pipeline\\\\Pipeline.php\", \"line\": 219, \"function\": \"handle\", \"class\": \"App\\\\Http\\\\Middleware\\\\CheckUserOnboarding\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Routing\\\\Middleware\\\\SubstituteBindings.php\", \"line\": 52, \"function\": \"{closure:{closure:Illuminate\\\\Pipeline\\\\Pipeline::carry():194}:195}\", \"class\": \"Illuminate\\\\Pipeline\\\\Pipeline\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Pipeline\\\\Pipeline.php\", \"line\": 219, \"function\": \"handle\", \"class\": \"Illuminate\\\\Routing\\\\Middleware\\\\SubstituteBindings\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Routing\\\\Middleware\\\\ThrottleRequests.php\", \"line\": 168, \"function\": \"{closure:{closure:Illuminate\\\\Pipeline\\\\Pipeline::carry():194}:195}\", \"class\": \"Illuminate\\\\Pipeline\\\\Pipeline\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Routing\\\\Middleware\\\\ThrottleRequests.php\", \"line\": 129, \"function\": \"handleRequest\", \"class\": \"Illuminate\\\\Routing\\\\Middleware\\\\ThrottleRequests\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Routing\\\\Middleware\\\\ThrottleRequests.php\", \"line\": 90, \"function\": \"handleRequestUsingNamedLimiter\", \"class\": \"Illuminate\\\\Routing\\\\Middleware\\\\ThrottleRequests\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Pipeline\\\\Pipeline.php\", \"line\": 219, \"function\": \"handle\", \"class\": \"Illuminate\\\\Routing\\\\Middleware\\\\ThrottleRequests\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Auth\\\\Middleware\\\\Authenticate.php\", \"line\": 63, \"function\": \"{closure:{closure:Illuminate\\\\Pipeline\\\\Pipeline::carry():194}:195}\", \"class\": \"Illuminate\\\\Pipeline\\\\Pipeline\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Pipeline\\\\Pipeline.php\", \"line\": 219, \"function\": \"handle\", \"class\": \"Illuminate\\\\Auth\\\\Middleware\\\\Authenticate\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Foundation\\\\Http\\\\Middleware\\\\PreventRequestForgery.php\", \"line\": 104, \"function\": \"{closure:{closure:Illuminate\\\\Pipeline\\\\Pipeline::carry():194}:195}\", \"class\": \"Illuminate\\\\Pipeline\\\\Pipeline\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Pipeline\\\\Pipeline.php\", \"line\": 219, \"function\": \"handle\", \"class\": \"Illuminate\\\\Foundation\\\\Http\\\\Middleware\\\\PreventRequestForgery\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\View\\\\Middleware\\\\ShareErrorsFromSession.php\", \"line\": 48, \"function\": \"{closure:{closure:Illuminate\\\\Pipeline\\\\Pipeline::carry():194}:195}\", \"class\": \"Illuminate\\\\Pipeline\\\\Pipeline\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Pipeline\\\\Pipeline.php\", \"line\": 219, \"function\": \"handle\", \"class\": \"Illuminate\\\\View\\\\Middleware\\\\ShareErrorsFromSession\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Session\\\\Middleware\\\\StartSession.php\", \"line\": 120, \"function\": \"{closure:{closure:Illuminate\\\\Pipeline\\\\Pipeline::carry():194}:195}\", \"class\": \"Illuminate\\\\Pipeline\\\\Pipeline\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Session\\\\Middleware\\\\StartSession.php\", \"line\": 63, \"function\": \"handleStatefulRequest\", \"class\": \"Illuminate\\\\Session\\\\Middleware\\\\StartSession\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Pipeline\\\\Pipeline.php\", \"line\": 219, \"function\": \"handle\", \"class\": \"Illuminate\\\\Session\\\\Middleware\\\\StartSession\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Cookie\\\\Middleware\\\\AddQueuedCookiesToResponse.php\", \"line\": 36, \"function\": \"{closure:{closure:Illuminate\\\\Pipeline\\\\Pipeline::carry():194}:195}\", \"class\": \"Illuminate\\\\Pipeline\\\\Pipeline\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Pipeline\\\\Pipeline.php\", \"line\": 219, \"function\": \"handle\", \"class\": \"Illuminate\\\\Cookie\\\\Middleware\\\\AddQueuedCookiesToResponse\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Cookie\\\\Middleware\\\\EncryptCookies.php\", \"line\": 74, \"function\": \"{closure:{closure:Illuminate\\\\Pipeline\\\\Pipeline::carry():194}:195}\", \"class\": \"Illuminate\\\\Pipeline\\\\Pipeline\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Pipeline\\\\Pipeline.php\", \"line\": 219, \"function\": \"handle\", \"class\": \"Illuminate\\\\Cookie\\\\Middleware\\\\EncryptCookies\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Pipeline\\\\Pipeline.php\", \"line\": 137, \"function\": \"{closure:{closure:Illuminate\\\\Pipeline\\\\Pipeline::carry():194}:195}\", \"class\": \"Illuminate\\\\Pipeline\\\\Pipeline\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Routing\\\\Router.php\", \"line\": 821, \"function\": \"then\", \"class\": \"Illuminate\\\\Pipeline\\\\Pipeline\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Routing\\\\Router.php\", \"line\": 800, \"function\": \"runRouteWithinStack\", \"class\": \"Illuminate\\\\Routing\\\\Router\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Routing\\\\Router.php\", \"line\": 764, \"function\": \"runRoute\", \"class\": \"Illuminate\\\\Routing\\\\Router\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Routing\\\\Router.php\", \"line\": 753, \"function\": \"dispatchToRoute\", \"class\": \"Illuminate\\\\Routing\\\\Router\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Foundation\\\\Http\\\\Kernel.php\", \"line\": 200, \"function\": \"dispatch\", \"class\": \"Illuminate\\\\Routing\\\\Router\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Pipeline\\\\Pipeline.php\", \"line\": 180, \"function\": \"{closure:Illuminate\\\\Foundation\\\\Http\\\\Kernel::dispatchToRouter():197}\", \"class\": \"Illuminate\\\\Foundation\\\\Http\\\\Kernel\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Foundation\\\\Http\\\\Middleware\\\\TransformsRequest.php\", \"line\": 21, \"function\": \"{closure:Illuminate\\\\Pipeline\\\\Pipeline::prepareDestination():178}\", \"class\": \"Illuminate\\\\Pipeline\\\\Pipeline\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Foundation\\\\Http\\\\Middleware\\\\ConvertEmptyStringsToNull.php\", \"line\": 31, \"function\": \"handle\", \"class\": \"Illuminate\\\\Foundation\\\\Http\\\\Middleware\\\\TransformsRequest\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Pipeline\\\\Pipeline.php\", \"line\": 219, \"function\": \"handle\", \"class\": \"Illuminate\\\\Foundation\\\\Http\\\\Middleware\\\\ConvertEmptyStringsToNull\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Foundation\\\\Http\\\\Middleware\\\\TransformsRequest.php\", \"line\": 21, \"function\": \"{closure:{closure:Illuminate\\\\Pipeline\\\\Pipeline::carry():194}:195}\", \"class\": \"Illuminate\\\\Pipeline\\\\Pipeline\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Foundation\\\\Http\\\\Middleware\\\\TrimStrings.php\", \"line\": 51, \"function\": \"handle\", \"class\": \"Illuminate\\\\Foundation\\\\Http\\\\Middleware\\\\TransformsRequest\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Pipeline\\\\Pipeline.php\", \"line\": 219, \"function\": \"handle\", \"class\": \"Illuminate\\\\Foundation\\\\Http\\\\Middleware\\\\TrimStrings\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Http\\\\Middleware\\\\ValidatePostSize.php\", \"line\": 27, \"function\": \"{closure:{closure:Illuminate\\\\Pipeline\\\\Pipeline::carry():194}:195}\", \"class\": \"Illuminate\\\\Pipeline\\\\Pipeline\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Pipeline\\\\Pipeline.php\", \"line\": 219, \"function\": \"handle\", \"class\": \"Illuminate\\\\Http\\\\Middleware\\\\ValidatePostSize\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Foundation\\\\Http\\\\Middleware\\\\PreventRequestsDuringMaintenance.php\", \"line\": 109, \"function\": \"{closure:{closure:Illuminate\\\\Pipeline\\\\Pipeline::carry():194}:195}\", \"class\": \"Illuminate\\\\Pipeline\\\\Pipeline\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Pipeline\\\\Pipeline.php\", \"line\": 219, \"function\": \"handle\", \"class\": \"Illuminate\\\\Foundation\\\\Http\\\\Middleware\\\\PreventRequestsDuringMaintenance\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Http\\\\Middleware\\\\HandleCors.php\", \"line\": 61, \"function\": \"{closure:{closure:Illuminate\\\\Pipeline\\\\Pipeline::carry():194}:195}\", \"class\": \"Illuminate\\\\Pipeline\\\\Pipeline\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Pipeline\\\\Pipeline.php\", \"line\": 219, \"function\": \"handle\", \"class\": \"Illuminate\\\\Http\\\\Middleware\\\\HandleCors\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Http\\\\Middleware\\\\TrustProxies.php\", \"line\": 58, \"function\": \"{closure:{closure:Illuminate\\\\Pipeline\\\\Pipeline::carry():194}:195}\", \"class\": \"Illuminate\\\\Pipeline\\\\Pipeline\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Pipeline\\\\Pipeline.php\", \"line\": 219, \"function\": \"handle\", \"class\": \"Illuminate\\\\Http\\\\Middleware\\\\TrustProxies\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Foundation\\\\Http\\\\Middleware\\\\InvokeDeferredCallbacks.php\", \"line\": 22, \"function\": \"{closure:{closure:Illuminate\\\\Pipeline\\\\Pipeline::carry():194}:195}\", \"class\": \"Illuminate\\\\Pipeline\\\\Pipeline\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Pipeline\\\\Pipeline.php\", \"line\": 219, \"function\": \"handle\", \"class\": \"Illuminate\\\\Foundation\\\\Http\\\\Middleware\\\\InvokeDeferredCallbacks\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Http\\\\Middleware\\\\ValidatePathEncoding.php\", \"line\": 28, \"function\": \"{closure:{closure:Illuminate\\\\Pipeline\\\\Pipeline::carry():194}:195}\", \"class\": \"Illuminate\\\\Pipeline\\\\Pipeline\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Pipeline\\\\Pipeline.php\", \"line\": 219, \"function\": \"handle\", \"class\": \"Illuminate\\\\Http\\\\Middleware\\\\ValidatePathEncoding\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Pipeline\\\\Pipeline.php\", \"line\": 137, \"function\": \"{closure:{closure:Illuminate\\\\Pipeline\\\\Pipeline::carry():194}:195}\", \"class\": \"Illuminate\\\\Pipeline\\\\Pipeline\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Foundation\\\\Http\\\\Kernel.php\", \"line\": 175, \"function\": \"then\", \"class\": \"Illuminate\\\\Pipeline\\\\Pipeline\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Foundation\\\\Http\\\\Kernel.php\", \"line\": 144, \"function\": \"sendRequestThroughRouter\", \"class\": \"Illuminate\\\\Foundation\\\\Http\\\\Kernel\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Foundation\\\\Application.php\", \"line\": 1227, \"function\": \"handle\", \"class\": \"Illuminate\\\\Foundation\\\\Http\\\\Kernel\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\public\\\\index.php\", \"line\": 20, \"function\": \"handleRequest\", \"class\": \"Illuminate\\\\Foundation\\\\Application\", \"type\": \"->\" }, { \"file\": \"C:\\\\xampp\\\\htdocs\\\\SunnyTripsCapstoneV2\\\\vendor\\\\laravel\\\\framework\\\\src\\\\Illuminate\\\\Foundation\\\\resources\\\\server.php\", \"line\": 23, \"function\": \"require_once\" } ] }"

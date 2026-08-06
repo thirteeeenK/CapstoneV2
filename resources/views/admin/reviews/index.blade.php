@@ -162,102 +162,236 @@
         </div>
 
         {{-- Recent reviews table --}}
-        <section class="mt-6 bg-white rounded-3xl border border-slate-200/80 overflow-hidden">
-            <header class="px-6 py-4 border-b border-slate-200 flex items-center justify-between gap-3">
+        <section class="mt-6 bg-white rounded-3xl border border-slate-200/80 overflow-hidden"
+            x-data="reviewFilters({
+                star: @js(request('star', '')),
+                sentiment: @js(request('sentiment', '')),
+                entityType: @js(request('entity_type', '')),
+                destinationId: @js(request('destination_id', '')),
+                hotelId: @js(request('hotel_id', '')),
+                roomId: @js(request('room_id', '')),
+                destinations: @js($destinations->toArray()),
+                hotels: @js($hotels->toArray()),
+                rooms: @js($rooms->toArray()),
+            })">
+            <header class="px-6 py-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <h2 class="font-headline text-sm font-bold text-slate-900">All Reviews</h2>
-                <span class="font-label text-[10px] uppercase font-bold tracking-[0.15em] text-slate-400">
-                    {{ $reviews->total() }} total
-                </span>
+                <div class="flex items-center gap-3">
+                    <span class="font-label text-[10px] uppercase font-bold tracking-[0.15em] text-slate-400">
+                        <span x-text="totalReviews"></span> total
+                    </span>
+                    <a href="{{ route('admin.reviews.create') }}"
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-ocean-600 hover:bg-ocean-700 text-white text-[10px] font-bold transition cursor-pointer">
+                        <span class="material-symbols-outlined text-[13px]">add_comment</span>
+                        Create review
+                    </a>
+                </div>
             </header>
 
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-sm">
-                    <thead class="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-400 font-bold">
-                        <tr>
-                            <th class="px-6 py-3">Guest</th>
-                            <th class="px-4 py-3">Listing</th>
-                            <th class="px-4 py-3">Rating</th>
-                            <th class="px-4 py-3">Sentiment</th>
-                            <th class="px-4 py-3">Comment</th>
-                            <th class="px-4 py-3">Status</th>
-                            <th class="px-4 py-3 text-right">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100">
-                        @forelse ($reviews as $review)
-                            <tr>
-                                <td class="px-6 py-3.5">
-                                    <p class="text-xs font-bold text-slate-900">{{ $review->reviewer_alias }}</p>
-                                    <p class="text-[10px] text-slate-400">{{ $review->created_at?->format('M j, Y · g:i A') }}</p>
-                                </td>
-                                <td class="px-4 py-3.5">
-                                    <p class="text-xs font-semibold text-slate-700 truncate max-w-[180px]">
-                                        {{ $review->reviewable instanceof \App\Models\RoomType ? ($review->reviewable->room_name . ' · ' . optional($review->reviewable->hotel)->hotel_name) : ($review->reviewable?->hotel_name ?? $review->reviewable?->room_name ?? $review->reviewable?->activity_name ?? $review->reviewable?->name ?? '—') }}
-                                    </p>
-                                </td>
-                                <td class="px-4 py-3.5">
-                                    <span class="flex items-center gap-0.5 text-amber-400">
-                                        @for ($i = 1; $i <= 5; $i++)
-                                            <span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' {{ $i <= (int)$review->rating ? 1 : 0 }}">star</span>
-                                        @endfor
-                                    </span>
-                                </td>
-                                <td class="px-4 py-3.5">
-                                    @php
-                                        $m = $sentimentMeta[$review->sentiment] ?? $sentimentMeta['neutral'];
-                                    @endphp
-                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold border {{ $review->sentiment === 'positive' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : ($review->sentiment === 'negative' ? 'bg-rose-50 text-rose-700 border-rose-100' : 'bg-amber-50 text-amber-700 border-amber-100') }}">
-                                        <span class="material-symbols-outlined text-[12px]">{{ $m['icon'] }}</span>
-                                        {{ $m['label'] }}
-                                        <span class="ml-0.5">{{ number_format((float)($review->sentiment_score ?? 0), 2) }}</span>
-                                    </span>
-                                </td>
-                                <td class="px-4 py-3.5">
-                                    <p class="text-[11px] text-slate-600 line-clamp-2 max-w-[260px]">{{ $review->comment }}</p>
-                                </td>
-                                <td class="px-4 py-3.5">
-                                    <span class="inline-flex px-2 py-0.5 rounded-lg text-[10px] font-bold {{ $review->is_published ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-slate-100 text-slate-500 border border-slate-200' }}">
-                                        {{ $review->is_published ? 'Published' : 'Hidden' }}
-                                    </span>
-                                </td>
-                                <td class="px-4 py-3.5">
-                                    <div class="flex items-center justify-end gap-2">
-                                        <form method="POST" action="{{ route('admin.reviews.toggle-publish', $review->id) }}">
-                                            @csrf
-                                            <button type="submit"
-                                                class="px-2.5 py-1.5 rounded-lg text-[10px] font-bold border {{ $review->is_published ? 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100' : 'bg-ocean-50 text-ocean-700 border-ocean-100 hover:bg-ocean-100' }} transition cursor-pointer"
-                                                title="{{ $review->is_published ? 'Hide from public' : 'Publish' }}">
-                                                {{ $review->is_published ? 'Hide' : 'Publish' }}
-                                            </button>
-                                        </form>
-                                        <form method="POST" action="{{ route('admin.reviews.destroy', $review->id) }}"
-                                            onsubmit="return confirm('Delete review #{{ $review->id }} permanently? This cannot be undone.')">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit"
-                                                class="px-2.5 py-1.5 rounded-lg text-[10px] font-bold bg-rose-50 text-rose-600 border border-rose-100 hover:bg-rose-100 transition cursor-pointer">
-                                                Delete
-                                            </button>
-                                        </form>
-                                    </div>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="7" class="px-6 py-12 text-center text-slate-400 text-xs">
-                                    No reviews submitted yet.
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+            {{-- Filter bar --}}
+            <div class="px-6 py-3 border-b border-slate-100 bg-slate-50/60 space-y-2.5">
+                {{-- Row 1: Star + Sentiment --}}
+                <div class="flex flex-wrap items-center gap-4">
+                    <div class="flex items-center gap-1.5">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Star</span>
+                        <button @click="setFilter('star', '')"
+                            class="px-2 py-0.5 rounded-md text-[10px] font-bold border transition cursor-pointer"
+                            :class="star === '' ? 'bg-ocean-600 text-white border-ocean-600' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-100'">
+                            All
+                        </button>
+                        @for ($s = 5; $s >= 1; $s--)
+                            <button @click="setFilter('star', '{{ $s }}')"
+                                class="px-2 py-0.5 rounded-md text-[10px] font-bold border transition cursor-pointer"
+                                :class="star === '{{ $s }}' ? 'bg-ocean-600 text-white border-ocean-600' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-100'">
+                                {{ $s }}★
+                            </button>
+                        @endfor
+                    </div>
+                    <div class="w-px h-4 bg-slate-200"></div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Sentiment</span>
+                        <button @click="setFilter('sentiment', '')"
+                            class="px-2 py-0.5 rounded-md text-[10px] font-bold border transition cursor-pointer"
+                            :class="sentiment === '' ? 'bg-ocean-600 text-white border-ocean-600' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-100'">
+                            All
+                        </button>
+                        @foreach (['positive' => 'Positive', 'neutral' => 'Neutral', 'negative' => 'Negative'] as $val => $lbl)
+                            <button @click="setFilter('sentiment', '{{ $val }}')"
+                                class="px-2 py-0.5 rounded-md text-[10px] font-bold border transition cursor-pointer"
+                                :class="sentiment === '{{ $val }}' ? 'bg-ocean-600 text-white border-ocean-600' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-100'">
+                                {{ $lbl }}
+                            </button>
+                        @endforeach
+                    </div>
+                </div>
+                {{-- Row 2: Entity Type + Destination + Hotel + Room --}}
+                <div class="flex flex-wrap items-center gap-4">
+                    <div class="flex items-center gap-1.5">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Entity</span>
+                        <button @click="setFilter('entityType', '')"
+                            class="px-2 py-0.5 rounded-md text-[10px] font-bold border transition cursor-pointer"
+                            :class="entityType === '' ? 'bg-ocean-600 text-white border-ocean-600' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-100'">
+                            All
+                        </button>
+                        @foreach (['hotel' => 'Hotel', 'room' => 'Room', 'activity' => 'Activity', 'package' => 'Package'] as $val => $lbl)
+                            <button @click="setFilter('entityType', '{{ $val }}')"
+                                class="px-2 py-0.5 rounded-md text-[10px] font-bold border transition cursor-pointer"
+                                :class="entityType === '{{ $val }}' ? 'bg-ocean-600 text-white border-ocean-600' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-100'">
+                                {{ $lbl }}
+                            </button>
+                        @endforeach
+                    </div>
+                    <div class="w-px h-4 bg-slate-200"></div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Destination</span>
+                        <select x-model="destinationId" @change="onDestinationChange()"
+                            class="px-2 py-0.5 rounded-md text-[10px] font-bold border bg-white text-slate-700 border-slate-200 hover:bg-slate-100 transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-ocean-500/30 focus:border-ocean-400">
+                            <option value="">All</option>
+                            <template x-for="d in allDestinations" :key="d.id">
+                                <option :value="d.id" x-text="d.name"></option>
+                            </template>
+                        </select>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Hotel</span>
+                        <select x-model="hotelId" @change="onHotelChange()"
+                            class="px-2 py-0.5 rounded-md text-[10px] font-bold border bg-white text-slate-700 border-slate-200 hover:bg-slate-100 transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-ocean-500/30 focus:border-ocean-400">
+                            <option value="">All</option>
+                            <template x-for="h in filteredHotels" :key="h.id">
+                                <option :value="h.id" x-text="h.hotel_name"></option>
+                            </template>
+                        </select>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Room</span>
+                        <select x-model="roomId" @change="applyFilter()"
+                            class="px-2 py-0.5 rounded-md text-[10px] font-bold border bg-white text-slate-700 border-slate-200 hover:bg-slate-100 transition cursor-pointer focus:outline-none focus:ring-2 focus:ring-ocean-500/30 focus:border-ocean-400">
+                            <option value="">All</option>
+                            <template x-for="r in filteredRooms" :key="r.id">
+                                <option :value="r.id" x-text="r.room_name"></option>
+                            </template>
+                        </select>
+                    </div>
+                </div>
             </div>
 
-            @if ($reviews->hasPages())
-                <div class="px-6 py-4 border-t border-slate-200">
-                    {{ $reviews->links() }}
-                </div>
-            @endif
+            <div id="reviews-table">
+                @include('admin.reviews._table', ['reviews' => $reviews, 'sentimentMeta' => $sentimentMeta ?? []])
+            </div>
         </section>
     </div>
+
+    <script>
+        function reviewFilters(initial) {
+            return {
+                star: initial.star,
+                sentiment: initial.sentiment,
+                entityType: initial.entityType,
+                destinationId: initial.destinationId,
+                hotelId: initial.hotelId,
+                roomId: initial.roomId,
+                allDestinations: initial.destinations,
+                allHotels: initial.hotels,
+                allRooms: initial.rooms,
+                totalReviews: {{ $reviews->total() }},
+                loading: false,
+                navigating: false,
+                loading: false,
+
+                get filteredHotels() {
+                    if (!this.destinationId) return this.allHotels;
+                    return this.allHotels.filter(h => String(h.destination_id) === String(this.destinationId));
+                },
+
+                get filteredRooms() {
+                    if (!this.hotelId) {
+                        if (!this.destinationId) return this.allRooms;
+                        const destHotelIds = this.filteredHotels.map(h => String(h.id));
+                        return this.allRooms.filter(r => destHotelIds.includes(String(r.hotel_id)));
+                    }
+                    return this.allRooms.filter(r => String(r.hotel_id) === String(this.hotelId));
+                },
+
+                setFilter(key, value) {
+                    this[key] = value;
+                    if (key === 'entityType') {
+                        this.destinationId = '';
+                        this.hotelId = '';
+                        this.roomId = '';
+                    }
+                    this.applyFilter();
+                },
+
+                onDestinationChange() {
+                    this.hotelId = '';
+                    this.roomId = '';
+                    this.applyFilter();
+                },
+
+                onHotelChange() {
+                    this.roomId = '';
+                    this.applyFilter();
+                },
+
+                buildParams() {
+                    const params = {};
+                    if (this.star) params.star = this.star;
+                    if (this.sentiment) params.sentiment = this.sentiment;
+                    if (this.entityType) params.entity_type = this.entityType;
+                    if (this.destinationId) params.destination_id = this.destinationId;
+                    if (this.hotelId) params.hotel_id = this.hotelId;
+                    if (this.roomId) params.room_id = this.roomId;
+                    params.partial = 1;
+                    return new URLSearchParams(params).toString();
+                },
+
+                async applyFilter() {
+                    this.loading = true;
+                    try {
+                        const qs = this.buildParams();
+                        const resp = await fetch(`{{ route('admin.reviews.index') }}?${qs}`, {
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                        });
+                        const html = await resp.text();
+                        document.getElementById('reviews-table').innerHTML = html;
+
+                        // Update total count from data attribute
+                        const tableDiv = document.querySelector('#reviews-table .overflow-x-auto');
+                        if (tableDiv && tableDiv.dataset.total !== undefined) {
+                            this.totalReviews = parseInt(tableDiv.dataset.total);
+                        }
+
+                        // Update URL without reload
+                        if (!this.navigating) {
+                            const cleanParams = this.buildParams().replace(/[&?]partial=1/, '').replace(/^&/, '');
+                            const url = cleanParams
+                                ? `{{ route('admin.reviews.index') }}?${cleanParams}`
+                                : `{{ route('admin.reviews.index') }}`;
+                            history.pushState(null, '', url);
+                        }
+                    } catch (e) {
+                        console.error('Filter fetch failed:', e);
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                init() {
+                    window.addEventListener('popstate', () => {
+                        const params = new URLSearchParams(window.location.search);
+                        this.star = params.get('star') || '';
+                        this.sentiment = params.get('sentiment') || '';
+                        this.entityType = params.get('entity_type') || '';
+                        this.destinationId = params.get('destination_id') || '';
+                        this.hotelId = params.get('hotel_id') || '';
+                        this.roomId = params.get('room_id') || '';
+                        this.navigating = true;
+                        this.applyFilter().then(() => {
+                            this.navigating = false;
+                        });
+                    });
+                }
+            }
+        }
+    </script>
 @endsection

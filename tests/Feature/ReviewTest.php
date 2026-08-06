@@ -20,6 +20,10 @@ beforeEach(function () {
                     'sentiment' => 'positive',
                     'confidence_score' => 0.94,
                     'extracted_keywords' => ['ocean view', 'clean room', 'friendly staff'],
+                    'ai_summary_text' => "- Guests love the ocean view\n- Staff is friendly",
+                    'top_positive_highlights' => ['ocean view'],
+                    'top_negative_highlights' => [],
+                    'most_frequent_keywords' => [['keyword' => 'ocean view', 'count' => 2]],
                 ])]]]],
             ],
         ], 200),
@@ -306,4 +310,288 @@ it('formats the reviewer alias as first name + last initial', function () {
     ])->assertStatus(201);
 
     expect(Review::first()->reviewer_alias)->toBe('Juan C.');
+});
+
+it('skips summary regeneration below the configurable threshold', function () {
+    $morph = (new RoomType)->getMorphClass();
+
+    foreach (range(1, 2) as $i) {
+        $booking = makeCompletedBooking($this->user, $this->room);
+        Review::create([
+            'booking_id' => $booking->id,
+            'user_id' => $this->user->id,
+            'reviewable_type' => $morph,
+            'reviewable_id' => $this->room->id,
+            'hotel_id' => $this->room->hotel_id,
+            'room_id' => $this->room->id,
+            'rating' => 5,
+            'comment' => "Threshold probe review number {$i}.",
+        ]);
+    }
+
+    $summary = ReviewSummary::create([
+        'summarizable_type' => $morph,
+        'summarizable_id' => $this->room->id,
+        'total_reviews' => 2,
+        'average_rating' => 5.00,
+        'ai_summary_text' => 'ORIGINAL CACHED SUMMARY',
+        'last_analyzed_at' => now()->subDay(),
+    ]);
+
+    config(['services.gemini.review_summary_threshold' => 3]);
+
+    (new \App\Jobs\UpdateEntityReviewSummaryJob($morph, $this->room->id, 'Deluxe Ocean View'))
+        ->handle(app(\App\Services\GeminiService::class));
+
+    $summary->refresh();
+
+    expect($summary->last_analyzed_at->toDateString())->toBe(now()->subDay()->toDateString())
+        ->and($summary->ai_summary_text)->toBe('ORIGINAL CACHED SUMMARY');
+});
+
+it('regenerates the summary once the threshold of new reviews is reached', function () {
+    $morph = (new RoomType)->getMorphClass();
+
+    foreach (range(1, 3) as $i) {
+        $booking = makeCompletedBooking($this->user, $this->room);
+        Review::create([
+            'booking_id' => $booking->id,
+            'user_id' => $this->user->id,
+            'reviewable_type' => $morph,
+            'reviewable_id' => $this->room->id,
+            'hotel_id' => $this->room->hotel_id,
+            'room_id' => $this->room->id,
+            'rating' => 5,
+            'comment' => "Threshold probe review number {$i}.",
+        ]);
+    }
+
+    $summary = ReviewSummary::create([
+        'summarizable_type' => $morph,
+        'summarizable_id' => $this->room->id,
+        'total_reviews' => 3,
+        'average_rating' => 5.00,
+        'ai_summary_text' => 'ORIGINAL CACHED SUMMARY',
+        'last_analyzed_at' => now()->subDay(),
+    ]);
+
+    config(['services.gemini.review_summary_threshold' => 3]);
+
+    (new \App\Jobs\UpdateEntityReviewSummaryJob($morph, $this->room->id, 'Deluxe Ocean View'))
+        ->handle(app(\App\Services\GeminiService::class));
+
+    $summary->refresh();
+
+    expect($summary->last_analyzed_at->gte(now()->subMinutes(5)))->toBeTrue()
+        ->and($summary->ai_summary_text)->toContain('ocean view');
+});
+
+it('shows only featured published reviews on the landing page', function () {
+    $bookingOne = makeCompletedBooking($this->user, $this->room);
+
+    $this->actingAs($this->user)->postJson(route('reviews.store'), [
+        'booking_id' => $bookingOne->id,
+        'rating' => 5,
+        'comment' => 'FEATURED TESTIMONIAL OCEANFRONT PARADISE',
+    ])->assertStatus(201);
+
+    $featured = Review::first();
+    $featured->is_featured = true;
+    $featured->save();
+
+    $bookingTwo = makeCompletedBooking($this->user, $this->room);
+
+    $this->actingAs($this->user)->postJson(route('reviews.store'), [
+        'booking_id' => $bookingTwo->id,
+        'rating' => 4,
+        'comment' => 'REGULAR REVIEW NOT FEATURED ANYWHERE',
+    ])->assertStatus(201);
+
+    $this->get(route('landing'))
+        ->assertOk()
+        ->assertSee('FEATURED TESTIMONIAL OCEANFRONT PARADISE', false)
+        ->assertDontSee('REGULAR REVIEW NOT FEATURED ANYWHERE', false)
+        ->assertSee('See all reviews', false)
+        ->assertSee(route('reviews.index'), false);
+});
+
+it('lets admins feature and unfeature a review', function () {
+    $booking = makeCompletedBooking($this->user, $this->room);
+
+    $this->actingAs($this->user)->postJson(route('reviews.store'), [
+        'booking_id' => $booking->id,
+        'rating' => 5,
+        'comment' => 'A delightful stay worth sharing on the homepage.',
+    ])->assertStatus(201);
+
+    $review = Review::first();
+    expect($review->is_featured)->toBeFalse();
+
+    $this->actingAs($this->admin, 'admin')
+        ->post(route('admin.reviews.toggle-featured', $review->id))
+        ->assertRedirect();
+
+    expect($review->fresh()->is_featured)->toBeTrue();
+
+    $this->actingAs($this->admin, 'admin')
+        ->post(route('admin.reviews.toggle-featured', $review->id))
+        ->assertRedirect();
+
+    expect($review->fresh()->is_featured)->toBeFalse();
+});
+
+it('lets admins backfill a review for a past booking', function () {
+    $booking = makeCompletedBooking($this->user, $this->room);
+
+    $this->actingAs($this->admin, 'admin')
+        ->post(route('admin.reviews.store'), [
+            'booking_id' => $booking->id,
+            'rating' => 5,
+            'comment' => 'Backfilled feedback recorded by the admin for a past trip.',
+        ])
+        ->assertRedirect(route('admin.reviews.index'));
+
+    $review = Review::first();
+
+    expect($review)->not->toBeNull()
+        ->and($review->booking_id)->toBe($booking->id)
+        ->and($review->user_id)->toBe($this->user->id)
+        ->and($review->reviewable_type)->toBe((new RoomType)->getMorphClass())
+        ->and($review->room_id)->toBe($this->room->id)
+        ->and($review->is_published)->toBeTrue()
+        ->and($review->is_verified_booking)->toBeTrue();
+});
+
+it('blocks admin backfill for an already-reviewed booking', function () {
+    $booking = makeCompletedBooking($this->user, $this->room);
+
+    $this->actingAs($this->user)->postJson(route('reviews.store'), [
+        'booking_id' => $booking->id,
+        'rating' => 5,
+        'comment' => 'The original guest review for this booking.',
+    ])->assertStatus(201);
+
+    $this->actingAs($this->admin, 'admin')
+        ->post(route('admin.reviews.store'), [
+            'booking_id' => $booking->id,
+            'rating' => 3,
+            'comment' => 'This duplicate backfill must be rejected.',
+        ])
+        ->assertStatus(422);
+
+    expect(Review::count())->toBe(1);
+});
+
+it('lists unreviewed completed bookings on the admin create form', function () {
+    $booking = makeCompletedBooking($this->user, $this->room);
+
+    $this->actingAs($this->admin, 'admin')
+        ->get(route('admin.reviews.create'))
+        ->assertOk()
+        ->assertSee($booking->booking_code)
+        ->assertSee('Deluxe Ocean View');
+
+    Review::create([
+        'booking_id' => $booking->id,
+        'user_id' => $this->user->id,
+        'reviewable_type' => (new RoomType)->getMorphClass(),
+        'reviewable_id' => $this->room->id,
+        'hotel_id' => $this->room->hotel_id,
+        'room_id' => $this->room->id,
+        'rating' => 5,
+        'comment' => 'Already reviewed so it must disappear from the picker.',
+    ]);
+
+    $this->actingAs($this->admin, 'admin')
+        ->get(route('admin.reviews.create'))
+        ->assertOk()
+        ->assertDontSee($booking->booking_code);
+});
+
+it('lets admins create a manual review without a booking', function () {
+    $this->actingAs($this->admin, 'admin')
+        ->post(route('admin.reviews.store'), [
+            'review_mode' => 'manual',
+            'reviewer_name' => 'Maria Santos',
+            'manual_entity_type' => 'room',
+            'manual_entity_id' => $this->room->id,
+            'rating' => 5,
+            'comment' => 'Absolutely stunning ocean view room. The staff was incredibly attentive and the amenities were top-notch.',
+        ])
+        ->assertRedirect(route('admin.reviews.index'));
+
+    $review = Review::first();
+
+    expect($review)->not->toBeNull()
+        ->and($review->booking_id)->toBeNull()
+        ->and($review->user_id)->toBeNull()
+        ->and($review->reviewer_name)->toBe('Maria Santos')
+        ->and($review->reviewable_type)->toBe((new RoomType)->getMorphClass())
+        ->and($review->room_id)->toBe($this->room->id)
+        ->and($review->is_verified_booking)->toBeFalse()
+        ->and($review->is_published)->toBeTrue()
+        ->and($review->sentiment)->toBe(Review::SENTIMENT_POSITIVE)
+        ->and($review->extracted_keywords)->toContain('ocean view');
+});
+
+it('lets admins create a manual review for a hotel', function () {
+    $hotel = HotelModel::first();
+
+    $this->actingAs($this->admin, 'admin')
+        ->post(route('admin.reviews.store'), [
+            'review_mode' => 'manual',
+            'reviewer_name' => 'Kenji Tanaka',
+            'manual_entity_type' => 'hotel',
+            'manual_entity_id' => $hotel->id,
+            'rating' => 4,
+            'comment' => 'Beautiful resort with excellent facilities. Would definitely recommend to other travelers.',
+        ])
+        ->assertRedirect(route('admin.reviews.index'));
+
+    $review = Review::first();
+
+    expect($review->reviewer_name)->toBe('Kenji Tanaka')
+        ->and($review->reviewable_type)->toBe((new HotelModel)->getMorphClass())
+        ->and($review->hotel_id)->toBe($hotel->id)
+        ->and($review->is_verified_booking)->toBeFalse();
+});
+
+it('uses reviewer_name as the alias for manual reviews', function () {
+    $this->actingAs($this->admin, 'admin')
+        ->post(route('admin.reviews.store'), [
+            'review_mode' => 'manual',
+            'reviewer_name' => 'Sarah Jenkins',
+            'manual_entity_type' => 'activity',
+            'manual_entity_id' => $this->activity->id,
+            'rating' => 5,
+            'comment' => 'The island hopping tour was spectacular. Great guide and beautiful stops.',
+        ])
+        ->assertRedirect();
+
+    expect(Review::first()->reviewer_alias)->toBe('Sarah Jenkins');
+});
+
+it('validates manual review fields', function () {
+    $this->actingAs($this->admin, 'admin')
+        ->postJson(route('admin.reviews.store'), [
+            'review_mode' => 'manual',
+            'reviewer_name' => '',
+            'manual_entity_type' => 'invalid',
+            'manual_entity_id' => 99999,
+            'rating' => 6,
+            'comment' => 'too short',
+        ])
+        ->assertStatus(422);
+
+    expect(Review::count())->toBe(0);
+});
+
+it('shows entity collections on the admin create form for manual mode', function () {
+    $this->actingAs($this->admin, 'admin')
+        ->get(route('admin.reviews.create'))
+        ->assertOk()
+        ->assertSee('Manual Entry')
+        ->assertSee('Deluxe Ocean View')
+        ->assertSee('Island Hopping Tour')
+        ->assertSee('Boracay Escape Promo');
 });

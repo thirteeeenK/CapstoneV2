@@ -1,0 +1,392 @@
+- generic [ref=f66e1]:
+  - banner [ref=f66e2]:
+    - generic [ref=f66e3]:
+      - generic [ref=f66e4]:
+        - generic [ref=f66e5]: admin_panel_settings
+        - generic [ref=f66e6]:
+          - generic [ref=f66e7]: SunnyTrips
+          - generic [ref=f66e8]: Admin
+      - generic [ref=f66e9]:
+        - generic [ref=f66e10]:
+          - generic [ref=f66e11]: A
+          - generic "sunnytrips@gmail.com" [ref=f66e12]: Administrator
+        - button "logout Sign out" [ref=f66e15] [cursor=pointer]:
+          - generic [ref=f66e16]: logout
+          - generic [ref=f66e17]: Sign out
+  - complementary [ref=f66e18]:
+    - generic [ref=f66e19]:
+      - heading "SunnyTrips" [level=1] [ref=f66e20]
+      - paragraph [ref=f66e21]: Admin Portal
+    - navigation [ref=f66e22]:
+      - generic [ref=f66e23]:
+        - heading "Overview" [level=2] [ref=f66e24]
+        - generic [ref=f66e25]:
+          - link "dashboard Dashboard" [ref=f66e26] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/dashboard
+            - generic [ref=f66e27]: dashboard
+            - generic [ref=f66e28]: Dashboard
+          - link "psychology AI Insights" [ref=f66e29] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=f66e30]: psychology
+            - generic [ref=f66e31]: AI Insights
+          - link "analytics Generate Reports" [ref=f66e32] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=f66e33]: analytics
+            - generic [ref=f66e34]: Generate Reports
+      - generic [ref=f66e35]:
+        - heading "Operations" [level=2] [ref=f66e36]
+        - generic [ref=f66e37]:
+          - link "calendar_month Bookings" [ref=f66e38] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/bookings
+            - generic [ref=f66e39]: calendar_month
+            - generic [ref=f66e40]: Bookings
+          - link "group Registered Users" [ref=f66e41] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/registered-users
+            - generic [ref=f66e42]: group
+            - generic [ref=f66e43]: Registered Users
+          - link "inventory Manage Inventory" [ref=f66e44] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/inventory
+            - generic [ref=f66e45]: inventory
+            - generic [ref=f66e46]: Manage Inventory
+          - link "tune Passenger Rules & Discounts" [ref=f66e47] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/passenger-rules
+            - generic [ref=f66e48]: tune
+            - generic [ref=f66e49]: Passenger Rules & Discounts
+      - generic [ref=f66e50]:
+        - heading "Catalog" [level=2] [ref=f66e51]
+        - generic [ref=f66e52]:
+          - link "place Destinations" [ref=f66e53] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/destinations
+            - generic [ref=f66e54]: place
+            - generic [ref=f66e55]: Destinations
+          - link "house Add Hotel Information" [ref=f66e56] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/hotels/manage
+            - generic [ref=f66e57]: house
+            - generic [ref=f66e58]: Add Hotel Information
+          - link "hotel Show Hotel Listing" [ref=f66e59] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/hotels
+            - generic [ref=f66e60]: hotel
+            - generic [ref=f66e61]: Show Hotel Listing
+          - link "card_travel Tour Packages & Promos" [ref=f66e62] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/packages
+            - generic [ref=f66e63]: card_travel
+            - generic [ref=f66e64]: Tour Packages & Promos
+          - link "explore Activities & Tours" [ref=f66e65] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/activities
+            - generic [ref=f66e66]: explore
+            - generic [ref=f66e67]: Activities & Tours
+          - link "extension Transfers and Add-ons" [ref=f66e68] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/addons
+            - generic [ref=f66e69]: extension
+            - generic [ref=f66e70]: Transfers and Add-ons
+          - link "psychology Manage AI" [ref=f66e71] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=f66e72]: psychology
+            - generic [ref=f66e73]: Manage AI
+      - generic [ref=f66e74]:
+        - heading "Legal" [level=2] [ref=f66e75]
+        - link "gavel Legal Documents" [ref=f66e77] [cursor=pointer]:
+          - /url: http://localhost:8000/admin/legal
+          - generic [ref=f66e78]: gavel
+          - generic [ref=f66e79]: Legal Documents
+      - generic [ref=f66e80]:
+        - heading "Community" [level=2] [ref=f66e81]
+        - link "reviews Reviews & Sentiment" [ref=f66e83] [cursor=pointer]:
+          - /url: http://localhost:8000/admin/reviews
+          - generic [ref=f66e84]: reviews
+          - generic [ref=f66e85]: Reviews & Sentiment
+  - main [ref=f66e86]:
+    - generic [ref=f66e88]:
+      - generic [ref=f66e89]:
+        - generic [ref=f66e90]:
+          - heading "Review Analytics & Sentiment" [level=1] [ref=f66e91]
+          - paragraph [ref=f66e92]: AI-assisted DSS metrics across all verified guest feedback.
+        - generic [ref=f66e93]:
+          - generic [ref=f66e94]: 59 reviews
+          - generic [ref=f66e95]: ★ 4.19 avg
+      - generic [ref=f66e96]:
+        - generic [ref=f66e97]:
+          - heading "donut_small Sentiment Distribution" [level=2] [ref=f66e98]:
+            - generic [ref=f66e99]: donut_small
+            - text: Sentiment Distribution
+          - generic [ref=f66e103]:
+            - generic [ref=f66e104]:
+              - generic [ref=f66e106]: Positive
+              - generic [ref=f66e107]: "41"
+              - generic [ref=f66e108]: 69%
+            - generic [ref=f66e109]:
+              - generic [ref=f66e111]: Neutral
+              - generic [ref=f66e112]: "13"
+              - generic [ref=f66e113]: 22%
+            - generic [ref=f66e114]:
+              - generic [ref=f66e116]: Negative
+              - generic [ref=f66e117]: "5"
+              - generic [ref=f66e118]: 8%
+        - generic [ref=f66e119]:
+          - heading "notification_important Needs Improvement Alerts" [level=2] [ref=f66e120]:
+            - generic [ref=f66e121]: notification_important
+            - text: Needs Improvement Alerts
+          - generic [ref=f66e123]:
+            - generic [ref=f66e124]:
+              - generic [ref=f66e125]:
+                - paragraph [ref=f66e126]: 6–7 Destinations (Aircon Van)
+                - paragraph [ref=f66e127]: 1 reviews · 2.0 ★ avg
+              - generic [ref=f66e128]: 100% negative
+            - generic [ref=f66e129]:
+              - generic [ref=f66e130]:
+                - paragraph [ref=f66e131]: Frendz Resort & Hostel
+                - paragraph [ref=f66e132]: 2 reviews · 2.5 ★ avg
+              - generic [ref=f66e133]: 50% negative
+            - generic [ref=f66e134]:
+              - generic [ref=f66e135]:
+                - paragraph [ref=f66e136]: The Muse Hotel
+                - paragraph [ref=f66e137]: 2 reviews · 3.0 ★ avg
+              - generic [ref=f66e138]: 50% negative
+            - generic [ref=f66e139]:
+              - generic [ref=f66e140]:
+                - paragraph [ref=f66e141]: Premier Family Room
+                - paragraph [ref=f66e142]: 2 reviews · 2.5 ★ avg
+              - generic [ref=f66e143]: 50% negative
+            - generic [ref=f66e144]:
+              - generic [ref=f66e145]:
+                - paragraph [ref=f66e146]: Breeze Garden Room
+                - paragraph [ref=f66e147]: 2 reviews · 3.5 ★ avg
+              - generic [ref=f66e148]: 50% negative
+        - generic [ref=f66e149]:
+          - heading "workspace_premium Top Rated Listings" [level=2] [ref=f66e150]:
+            - generic [ref=f66e151]: workspace_premium
+            - text: Top Rated Listings
+          - generic [ref=f66e153]:
+            - generic [ref=f66e154]:
+              - paragraph [ref=f66e155]: Hotels
+              - list [ref=f66e156]:
+                - listitem [ref=f66e157]:
+                  - generic [ref=f66e158]: "1"
+                  - generic [ref=f66e159]:
+                    - paragraph [ref=f66e160]: Happiness Hostel
+                    - paragraph [ref=f66e161]: 2 reviews
+                  - generic [ref=f66e162]: 5.0 ★
+                - listitem [ref=f66e163]:
+                  - generic [ref=f66e164]: "2"
+                  - generic [ref=f66e165]:
+                    - paragraph [ref=f66e166]: Boracay Ocean Club Beach Resort
+                    - paragraph [ref=f66e167]: 2 reviews
+                  - generic [ref=f66e168]: 5.0 ★
+                - listitem [ref=f66e169]:
+                  - generic [ref=f66e170]: "3"
+                  - generic [ref=f66e171]:
+                    - paragraph [ref=f66e172]: My Station Hotel
+                    - paragraph [ref=f66e173]: 2 reviews
+                  - generic [ref=f66e174]: 5.0 ★
+                - listitem [ref=f66e175]:
+                  - generic [ref=f66e176]: "4"
+                  - generic [ref=f66e177]:
+                    - paragraph [ref=f66e178]: Henann Garden Resort
+                    - paragraph [ref=f66e179]: 2 reviews
+                  - generic [ref=f66e180]: 4.0 ★
+                - listitem [ref=f66e181]:
+                  - generic [ref=f66e182]: "5"
+                  - generic [ref=f66e183]:
+                    - paragraph [ref=f66e184]: Canyon Hotels & Resorts Boracay
+                    - paragraph [ref=f66e185]: 2 reviews
+                  - generic [ref=f66e186]: 4.0 ★
+            - generic [ref=f66e187]:
+              - paragraph [ref=f66e188]: Rooms
+              - list [ref=f66e189]:
+                - listitem [ref=f66e190]:
+                  - generic [ref=f66e191]: "1"
+                  - generic [ref=f66e192]:
+                    - paragraph [ref=f66e193]: Social Mixed Dormitory Bed
+                    - paragraph [ref=f66e194]: 1 reviews
+                  - generic [ref=f66e195]: 5.0 ★
+                - listitem [ref=f66e196]:
+                  - generic [ref=f66e197]: "2"
+                  - generic [ref=f66e198]:
+                    - paragraph [ref=f66e199]: Premier Ocean View Room
+                    - paragraph [ref=f66e200]: 1 reviews
+                  - generic [ref=f66e201]: 5.0 ★
+                - listitem [ref=f66e202]:
+                  - generic [ref=f66e203]: "3"
+                  - generic [ref=f66e204]:
+                    - paragraph [ref=f66e205]: Social Mixed Dormitory Bed
+                    - paragraph [ref=f66e206]: 3 reviews
+                  - generic [ref=f66e207]: 4.7 ★
+                - listitem [ref=f66e208]:
+                  - generic [ref=f66e209]: "4"
+                  - generic [ref=f66e210]:
+                    - paragraph [ref=f66e211]: Deluxe Room
+                    - paragraph [ref=f66e212]: 2 reviews
+                  - generic [ref=f66e213]: 4.5 ★
+                - listitem [ref=f66e214]:
+                  - generic [ref=f66e215]: "5"
+                  - generic [ref=f66e216]:
+                    - paragraph [ref=f66e217]: Deluxe Suite
+                    - paragraph [ref=f66e218]: 2 reviews
+                  - generic [ref=f66e219]: 4.5 ★
+            - generic [ref=f66e220]:
+              - paragraph [ref=f66e221]: Activities
+              - list [ref=f66e222]:
+                - listitem [ref=f66e223]:
+                  - generic [ref=f66e224]: "1"
+                  - generic [ref=f66e225]:
+                    - paragraph [ref=f66e226]: 6–7 Destinations (E-Trike)
+                    - paragraph [ref=f66e227]: 2 reviews
+                  - generic [ref=f66e228]: 5.0 ★
+                - listitem [ref=f66e229]:
+                  - generic [ref=f66e230]: "2"
+                  - generic [ref=f66e231]:
+                    - paragraph [ref=f66e232]: Parasailing
+                    - paragraph [ref=f66e233]: 1 reviews
+                  - generic [ref=f66e234]: 5.0 ★
+                - listitem [ref=f66e235]:
+                  - generic [ref=f66e236]: "3"
+                  - generic [ref=f66e237]:
+                    - paragraph [ref=f66e238]: Crystal Kayak
+                    - paragraph [ref=f66e239]: 1 reviews
+                  - generic [ref=f66e240]: 5.0 ★
+                - listitem [ref=f66e241]:
+                  - generic [ref=f66e242]: "4"
+                  - generic [ref=f66e243]:
+                    - paragraph [ref=f66e244]: Jet Ski (15 mins)
+                    - paragraph [ref=f66e245]: 1 reviews
+                  - generic [ref=f66e246]: 5.0 ★
+                - listitem [ref=f66e247]:
+                  - generic [ref=f66e248]: "5"
+                  - generic [ref=f66e249]:
+                    - paragraph [ref=f66e250]: Banana Boat
+                    - paragraph [ref=f66e251]: 1 reviews
+                  - generic [ref=f66e252]: 5.0 ★
+        - generic [ref=f66e253]:
+          - heading "cloud Keyword Cloud" [level=2] [ref=f66e254]:
+            - generic [ref=f66e255]: cloud
+            - text: Keyword Cloud
+          - generic [ref=f66e257]:
+            - generic [ref=f66e258]: room ×32
+            - generic [ref=f66e260]: staff ×28
+            - generic [ref=f66e262]: clean ×16
+            - generic [ref=f66e264]: view ×13
+            - generic [ref=f66e266]: tour ×10
+            - generic [ref=f66e268]: friendly ×8
+            - generic [ref=f66e270]: pool ×7
+            - generic [ref=f66e272]: great ×5
+            - generic [ref=f66e274]: ocean view ×4
+            - generic [ref=f66e276]: guide ×4
+            - generic [ref=f66e278]: check-in ×3
+            - generic [ref=f66e280]: boat ×3
+            - generic [ref=f66e282]: super ×3
+            - generic [ref=f66e284]: sulit ×3
+            - generic [ref=f66e286]: booking ×3
+            - generic [ref=f66e288]: package ×3
+            - generic [ref=f66e290]: AC ×2
+            - generic [ref=f66e292]: bait ×2
+            - generic [ref=f66e294]: quiet ×2
+            - generic [ref=f66e296]: spotless ×2
+            - generic [ref=f66e298]: beautiful ×2
+            - generic [ref=f66e300]: worth it ×2
+            - generic [ref=f66e302]: location ×2
+            - generic [ref=f66e304]: experience ×2
+            - generic [ref=f66e306]: bathroom ×2
+            - generic [ref=f66e308]: kids ×2
+            - generic [ref=f66e310]: organized ×2
+            - generic [ref=f66e312]: smooth ×2
+            - generic [ref=f66e314]: lagoons ×2
+            - generic [ref=f66e316]: activities ×2
+      - generic [ref=f66e318]:
+        - generic [ref=f66e319]:
+          - heading "All Reviews" [level=2] [ref=f66e320]
+          - generic [ref=f66e321]:
+            - generic [ref=f66e322]: 0 total
+            - link "add_comment Create review" [ref=f66e323] [cursor=pointer]:
+              - /url: http://localhost:8000/admin/reviews/create
+              - generic [ref=f66e324]: add_comment
+              - text: Create review
+        - generic [ref=f66e325]:
+          - generic [ref=f66e326]:
+            - generic [ref=f66e327]:
+              - generic [ref=f66e328]: Star
+              - button "All" [ref=f66e329] [cursor=pointer]
+              - button "5★" [ref=f66e330] [cursor=pointer]
+              - button "4★" [ref=f66e331] [cursor=pointer]
+              - button "3★" [ref=f66e332] [cursor=pointer]
+              - button "2★" [ref=f66e333] [cursor=pointer]
+              - button "1★" [ref=f66e334] [cursor=pointer]
+            - generic [ref=f66e336]:
+              - generic [ref=f66e337]: Sentiment
+              - button "All" [ref=f66e338] [cursor=pointer]
+              - button "Positive" [ref=f66e339] [cursor=pointer]
+              - button "Neutral" [ref=f66e340] [cursor=pointer]
+              - button "Negative" [active] [ref=f66e341] [cursor=pointer]
+          - generic [ref=f66e342]:
+            - generic [ref=f66e343]:
+              - generic [ref=f66e344]: Entity
+              - button "All" [ref=f66e345] [cursor=pointer]
+              - button "Hotel" [ref=f66e346] [cursor=pointer]
+              - button "Room" [ref=f66e347] [cursor=pointer]
+              - button "Activity" [ref=f66e348] [cursor=pointer]
+              - button "Package" [ref=f66e349] [cursor=pointer]
+            - generic [ref=f66e351]:
+              - generic [ref=f66e352]: Destination
+              - combobox [ref=f66e353] [cursor=pointer]:
+                - option "All" [selected]
+                - option "Boracay"
+                - option "El Nido"
+            - generic [ref=f66e354]:
+              - generic [ref=f66e355]: Hotel
+              - combobox [ref=f66e356] [cursor=pointer]:
+                - option "All" [selected]
+                - option "Boracay Ocean Club Beach Resort"
+                - option "Buko Beach Resort"
+                - option "Canyon Hotels & Resorts Boracay"
+                - option "Cauayan Island Resort"
+                - option "Charlie's El Nido"
+                - option "El Nido Resorts - Miniloc Island"
+                - option "El Nido Resorts - Pangulasian Island"
+                - option "Frendz Resort & Hostel"
+                - option "Happiness Hostel"
+                - option "Henann Garden Resort"
+                - option "Henann Palm Beach Resort"
+                - option "Lazy Dog Bed & Breakfast"
+                - option "Lihim Resorts"
+                - option "Matinloc Resort"
+                - option "My Station Hotel"
+                - option "Panorama Resort"
+                - option "Seda Lio"
+                - option "Spin Designer Hostel"
+                - option "The Muse Hotel"
+            - generic [ref=f66e357]:
+              - generic [ref=f66e358]: Room
+              - combobox [ref=f66e359] [cursor=pointer]:
+                - option "All" [selected]
+                - option "Beach Villa"
+                - option "Beachfront Executive Suite"
+                - option "Boho Private Double Room"
+                - option "Breeze Garden Room"
+                - option "Canopy Villa"
+                - option "Deluxe Room"
+                - option "Deluxe Room with Pool Access"
+                - option "Deluxe Suite"
+                - option "Diamond Oceanfront Room"
+                - option "Direct Pool Access Suite"
+                - option "Luxury Villa"
+                - option "Panoramic Beach Villa"
+                - option "Premier Family Room"
+                - option "Premier Ocean View Room"
+                - option "Social Mixed Dormitory Bed"
+                - option "Social Mixed Dormitory Bed"
+                - option "Standard Double Room"
+                - option "Water Cottage"
+                - option "Water Villa"
+        - table [ref=f66e1354]:
+          - rowgroup [ref=f66e1355]:
+            - row [ref=f66e1356]:
+              - columnheader "#" [ref=f66e1357]
+              - columnheader "Guest" [ref=f66e1358]
+              - columnheader "Listing" [ref=f66e1359]
+              - columnheader "Rating" [ref=f66e1360]
+              - columnheader "Sentiment" [ref=f66e1361]
+              - columnheader "Comment" [ref=f66e1362]
+              - columnheader "Status" [ref=f66e1363]
+              - columnheader "Actions" [ref=f66e1364]
+          - rowgroup [ref=f66e1365]:
+            - row [ref=f66e1366]:
+              - cell "No reviews match the current filters." [ref=f66e1367]

@@ -27,6 +27,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         \Illuminate\Database\Eloquent\Relations\Relation::morphMap([
+            'hotel' => \App\Models\HotelModel::class,
             'room' => \App\Models\RoomType::class,
             'activity' => \App\Models\ActivityModel::class,
             'addon' => \App\Models\AddOnModel::class,
