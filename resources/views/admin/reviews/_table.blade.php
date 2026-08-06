@@ -22,7 +22,12 @@
         </thead>
         <tbody class="divide-y divide-slate-100">
             @forelse ($reviews as $i => $review)
-                <tr>
+                @php
+                    $listingLabel = $review->reviewable instanceof \App\Models\RoomType
+                        ? trim($review->reviewable->room_name . ' · ' . optional($review->reviewable->hotel)->hotel_name, ' ·')
+                        : ($review->reviewable?->hotel_name ?? $review->reviewable?->room_name ?? $review->reviewable?->activity_name ?? $review->reviewable?->name ?? '—');
+                @endphp
+                <tr class="hover:bg-ocean-50/30 transition group">
                     <td class="px-6 py-3.5 text-[11px] font-bold text-slate-400">
                         {{ ($reviews->currentPage() - 1) * $reviews->perPage() + $i + 1 }}
                     </td>
@@ -32,7 +37,7 @@
                     </td>
                     <td class="px-4 py-3.5">
                         <p class="text-xs font-semibold text-slate-700 truncate max-w-[180px]">
-                            {{ $review->reviewable instanceof \App\Models\RoomType ? ($review->reviewable->room_name . ' · ' . optional($review->reviewable->hotel)->hotel_name) : ($review->reviewable?->hotel_name ?? $review->reviewable?->room_name ?? $review->reviewable?->activity_name ?? $review->reviewable?->name ?? '—') }}
+                            {{ $listingLabel }}
                         </p>
                     </td>
                     <td class="px-4 py-3.5">
@@ -53,7 +58,7 @@
                         </span>
                     </td>
                     <td class="px-4 py-3.5">
-                        <p class="text-[11px] text-slate-600 line-clamp-2 max-w-[260px]">{{ $review->comment }}</p>
+                        <p class="text-[11px] text-slate-600 line-clamp-2 group-hover:line-clamp-none max-w-[260px]">{{ $review->comment }}</p>
                     </td>
                     <td class="px-4 py-3.5">
                         <span class="inline-flex px-2 py-0.5 rounded-lg text-[10px] font-bold {{ $review->is_published ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-slate-100 text-slate-500 border border-slate-200' }}">

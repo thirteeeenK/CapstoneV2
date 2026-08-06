@@ -78,7 +78,7 @@ class AdminReviewController extends Controller
         $keywordCloud = array_slice($keywordCounts, 0, 30, true);
 
         // Recent reviews table with filters
-        $reviewsQuery = Review::with(['user', 'reviewable'])
+        $reviewsQuery = Review::with(['user', 'reviewable', 'booking'])
             ->latest();
 
         if ($request->filled('star')) {
@@ -110,7 +110,27 @@ class AdminReviewController extends Controller
             $reviewsQuery->where('room_id', $request->query('room_id'));
         }
 
+        if ($request->filled('featured')) {
+            $reviewsQuery->where('is_featured', $request->query('featured') === '1');
+        }
+
         $reviews = $reviewsQuery->paginate(15)->withQueryString();
+
+        // Chart data for the ApexCharts analytics dashboard
+        $ratingDist = Review::selectRaw('rating, COUNT(*) as c')
+            ->groupBy('rating')
+            ->orderBy('rating')
+            ->pluck('c', 'rating')
+            ->map(fn($count) => (int) $count)
+            ->all();
+
+        $chartData = [
+            'sentiment' => $sentimentCounts,
+            'ratingDist' => $ratingDist,
+            'leaderboards' => $leaderboards,
+            'needsImprovement' => $needsImprovement,
+            'keywords' => $keywordCloud,
+        ];
 
         $sentimentMeta = [
             'positive' => ['label' => 'Positive', 'icon' => 'sentiment_satisfied', 'bar' => 'bg-emerald-500'],
@@ -137,7 +157,8 @@ class AdminReviewController extends Controller
             'reviews',
             'destinations',
             'hotels',
-            'rooms'
+            'rooms',
+            'chartData',
         ));
     }
 

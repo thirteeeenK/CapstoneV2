@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Models\ChatbotAbuseReport;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\File;
 
 class GeminiService
 {
@@ -743,6 +744,25 @@ class GeminiService
     //  Reviews: Sentiment Analysis & Multi-Level Summarization (DSS)
     // =========================================================================
 
+    protected static array $promptCache = [];
+
+    /**
+     * Loads a system prompt from an external .md file in Services/SystemPrompts/.
+     * Fails loudly (HTTP 500) if the file is missing — never silently degrades.
+     */
+    protected function loadSystemPrompt(string $filename): string
+    {
+        if (isset(self::$promptCache[$filename])) {
+            return self::$promptCache[$filename];
+        }
+
+        $path = app_path("Services/SystemPrompts/{$filename}");
+
+        abort_unless(File::exists($path), 500, "Missing Gemini system prompt file: {$filename}");
+
+        return self::$promptCache[$filename] = File::get($path);
+    }
+
     /**
      * Sends a text generation request to the configured Gemini chat model.
      *
@@ -802,7 +822,7 @@ class GeminiService
      */
     public function analyzeReviewSentiment(string $comment): array
     {
-        $systemInstruction = 'You are an expert NLP sentiment analysis model for the SunnyTrips travel platform (Philippines, Taglish-friendly). Analyze the user review and respond ONLY with valid JSON matching the schema: {"sentiment": "positive"|"neutral"|"negative", "confidence_score": number between 0 and 1, "extracted_keywords": ["keyword", ...]}. Extract 3-6 concise, factual keywords (English or Tagalog) describing what guests praise or complain about.';
+        $systemInstruction = $this->loadSystemPrompt('sentiment-analysis-prompt.md');
 
         $prompt = "Review Text: '{$comment}'";
 
@@ -959,7 +979,7 @@ class GeminiService
             return "[{$rating}/5] {$comment}";
         })->implode("\n");
 
-        $systemInstruction = 'You are an AI consensus summarizer for the SunnyTrips travel platform. Read the verified guest reviews for one entity and produce a concise 4-bullet consensus summary of what guests consistently praise or complain about. Respond ONLY with valid JSON matching: {"ai_summary_text": "4 bullet lines starting with a dash (-), one per line, in English", "top_positive_highlights": ["short phrase", ... 1-4 items], "top_negative_highlights": ["short phrase", ... 0-4 items], "most_frequent_keywords": [{"keyword": "phrase", "count": number}, ... max 8 items]}. Do not invent facts not present in the reviews.';
+        $systemInstruction = $this->loadSystemPrompt('review-summary-prompt.md');
 
         $prompt = "Entity: {$entityLabel}\n\nReviews:\n{$lines}";
 
