@@ -17,13 +17,24 @@ class BookingRequestService
      */
     public function getCartQuery(Request $request)
     {
-        if (auth()->check()) {
-            return CartItem::where('user_id', auth()->id())->where('is_selected', true);
-        }
-
         $sessionToken = $request->hasSession() ? $request->session()->get('cart_session_token') : null;
+        if (!$sessionToken && $request->hasSession()) {
+            $sessionToken = (string) Str::uuid();
+            $request->session()->put('cart_session_token', $sessionToken);
+        }
         if (!$sessionToken) {
             $sessionToken = 'guest_' . md5($request->ip() . ($request->header('User-Agent') ?? 'ua'));
+        }
+
+        if (auth()->check()) {
+            $userId = auth()->id();
+
+            // Automatically claim any guest cart items from the current session
+            CartItem::whereNull('user_id')
+                ->where('session_token', $sessionToken)
+                ->update(['user_id' => $userId]);
+
+            return CartItem::where('user_id', $userId)->where('is_selected', true);
         }
 
         return CartItem::where('session_token', $sessionToken)->where('is_selected', true);

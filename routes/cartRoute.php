@@ -3,7 +3,9 @@
 use App\Http\Controllers\CartController;
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('cart')->name('cart.')->middleware('throttle:cart')->group(function () {
+// Route::prefix('cart')->name('cart.')->middleware('throttle:cart')->group(function () {
+
+Route::prefix('cart')->name('cart.')->group(function () {
     Route::get('/', [CartController::class, 'index'])->name('index');
     Route::get('/data', [CartController::class, 'data'])->name('data');
     Route::post('/add', [CartController::class, 'store'])->name('add');

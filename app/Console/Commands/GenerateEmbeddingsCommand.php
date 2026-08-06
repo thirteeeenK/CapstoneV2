@@ -108,6 +108,6 @@ class GenerateEmbeddingsCommand extends Command
         }
 
         $this->info('AI Embedding process completed successfully!');
-        return Command::SUCCESS;
+        return self::SUCCESS;
     }
 }

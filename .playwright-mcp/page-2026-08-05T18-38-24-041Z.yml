@@ -1,0 +1,122 @@
+- generic [active] [ref=f61e1]:
+  - banner [ref=f61e2]:
+    - generic [ref=f61e3]:
+      - generic [ref=f61e4]:
+        - generic [ref=f61e5]: admin_panel_settings
+        - generic [ref=f61e6]:
+          - generic [ref=f61e7]: SunnyTrips
+          - generic [ref=f61e8]: Admin
+      - generic [ref=f61e9]:
+        - generic [ref=f61e10]:
+          - generic [ref=f61e11]: A
+          - generic "sunnytrips@gmail.com" [ref=f61e12]: Administrator
+        - button "logout Sign out" [ref=f61e15] [cursor=pointer]:
+          - generic [ref=f61e16]: logout
+          - generic [ref=f61e17]: Sign out
+  - complementary [ref=f61e18]:
+    - generic [ref=f61e19]:
+      - heading "SunnyTrips" [level=1] [ref=f61e20]
+      - paragraph [ref=f61e21]: Admin Portal
+    - navigation [ref=f61e22]:
+      - generic [ref=f61e23]:
+        - heading "Overview" [level=2] [ref=f61e24]
+        - generic [ref=f61e25]:
+          - link "dashboard Dashboard" [ref=f61e26] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/dashboard
+            - generic [ref=f61e27]: dashboard
+            - generic [ref=f61e28]: Dashboard
+          - link "psychology AI Insights" [ref=f61e29] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=f61e30]: psychology
+            - generic [ref=f61e31]: AI Insights
+          - link "analytics Generate Reports" [ref=f61e32] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=f61e33]: analytics
+            - generic [ref=f61e34]: Generate Reports
+      - generic [ref=f61e35]:
+        - heading "Operations" [level=2] [ref=f61e36]
+        - generic [ref=f61e37]:
+          - link "calendar_month Bookings" [ref=f61e38] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/bookings
+            - generic [ref=f61e39]: calendar_month
+            - generic [ref=f61e40]: Bookings
+          - link "group Registered Users" [ref=f61e41] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/registered-users
+            - generic [ref=f61e42]: group
+            - generic [ref=f61e43]: Registered Users
+          - link "inventory Manage Inventory" [ref=f61e44] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/inventory
+            - generic [ref=f61e45]: inventory
+            - generic [ref=f61e46]: Manage Inventory
+          - link "tune Passenger Rules & Discounts" [ref=f61e47] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/passenger-rules
+            - generic [ref=f61e48]: tune
+            - generic [ref=f61e49]: Passenger Rules & Discounts
+      - generic [ref=f61e50]:
+        - heading "Catalog" [level=2] [ref=f61e51]
+        - generic [ref=f61e52]:
+          - link "place Destinations" [ref=f61e53] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/destinations
+            - generic [ref=f61e54]: place
+            - generic [ref=f61e55]: Destinations
+          - link "house Add Hotel Information" [ref=f61e56] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/hotels/manage
+            - generic [ref=f61e57]: house
+            - generic [ref=f61e58]: Add Hotel Information
+          - link "hotel Show Hotel Listing" [ref=f61e59] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/hotels
+            - generic [ref=f61e60]: hotel
+            - generic [ref=f61e61]: Show Hotel Listing
+          - link "card_travel Tour Packages & Promos" [ref=f61e62] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/packages
+            - generic [ref=f61e63]: card_travel
+            - generic [ref=f61e64]: Tour Packages & Promos
+          - link "explore Activities & Tours" [ref=f61e65] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/activities
+            - generic [ref=f61e66]: explore
+            - generic [ref=f61e67]: Activities & Tours
+          - link "extension Transfers and Add-ons" [ref=f61e68] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/addons
+            - generic [ref=f61e69]: extension
+            - generic [ref=f61e70]: Transfers and Add-ons
+          - link "psychology Manage AI" [ref=f61e71] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=f61e72]: psychology
+            - generic [ref=f61e73]: Manage AI
+      - generic [ref=f61e74]:
+        - heading "Legal" [level=2] [ref=f61e75]
+        - link "gavel Legal Documents" [ref=f61e77] [cursor=pointer]:
+          - /url: http://localhost:8000/admin/legal
+          - generic [ref=f61e78]: gavel
+          - generic [ref=f61e79]: Legal Documents
+  - main [ref=f61e80]:
+    - generic [ref=f61e82]:
+      - generic [ref=f61e83]:
+        - generic [ref=f61e84]:
+          - heading "Destinations" [level=1] [ref=f61e85]
+          - paragraph [ref=f61e86]: Manage your travel destinations
+        - button "add Add Destination" [ref=f61e87] [cursor=pointer]:
+          - generic [ref=f61e88]: add
+          - text: Add Destination
+      - generic [ref=f61e89]:
+        - textbox "Search destinations..." [ref=f61e91]
+        - generic [ref=f61e92]: 2 destinations
+      - generic [ref=f61e95]:
+        - generic [ref=f61e96]:
+          - button [ref=f61e97] [cursor=pointer]
+          - generic [ref=f61e103]: Actions
+        - generic [ref=f61e104]:
+          - generic [ref=f61e105]:
+            - generic [ref=f61e111]:
+              - heading "Boracay" [level=3] [ref=f61e112]
+              - paragraph [ref=f61e113]: "ID: 1"
+            - generic [ref=f61e114]:
+              - button "Edit" [ref=f61e115] [cursor=pointer]
+              - button "Delete" [ref=f61e119] [cursor=pointer]
+          - generic [ref=f61e122]:
+            - generic [ref=f61e128]:
+              - heading "El Nido" [level=3] [ref=f61e129]
+              - paragraph [ref=f61e130]: "ID: 2"
+            - generic [ref=f61e131]:
+              - button "Edit" [ref=f61e132] [cursor=pointer]
+              - button "Delete" [ref=f61e136] [cursor=pointer]

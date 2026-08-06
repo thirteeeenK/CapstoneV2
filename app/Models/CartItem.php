@@ -4,7 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property Carbon|null $check_in_date
+ * @property Carbon|null $check_out_date
+ */
 class CartItem extends Model
 {
     use HasFactory;
@@ -98,8 +103,10 @@ class CartItem extends Model
     public function getDateDetailsAttribute()
     {
         if ($this->check_in_date && $this->check_out_date) {
-            $nights = max(1, $this->check_in_date->diffInDays($this->check_out_date));
-            return $this->check_in_date->format('M d') . ' - ' . $this->check_out_date->format('M d, Y') . " ({$nights} night" . ($nights > 1 ? 's' : '') . ')';
+            $checkIn = Carbon::parse($this->check_in_date);
+            $checkOut = Carbon::parse($this->check_out_date);
+            $nights = max(1, $checkIn->diffInDays($checkOut));
+            return $checkIn->format('M d') . ' - ' . $checkOut->format('M d, Y') . " ({$nights} night" . ($nights > 1 ? 's' : '') . ')';
         }
         return null;
     }
@@ -107,12 +114,22 @@ class CartItem extends Model
     /**
      * Strip currency symbols and formatting to get a numeric value.
      */
-    protected function parseCurrency($value): float
+    protected function parseCurrency($value, int $pax = 1): float
     {
         if (is_null($value)) return 0;
         if (is_numeric($value)) return (float) $value;
+
+        $valStr = (string) $value;
+
+        // Check for range strings e.g. "₱300–₱500/person" or "200-300"
+        if (preg_match('/(\d[\d,.]*)\s*[\-–—]\s*[^\d]*(\d[\d,.]*)/u', $valStr, $m)) {
+            $min = (float) str_replace(',', '', $m[1]);
+            $max = (float) str_replace(',', '', $m[2]);
+            return ($pax <= 1) ? $min : $max;
+        }
+
         // Strip ₱, PHP, commas, spaces, and other non-numeric chars except dots
-        $cleaned = preg_replace('/[^\d.]/', '', (string) $value);
+        $cleaned = preg_replace('/[^\d.]/', '', $valStr);
         return (float) $cleaned;
     }
 
@@ -126,43 +143,64 @@ class CartItem extends Model
             return 0;
         }
 
+        $pax = max(1, (int) ($this->selected_pax ?: 1));
+
         switch ($this->item_type) {
             case 'room':
                 if (method_exists($item, 'calculateNightlyRate')) {
                     return $item->calculateNightlyRate(max(1, (int)($this->selected_pax ?: 2)));
                 }
-                return $this->parseCurrency($item->base_price ?? $item->rate_per_night ?? 0);
+                return $this->parseCurrency($item->base_price ?? $item->rate_per_night ?? 0, $pax);
 
             case 'activity':
-                return $this->parseCurrency($item->rate ?? 0);
+                if (method_exists($item, 'calculateRateForPax')) {
+                    return $item->calculateRateForPax($pax);
+                }
+                return $this->parseCurrency($item->rate ?? 0, $pax);
 
             case 'package':
-                return $this->parseCurrency($item->price ?? 0);
+                return $this->parseCurrency($item->price ?? 0, $pax);
 
             case 'addon':
+                if (method_exists($item, 'getRateForPax')) {
+                    $tierRate = $item->getRateForPax($pax);
+                    if ($tierRate > 0) {
+                        return $tierRate;
+                    }
+                }
+
                 // Check if add-on has pax pricing tiers
                 if (!empty($item->pricing_tiers) && is_array($item->pricing_tiers)) {
-                    $pax = max(1, (int) $this->selected_pax);
                     // Match pricing tier or find closest tier
                     $matchingTier = null;
                     foreach ($item->pricing_tiers as $tier) {
-                        $minPax = $tier['min_pax'] ?? 1;
-                        $maxPax = $tier['max_pax'] ?? 999;
+                        $minPax = (int) ($tier['min_pax'] ?? 1);
+                        $maxPax = (int) ($tier['max_pax'] ?? 999);
                         if ($pax >= $minPax && $pax <= $maxPax) {
                             $matchingTier = $tier;
                             break;
                         }
                     }
-                    if ($matchingTier && isset($matchingTier['rate_per_pax'])) {
-                        return $this->parseCurrency($matchingTier['rate_per_pax']);
-                    } elseif ($matchingTier && isset($matchingTier['total_rate'])) {
-                        return $this->parseCurrency($matchingTier['total_rate']) / max(1, $pax);
+                    if (!$matchingTier && !empty($item->pricing_tiers)) {
+                        $matchingTier = end($item->pricing_tiers);
+                    }
+
+                    if ($matchingTier) {
+                        if (isset($matchingTier['rate'])) {
+                            return $this->parseCurrency($matchingTier['rate'], $pax);
+                        }
+                        if (isset($matchingTier['rate_per_pax'])) {
+                            return $this->parseCurrency($matchingTier['rate_per_pax'], $pax);
+                        }
+                        if (isset($matchingTier['total_rate'])) {
+                            return $this->parseCurrency($matchingTier['total_rate'], $pax) / $pax;
+                        }
                     }
                 }
-                return $this->parseCurrency($item->base_price ?? $item->rate ?? 0);
+                return $this->parseCurrency($item->base_price ?? $item->rate ?? 0, $pax);
 
             default:
-                return $this->parseCurrency($item->price ?? $item->base_price ?? $item->rate ?? 0);
+                return $this->parseCurrency($item->price ?? $item->base_price ?? $item->rate ?? 0, $pax);
         }
     }
 
@@ -174,7 +212,9 @@ class CartItem extends Model
         $unitRate = $this->unit_rate;
 
         if ($this->item_type === 'room' && $this->check_in_date && $this->check_out_date) {
-            $nights = max(1, $this->check_in_date->diffInDays($this->check_out_date));
+            $checkIn = Carbon::parse($this->check_in_date);
+            $checkOut = Carbon::parse($this->check_out_date);
+            $nights = max(1, $checkIn->diffInDays($checkOut));
             return $unitRate * $nights * max(1, $this->quantity);
         }
 
@@ -184,9 +224,16 @@ class CartItem extends Model
         }
 
         if ($this->item_type === 'activity') {
-            // Activity tickets: pax count * rate or quantity * rate
-            $pax = max(1, $this->selected_pax ?: $this->quantity);
-            return $unitRate * $pax;
+            $item = $this->itemable;
+            $pax = max(1, (int) ($this->selected_pax ?: 1));
+
+            if ($item && method_exists($item, 'isPerPersonRate') && !$item->isPerPersonRate()) {
+                // Flat group rate (e.g. ₱2,000 for E-Trike 1-6 persons)
+                return $unitRate * max(1, $this->quantity);
+            }
+
+            // Default activity tickets: unit rate per pax * selected pax * quantity
+            return $unitRate * $pax * max(1, $this->quantity);
         }
 
         return $unitRate * max(1, $this->quantity);

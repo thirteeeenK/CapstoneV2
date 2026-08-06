@@ -9,6 +9,7 @@
         levelFilter: '{{ $selectedLevel ?: 'all' }}',
         searchQuery: '',
         previewActivity: null,
+        modalPax: 1,
         activePreviewImgIdx: 0,
         matchesActivity(destId, level, searchableText) {
             if (this.activeDestId !== 'all' && String(this.activeDestId) !== String(destId)) {
@@ -125,22 +126,9 @@
                 @foreach($activities as $act)
                     @php
                         $imagesRaw = is_array($act->images) ? $act->images : (is_string($act->images) ? (json_decode($act->images, true) ?: []) : []);
-                        $resolvedImages = array_map(function ($img) {
-                            return App\Concerns\ResolvesImages::resolveImg($img, 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=800&q=80');
-                        }, $imagesRaw);
-                        if (empty($resolvedImages)) {
-                            $resolvedImages = [App\Concerns\ResolvesImages::resolveImg(null, 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=800&q=80')];
-                        }
-                        $actImg = $resolvedImages[0];
-
-                        $rateText = (string) $act->rate;
-                        if (is_numeric($rateText)) {
-                            $formattedRate = '₱' . number_format((float) $rateText, 2);
-                        } elseif (str_starts_with($rateText, '₱')) {
-                            $formattedRate = $rateText;
-                        } else {
-                            $formattedRate = '₱' . $rateText;
-                        }
+                        $actImg = App\Concerns\ResolvesImages::resolveActivityImage($imagesRaw[0] ?? null, $act->activity_name, $act->category);
+                        $resolvedImages = [$actImg];
+                        $formattedRate = App\Concerns\ResolvesImages::formatRate($act->rate);
 
                         $inclusionsRaw = is_array($act->inclusions) ? $act->inclusions : (is_string($act->inclusions) ? array_filter(array_map('trim', explode(',', $act->inclusions))) : []);
                         $exclusionsRaw = is_array($act->exclusions) ? $act->exclusions : (is_string($act->exclusions) ? array_filter(array_map('trim', explode(',', $act->exclusions))) : []);
@@ -361,6 +349,22 @@
                         </div>
                     </div>
 
+                    {{-- Pax Selector Control --}}
+                    <div class="flex items-center justify-between p-3.5 bg-sky-50/80 rounded-2xl border border-sky-200/80">
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-sky-600">group</span>
+                            <div>
+                                <span class="text-xs font-bold text-slate-800 block">Number of Participants / Pax</span>
+                                <span class="text-[11px] text-slate-500">Manifest entries will be generated for each participant</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-2xs">
+                            <button type="button" @click="modalPax = Math.max(1, modalPax - 1)" :disabled="modalPax <= 1" class="text-slate-600 font-bold hover:text-sky-600 disabled:opacity-40 cursor-pointer">-</button>
+                            <span class="text-xs font-black text-slate-900 w-6 text-center" x-text="modalPax"></span>
+                            <button type="button" @click="modalPax += 1" class="text-slate-600 font-bold hover:text-sky-600 cursor-pointer">+</button>
+                        </div>
+                    </div>
+
                     {{-- Description --}}
                     <div class="space-y-1.5">
                         <h4 class="text-xs font-extrabold uppercase tracking-wider text-slate-400">Description</h4>
@@ -401,7 +405,7 @@
                     </button>
 
                     <button type="button"
-                        @click="window.addToCart('activity', previewActivity.id); previewActivity = null;"
+                        @click="window.addToCart('activity', previewActivity.id, { selected_pax: modalPax }); previewActivity = null;"
                         class="px-6 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs shadow-md transition-colors flex items-center gap-1.5 cursor-pointer">
                         <span class="material-symbols-outlined text-sm">shopping_cart</span>
                         <span>Add to Trip Basket</span>

@@ -5,58 +5,64 @@
 @section('content')
 
     <div x-data="{ 
-                    isModalOpen: false, 
-                    modalTitle: 'Add New Destination',
+                            isModalOpen: false, 
+                            modalTitle: 'Add New Destination',
                     formAction: '{{ route('admin.store') }}',
                     destName: '',
+                    destDescription: '',
+                    destImageUrl: '',
                     methodType: 'POST',
-                    searchQuery: '',
-                    sortBy: 'name',
-                    sortOrder: 'asc',
+                            searchQuery: '',
+                            sortBy: 'name',
+                            sortOrder: 'asc',
 
-                    get filteredDestinations() {
-                        let results = [...this.destinations];
+                            get filteredDestinations() {
+                                let results = [...this.destinations];
 
-                        if (this.searchQuery) {
-                            const q = this.searchQuery.toLowerCase();
-                            results = results.filter(d => d.name.toLowerCase().includes(q));
-                                                                                        }
+                                if (this.searchQuery) {
+                                    const q = this.searchQuery.toLowerCase();
+                                    results = results.filter(d => d.name.toLowerCase().includes(q));
+                                                                                                }
 
-                                                                                        results.sort((a, b) => {
-                                                                                            const aVal = a[this.sortBy].toLowerCase();
-                                                                                            const bVal = b[this.sortBy].toLowerCase();
-                                                                                            return this.sortOrder === 'asc' 
-                                                                                                ? aVal.localeCompare(bVal) 
-                                                                                                : bVal.localeCompare(aVal);
-                                                                                        });
+                                                                                                results.sort((a, b) => {
+                                                                                                    const aVal = a[this.sortBy].toLowerCase();
+                                                                                                    const bVal = b[this.sortBy].toLowerCase();
+                                                                                                    return this.sortOrder === 'asc' 
+                                                                                                        ? aVal.localeCompare(bVal) 
+                                                                                                        : bVal.localeCompare(aVal);
+                                                                                                });
 
-                                                                                        return results;
-                                                                                    },
+                                                                                                return results;
+                                                                                            },
 
-                                                                                    destinations: {{ $destinations->toJson() }},
+                                                                                            destinations: {{ $destinations->toJson() }},
 
-                                                                                    openCreate() {
-                                                                                        this.modalTitle = 'Add New Destination';
-                                                                                        this.formAction = '{{ route('admin.store') }}';
-                                                                                        this.destName = '';
-                                                                                        this.methodType = 'POST';
-                                                                                        this.isModalOpen = true;
-                                                                                        this.$nextTick(() => this.$refs.nameInput.focus());
-                                                                                    },
+                    openCreate() {
+                        this.modalTitle = 'Add New Destination';
+                        this.formAction = '{{ route('admin.store') }}';
+                        this.destName = '';
+                        this.destDescription = '';
+                        this.destImageUrl = '';
+                        this.methodType = 'POST';
+                        this.isModalOpen = true;
+                        this.$nextTick(() => this.$refs.nameInput.focus());
+                    },
 
-                                                                                    openEdit(id, name) {
-                                                                                        this.modalTitle = 'Edit Destination';   
-                                                                                        this.formAction = '/admin/destinations/' + id;
-                                                                                        this.destName = name;
-                                                                                        this.methodType = 'PUT';
-                                                                                        this.isModalOpen = true;
-                                                                                        this.$nextTick(() => this.$refs.nameInput.focus());
-                                                                                    },
+                    openEdit(destination) {
+                        this.modalTitle = 'Edit Destination';
+                        this.formAction = '/admin/destinations/' + destination.id;
+                        this.destName = destination.name;
+                        this.destDescription = destination.description || '';
+                        this.destImageUrl = destination.image && destination.image.startsWith('http') ? destination.image : '';
+                        this.methodType = 'PUT';
+                        this.isModalOpen = true;
+                        this.$nextTick(() => this.$refs.nameInput.focus());
+                    },
 
-                                                                                    toggleSort() {
-                                                                                        this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
-                                                                                    }
-                                                                                }" class="pb-12">
+                                                                                            toggleSort() {
+                                                                                                this.sortOrder = this.sortOrder === 'asc' ? 'desc' : 'asc';
+                                                                                            }
+                                                                                        }" class="pb-12">
 
         <!-- Header Section -->
         <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -197,7 +203,7 @@
 
                         <!-- Actions -->
                         <div class="flex items-center gap-1 ml-4">
-                            <button type="button" @click="openEdit(destination.id, destination.name)"
+                            <button type="button" @click="openEdit(destination)"
                                 class="p-2 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200"
                                 title="Edit">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -250,9 +256,8 @@
                 </template>
             </div>
         </div>
-    </div>
 
-    <!-- Modal -->
+        <!-- Modal -->
     <div x-show="isModalOpen" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0"
         x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150"
         x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
@@ -329,6 +334,36 @@
                             class="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" />
                     </div>
                     <p class="text-xs text-slate-400">Enter the full name of the destination.</p>
+                </div>
+
+                <div class="space-y-2 mt-4">
+                    <label class="block text-sm font-semibold text-slate-700">
+                        Description
+                        <span class="text-xs font-normal text-slate-400">(optional)</span>
+                    </label>
+                    <textarea x-model="destDescription" name="description" rows="3"
+                        placeholder="What makes this destination special?"
+                        class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none"></textarea>
+                </div>
+
+                <div class="space-y-2 mt-4">
+                    <label class="block text-sm font-semibold text-slate-700">
+                        Image URL
+                        <span class="text-xs font-normal text-slate-400">(optional)</span>
+                    </label>
+                    <input x-model="destImageUrl" name="image_url" type="url"
+                        placeholder="https://example.com/boracay.jpg"
+                        class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all" />
+                    <p class="text-xs text-slate-400">Paste an image link, or upload a file below instead.</p>
+                </div>
+
+                <div class="space-y-2 mt-4">
+                    <label class="block text-sm font-semibold text-slate-700">
+                        Upload Image
+                        <span class="text-xs font-normal text-slate-400">(optional)</span>
+                    </label>
+                    <input type="file" name="image" accept="image/*"
+                        class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200">
                 </div>
 
                 <!-- Modal Footer -->

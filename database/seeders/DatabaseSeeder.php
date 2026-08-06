@@ -37,6 +37,7 @@ class DatabaseSeeder extends Seeder
             LegalDocumentsSeeder::class,
             AddOnSeeder::class,
             PackageSeeder::class,
+            PassengerCategoryRuleSeeder::class,
         ]);
     }
 }

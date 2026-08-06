@@ -1,0 +1,132 @@
+- generic [active] [ref=f2e1]:
+  - banner [ref=f2e2]:
+    - generic [ref=f2e3]:
+      - generic [ref=f2e4]:
+        - generic [ref=f2e5]: admin_panel_settings
+        - generic [ref=f2e6]:
+          - generic [ref=f2e7]: SunnyTrips
+          - generic [ref=f2e8]: Admin
+      - generic [ref=f2e9]:
+        - generic [ref=f2e10]:
+          - generic [ref=f2e11]: A
+          - generic "sunnytrips@gmail.com" [ref=f2e12]: Administrator
+        - button "logout Sign out" [ref=f2e15] [cursor=pointer]:
+          - generic [ref=f2e16]: logout
+          - generic [ref=f2e17]: Sign out
+  - complementary [ref=f2e18]:
+    - generic [ref=f2e19]:
+      - heading "SunnyTrips" [level=1] [ref=f2e20]
+      - paragraph [ref=f2e21]: Admin Portal
+    - navigation [ref=f2e22]:
+      - generic [ref=f2e23]:
+        - heading "Overview" [level=2] [ref=f2e24]
+        - generic [ref=f2e25]:
+          - link "dashboard Dashboard" [ref=f2e26] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/dashboard
+            - generic [ref=f2e27]: dashboard
+            - generic [ref=f2e28]: Dashboard
+          - link "psychology AI Insights" [ref=f2e29] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=f2e30]: psychology
+            - generic [ref=f2e31]: AI Insights
+          - link "analytics Generate Reports" [ref=f2e32] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=f2e33]: analytics
+            - generic [ref=f2e34]: Generate Reports
+      - generic [ref=f2e35]:
+        - heading "Operations" [level=2] [ref=f2e36]
+        - generic [ref=f2e37]:
+          - link "calendar_month Bookings" [ref=f2e38] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/bookings
+            - generic [ref=f2e39]: calendar_month
+            - generic [ref=f2e40]: Bookings
+          - link "group Registered Users" [ref=f2e41] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/registered-users
+            - generic [ref=f2e42]: group
+            - generic [ref=f2e43]: Registered Users
+          - link "inventory Manage Inventory" [ref=f2e44] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/inventory
+            - generic [ref=f2e45]: inventory
+            - generic [ref=f2e46]: Manage Inventory
+          - link "tune Passenger Rules & Discounts" [ref=f2e47] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/passenger-rules
+            - generic [ref=f2e48]: tune
+            - generic [ref=f2e49]: Passenger Rules & Discounts
+      - generic [ref=f2e50]:
+        - heading "Catalog" [level=2] [ref=f2e51]
+        - generic [ref=f2e52]:
+          - link "place Destinations" [ref=f2e53] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/destinations
+            - generic [ref=f2e54]: place
+            - generic [ref=f2e55]: Destinations
+          - link "house Add Hotel Information" [ref=f2e56] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/hotels/manage
+            - generic [ref=f2e57]: house
+            - generic [ref=f2e58]: Add Hotel Information
+          - link "hotel Show Hotel Listing" [ref=f2e59] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/hotels
+            - generic [ref=f2e60]: hotel
+            - generic [ref=f2e61]: Show Hotel Listing
+          - link "card_travel Tour Packages & Promos" [ref=f2e62] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/packages
+            - generic [ref=f2e63]: card_travel
+            - generic [ref=f2e64]: Tour Packages & Promos
+          - link "explore Activities & Tours" [ref=f2e65] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/activities
+            - generic [ref=f2e66]: explore
+            - generic [ref=f2e67]: Activities & Tours
+          - link "extension Transfers and Add-ons" [ref=f2e68] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/addons
+            - generic [ref=f2e69]: extension
+            - generic [ref=f2e70]: Transfers and Add-ons
+          - link "psychology Manage AI" [ref=f2e71] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=f2e72]: psychology
+            - generic [ref=f2e73]: Manage AI
+      - generic [ref=f2e74]:
+        - heading "Legal" [level=2] [ref=f2e75]
+        - link "gavel Legal Documents" [ref=f2e77] [cursor=pointer]:
+          - /url: http://localhost:8000/admin/legal
+          - generic [ref=f2e78]: gavel
+          - generic [ref=f2e79]: Legal Documents
+  - main [ref=f2e80]:
+    - generic [ref=f2e82]:
+      - generic [ref=f2e83]:
+        - generic [ref=f2e84]:
+          - heading "Destinations" [level=1] [ref=f2e85]
+          - paragraph [ref=f2e86]: Manage your travel destinations
+        - button "add Add Destination" [ref=f2e87] [cursor=pointer]:
+          - generic [ref=f2e88]: add
+          - text: Add Destination
+      - generic [ref=f2e89]:
+        - paragraph [ref=f2e94]: Destination added successfully!
+        - button [ref=f2e95] [cursor=pointer]
+      - generic [ref=f2e98]:
+        - textbox "Search destinations..." [ref=f2e100]
+        - generic [ref=f2e101]: 3 destinations
+      - generic [ref=f2e104]:
+        - generic [ref=f2e105]:
+          - button [ref=f2e106] [cursor=pointer]
+          - generic [ref=f2e112]: Actions
+        - generic [ref=f2e113]:
+          - generic [ref=f2e114]:
+            - generic [ref=f2e120]:
+              - heading "Boracay" [level=3] [ref=f2e121]
+              - paragraph [ref=f2e122]: "ID: 1"
+            - generic [ref=f2e123]:
+              - button "Edit" [ref=f2e124] [cursor=pointer]
+              - button "Delete" [ref=f2e128] [cursor=pointer]
+          - generic [ref=f2e131]:
+            - generic [ref=f2e137]:
+              - heading "El Nido" [level=3] [ref=f2e138]
+              - paragraph [ref=f2e139]: "ID: 2"
+            - generic [ref=f2e140]:
+              - button "Edit" [ref=f2e141] [cursor=pointer]
+              - button "Delete" [ref=f2e145] [cursor=pointer]
+          - generic [ref=f2e148]:
+            - generic [ref=f2e154]:
+              - heading "Siargao" [level=3] [ref=f2e155]
+              - paragraph [ref=f2e156]: "ID: 3"
+            - generic [ref=f2e157]:
+              - button "Edit" [ref=f2e158] [cursor=pointer]
+              - button "Delete" [ref=f2e162] [cursor=pointer]

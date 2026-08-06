@@ -138,22 +138,9 @@
                 @foreach($activities as $index => $act)
                     @php
                         $imagesRaw = is_array($act->images) ? $act->images : (is_string($act->images) ? (json_decode($act->images, true) ?: []) : []);
-                        $resolvedImages = array_map(function ($img) use ($resolveActivityImage) {
-                            return static::resolveImg($img, 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=800&q=80');
-                        }, $imagesRaw);
-                        if (empty($resolvedImages)) {
-                            $resolvedImages = [$resolveActivityImage(null)];
-                        }
-                        $actImg = $resolvedImages[0];
-
-                        $rateText = (string) $act->rate;
-                        if (is_numeric($rateText)) {
-                            $formattedRate = '₱' . number_format((float) $rateText, 2);
-                        } elseif (str_starts_with($rateText, '₱')) {
-                            $formattedRate = $rateText;
-                        } else {
-                            $formattedRate = '₱' . $rateText;
-                        }
+                        $actImg = App\Concerns\ResolvesImages::resolveActivityImage($imagesRaw[0] ?? null, $act->activity_name, $act->category);
+                        $resolvedImages = [$actImg];
+                        $formattedRate = App\Concerns\ResolvesImages::formatRate($act->rate);
 
                         $inclusionsRaw = is_array($act->inclusions) ? $act->inclusions : (is_string($act->inclusions) ? array_filter(array_map('trim', explode(',', $act->inclusions))) : []);
                         $exclusionsRaw = is_array($act->exclusions) ? $act->exclusions : (is_string($act->exclusions) ? array_filter(array_map('trim', explode(',', $act->exclusions))) : []);

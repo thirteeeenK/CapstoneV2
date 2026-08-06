@@ -1,14 +1,28 @@
 @props([
     'categoryRules' => null,
     'maxGuests' => 10,
+    'baseGuests' => 2,
+    'initialGuests' => 1,
     'leadName' => Auth::user()->name ?? '',
     'leadEmail' => Auth::user()->email ?? '',
     'leadPhone' => Auth::user()->phone_number ?? (Auth::user()->phone ?? ''),
 ])
 
 @php
-    if (!$categoryRules) {
+    if (empty($categoryRules) || (is_object($categoryRules) && method_exists($categoryRules, 'isEmpty') && $categoryRules->isEmpty()) || (is_countable($categoryRules) && count($categoryRules) === 0)) {
         $categoryRules = \App\Models\PassengerCategoryRule::where('is_active', true)->get();
+    }
+
+    if (empty($categoryRules) || (is_object($categoryRules) && method_exists($categoryRules, 'isEmpty') && $categoryRules->isEmpty()) || (is_countable($categoryRules) && count($categoryRules) === 0)) {
+        $categoryRules = collect([
+            ['category_name' => 'Adult', 'display_label' => 'Regular Adult', 'adjustment_type' => 'none', 'amount' => 0],
+            ['category_name' => 'Senior Citizen', 'display_label' => 'Senior Citizen', 'adjustment_type' => 'discount', 'amount' => 50],
+            ['category_name' => 'PWD', 'display_label' => 'PWD (Person with Disability)', 'adjustment_type' => 'discount', 'amount' => 50],
+            ['category_name' => 'Student', 'display_label' => 'Student', 'adjustment_type' => 'discount', 'amount' => 50],
+            ['category_name' => 'Child', 'display_label' => 'Child (3-17)', 'adjustment_type' => 'discount', 'amount' => 50],
+            ['category_name' => 'Infant', 'display_label' => 'Infant (0-2)', 'adjustment_type' => 'discount', 'amount' => 50],
+            ['category_name' => 'Foreigner', 'display_label' => 'Foreign Tourist', 'adjustment_type' => 'surcharge', 'amount' => 150],
+        ]);
     }
 @endphp
 
@@ -17,6 +31,8 @@
         leadEmail: '{{ addslashes($leadEmail) }}', 
         leadPhone: '{{ addslashes($leadPhone) }}',
         maxGuests: {{ (int)$maxGuests }},
+        baseGuests: {{ (int)$baseGuests }},
+        initialGuests: {{ (int)$initialGuests }},
         rules: {{ json_encode($categoryRules) }}
      })"
      x-init="initManifest()"
@@ -24,19 +40,22 @@
 
     {{-- SECTION 1: Lead Guest Contact Information --}}
     <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-5">
-        <div class="flex items-center gap-3 border-b border-slate-100 pb-4">
-            <div class="w-10 h-10 rounded-2xl bg-sky-50 text-sky-600 border border-sky-200 flex items-center justify-center font-bold">
-                <span class="material-symbols-outlined text-xl">contact_mail</span>
+        <div class="flex items-center justify-between gap-3 border-b border-slate-100 pb-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-2xl bg-sky-50 text-sky-600 border border-sky-200 flex items-center justify-center font-bold">
+                    <span class="material-symbols-outlined text-xl">contact_mail</span>
+                </div>
+                <div>
+                    <h3 class="text-base sm:text-lg font-bold text-slate-900 font-headline">Lead Guest Contact Details</h3>
+                    <p class="text-xs text-slate-500">We will send your voucher, payment updates, and itinerary here.</p>
+                </div>
             </div>
-            <div>
-                <h3 class="text-base sm:text-lg font-bold text-slate-900 font-headline">Lead Traveler Information</h3>
-                <p class="text-xs text-slate-500">Primary contact for booking vouchers, status updates, and vouchers.</p>
-            </div>
+            <span class="text-xs font-semibold text-sky-700 bg-sky-50 px-3 py-1 rounded-full border border-sky-100">Primary Contact</span>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Full Name *</label>
+            <div class="sm:col-span-2">
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Lead Traveler Full Name *</label>
                 <input type="text" 
                        name="contact_name" 
                        x-model="leadName" 
@@ -64,14 +83,6 @@
                        placeholder="e.g. 0917 123 4567" 
                        class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 bg-slate-50/50">
             </div>
-
-            <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Special Instructions / Requests</label>
-                <input type="text" 
-                       name="special_requests" 
-                       placeholder="e.g. Non-smoking room, extra towels, early check-in" 
-                       class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-medium text-slate-800 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 bg-slate-50/50">
-            </div>
         </div>
     </div>
 
@@ -85,8 +96,8 @@
                     <span class="material-symbols-outlined text-xl">badge</span>
                 </div>
                 <div>
-                    <h3 class="text-base sm:text-lg font-bold text-slate-900 font-headline">Passenger & Guest Manifest</h3>
-                    <p class="text-xs text-slate-500">Provide full names and passenger categories for all guests joining this travel booking.</p>
+                    <h3 class="text-base sm:text-lg font-bold text-slate-900 font-headline">Hotel Guest Manifest</h3>
+                    <p class="text-xs text-slate-500">Provide full names and categories for all guests staying in this Hotel and Room.</p>
                 </div>
             </div>
         </div>
@@ -106,7 +117,7 @@
                         <template x-if="!guest.is_lead">
                             <button type="button" 
                                     @click="removeGuest(index)" 
-                                    class="text-slate-400 hover:text-rose-600 text-xs font-semibold flex items-center gap-1 p-1 rounded-md hover:bg-rose-50 transition"
+                                    class="text-slate-400 hover:text-rose-600 text-xs font-semibold flex items-center gap-1 p-1 rounded-md hover:bg-rose-50 transition cursor-pointer"
                                     title="Remove this guest">
                                 <span class="material-symbols-outlined text-[16px]">delete</span>
                                 <span>Remove</span>
@@ -132,11 +143,23 @@
                             <select x-model="guest.category" 
                                     @change="notifyManifestChange()"
                                     class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">
-                                <template x-for="rule in rules" :key="rule.category_name">
-                                    <option :value="rule.category_name" 
-                                            x-text="rule.display_label + (rule.adjustment_type === 'discount' ? ' (-₱' + Number(rule.amount).toFixed(0) + ' Discount)' : (rule.adjustment_type === 'surcharge' ? ' (+₱' + Number(rule.amount).toFixed(0) + ' Surcharge)' : ''))">
-                                    </option>
-                                </template>
+                                @foreach($categoryRules as $rule)
+                                    @php
+                                        $rObj = is_array($rule) ? (object)$rule : $rule;
+                                        $rName = $rObj->category_name;
+                                        $rLabel = $rObj->display_label;
+                                        $rType = $rObj->adjustment_type ?? 'none';
+                                        $rAmt = (float)($rObj->amount ?? 0);
+                                        
+                                        $labelText = $rLabel;
+                                        if ($rType === 'discount' && $rAmt > 0) {
+                                            $labelText .= ' (-₱' . number_format($rAmt, 0) . ' Discount)';
+                                        } elseif ($rType === 'surcharge' && $rAmt > 0) {
+                                            $labelText .= ' (+₱' . number_format($rAmt, 0) . ' Surcharge)';
+                                        }
+                                    @endphp
+                                    <option value="{{ $rName }}">{{ $labelText }}</option>
+                                @endforeach
                             </select>
                         </div>
 
@@ -165,7 +188,8 @@
             </button>
             <template x-if="maxGuests && maxGuests < 99">
                 <span class="text-[11px] font-semibold text-slate-500">
-                    Max room capacity: <strong class="text-slate-800" x-text="maxGuests + ' Guests'"></strong>
+                    Base capacity: <strong class="text-slate-800" x-text="baseGuests + ' Guest' + (baseGuests > 1 ? 's' : '')"></strong>
+                    · Max capacity: <strong class="text-slate-800" x-text="maxGuests + ' Guest' + (maxGuests > 1 ? 's' : '')"></strong>
                 </span>
             </template>
         </div>
@@ -177,12 +201,24 @@
 
 <script>
 function guestManifestBuilder(config) {
+    const defaultRules = [
+        { category_name: 'Adult', display_label: 'Regular Adult', adjustment_type: 'none', amount: 0 },
+        { category_name: 'Senior Citizen', display_label: 'Senior Citizen', adjustment_type: 'discount', amount: 50 },
+        { category_name: 'PWD', display_label: 'PWD (Person with Disability)', adjustment_type: 'discount', amount: 50 },
+        { category_name: 'Student', display_label: 'Student', adjustment_type: 'discount', amount: 50 },
+        { category_name: 'Child', display_label: 'Child (3-17)', adjustment_type: 'discount', amount: 50 },
+        { category_name: 'Infant', display_label: 'Infant (0-2)', adjustment_type: 'discount', amount: 50 },
+        { category_name: 'Foreigner', display_label: 'Foreign Tourist', adjustment_type: 'surcharge', amount: 150 }
+    ];
+
     return {
         leadName: config.leadName || '',
         leadEmail: config.leadEmail || '',
         leadPhone: config.leadPhone || '',
         maxGuests: config.maxGuests || 10,
-        rules: config.rules || [],
+        baseGuests: config.baseGuests || 2,
+        initialGuests: Math.min(config.maxGuests || 10, Math.max(1, config.initialGuests || 1)),
+        rules: (config.rules && config.rules.length > 0) ? config.rules : defaultRules,
         guests: [],
 
         initManifest() {
@@ -194,6 +230,16 @@ function guestManifestBuilder(config) {
                     special_notes: 'Lead Traveler'
                 }
             ];
+
+            const needed = this.initialGuests;
+            for (let i = 1; i < needed; i++) {
+                this.guests.push({
+                    full_name: '',
+                    category: 'Adult',
+                    is_lead: false,
+                    special_notes: ''
+                });
+            }
 
             this.$watch('leadName', value => {
                 if (this.guests.length > 0) {
@@ -263,6 +309,8 @@ function guestManifestBuilder(config) {
 
             window.dispatchEvent(new CustomEvent('manifest-pricing-updated', {
                 detail: {
+                    key: 'main_room',
+                    guest_count: this.guests.length,
                     totalDiscount: totalDiscount,
                     totalSurcharge: totalSurcharge,
                     breakdown: breakdown,

@@ -342,3 +342,72 @@ it('allows the owner but not others to view booking pages', function () {
 
     $this->actingAs($this->user)->get(route('booking.show', $booking->booking_code))->assertOk();
 });
+
+it('correctly calculates activity range pricing and airport transfer tier pricing with passenger manifest', function () {
+    $activity = \App\Models\ActivityModel::create([
+        'destination_id' => $this->room->hotel->destination_id,
+        'activity_name' => 'Clear Kayak Rental',
+        'rate' => '₱300–₱500/person',
+        'category' => 'Water Activity',
+        'activity_level' => 'Relaxing',
+        'description' => 'Test kayak',
+        'vibe_tags' => [],
+        'is_shown' => true,
+    ]);
+
+    $addon = \App\Models\AddOnModel::create([
+        'destination_id' => $this->room->hotel->destination_id,
+        'name' => 'Airport to Hotel Roundtrip Transfer',
+        'type' => 'Transfer',
+        'description' => 'Test transfer',
+        'pricing_tiers' => [
+            ['min_pax' => 1, 'max_pax' => 1, 'rate' => 1850],
+            ['min_pax' => 2, 'max_pax' => 2, 'rate' => 1450],
+            ['min_pax' => 3, 'max_pax' => 3, 'rate' => 1250],
+        ],
+        'is_shown' => true,
+    ]);
+
+    $actCart = CartItem::create([
+        'user_id' => $this->user->id,
+        'item_type' => 'activity',
+        'item_id' => $activity->id,
+        'quantity' => 1,
+        'selected_pax' => 2,
+        'is_selected' => true,
+    ]);
+
+    $addonCart = CartItem::create([
+        'user_id' => $this->user->id,
+        'item_type' => 'addon',
+        'item_id' => $addon->id,
+        'quantity' => 1,
+        'selected_pax' => 2,
+        'is_selected' => true,
+    ]);
+
+    // Clear Kayak for 2 pax @ 500 = 1000 subtotal
+    expect($actCart->unit_rate)->toBe(500.0)
+        ->and($actCart->subtotal)->toBe(1000.0);
+
+    // Airport Transfer for 2 pax @ 1450 = 2900 subtotal
+    expect($addonCart->unit_rate)->toBe(1450.0)
+        ->and($addonCart->subtotal)->toBe(2900.0);
+
+    $response = $this->actingAs($this->user)->post(route('checkout.process'), [
+        'contact_name' => 'Juan Dela Cruz',
+        'contact_email' => $this->user->email,
+        'contact_phone' => '09171234567',
+        'guest_manifest' => json_encode([
+            ['full_name' => 'Juan Dela Cruz', 'category' => 'Adult', 'special_notes' => 'Lead'],
+            ['full_name' => 'Maria Dela Cruz', 'category' => 'Adult', 'special_notes' => 'Guest 2'],
+        ]),
+    ]);
+
+    $response->assertOk()->assertJson(['success' => true]);
+
+    $booking = Booking::first();
+    expect($booking)->not->toBeNull()
+        ->and($booking->total_amount)->toBe('3900.00')
+        ->and($booking->guest_manifest)->toHaveCount(2);
+});

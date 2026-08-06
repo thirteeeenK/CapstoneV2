@@ -178,7 +178,7 @@
                             <div class="grid {{ $hCols }} gap-5">
                                 @foreach($hotels as $rank => $hotel)
                                     @php
-                                        $hotelImagesRaw = is_array($hotel->hotel_images) ? $hotel->hotel_images : (is_string($hotel->hotel_images) ? (json_decode($hotel->hotel_images, true) ?: []) : []);
+                                        $hotelImagesRaw = is_array($hotel->images) ? $hotel->images : (is_string($hotel->images) ? (json_decode($hotel->images, true) ?: []) : []);
                                         $hotelImg = App\Concerns\ResolvesImages::resolveImg(
                                             $hotelImagesRaw[0] ?? null,
                                             'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80'
@@ -252,9 +252,10 @@
                                 @foreach($activities as $rank => $act)
                                     @php
                                         $actImagesRaw = is_array($act->images) ? $act->images : (is_string($act->images) ? (json_decode($act->images, true) ?: []) : []);
-                                        $actImg = App\Concerns\ResolvesImages::resolveImg(
+                                        $actImg = App\Concerns\ResolvesImages::resolveActivityImage(
                                             $actImagesRaw[0] ?? null,
-                                            'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=800&q=80'
+                                            $act->activity_name,
+                                            $act->category
                                         );
                                     @endphp
                                     <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs hover:shadow-md hover:border-emerald-300 transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between group">
@@ -265,7 +266,7 @@
                                                 <div class="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent"></div>
                                                 @if($act->rate)
                                                     <div class="absolute bottom-2.5 right-2.5 bg-slate-900/85 text-emerald-300 font-extrabold text-[11px] px-2 py-0.5 rounded-md">
-                                                        ₱{{ is_numeric($act->rate) ? number_format((float) $act->rate, 2) : $act->rate }}
+                                                        {{ App\Concerns\ResolvesImages::formatRate($act->rate) }}
                                                     </div>
                                                 @endif
                                             </div>
@@ -339,7 +340,7 @@
                             <div class="grid {{ $hColsDef }} gap-5">
                                 @foreach($hotels as $hotel)
                                     @php
-                                        $hotelImagesRaw = is_array($hotel->hotel_images) ? $hotel->hotel_images : (is_string($hotel->hotel_images) ? (json_decode($hotel->hotel_images, true) ?: []) : []);
+                                        $hotelImagesRaw = is_array($hotel->images) ? $hotel->images : (is_string($hotel->images) ? (json_decode($hotel->images, true) ?: []) : []);
                                         $hotelImg = App\Concerns\ResolvesImages::resolveImg(
                                             $hotelImagesRaw[0] ?? null,
                                             'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80'
@@ -410,9 +411,10 @@
                                 @foreach($activities as $rank => $act)
                                     @php
                                         $actImagesRaw = is_array($act->images) ? $act->images : (is_string($act->images) ? (json_decode($act->images, true) ?: []) : []);
-                                        $actImg = App\Concerns\ResolvesImages::resolveImg(
+                                        $actImg = App\Concerns\ResolvesImages::resolveActivityImage(
                                             $actImagesRaw[0] ?? null,
-                                            'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=800&q=80'
+                                            $act->activity_name,
+                                            $act->category
                                         );
                                     @endphp
                                     <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs hover:shadow-md hover:border-emerald-300 transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between group">
@@ -423,7 +425,7 @@
                                                 <div class="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent"></div>
                                                 @if($act->rate)
                                                     <div class="absolute bottom-2.5 right-2.5 bg-slate-900/85 text-emerald-300 font-extrabold text-[11px] px-2 py-0.5 rounded-md">
-                                                        ₱{{ is_numeric($act->rate) ? number_format((float) $act->rate, 2) : $act->rate }}
+                                                        {{ App\Concerns\ResolvesImages::formatRate($act->rate) }}
                                                     </div>
                                                 @endif
                                             </div>

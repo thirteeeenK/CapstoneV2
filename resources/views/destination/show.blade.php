@@ -255,22 +255,9 @@
                         @foreach($destination->activities as $activity)
                             @php
                                 $actImagesRaw = is_array($activity->images) ? $activity->images : (is_string($activity->images) ? (json_decode($activity->images, true) ?: []) : []);
-                                $resolvedActImages = array_map(function ($img) {
-                                    return App\Concerns\ResolvesImages::resolveImg($img, 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=800&q=80');
-                                }, $actImagesRaw);
-                                if (empty($resolvedActImages)) {
-                                    $resolvedActImages = [App\Concerns\ResolvesImages::resolveImg(null, 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=800&q=80')];
-                                }
-                                $actImg = $resolvedActImages[0];
-
-                                $actRateText = (string) $activity->rate;
-                                if (is_numeric($actRateText)) {
-                                    $formattedActRate = '₱' . number_format((float) $actRateText, 2);
-                                } elseif (str_starts_with($actRateText, '₱')) {
-                                    $formattedActRate = $actRateText;
-                                } else {
-                                    $formattedActRate = '₱' . $actRateText;
-                                }
+                                $actImg = App\Concerns\ResolvesImages::resolveActivityImage($actImagesRaw[0] ?? null, $activity->activity_name, $activity->category);
+                                $resolvedActImages = [$actImg];
+                                $formattedActRate = App\Concerns\ResolvesImages::formatRate($activity->rate);
 
                                 $inclusionsRaw = is_array($activity->inclusions) ? $activity->inclusions : (is_string($activity->inclusions) ? array_filter(array_map('trim', explode(',', $activity->inclusions))) : []);
                                 $exclusionsRaw = is_array($activity->exclusions) ? $activity->exclusions : (is_string($activity->exclusions) ? array_filter(array_map('trim', explode(',', $activity->exclusions))) : []);
