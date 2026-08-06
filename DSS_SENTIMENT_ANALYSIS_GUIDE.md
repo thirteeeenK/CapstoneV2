@@ -1,5 +1,7 @@
 # Sentiment Analysis & Review Summarization as a Decision Support System (DSS)
 
+> **Detailed Technical & Database Specification:** See [REVIEWS_SYSTEM_SPECIFICATION.md](file:///c:/xampp/htdocs/SunnyTripsCapstoneV2/REVIEWS_SYSTEM_SPECIFICATION.md) for database tables, Blade UI specifications, Gemini API prompts, `/reviews` page design, and admin analytics architecture.
+
 This document addresses how review summarization and sentiment analysis fit into the SunnyTrips Decision Support System, how to handle the lack of initial data, and recommended algorithms for capstone defense.
 
 ## 1. How do they qualify as DSS components?

@@ -23,6 +23,10 @@
             $hotel->images[0] ?? null,
             'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80'
         );
+        $galleryImages = array_values(array_map(
+            fn($img) => App\Concerns\ResolvesImages::resolveImg($img),
+            is_array($hotel->images) ? $hotel->images : []
+        ));
     @endphp
 
     <div x-data="{
@@ -32,6 +36,8 @@
         roomCheckOut: '',
         roomAvailable: true,
         activeModalImg: null,
+        activeModalImgIndex: 0,
+        galleryImages: {{ json_encode($galleryImages) }},
         previewRoom: null,
         activePreviewImgIndex: 0,
         autoPreviewRoomId: {{ request('preview_room') ? (int)request('preview_room') : 'null' }},
@@ -102,6 +108,20 @@
         confirmRoomSelection(room) {
             this.selectRoom(room);
             this.closeRoomPreview();
+        },
+        openGallery(idx) {
+            this.activeModalImgIndex = idx;
+            this.activeModalImg = this.galleryImages[idx] || null;
+        },
+        prevGallery() {
+            if (!this.galleryImages.length) return;
+            this.activeModalImgIndex = (this.activeModalImgIndex - 1 + this.galleryImages.length) % this.galleryImages.length;
+            this.activeModalImg = this.galleryImages[this.activeModalImgIndex];
+        },
+        nextGallery() {
+            if (!this.galleryImages.length) return;
+            this.activeModalImgIndex = (this.activeModalImgIndex + 1) % this.galleryImages.length;
+            this.activeModalImg = this.galleryImages[this.activeModalImgIndex];
         }
     }" class="pt-32 sm:pt-36 pb-24 bg-slate-50 min-h-screen">
 
@@ -479,7 +499,7 @@
                     <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
                         @foreach($hotel->images as $idx => $img)
                             @php $fullUrl = App\Concerns\ResolvesImages::resolveImg($img); @endphp
-                            <div @click="activeModalImg = '{{ $fullUrl }}'"
+                            <div @click="openGallery({{ $idx }})"
                                 class="relative h-40 sm:h-48 rounded-xl overflow-hidden cursor-pointer group bg-slate-200">
                                 <img src="{{ $fullUrl }}" alt="Hotel photo {{ $idx + 1 }}"
                                     class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
@@ -644,6 +664,42 @@
                     </button>
                 </div>
 
+            </div>
+        </div>
+
+        {{-- Hotel Photo Lightbox --}}
+        <div x-show="activeModalImg" x-transition.opacity
+            @keydown.escape.window="activeModalImg = null"
+            @keydown.left.window="prevGallery()"
+            @keydown.right.window="nextGallery()"
+            class="fixed inset-0 z-[120] bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4 sm:p-8"
+            style="display: none;">
+            <div class="relative max-w-5xl w-full" @click.away="activeModalImg = null">
+
+                <button @click="activeModalImg = null"
+                    class="absolute -top-3 -right-3 z-10 text-white bg-slate-900/80 hover:bg-rose-600 p-2 rounded-full transition-colors cursor-pointer"
+                    title="Close photo">
+                    <span class="material-symbols-outlined text-[20px]">close</span>
+                </button>
+
+                <button @click.stop="prevGallery()"
+                    class="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-10 text-white bg-slate-900/60 hover:bg-slate-900/90 p-2.5 sm:p-3 rounded-full transition-colors cursor-pointer"
+                    title="Previous photo">
+                    <span class="material-symbols-outlined text-[22px]">chevron_left</span>
+                </button>
+
+                <button @click.stop="nextGallery()"
+                    class="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-10 text-white bg-slate-900/60 hover:bg-slate-900/90 p-2.5 sm:p-3 rounded-full transition-colors cursor-pointer"
+                    title="Next photo">
+                    <span class="material-symbols-outlined text-[22px]">chevron_right</span>
+                </button>
+
+                <img :src="activeModalImg" alt="Hotel photo"
+                    class="w-full max-h-[85vh] object-contain rounded-2xl shadow-2xl bg-slate-900">
+
+                <div class="absolute bottom-3 right-3 bg-slate-950/70 backdrop-blur-md text-white text-xs px-3 py-1 rounded-lg border border-white/20">
+                    Photo <span x-text="activeModalImgIndex + 1"></span> of <span x-text="galleryImages.length"></span>
+                </div>
             </div>
         </div>
 

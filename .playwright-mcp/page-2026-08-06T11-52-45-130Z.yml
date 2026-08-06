@@ -1,0 +1,169 @@
+- generic [active] [ref=f14e1]:
+  - complementary [ref=f14e2]:
+    - generic [ref=f14e4]:
+      - link "SunnyTrips" [ref=f14e5] [cursor=pointer]:
+        - /url: http://localhost:8000/dashboard
+      - paragraph [ref=f14e7]:
+        - generic [ref=f14e9]: Traveler Portal
+    - navigation [ref=f14e10]:
+      - generic [ref=f14e11]:
+        - heading "Main Navigation" [level=2] [ref=f14e12]
+        - generic [ref=f14e13]:
+          - link "space_dashboard Dashboard" [ref=f14e14] [cursor=pointer]:
+            - /url: http://localhost:8000/dashboard
+            - generic [ref=f14e15]: space_dashboard
+            - generic [ref=f14e16]: Dashboard
+          - link "shopping_basket My Trip Basket" [ref=f14e17] [cursor=pointer]:
+            - /url: http://localhost:8000/cart
+            - generic [ref=f14e18]: shopping_basket
+            - generic [ref=f14e19]: My Trip Basket
+          - link "auto_stories My Bookings" [ref=f14e20] [cursor=pointer]:
+            - /url: http://localhost:8000/bookings
+            - generic [ref=f14e21]: auto_stories
+            - generic [ref=f14e22]: My Bookings
+      - generic [ref=f14e23]:
+        - heading "Explore Catalog" [level=2] [ref=f14e24]
+        - generic [ref=f14e25]:
+          - link "location_on Island Destinations" [ref=f14e26] [cursor=pointer]:
+            - /url: http://localhost:8000/destinations
+            - generic [ref=f14e27]: location_on
+            - generic [ref=f14e28]: Island Destinations
+          - link "hotel Hotels & Sanctuaries" [ref=f14e29] [cursor=pointer]:
+            - /url: http://localhost:8000/hotels
+            - generic [ref=f14e30]: hotel
+            - generic [ref=f14e31]: Hotels & Sanctuaries
+          - link "king_bed Rooms & Stays" [ref=f14e32] [cursor=pointer]:
+            - /url: http://localhost:8000/rooms
+            - generic [ref=f14e33]: king_bed
+            - generic [ref=f14e34]: Rooms & Stays
+          - link "explore Activities & Tours" [ref=f14e35] [cursor=pointer]:
+            - /url: http://localhost:8000/activities
+            - generic [ref=f14e36]: explore
+            - generic [ref=f14e37]: Activities & Tours
+          - link "extension Transfers & Add-ons" [ref=f14e38] [cursor=pointer]:
+            - /url: http://localhost:8000/addons
+            - generic [ref=f14e39]: extension
+            - generic [ref=f14e40]: Transfers & Add-ons
+          - link "card_travel Tour Packages & Promos" [ref=f14e41] [cursor=pointer]:
+            - /url: http://localhost:8000/packages
+            - generic [ref=f14e42]: card_travel
+            - generic [ref=f14e43]: Tour Packages & Promos
+      - generic [ref=f14e44]:
+        - heading "Personalization" [level=2] [ref=f14e45]
+        - generic [ref=f14e46]:
+          - link "tune AI Preferences Quiz" [ref=f14e47] [cursor=pointer]:
+            - /url: http://localhost:8000/onboarding
+            - generic [ref=f14e48]: tune
+            - generic [ref=f14e49]: AI Preferences Quiz
+          - link "manage_accounts Account Profile" [ref=f14e50] [cursor=pointer]:
+            - /url: http://localhost:8000/profile
+            - generic [ref=f14e51]: manage_accounts
+            - generic [ref=f14e52]: Account Profile
+    - generic [ref=f14e53]:
+      - generic [ref=f14e54]:
+        - generic [ref=f14e55]: T
+        - generic [ref=f14e56]:
+          - generic [ref=f14e57]: Test User
+          - generic [ref=f14e58]: test@example.com
+      - button "logout Log Out" [ref=f14e60] [cursor=pointer]:
+        - generic [ref=f14e61]: logout
+        - generic [ref=f14e62]: Log Out
+  - main [ref=f14e63]:
+    - generic [ref=f14e65]:
+      - generic [ref=f14e66]:
+        - img "Boracay Ocean Club Beach Resort" [ref=f14e67]
+        - generic [ref=f14e69]:
+          - generic [ref=f14e70]:
+            - generic [ref=f14e71]: High End Luxury Hotels
+            - generic [ref=f14e72]:
+              - generic [ref=f14e73]: location_on
+              - text: Boracay
+          - heading "Boracay Ocean Club Beach Resort" [level=1] [ref=f14e74]
+          - paragraph [ref=f14e75]:
+            - generic [ref=f14e76]: pin_drop
+            - text: Station 3, White Beach
+          - generic [ref=f14e77]:
+            - generic [ref=f14e78]: "#Beachfront Resort"
+            - generic [ref=f14e79]: "#Scuba & Diving"
+            - generic [ref=f14e80]: "#Ocean Views"
+            - generic [ref=f14e81]: "#Laid-back Luxury"
+      - generic [ref=f14e82]:
+        - generic [ref=f14e83]:
+          - generic [ref=f14e84]:
+            - heading "Hotel Description" [level=2] [ref=f14e85]
+            - paragraph [ref=f14e87]: Boracay Ocean Club is located in Station 3, right along White Beach with direct beachfront access. The resort features a beachfront pool, spa services, and dive center, making it ideal for adventure seekers and beach lovers. With ocean-view rooms and a quieter location, it's perfect for travelers who want a more laid-back Boracay experience.
+          - generic [ref=f14e88]:
+            - heading "Exclusive Amenities & Services" [level=3] [ref=f14e91]
+            - generic [ref=f14e92]:
+              - generic [ref=f14e93]:
+                - generic [ref=f14e94]: pool
+                - paragraph [ref=f14e97]: Beachfront Pool
+              - generic [ref=f14e98]:
+                - generic [ref=f14e99]: star
+                - paragraph [ref=f14e102]: PADI Dive Center
+              - generic [ref=f14e103]:
+                - generic [ref=f14e104]: spa
+                - paragraph [ref=f14e107]: Massage Spa
+              - generic [ref=f14e108]:
+                - generic [ref=f14e109]: restaurant
+                - paragraph [ref=f14e112]: Oceanview Dining
+        - generic [ref=f14e115]:
+          - generic [ref=f14e116]: king_bed
+          - generic [ref=f14e118]:
+            - heading "Select a Room" [level=3] [ref=f14e119]
+            - paragraph [ref=f14e120]: Choose your preferred room type from the gallery below to view live pricing and details.
+          - link "Browse Available Rooms arrow_downward" [ref=f14e121] [cursor=pointer]:
+            - /url: "#room-gallery"
+            - generic [ref=f14e122]: Browse Available Rooms
+            - generic [ref=f14e123]: arrow_downward
+      - generic [ref=f14e124]:
+        - generic [ref=f14e125]:
+          - generic [ref=f14e126]:
+            - heading "Available Room Types" [level=2] [ref=f14e127]
+            - paragraph [ref=f14e128]: Explore available suites & rooms at Boracay Ocean Club Beach Resort
+          - generic [ref=f14e129]: 1 Room Type
+        - generic [ref=f14e131]:
+          - generic [ref=f14e132]:
+            - generic [ref=f14e133] [cursor=pointer]:
+              - img "Diamond Oceanfront Room" [ref=f14e134]
+              - generic [ref=f14e136]:
+                - generic [ref=f14e137]: visibility
+                - text: Quick Preview
+              - generic [ref=f14e138]: ₱6,800.00 / night
+              - generic [ref=f14e139]:
+                - generic [ref=f14e140]: visibility
+                - text: Ocean View
+            - generic [ref=f14e141]:
+              - heading "Diamond Oceanfront Room" [level=3] [ref=f14e143] [cursor=pointer]
+              - paragraph [ref=f14e144]: Tranquil beachfront sanctuary in Station 3. Panoramic sea views and immediate access to the resort's PADI diving facility.
+              - generic [ref=f14e145]:
+                - generic [ref=f14e146]:
+                  - generic [ref=f14e147]: bed
+                  - text: 1 King Bed
+                - generic [ref=f14e148]:
+                  - generic [ref=f14e149]: group
+                  - text: "Base: 2 • Max: 2 Guests"
+                - generic [ref=f14e150]:
+                  - generic [ref=f14e151]: aspect_ratio
+                  - text: 38 sq.m
+          - generic [ref=f14e152]:
+            - button "visibility Preview" [ref=f14e153] [cursor=pointer]:
+              - generic [ref=f14e154]: visibility
+              - generic [ref=f14e155]: Preview
+            - button "touch_app Select" [ref=f14e156] [cursor=pointer]:
+              - generic [ref=f14e157]: touch_app
+              - generic [ref=f14e158]: Select
+      - generic [ref=f14e159]:
+        - generic [ref=f14e160]:
+          - heading "Hotel Photo Gallery" [level=2] [ref=f14e161]
+          - paragraph [ref=f14e162]: Immerse yourself in the atmosphere of Boracay Ocean Club Beach Resort
+        - generic [ref=f14e163]:
+          - generic [ref=f14e164] [cursor=pointer]:
+            - img "Hotel photo 1" [ref=f14e165]
+            - generic [ref=f14e166]: zoom_in
+          - generic [ref=f14e168] [cursor=pointer]:
+            - img "Hotel photo 2" [ref=f14e169]
+            - generic [ref=f14e170]: zoom_in
+          - generic [ref=f14e172] [cursor=pointer]:
+            - img "Hotel photo 3" [ref=f14e173]
+            - generic [ref=f14e174]: zoom_in
