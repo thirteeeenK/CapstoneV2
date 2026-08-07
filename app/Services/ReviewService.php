@@ -70,13 +70,22 @@ class ReviewService
     }
 
     /**
-     * Validate that a booking is eligible for review submission by this user.
+     * Validate that a booking item is eligible for review submission by this user.
      */
-    public function assertEligible(User $user, Booking $booking): void
+    public function assertEligible(User $user, Booking $booking, ?int $bookingItemId = null): void
     {
         abort_unless($booking->user_id === $user->id, 403, 'This booking does not belong to you.');
         abort_unless($booking->status === Booking::STATUS_COMPLETED, 422, 'Only completed bookings can be reviewed.');
-        abort_if(Review::where('booking_id', $booking->id)->exists(), 422, 'This booking has already been reviewed.');
+
+        if ($bookingItemId) {
+            abort_if(
+                Review::where('booking_id', $booking->id)->where('booking_item_id', $bookingItemId)->exists(),
+                422,
+                'This item has already been reviewed.'
+            );
+        } else {
+            abort_if(Review::where('booking_id', $booking->id)->whereNull('booking_item_id')->exists(), 422, 'This booking has already been reviewed.');
+        }
     }
 
     /**
@@ -84,7 +93,7 @@ class ReviewService
      */
     public function store(User $user, Booking $booking, int $rating, string $comment, ?int $bookingItemId = null): Review
     {
-        $this->assertEligible($user, $booking);
+        $this->assertEligible($user, $booking, $bookingItemId);
 
         $item = null;
 
@@ -106,6 +115,7 @@ class ReviewService
 
         $review = Review::create([
             'booking_id' => $booking->id,
+            'booking_item_id' => $item->id,
             'user_id' => $user->id,
             'reviewable_type' => $target['type'],
             'reviewable_id' => $target['id'],
@@ -138,11 +148,20 @@ class ReviewService
     public function adminStore(Booking $booking, int $rating, string $comment, ?int $bookingItemId = null, ?User $user = null): Review
     {
         abort_unless($booking->status === Booking::STATUS_COMPLETED, 422, 'Only completed bookings can be reviewed.');
-        abort_if(Review::where('booking_id', $booking->id)->exists(), 422, 'This booking has already been reviewed.');
+
+        if ($bookingItemId) {
+            abort_if(
+                Review::where('booking_id', $booking->id)->where('booking_item_id', $bookingItemId)->exists(),
+                422,
+                'This item has already been reviewed.'
+            );
+        }
 
         $reviewer = $user ?? $booking->user;
 
         abort_unless($reviewer, 422, 'This booking has no guest account to attribute the review to.');
+
+        $reviewedItemIds = Review::where('booking_id', $booking->id)->pluck('booking_item_id')->filter();
 
         $item = null;
 
@@ -153,10 +172,11 @@ class ReviewService
         if (!$item) {
             $item = $booking->items()
                 ->whereIn('item_type', array_keys(self::REVIEWABLE_ITEM_TYPES))
+                ->whereNotIn('id', $reviewedItemIds)
                 ->first();
         }
 
-        abort_unless($item, 422, 'This booking has no reviewable items.');
+        abort_unless($item, 422, 'This booking has no unreviewed items.');
 
         $target = $this->resolveReviewableFromItem($item);
 
@@ -164,6 +184,7 @@ class ReviewService
 
         $review = Review::create([
             'booking_id' => $booking->id,
+            'booking_item_id' => $item->id,
             'user_id' => $reviewer->id,
             'reviewable_type' => $target['type'],
             'reviewable_id' => $target['id'],
@@ -253,39 +274,53 @@ class ReviewService
     }
 
     /**
-     * Completed bookings of the user that still have no review, with their
-     * reviewable items for the dynamic modal picker.
+     * Completed bookings of the user with per-item review status for the modal picker.
+     * Returns all completed bookings; each reviewable item includes an is_reviewed flag.
      */
     public function eligibleBookings(User $user): Collection
     {
-        $reviewedBookingIds = Review::where('user_id', $user->id)->pluck('booking_id')->filter();
-
         return Booking::with(['items'])
             ->where('user_id', $user->id)
             ->where('status', Booking::STATUS_COMPLETED)
-            ->when($reviewedBookingIds->isNotEmpty(), fn($q) => $q->whereNotIn('id', $reviewedBookingIds))
             ->latest()
             ->get()
             ->map(function (Booking $booking) {
                 $items = $booking->items
                     ->filter(fn($item) => array_key_exists($item->item_type, self::REVIEWABLE_ITEM_TYPES))
-                    ->map(fn(BookingItem $item) => [
-                        'id' => $item->id,
-                        'item_type' => $item->item_type,
-                        'item_title' => $item->item_title,
-                        'item_subtitle' => $item->item_subtitle,
-                        'hotel_name' => $item->hotel_name,
-                        'check_in_date' => $item->check_in_date?->format('Y-m-d'),
-                        'check_out_date' => $item->check_out_date?->format('Y-m-d'),
-                    ])
+                    ->map(function (BookingItem $item) {
+                        $review = Review::where('booking_id', $item->booking_id)
+                            ->where('booking_item_id', $item->id)
+                            ->first();
+
+                        return [
+                            'id' => $item->id,
+                            'item_type' => $item->item_type,
+                            'item_title' => $item->item_title,
+                            'item_subtitle' => $item->item_subtitle,
+                            'hotel_name' => $item->hotel_name,
+                            'check_in_date' => $item->check_in_date?->format('Y-m-d'),
+                            'check_out_date' => $item->check_out_date?->format('Y-m-d'),
+                            'is_reviewed' => $review !== null,
+                            'existing_review' => $review ? [
+                                'id' => $review->id,
+                                'rating' => $review->rating,
+                                'comment' => $review->comment,
+                            ] : null,
+                        ];
+                    })
                     ->values();
+
+                $hasUnreviewed = $items->contains('is_reviewed', false);
 
                 return [
                     'booking_id' => $booking->id,
                     'booking_code' => $booking->booking_code,
                     'reviewable_items' => $items,
+                    'has_unreviewed_items' => $hasUnreviewed,
                 ];
-            });
+            })
+            ->filter(fn($b) => $b['has_unreviewed_items'])
+            ->values();
     }
 
     /**

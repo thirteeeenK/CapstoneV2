@@ -22,7 +22,8 @@ class CheckUserOnboarding
                 !$request->routeIs('onboarding.*') &&
                 !$request->routeIs('logout') &&
                 !$request->routeIs('admin.*') &&
-                !$request->is('admin*')
+                !$request->is('admin*') &&
+                !$request->expectsJson()
             ) {
                 return redirect()->route('onboarding.index');
             }

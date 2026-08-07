@@ -15,6 +15,8 @@
             ['key' => 'active', 'label' => 'In Progress'],
             ['key' => 'paid', 'label' => 'Confirmed'],
             ['key' => 'completed', 'label' => 'Completed'],
+            ['key' => 'reviewable', 'label' => 'Pending For Review'],
+            ['key' => 'reviewed', 'label' => 'Reviewed'],
             ['key' => 'closed', 'label' => 'Closed'],
         ];
 
@@ -82,18 +84,27 @@
 
                     {{-- Booking cards --}}
                     <div class="space-y-4">
-                        @foreach ($bookings as $booking)
+                        @foreach ($bookings as $bookingList)
                             @php
-                                $meta = $statusMeta[$booking->status] ?? $statusMeta['pending'];
-                                $firstItem = $booking->items->first();
-                                $itemCount = $booking->items->count();
-                                $checkIn = $booking->items->pluck('check_in_date')->filter()->min();
-                                $bucket = in_array($booking->status, $activeKeys, true) ? 'active'
-                                    : ($booking->status === 'paid' ? 'paid'
-                                    : ($booking->status === 'completed' ? 'completed' : 'closed'));
+                                $bookingList->loadMissing('reviews');
+                                $meta = $statusMeta[$bookingList->status] ?? $statusMeta['pending'];
+                                $firstItem = $bookingList->items->first();
+                                $itemCount = $bookingList->items->count();
+                                $checkIn = $bookingList->items->pluck('check_in_date')->filter()->min();
+                                $bucket = in_array($bookingList->status, $activeKeys, true) ? 'active'
+                                    : ($bookingList->status === 'paid' ? 'paid'
+                                    : ($bookingList->status === 'completed' ? 'completed' : 'closed'));
+
+                                if ($bookingList->status === 'completed') {
+                                    $reviewableTypes = ['room', 'activity', 'package'];
+                                    $reviewableItems = $bookingList->items->filter(fn($it) => in_array($it->item_type, $reviewableTypes));
+                                    $hasAnyUnreviewed = $reviewableItems->count() > 0
+                                        && $reviewableItems->some(fn($it) => !$bookingList->reviews->contains('booking_item_id', $it->id));
+                                    $bucket = $hasAnyUnreviewed ? 'reviewable' : 'reviewed';
+                                }
                             @endphp
 
-                            <a href="{{ route('booking.show', $booking->booking_code) }}"
+                            <a href="{{ route('booking.show', $bookingList->booking_code) }}"
                                x-show="filter === 'all' || filter === '{{ $bucket }}'"
                                x-transition:enter="transition ease-out duration-200"
                                x-transition:enter-start="opacity-0 translate-y-2"
@@ -107,7 +118,7 @@
                                 <div class="min-w-0 flex-1">
                                     <div class="flex items-center gap-2.5 flex-wrap">
                                         <h2 class="font-headline text-sm sm:text-base font-bold text-slate-900 truncate">
-                                            {{ $booking->booking_code }}
+                                            {{ $bookingList->booking_code }}
                                         </h2>
                                         <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider {{ $meta['chip'] }}">
                                             <span class="w-1.5 h-1.5 rounded-full {{ $meta['dot'] }}"></span>
@@ -125,17 +136,17 @@
                                         @endif
                                     </p>
                                     <p class="font-label text-[9px] uppercase tracking-[0.15em] text-slate-400 font-bold mt-1.5">
-                                        Journaled {{ $booking->created_at->format('M j, Y') }}
+                                        Journaled {{ $bookingList->created_at->format('M j, Y') }}
                                     </p>
                                 </div>
 
                                 <div class="text-right shrink-0">
-                                    @if (in_array($booking->status, ['pending', 'approved', 'paid'], true))
+                                    @if (in_array($bookingList->status, ['pending', 'approved', 'paid'], true))
                                         <p class="font-headline text-base sm:text-lg font-black text-slate-900">
-                                            ₱{{ number_format($booking->net_amount, 2) }}
+                                            ₱{{ number_format($bookingList->net_amount, 2) }}
                                         </p>
                                         <p class="font-label text-[9px] uppercase tracking-[0.15em] text-slate-400 font-bold mt-0.5">
-                                            {{ $booking->status === 'pending' ? 'Estimated' : ($booking->status === 'approved' ? 'Due' : 'Paid') }}
+                                            {{ $bookingList->status === 'pending' ? 'Estimated' : ($bookingList->status === 'approved' ? 'Due' : 'Paid') }}
                                         </p>
                                     @endif
                                     <span class="material-symbols-outlined text-slate-300 group-hover:text-slate-600 group-hover:translate-x-0.5 transition-all text-xl mt-1 inline-block">

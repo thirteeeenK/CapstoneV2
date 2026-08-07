@@ -42,7 +42,7 @@
                             <span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' {{ $i <= round((float)$summary->average_rating) ? 1 : 0 }}">star</span>
                         @endfor
                     </div>
-                    <p class="text-xs text-slate-500 mt-0.5">{{ $summary->total_reviews }} verified {{ Str::plural('review', $summary->total_reviews) }}</p>
+                    <!-- <p class="text-xs text-slate-500 mt-0.5">{{ $summary->total_reviews }} verified {{ Str::plural('review', $summary->total_reviews) }}</p> -->
                 </div>
             </div>
 

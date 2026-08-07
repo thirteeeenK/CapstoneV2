@@ -16,11 +16,6 @@
                 class="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                 <div class="space-y-2">
                     <div class="flex flex-wrap items-center gap-2">
-                        <span
-                            class="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[11px] font-bold border border-emerald-200 flex items-center gap-1">
-                            <span class="material-symbols-outlined text-[15px] text-emerald-600">verified</span>
-                            <span>Traveler Account</span>
-                        </span>
                         @if($isPersonalized)
                             <span
                                 class="px-3 py-1 rounded-full bg-sky-50 text-sky-700 text-[11px] font-extrabold uppercase tracking-widest border border-sky-200 flex items-center gap-1.5 shadow-xs">

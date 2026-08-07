@@ -1,0 +1,251 @@
+- generic [active] [ref=f7e1]:
+  - complementary [ref=f7e2]:
+    - generic [ref=f7e4]:
+      - link "SunnyTrips" [ref=f7e5] [cursor=pointer]:
+        - /url: http://localhost:8000/dashboard
+      - paragraph [ref=f7e7]:
+        - generic [ref=f7e9]: Traveler Portal
+    - navigation [ref=f7e10]:
+      - generic [ref=f7e11]:
+        - heading "Main Navigation" [level=2] [ref=f7e12]
+        - generic [ref=f7e13]:
+          - link "space_dashboard Dashboard" [ref=f7e14] [cursor=pointer]:
+            - /url: http://localhost:8000/dashboard
+            - generic [ref=f7e15]: space_dashboard
+            - generic [ref=f7e16]: Dashboard
+          - link "shopping_basket My Trip Basket" [ref=f7e17] [cursor=pointer]:
+            - /url: http://localhost:8000/cart
+            - generic [ref=f7e18]: shopping_basket
+            - generic [ref=f7e19]: My Trip Basket
+          - link "auto_stories My Bookings" [ref=f7e20] [cursor=pointer]:
+            - /url: http://localhost:8000/bookings
+            - generic [ref=f7e21]: auto_stories
+            - generic [ref=f7e22]: My Bookings
+          - link "reviews Guest Reviews" [ref=f7e23] [cursor=pointer]:
+            - /url: http://localhost:8000/reviews
+            - generic [ref=f7e24]: reviews
+            - generic [ref=f7e25]: Guest Reviews
+      - generic [ref=f7e26]:
+        - heading "Explore Catalog" [level=2] [ref=f7e27]
+        - generic [ref=f7e28]:
+          - link "location_on Island Destinations" [ref=f7e29] [cursor=pointer]:
+            - /url: http://localhost:8000/destinations
+            - generic [ref=f7e30]: location_on
+            - generic [ref=f7e31]: Island Destinations
+          - link "hotel Hotels & Sanctuaries" [ref=f7e32] [cursor=pointer]:
+            - /url: http://localhost:8000/hotels
+            - generic [ref=f7e33]: hotel
+            - generic [ref=f7e34]: Hotels & Sanctuaries
+          - link "king_bed Rooms & Stays" [ref=f7e35] [cursor=pointer]:
+            - /url: http://localhost:8000/rooms
+            - generic [ref=f7e36]: king_bed
+            - generic [ref=f7e37]: Rooms & Stays
+          - link "explore Activities & Tours" [ref=f7e38] [cursor=pointer]:
+            - /url: http://localhost:8000/activities
+            - generic [ref=f7e39]: explore
+            - generic [ref=f7e40]: Activities & Tours
+          - link "extension Transfers & Add-ons" [ref=f7e41] [cursor=pointer]:
+            - /url: http://localhost:8000/addons
+            - generic [ref=f7e42]: extension
+            - generic [ref=f7e43]: Transfers & Add-ons
+          - link "card_travel Tour Packages & Promos" [ref=f7e44] [cursor=pointer]:
+            - /url: http://localhost:8000/packages
+            - generic [ref=f7e45]: card_travel
+            - generic [ref=f7e46]: Tour Packages & Promos
+      - generic [ref=f7e47]:
+        - heading "Personalization" [level=2] [ref=f7e48]
+        - generic [ref=f7e49]:
+          - link "tune AI Preferences Quiz" [ref=f7e50] [cursor=pointer]:
+            - /url: http://localhost:8000/onboarding
+            - generic [ref=f7e51]: tune
+            - generic [ref=f7e52]: AI Preferences Quiz
+          - link "manage_accounts Account Profile" [ref=f7e53] [cursor=pointer]:
+            - /url: http://localhost:8000/profile
+            - generic [ref=f7e54]: manage_accounts
+            - generic [ref=f7e55]: Account Profile
+    - generic [ref=f7e56]:
+      - generic [ref=f7e57]:
+        - generic [ref=f7e58]: J
+        - generic [ref=f7e59]:
+          - generic [ref=f7e60]: John Kenly Pamor
+          - generic [ref=f7e61]: johnkenlypamor13@gmail.com
+      - button "logout Log Out" [ref=f7e63] [cursor=pointer]:
+        - generic [ref=f7e64]: logout
+        - generic [ref=f7e65]: Log Out
+  - main [ref=f7e66]:
+    - generic [ref=f7e68]:
+      - generic [ref=f7e70]:
+        - generic [ref=f7e72]:
+          - generic [ref=f7e73]: auto_awesome
+          - generic [ref=f7e74]: AI Personalization Active
+        - heading "Welcome back, John Kenly Pamor!" [level=1] [ref=f7e75]
+        - paragraph [ref=f7e76]: Logged in as johnkenlypamor13@gmail.com. Explore your island recommendations below.
+      - generic [ref=f7e77]:
+        - generic [ref=f7e78]:
+          - generic [ref=f7e79]:
+            - generic [ref=f7e80]:
+              - button "auto_awesome AI Recommendations" [ref=f7e81] [cursor=pointer]:
+                - generic [ref=f7e82]: auto_awesome
+                - generic [ref=f7e83]: AI Recommendations
+              - button "travel_explore Default Listings" [ref=f7e85] [cursor=pointer]:
+                - generic [ref=f7e86]: travel_explore
+                - generic [ref=f7e87]: Default Listings
+              - button "card_travel Tour Packages" [ref=f7e88] [cursor=pointer]:
+                - generic [ref=f7e89]: card_travel
+                - generic [ref=f7e90]: Tour Packages
+            - paragraph [ref=f7e91]: Top 5 sanctuary stays and top 5 experiences matched to your travel preference profile.
+          - generic [ref=f7e92]:
+            - link "tune Reset Preferences" [ref=f7e93] [cursor=pointer]:
+              - /url: http://localhost:8000/onboarding/reset
+              - generic [ref=f7e94]: tune
+              - generic [ref=f7e95]: Reset Preferences
+            - generic [ref=f7e96]:
+              - generic [ref=f7e97]:
+                - generic [ref=f7e98]: filter_alt
+                - generic [ref=f7e99]: "Sanctuary:"
+              - button "location_on Boracay" [ref=f7e100] [cursor=pointer]:
+                - generic [ref=f7e101]: location_on
+                - generic [ref=f7e102]: Boracay
+              - button "location_on El Nido" [ref=f7e103] [cursor=pointer]:
+                - generic [ref=f7e104]: location_on
+                - generic [ref=f7e105]: El Nido
+        - generic [ref=f7e107]:
+          - generic [ref=f7e108]:
+            - generic [ref=f7e109]:
+              - generic [ref=f7e110]:
+                - generic [ref=f7e111]: hotel
+                - heading "Top 5 Recommended Sanctuary Stays in Boracay" [level=3] [ref=f7e112]
+              - generic [ref=f7e113]: Ranked by AI Match
+            - generic [ref=f7e114]:
+              - 'link "My Station Hotel #1 AI Match Mid Affordable Hotels My Station Hotel Located in Station 1, My Station Hotel is just a short walk from the pristine White Beach. With modern, comfortable rooms and a welcoming atmosphere, this hotel offers a relaxing stay while being close to local attractions. Guests can enjoy easy access to restaurants, shopping, and the island''s nightlife, making it perfect for both relaxation and adventure seekers. View Sanctuary arrow_forward" [ref=f7e115] [cursor=pointer]':
+                - /url: http://localhost:8000/hotels/5
+                - generic [ref=f7e116]:
+                  - generic [ref=f7e117]:
+                    - img "My Station Hotel" [ref=f7e118]
+                    - generic [ref=f7e120]: "#1 AI Match"
+                    - generic [ref=f7e121]: Mid Affordable Hotels
+                  - generic [ref=f7e122]:
+                    - heading "My Station Hotel" [level=4] [ref=f7e123]
+                    - paragraph [ref=f7e124]: Located in Station 1, My Station Hotel is just a short walk from the pristine White Beach. With modern, comfortable rooms and a welcoming atmosphere, this hotel offers a relaxing stay while being close to local attractions. Guests can enjoy easy access to restaurants, shopping, and the island's nightlife, making it perfect for both relaxation and adventure seekers.
+                - generic [ref=f7e126]:
+                  - generic [ref=f7e127]: View Sanctuary
+                  - generic [ref=f7e128]: arrow_forward
+              - 'link "Happiness Hostel #2 AI Match Mid Affordable Hotels Happiness Hostel Near Bulabog Beach in Station 2, Happiness Hostel offers a bohemian vibe with both dorms and private rooms. It''s a 2-minute walk to Bulabog and around 10 minutes to White Beach. The property has a small pool and an in-house restaurant with communal areas for socializing. View Sanctuary arrow_forward" [ref=f7e129] [cursor=pointer]':
+                - /url: http://localhost:8000/hotels/8
+                - generic [ref=f7e130]:
+                  - generic [ref=f7e131]:
+                    - img "Happiness Hostel" [ref=f7e132]
+                    - generic [ref=f7e134]: "#2 AI Match"
+                    - generic [ref=f7e135]: Mid Affordable Hotels
+                  - generic [ref=f7e136]:
+                    - heading "Happiness Hostel" [level=4] [ref=f7e137]
+                    - paragraph [ref=f7e138]: Near Bulabog Beach in Station 2, Happiness Hostel offers a bohemian vibe with both dorms and private rooms. It's a 2-minute walk to Bulabog and around 10 minutes to White Beach. The property has a small pool and an in-house restaurant with communal areas for socializing.
+                - generic [ref=f7e140]:
+                  - generic [ref=f7e141]: View Sanctuary
+                  - generic [ref=f7e142]: arrow_forward
+              - 'link "The Muse Hotel #3 AI Match Mid Affordable Hotels The Muse Hotel Located in Station 1, The Muse is a stylish beachfront hotel with easy access to White Beach. It features an indoor pool, restaurant, and modern rooms. The quieter beachfront location is perfect for relaxation, while still being near several restaurants. View Sanctuary arrow_forward" [ref=f7e143] [cursor=pointer]':
+                - /url: http://localhost:8000/hotels/9
+                - generic [ref=f7e144]:
+                  - generic [ref=f7e145]:
+                    - img "The Muse Hotel" [ref=f7e146]
+                    - generic [ref=f7e148]: "#3 AI Match"
+                    - generic [ref=f7e149]: Mid Affordable Hotels
+                  - generic [ref=f7e150]:
+                    - heading "The Muse Hotel" [level=4] [ref=f7e151]
+                    - paragraph [ref=f7e152]: Located in Station 1, The Muse is a stylish beachfront hotel with easy access to White Beach. It features an indoor pool, restaurant, and modern rooms. The quieter beachfront location is perfect for relaxation, while still being near several restaurants.
+                - generic [ref=f7e154]:
+                  - generic [ref=f7e155]: View Sanctuary
+                  - generic [ref=f7e156]: arrow_forward
+              - 'link "Canyon Hotels & Resorts Boracay #4 AI Match High End Luxury Hotels Canyon Hotels & Resorts Boracay Canyon is nestled in Station 2, just a short walk from White Beach and D''Mall. This boutique hotel offers cozy, well-appointed rooms and a peaceful atmosphere. With its quiet location yet easy access to shops and restaurants, it''s great for couples and families seeking a balance of relaxation and convenience. View Sanctuary arrow_forward" [ref=f7e157] [cursor=pointer]':
+                - /url: http://localhost:8000/hotels/2
+                - generic [ref=f7e158]:
+                  - generic [ref=f7e159]:
+                    - img "Canyon Hotels & Resorts Boracay" [ref=f7e160]
+                    - generic [ref=f7e162]: "#4 AI Match"
+                    - generic [ref=f7e163]: High End Luxury Hotels
+                  - generic [ref=f7e164]:
+                    - heading "Canyon Hotels & Resorts Boracay" [level=4] [ref=f7e165]
+                    - paragraph [ref=f7e166]: Canyon is nestled in Station 2, just a short walk from White Beach and D'Mall. This boutique hotel offers cozy, well-appointed rooms and a peaceful atmosphere. With its quiet location yet easy access to shops and restaurants, it's great for couples and families seeking a balance of relaxation and convenience.
+                - generic [ref=f7e168]:
+                  - generic [ref=f7e169]: View Sanctuary
+                  - generic [ref=f7e170]: arrow_forward
+              - 'link "Lazy Dog Bed & Breakfast #5 AI Match Mid Affordable Hotels Lazy Dog Bed & Breakfast Located near Bulabog Beach, Lazy Dog provides a cozy environment with both private rooms and dormitories. It''s about a 2-minute walk to Bulabog Beach and 10 minutes to White Beach Station 2. There''s no swimming pool, but the area is peaceful and just a short walk to D''Mall and various restaurants. View Sanctuary arrow_forward" [ref=f7e171] [cursor=pointer]':
+                - /url: http://localhost:8000/hotels/7
+                - generic [ref=f7e172]:
+                  - generic [ref=f7e173]:
+                    - img "Lazy Dog Bed & Breakfast" [ref=f7e174]
+                    - generic [ref=f7e176]: "#5 AI Match"
+                    - generic [ref=f7e177]: Mid Affordable Hotels
+                  - generic [ref=f7e178]:
+                    - heading "Lazy Dog Bed & Breakfast" [level=4] [ref=f7e179]
+                    - paragraph [ref=f7e180]: Located near Bulabog Beach, Lazy Dog provides a cozy environment with both private rooms and dormitories. It's about a 2-minute walk to Bulabog Beach and 10 minutes to White Beach Station 2. There's no swimming pool, but the area is peaceful and just a short walk to D'Mall and various restaurants.
+                - generic [ref=f7e182]:
+                  - generic [ref=f7e183]: View Sanctuary
+                  - generic [ref=f7e184]: arrow_forward
+          - generic [ref=f7e185]:
+            - generic [ref=f7e186]:
+              - generic [ref=f7e187]:
+                - generic [ref=f7e188]: explore
+                - heading "Top 5 Must-Try Experiences in Boracay" [level=3] [ref=f7e189]
+              - generic [ref=f7e190]: Curated AI Matches
+            - generic [ref=f7e191]:
+              - generic [ref=f7e192]:
+                - generic [ref=f7e193]:
+                  - generic [ref=f7e194]:
+                    - img "Crystal Kayak" [ref=f7e195]
+                    - generic [ref=f7e197]: ₱300/person
+                  - generic [ref=f7e198]:
+                    - heading "Crystal Kayak" [level=4] [ref=f7e199]
+                    - paragraph [ref=f7e200]: Paddle a completely clear, transparent kayak over crystal waters with local guide photo assistance. Get stunning Instagram photo shoots.
+                - link "View Experience arrow_forward" [ref=f7e202] [cursor=pointer]:
+                  - /url: http://localhost:8000/activities
+                  - generic [ref=f7e203]: View Experience
+                  - generic [ref=f7e204]: arrow_forward
+              - generic [ref=f7e205]:
+                - generic [ref=f7e206]:
+                  - generic [ref=f7e207]:
+                    - img "Parasailing (Solo)" [ref=f7e208]
+                    - generic [ref=f7e210]: ₱2,500
+                  - generic [ref=f7e211]:
+                    - heading "Parasailing (Solo)" [level=4] [ref=f7e212]
+                    - paragraph [ref=f7e213]: Command the skies alone on a dedicated solo parasail flight over White Beach. Ultimate freedom and adrenaline in the air.
+                - link "View Experience arrow_forward" [ref=f7e215] [cursor=pointer]:
+                  - /url: http://localhost:8000/activities
+                  - generic [ref=f7e216]: View Experience
+                  - generic [ref=f7e217]: arrow_forward
+              - generic [ref=f7e218]:
+                - generic [ref=f7e219]:
+                  - generic [ref=f7e220]:
+                    - img "Zipline Only" [ref=f7e221]
+                    - generic [ref=f7e223]: ₱750
+                  - generic [ref=f7e224]:
+                    - heading "Zipline Only" [level=4] [ref=f7e225]
+                    - paragraph [ref=f7e226]: Fly superman-style across a 600-meter cable line high above the trees with stunning coastline views.
+                - link "View Experience arrow_forward" [ref=f7e228] [cursor=pointer]:
+                  - /url: http://localhost:8000/activities
+                  - generic [ref=f7e229]: View Experience
+                  - generic [ref=f7e230]: arrow_forward
+              - generic [ref=f7e231]:
+                - generic [ref=f7e232]:
+                  - generic [ref=f7e233]:
+                    - img "6–7 Destinations (Aircon Van)" [ref=f7e234]
+                    - generic [ref=f7e236]: ₱3,700
+                  - generic [ref=f7e237]:
+                    - heading "6–7 Destinations (Aircon Van)" [level=4] [ref=f7e238]
+                    - paragraph [ref=f7e239]: Travel around Boracay in climate-controlled luxury. Visit Keyhole, Puka Beach, Mangrove Park, and scenic heights without breaking a sweat.
+                - link "View Experience arrow_forward" [ref=f7e241] [cursor=pointer]:
+                  - /url: http://localhost:8000/activities
+                  - generic [ref=f7e242]: View Experience
+                  - generic [ref=f7e243]: arrow_forward
+              - generic [ref=f7e244]:
+                - generic [ref=f7e245]:
+                  - generic [ref=f7e246]:
+                    - img "6–7 Destinations (FB Van/Multicab)" [ref=f7e247]
+                    - generic [ref=f7e249]: ₱3,000
+                  - generic [ref=f7e250]:
+                    - heading "6–7 Destinations (FB Van/Multicab)" [level=4] [ref=f7e251]
+                    - paragraph [ref=f7e252]: Group land tour around Boracay's famous spots in an open-air multicab. Ideal for medium-sized barkadas exploring the island's northern beaches and coastal views.
+                - link "View Experience arrow_forward" [ref=f7e254] [cursor=pointer]:
+                  - /url: http://localhost:8000/activities
+                  - generic [ref=f7e255]: View Experience
+                  - generic [ref=f7e256]: arrow_forward

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Review;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -50,5 +51,10 @@ class BookingItem extends Model
     public function itemable()
     {
         return $this->morphTo('itemable', 'item_type', 'item_id');
+    }
+
+    public function reviews()
+    {
+        return $this->hasMany(Review::class);
     }
 }

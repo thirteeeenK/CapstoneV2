@@ -1,0 +1,252 @@
+- generic [active] [ref=f6e1]:
+  - complementary [ref=f6e2]:
+    - generic [ref=f6e4]:
+      - link "SunnyTrips" [ref=f6e5] [cursor=pointer]:
+        - /url: http://localhost:8000/dashboard
+      - paragraph [ref=f6e7]:
+        - generic [ref=f6e9]: Traveler Portal
+    - navigation [ref=f6e10]:
+      - generic [ref=f6e11]:
+        - heading "Main Navigation" [level=2] [ref=f6e12]
+        - generic [ref=f6e13]:
+          - link "space_dashboard Dashboard" [ref=f6e14] [cursor=pointer]:
+            - /url: http://localhost:8000/dashboard
+            - generic [ref=f6e15]: space_dashboard
+            - generic [ref=f6e16]: Dashboard
+          - link "shopping_basket My Trip Basket" [ref=f6e17] [cursor=pointer]:
+            - /url: http://localhost:8000/cart
+            - generic [ref=f6e18]: shopping_basket
+            - generic [ref=f6e19]: My Trip Basket
+          - link "auto_stories My Bookings" [ref=f6e20] [cursor=pointer]:
+            - /url: http://localhost:8000/bookings
+            - generic [ref=f6e21]: auto_stories
+            - generic [ref=f6e22]: My Bookings
+          - link "reviews Guest Reviews" [ref=f6e23] [cursor=pointer]:
+            - /url: http://localhost:8000/reviews
+            - generic [ref=f6e24]: reviews
+            - generic [ref=f6e25]: Guest Reviews
+      - generic [ref=f6e26]:
+        - heading "Explore Catalog" [level=2] [ref=f6e27]
+        - generic [ref=f6e28]:
+          - link "location_on Island Destinations" [ref=f6e29] [cursor=pointer]:
+            - /url: http://localhost:8000/destinations
+            - generic [ref=f6e30]: location_on
+            - generic [ref=f6e31]: Island Destinations
+          - link "hotel Hotels & Sanctuaries" [ref=f6e32] [cursor=pointer]:
+            - /url: http://localhost:8000/hotels
+            - generic [ref=f6e33]: hotel
+            - generic [ref=f6e34]: Hotels & Sanctuaries
+          - link "king_bed Rooms & Stays" [ref=f6e35] [cursor=pointer]:
+            - /url: http://localhost:8000/rooms
+            - generic [ref=f6e36]: king_bed
+            - generic [ref=f6e37]: Rooms & Stays
+          - link "explore Activities & Tours" [ref=f6e38] [cursor=pointer]:
+            - /url: http://localhost:8000/activities
+            - generic [ref=f6e39]: explore
+            - generic [ref=f6e40]: Activities & Tours
+          - link "extension Transfers & Add-ons" [ref=f6e41] [cursor=pointer]:
+            - /url: http://localhost:8000/addons
+            - generic [ref=f6e42]: extension
+            - generic [ref=f6e43]: Transfers & Add-ons
+          - link "card_travel Tour Packages & Promos" [ref=f6e44] [cursor=pointer]:
+            - /url: http://localhost:8000/packages
+            - generic [ref=f6e45]: card_travel
+            - generic [ref=f6e46]: Tour Packages & Promos
+      - generic [ref=f6e47]:
+        - heading "Personalization" [level=2] [ref=f6e48]
+        - generic [ref=f6e49]:
+          - link "tune AI Preferences Quiz" [ref=f6e50] [cursor=pointer]:
+            - /url: http://localhost:8000/onboarding
+            - generic [ref=f6e51]: tune
+            - generic [ref=f6e52]: AI Preferences Quiz
+          - link "manage_accounts Account Profile" [ref=f6e53] [cursor=pointer]:
+            - /url: http://localhost:8000/profile
+            - generic [ref=f6e54]: manage_accounts
+            - generic [ref=f6e55]: Account Profile
+    - generic [ref=f6e56]:
+      - generic [ref=f6e57]:
+        - generic [ref=f6e58]: J
+        - generic [ref=f6e59]:
+          - generic [ref=f6e60]: John Kenly Pamor
+          - generic [ref=f6e61]: johnkenlypamor13@gmail.com
+      - button "logout Log Out" [ref=f6e63] [cursor=pointer]:
+        - generic [ref=f6e64]: logout
+        - generic [ref=f6e65]: Log Out
+  - main [ref=f6e66]:
+    - generic [ref=f6e68]:
+      - generic [ref=f6e69]:
+        - paragraph [ref=f6e70]: SunnyTrips · Traveler Journal
+        - paragraph [ref=f6e71]: Aug 7, 2026
+      - generic [ref=f6e88]:
+        - paragraph [ref=f6e89]: Voucher No. ST-2026-CAQBB
+        - generic [ref=f6e90]:
+          - generic [ref=f6e91]: celebration
+          - generic [ref=f6e92]: Completed
+        - heading "A journey well traveled" [level=1] [ref=f6e93]
+        - paragraph [ref=f6e94]: Your trip has been completed. Thank you for traveling with SunnyTrips — until the next island.
+        - generic [ref=f6e95]:
+          - generic [ref=f6e98]:
+            - button "rate_review Leave a Review" [ref=f6e99] [cursor=pointer]:
+              - generic [ref=f6e100]: rate_review
+              - generic [ref=f6e101]: Leave a Review
+            - generic [ref=f6e237]:
+              - generic [ref=f6e238]:
+                - generic [ref=f6e239]:
+                  - paragraph [ref=f6e240]: SunnyTrips · Verified Guest Feedback
+                  - heading "Share your experience" [level=3] [ref=f6e241]
+                - button "close" [ref=f6e242] [cursor=pointer]
+              - generic [ref=f6e270]:
+                - button "arrow_back Back to items" [ref=f6e271] [cursor=pointer]:
+                  - generic [ref=f6e272]: arrow_back
+                  - text: Back to items
+                - generic [ref=f6e273]:
+                  - paragraph [ref=f6e274]: ST-2026-CAQBB · Verified booking
+                  - paragraph [ref=f6e275]: Canyon Hotels & Resorts Boracay — Deluxe Suite
+                  - paragraph [ref=f6e276]: Canyon Hotels & Resorts Boracay
+                - generic [ref=f6e277]:
+                  - paragraph [ref=f6e278]: Your rating
+                  - generic [ref=f6e279]:
+                    - button "star" [ref=f6e280] [cursor=pointer]
+                    - button "star" [ref=f6e282] [cursor=pointer]
+                    - button "star" [ref=f6e284] [cursor=pointer]
+                    - button "star" [ref=f6e286] [cursor=pointer]
+                    - button "star" [ref=f6e288] [cursor=pointer]
+                - generic [ref=f6e290]:
+                  - paragraph [ref=f6e291]: Your feedback
+                  - textbox "What made this stay or experience memorable?" [ref=f6e292]
+                  - generic [ref=f6e293]:
+                    - paragraph [ref=f6e294]: Minimum 10 characters.
+                    - paragraph
+                - button "send Publish Review" [disabled] [ref=f6e295]:
+                  - generic [ref=f6e296]: send
+                  - generic [ref=f6e297]: Publish Review
+          - link "home Return to Dashboard" [ref=f6e102] [cursor=pointer]:
+            - /url: http://localhost:8000/dashboard
+            - generic [ref=f6e103]: home
+            - generic [ref=f6e104]: Return to Dashboard
+      - generic [ref=f6e105]:
+        - generic [ref=f6e106]:
+          - generic [ref=f6e107]:
+            - generic [ref=f6e108]:
+              - heading "luggage Expedition Itinerary" [level=2] [ref=f6e109]:
+                - generic [ref=f6e110]: luggage
+                - text: Expedition Itinerary
+              - generic [ref=f6e112]: 4 items
+            - generic [ref=f6e113]:
+              - generic [ref=f6e114]:
+                - generic [ref=f6e115]:
+                  - generic [ref=f6e116]: hotel
+                  - generic [ref=f6e118]:
+                    - paragraph [ref=f6e119]: Canyon Hotels & Resorts Boracay
+                    - heading "Canyon Hotels & Resorts Boracay — Deluxe Suite" [level=3] [ref=f6e120]
+                    - paragraph [ref=f6e121]: Aug 6, 2026 – Aug 7, 2026 · 1 night
+                - generic [ref=f6e122]:
+                  - generic [ref=f6e123]: Qty × 1
+                  - text: ₱5,200.00
+              - generic [ref=f6e124]:
+                - generic [ref=f6e125]:
+                  - generic [ref=f6e126]: hotel
+                  - generic [ref=f6e128]:
+                    - paragraph [ref=f6e129]: El Nido Resorts - Pangulasian Island
+                    - heading "El Nido Resorts - Pangulasian Island — Canopy Villa" [level=3] [ref=f6e130]
+                    - paragraph [ref=f6e131]: Aug 6, 2026 – Aug 7, 2026 · 1 night
+                - generic [ref=f6e132]:
+                  - generic [ref=f6e133]: Qty × 1
+                  - text: ₱45,000.00
+              - generic [ref=f6e134]:
+                - generic [ref=f6e135]:
+                  - generic [ref=f6e136]: explore
+                  - generic [ref=f6e138]:
+                    - heading "Discover Scuba Diving (DSD)" [level=3] [ref=f6e139]
+                    - paragraph [ref=f6e140]: El Nido • Full Day (Includes 2 Dives) • 1 pax
+                - generic [ref=f6e141]:
+                  - generic [ref=f6e142]: Qty × 1
+                  - text: ₱4,500.00
+              - generic [ref=f6e143]:
+                - generic [ref=f6e144]:
+                  - generic [ref=f6e145]: card_travel
+                  - generic [ref=f6e147]:
+                    - heading "Airport to Hotel Roundtrip Transfer" [level=3] [ref=f6e148]
+                    - paragraph [ref=f6e149]: Boracay • Transfer & Add-on • 7 pax
+                - generic [ref=f6e150]:
+                  - generic [ref=f6e151]: Qty × 7
+                  - text: ₱7,000.00
+          - generic [ref=f6e152]:
+            - generic [ref=f6e153]:
+              - heading "groups Ship Manifest" [level=2] [ref=f6e154]:
+                - generic [ref=f6e155]: groups
+                - text: Ship Manifest
+              - generic [ref=f6e157]: 1 guest
+            - generic [ref=f6e159]:
+              - generic [ref=f6e160]:
+                - generic [ref=f6e161]: "01"
+                - generic [ref=f6e162]:
+                  - heading "John Kenly Pamor" [level=4] [ref=f6e163]
+                  - paragraph [ref=f6e164]: Lead Traveler
+              - generic [ref=f6e165]: Foreigner
+        - generic [ref=f6e166]:
+          - generic [ref=f6e167]:
+            - heading "menu_book Captain's Ledger" [level=2] [ref=f6e168]:
+              - generic [ref=f6e169]: menu_book
+              - text: Captain's Ledger
+            - generic [ref=f6e171]:
+              - generic [ref=f6e172]:
+                - term [ref=f6e173]: Status
+                - definition [ref=f6e174]:
+                  - generic [ref=f6e175]: Completed
+              - generic [ref=f6e177]:
+                - term [ref=f6e178]: Payment
+                - definition [ref=f6e179]: paid
+              - generic [ref=f6e180]:
+                - term [ref=f6e181]: Deadline
+                - definition [ref=f6e182]: Aug 8 · 2:21 PM
+              - generic [ref=f6e183]:
+                - term [ref=f6e184]: Submitted
+                - definition [ref=f6e185]: Aug 6, 2026
+          - generic [ref=f6e186]:
+            - heading "sailing Lead Traveler" [level=2] [ref=f6e187]:
+              - generic [ref=f6e188]: sailing
+              - text: Lead Traveler
+            - paragraph [ref=f6e190]: John Kenly Pamor
+            - generic [ref=f6e191]:
+              - paragraph [ref=f6e192]:
+                - generic [ref=f6e193]: mail
+                - generic [ref=f6e194]: johnkenlypamor13@gmail.com
+              - paragraph [ref=f6e195]:
+                - generic [ref=f6e196]: call
+                - text: "09517644005"
+          - generic [ref=f6e197]:
+            - heading "receipt_long Settlement" [level=2] [ref=f6e198]:
+              - generic [ref=f6e199]: receipt_long
+              - text: Settlement
+            - generic [ref=f6e201]:
+              - generic [ref=f6e202]:
+                - term [ref=f6e203]: Subtotal
+                - definition [ref=f6e204]: ₱61,700.00
+              - generic [ref=f6e205]:
+                - term [ref=f6e206]:
+                  - generic [ref=f6e207]: public
+                  - generic [ref=f6e208]: Foreign Tourist
+                - definition [ref=f6e209]: +₱150.00
+              - generic [ref=f6e210]:
+                - term [ref=f6e211]: Total paid
+                - definition [ref=f6e212]: ₱61,850.00
+      - generic [ref=f6e213]:
+        - generic [ref=f6e214]:
+          - heading "history Journal Timeline" [level=2] [ref=f6e215]:
+            - generic [ref=f6e216]: history
+            - text: Journal Timeline
+          - list [ref=f6e218]:
+            - listitem [ref=f6e219]:
+              - paragraph [ref=f6e221]: Completed (was paid)
+              - paragraph [ref=f6e222]: Marked completed by admin.
+              - paragraph [ref=f6e223]: Aug 6, 2026 · 2:21 PM
+            - listitem [ref=f6e224]:
+              - paragraph [ref=f6e226]: Paid (was approved)
+              - paragraph [ref=f6e227]: Marked paid manually by admin.
+              - paragraph [ref=f6e228]: Aug 6, 2026 · 2:21 PM
+            - listitem [ref=f6e229]:
+              - paragraph [ref=f6e231]: Approved (was pending)
+              - paragraph [ref=f6e232]: Approved with 4 item(s) available.
+              - paragraph [ref=f6e233]: Aug 6, 2026 · 2:21 PM
+        - paragraph [ref=f6e234]: SunnyTrips · Curated island escapes, verified before payment

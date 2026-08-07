@@ -1,0 +1,91 @@
+- generic [ref=f8e1]:
+  - complementary [ref=f8e2]:
+    - generic [ref=f8e4]:
+      - link "SunnyTrips" [ref=f8e5] [cursor=pointer]:
+        - /url: http://localhost:8000/dashboard
+      - paragraph [ref=f8e7]:
+        - generic [ref=f8e9]: Traveler Portal
+    - navigation [ref=f8e10]:
+      - generic [ref=f8e11]:
+        - heading "Main Navigation" [level=2] [ref=f8e12]
+        - generic [ref=f8e13]:
+          - link "space_dashboard Dashboard" [ref=f8e14] [cursor=pointer]:
+            - /url: http://localhost:8000/dashboard
+            - generic [ref=f8e15]: space_dashboard
+            - generic [ref=f8e16]: Dashboard
+          - link "shopping_basket My Trip Basket" [ref=f8e17] [cursor=pointer]:
+            - /url: http://localhost:8000/cart
+            - generic [ref=f8e18]: shopping_basket
+            - generic [ref=f8e19]: My Trip Basket
+          - link "auto_stories My Bookings" [ref=f8e20] [cursor=pointer]:
+            - /url: http://localhost:8000/bookings
+            - generic [ref=f8e21]: auto_stories
+            - generic [ref=f8e22]: My Bookings
+          - link "reviews Guest Reviews" [ref=f8e23] [cursor=pointer]:
+            - /url: http://localhost:8000/reviews
+            - generic [ref=f8e24]: reviews
+            - generic [ref=f8e25]: Guest Reviews
+      - generic [ref=f8e26]:
+        - heading "Explore Catalog" [level=2] [ref=f8e27]
+        - generic [ref=f8e28]:
+          - link "location_on Island Destinations" [ref=f8e29] [cursor=pointer]:
+            - /url: http://localhost:8000/destinations
+            - generic [ref=f8e30]: location_on
+            - generic [ref=f8e31]: Island Destinations
+          - link "hotel Hotels & Sanctuaries" [ref=f8e32] [cursor=pointer]:
+            - /url: http://localhost:8000/hotels
+            - generic [ref=f8e33]: hotel
+            - generic [ref=f8e34]: Hotels & Sanctuaries
+          - link "king_bed Rooms & Stays" [ref=f8e35] [cursor=pointer]:
+            - /url: http://localhost:8000/rooms
+            - generic [ref=f8e36]: king_bed
+            - generic [ref=f8e37]: Rooms & Stays
+          - link "explore Activities & Tours" [ref=f8e38] [cursor=pointer]:
+            - /url: http://localhost:8000/activities
+            - generic [ref=f8e39]: explore
+            - generic [ref=f8e40]: Activities & Tours
+          - link "extension Transfers & Add-ons" [ref=f8e41] [cursor=pointer]:
+            - /url: http://localhost:8000/addons
+            - generic [ref=f8e42]: extension
+            - generic [ref=f8e43]: Transfers & Add-ons
+          - link "card_travel Tour Packages & Promos" [ref=f8e44] [cursor=pointer]:
+            - /url: http://localhost:8000/packages
+            - generic [ref=f8e45]: card_travel
+            - generic [ref=f8e46]: Tour Packages & Promos
+      - generic [ref=f8e47]:
+        - heading "Personalization" [level=2] [ref=f8e48]
+        - generic [ref=f8e49]:
+          - link "tune AI Preferences Quiz" [ref=f8e50] [cursor=pointer]:
+            - /url: http://localhost:8000/onboarding
+            - generic [ref=f8e51]: tune
+            - generic [ref=f8e52]: AI Preferences Quiz
+          - link "manage_accounts Account Profile" [ref=f8e53] [cursor=pointer]:
+            - /url: http://localhost:8000/profile
+            - generic [ref=f8e54]: manage_accounts
+            - generic [ref=f8e55]: Account Profile
+    - generic [ref=f8e56]:
+      - generic [ref=f8e57]:
+        - generic [ref=f8e58]: J
+        - generic [ref=f8e59]:
+          - generic [ref=f8e60]: John Kenly Pamor
+          - generic [ref=f8e61]: johnkenlypamor13@gmail.com
+      - button "logout Log Out" [ref=f8e63] [cursor=pointer]:
+        - generic [ref=f8e64]: logout
+        - generic [ref=f8e65]: Log Out
+  - main [ref=f8e66]:
+    - generic [ref=f8e68]:
+      - generic [ref=f8e69]:
+        - paragraph [ref=f8e70]: SunnyTrips · Traveler Portal
+        - paragraph [ref=f8e71]: Aug 7, 2026
+      - generic [ref=f8e72]:
+        - heading "My Booking Journals" [level=1] [ref=f8e73]
+        - paragraph [ref=f8e74]: Every request, approval, and confirmation lives here — open a journal to track status, complete payment, or rebook.
+      - generic [ref=f8e76]:
+        - button "All" [ref=f8e77] [cursor=pointer]
+        - button "In Progress" [ref=f8e78] [cursor=pointer]
+        - button "Confirmed" [ref=f8e79] [cursor=pointer]
+        - button "Completed" [ref=f8e80] [cursor=pointer]
+        - button "Pending For Review" [ref=f8e81] [cursor=pointer]
+        - button "Reviewed" [active] [ref=f8e82] [cursor=pointer]
+        - button "Closed" [ref=f8e83] [cursor=pointer]
+      - paragraph [ref=f8e205]: SunnyTrips · Curated island escapes, verified before payment

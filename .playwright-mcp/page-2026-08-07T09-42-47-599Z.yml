@@ -1,0 +1,66 @@
+- main [ref=f4e2]:
+  - generic [ref=f4e4]:
+    - link "SunnyTrips" [ref=f4e6] [cursor=pointer]:
+      - /url: http://localhost:8000
+    - generic [ref=f4e8]:
+      - generic [ref=f4e9]:
+        - generic [ref=f4e10]:
+          - generic [ref=f4e11]: auto_awesome
+          - generic [ref=f4e12]: AI Travel Personalization
+        - heading "Craft Your Ideal Island Escape" [level=1] [ref=f4e13]
+        - paragraph [ref=f4e14]: Answer a few quick questions so our AI recommendation engine can match you with perfect sanctuaries, luxury rooms, and curated experiences.
+      - generic [ref=f4e21]:
+        - generic [ref=f4e22]:
+          - 'heading "palette Step 1: What atmosphere do you crave?" [level=2] [ref=f4e23]':
+            - generic [ref=f4e24]: palette
+            - generic [ref=f4e25]: "Step 1: What atmosphere do you crave?"
+          - paragraph [ref=f4e26]: Select all vibes that match your ideal getaway mood.
+        - generic [ref=f4e27]:
+          - button "beach_access Beachfront Oceanfront views & white sand" [ref=f4e28] [cursor=pointer]:
+            - generic [ref=f4e29]: beach_access
+            - generic [ref=f4e31]:
+              - generic [ref=f4e32]: Beachfront
+              - generic [ref=f4e33]: Oceanfront views & white sand
+          - button "spa Luxury & Spa High-end pampering & resorts" [ref=f4e34] [cursor=pointer]:
+            - generic [ref=f4e35]: spa
+            - generic [ref=f4e37]:
+              - generic [ref=f4e38]: Luxury & Spa
+              - generic [ref=f4e39]: High-end pampering & resorts
+          - button "local_bar Nightlife & Party Vibrant music & island bars" [ref=f4e40] [cursor=pointer]:
+            - generic [ref=f4e41]: local_bar
+            - generic [ref=f4e43]:
+              - generic [ref=f4e44]: Nightlife & Party
+              - generic [ref=f4e45]: Vibrant music & island bars
+          - button "forest Nature & Eco Pristine greenery & wildlife" [ref=f4e46] [cursor=pointer]:
+            - generic [ref=f4e47]: forest
+            - generic [ref=f4e49]:
+              - generic [ref=f4e50]: Nature & Eco
+              - generic [ref=f4e51]: Pristine greenery & wildlife
+          - button "self_improvement Quiet & Serene Peaceful retreat away from crowds" [ref=f4e52] [cursor=pointer]:
+            - generic [ref=f4e53]: self_improvement
+            - generic [ref=f4e55]:
+              - generic [ref=f4e56]: Quiet & Serene
+              - generic [ref=f4e57]: Peaceful retreat away from crowds
+          - button "hiking Adventure & Thrills Water sports, treks & diving" [ref=f4e58] [cursor=pointer]:
+            - generic [ref=f4e59]: hiking
+            - generic [ref=f4e61]:
+              - generic [ref=f4e62]: Adventure & Thrills
+              - generic [ref=f4e63]: Water sports, treks & diving
+          - button "restaurant Culinary & Dining Seafood feasts & local cuisine" [ref=f4e64] [cursor=pointer]:
+            - generic [ref=f4e65]: restaurant
+            - generic [ref=f4e67]:
+              - generic [ref=f4e68]: Culinary & Dining
+              - generic [ref=f4e69]: Seafood feasts & local cuisine
+          - button "family_restroom Family Friendly Safe pools & kid activities" [ref=f4e70] [cursor=pointer]:
+            - generic [ref=f4e71]: family_restroom
+            - generic [ref=f4e73]:
+              - generic [ref=f4e74]: Family Friendly
+              - generic [ref=f4e75]: Safe pools & kid activities
+        - generic [ref=f4e76]:
+          - link "fast_forward Skip for now" [ref=f4e77] [cursor=pointer]:
+            - /url: http://localhost:8000/onboarding/skip
+            - generic [ref=f4e78]: fast_forward
+            - generic [ref=f4e79]: Skip for now
+          - 'button "Next: Destination arrow_forward" [ref=f4e80] [cursor=pointer]':
+            - generic [ref=f4e81]: "Next: Destination"
+            - generic [ref=f4e82]: arrow_forward

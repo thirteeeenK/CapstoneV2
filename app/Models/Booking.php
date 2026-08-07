@@ -87,6 +87,11 @@ class Booking extends Model
         return $this->hasMany(BookingItem::class);
     }
 
+    public function reviews()
+    {
+        return $this->hasMany(Review::class);
+    }
+
     public function history()
     {
         return $this->hasMany(BookingStatusHistory::class)->orderBy('id', 'desc');

@@ -61,9 +61,9 @@ class ReviewController extends Controller
     {
         $validated = $request->validate([
             'booking_id' => ['required', 'integer', Rule::exists('bookings', 'id')],
+            'booking_item_id' => ['required', 'integer', Rule::exists('booking_items', 'id')],
             'rating' => ['required', 'integer', 'min:1', 'max:5'],
             'comment' => ['required', 'string', 'min:10', 'max:1000'],
-            'booking_item_id' => ['nullable', 'integer'],
         ]);
 
         $booking = Booking::findOrFail($validated['booking_id']);
@@ -74,7 +74,7 @@ class ReviewController extends Controller
                 $booking,
                 $validated['rating'],
                 trim($validated['comment']),
-                $validated['booking_item_id'] ?? null,
+                $validated['booking_item_id'],
             );
         } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], $e->getStatusCode());

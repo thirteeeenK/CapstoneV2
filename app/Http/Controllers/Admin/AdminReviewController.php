@@ -233,15 +233,19 @@ class AdminReviewController extends Controller
      */
     public function create()
     {
-        $reviewedBookingIds = Review::pluck('booking_id')->filter();
-
         $bookings = \App\Models\Booking::with(['user', 'items'])
             ->withCount('items')
             ->where('status', \App\Models\Booking::STATUS_COMPLETED)
-            ->when($reviewedBookingIds->isNotEmpty(), fn($q) => $q->whereNotIn('id', $reviewedBookingIds))
             ->latest()
             ->limit(100)
             ->get()
+            ->filter(function (\App\Models\Booking $booking) {
+                return $booking->items->contains(function ($item) {
+                    return array_key_exists($item->item_type, \App\Services\ReviewService::REVIEWABLE_ITEM_TYPES)
+                        && !$item->reviews()->exists();
+                });
+            })
+            ->values()
             ->map(function (\App\Models\Booking $booking) {
                 return [
                     'id' => $booking->id,
@@ -255,6 +259,7 @@ class AdminReviewController extends Controller
                             'item_type' => $item->item_type,
                             'item_title' => $item->item_title,
                             'item_subtitle' => $item->item_subtitle,
+                            'is_reviewed' => $item->reviews()->exists(),
                         ])
                         ->values(),
                 ];

@@ -104,7 +104,7 @@ function makeCompletedBooking(User $user, RoomType $room, string $status = 'comp
         'contact_phone' => '09171234567',
     ]);
 
-    BookingItem::create([
+    $item = BookingItem::create([
         'booking_id' => $booking->id,
         'item_type' => 'room',
         'item_id' => $room->id,
@@ -119,6 +119,8 @@ function makeCompletedBooking(User $user, RoomType $room, string $status = 'comp
         'item_snapshot' => [],
     ]);
 
+    $booking->review_item_id = $item->id;
+
     return $booking;
 }
 
@@ -127,6 +129,7 @@ it('publishes a verified review for a completed booking and runs AI sentiment', 
 
     $response = $this->actingAs($this->user)->postJson(route('reviews.store'), [
         'booking_id' => $booking->id,
+        'booking_item_id' => $booking->review_item_id,
         'rating' => 5,
         'comment' => 'The ocean view room was breathtaking and spotless! Staff were super polite.',
     ]);
@@ -138,6 +141,7 @@ it('publishes a verified review for a completed booking and runs AI sentiment', 
 
     expect($review)->not->toBeNull()
         ->and($review->booking_id)->toBe($booking->id)
+        ->and($review->booking_item_id)->toBe($booking->review_item_id)
         ->and($review->user_id)->toBe($this->user->id)
         ->and($review->reviewable_type)->toBe((new RoomType)->getMorphClass())
         ->and($review->room_id)->toBe($this->room->id)
@@ -158,6 +162,7 @@ it('rejects reviews for bookings that are not completed', function () {
 
     $this->actingAs($this->user)->postJson(route('reviews.store'), [
         'booking_id' => $booking->id,
+        'booking_item_id' => $booking->review_item_id,
         'rating' => 5,
         'comment' => 'This should be rejected since the trip is not done.',
     ])->assertStatus(422);
@@ -171,6 +176,7 @@ it('rejects reviews for another users booking', function () {
 
     $this->actingAs($this->user)->postJson(route('reviews.store'), [
         'booking_id' => $booking->id,
+        'booking_item_id' => $booking->review_item_id,
         'rating' => 4,
         'comment' => 'I did not book this, so this must fail.',
     ])->assertStatus(403);
@@ -178,13 +184,14 @@ it('rejects reviews for another users booking', function () {
     expect(Review::count())->toBe(0);
 });
 
-it('allows only one review per booking', function () {
+it('allows only one review per booking item', function () {
     $booking = makeCompletedBooking($this->user, $this->room);
 
     $payload = [
         'booking_id' => $booking->id,
+        'booking_item_id' => $booking->review_item_id,
         'rating' => 5,
-        'comment' => 'First review for this completed booking.',
+        'comment' => 'First review for this completed booking item.',
     ];
 
     $this->actingAs($this->user)->postJson(route('reviews.store'), $payload)->assertStatus(201);
@@ -199,12 +206,14 @@ it('validates rating and comment length', function () {
 
     $this->actingAs($this->user)->postJson(route('reviews.store'), [
         'booking_id' => $booking->id,
+        'booking_item_id' => $booking->review_item_id,
         'rating' => 6,
         'comment' => 'Valid comment body with enough characters.',
     ])->assertStatus(422);
 
     $this->actingAs($this->user)->postJson(route('reviews.store'), [
         'booking_id' => $booking->id,
+        'booking_item_id' => $booking->review_item_id,
         'rating' => 3,
         'comment' => 'too short',
     ])->assertStatus(422);
@@ -217,6 +226,7 @@ it('hides unpublished reviews from the public hub', function () {
 
     $this->actingAs($this->user)->postJson(route('reviews.store'), [
         'booking_id' => $booking->id,
+        'booking_item_id' => $booking->review_item_id,
         'rating' => 5,
         'comment' => 'A wonderful stay with a gorgeous sunrise view.',
     ])->assertStatus(201);
@@ -276,6 +286,7 @@ it('supports reviewing activities and packages', function () {
 
     $this->actingAs($this->user)->postJson(route('reviews.store'), [
         'booking_id' => $activityBooking->id,
+        'booking_item_id' => $activityBooking->items()->first()->id,
         'rating' => 5,
         'comment' => 'The island hopping guide was punctual and the tour was fantastic.',
     ])->assertStatus(201);
@@ -289,6 +300,7 @@ it('lets admins view the review analytics dashboard', function () {
 
     $this->actingAs($this->user)->postJson(route('reviews.store'), [
         'booking_id' => $booking->id,
+        'booking_item_id' => $booking->review_item_id,
         'rating' => 5,
         'comment' => 'Friendly staff and a spotless room, will book again.',
     ])->assertStatus(201);
@@ -305,6 +317,7 @@ it('formats the reviewer alias as first name + last initial', function () {
 
     $this->actingAs($this->user)->postJson(route('reviews.store'), [
         'booking_id' => $booking->id,
+        'booking_item_id' => $booking->review_item_id,
         'rating' => 5,
         'comment' => 'Great stay with excellent service all around.',
     ])->assertStatus(201);
@@ -391,6 +404,7 @@ it('shows only featured published reviews on the landing page', function () {
 
     $this->actingAs($this->user)->postJson(route('reviews.store'), [
         'booking_id' => $bookingOne->id,
+        'booking_item_id' => $bookingOne->review_item_id,
         'rating' => 5,
         'comment' => 'FEATURED TESTIMONIAL OCEANFRONT PARADISE',
     ])->assertStatus(201);
@@ -403,6 +417,7 @@ it('shows only featured published reviews on the landing page', function () {
 
     $this->actingAs($this->user)->postJson(route('reviews.store'), [
         'booking_id' => $bookingTwo->id,
+        'booking_item_id' => $bookingTwo->review_item_id,
         'rating' => 4,
         'comment' => 'REGULAR REVIEW NOT FEATURED ANYWHERE',
     ])->assertStatus(201);
@@ -420,6 +435,7 @@ it('lets admins feature and unfeature a review', function () {
 
     $this->actingAs($this->user)->postJson(route('reviews.store'), [
         'booking_id' => $booking->id,
+        'booking_item_id' => $booking->review_item_id,
         'rating' => 5,
         'comment' => 'A delightful stay worth sharing on the homepage.',
     ])->assertStatus(201);
@@ -455,6 +471,7 @@ it('lets admins backfill a review for a past booking', function () {
 
     expect($review)->not->toBeNull()
         ->and($review->booking_id)->toBe($booking->id)
+        ->and($review->booking_item_id)->toBe($booking->review_item_id)
         ->and($review->user_id)->toBe($this->user->id)
         ->and($review->reviewable_type)->toBe((new RoomType)->getMorphClass())
         ->and($review->room_id)->toBe($this->room->id)
@@ -467,6 +484,7 @@ it('blocks admin backfill for an already-reviewed booking', function () {
 
     $this->actingAs($this->user)->postJson(route('reviews.store'), [
         'booking_id' => $booking->id,
+        'booking_item_id' => $booking->review_item_id,
         'rating' => 5,
         'comment' => 'The original guest review for this booking.',
     ])->assertStatus(201);
@@ -493,6 +511,7 @@ it('lists unreviewed completed bookings on the admin create form', function () {
 
     Review::create([
         'booking_id' => $booking->id,
+        'booking_item_id' => $booking->review_item_id,
         'user_id' => $this->user->id,
         'reviewable_type' => (new RoomType)->getMorphClass(),
         'reviewable_id' => $this->room->id,
@@ -594,4 +613,157 @@ it('shows entity collections on the admin create form for manual mode', function
         ->assertSee('Deluxe Ocean View')
         ->assertSee('Island Hopping Tour')
         ->assertSee('Boracay Escape Promo');
+});
+
+it('allows multiple reviews on the same booking for different items', function () {
+    $booking = Booking::create([
+        'booking_code' => 'RVT-MULTI' . strtoupper(\Illuminate\Support\Str::random(6)),
+        'user_id' => $this->user->id,
+        'status' => 'completed',
+        'total_amount' => 9000,
+        'discount_amount' => 0,
+        'tax_amount' => 0,
+        'net_amount' => 9000,
+        'payment_status' => 'paid',
+        'payment_method' => 'Simulator',
+        'contact_name' => $this->user->name,
+        'contact_email' => $this->user->email,
+        'contact_phone' => '09171234567',
+    ]);
+
+    $roomItem = BookingItem::create([
+        'booking_id' => $booking->id,
+        'item_type' => 'room',
+        'item_id' => $this->room->id,
+        'item_title' => $this->room->room_name,
+        'item_subtitle' => '1 night stay',
+        'hotel_name' => 'Test Beach Resort',
+        'unit_price' => 2000,
+        'quantity' => 1,
+        'selected_pax' => 2,
+        'subtotal' => 6000,
+        'availability_status' => 'available',
+        'item_snapshot' => [],
+    ]);
+
+    $activityItem = BookingItem::create([
+        'booking_id' => $booking->id,
+        'item_type' => 'activity',
+        'item_id' => $this->activity->id,
+        'item_title' => $this->activity->activity_name,
+        'item_subtitle' => '1 pax',
+        'unit_price' => 3000,
+        'quantity' => 1,
+        'selected_pax' => 1,
+        'subtotal' => 3000,
+        'availability_status' => 'available',
+        'item_snapshot' => [],
+    ]);
+
+    $this->actingAs($this->user)->postJson(route('reviews.store'), [
+        'booking_id' => $booking->id,
+        'booking_item_id' => $roomItem->id,
+        'rating' => 5,
+        'comment' => 'The room was absolutely stunning and clean.',
+    ])->assertStatus(201);
+
+    $this->actingAs($this->user)->postJson(route('reviews.store'), [
+        'booking_id' => $booking->id,
+        'booking_item_id' => $activityItem->id,
+        'rating' => 4,
+        'comment' => 'Great island hopping tour with a friendly guide.',
+    ])->assertStatus(201);
+
+    expect(Review::where('booking_id', $booking->id)->count())->toBe(2);
+});
+
+it('returns per-item review status in eligible bookings', function () {
+    $booking = Booking::create([
+        'booking_code' => 'RVT-ELIG' . strtoupper(\Illuminate\Support\Str::random(6)),
+        'user_id' => $this->user->id,
+        'status' => 'completed',
+        'total_amount' => 9000,
+        'discount_amount' => 0,
+        'tax_amount' => 0,
+        'net_amount' => 9000,
+        'payment_status' => 'paid',
+        'payment_method' => 'Simulator',
+        'contact_name' => $this->user->name,
+        'contact_email' => $this->user->email,
+        'contact_phone' => '09171234567',
+    ]);
+
+    $roomItem = BookingItem::create([
+        'booking_id' => $booking->id,
+        'item_type' => 'room',
+        'item_id' => $this->room->id,
+        'item_title' => $this->room->room_name,
+        'item_subtitle' => '1 night stay',
+        'hotel_name' => 'Test Beach Resort',
+        'unit_price' => 2000,
+        'quantity' => 1,
+        'selected_pax' => 2,
+        'subtotal' => 6000,
+        'availability_status' => 'available',
+        'item_snapshot' => [],
+    ]);
+
+    $activityItem = BookingItem::create([
+        'booking_id' => $booking->id,
+        'item_type' => 'activity',
+        'item_id' => $this->activity->id,
+        'item_title' => $this->activity->activity_name,
+        'item_subtitle' => '1 pax',
+        'unit_price' => 3000,
+        'quantity' => 1,
+        'selected_pax' => 1,
+        'subtotal' => 3000,
+        'availability_status' => 'available',
+        'item_snapshot' => [],
+    ]);
+
+    Review::create([
+        'booking_id' => $booking->id,
+        'booking_item_id' => $roomItem->id,
+        'user_id' => $this->user->id,
+        'reviewable_type' => (new RoomType)->getMorphClass(),
+        'reviewable_id' => $this->room->id,
+        'hotel_id' => $this->room->hotel_id,
+        'room_id' => $this->room->id,
+        'rating' => 5,
+        'comment' => 'Already reviewed the room.',
+    ]);
+
+    $response = $this->actingAs($this->user)->getJson(route('reviews.eligible'));
+
+    $response->assertOk()
+        ->assertJsonPath('bookings.0.booking_id', $booking->id);
+
+    $items = $response->json('bookings.0.reviewable_items');
+    expect($items)->toHaveCount(2);
+
+    $room = collect($items)->firstWhere('id', $roomItem->id);
+    expect($room['is_reviewed'])->toBeTrue()
+        ->and($room['existing_review']['rating'])->toBe(5);
+
+    $activity = collect($items)->firstWhere('id', $activityItem->id);
+    expect($activity['is_reviewed'])->toBeFalse();
+});
+
+it('hides the review button when all items are reviewed', function () {
+    $booking = makeCompletedBooking($this->user, $this->room);
+
+    $this->actingAs($this->user)->postJson(route('reviews.store'), [
+        'booking_id' => $booking->id,
+        'booking_item_id' => $booking->review_item_id,
+        'rating' => 5,
+        'comment' => 'Reviewed the only item in this booking.',
+    ])->assertStatus(201);
+
+    $response = $this->actingAs($this->user)->getJson(route('reviews.eligible'));
+
+    $response->assertOk();
+
+    $bookings = $response->json('bookings');
+    expect($bookings)->toHaveCount(0);
 });

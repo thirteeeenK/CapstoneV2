@@ -197,10 +197,6 @@
                         </div>
                     </div>
 
-                    {{-- DSS Review Summary & Verified Guest Reviews --}}
-                    <x-reviews.summary-box :summary="$hotel->reviewSummary" title="Guest Reviews & Sentiment" />
-                    <x-reviews.list :reviews="$hotel->reviews->where('is_published', true)" :limit="4" />
-
                     {{-- Exclusive Amenities Grid --}}
                     @if(!empty($hotel->featured_amenities) && is_array($hotel->featured_amenities))
                         <div class="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-6">
@@ -541,7 +537,12 @@
                 </div>
             @endif
 
+            {{-- DSS Review Summary & Verified Guest Reviews --}}
+                    <x-reviews.summary-box :summary="$hotel->reviewSummary" title="Guest Reviews & Sentiment" />
+                    <x-reviews.list :reviews="$hotel->reviews->where('is_published', true)" :limit="4" />
         </div>
+
+        
 
         {{-- Dynamic Room Preview Modal --}}
         <div x-show="previewRoom" x-transition.opacity @keydown.escape.window="closeRoomPreview()"

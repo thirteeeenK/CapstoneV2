@@ -245,8 +245,27 @@
                         @endif
 
                         @if ($status === 'completed')
-                            <x-review-modal :booking-id="$booking->id" />
-                        @endif
+                                @php
+                                    $reviewableTypes = ['room', 'activity', 'package'];
+                                    $hasUnreviewed = $booking->items
+                                        ->filter(fn($item) => in_array($item->item_type, $reviewableTypes))
+                                        ->some(fn($item) => !$booking->reviews->contains('booking_item_id', $item->id));
+                                @endphp
+                                <div x-data="{ reviewed: @js(!$hasUnreviewed) }"
+                                     x-on:booking-reviews-synced.window="reviewed = true">
+                                    <template x-if="!reviewed">
+                                        <div>
+                                            <x-review-modal :booking-id="$booking->id" />
+                                        </div>
+                                    </template>
+                                    <template x-if="reviewed">
+                                        <span class="px-5 py-3 rounded-2xl bg-emerald-100 text-emerald-700 font-bold text-xs flex items-center gap-1.5 border border-emerald-200">
+                                            <span class="material-symbols-outlined text-[16px]">check_circle</span>
+                                            All Items Reviewed
+                                        </span>
+                                    </template>
+                                </div>
+                            @endif
 
                         <a href="{{ route('dashboard') }}" class="px-5 py-3 rounded-2xl bg-white/60 hover:bg-white/90 backdrop-blur text-slate-900 font-bold text-xs transition flex items-center gap-1.5 cursor-pointer">
                             <span class="material-symbols-outlined text-[16px]">home</span>
