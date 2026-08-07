@@ -8,11 +8,11 @@
         ];
         $ratingFilters = [
             ['key' => 0, 'label' => 'All'],
-            ['key' => 5, 'label' => '5 Stars'],
-            ['key' => 4, 'label' => '4 Stars'],
-            ['key' => 3, 'label' => '3 Stars'],
-            ['key' => 2, 'label' => '2 Stars'],
-            ['key' => 1, 'label' => '1 Star'],
+            ['key' => 5, 'label' => '5★'],
+            ['key' => 4, 'label' => '4★'],
+            ['key' => 3, 'label' => '3★'],
+            ['key' => 2, 'label' => '2★'],
+            ['key' => 1, 'label' => '1★'],
         ];
         $sentimentFilters = [
             ['key' => '', 'label' => 'All Sentiments'],
@@ -39,9 +39,9 @@
                 <p class="font-label text-[10px] uppercase font-bold tracking-[0.25em] text-slate-400">
                     SunnyTrips · Traveler Insights Hub
                 </p>
-                <p class="font-label text-[10px] uppercase font-bold tracking-[0.2em] text-slate-400">
+                <!-- <p class="font-label text-[10px] uppercase font-bold tracking-[0.2em] text-slate-400">
                     {{ now()->format('M j, Y') }}
-                </p>
+                </p> -->
             </div>
 
             <header class="mb-8 animate-fade-up">
@@ -77,7 +77,8 @@
                 <div class="bg-white rounded-3xl border border-sand-200/80 shadow-sm p-5 sm:p-6 mb-6">
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
                         <div>
-                            <p class="font-label text-[9px] uppercase font-bold tracking-[0.2em] text-slate-400 mb-2">Rating</p>
+                            <p class="font-label text-[9px] uppercase font-bold tracking-[0.2em] text-slate-400 mb-2">
+                                Rating</p>
                             <div class="flex items-center gap-1.5 flex-wrap">
                                 @foreach ($ratingFilters as $r)
                                     <button @click="setRating({{ $r['key'] }})"
@@ -89,7 +90,8 @@
                             </div>
                         </div>
                         <div>
-                            <p class="font-label text-[9px] uppercase font-bold tracking-[0.2em] text-slate-400 mb-2">Sentiment</p>
+                            <p class="font-label text-[9px] uppercase font-bold tracking-[0.2em] text-slate-400 mb-2">
+                                Sentiment</p>
                             <div class="flex items-center gap-1.5 flex-wrap">
                                 @foreach ($sentimentFilters as $s)
                                     <button @click="setSentiment('{{ $s['key'] }}')"
@@ -101,7 +103,8 @@
                             </div>
                         </div>
                         <div>
-                            <p class="font-label text-[9px] uppercase font-bold tracking-[0.2em] text-slate-400 mb-2">Sort</p>
+                            <p class="font-label text-[9px] uppercase font-bold tracking-[0.2em] text-slate-400 mb-2">
+                                Sort</p>
                             <select x-model="sort" @change="applySort()"
                                 class="w-full rounded-xl border border-sand-200 bg-white text-xs font-bold text-slate-700 px-3 py-2.5 focus:border-ocean-400 focus:ring-ocean-100">
                                 @foreach ($sorts as $s)
@@ -112,8 +115,10 @@
                     </div>
 
                     <div class="mt-5 relative">
-                        <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[18px] text-slate-400">search</span>
-                        <input x-model="search" type="search" placeholder="Search by hotel, room, activity, or package name..."
+                        <span
+                            class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[18px] text-slate-400">search</span>
+                        <input x-model="search" @input="refresh()" type="search"
+                            placeholder="Search by hotel, room, activity, or package name..."
                             class="w-full rounded-2xl border border-sand-200 bg-white pl-11 pr-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-ocean-400 focus:ring-ocean-100">
                     </div>
                 </div>
@@ -127,7 +132,8 @@
                 {{-- Empty state --}}
                 <div x-show="filtered.length === 0" x-cloak
                     class="bg-white rounded-3xl border border-sand-200/80 shadow-sm px-6 py-14 text-center">
-                    <div class="w-16 h-16 rounded-3xl bg-sand-100 border border-sand-200 flex items-center justify-center mx-auto mb-4">
+                    <div
+                        class="w-16 h-16 rounded-3xl bg-sand-100 border border-sand-200 flex items-center justify-center mx-auto mb-4">
                         <span class="material-symbols-outlined text-3xl text-slate-400">search_off</span>
                     </div>
                     <h3 class="font-headline text-sm font-bold text-slate-900">No reviews match</h3>
@@ -140,24 +146,31 @@
                         <article class="bg-white rounded-3xl border border-sand-200/80 shadow-sm p-5 sm:p-6">
                             <div class="flex items-center justify-between gap-3 flex-wrap">
                                 <div class="flex items-center gap-3 min-w-0">
-                                    <div class="w-11 h-11 rounded-2xl bg-ocean-50 border border-ocean-100 text-ocean-700 flex items-center justify-center shrink-0">
-                                        <span class="material-symbols-outlined text-[20px]" x-text="iconFor(review.entity_type)"></span>
+                                    <div
+                                        class="w-11 h-11 rounded-2xl bg-ocean-50 border border-ocean-100 text-ocean-700 flex items-center justify-center shrink-0">
+                                        <span class="material-symbols-outlined text-[20px]"
+                                            x-text="iconFor(review.entity_type)"></span>
                                     </div>
                                     <div class="min-w-0">
-                                        <p class="text-sm font-bold text-slate-900 font-headline truncate" x-text="review.entity_label"></p>
+                                        <p class="text-sm font-bold text-slate-900 font-headline truncate"
+                                            x-text="review.entity_label"></p>
                                         <p class="text-[11px] text-slate-400 truncate">
-                                            <span x-text="review.entity_location ? review.entity_location + ' · ' : ''"></span>
-                                            <span x-text="review.reviewer_alias"></span> · <span x-text="review.created_at_label"></span>
+                                            <span
+                                                x-text="review.entity_location ? review.entity_location + ' · ' : ''"></span>
+                                            <span x-text="review.reviewer_alias"></span> · <span
+                                                x-text="review.created_at_label"></span>
                                         </p>
                                     </div>
                                 </div>
                                 <div class="flex items-center gap-2">
                                     <span class="flex items-center gap-0.5 text-amber-400">
                                         <template x-for="i in 5" :key="i">
-                                            <span class="material-symbols-outlined text-[16px]" :style="'font-variation-settings: \'FILL\' ' + (i <= review.rating ? 1 : 0)">star</span>
+                                            <span class="material-symbols-outlined text-[16px]"
+                                                :style="'font-variation-settings: \'FILL\' ' + (i <= review.rating ? 1 : 0)">star</span>
                                         </template>
                                     </span>
-                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold border"
+                                    <span
+                                        class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold border"
                                         :class="{
                                             'bg-emerald-50 text-emerald-700 border-emerald-100': review.sentiment === 'positive',
                                             'bg-amber-50 text-amber-700 border-amber-100': review.sentiment === 'neutral',
@@ -165,7 +178,8 @@
                                         }">
                                         <span class="material-symbols-outlined text-[12px]"
                                             x-text="review.sentiment === 'positive' ? 'sentiment_satisfied' : (review.sentiment === 'negative' ? 'sentiment_dissatisfied' : 'sentiment_neutral')"></span>
-                                        <span x-text="review.sentiment.charAt(0).toUpperCase() + review.sentiment.slice(1)"></span>
+                                        <span
+                                            x-text="review.sentiment.charAt(0).toUpperCase() + review.sentiment.slice(1)"></span>
                                     </span>
                                 </div>
                             </div>
@@ -174,9 +188,12 @@
 
                             <div class="mt-4 flex items-center gap-1.5 flex-wrap">
                                 <template x-for="(tag, ti) in review.keywords.slice(0, 5)" :key="ti">
-                                    <span class="px-2.5 py-1 rounded-lg bg-sand-100 border border-sand-200 text-slate-600 text-[10px] font-bold">#<span x-text="tag"></span></span>
+                                    <span
+                                        class="px-2.5 py-1 rounded-lg bg-sand-100 border border-sand-200 text-slate-600 text-[10px] font-bold">#<span
+                                            x-text="tag"></span></span>
                                 </template>
-                                <span class="ml-auto inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-teal-50 text-teal-700 border border-teal-100 text-[10px] font-bold">
+                                <span
+                                    class="ml-auto inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-teal-50 text-teal-700 border border-teal-100 text-[10px] font-bold">
                                     <span class="material-symbols-outlined text-[12px]">verified</span>
                                     Verified Booking
                                 </span>

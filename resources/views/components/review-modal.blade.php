@@ -15,13 +15,14 @@
     </button>
 
     {{-- Modal shell --}}
-    <div x-show="show" x-cloak @keydown.escape.window="close()" x-transition.opacity
-        class="fixed inset-0 z-[70] flex items-start sm:items-center justify-center px-4 py-6 overflow-y-auto">
-        <div class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm" @click="close()"></div>
+    <template x-teleport="body">
+        <div x-show="show" x-cloak @keydown.escape.window="close()" x-transition.opacity
+            class="fixed inset-0 z-[70] flex items-start sm:items-center justify-center px-4 py-6 overflow-y-auto">
+            <div class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm" @click="close()"></div>
 
-        <div class="relative w-full max-w-xl bg-white rounded-[1.75rem] shadow-2xl border border-sand-200 overflow-hidden">
+            <div class="relative w-full max-w-xl bg-white rounded-[1.75rem] shadow-2xl border border-sand-200 overflow-hidden">
             {{-- Header --}}
-            <div class="px-7 sm:px-9 pt-6 pb-5 border-b border-sand-100 flex items-start justify-between gap-4">
+            <div class="px-7 sm:px-9 pt-5 pb-4 border-b border-sand-100 flex items-start justify-between gap-4">
                 <div>
                     <p class="font-label text-[10px] uppercase font-bold tracking-[0.25em] text-ocean-600">
                         SunnyTrips · Verified Guest Feedback
@@ -34,7 +35,7 @@
                 </button>
             </div>
 
-            <div class="px-7 sm:px-9 py-7">
+            <div class="px-7 sm:px-9 py-5">
 
                 {{-- Loading --}}
                 <div x-show="loading" class="py-12 text-center">
@@ -148,11 +149,11 @@
                 {{-- Step 3: rating + comment form --}}
                 <div x-show="!loading && !success && selectedBooking && selectedItem && !showingReviewedItem" x-cloak>
                     <button type="button" @click="selectedItem = null"
-                        class="text-[11px] font-bold text-slate-400 hover:text-slate-700 flex items-center gap-1 mb-5 transition cursor-pointer">
+                        class="text-[11px] font-bold text-slate-400 hover:text-slate-700 flex items-center gap-1 mb-3 transition cursor-pointer">
                         <span class="material-symbols-outlined text-[14px]">arrow_back</span> Back to items
                     </button>
 
-                    <div class="rounded-2xl bg-sand-50 border border-sand-200 px-5 py-4 mb-6">
+                    <div class="rounded-2xl bg-sand-50 border border-sand-200 px-4 py-3 mb-4">
                         <p class="font-label text-[9px] uppercase font-bold tracking-[0.15em] text-slate-400 mb-0.5">
                             <span x-text="selectedBooking?.booking_code || ''"></span> · Verified booking
                         </p>
@@ -162,26 +163,26 @@
                             x-text="(selectedItem?.hotel_name || selectedItem?.item_subtitle) || ''"></p>
                     </div>
 
-                    <div class="mb-6">
-                        <p class="font-label text-[10px] uppercase font-bold tracking-[0.2em] text-slate-400 mb-3">Your rating</p>
+                    <div class="mb-5">
+                        <p class="font-label text-[10px] uppercase font-bold tracking-[0.2em] text-slate-400 mb-2">Your rating</p>
                         <div class="flex items-center gap-1.5">
                             <template x-for="n in 5" :key="n">
                                 <button type="button"
                                     @mouseenter="hoverStar = n"
                                     @mouseleave="hoverStar = 0"
                                     @click="rating = n"
-                                    class="text-3xl transition-transform hover:scale-110 cursor-pointer focus:outline-none"
+                                    class="text-2xl transition-transform hover:scale-110 cursor-pointer focus:outline-none"
                                     :class="(hoverStar || rating) >= n ? 'text-amber-400' : 'text-sand-300'">
-                                    <span class="material-symbols-outlined text-[34px]" style="font-variation-settings: 'FILL' 1">star</span>
+                                    <span class="material-symbols-outlined text-[26px]" style="font-variation-settings: 'FILL' 1">star</span>
                                 </button>
                             </template>
                             <span class="ml-3 font-headline text-sm font-bold text-slate-700" x-text="rating ? rating + ' / 5' : ''"></span>
                         </div>
                     </div>
 
-                    <div class="mb-6">
-                        <p class="font-label text-[10px] uppercase font-bold tracking-[0.2em] text-slate-400 mb-3">Your feedback</p>
-                        <textarea x-model="comment" rows="5" maxlength="1000" placeholder="What made this stay or experience memorable?"
+                    <div class="mb-5">
+                        <p class="font-label text-[10px] uppercase font-bold tracking-[0.2em] text-slate-400 mb-2">Your feedback</p>
+                        <textarea x-model="comment" rows="3" maxlength="1000" placeholder="What made this stay or experience memorable?"
                             class="w-full rounded-2xl border border-sand-200 bg-white px-5 py-3.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-ocean-400 focus:ring-ocean-100 resize-none"></textarea>
                         <div class="flex items-center justify-between mt-2">
                             <p class="text-[10px] text-slate-400" x-text="comment.length < 10 ? 'Minimum 10 characters.' : (1000 - comment.length) + ' characters remaining'"></p>
@@ -193,7 +194,7 @@
 
                     <button type="button" @click="submit()" :disabled="submitting || rating === 0 || comment.length < 10"
                         :class="rating === 0 || comment.length < 10 ? 'bg-sand-300 cursor-not-allowed' : 'bg-slate-900 hover:bg-slate-800 cursor-pointer'"
-                        class="w-full px-6 py-4 rounded-2xl text-white font-bold text-xs transition flex items-center justify-center gap-2 shadow-lg shadow-slate-900/15">
+                        class="w-full px-6 py-3 rounded-2xl text-white font-bold text-xs transition flex items-center justify-center gap-2 shadow-lg shadow-slate-900/15">
                         <span class="material-symbols-outlined text-[16px]" x-text="submitting ? 'progress_activity' : 'send'"></span>
                         <span x-text="submitting ? 'Publishing...' : 'Publish Review'"></span>
                     </button>
@@ -256,7 +257,8 @@
                 </div>
             </div>
         </div>
-    </div>
+        </div>
+    </template>
 </div>
 
 @once

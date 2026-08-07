@@ -1,0 +1,197 @@
+- generic [active] [ref=f91e1]:
+  - complementary [ref=f91e2]:
+    - generic [ref=f91e4]:
+      - link "SunnyTrips" [ref=f91e5] [cursor=pointer]:
+        - /url: http://127.0.0.1:8000/dashboard
+      - paragraph [ref=f91e7]:
+        - generic [ref=f91e9]: Traveler Portal
+    - navigation [ref=f91e10]:
+      - generic [ref=f91e11]:
+        - heading "Main Navigation" [level=2] [ref=f91e12]
+        - generic [ref=f91e13]:
+          - link "space_dashboard Dashboard" [ref=f91e14] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/dashboard
+            - generic [ref=f91e15]: space_dashboard
+            - generic [ref=f91e16]: Dashboard
+          - link "shopping_basket My Trip Basket" [ref=f91e17] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/cart
+            - generic [ref=f91e18]: shopping_basket
+            - generic [ref=f91e19]: My Trip Basket
+          - link "auto_stories My Bookings" [ref=f91e20] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/bookings
+            - generic [ref=f91e21]: auto_stories
+            - generic [ref=f91e22]: My Bookings
+          - link "reviews Guest Reviews" [ref=f91e23] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/reviews
+            - generic [ref=f91e24]: reviews
+            - generic [ref=f91e25]: Guest Reviews
+      - generic [ref=f91e26]:
+        - heading "Explore Catalog" [level=2] [ref=f91e27]
+        - generic [ref=f91e28]:
+          - link "location_on Island Destinations" [ref=f91e29] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/destinations
+            - generic [ref=f91e30]: location_on
+            - generic [ref=f91e31]: Island Destinations
+          - link "hotel Hotels & Sanctuaries" [ref=f91e32] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/hotels
+            - generic [ref=f91e33]: hotel
+            - generic [ref=f91e34]: Hotels & Sanctuaries
+          - link "king_bed Rooms & Stays" [ref=f91e35] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/rooms
+            - generic [ref=f91e36]: king_bed
+            - generic [ref=f91e37]: Rooms & Stays
+          - link "explore Activities & Tours" [ref=f91e38] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/activities
+            - generic [ref=f91e39]: explore
+            - generic [ref=f91e40]: Activities & Tours
+          - link "extension Transfers & Add-ons" [ref=f91e41] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/addons
+            - generic [ref=f91e42]: extension
+            - generic [ref=f91e43]: Transfers & Add-ons
+          - link "card_travel Tour Packages & Promos" [ref=f91e44] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/packages
+            - generic [ref=f91e45]: card_travel
+            - generic [ref=f91e46]: Tour Packages & Promos
+      - generic [ref=f91e47]:
+        - heading "Account" [level=2] [ref=f91e48]
+        - link "manage_accounts Account Profile" [ref=f91e50] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/profile
+          - generic [ref=f91e51]: manage_accounts
+          - generic [ref=f91e52]: Account Profile
+    - generic [ref=f91e53]:
+      - generic [ref=f91e54]:
+        - generic [ref=f91e55]: T
+        - generic [ref=f91e56]:
+          - generic [ref=f91e57]: Test User
+          - generic [ref=f91e58]: test@example.com
+      - button "logout Log Out" [ref=f91e60] [cursor=pointer]:
+        - generic [ref=f91e61]: logout
+        - generic [ref=f91e62]: Log Out
+  - main [ref=f91e63]:
+    - generic [ref=f91e65]:
+      - generic [ref=f91e66]:
+        - paragraph [ref=f91e67]: SunnyTrips · Traveler Journal
+        - paragraph [ref=f91e68]: Aug 7, 2026
+      - generic [ref=f91e85]:
+        - paragraph [ref=f91e86]: Voucher No. ST-2026-0HFWX
+        - generic [ref=f91e87]:
+          - generic [ref=f91e88]: celebration
+          - generic [ref=f91e89]: Completed
+        - heading "A journey well traveled" [level=1] [ref=f91e90]
+        - paragraph [ref=f91e91]: Your trip has been completed. Thank you for traveling with SunnyTrips — until the next island.
+        - generic [ref=f91e92]:
+          - generic [ref=f91e94]:
+            - generic [ref=f91e95]: check_circle
+            - text: All Items Reviewed
+          - link "home Return to Dashboard" [ref=f91e96] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/dashboard
+            - generic [ref=f91e97]: home
+            - generic [ref=f91e98]: Return to Dashboard
+      - generic [ref=f91e99]:
+        - generic [ref=f91e100]:
+          - generic [ref=f91e101]:
+            - generic [ref=f91e102]:
+              - heading "luggage Expedition Itinerary" [level=2] [ref=f91e103]:
+                - generic [ref=f91e104]: luggage
+                - text: Expedition Itinerary
+              - generic [ref=f91e106]: 2 items
+            - generic [ref=f91e107]:
+              - generic [ref=f91e108]:
+                - generic [ref=f91e109]:
+                  - generic [ref=f91e110]: hotel
+                  - generic [ref=f91e112]:
+                    - paragraph [ref=f91e113]: Boracay Ocean Club Beach Resort
+                    - heading "Boracay Ocean Club Beach Resort — Diamond Oceanfront Room" [level=3] [ref=f91e114]
+                    - paragraph [ref=f91e115]: Aug 6, 2026 – Aug 7, 2026 · 1 night
+                - generic [ref=f91e116]:
+                  - generic [ref=f91e117]: Qty × 1
+                  - text: ₱6,800.00
+              - generic [ref=f91e118]:
+                - generic [ref=f91e119]:
+                  - generic [ref=f91e120]: hotel
+                  - generic [ref=f91e122]:
+                    - paragraph [ref=f91e123]: Canyon Hotels & Resorts Boracay
+                    - heading "Canyon Hotels & Resorts Boracay — Deluxe Suite" [level=3] [ref=f91e124]
+                    - paragraph [ref=f91e125]: Aug 6, 2026 – Aug 7, 2026 · 1 night
+                - generic [ref=f91e126]:
+                  - generic [ref=f91e127]: Qty × 1
+                  - text: ₱5,200.00
+          - generic [ref=f91e128]:
+            - generic [ref=f91e129]:
+              - heading "groups Ship Manifest" [level=2] [ref=f91e130]:
+                - generic [ref=f91e131]: groups
+                - text: Ship Manifest
+              - generic [ref=f91e133]: 1 guest
+            - generic [ref=f91e135]:
+              - generic [ref=f91e136]:
+                - generic [ref=f91e137]: "01"
+                - generic [ref=f91e138]:
+                  - heading "John Kenly Pamor" [level=4] [ref=f91e139]
+                  - paragraph [ref=f91e140]: Lead Traveler
+              - generic [ref=f91e141]: Senior Citizen
+        - generic [ref=f91e142]:
+          - generic [ref=f91e143]:
+            - heading "menu_book Captain's Ledger" [level=2] [ref=f91e144]:
+              - generic [ref=f91e145]: menu_book
+              - text: Captain's Ledger
+            - generic [ref=f91e147]:
+              - generic [ref=f91e148]:
+                - term [ref=f91e149]: Status
+                - definition [ref=f91e150]:
+                  - generic [ref=f91e151]: Completed
+              - generic [ref=f91e153]:
+                - term [ref=f91e154]: Payment
+                - definition [ref=f91e155]: paid
+              - generic [ref=f91e156]:
+                - term [ref=f91e157]: Deadline
+                - definition [ref=f91e158]: Aug 8 · 3:30 PM
+              - generic [ref=f91e159]:
+                - term [ref=f91e160]: Submitted
+                - definition [ref=f91e161]: Aug 6, 2026
+          - generic [ref=f91e162]:
+            - heading "sailing Lead Traveler" [level=2] [ref=f91e163]:
+              - generic [ref=f91e164]: sailing
+              - text: Lead Traveler
+            - paragraph [ref=f91e166]: John Kenly Pamor
+            - generic [ref=f91e167]:
+              - paragraph [ref=f91e168]:
+                - generic [ref=f91e169]: mail
+                - generic [ref=f91e170]: johnkenlypamor13@gmail.com
+              - paragraph [ref=f91e171]:
+                - generic [ref=f91e172]: call
+                - text: "09517644005"
+          - generic [ref=f91e173]:
+            - heading "receipt_long Settlement" [level=2] [ref=f91e174]:
+              - generic [ref=f91e175]: receipt_long
+              - text: Settlement
+            - generic [ref=f91e177]:
+              - generic [ref=f91e178]:
+                - term [ref=f91e179]: Subtotal
+                - definition [ref=f91e180]: ₱12,000.00
+              - generic [ref=f91e181]:
+                - term [ref=f91e182]:
+                  - generic [ref=f91e183]: percent
+                  - generic [ref=f91e184]: Senior Citizen
+                - definition [ref=f91e185]: "-₱50.00"
+              - generic [ref=f91e186]:
+                - term [ref=f91e187]: Total paid
+                - definition [ref=f91e188]: ₱11,950.00
+      - generic [ref=f91e189]:
+        - generic [ref=f91e190]:
+          - heading "history Journal Timeline" [level=2] [ref=f91e191]:
+            - generic [ref=f91e192]: history
+            - text: Journal Timeline
+          - list [ref=f91e194]:
+            - listitem [ref=f91e195]:
+              - paragraph [ref=f91e197]: Completed (was paid)
+              - paragraph [ref=f91e198]: Marked completed by admin.
+              - paragraph [ref=f91e199]: Aug 6, 2026 · 3:30 PM
+            - listitem [ref=f91e200]:
+              - paragraph [ref=f91e202]: Paid (was approved)
+              - paragraph [ref=f91e203]: Marked paid manually by admin.
+              - paragraph [ref=f91e204]: Aug 6, 2026 · 3:30 PM
+            - listitem [ref=f91e205]:
+              - paragraph [ref=f91e207]: Approved (was pending)
+              - paragraph [ref=f91e208]: Approved with 2 item(s) available.
+              - paragraph [ref=f91e209]: Aug 6, 2026 · 3:30 PM
+        - paragraph [ref=f91e210]: SunnyTrips · Curated island escapes, verified before payment
