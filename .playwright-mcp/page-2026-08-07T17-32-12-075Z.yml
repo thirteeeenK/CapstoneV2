@@ -1,0 +1,334 @@
+- generic [active] [ref=f4e1]:
+  - complementary [ref=f4e2]:
+    - generic [ref=f4e4]:
+      - link "SunnyTrips" [ref=f4e5] [cursor=pointer]:
+        - /url: http://127.0.0.1:8000/dashboard
+      - paragraph [ref=f4e7]:
+        - generic [ref=f4e9]: Traveler Portal
+    - navigation [ref=f4e10]:
+      - generic [ref=f4e11]:
+        - heading "Main Navigation" [level=2] [ref=f4e12]
+        - generic [ref=f4e13]:
+          - link "space_dashboard Dashboard" [ref=f4e14] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/dashboard
+            - generic [ref=f4e15]: space_dashboard
+            - generic [ref=f4e16]: Dashboard
+          - link "casino I'm Feeling Lucky" [ref=f4e17] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/lucky
+            - generic [ref=f4e18]: casino
+            - generic [ref=f4e19]: I'm Feeling Lucky
+          - link "shopping_basket My Trip Basket" [ref=f4e20] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/cart
+            - generic [ref=f4e21]: shopping_basket
+            - generic [ref=f4e22]: My Trip Basket
+          - link "auto_stories My Bookings" [ref=f4e23] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/bookings
+            - generic [ref=f4e24]: auto_stories
+            - generic [ref=f4e25]: My Bookings
+          - link "reviews Guest Reviews" [ref=f4e26] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/reviews
+            - generic [ref=f4e27]: reviews
+            - generic [ref=f4e28]: Guest Reviews
+      - generic [ref=f4e29]:
+        - heading "Explore Catalog" [level=2] [ref=f4e30]
+        - generic [ref=f4e31]:
+          - link "location_on Island Destinations" [ref=f4e32] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/destinations
+            - generic [ref=f4e33]: location_on
+            - generic [ref=f4e34]: Island Destinations
+          - link "hotel Hotels & Sanctuaries" [ref=f4e35] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/hotels
+            - generic [ref=f4e36]: hotel
+            - generic [ref=f4e37]: Hotels & Sanctuaries
+          - link "king_bed Rooms & Stays" [ref=f4e38] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/rooms
+            - generic [ref=f4e39]: king_bed
+            - generic [ref=f4e40]: Rooms & Stays
+          - link "explore Activities & Tours" [ref=f4e41] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/activities
+            - generic [ref=f4e42]: explore
+            - generic [ref=f4e43]: Activities & Tours
+          - link "extension Transfers & Add-ons" [ref=f4e44] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/addons
+            - generic [ref=f4e45]: extension
+            - generic [ref=f4e46]: Transfers & Add-ons
+          - link "card_travel Tour Packages & Promos" [ref=f4e47] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/packages
+            - generic [ref=f4e48]: card_travel
+            - generic [ref=f4e49]: Tour Packages & Promos
+      - generic [ref=f4e50]:
+        - heading "Account" [level=2] [ref=f4e51]
+        - link "manage_accounts Account Profile" [ref=f4e53] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/profile
+          - generic [ref=f4e54]: manage_accounts
+          - generic [ref=f4e55]: Account Profile
+    - generic [ref=f4e56]:
+      - generic [ref=f4e57]:
+        - generic [ref=f4e58]: J
+        - generic [ref=f4e59]:
+          - generic [ref=f4e60]: John Kenly Pamor
+          - generic [ref=f4e61]: johnkenlypamor13@gmail.com
+      - button "logout Log Out" [ref=f4e63] [cursor=pointer]:
+        - generic [ref=f4e64]: logout
+        - generic [ref=f4e65]: Log Out
+  - main [ref=f4e66]:
+    - generic [ref=f4e68]:
+      - generic [ref=f4e69]:
+        - generic [ref=f4e70]:
+          - navigation "Breadcrumb" [ref=f4e71]:
+            - link "Home" [ref=f4e72] [cursor=pointer]:
+              - /url: /
+            - generic [ref=f4e75]: Trip Basket
+          - heading "Your Trip Basket" [level=1] [ref=f4e76]
+          - paragraph [ref=f4e77]: 8 items in your basket — 4 selected for booking.
+        - link "Continue exploring" [ref=f4e78] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/destinations
+      - generic [ref=f4e82]:
+        - generic [ref=f4e83]:
+          - generic [ref=f4e84]:
+            - generic [ref=f4e85]:
+              - checkbox "Select or deselect the Boracay — 2N Surprise Itinerary" [ref=f4e86] [cursor=pointer]
+              - generic [ref=f4e87]:
+                - generic [ref=f4e88]:
+                  - generic [ref=f4e89]:
+                    - generic [ref=f4e90]: casino
+                    - text: I'm Feeling Lucky
+                  - generic [ref=f4e91]:
+                    - generic [ref=f4e92]: location_on
+                    - generic [ref=f4e93]: Boracay
+                - heading "Boracay — 2N Surprise Itinerary" [level=3] [ref=f4e94]
+                - paragraph [ref=f4e95]: 3 items
+              - generic [ref=f4e96]:
+                - generic [ref=f4e97]: Itinerary total
+                - generic [ref=f4e98]: ₱6,000.00
+            - generic [ref=f4e99]:
+              - generic [ref=f4e100]:
+                - checkbox "Select Canyon Hotels & Resorts Boracay — Deluxe Suite" [ref=f4e102] [cursor=pointer]
+                - img "Canyon Hotels & Resorts Boracay — Deluxe Suite" [ref=f4e103]
+                - generic [ref=f4e104]:
+                  - generic [ref=f4e105]:
+                    - generic [ref=f4e106]: room
+                    - generic [ref=f4e107]:
+                      - generic [ref=f4e108]: location_on
+                      - generic [ref=f4e109]: Boracay
+                  - generic [ref=f4e110]:
+                    - generic [ref=f4e111]: hotel
+                    - generic [ref=f4e112]: Canyon Hotels & Resorts Boracay
+                  - heading "Deluxe Suite" [level=3] [ref=f4e113]
+                  - generic [ref=f4e114]:
+                    - generic [ref=f4e115]:
+                      - generic [ref=f4e116]: group
+                      - generic [ref=f4e117]: Base 2 • Max 2 Pax
+                    - generic [ref=f4e118]:
+                      - generic [ref=f4e119]: king_bed
+                      - generic [ref=f4e120]: 1 Queen Bed
+                    - generic [ref=f4e121]:
+                      - generic [ref=f4e122]: calendar_month
+                      - generic [ref=f4e123]: Aug 14 - Aug 16, 2026 (2 nights)
+                  - generic [ref=f4e124]:
+                    - generic [ref=f4e125]:
+                      - generic [ref=f4e126]: Qty
+                      - generic [ref=f4e127]:
+                        - button "-" [disabled] [ref=f4e128]
+                        - generic [ref=f4e130]: "1"
+                        - button "+" [ref=f4e131] [cursor=pointer]
+                      - generic [ref=f4e133]: 2 of 2 rooms available in resort
+                    - generic [ref=f4e135]: ₱10,400.00
+                - button "Remove Canyon Hotels & Resorts Boracay — Deluxe Suite" [ref=f4e138] [cursor=pointer]
+              - generic [ref=f4e141]:
+                - checkbox "Select Parasailing" [checked] [ref=f4e143] [cursor=pointer]
+                - img "Parasailing" [ref=f4e144]
+                - generic [ref=f4e145]:
+                  - generic [ref=f4e146]:
+                    - generic [ref=f4e147]: activity
+                    - generic [ref=f4e148]:
+                      - generic [ref=f4e149]: location_on
+                      - generic [ref=f4e150]: Boracay
+                  - heading "Parasailing" [level=3] [ref=f4e151]
+                  - generic [ref=f4e152]:
+                    - generic [ref=f4e153]:
+                      - generic [ref=f4e154]: Pax
+                      - generic [ref=f4e155]:
+                        - button "-" [ref=f4e156] [cursor=pointer]
+                        - generic [ref=f4e158]: "2"
+                        - button "+" [ref=f4e159] [cursor=pointer]
+                    - generic [ref=f4e161]:
+                      - generic [ref=f4e162]: ₱1,700.00 / pax
+                      - generic [ref=f4e163]: ₱3,400.00
+                - button "Remove Parasailing" [ref=f4e165] [cursor=pointer]
+              - generic [ref=f4e168]:
+                - checkbox "Select Party Yacht" [checked] [ref=f4e170] [cursor=pointer]
+                - img "Party Yacht" [ref=f4e171]
+                - generic [ref=f4e172]:
+                  - generic [ref=f4e173]:
+                    - generic [ref=f4e174]: activity
+                    - generic [ref=f4e175]:
+                      - generic [ref=f4e176]: location_on
+                      - generic [ref=f4e177]: Boracay
+                  - heading "Party Yacht" [level=3] [ref=f4e178]
+                  - generic [ref=f4e179]:
+                    - generic [ref=f4e180]:
+                      - generic [ref=f4e181]: Pax
+                      - generic [ref=f4e182]:
+                        - button "-" [ref=f4e183] [cursor=pointer]
+                        - generic [ref=f4e185]: "2"
+                        - button "+" [ref=f4e186] [cursor=pointer]
+                    - generic [ref=f4e188]:
+                      - generic [ref=f4e189]: ₱1,300.00 / pax
+                      - generic [ref=f4e190]: ₱2,600.00
+                - button "Remove Party Yacht" [ref=f4e192] [cursor=pointer]
+          - generic [ref=f4e195]:
+            - generic [ref=f4e196]:
+              - checkbox "Select or deselect the Boracay — 2N Surprise Itinerary" [ref=f4e197] [cursor=pointer]
+              - generic [ref=f4e198]:
+                - generic [ref=f4e199]:
+                  - generic [ref=f4e200]:
+                    - generic [ref=f4e201]: casino
+                    - text: I'm Feeling Lucky
+                  - generic [ref=f4e202]:
+                    - generic [ref=f4e203]: location_on
+                    - generic [ref=f4e204]: Boracay
+                - heading "Boracay — 2N Surprise Itinerary" [level=3] [ref=f4e205]
+                - paragraph [ref=f4e206]: 3 items
+              - generic [ref=f4e207]:
+                - generic [ref=f4e208]: Itinerary total
+                - generic [ref=f4e209]: ₱18,600.00
+            - generic [ref=f4e210]:
+              - generic [ref=f4e211]:
+                - checkbox "Select Lazy Dog Bed & Breakfast — Breeze Garden Room" [checked] [ref=f4e213] [cursor=pointer]
+                - img "Lazy Dog Bed & Breakfast — Breeze Garden Room" [ref=f4e214]
+                - generic [ref=f4e215]:
+                  - generic [ref=f4e216]:
+                    - generic [ref=f4e217]: room
+                    - generic [ref=f4e218]:
+                      - generic [ref=f4e219]: location_on
+                      - generic [ref=f4e220]: Boracay
+                  - generic [ref=f4e221]:
+                    - generic [ref=f4e222]: hotel
+                    - generic [ref=f4e223]: Lazy Dog Bed & Breakfast
+                  - heading "Breeze Garden Room" [level=3] [ref=f4e224]
+                  - generic [ref=f4e225]:
+                    - generic [ref=f4e226]:
+                      - generic [ref=f4e227]: group
+                      - generic [ref=f4e228]: Base 2 • Max 2 Pax
+                    - generic [ref=f4e229]:
+                      - generic [ref=f4e230]: king_bed
+                      - generic [ref=f4e231]: 1 Queen Bed
+                    - generic [ref=f4e232]:
+                      - generic [ref=f4e233]: calendar_month
+                      - generic [ref=f4e234]: Aug 14 - Aug 16, 2026 (2 nights)
+                  - generic [ref=f4e235]:
+                    - generic [ref=f4e236]:
+                      - generic [ref=f4e237]: Qty
+                      - generic [ref=f4e238]:
+                        - button "-" [ref=f4e239] [cursor=pointer]
+                        - generic [ref=f4e241]: "2"
+                        - button "+" [disabled] [ref=f4e242]
+                      - generic [ref=f4e244]: 2 of 2 rooms available in resort
+                    - generic [ref=f4e246]:
+                      - generic [ref=f4e247]: ₱2,800.00 each
+                      - generic [ref=f4e248]: ₱11,200.00
+                - button "Remove Lazy Dog Bed & Breakfast — Breeze Garden Room" [ref=f4e250] [cursor=pointer]
+              - generic [ref=f4e253]:
+                - checkbox "Select 6–7 Destinations (Aircon Van)" [checked] [ref=f4e255] [cursor=pointer]
+                - img "6–7 Destinations (Aircon Van)" [ref=f4e256]
+                - generic [ref=f4e257]:
+                  - generic [ref=f4e258]:
+                    - generic [ref=f4e259]: activity
+                    - generic [ref=f4e260]:
+                      - generic [ref=f4e261]: location_on
+                      - generic [ref=f4e262]: Boracay
+                  - heading "6–7 Destinations (Aircon Van)" [level=3] [ref=f4e263]
+                  - generic [ref=f4e264]:
+                    - generic [ref=f4e265]:
+                      - generic [ref=f4e266]: Pax
+                      - generic [ref=f4e267]:
+                        - button "-" [ref=f4e268] [cursor=pointer]
+                        - generic [ref=f4e270]: "2"
+                        - button "+" [ref=f4e271] [cursor=pointer]
+                    - generic [ref=f4e273]:
+                      - generic [ref=f4e274]: ₱3,700.00 / pax
+                      - generic [ref=f4e275]: ₱7,400.00
+                - button "Remove 6–7 Destinations (Aircon Van)" [ref=f4e277] [cursor=pointer]
+              - generic [ref=f4e280]:
+                - checkbox "Select Crystal Kayak" [ref=f4e282] [cursor=pointer]
+                - img "Crystal Kayak" [ref=f4e283]
+                - generic [ref=f4e284]:
+                  - generic [ref=f4e285]:
+                    - generic [ref=f4e286]: activity
+                    - generic [ref=f4e287]:
+                      - generic [ref=f4e288]: location_on
+                      - generic [ref=f4e289]: Boracay
+                  - heading "Crystal Kayak" [level=3] [ref=f4e290]
+                  - generic [ref=f4e291]:
+                    - generic [ref=f4e292]:
+                      - generic [ref=f4e293]: Pax
+                      - generic [ref=f4e294]:
+                        - button "-" [ref=f4e295] [cursor=pointer]
+                        - generic [ref=f4e297]: "2"
+                        - button "+" [ref=f4e298] [cursor=pointer]
+                    - generic [ref=f4e300]:
+                      - generic [ref=f4e301]: ₱300.00 / pax
+                      - generic [ref=f4e302]: ₱600.00
+                - button "Remove Crystal Kayak" [ref=f4e304] [cursor=pointer]
+          - generic [ref=f4e307]:
+            - checkbox "Select Boracay Tipid Deal" [ref=f4e309] [cursor=pointer]
+            - img "Boracay Tipid Deal" [ref=f4e310]
+            - generic [ref=f4e311]:
+              - generic [ref=f4e312]:
+                - generic [ref=f4e313]: package
+                - generic [ref=f4e314]:
+                  - generic [ref=f4e315]: location_on
+                  - generic [ref=f4e316]: Boracay
+              - heading "Boracay Tipid Deal" [level=3] [ref=f4e317]
+              - generic [ref=f4e318]:
+                - generic [ref=f4e319]:
+                  - generic [ref=f4e320]: Pax
+                  - generic [ref=f4e321]:
+                    - button "-" [ref=f4e322] [cursor=pointer]
+                    - generic [ref=f4e324]: "2"
+                    - button "+" [ref=f4e325] [cursor=pointer]
+                  - generic [ref=f4e327]: Min 2 Pax
+                - generic [ref=f4e328]:
+                  - generic [ref=f4e329]: ₱6,999.00 / pax
+                  - generic [ref=f4e330]: ₱13,998.00
+            - button "Remove Boracay Tipid Deal" [ref=f4e332] [cursor=pointer]
+          - generic [ref=f4e335]:
+            - checkbox "Select Joiners Island Hopping" [ref=f4e337] [cursor=pointer]
+            - img "Joiners Island Hopping" [ref=f4e338]
+            - generic [ref=f4e339]:
+              - generic [ref=f4e340]:
+                - generic [ref=f4e341]: activity
+                - generic [ref=f4e342]:
+                  - generic [ref=f4e343]: location_on
+                  - generic [ref=f4e344]: Boracay
+              - heading "Joiners Island Hopping" [level=3] [ref=f4e345]
+              - generic [ref=f4e346]:
+                - generic [ref=f4e347]:
+                  - generic [ref=f4e348]: Pax
+                  - generic [ref=f4e349]:
+                    - button "-" [ref=f4e350] [cursor=pointer]
+                    - generic [ref=f4e352]: "3"
+                    - button "+" [ref=f4e353] [cursor=pointer]
+                - generic [ref=f4e355]:
+                  - generic [ref=f4e356]: ₱850.00 / pax
+                  - generic [ref=f4e357]: ₱2,550.00
+            - button "Remove Joiners Island Hopping" [ref=f4e359] [cursor=pointer]
+        - generic [ref=f4e363]:
+          - heading "Booking Summary" [level=2] [ref=f4e364]
+          - generic [ref=f4e365]:
+            - generic [ref=f4e366]:
+              - generic [ref=f4e367]: Selected items
+              - generic [ref=f4e368]: 4 of 8
+            - generic [ref=f4e369]:
+              - generic [ref=f4e370]: Subtotal
+              - generic [ref=f4e371]: ₱24,600.00
+            - generic [ref=f4e372]:
+              - generic [ref=f4e373]: Service & booking fee
+              - generic [ref=f4e374]: Waived (Promo)
+          - generic [ref=f4e375]:
+            - generic [ref=f4e376]: Estimated total
+            - generic [ref=f4e377]: ₱24,600.00
+          - link "Proceed to Booking Checkout" [ref=f4e378] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/checkout
+          - paragraph [ref=f4e382]: You'll add your guest details and confirm your stay at checkout.

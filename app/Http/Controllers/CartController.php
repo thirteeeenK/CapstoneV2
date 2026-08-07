@@ -3,45 +3,27 @@
 namespace App\Http\Controllers;
 
 use App\Models\CartItem;
+use App\Services\CartService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
 class CartController extends Controller
 {
+    public function __construct(protected CartService $cartService)
+    {
+    }
     /**
      * Get or generate cart identifier for session/user.
      */
     protected function getSessionToken(Request $request): string
     {
-        if ($request->hasSession()) {
-            $token = $request->session()->get('cart_session_token');
-            if (!$token) {
-                $token = (string) Str::uuid();
-                $request->session()->put('cart_session_token', $token);
-            }
-            return $token;
-        }
-
-        return 'guest_' . md5($request->ip() . ($request->header('User-Agent') ?? 'ua'));
+        return $this->cartService->getSessionToken($request);
     }
 
     protected function getCartQuery(Request $request)
     {
-        $sessionToken = $this->getSessionToken($request);
-
-        if (auth()->check()) {
-            $userId = auth()->id();
-
-            // Automatically claim any guest cart items from the current session
-            CartItem::whereNull('user_id')
-                ->where('session_token', $sessionToken)
-                ->update(['user_id' => $userId]);
-
-            return CartItem::where('user_id', $userId);
-        }
-
-        return CartItem::where('session_token', $sessionToken);
+        return $this->cartService->getCartQuery($request);
     }
 
     protected function getItemsWithRelations(Request $request)
@@ -66,7 +48,9 @@ class CartController extends Controller
     public function index(Request $request)
     {
         $cartItems = $this->getItemsWithRelations($request);
-        return view('cart.index', compact('cartItems'));
+        $validItems = $cartItems->filter(fn($item) => $item->itemable !== null);
+        $groups = $this->buildGroups($validItems);
+        return view('cart.index', compact('cartItems', 'groups'));
     }
 
     public function getAvailableRoomInventory(CartItem $item): array
@@ -115,6 +99,45 @@ class CartController extends Controller
     }
 
     /**
+     * Build the "I'm Feeling Lucky" group metadata map for the cart payload.
+     */
+    protected function buildGroups($items): array
+    {
+        $groups = [];
+        $grouped = $items->filter(fn($item) => !empty($item->lucky_group_id))
+            ->groupBy('lucky_group_id');
+
+        foreach ($grouped as $groupId => $groupItems) {
+            $roomItem = $groupItems->first(fn($i) => $i->item_type === 'room');
+            $destinationName = $groupItems->first()?->location_name;
+            $nights = null;
+
+            if ($roomItem && $roomItem->check_in_date && $roomItem->check_out_date) {
+                $nights = max(1, Carbon::parse($roomItem->check_in_date)
+                    ->diffInDays(Carbon::parse($roomItem->check_out_date)));
+            }
+
+            $titleParts = array_filter([$destinationName, $nights ? $nights . 'N' : null]);
+            $selectedItems = $groupItems->where('is_selected', true);
+            $subtotal = $selectedItems->sum(fn($item) => $item->subtotal);
+
+            $groups[] = [
+                'id' => $groupId,
+                'title' => implode(' — ', $titleParts) . ' Surprise Itinerary',
+                'destination_name' => $destinationName,
+                'nights' => $nights,
+                'item_count' => $groupItems->count(),
+                'selected_count' => $selectedItems->count(),
+                'is_selected' => $groupItems->count() > 0 && $selectedItems->count() === $groupItems->count(),
+                'subtotal' => $subtotal,
+                'formatted_subtotal' => '₱' . number_format($subtotal, 2),
+            ];
+        }
+
+        return $groups;
+    }
+
+    /**
      * Get JSON data for floating drawer & Ajax updates.
      */
     public function data(Request $request)
@@ -142,6 +165,7 @@ class CartController extends Controller
                     'check_out_date' => $item->check_out_date ? Carbon::parse($item->check_out_date)->format('Y-m-d') : null,
                     'is_selected' => $item->is_selected,
                     'notes' => $item->notes,
+                    'lucky_group_id' => $item->lucky_group_id,
                     'title' => $item->item_title,
                     'subtitle' => $item->item_subtitle,
                     'hotel_name' => $item->hotel_name,
@@ -158,6 +182,7 @@ class CartController extends Controller
                     'available_notice' => $inv['available_notice'],
                 ];
             }),
+            'groups' => $this->buildGroups($validItems),
             'total_count' => $validItems->sum('quantity'),
             'selected_count' => $selectedItems->count(),
             'subtotal' => $subtotal,
@@ -181,9 +206,6 @@ class CartController extends Controller
                 'notes' => 'nullable|string',
             ]);
 
-            $userId = auth()->id();
-            $sessionToken = $this->getSessionToken($request);
-
             // Enforce required check-in and check-out dates for Room items
             if ($validated['item_type'] === 'room') {
                 if (empty($validated['check_in_date']) || empty($validated['check_out_date'])) {
@@ -194,105 +216,25 @@ class CartController extends Controller
                 }
             }
 
-            // Room Availability Check before adding to cart
-            if ($validated['item_type'] === 'room' && !empty($validated['check_in_date']) && !empty($validated['check_out_date'])) {
-                $room = \App\Models\RoomType::find($validated['item_id']);
-                if ($room) {
-                    $checkIn = \Carbon\Carbon::parse($validated['check_in_date']);
-                    $checkOut = \Carbon\Carbon::parse($validated['check_out_date']);
+            $result = $this->cartService->add($request, $validated);
+            $cartItem = $result['cart_item'];
+            $cartItem->load('itemable');
 
-                    $bookedCount = \App\Models\BookingItem::where('item_type', 'room')
-                        ->where('item_id', $room->id)
-                        ->whereHas('booking', fn($q) => $q->whereIn('status', \App\Models\Booking::HOLD_STATUSES))
-                        ->where(function ($q) use ($checkIn, $checkOut) {
-                            $q->whereBetween('check_in_date', [$checkIn, $checkOut->copy()->subDay()])
-                              ->orWhereBetween('check_out_date', [$checkIn->copy()->addDay(), $checkOut]);
-                        })
-                        ->sum('quantity');
-
-                    $totalRooms = max(1, (int) ($room->total_rooms ?: ($room->total_number_of_rooms ?: 2)));
-                    if (($totalRooms - $bookedCount) < ($validated['quantity'] ?? 1)) {
-                        return response()->json([
-                            'success' => false,
-                            'message' => 'Sorry, this room is sold out for your selected dates.',
-                        ], 422);
-                    }
-                }
-            }
-
-            // Check if item already exists in cart with same type, id, and dates
-            $query = CartItem::where('item_type', $validated['item_type'])
-                ->where('item_id', $validated['item_id']);
-
-            if ($userId) {
-                $query->where('user_id', $userId);
-            } else {
-                $query->where('session_token', $sessionToken);
-            }
-
-            if (!empty($validated['check_in_date'])) {
-                $query->where('check_in_date', $validated['check_in_date']);
-            }
-
-            if (in_array($validated['item_type'], ['activity', 'addon'])) {
-                $paxVal = max((int) ($validated['quantity'] ?? 1), (int) ($validated['selected_pax'] ?? 1));
-                $validated['quantity'] = $paxVal;
-                $validated['selected_pax'] = $paxVal;
-            } elseif ($validated['item_type'] === 'package') {
-                // min_pax only gates booking eligibility at checkout, never inflates pax
-                $paxVal = max(1, (int) ($validated['quantity'] ?? 1), (int) ($validated['selected_pax'] ?? 1));
-                $validated['quantity'] = $paxVal;
-                $validated['selected_pax'] = $paxVal;
-            }
-
-            $existingItem = $query->first();
-
-            if ($existingItem) {
-                // Packages are non-stackable — each package is a single booking entry.
-                // Re-adding a package that's already in the cart just notifies the user.
-                if ($existingItem->item_type === 'package') {
-                    $existingItem->load('itemable');
-                    return response()->json([
-                        'success' => true,
-                        'already_in_cart' => true,
-                        'message' => '"' . $existingItem->item_title . '" is already in your Trip Basket. Adjust the traveler count from your cart.',
-                        'cart_item' => [
-                            'id' => $existingItem->id,
-                            'title' => $existingItem->item_title,
-                            'subtitle' => $existingItem->item_subtitle,
-                            'image' => $existingItem->item_image,
-                            'quantity' => $existingItem->quantity,
-                            'formatted_subtotal' => '₱' . number_format($existingItem->subtotal, 2),
-                        ],
-                    ]);
-                }
-
-                $existingItem->quantity += ($validated['quantity'] ?? 1);
-                if (!empty($validated['selected_pax'])) {
-                    $existingItem->selected_pax = $validated['selected_pax'];
-                }
-                if (in_array($existingItem->item_type, ['activity', 'addon'])) {
-                    $existingItem->selected_pax = max($existingItem->quantity, $existingItem->selected_pax);
-                    $existingItem->quantity = $existingItem->selected_pax;
-                }
-                $existingItem->save();
-                $cartItem = $existingItem;
-            } else {
-                $cartItem = CartItem::create([
-                    'user_id' => $userId,
-                    'session_token' => $sessionToken,
-                    'item_type' => $validated['item_type'],
-                    'item_id' => $validated['item_id'],
-                    'quantity' => $validated['quantity'] ?? 1,
-                    'selected_pax' => $validated['selected_pax'] ?? 1,
-                    'check_in_date' => !empty($validated['check_in_date']) ? $validated['check_in_date'] : null,
-                    'check_out_date' => !empty($validated['check_out_date']) ? $validated['check_out_date'] : null,
-                    'notes' => $validated['notes'] ?? null,
-                    'is_selected' => true,
+            if ($result['status'] === 'already_in_cart') {
+                return response()->json([
+                    'success' => true,
+                    'already_in_cart' => true,
+                    'message' => '"' . $cartItem->item_title . '" is already in your Trip Basket. Adjust the traveler count from your cart.',
+                    'cart_item' => [
+                        'id' => $cartItem->id,
+                        'title' => $cartItem->item_title,
+                        'subtitle' => $cartItem->item_subtitle,
+                        'image' => $cartItem->item_image,
+                        'quantity' => $cartItem->quantity,
+                        'formatted_subtotal' => '₱' . number_format($cartItem->subtotal, 2),
+                    ],
                 ]);
             }
-
-            $cartItem->load('itemable');
 
             if ($request->wantsJson() || $request->ajax() || $request->header('Accept') === 'application/json') {
                 return response()->json([
@@ -312,6 +254,8 @@ class CartController extends Controller
             }
 
             return redirect()->back()->with('success', 'Item added to your Trip Basket!');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            throw $e;
         } catch (\Exception $e) {
             \Illuminate\Support\Facades\Log::error('Cart store error: ' . $e->getMessage());
             if ($request->wantsJson() || $request->ajax() || $request->header('Accept') === 'application/json') {
@@ -322,6 +266,33 @@ class CartController extends Controller
             }
             return redirect()->back()->with('error', 'Could not add item to cart.');
         }
+    }
+
+    /**
+     * Toggle selection for every item in an "I'm Feeling Lucky" group at once.
+     */
+    public function toggleGroup(Request $request, $groupId)
+    {
+        $total = $this->getCartQuery($request)->where('lucky_group_id', $groupId)->count();
+        if ($total === 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Itinerary group not found.',
+            ], 404);
+        }
+
+        $selected = $this->getCartQuery($request)
+            ->where('lucky_group_id', $groupId)
+            ->where('is_selected', true)
+            ->count();
+
+        $target = $selected !== $total;
+
+        $this->getCartQuery($request)
+            ->where('lucky_group_id', $groupId)
+            ->update(['is_selected' => $target]);
+
+        return $this->data($request);
     }
 
     protected function findCartItem(Request $request, $id): ?CartItem

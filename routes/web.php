@@ -54,6 +54,7 @@ require __DIR__ . '/legalRoute.php';
 require __DIR__ . '/addonRoute.php';
 require __DIR__ . '/packageRoute.php';
 require __DIR__ . '/cartRoute.php';
+require __DIR__ . '/luckyRoute.php';
 require __DIR__ . '/checkoutRoute.php';
 require __DIR__ . '/passengerRulesRoute.php';
 require __DIR__ . '/adminPackageRoute.php';

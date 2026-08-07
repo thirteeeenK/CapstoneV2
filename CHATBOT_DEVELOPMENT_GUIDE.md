@@ -12,6 +12,7 @@
 2. [System Architecture](#2-system-architecture)
 3. [Hybrid Retrieval Strategy](#3-hybrid-retrieval-strategy)
    - [3.3 Real-Time Date & Room Availability Tool Calling](#33-real-time-date--room-availability-tool-calling-function-execution)
+   - [3.4 Map & Weather Inquiry Handling (Tool Calling)](#34-map--weather-inquiry-handling-tool-calling)
 4. [Knowledge Sources & Data Mapping](#4-knowledge-sources--data-mapping)
 5. [Embedding Strategy & Pipeline](#5-embedding-strategy--pipeline)
 6. [Recommendation System Engine](#6-recommendation-system-engine)
@@ -138,6 +139,35 @@ The AI Chatbot is empowered with real-time tool calling (`check_room_availabilit
 3. **Inventory Filtering**: Filters out sold-out room types where `remaining_rooms <= 0`.
 4. **Conversational Synthesis & Interactive Cards**: Gemini generates a grounded response listing available rooms, total stay cost ($\text{Nights} \times \text{Rate/Night}$), remaining inventory badges, and interactive **"Add to Trip Basket"** buttons.
 
+### 3.4 Map & Weather Inquiry Handling (Tool Calling)
+
+The chatbot answers **map/location** and **weather** inquiries with two dedicated deterministic intents — `MAP_QUERY` and `WEATHER_QUERY`. **Neither intent requires embeddings or new database columns**: coordinates are plain `latitude`/`longitude` decimal columns, and weather is live external data cached by time, not by semantics.
+
+> **Why no embeddings?** Vector embeddings power *semantic text matching* over catalog content (rooms, hotels, activities). Map questions are resolved with SQL (lat/lng lookups) and Haversine math; weather is fetched from OpenWeatherMap and cached in `weather_cache`. Embedding weather would produce stale answers — the time-based cache is the correct pattern. All embedding columns (`hotels`, `rooms`, `activities`, `packages`, `add_ons`) and the `embed:all` pipeline already exist for the semantic intents.
+
+#### 3.4.1 `MAP_QUERY` — Location & Distance ("Where is Boracay?", "How far is El Nido from Boracay?", "Show nearby hotels")
+
+Execution Architecture:
+1. **Place Extraction**: `IntentRouter` extracts place names (destination / hotel / activity mentions) and intent verbs (`where`, `how far`, `nearby`).
+2. **Coordinate Resolution**: Resolves names to DB rows **with non-null coordinates** — SQL `whereNotNull('latitude')` across `destinations`, `hotels`, and `activities` (columns already added by migrations `2026_08_07_111243` / `2026_08_07_111244`).
+3. **Distance Computation**: `DistanceService::haversine(lat1, lng1, lat2, lng2)` + `DistanceService::format()` for "how far" questions; `DistanceService` also supports user-location ("distance from me") via `latitude_with_fallback` / `longitude_with_fallback` accessors.
+4. **Grounded Synthesis**: Gemini composes the reply **exclusively from the resolved coordinates/distances**.
+5. **Interactive Map Card**: When relevant, the chatbot returns a map payload the frontend renders with the existing Leaflet map component (`resources/views/components/frontend/map.blade.php`, Leaflet 1.9.4) or a deep link to the full map: `route('explore', ['focus' => 'lat,lng'])` — the `/explore` page (`DssController` + `MapService`) already renders destination markers with weather and distance.
+
+#### 3.4.2 `WEATHER_QUERY` — Forecasts ("What's the weather in Boracay?", "Will it rain in El Nido this weekend?")
+
+Execution Architecture:
+1. **Constraint Extraction**: `IntentRouter` extracts `destination_name` and an optional date window (e.g., "this weekend" → next Sat/Sun).
+2. **Forecast Retrieval**: `WeatherService::forecastForDestination($destination)` (or `WeatherService::forecast($lat, $lng)` for raw coordinates) fetches the OpenWeatherMap 5-day / 3-hour forecast. Two-layer caching: Laravel cache fast path + `weather_cache` table persistence (`cache_key`, `weather_data` JSON, `fetched_at`, `expires_at`); fresh cache TTL 180 min, stale fallback 360 min when the API is unreachable.
+3. **Date Windowing**: Filter the forecast entries to the requested date window before prompt injection.
+4. **Safety Advice**: Include `WeatherService::isOutdoorUnsafe($weather)` and `WeatherService::advice($weather)` in the context so the bot can warn about outdoor activities (e.g., *"31°C, light rain Friday — island tours are better on Saturday"*).
+5. **Unavailable Policy**: If the destination has no coordinates, `OPENWEATHER_API_KEY` is missing, or the fetch fails, the bot must politely state the weather is unavailable — never invent conditions (grounding rule from §12).
+
+#### 3.4.3 Data Readiness
+
+- `weather_cache` table exists (migration `2026_08_07_111245`); `OPENWEATHER_API_KEY` is read via `config('services.openweather.api_key')`.
+- No schema changes required. If seed data ships with NULL coordinates, backfill them via a seeder/command — **not** a migration.
+
 ---
 
 ## 4. Knowledge Sources & Data Mapping
@@ -257,7 +287,9 @@ CREATE TABLE chat_messages (
 | **Vector Embedding Generation**          | Gemini API         | `GeminiService::generateEmbedding()`     |
 | **Cosine Similarity Ranking**            | Laravel / DB       | `GeminiService::rankRecommendations()`   |
 | **SQL Hard Constraint Filtering**        | Laravel Eloquent   | `RoomType::where(...)`                   |
-| **RAG Context Text Assembly**            | Laravel PHP        | `GeminiService::getRoomContext()`        |
+| **RAG Context Text Assembly**            | Laravel PHP         | `GeminiService::getRoomContext()`        |
+| **Map & Distance Resolution**            | Laravel PHP / SQL   | `IntentRouter` + `DistanceService` + `MapService` (lat/lng columns) |
+| **Weather Retrieval & Caching**          | Laravel + OpenWeatherMap | `WeatherService` + `weather_cache` table |
 | **Natural Language Response Generation** | Gemini LLM         | `gemini-1.5-flash` API                   |
 | **Session Memory & Persistence**         | Laravel DB / Redis | `ChatbotController` & `ChatSessionModel` |
 
@@ -362,5 +394,6 @@ gantt
 
 - **Voice Assistant Interface**: Speech-to-text input via Web Speech API.
 - **Interactive Map Pinning**: Dynamic map marker highlighting when a user selects a recommended hotel.
+- **In-Chat Map & Weather Cards**: Reuse `components/frontend/map.blade.php` (Leaflet) and `WeatherService` summaries to render rich map/weather cards directly inside chat bubbles (see §3.4).
 - **Booking Flow Handoff**: One-click pre-populated booking checkout directly from chatbot room cards.
 - **Multi-Language Support**: Seamless Tagalog / English (Taglish) RAG translation.

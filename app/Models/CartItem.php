@@ -27,6 +27,7 @@ class CartItem extends Model
         'selected_pax',
         'is_selected',
         'notes',
+        'lucky_group_id',
     ];
 
     protected $casts = [

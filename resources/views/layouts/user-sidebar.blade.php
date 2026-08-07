@@ -53,6 +53,7 @@
             $navGroups = [
                 'Main Navigation' => [
                     ['route' => 'dashboard', 'icon' => 'space_dashboard', 'label' => 'Dashboard', 'href' => route('dashboard')],
+                    ['route' => 'lucky.*', 'icon' => 'casino', 'label' => "I'm Feeling Lucky", 'href' => route('lucky.index')],
                     ['route' => 'cart.*', 'icon' => 'shopping_basket', 'label' => 'My Trip Basket', 'href' => route('cart.index'), 'drawer' => true],
                     ['route' => 'booking.*', 'icon' => 'auto_stories', 'label' => 'My Bookings', 'href' => route('booking.index')],
                         ['route' => 'reviews.*', 'icon' => 'reviews', 'label' => 'Guest Reviews', 'href' => route('reviews.index')],

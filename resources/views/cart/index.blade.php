@@ -37,6 +37,7 @@
             'selected_pax' => (int) ($item->selected_pax ?: 1),
             'min_pax' => ($item->item_type === 'package' && $item->itemable) ? (int) $item->itemable->min_pax : null,
             'is_selected' => (bool) $item->is_selected,
+            'lucky_group_id' => $item->lucky_group_id,
             'title' => $item->item_title,
             'subtitle' => $item->item_subtitle,
             'hotel_name' => $item->hotel_name,
@@ -60,7 +61,7 @@
 @endphp
 
 <x-frontend.layout title="Trip Basket | SunnyTrips">
-    <div x-data="cartPageManager({{ json_encode($initialItems) }})" class="min-h-screen bg-sand-50 font-body">
+    <div x-data="cartPageManager({{ json_encode($initialItems) }}, {{ json_encode($groups) }})" class="min-h-screen bg-sand-50 font-body">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
 
             {{-- Breadcrumb & Title --}}
@@ -121,153 +122,50 @@
             <div x-show="items.length > 0" class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
 
                 {{-- Left 2 Columns: Item Cards --}}
-                <div class="lg:col-span-2 space-y-4">
-                    <template x-for="item in items" :key="item.id">
-                        <div class="bg-white rounded-2xl ring-1 ring-sand-200 p-5 sm:p-6 flex flex-col sm:flex-row gap-5 transition-all duration-200 hover:ring-ocean-200 hover:shadow-md hover:shadow-ocean-900/5"
-                             :class="item.is_selected ? '' : 'opacity-60'">
+                <div class="lg:col-span-2 space-y-6">
 
-                            {{-- Checkbox --}}
-                            <div class="pt-0.5">
+                    {{-- "I'm Feeling Lucky" Itinerary Groups --}}
+                    <template x-for="group in displayGroups" :key="group.id">
+                        <section class="overflow-hidden rounded-2xl bg-white ring-1 ring-ocean-200 shadow-sm shadow-ocean-900/5">
+                            <div class="bg-gradient-to-r from-ocean-700 to-sky-500 px-5 sm:px-6 py-4 flex flex-wrap items-center gap-4">
                                 <input type="checkbox"
-                                       :checked="item.is_selected"
-                                       @change="toggleSelect(item.id)"
-                                       :aria-label="'Select ' + item.title"
-                                       class="w-5 h-5 rounded accent-ocean-600 text-ocean-600 border-sand-300 focus:ring-ocean-500 cursor-pointer">
-                            </div>
-
-                            {{-- Image --}}
-                            <img :src="item.image" :alt="item.title"
-                                 class="w-full sm:w-36 h-48 sm:h-32 rounded-xl object-cover ring-1 ring-sand-200 shrink-0">
-
-                            {{-- Details --}}
-                            <div class="flex-1 min-w-0">
-                                <div class="flex flex-wrap items-center gap-2 mb-2">
-                                    <span class="inline-flex items-center rounded-full bg-ocean-50 text-ocean-800 border border-ocean-100 px-2.5 py-0.5 text-[11px] font-semibold tracking-wide capitalize"
-                                          x-text="item.item_type">
-                                    </span>
-                                    <template x-if="item.location_name">
-                                        <span class="inline-flex items-center gap-1 text-xs font-medium text-ink-500">
-                                            <span class="material-symbols-outlined text-sm text-ocean-600">location_on</span>
-                                            <span x-text="item.location_name"></span>
+                                       :checked="group.is_selected"
+                                       @change="toggleGroup(group.id)"
+                                       :aria-label="'Select or deselect the ' + group.title"
+                                       class="w-5 h-5 rounded bg-white accent-ocean-700 border-white/50 focus:ring-white cursor-pointer">
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <span class="inline-flex items-center gap-1 rounded-full bg-white/20 text-white border border-white/30 px-2.5 py-0.5 text-[11px] font-bold tracking-wide uppercase">
+                                            <span class="material-symbols-outlined text-[13px]">casino</span>
+                                            I'm Feeling Lucky
                                         </span>
-                                    </template>
-                                </div>
-
-                                <template x-if="item.hotel_name">
-                                    <div class="flex items-center gap-1.5 text-xs font-semibold text-ocean-700 mb-1">
-                                        <span class="material-symbols-outlined text-sm text-ocean-600">hotel</span>
-                                        <span x-text="item.hotel_name"></span>
+                                        <span class="inline-flex items-center gap-1 text-xs text-white/90">
+                                            <span class="material-symbols-outlined text-sm">location_on</span>
+                                            <span x-text="group.destination_name"></span>
+                                        </span>
                                     </div>
+                                    <h3 class="font-display text-base sm:text-lg font-bold text-white mt-1.5" x-text="group.title"></h3>
+                                    <p class="text-xs text-white/80 mt-0.5">
+                                        <span x-text="group.item_count + ' ' + (group.item_count === 1 ? 'item' : 'items')"></span>
+                                        <span x-text="group.selected_count === group.item_count ? ' • fully selected' : ''"></span>
+                                    </p>
+                                </div>
+                                <div class="text-right">
+                                    <span class="block text-[11px] font-semibold text-white/70 uppercase tracking-wide">Itinerary total</span>
+                                    <span class="block font-display text-lg font-bold text-white" x-text="group.formatted_subtotal"></span>
+                                </div>
+                            </div>
+                            <div class="divide-y divide-sand-200/80">
+                                <template x-for="item in group.items" :key="item.id">
+                                    @include('cart.partials.item-card')
                                 </template>
-
-                                <h3 class="text-base font-semibold text-ink-900 truncate" x-text="item.room_name || item.title"></h3>
-
-                                {{-- Feature Badges & Specs --}}
-                                <div class="flex flex-wrap gap-1.5 mt-2.5">
-                                    <template x-if="item.item_type === 'room' && item.base_occupancy">
-                                        <span class="inline-flex items-center gap-1.5 text-[11px] font-medium text-ink-600 bg-sand-100 px-2.5 py-1 rounded-full border border-sand-200">
-                                            <span class="material-symbols-outlined text-[13px] text-ink-400">group</span>
-                                            <span x-text="'Base ' + item.base_occupancy + ' • Max ' + item.max_occupancy + ' Pax'"></span>
-                                        </span>
-                                    </template>
-
-                                    <template x-if="item.bed_configuration">
-                                        <span class="inline-flex items-center gap-1.5 text-[11px] font-medium text-ink-600 bg-sand-100 px-2.5 py-1 rounded-full border border-sand-200">
-                                            <span class="material-symbols-outlined text-[13px] text-ink-400">king_bed</span>
-                                            <span x-text="item.bed_configuration"></span>
-                                        </span>
-                                    </template>
-
-                                    <template x-if="item.date_details">
-                                        <span class="inline-flex items-center gap-1.5 text-[11px] font-medium text-ocean-800 bg-ocean-50 px-2.5 py-1 rounded-full border border-ocean-100">
-                                            <span class="material-symbols-outlined text-[13px] text-ocean-600">calendar_month</span>
-                                            <span x-text="item.date_details"></span>
-                                        </span>
-                                    </template>
-                                </div>
-
-                                <div class="mt-4 flex flex-wrap items-center justify-between gap-4">
-                                    {{-- Steppers: Pax for Activities/Transfers/Addons/Packages, Qty for Rooms --}}
-                                    <template x-if="item.item_type === 'addon' || item.item_type === 'activity' || item.item_type === 'package'">
-                                        <div class="flex items-center gap-1.5 flex-wrap">
-                                            <span class="text-xs font-medium text-ink-500">Pax</span>
-                                            <div class="flex items-center rounded-full border border-sand-200 bg-white p-1">
-                                                <button type="button"
-                                                        @click="updatePax(item.id, -1)"
-                                                        :disabled="item.selected_pax <= 1"
-                                                        class="w-7 h-7 rounded-full flex items-center justify-center text-ink-600 hover:bg-sand-100 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer">
-                                                    <span class="text-xs font-bold">-</span>
-                                                </button>
-                                                <span class="w-7 text-center text-xs font-semibold text-ink-900" x-text="item.selected_pax"></span>
-                                                <button type="button"
-                                                        @click="updatePax(item.id, 1)"
-                                                        class="w-7 h-7 rounded-full flex items-center justify-center text-ink-600 hover:bg-sand-100 transition cursor-pointer">
-                                                    <span class="text-xs font-bold">+</span>
-                                                </button>
-                                            </div>
-                                            <template x-if="item.item_type === 'package'">
-                                                <span class="text-[11px] font-medium text-amber-700 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-full">Min 2 Pax</span>
-                                            </template>
-                                        </div>
-                                    </template>
-
-                                    <template x-if="item.item_type !== 'addon' && item.item_type !== 'activity' && item.item_type !== 'package'">
-                                        <div class="flex items-center gap-1.5">
-                                            <span class="text-xs font-medium text-ink-500">Qty</span>
-                                            <div class="flex items-center rounded-full border border-sand-200 bg-white p-1">
-                                                <button type="button"
-                                                        @click="updateQty(item.id, -1)"
-                                                        :disabled="item.quantity <= 1"
-                                                        class="w-7 h-7 rounded-full flex items-center justify-center text-ink-600 hover:bg-sand-100 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer">
-                                                    <span class="text-xs font-bold">-</span>
-                                                </button>
-                                                <span class="w-7 text-center text-xs font-semibold text-ink-900" x-text="item.quantity"></span>
-                                                <button type="button"
-                                                        @click="updateQty(item.id, 1)"
-                                                        :disabled="item.quantity >= item.max_qty"
-                                                        class="w-7 h-7 rounded-full flex items-center justify-center text-ink-600 hover:bg-sand-100 disabled:opacity-40 disabled:cursor-not-allowed transition cursor-pointer">
-                                                    <span class="text-xs font-bold">+</span>
-                                                </button>
-                                            </div>
-                                            <template x-if="item.item_type === 'room'">
-                                                <div class="flex flex-col gap-0.5">
-                                                    <span class="text-[11px] font-medium text-ink-500" x-text="item.available_notice"></span>
-                                                    <template x-if="item.booked_count > 0">
-                                                        <span class="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-800 bg-amber-50 border border-amber-200/80 px-2 py-0.5 rounded-full w-fit">
-                                                            <span class="material-symbols-outlined text-[12px] text-amber-600">info</span>
-                                                            <span>Note: <span x-text="item.booked_count"></span> room<span x-text="item.booked_count > 1 ? 's are' : ' is'"></span> pending admin approval or active holds for these dates.</span>
-                                                        </span>
-                                                    </template>
-                                                </div>
-                                            </template>
-                                        </div>
-                                    </template>
-
-                                    {{-- Subtotal & Rate Display --}}
-                                    <div class="text-right">
-                                        <template x-if="item.item_type === 'addon' || item.item_type === 'activity' || item.item_type === 'package'">
-                                            <span class="block text-xs text-ink-500 font-medium" x-text="item.formatted_unit_rate + ' / pax'"></span>
-                                        </template>
-                                        <template x-if="item.item_type !== 'addon' && item.item_type !== 'activity' && item.item_type !== 'package' && item.quantity > 1">
-                                            <span class="block text-xs text-ink-400" x-text="item.formatted_unit_rate + ' each'"></span>
-                                        </template>
-                                        <span class="block text-lg font-bold text-ink-900" x-text="item.formatted_subtotal"></span>
-                                    </div>
-                                </div>
                             </div>
+                        </section>
+                    </template>
 
-                            {{-- Remove Action --}}
-                            <div class="self-start sm:self-center">
-                                <button type="button"
-                                        @click="removeItem(item.id)"
-                                        :aria-label="'Remove ' + item.title"
-                                        class="w-9 h-9 rounded-full flex items-center justify-center text-rose-600 bg-rose-50 border border-rose-100 hover:bg-rose-100 hover:text-rose-700 transition cursor-pointer shadow-2xs">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                                    </svg>
-                                </button>
-                            </div>
-                        </div>
+                    {{-- Regular (ungrouped) Items --}}
+                    <template x-for="item in ungroupedItems" :key="item.id">
+                        @include('cart.partials.item-card')
                     </template>
                 </div>
 
@@ -317,9 +215,31 @@
     </div>
 
     <script>
-    function cartPageManager(initialItems) {
+    function cartPageManager(initialItems, initialGroups) {
         return {
             items: initialItems || [],
+            groups: initialGroups || [],
+
+            get displayGroups() {
+                return this.groups.map(g => {
+                    const gItems = this.items.filter(i => i.lucky_group_id === g.id);
+                    const selected = gItems.filter(i => i.is_selected);
+                    const subtotal = selected.reduce((sum, i) => sum + Number(i.subtotal), 0);
+                    return {
+                        ...g,
+                        items: gItems,
+                        is_selected: gItems.length > 0 && selected.length === gItems.length,
+                        item_count: gItems.length,
+                        selected_count: selected.length,
+                        subtotal,
+                        formatted_subtotal: '₱' + subtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                    };
+                });
+            },
+
+            get ungroupedItems() {
+                return this.items.filter(i => !i.lucky_group_id);
+            },
 
             get selectedItems() {
                 return this.items.filter(i => i.is_selected);
@@ -380,7 +300,7 @@
 
                     const data = await res.json();
                     if (data.success && data.items) {
-                        this.syncWithBackend(data.items);
+                        this.syncWithBackend(data);
                         window.dispatchEvent(new CustomEvent('cart-updated'));
                     } else {
                         item.selected_pax = prevPax;
@@ -422,7 +342,7 @@
 
                     const data = await res.json();
                     if (data.success && data.items) {
-                        this.syncWithBackend(data.items);
+                        this.syncWithBackend(data);
                         window.dispatchEvent(new CustomEvent('cart-updated'));
                     } else {
                         item.quantity = prevQty;
@@ -457,11 +377,35 @@
                     });
                     const data = await res.json();
                     if (data.success && data.items) {
-                        this.syncWithBackend(data.items);
+                        this.syncWithBackend(data);
                         window.dispatchEvent(new CustomEvent('cart-updated'));
                     }
                 } catch (err) {
                     console.error('Error toggling selection:', err);
+                }
+            },
+
+            async toggleGroup(groupId) {
+                try {
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+                    const res = await fetch('/cart/toggle-group/' + groupId, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken,
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+                    const data = await res.json();
+                    if (data.success && data.items) {
+                        this.syncWithBackend(data);
+                        window.dispatchEvent(new CustomEvent('cart-updated'));
+                    } else {
+                        alert(data.message || 'Could not update the itinerary selection.');
+                    }
+                } catch (err) {
+                    console.error('Error toggling itinerary group:', err);
                 }
             },
 
@@ -479,6 +423,7 @@
                     const data = await res.json();
                     if (data.success) {
                         this.items = this.items.filter(i => i.id !== itemId);
+                        this.groups = this.groups.filter(g => this.items.some(i => i.lucky_group_id === g.id));
                         window.dispatchEvent(new CustomEvent('cart-updated'));
                     }
                 } catch (err) {
@@ -486,8 +431,8 @@
                 }
             },
 
-            syncWithBackend(backendItems) {
-                backendItems.forEach(bItem => {
+            syncWithBackend(data) {
+                (data.items || []).forEach(bItem => {
                     const local = this.items.find(i => i.id === bItem.id);
                     if (local) {
                         local.quantity = bItem.quantity;
@@ -499,6 +444,9 @@
                         local.is_selected = bItem.is_selected;
                     }
                 });
+                if (data.groups) {
+                    this.groups = data.groups;
+                }
             }
         };
     }

@@ -1,0 +1,211 @@
+- generic [active] [ref=e1]:
+  - complementary [ref=e2]:
+    - generic [ref=e4]:
+      - link "SunnyTrips" [ref=e5] [cursor=pointer]:
+        - /url: http://127.0.0.1:8000/dashboard
+      - paragraph [ref=e7]:
+        - generic [ref=e9]: Traveler Portal
+    - navigation [ref=e10]:
+      - generic [ref=e11]:
+        - heading "Main Navigation" [level=2] [ref=e12]
+        - generic [ref=e13]:
+          - link "space_dashboard Dashboard" [ref=e14] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/dashboard
+            - generic [ref=e15]: space_dashboard
+            - generic [ref=e16]: Dashboard
+          - link "casino I'm Feeling Lucky" [ref=e17] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/lucky
+            - generic [ref=e18]: casino
+            - generic [ref=e19]: I'm Feeling Lucky
+          - link "shopping_basket My Trip Basket" [ref=e20] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/cart
+            - generic [ref=e21]: shopping_basket
+            - generic [ref=e22]: My Trip Basket
+          - link "auto_stories My Bookings" [ref=e23] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/bookings
+            - generic [ref=e24]: auto_stories
+            - generic [ref=e25]: My Bookings
+          - link "reviews Guest Reviews" [ref=e26] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/reviews
+            - generic [ref=e27]: reviews
+            - generic [ref=e28]: Guest Reviews
+      - generic [ref=e29]:
+        - heading "Explore Catalog" [level=2] [ref=e30]
+        - generic [ref=e31]:
+          - link "location_on Island Destinations" [ref=e32] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/destinations
+            - generic [ref=e33]: location_on
+            - generic [ref=e34]: Island Destinations
+          - link "hotel Hotels & Sanctuaries" [ref=e35] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/hotels
+            - generic [ref=e36]: hotel
+            - generic [ref=e37]: Hotels & Sanctuaries
+          - link "king_bed Rooms & Stays" [ref=e38] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/rooms
+            - generic [ref=e39]: king_bed
+            - generic [ref=e40]: Rooms & Stays
+          - link "explore Activities & Tours" [ref=e41] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/activities
+            - generic [ref=e42]: explore
+            - generic [ref=e43]: Activities & Tours
+          - link "extension Transfers & Add-ons" [ref=e44] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/addons
+            - generic [ref=e45]: extension
+            - generic [ref=e46]: Transfers & Add-ons
+          - link "card_travel Tour Packages & Promos" [ref=e47] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/packages
+            - generic [ref=e48]: card_travel
+            - generic [ref=e49]: Tour Packages & Promos
+      - generic [ref=e50]:
+        - heading "Account" [level=2] [ref=e51]
+        - link "manage_accounts Account Profile" [ref=e53] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/profile
+          - generic [ref=e54]: manage_accounts
+          - generic [ref=e55]: Account Profile
+    - generic [ref=e56]:
+      - generic [ref=e57]:
+        - generic [ref=e58]: J
+        - generic [ref=e59]:
+          - generic [ref=e60]: John Kenly Pamor
+          - generic [ref=e61]: johnkenlypamor13@gmail.com
+      - button "logout Log Out" [ref=e63] [cursor=pointer]:
+        - generic [ref=e64]: logout
+        - generic [ref=e65]: Log Out
+  - main [ref=e66]:
+    - generic [ref=e68]:
+      - generic [ref=e69]:
+        - generic [ref=e70]:
+          - generic [ref=e71]: casino
+          - text: Surprise Me
+        - heading "I'm Feeling Lucky" [level=1] [ref=e72]
+        - paragraph [ref=e73]: One click generates a complete surprise itinerary — hotel and activities in a single destination, priced to fit your budget. Shuffle as many times as you like.
+      - generic [ref=e75]:
+        - generic [ref=e76]:
+          - generic [ref=e77]: Destination
+          - combobox "Destination" [ref=e78] [cursor=pointer]:
+            - option "Anywhere"
+            - option "Boracay"
+            - option "El Nido" [selected]
+        - generic [ref=e79]:
+          - generic [ref=e80]: Max budget
+          - generic [ref=e81]:
+            - generic [ref=e82]: ₱
+            - spinbutton "Max budget" [ref=e83]: "20000"
+        - generic [ref=e84]:
+          - generic [ref=e85]: Activities
+          - combobox "Activities" [ref=e86] [cursor=pointer]:
+            - option "1"
+            - option "2" [selected]
+            - option "3"
+            - option "4"
+            - option "5"
+        - generic [ref=e87]:
+          - generic [ref=e88]: Trip duration
+          - combobox "Trip duration" [ref=e89] [cursor=pointer]:
+            - option "1 night"
+            - option "2 nights" [selected]
+            - option "3 nights"
+            - option "4 nights"
+            - option "5 nights"
+            - option "6 nights"
+            - option "7 nights"
+        - generic [ref=e90]:
+          - generic [ref=e91]: Hotel category
+          - combobox "Hotel category" [ref=e92] [cursor=pointer]:
+            - option "Any" [selected]
+            - option "Budget (≤ ₱2,500/night)"
+            - option "Mid-range (₱2,500–6,000)"
+            - option "Luxury (≥ ₱6,000)"
+        - generic [ref=e93]:
+          - generic [ref=e94]: Travelers
+          - combobox "Travelers" [ref=e95] [cursor=pointer]:
+            - option "1 traveler"
+            - option "2 travelers" [selected]
+            - option "3 travelers"
+            - option "4 travelers"
+        - generic [ref=e96]:
+          - generic [ref=e97]: Activity vibe
+          - combobox "Activity vibe" [ref=e98] [cursor=pointer]:
+            - option "Any" [selected]
+            - option "Relaxing"
+            - option "Sightseeing"
+            - option "Adventure"
+            - option "Extreme"
+            - option "Underwater"
+        - generic [ref=e99]:
+          - generic [ref=e100]: Start date
+          - textbox "Start date" [ref=e101]
+      - generic [ref=e102]:
+        - button "Shuffle Again" [ref=e107] [cursor=pointer]
+        - paragraph [ref=e182]: "SQLSTATE[42703]: Undefined column: 7 ERROR: column \"lucky_group_id\" of relation \"cart_items\" does not exist LINE 1: ..._date\", \"check_out_date\", \"notes\", \"is_selected\", \"lucky_gro... ^ (Connection: pgsql, Host: localhost, Port: 5432, Database: SunnyTripsCapstoneV2, SQL: insert into \"cart_items\" (\"user_id\", \"session_token\", \"item_type\", \"item_id\", \"quantity\", \"selected_pax\", \"check_in_date\", \"check_out_date\", \"notes\", \"is_selected\", \"lucky_group_id\", \"updated_at\", \"created_at\") values (2, 22a72012-575f-481c-b325-83e2f2f3a206, room, 17, 1, 2, 2026-08-14 00:00:00, 2026-08-16 00:00:00, ?, 1, 5ad4444e-2857-4e7b-981a-de2b8b938edb, 2026-08-07 17:20:02, 2026-08-07 17:20:02) returning \"id\")"
+      - generic [ref=e110]:
+        - generic [ref=e112]:
+          - generic [ref=e113]:
+            - generic [ref=e114]:
+              - generic [ref=e115]: explore
+              - text: Your surprise itinerary
+            - heading "El Nido" [level=2] [ref=e116]
+            - paragraph [ref=e117]: 2 nights • 2 travelers • 2026-08-14 → 2026-08-16
+          - generic [ref=e118]:
+            - generic [ref=e119]:
+              - generic [ref=e120]: check_circle
+              - text: Within budget
+            - paragraph [ref=e121]: ₱15,900.00
+            - paragraph [ref=e122]: "Budget: ₱20,000.00"
+        - generic [ref=e123]:
+          - generic [ref=e124]:
+            - heading "king_bed Your stay" [level=3] [ref=e125]:
+              - generic [ref=e126]: king_bed
+              - text: Your stay
+            - generic [ref=e127]:
+              - img "Charlie's El Nido" [ref=e128]
+              - generic [ref=e129]:
+                - paragraph [ref=e130]: Charlie's El Nido
+                - paragraph [ref=e131]: Deluxe Room with Pool Access
+                - generic [ref=e132]:
+                  - generic [ref=e133]: Boutique Hotel
+                  - generic [ref=e134]:
+                    - generic [ref=e135]: king_bed
+                    - generic [ref=e136]: 1 King Bed
+                  - generic [ref=e137]:
+                    - generic [ref=e138]: group
+                    - generic [ref=e139]: Up to 2 guests
+              - generic [ref=e140]:
+                - generic [ref=e141]: ₱7,500.00 / night
+                - generic [ref=e142]: ₱15,000.00
+          - generic [ref=e143]:
+            - heading "explore Your experiences (2)" [level=3] [ref=e144]:
+              - generic [ref=e145]: explore
+              - generic [ref=e146]: Your experiences (2)
+            - generic [ref=e147]:
+              - generic [ref=e148]:
+                - generic [ref=e149]: "1"
+                - generic [ref=e150]:
+                  - paragraph [ref=e151]: Clear Kayak Rental
+                  - generic [ref=e152]:
+                    - generic [ref=e153]: Water Activity
+                    - generic [ref=e154]: Relaxing
+                    - generic [ref=e155]: 1 Hour
+                - generic [ref=e156]:
+                  - generic [ref=e157]: for 2 pax
+                  - generic [ref=e158]: ₱500.00
+              - generic [ref=e159]:
+                - generic [ref=e160]: "2"
+                - generic [ref=e161]:
+                  - paragraph [ref=e162]: Stand-Up Paddleboarding (SUP)
+                  - generic [ref=e163]:
+                    - generic [ref=e164]: Water Activity
+                    - generic [ref=e165]: Adventure
+                    - generic [ref=e166]: 1 Hour
+                - generic [ref=e167]:
+                  - generic [ref=e168]: for 2 pax
+                  - generic [ref=e169]: ₱400.00
+          - generic [ref=e170]:
+            - generic [ref=e171]:
+              - paragraph [ref=e172]: Estimated itinerary total
+              - paragraph [ref=e173]: ₱15,900.00
+            - generic [ref=e174]:
+              - button "Shuffle" [ref=e175] [cursor=pointer]
+              - button "shopping_basket Add to Trip Basket" [ref=e179] [cursor=pointer]:
+                - generic [ref=e183]: shopping_basket
+                - generic [ref=e181]: Add to Trip Basket
