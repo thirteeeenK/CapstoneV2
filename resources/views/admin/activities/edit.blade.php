@@ -233,6 +233,22 @@
                                   class="w-full bg-slate-50 border border-slate-300 rounded-md p-3 text-xs text-slate-900 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all">{{ old('notes', $activity->notes) }}</textarea>
                     </div>
 
+                    <!-- Latitude & Longitude -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="space-y-1.5">
+                            <label class="block text-xs font-semibold text-slate-700">Latitude</label>
+                            <input name="latitude" type="number" step="any" placeholder="e.g., 11.9674"
+                                value="{{ old('latitude', $activity->latitude) }}"
+                                class="w-full bg-slate-50 border border-slate-300 rounded-md p-3 text-xs text-slate-900 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" />
+                        </div>
+                        <div class="space-y-1.5">
+                            <label class="block text-xs font-semibold text-slate-700">Longitude</label>
+                            <input name="longitude" type="number" step="any" placeholder="e.g., 121.9246"
+                                value="{{ old('longitude', $activity->longitude) }}"
+                                class="w-full bg-slate-50 border border-slate-300 rounded-md p-3 text-xs text-slate-900 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" />
+                        </div>
+                    </div>
+
                     </div>
                 </section>
 

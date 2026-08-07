@@ -1,0 +1,322 @@
+- generic [active] [ref=f15e1]:
+  - complementary [ref=f15e2]:
+    - generic [ref=f15e4]:
+      - link "SunnyTrips" [ref=f15e5] [cursor=pointer]:
+        - /url: http://127.0.0.1:8000/dashboard
+      - paragraph [ref=f15e7]:
+        - generic [ref=f15e9]: Traveler Portal
+    - navigation [ref=f15e10]:
+      - generic [ref=f15e11]:
+        - heading "Main Navigation" [level=2] [ref=f15e12]
+        - generic [ref=f15e13]:
+          - link "space_dashboard Dashboard" [ref=f15e14] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/dashboard
+            - generic [ref=f15e15]: space_dashboard
+            - generic [ref=f15e16]: Dashboard
+          - link "shopping_basket My Trip Basket" [ref=f15e17] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/cart
+            - generic [ref=f15e18]: shopping_basket
+            - generic [ref=f15e19]: My Trip Basket
+          - link "auto_stories My Bookings" [ref=f15e20] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/bookings
+            - generic [ref=f15e21]: auto_stories
+            - generic [ref=f15e22]: My Bookings
+          - link "reviews Guest Reviews" [ref=f15e23] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/reviews
+            - generic [ref=f15e24]: reviews
+            - generic [ref=f15e25]: Guest Reviews
+      - generic [ref=f15e26]:
+        - heading "Explore Catalog" [level=2] [ref=f15e27]
+        - generic [ref=f15e28]:
+          - link "location_on Island Destinations" [ref=f15e29] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/destinations
+            - generic [ref=f15e30]: location_on
+            - generic [ref=f15e31]: Island Destinations
+          - link "hotel Hotels & Sanctuaries" [ref=f15e32] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/hotels
+            - generic [ref=f15e33]: hotel
+            - generic [ref=f15e34]: Hotels & Sanctuaries
+          - link "king_bed Rooms & Stays" [ref=f15e35] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/rooms
+            - generic [ref=f15e36]: king_bed
+            - generic [ref=f15e37]: Rooms & Stays
+          - link "explore Activities & Tours" [ref=f15e38] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/activities
+            - generic [ref=f15e39]: explore
+            - generic [ref=f15e40]: Activities & Tours
+          - link "extension Transfers & Add-ons" [ref=f15e41] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/addons
+            - generic [ref=f15e42]: extension
+            - generic [ref=f15e43]: Transfers & Add-ons
+          - link "card_travel Tour Packages & Promos" [ref=f15e44] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/packages
+            - generic [ref=f15e45]: card_travel
+            - generic [ref=f15e46]: Tour Packages & Promos
+      - generic [ref=f15e47]:
+        - heading "Personalization" [level=2] [ref=f15e48]
+        - generic [ref=f15e49]:
+          - link "tune AI Preferences Quiz" [ref=f15e50] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/onboarding
+            - generic [ref=f15e51]: tune
+            - generic [ref=f15e52]: AI Preferences Quiz
+          - link "manage_accounts Account Profile" [ref=f15e53] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/profile
+            - generic [ref=f15e54]: manage_accounts
+            - generic [ref=f15e55]: Account Profile
+    - generic [ref=f15e56]:
+      - generic [ref=f15e57]:
+        - generic [ref=f15e58]: T
+        - generic [ref=f15e59]:
+          - generic [ref=f15e60]: Test User
+          - generic [ref=f15e61]: test@example.com
+      - button "logout Log Out" [ref=f15e63] [cursor=pointer]:
+        - generic [ref=f15e64]: logout
+        - generic [ref=f15e65]: Log Out
+  - main [ref=f15e66]:
+    - generic [ref=f15e68]:
+      - generic [ref=f15e69]:
+        - img "Canyon Hotels & Resorts Boracay" [ref=f15e70]
+        - generic [ref=f15e72]:
+          - generic [ref=f15e73]:
+            - generic [ref=f15e74]: High End Luxury Hotels
+            - generic [ref=f15e75]:
+              - generic [ref=f15e76]: location_on
+              - text: Boracay
+          - heading "Canyon Hotels & Resorts Boracay" [level=1] [ref=f15e77]
+          - paragraph [ref=f15e78]:
+            - generic [ref=f15e79]: pin_drop
+            - text: Station 2 (Near D'Mall)
+          - generic [ref=f15e80]:
+            - generic [ref=f15e81]: "#Boutique Luxury"
+            - generic [ref=f15e82]: "#Quiet & Cozy"
+            - generic [ref=f15e83]: "#Modern Elegance"
+            - generic [ref=f15e84]: "#Family Friendly"
+      - generic [ref=f15e85]:
+        - generic [ref=f15e86]:
+          - generic [ref=f15e87]:
+            - heading "Hotel Description" [level=2] [ref=f15e88]
+            - paragraph [ref=f15e90]: Canyon is nestled in Station 2, just a short walk from White Beach and D'Mall. This boutique hotel offers cozy, well-appointed rooms and a peaceful atmosphere. With its quiet location yet easy access to shops and restaurants, it's great for couples and families seeking a balance of relaxation and convenience.
+          - generic [ref=f15e91]:
+            - heading "Exclusive Amenities & Services" [level=3] [ref=f15e94]
+            - generic [ref=f15e95]:
+              - generic [ref=f15e96]:
+                - generic [ref=f15e97]: pool
+                - paragraph [ref=f15e100]: Swimming Pool
+              - generic [ref=f15e101]:
+                - generic [ref=f15e102]: chair
+                - paragraph [ref=f15e105]: Boutique Lounge
+              - generic [ref=f15e106]:
+                - generic [ref=f15e107]: star
+                - paragraph [ref=f15e110]: Free Shuttle
+              - generic [ref=f15e111]:
+                - generic [ref=f15e112]: restaurant
+                - paragraph [ref=f15e115]: In-house Restaurant
+        - generic [ref=f15e118]:
+          - generic [ref=f15e119]: king_bed
+          - generic [ref=f15e121]:
+            - heading "Select a Room" [level=3] [ref=f15e122]
+            - paragraph [ref=f15e123]: Choose your preferred room type from the gallery below to view live pricing and details.
+          - link "Browse Available Rooms arrow_downward" [ref=f15e124] [cursor=pointer]:
+            - /url: "#room-gallery"
+            - generic [ref=f15e125]: Browse Available Rooms
+            - generic [ref=f15e126]: arrow_downward
+      - generic [ref=f15e127]:
+        - generic [ref=f15e128]:
+          - generic [ref=f15e129]:
+            - heading "Available Room Types" [level=2] [ref=f15e130]
+            - paragraph [ref=f15e131]: Explore available suites & rooms at Canyon Hotels & Resorts Boracay
+          - generic [ref=f15e132]: 1 Room Type
+        - generic [ref=f15e134]:
+          - generic [ref=f15e135]:
+            - generic [ref=f15e136] [cursor=pointer]:
+              - img "Deluxe Suite" [ref=f15e137]
+              - generic [ref=f15e139]:
+                - generic [ref=f15e140]: visibility
+                - text: Quick Preview
+              - generic [ref=f15e141]: ₱5,200.00 / night
+              - generic [ref=f15e142]:
+                - generic [ref=f15e143]: visibility
+                - text: Garden View
+            - generic [ref=f15e144]:
+              - heading "Deluxe Suite" [level=3] [ref=f15e146] [cursor=pointer]
+              - paragraph [ref=f15e147]: Cozy modern suite featuring warm wooden finishes, plush bedding, and proximity to D'Mall shopping district. Quiet and serene atmosphere.
+              - generic [ref=f15e148]:
+                - generic [ref=f15e149]:
+                  - generic [ref=f15e150]: bed
+                  - text: 1 Queen Bed
+                - generic [ref=f15e151]:
+                  - generic [ref=f15e152]: group
+                  - text: "Base: 2 • Max: 2 Guests"
+                - generic [ref=f15e153]:
+                  - generic [ref=f15e154]: aspect_ratio
+                  - text: 32 sq.m
+          - generic [ref=f15e155]:
+            - button "visibility Preview" [ref=f15e156] [cursor=pointer]:
+              - generic [ref=f15e157]: visibility
+              - generic [ref=f15e158]: Preview
+            - button "touch_app Select" [ref=f15e159] [cursor=pointer]:
+              - generic [ref=f15e160]: touch_app
+              - generic [ref=f15e161]: Select
+      - generic [ref=f15e162]:
+        - generic [ref=f15e163]:
+          - heading "Hotel Photo Gallery" [level=2] [ref=f15e164]
+          - paragraph [ref=f15e165]: Immerse yourself in the atmosphere of Canyon Hotels & Resorts Boracay
+        - generic [ref=f15e166]:
+          - generic [ref=f15e167] [cursor=pointer]:
+            - img "Hotel photo 1" [ref=f15e168]
+            - generic [ref=f15e169]: zoom_in
+          - generic [ref=f15e171] [cursor=pointer]:
+            - img "Hotel photo 2" [ref=f15e172]
+            - generic [ref=f15e173]: zoom_in
+      - generic [ref=f15e175]:
+        - generic [ref=f15e176]:
+          - generic [ref=f15e177]:
+            - heading "Location & Weather" [level=2] [ref=f15e178]
+            - paragraph [ref=f15e179]: Where you'll be staying and what to expect
+          - generic [ref=f15e181]:
+            - paragraph [ref=f15e182]: 28°C
+            - paragraph [ref=f15e183]: light rain
+        - generic [ref=f15e184]:
+          - generic [ref=f15e187]:
+            - generic:
+              - generic:
+                - button [ref=f15e188] [cursor=pointer]
+                - button [ref=f15e190] [cursor=pointer]
+                - button [ref=f15e192] [cursor=pointer]
+                - button [ref=f15e194] [cursor=pointer]
+                - button [ref=f15e196] [cursor=pointer]
+                - button [ref=f15e198] [cursor=pointer]
+                - button [ref=f15e200] [cursor=pointer]
+            - generic:
+              - generic [ref=f15e202]:
+                - button "Zoom in" [ref=f15e203] [cursor=pointer]: +
+                - button "Zoom out" [ref=f15e204] [cursor=pointer]: −
+              - generic [ref=f15e205]:
+                - link "Leaflet" [ref=f15e206] [cursor=pointer]:
+                  - /url: https://leafletjs.com
+                - text: "| ©"
+                - link "OpenStreetMap" [ref=f15e211] [cursor=pointer]:
+                  - /url: https://www.openstreetmap.org/copyright
+                - text: contributors
+          - generic [ref=f15e212]:
+            - generic [ref=f15e213]:
+              - heading "Boracay Forecast" [level=3] [ref=f15e214]
+              - generic [ref=f15e215]:
+                - generic [ref=f15e216]:
+                  - generic [ref=f15e217]:
+                    - img "light rain" [ref=f15e218]
+                    - generic [ref=f15e219]:
+                      - paragraph [ref=f15e220]: 28°C
+                      - paragraph [ref=f15e221]: light rain
+                  - generic [ref=f15e222]: ☔ 100% rain
+                - generic [ref=f15e223]:
+                  - generic [ref=f15e224]:
+                    - paragraph [ref=f15e225]: Feels like
+                    - paragraph [ref=f15e226]: 33°C
+                  - generic [ref=f15e227]:
+                    - paragraph [ref=f15e228]: Humidity
+                    - paragraph [ref=f15e229]: 79%
+                  - generic [ref=f15e230]:
+                    - paragraph [ref=f15e231]: High
+                    - paragraph [ref=f15e232]: 28°C
+                - generic [ref=f15e233]:
+                  - generic [ref=f15e234]:
+                    - paragraph [ref=f15e235]: Fri
+                    - paragraph [ref=f15e236]: 28°/28°
+                  - generic [ref=f15e237]:
+                    - paragraph [ref=f15e238]: Sat
+                    - paragraph [ref=f15e239]: 28°/28°
+                  - generic [ref=f15e240]:
+                    - paragraph [ref=f15e241]: Sun
+                    - paragraph [ref=f15e242]: 28°/28°
+                  - generic [ref=f15e243]:
+                    - paragraph [ref=f15e244]: Mon
+                    - paragraph [ref=f15e245]: 28°/28°
+                  - generic [ref=f15e246]:
+                    - paragraph [ref=f15e247]: Tue
+                    - paragraph [ref=f15e248]: 28°/28°
+            - generic [ref=f15e249]:
+              - heading "Nearby Experiences" [level=3] [ref=f15e250]
+              - list [ref=f15e251]:
+                - listitem [ref=f15e252]:
+                  - generic [ref=f15e253]:
+                    - paragraph [ref=f15e254]: Joiners Island Hopping
+                    - paragraph [ref=f15e255]: Boracay
+                  - generic [ref=f15e256]: 1.2 km
+                - listitem [ref=f15e257]:
+                  - generic [ref=f15e258]:
+                    - paragraph [ref=f15e259]: 6–7 Destinations (E-Trike)
+                    - paragraph [ref=f15e260]: Boracay
+                  - generic [ref=f15e261]: 1.2 km
+                - listitem [ref=f15e262]:
+                  - generic [ref=f15e263]:
+                    - paragraph [ref=f15e264]: 6–7 Destinations (FB Van/Multicab)
+                    - paragraph [ref=f15e265]: Boracay
+                  - generic [ref=f15e266]: 1.2 km
+                - listitem [ref=f15e267]:
+                  - generic [ref=f15e268]:
+                    - paragraph [ref=f15e269]: 6–7 Destinations (Aircon Van)
+                    - paragraph [ref=f15e270]: Boracay
+                  - generic [ref=f15e271]: 1.2 km
+                - listitem [ref=f15e272]:
+                  - generic [ref=f15e273]:
+                    - paragraph [ref=f15e274]: Parasailing
+                    - paragraph [ref=f15e275]: Boracay
+                  - generic [ref=f15e276]: 1.2 km
+                - listitem [ref=f15e277]:
+                  - generic [ref=f15e278]:
+                    - paragraph [ref=f15e279]: Parasailing (Solo)
+                    - paragraph [ref=f15e280]: Boracay
+                  - generic [ref=f15e281]: 1.2 km
+      - generic [ref=f15e282]:
+        - article [ref=f15e283]:
+          - generic [ref=f15e284]:
+            - generic [ref=f15e285]:
+              - generic [ref=f15e286]: J
+              - generic [ref=f15e287]:
+                - paragraph [ref=f15e288]: John C.
+                - paragraph [ref=f15e289]:
+                  - generic [ref=f15e290]: verified
+                  - text: Verified booking · Jul 3, 2026
+            - generic [ref=f15e291]:
+              - generic [ref=f15e292]:
+                - generic [ref=f15e293]: star
+                - generic [ref=f15e294]: star
+                - generic [ref=f15e295]: star
+                - generic [ref=f15e296]: star
+                - generic [ref=f15e297]: star
+              - generic [ref=f15e298]:
+                - generic [ref=f15e299]: sentiment_neutral
+                - text: Neutral
+          - paragraph [ref=f15e300]: Average experience. The room was fine but the hallway smelled of cigarette smoke.
+          - generic [ref=f15e301]:
+            - generic [ref=f15e302]: "#average experience"
+            - generic [ref=f15e303]: "#room was fine"
+            - generic [ref=f15e304]: "#hallway smelled"
+            - generic [ref=f15e305]: "#cigarette smoke"
+        - article [ref=f15e306]:
+          - generic [ref=f15e307]:
+            - generic [ref=f15e308]:
+              - generic [ref=f15e309]: M
+              - generic [ref=f15e310]:
+                - paragraph [ref=f15e311]: Maria S.
+                - paragraph [ref=f15e312]:
+                  - generic [ref=f15e313]: verified
+                  - text: Verified booking · Aug 5, 2026
+            - generic [ref=f15e314]:
+              - generic [ref=f15e315]:
+                - generic [ref=f15e316]: star
+                - generic [ref=f15e317]: star
+                - generic [ref=f15e318]: star
+                - generic [ref=f15e319]: star
+                - generic [ref=f15e320]: star
+              - generic [ref=f15e321]:
+                - generic [ref=f15e322]: sentiment_satisfied
+                - text: Positive
+          - paragraph [ref=f15e323]: Super ganda ng room! Clean bed, working AC, and ang bait ng staff. Will definitely book again next summer.
+          - generic [ref=f15e324]:
+            - generic [ref=f15e325]: "#maganda ang room"
+            - generic [ref=f15e326]: "#clean bed"
+            - generic [ref=f15e327]: "#working AC"
+            - generic [ref=f15e328]: "#bait ng staff"
+            - generic [ref=f15e329]: "#book again"

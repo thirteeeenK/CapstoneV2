@@ -62,4 +62,5 @@ require __DIR__ . '/adminBookingRoute.php';
 require __DIR__ . '/paymentWebhookRoute.php';
 require __DIR__ . '/reviewRoute.php';
 require __DIR__ . '/adminReviewRoute.php';
+require __DIR__ . '/dssRoute.php';
 

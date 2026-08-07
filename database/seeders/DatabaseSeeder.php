@@ -34,6 +34,7 @@ class DatabaseSeeder extends Seeder
             ElNidoRoomSeeder::class,
             ActivitySeeder::class,
             ElNidoActivitySeeder::class,
+            ActivityCoordinatesSeeder::class,
             LegalDocumentsSeeder::class,
             AddOnSeeder::class,
             PackageSeeder::class,

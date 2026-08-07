@@ -7,6 +7,8 @@ use App\Models\DestinationModel;
 use App\Models\HotelModel;
 use App\Models\Package;
 use App\Services\GeminiService;
+use App\Services\MapService;
+use App\Services\WeatherService;
 use Illuminate\Support\Facades\Auth;
 
 class RecommendationController extends Controller
@@ -14,7 +16,7 @@ class RecommendationController extends Controller
     /**
      * Display the user dashboard with AI Recommendations and Default Listings tabs.
      */
-    public function index(GeminiService $geminiService)
+    public function index(GeminiService $geminiService, MapService $mapService, WeatherService $weatherService)
     {
         $user = Auth::user();
         $userVector = $user ? $this->parseVector($user->preferences_embedding) : null;
@@ -97,7 +99,17 @@ class RecommendationController extends Controller
             }
         }
 
-        return view('dashboard', compact('user', 'isPersonalized', 'aiRecommendations', 'defaultRecommendations'));
+        // DSS overview markers (one per destination with weather + listing counts)
+        $mapMarkers = $mapService->destinationMarkers();
+        $weatherCards = [];
+        foreach ($mapMarkers as $marker) {
+            $destination = DestinationModel::find($marker['id']);
+            if ($destination) {
+                $weatherCards[$destination->id] = $weatherService->summaryForDestination($destination);
+            }
+        }
+
+        return view('dashboard', compact('user', 'isPersonalized', 'aiRecommendations', 'defaultRecommendations', 'mapMarkers', 'weatherCards'));
     }
 
     /**

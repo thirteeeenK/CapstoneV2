@@ -26,7 +26,7 @@
             }
             return true;
         }
-    }" class="pt-28 pb-12 bg-slate-50 text-slate-900 min-h-screen relative overflow-hidden">
+    }" class="py-12 bg-slate-50 text-slate-900 min-h-screen relative overflow-hidden">
         
         {{-- Background Soft Ambient Mesh Glows --}}
         <div class="absolute top-10 left-1/3 w-[500px] h-[300px] bg-sky-200/40 blur-3xl rounded-full pointer-events-none"></div>

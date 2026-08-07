@@ -80,6 +80,8 @@ class ActivityController extends Controller
             'exclusions' => 'nullable|array',
             'itinerary' => 'nullable|array',
             'notes' => 'nullable|string',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
             'images' => 'nullable|array',
             'images.*' => 'image|mimes:jpeg,png,jpg,webp|max:5120',
         ]);
@@ -111,6 +113,8 @@ class ActivityController extends Controller
             'exclusions' => $request->exclusions,
             'itinerary' => $request->itinerary,
             'notes' => $request->notes,
+            'latitude' => $request->latitude,
+            'longitude' => $request->longitude,
             'images' => $imagePaths,
             'is_shown' => $request->has('is_shown') ? $request->boolean('is_shown') : true,
         ]);
@@ -157,6 +161,8 @@ class ActivityController extends Controller
             'exclusions' => 'nullable|array',
             'itinerary' => 'nullable|array',
             'notes' => 'nullable|string',
+            'latitude' => 'nullable|numeric|between:-90,90',
+            'longitude' => 'nullable|numeric|between:-180,180',
             'images' => 'nullable|array',
             'images.*' => 'image|mimes:jpeg,png,jpg,webp|max:5120',
             'removed_images' => 'nullable|array'
@@ -183,6 +189,8 @@ class ActivityController extends Controller
         $activity->exclusions = $request->exclusions;
         $activity->itinerary = $request->itinerary;
         $activity->notes = $request->notes;
+        $activity->latitude = $request->latitude;
+        $activity->longitude = $request->longitude;
         $activity->is_shown = $request->has('is_shown') ? $request->boolean('is_shown') : false;
 
         $currentImages = $activity->images;

@@ -1,0 +1,334 @@
+- generic [active] [ref=f76e1]:
+  - complementary [ref=f76e2]:
+    - generic [ref=f76e4]:
+      - link "SunnyTrips" [ref=f76e5] [cursor=pointer]:
+        - /url: http://127.0.0.1:8000/dashboard
+      - paragraph [ref=f76e7]:
+        - generic [ref=f76e9]: Traveler Portal
+    - navigation [ref=f76e10]:
+      - generic [ref=f76e11]:
+        - heading "Main Navigation" [level=2] [ref=f76e12]
+        - generic [ref=f76e13]:
+          - link "space_dashboard Dashboard" [ref=f76e14] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/dashboard
+            - generic [ref=f76e15]: space_dashboard
+            - generic [ref=f76e16]: Dashboard
+          - link "shopping_basket My Trip Basket" [ref=f76e17] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/cart
+            - generic [ref=f76e18]: shopping_basket
+            - generic [ref=f76e19]: My Trip Basket
+          - link "auto_stories My Bookings" [ref=f76e20] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/bookings
+            - generic [ref=f76e21]: auto_stories
+            - generic [ref=f76e22]: My Bookings
+          - link "reviews Guest Reviews" [ref=f76e23] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/reviews
+            - generic [ref=f76e24]: reviews
+            - generic [ref=f76e25]: Guest Reviews
+      - generic [ref=f76e26]:
+        - heading "Explore Catalog" [level=2] [ref=f76e27]
+        - generic [ref=f76e28]:
+          - link "location_on Island Destinations" [ref=f76e29] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/destinations
+            - generic [ref=f76e30]: location_on
+            - generic [ref=f76e31]: Island Destinations
+          - link "hotel Hotels & Sanctuaries" [ref=f76e32] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/hotels
+            - generic [ref=f76e33]: hotel
+            - generic [ref=f76e34]: Hotels & Sanctuaries
+          - link "king_bed Rooms & Stays" [ref=f76e35] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/rooms
+            - generic [ref=f76e36]: king_bed
+            - generic [ref=f76e37]: Rooms & Stays
+          - link "explore Activities & Tours" [ref=f76e38] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/activities
+            - generic [ref=f76e39]: explore
+            - generic [ref=f76e40]: Activities & Tours
+          - link "extension Transfers & Add-ons" [ref=f76e41] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/addons
+            - generic [ref=f76e42]: extension
+            - generic [ref=f76e43]: Transfers & Add-ons
+          - link "card_travel Tour Packages & Promos" [ref=f76e44] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/packages
+            - generic [ref=f76e45]: card_travel
+            - generic [ref=f76e46]: Tour Packages & Promos
+      - generic [ref=f76e47]:
+        - heading "Account" [level=2] [ref=f76e48]
+        - link "manage_accounts Account Profile" [ref=f76e50] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/profile
+          - generic [ref=f76e51]: manage_accounts
+          - generic [ref=f76e52]: Account Profile
+    - generic [ref=f76e53]:
+      - generic [ref=f76e54]:
+        - generic [ref=f76e55]: T
+        - generic [ref=f76e56]:
+          - generic [ref=f76e57]: Test User
+          - generic [ref=f76e58]: test@example.com
+      - button "logout Log Out" [ref=f76e60] [cursor=pointer]:
+        - generic [ref=f76e61]: logout
+        - generic [ref=f76e62]: Log Out
+  - main [ref=f76e63]:
+    - generic [ref=f76e65]:
+      - generic [ref=f76e66]:
+        - img "El Nido Resorts - Pangulasian Island" [ref=f76e67]
+        - generic [ref=f76e69]:
+          - generic [ref=f76e70]:
+            - generic [ref=f76e71]: Luxury Eco Resort
+            - generic [ref=f76e72]:
+              - generic [ref=f76e73]: location_on
+              - text: El Nido
+          - heading "El Nido Resorts - Pangulasian Island" [level=1] [ref=f76e74]
+          - paragraph [ref=f76e75]:
+            - generic [ref=f76e76]: pin_drop
+            - text: Pangulasian Island, Bacuit Bay, El Nido, Palawan
+          - generic [ref=f76e77]:
+            - generic [ref=f76e78]: "#Luxury"
+            - generic [ref=f76e79]: "#Eco-Friendly"
+            - generic [ref=f76e80]: "#Honeymoon"
+            - generic [ref=f76e81]: "#Beachfront"
+            - generic [ref=f76e82]: "#Secluded"
+      - generic [ref=f76e83]:
+        - generic [ref=f76e84]:
+          - generic [ref=f76e85]:
+            - heading "Hotel Description" [level=2] [ref=f76e86]
+            - paragraph [ref=f76e88]: Pangulasian Island is El Nido Resorts’ luxury island hideaway in Bacuit Bay, offering breathtaking views of both the sunrise and sunset.
+          - generic [ref=f76e89]:
+            - heading "Exclusive Amenities & Services" [level=3] [ref=f76e92]
+            - generic [ref=f76e93]:
+              - generic [ref=f76e94]:
+                - generic [ref=f76e95]: beach_access
+                - paragraph [ref=f76e98]: Private Beach
+              - generic [ref=f76e99]:
+                - generic [ref=f76e100]: pool
+                - paragraph [ref=f76e103]: Infinity Pool
+              - generic [ref=f76e104]:
+                - generic [ref=f76e105]: spa
+                - paragraph [ref=f76e108]: Spa & Wellness Center
+              - generic [ref=f76e109]:
+                - generic [ref=f76e110]: star
+                - paragraph [ref=f76e113]: PADI Dive Center
+              - generic [ref=f76e114]:
+                - generic [ref=f76e115]: local_bar
+                - paragraph [ref=f76e118]: On-site Restaurant & Bar
+        - generic [ref=f76e121]:
+          - generic [ref=f76e122]: king_bed
+          - generic [ref=f76e124]:
+            - heading "Select a Room" [level=3] [ref=f76e125]
+            - paragraph [ref=f76e126]: Choose your preferred room type from the gallery below to view live pricing and details.
+          - link "Browse Available Rooms arrow_downward" [ref=f76e127] [cursor=pointer]:
+            - /url: "#room-gallery"
+            - generic [ref=f76e128]: Browse Available Rooms
+            - generic [ref=f76e129]: arrow_downward
+      - generic [ref=f76e130]:
+        - generic [ref=f76e131]:
+          - generic [ref=f76e132]:
+            - heading "Available Room Types" [level=2] [ref=f76e133]
+            - paragraph [ref=f76e134]: Explore available suites & rooms at El Nido Resorts - Pangulasian Island
+          - generic [ref=f76e135]: 2 Room Types
+        - generic [ref=f76e136]:
+          - generic [ref=f76e137]:
+            - generic [ref=f76e138]:
+              - generic [ref=f76e139] [cursor=pointer]:
+                - img "Canopy Villa" [ref=f76e140]
+                - generic [ref=f76e142]:
+                  - generic [ref=f76e143]: visibility
+                  - text: Quick Preview
+                - generic [ref=f76e144]: ₱45,000.00 / night
+                - generic [ref=f76e145]:
+                  - generic [ref=f76e146]: visibility
+                  - text: Canopy & Bay View
+              - generic [ref=f76e147]:
+                - heading "Canopy Villa" [level=3] [ref=f76e149] [cursor=pointer]
+                - paragraph [ref=f76e150]: Perched 15 meters off the ground inside the forest canopy, offering a unique treetop view of the island and Bacuit Bay. Reached via a wooden buggy trail.
+                - generic [ref=f76e151]:
+                  - generic [ref=f76e152]:
+                    - generic [ref=f76e153]: bed
+                    - text: 1 King Bed
+                  - generic [ref=f76e154]:
+                    - generic [ref=f76e155]: group
+                    - text: "Base: 2 • Max: 2 Guests"
+                  - generic [ref=f76e156]:
+                    - generic [ref=f76e157]: aspect_ratio
+                    - text: 89 sq.m
+            - generic [ref=f76e158]:
+              - button "visibility Preview" [ref=f76e159] [cursor=pointer]:
+                - generic [ref=f76e160]: visibility
+                - generic [ref=f76e161]: Preview
+              - button "touch_app Select" [ref=f76e162] [cursor=pointer]:
+                - generic [ref=f76e163]: touch_app
+                - generic [ref=f76e164]: Select
+          - generic [ref=f76e165]:
+            - generic [ref=f76e166]:
+              - generic [ref=f76e167] [cursor=pointer]:
+                - img "Beach Villa" [ref=f76e168]
+                - generic [ref=f76e170]:
+                  - generic [ref=f76e171]: visibility
+                  - text: Quick Preview
+                - generic [ref=f76e172]: ₱52,000.00 / night
+                - generic [ref=f76e173]:
+                  - generic [ref=f76e174]: visibility
+                  - text: Beachfront
+              - generic [ref=f76e175]:
+                - heading "Beach Villa" [level=3] [ref=f76e177] [cursor=pointer]
+                - paragraph [ref=f76e178]: Located right on the powdery white sand beach, allowing guests immediate access to the clear waters. Includes a spacious private veranda.
+                - generic [ref=f76e179]:
+                  - generic [ref=f76e180]:
+                    - generic [ref=f76e181]: bed
+                    - text: 1 King Bed
+                  - generic [ref=f76e182]:
+                    - generic [ref=f76e183]: group
+                    - text: "Base: 2 • Max: 3 Guests"
+                  - generic [ref=f76e184]:
+                    - generic [ref=f76e185]: aspect_ratio
+                    - text: 89 sq.m
+            - generic [ref=f76e186]:
+              - button "visibility Preview" [ref=f76e187] [cursor=pointer]:
+                - generic [ref=f76e188]: visibility
+                - generic [ref=f76e189]: Preview
+              - button "touch_app Select" [ref=f76e190] [cursor=pointer]:
+                - generic [ref=f76e191]: touch_app
+                - generic [ref=f76e192]: Select
+      - generic [ref=f76e193]:
+        - generic [ref=f76e194]:
+          - generic [ref=f76e195]:
+            - heading "Location & Weather" [level=2] [ref=f76e196]
+            - paragraph [ref=f76e197]: Where you'll be staying and what to expect
+          - generic [ref=f76e199]:
+            - paragraph [ref=f76e200]: 29°C
+            - paragraph [ref=f76e201]: overcast clouds
+        - generic [ref=f76e202]:
+          - generic [ref=f76e204]:
+            - generic [ref=f76e205]:
+              - button [ref=f76e206] [cursor=pointer]
+              - generic:
+                - generic [ref=f76e208]:
+                  - button "Zoom in" [ref=f76e209] [cursor=pointer]: +
+                  - button "Zoom out" [ref=f76e210] [cursor=pointer]: −
+                - generic [ref=f76e211]:
+                  - link "Leaflet" [ref=f76e212] [cursor=pointer]:
+                    - /url: https://leafletjs.com
+                  - text: "| ©"
+                  - link "OpenStreetMap" [ref=f76e217] [cursor=pointer]:
+                    - /url: https://www.openstreetmap.org/copyright
+                  - text: contributors
+            - button "my_location Distance from me" [ref=f76e218] [cursor=pointer]:
+              - generic [ref=f76e219]: my_location
+              - generic [ref=f76e220]: Distance from me
+          - generic [ref=f76e221]:
+            - generic [ref=f76e222]:
+              - heading "El Nido Forecast" [level=3] [ref=f76e223]
+              - generic [ref=f76e224]:
+                - generic [ref=f76e225]:
+                  - generic [ref=f76e226]:
+                    - img "overcast clouds" [ref=f76e227]
+                    - generic [ref=f76e228]:
+                      - paragraph [ref=f76e229]: 29°C
+                      - paragraph [ref=f76e230]: overcast clouds
+                  - generic [ref=f76e231]: ☔ 0% rain
+                - generic [ref=f76e232]:
+                  - generic [ref=f76e233]:
+                    - paragraph [ref=f76e234]: Feels like
+                    - paragraph [ref=f76e235]: 36°C
+                  - generic [ref=f76e236]:
+                    - paragraph [ref=f76e237]: Humidity
+                    - paragraph [ref=f76e238]: 79%
+                  - generic [ref=f76e239]:
+                    - paragraph [ref=f76e240]: High
+                    - paragraph [ref=f76e241]: 29°C
+                - generic [ref=f76e242]:
+                  - generic [ref=f76e243]:
+                    - paragraph [ref=f76e244]: Fri, Aug 7
+                    - paragraph [ref=f76e245]: 29°/29°
+                  - generic [ref=f76e246]:
+                    - paragraph [ref=f76e247]: Sat, Aug 8
+                    - paragraph [ref=f76e248]: 29°/29°
+                  - generic [ref=f76e249]:
+                    - paragraph [ref=f76e250]: Sun, Aug 9
+                    - paragraph [ref=f76e251]: 29°/29°
+                  - generic [ref=f76e252]:
+                    - paragraph [ref=f76e253]: Mon, Aug 10
+                    - paragraph [ref=f76e254]: 29°/29°
+                  - generic [ref=f76e255]:
+                    - paragraph [ref=f76e256]: Tue, Aug 11
+                    - paragraph [ref=f76e257]: 29°/29°
+            - generic [ref=f76e258]:
+              - heading "Nearby Experiences" [level=3] [ref=f76e259]
+              - list [ref=f76e260]:
+                - listitem [ref=f76e261]:
+                  - generic [ref=f76e262]:
+                    - generic [ref=f76e263]:
+                      - paragraph [ref=f76e264]: Stand-Up Paddleboarding (SUP)
+                      - paragraph [ref=f76e265]: El Nido
+                    - generic [ref=f76e266]: 7 km from hotel
+                  - generic [ref=f76e267]:
+                    - button "my_location Calculate Distance" [ref=f76e268] [cursor=pointer]:
+                      - generic [ref=f76e269]: my_location
+                      - text: Calculate Distance
+                    - button "visibility View Details" [ref=f76e270] [cursor=pointer]:
+                      - generic [ref=f76e271]: visibility
+                      - text: View Details
+                - listitem [ref=f76e272]:
+                  - generic [ref=f76e273]:
+                    - generic [ref=f76e274]:
+                      - paragraph [ref=f76e275]: Sunset Cruise / Party Boat
+                      - paragraph [ref=f76e276]: El Nido
+                    - generic [ref=f76e277]: 7.8 km from hotel
+                  - generic [ref=f76e278]:
+                    - button "my_location Calculate Distance" [ref=f76e279] [cursor=pointer]:
+                      - generic [ref=f76e280]: my_location
+                      - text: Calculate Distance
+                    - button "visibility View Details" [ref=f76e281] [cursor=pointer]:
+                      - generic [ref=f76e282]: visibility
+                      - text: View Details
+                - listitem [ref=f76e283]:
+                  - generic [ref=f76e284]:
+                    - generic [ref=f76e285]:
+                      - paragraph [ref=f76e286]: Clear Kayak Rental
+                      - paragraph [ref=f76e287]: El Nido
+                    - generic [ref=f76e288]: 7.9 km from hotel
+                  - generic [ref=f76e289]:
+                    - button "my_location Calculate Distance" [ref=f76e290] [cursor=pointer]:
+                      - generic [ref=f76e291]: my_location
+                      - text: Calculate Distance
+                    - button "visibility View Details" [ref=f76e292] [cursor=pointer]:
+                      - generic [ref=f76e293]: visibility
+                      - text: View Details
+                - listitem [ref=f76e294]:
+                  - generic [ref=f76e295]:
+                    - generic [ref=f76e296]:
+                      - paragraph [ref=f76e297]: Taraw Cliff Canopy Walk
+                      - paragraph [ref=f76e298]: El Nido
+                    - generic [ref=f76e299]: 9.3 km from hotel
+                  - generic [ref=f76e300]:
+                    - button "my_location Calculate Distance" [ref=f76e301] [cursor=pointer]:
+                      - generic [ref=f76e302]: my_location
+                      - text: Calculate Distance
+                    - button "visibility View Details" [ref=f76e303] [cursor=pointer]:
+                      - generic [ref=f76e304]: visibility
+                      - text: View Details
+                - listitem [ref=f76e305]:
+                  - generic [ref=f76e306]:
+                    - generic [ref=f76e307]:
+                      - paragraph [ref=f76e308]: Discover Scuba Diving (DSD)
+                      - paragraph [ref=f76e309]: El Nido
+                    - generic [ref=f76e310]: 9.6 km from hotel
+                  - generic [ref=f76e311]:
+                    - button "my_location Calculate Distance" [ref=f76e312] [cursor=pointer]:
+                      - generic [ref=f76e313]: my_location
+                      - text: Calculate Distance
+                    - button "visibility View Details" [ref=f76e314] [cursor=pointer]:
+                      - generic [ref=f76e315]: visibility
+                      - text: View Details
+                - listitem [ref=f76e316]:
+                  - generic [ref=f76e317]:
+                    - generic [ref=f76e318]:
+                      - paragraph [ref=f76e319]: El Nido Tour D (Island Beaches)
+                      - paragraph [ref=f76e320]: El Nido
+                    - generic [ref=f76e321]: 11.5 km from hotel
+                  - generic [ref=f76e322]:
+                    - button "my_location Calculate Distance" [ref=f76e323] [cursor=pointer]:
+                      - generic [ref=f76e324]: my_location
+                      - text: Calculate Distance
+                    - button "visibility View Details" [ref=f76e325] [cursor=pointer]:
+                      - generic [ref=f76e326]: visibility
+                      - text: View Details

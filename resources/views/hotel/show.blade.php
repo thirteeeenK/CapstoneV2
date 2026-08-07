@@ -40,6 +40,10 @@
         galleryImages: {{ json_encode($galleryImages) }},
         previewRoom: null,
         activePreviewImgIndex: 0,
+        routeHistory: [],
+        userHotel: null,
+        previewActivity: null,
+        modalPax: 1,
         autoPreviewRoomId: {{ request('preview_room') ? (int)request('preview_room') : 'null' }},
 
         get computedNightlyRate() {
@@ -123,7 +127,7 @@
             this.activeModalImgIndex = (this.activeModalImgIndex + 1) % this.galleryImages.length;
             this.activeModalImg = this.galleryImages[this.activeModalImgIndex];
         }
-    }" class="pt-32 sm:pt-36 pb-24 bg-slate-50 min-h-screen">
+    }" class="{{ Auth::check() ? 'pt-6 sm:pt-10' : 'pt-32 sm:pt-36' }} pb-24 bg-slate-50 min-h-screen">
 
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
 
@@ -537,6 +541,188 @@
                 </div>
             @endif
 
+            {{-- DSS Location Map, Weather & Nearby Experiences --}}
+            @if(isset($mapContext) && $mapContext['hotel']['lat'] && $mapContext['hotel']['lng'])
+                <div class="space-y-4 pt-6">
+                    <div class="border-b border-slate-200 pb-4 flex flex-wrap items-end justify-between gap-3">
+                        <div>
+                            <h2 class="text-xl sm:text-2xl font-bold text-slate-900 font-headline">
+                                Location & Weather
+                            </h2>
+                            <p class="text-xs sm:text-sm text-slate-500">
+                                Where you'll be staying and what to expect
+                            </p>
+                        </div>
+                        @if(isset($weatherSummary) && ($weatherSummary['current']['temp'] ?? null))
+                            <div class="flex items-center gap-2 rounded-full bg-ocean-50 px-4 py-2">
+                                @if(($weatherSummary['current']['icon'] ?? null))
+                                    <img src="https://openweathermap.org/img/wn/{{ $weatherSummary['current']['icon'] }}@2x.png"
+                                         alt="" class="h-9 w-9 object-contain">
+                                @endif
+                                <div class="text-sm">
+                                    <p class="font-bold text-slate-900 leading-none">
+                                        {{ round($weatherSummary['current']['temp']) }}°C
+                                    </p>
+                                    <p class="text-slate-500 capitalize leading-none">
+                                        {{ $weatherSummary['current']['description'] ?? '' }}
+                                    </p>
+                                </div>
+                            </div>
+                        @endif
+                    </div>
+
+                    @php
+                        $mapMarkers = array_merge(
+                            [array_merge($mapContext['hotel'], ['deferred' => false])],
+                            collect($mapContext['activities'])
+                                ->filter(fn($a) => !empty($a['lat']) && !empty($a['lng']))
+                                ->map(fn($a) => array_merge($a, ['deferred' => true]))
+                                ->values()
+                                ->all()
+                        );
+                    @endphp
+
+                    <div class="grid lg:grid-cols-3 gap-6">
+                        <div class="lg:col-span-2 space-y-4">
+                            <x-frontend.map id="hotel-location-map" :markers="$mapMarkers"
+                                :center="$mapContext['hotel']" :zoom="13" height="h-96" route-mode />
+
+                            {{-- Trip distances: hotel->activity routes + user->hotel --}}
+                            <div x-show="routeHistory.length || userHotel" x-cloak x-transition
+                                 @sunnytrip:hotel-route.window="routeHistory = routeHistory.filter(r => r.activity !== $event.detail.activity); routeHistory.push($event.detail)"
+                                 @sunnytrip:user-hotel-distance.window="userHotel = $event.detail"
+                                 class="rounded-2xl border border-ocean-200 bg-ocean-50 p-5">
+                                <div class="mb-3 flex items-center gap-2">
+                                    <span class="material-symbols-outlined text-[18px] text-ocean-600">route</span>
+                                    <h3 class="text-sm font-bold uppercase tracking-wider text-ocean-800">
+                                        Trip Distances
+                                    </h3>
+                                </div>
+                                <div class="space-y-2.5">
+                                    <template x-for="r in routeHistory" :key="r.activity">
+                                        <p class="text-sm text-slate-700">
+                                            Distance from
+                                            <span class="font-semibold text-slate-900" x-text="r.hotel"></span>
+                                            to
+                                            <span class="font-semibold text-slate-900" x-text="r.activity"></span>
+                                            : Approximately
+                                            <span class="font-bold text-ocean-700" x-text="r.distance_label"></span>
+                                        </p>
+                                    </template>
+                                    <p x-show="userHotel" x-cloak class="text-sm text-slate-700">
+                                        Distance from your location to
+                                        <span class="font-semibold text-slate-900" x-text="userHotel?.hotel"></span>
+                                        : Approximately
+                                        <span class="font-bold text-ocean-700" x-text="userHotel?.distance_label"></span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="space-y-4">
+                            @if(isset($weatherSummary))
+                                <div>
+                                    <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider mb-2">
+                                        {{ $hotel->destination->name ?? 'Local' }} Forecast
+                                    </h3>
+                                    <x-frontend.weather-card :summary="$weatherSummary" />
+                                </div>
+                            @endif
+                            @if(count($mapContext['activities']))
+                                <div>
+                                    <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider mb-2">
+                                        Nearby Experiences
+                                    </h3>
+                                    <ul class="divide-y divide-slate-100 rounded-2xl border border-slate-200 bg-white shadow-sm">
+                                        @php $mapMarkerIdx = 1; @endphp
+                                        @foreach($mapContext['activities'] as $index => $activity)
+                                            @php
+                                                $actModel = $mapContext['activityModels'][$index] ?? null;
+                                                $hasLocation = !empty($activity['lat']) && !empty($activity['lng']);
+                                            @endphp
+                                            <li class="px-4 py-3 space-y-2.5">
+                                                <div class="flex items-start justify-between gap-3">
+                                                    <div class="min-w-0">
+                                                        <p class="font-medium text-slate-800 truncate text-sm">{{ $activity['name'] }}</p>
+                                                        <p class="text-xs text-slate-400">{{ $activity['subtitle'] }}</p>
+                                                    </div>
+                                                    @if($hasLocation)
+                                                        <!-- <span class="shrink-0 text-xs font-medium text-ocean-600">
+                                                            {{ $activity['distance_label'] }} from hotel
+                                                        </span> -->
+                                                    @else
+                                                        <span class="shrink-0 rounded-full bg-amber-50 border border-amber-200 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-600">
+                                                            No location data available
+                                                        </span>
+                                                    @endif
+                                                </div>
+                                                <div class="flex items-center gap-2">
+                                                    @if($hasLocation)
+                                                        <button type="button"
+                                                            onclick="window['hotel-location-map']?.reveal({{ $mapMarkerIdx }})"
+                                                            class="inline-flex flex-1 items-center justify-center gap-1 rounded-lg bg-ocean-600 px-3 py-1.5 text-[11px] font-bold text-white transition hover:bg-ocean-700 cursor-pointer">
+                                                            <span class="material-symbols-outlined text-[14px]">my_location</span>
+                                                            Calculate Distance
+                                                        </button>
+                                                    @else
+                                                        <button type="button"
+                                                            onclick="alert('No location data recorded for this experience yet.')"
+                                                            class="inline-flex flex-1 items-center justify-center gap-1 rounded-lg bg-ocean-600 px-3 py-1.5 text-[11px] font-bold text-white transition hover:bg-ocean-700 cursor-pointer">
+                                                            <span class="material-symbols-outlined text-[14px]">my_location</span>
+                                                            Calculate Distance
+                                                        </button>
+                                                    @endif
+                                                    @if($actModel)
+                                                        @php
+                                                            $imagesRaw = is_array($actModel->images) ? $actModel->images : (is_string($actModel->images) ? (json_decode($actModel->images, true) ?: []) : []);
+                                                            $resolvedImages = [App\Concerns\ResolvesImages::resolveActivityImage($imagesRaw[0] ?? null, $actModel->activity_name, $actModel->category)];
+                                                            $inclusionsRaw = is_array($actModel->inclusions) ? $actModel->inclusions : (is_string($actModel->inclusions) ? array_filter(array_map('trim', explode(',', $actModel->inclusions))) : []);
+                                                            $exclusionsRaw = is_array($actModel->exclusions) ? $actModel->exclusions : (is_string($actModel->exclusions) ? array_filter(array_map('trim', explode(',', $actModel->exclusions))) : []);
+                                                            $itineraryRaw = is_array($actModel->itinerary) ? $actModel->itinerary : (is_string($actModel->itinerary) ? (json_decode($actModel->itinerary, true) ?: []) : []);
+                                                            $vibeTagsRaw = is_array($actModel->vibe_tags) ? $actModel->vibe_tags : (is_string($actModel->vibe_tags) ? array_filter(array_map('trim', explode(',', $actModel->vibe_tags))) : []);
+
+                                                            $actPayload = [
+                                                                'id' => $actModel->id,
+                                                                'activity_name' => $actModel->activity_name,
+                                                                'category' => $actModel->category,
+                                                                'category_icon' => App\Concerns\ResolvesImages::getCategoryIcon($actModel->category),
+                                                                'rate' => App\Concerns\ResolvesImages::formatRate($actModel->rate),
+                                                                'duration' => $actModel->duration,
+                                                                'activity_level' => $actModel->activity_level,
+                                                                'capacity' => $actModel->capacity,
+                                                                'requirements' => $actModel->requirements,
+                                                                'ideal_for' => $actModel->ideal_for,
+                                                                'description' => $actModel->description,
+                                                                'notes' => $actModel->notes,
+                                                                'destination_name' => $actModel->destination?->name,
+                                                                'destination_id' => $actModel->destination_id,
+                                                                'images' => array_values($resolvedImages),
+                                                                'inclusions' => array_values($inclusionsRaw),
+                                                                'exclusions' => array_values($exclusionsRaw),
+                                                                'itinerary' => array_values($itineraryRaw),
+                                                                'vibe_tags' => array_values($vibeTagsRaw),
+                                                            ];
+                                                        @endphp
+                                                        <button type="button"
+                                                            @click="previewActivity = {{ json_encode($actPayload) }}; activePreviewImgIdx = 0;"
+                                                            class="inline-flex flex-1 items-center justify-center gap-1 rounded-lg bg-slate-100 px-3 py-1.5 text-[11px] font-bold text-slate-700 transition hover:bg-slate-200 cursor-pointer">
+                                                            <span class="material-symbols-outlined text-[14px]">visibility</span>
+                                                            View Details
+                                                        </button>
+                                                    @endif
+                                                </div>
+                                                @if($hasLocation)
+                                                    @php $mapMarkerIdx++; @endphp
+                                                @endif
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            @endif
+
             {{-- DSS Review Summary & Verified Guest Reviews --}}
                     <x-reviews.summary-box :summary="$hotel->reviewSummary" title="Guest Reviews & Sentiment" />
                     <x-reviews.list :reviews="$hotel->reviews->where('is_published', true)" :limit="4" />
@@ -771,6 +957,142 @@
                 <div class="absolute bottom-3 right-3 bg-slate-950/70 backdrop-blur-md text-white text-xs px-3 py-1 rounded-lg border border-white/20">
                     Photo <span x-text="activeModalImgIndex + 1"></span> of <span x-text="galleryImages.length"></span>
                 </div>
+            </div>
+        </div>
+
+        {{-- Activity Preview Modal --}}
+        <div x-show="previewActivity" x-transition.opacity @keydown.escape.window="previewActivity = null"
+            class="fixed inset-0 z-[130] flex items-center justify-center p-4 sm:p-6 bg-slate-950/75 backdrop-blur-md" x-cloak style="display: none;">
+
+            <div @click.away="previewActivity = null"
+                class="bg-white border border-slate-200 rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative flex flex-col">
+
+                {{-- Modal Header --}}
+                <div class="sticky top-0 bg-white/90 backdrop-blur-md px-6 py-4 border-b border-slate-200 flex items-center justify-between z-20">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-sky-600 text-xl" x-text="previewActivity?.category_icon || 'explore'"></span>
+                        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider" x-text="previewActivity?.category || 'Activity'"></span>
+                        <template x-if="previewActivity?.destination_name">
+                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-sky-50 text-sky-700 text-[11px] font-bold border border-sky-200">
+                                <span class="material-symbols-outlined text-[13px] text-sky-500">location_on</span>
+                                <span x-text="previewActivity.destination_name"></span>
+                            </span>
+                        </template>
+                    </div>
+                    <button @click="previewActivity = null" class="p-1 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer">
+                        <span class="material-symbols-outlined text-xl">close</span>
+                    </button>
+                </div>
+
+                {{-- Modal Body --}}
+                <div class="p-6 space-y-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-4">
+                        <h2 class="text-xl sm:text-2xl font-black text-slate-900 font-headline" x-text="previewActivity?.activity_name"></h2>
+                        <span class="text-xl font-black text-emerald-600 font-mono bg-emerald-50 px-3 py-1 rounded-xl border border-emerald-200/80 inline-block w-fit" x-text="previewActivity?.rate"></span>
+                    </div>
+
+                    {{-- Image Carousel Preview --}}
+                    <template x-if="previewActivity?.images && previewActivity.images.length > 0">
+                        <div class="space-y-3">
+                            <div class="relative h-64 sm:h-80 rounded-2xl overflow-hidden bg-slate-900 shadow-inner">
+                                <img :src="previewActivity.images[activePreviewImgIndex]" class="w-full h-full object-cover">
+                                <span class="absolute bottom-3 right-3 bg-slate-950/80 text-white text-[10px] font-bold px-2.5 py-1 rounded-full backdrop-blur-xs border border-white/10">
+                                    <span x-text="activePreviewImgIndex + 1"></span> / <span x-text="previewActivity.images.length"></span>
+                                </span>
+                            </div>
+                            <template x-if="previewActivity.images.length > 1">
+                                <div class="flex items-center gap-2 overflow-x-auto pb-1">
+                                    <template x-for="(img, idx) in previewActivity.images" :key="idx">
+                                        <button @click="activePreviewImgIndex = idx"
+                                            :class="activePreviewImgIndex === idx ? 'ring-2 ring-sky-500 scale-95' : 'opacity-70 hover:opacity-100'"
+                                            class="w-16 h-12 rounded-lg overflow-hidden shrink-0 transition-all cursor-pointer">
+                                            <img :src="img" class="w-full h-full object-cover">
+                                        </button>
+                                    </template>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+
+                    {{-- Quick Specs Grid --}}
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
+                        <div>
+                            <span class="text-slate-400 text-[10px] block uppercase font-bold tracking-wider">Duration</span>
+                            <span class="text-xs font-bold text-slate-800" x-text="previewActivity?.duration || 'Flexible'"></span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 text-[10px] block uppercase font-bold tracking-wider">Activity Level</span>
+                            <span class="text-xs font-bold text-sky-700" x-text="previewActivity?.activity_level || 'General'"></span>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 text-[10px] block uppercase font-bold tracking-wider">Max Group</span>
+                            <span class="text-xs font-bold text-slate-800" x-text="previewActivity?.capacity ? 'Up to ' + previewActivity.capacity + ' guests' : 'Flexible'"></span>
+                        </div>
+                    </div>
+
+                    {{-- Pax Selector Control --}}
+                    <div class="flex items-center justify-between p-3.5 bg-sky-50/80 rounded-2xl border border-sky-200/80">
+                        <div class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-sky-600">group</span>
+                            <div>
+                                <span class="text-xs font-bold text-slate-800 block">Number of Participants / Pax</span>
+                                <span class="text-[11px] text-slate-500">Manifest entries will be generated for each participant</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-2xs">
+                            <button type="button" @click="modalPax = Math.max(1, modalPax - 1)" :disabled="modalPax <= 1" class="text-slate-600 font-bold hover:text-sky-600 disabled:opacity-40 cursor-pointer">-</button>
+                            <span class="text-xs font-black text-slate-900 w-6 text-center" x-text="modalPax"></span>
+                            <button type="button" @click="modalPax += 1" class="text-slate-600 font-bold hover:text-sky-600 cursor-pointer">+</button>
+                        </div>
+                    </div>
+
+                    {{-- Description --}}
+                    <div class="space-y-1.5">
+                        <h4 class="text-xs font-extrabold uppercase tracking-wider text-slate-400">Description</h4>
+                        <p class="text-xs sm:text-sm text-slate-600 leading-relaxed" x-text="previewActivity?.description"></p>
+                    </div>
+
+                    {{-- Requirements --}}
+                    <template x-if="previewActivity?.requirements">
+                        <div class="space-y-1.5 bg-amber-50/80 border border-amber-200/80 p-3.5 rounded-xl text-amber-900 text-xs">
+                            <span class="font-bold block flex items-center gap-1">
+                                <span class="material-symbols-outlined text-[15px]">info</span>
+                                Requirements & Guidelines
+                            </span>
+                            <p x-text="previewActivity.requirements" class="leading-relaxed"></p>
+                        </div>
+                    </template>
+
+                    {{-- Inclusions --}}
+                    <template x-if="previewActivity?.inclusions && previewActivity.inclusions.length > 0">
+                        <div class="space-y-2">
+                            <h4 class="text-xs font-extrabold uppercase tracking-wider text-slate-400">What's Included</h4>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <template x-for="(inc, idx) in previewActivity.inclusions" :key="idx">
+                                    <div class="flex items-center gap-2 text-xs text-slate-700 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200/80">
+                                        <span class="material-symbols-outlined text-[15px] text-emerald-500">check_circle</span>
+                                        <span x-text="inc"></span>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+
+                {{-- Modal Footer --}}
+                <div class="sticky bottom-0 bg-slate-50 px-6 py-4 border-t border-slate-200 flex items-center justify-between gap-4">
+                    <button @click="previewActivity = null" class="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs transition-colors cursor-pointer">
+                        Close Preview
+                    </button>
+
+                    <button type="button"
+                        @click="window.addToCart('activity', previewActivity.id, { selected_pax: modalPax }); previewActivity = null;"
+                        class="px-6 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs shadow-md transition-colors flex items-center gap-1.5 cursor-pointer">
+                        <span class="material-symbols-outlined text-sm">shopping_cart</span>
+                        <span>Add to Trip Basket</span>
+                    </button>
+                </div>
+
             </div>
         </div>
 

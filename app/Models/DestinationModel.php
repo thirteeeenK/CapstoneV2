@@ -9,8 +9,16 @@ class DestinationModel extends Model
     protected $table = 'destinations';
     protected $fillable = [
         'name',
+        'region',
         'description',
         'image',
+        'latitude',
+        'longitude',
+    ];
+
+    protected $casts = [
+        'latitude' => 'decimal:8',
+        'longitude' => 'decimal:8',
     ];
 
     public function hotels()

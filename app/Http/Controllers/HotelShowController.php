@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Concerns\ResolvesImages;
 use App\Models\DestinationModel;
 use App\Models\HotelModel;
+use App\Services\MapService;
+use App\Services\WeatherService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -33,7 +35,7 @@ class HotelShowController extends Controller
     /**
      * Display dynamic details for a specific Hotel / Sanctuary.
      */
-    public function show(Request $request, $id)
+    public function show(Request $request, $id, MapService $map, WeatherService $weather)
     {
         $isAdmin = Auth::guard('admin')->check();
 
@@ -58,6 +60,12 @@ class HotelShowController extends Controller
         $hasPreviewQuery = $request->has('preview') || $request->has('preview_room');
         $isAdminPreview = $isAdmin && ($hasPreviewQuery || !$hotel->is_shown);
 
-        return view('hotel.show', compact('hotel', 'isAdminPreview'));
+        // DSS context: nearby map markers + local weather via destination
+        $mapContext = $map->hotelContextMarkers($hotel);
+        $weatherSummary = $hotel->destination
+            ? $weather->summaryForDestination($hotel->destination)
+            : null;
+
+        return view('hotel.show', compact('hotel', 'isAdminPreview', 'mapContext', 'weatherSummary'));
     }
 }

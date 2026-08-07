@@ -1,0 +1,98 @@
+- generic [active] [ref=f91e1]:
+  - banner [ref=f91e2]:
+    - generic [ref=f91e3]:
+      - generic [ref=f91e4]:
+        - generic [ref=f91e5]: admin_panel_settings
+        - generic [ref=f91e6]:
+          - generic [ref=f91e7]: SunnyTrips
+          - generic [ref=f91e8]: Admin
+      - generic [ref=f91e9]:
+        - generic [ref=f91e10]:
+          - generic [ref=f91e11]: A
+          - generic "sunnytrips@gmail.com" [ref=f91e12]: Administrator
+        - button "logout Sign out" [ref=f91e15] [cursor=pointer]:
+          - generic [ref=f91e16]: logout
+          - generic [ref=f91e17]: Sign out
+  - complementary [ref=f91e18]:
+    - generic [ref=f91e19]:
+      - heading "SunnyTrips" [level=1] [ref=f91e20]
+      - paragraph [ref=f91e21]: Admin Portal
+    - navigation [ref=f91e22]:
+      - generic [ref=f91e23]:
+        - heading "Overview" [level=2] [ref=f91e24]
+        - generic [ref=f91e25]:
+          - link "dashboard Dashboard" [ref=f91e26] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/admin/dashboard
+            - generic [ref=f91e27]: dashboard
+            - generic [ref=f91e28]: Dashboard
+          - link "psychology AI Insights" [ref=f91e29] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=f91e30]: psychology
+            - generic [ref=f91e31]: AI Insights
+          - link "analytics Generate Reports" [ref=f91e32] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=f91e33]: analytics
+            - generic [ref=f91e34]: Generate Reports
+      - generic [ref=f91e35]:
+        - heading "Operations" [level=2] [ref=f91e36]
+        - generic [ref=f91e37]:
+          - link "calendar_month Bookings" [ref=f91e38] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/admin/bookings
+            - generic [ref=f91e39]: calendar_month
+            - generic [ref=f91e40]: Bookings
+          - link "group Registered Users" [ref=f91e41] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/admin/registered-users
+            - generic [ref=f91e42]: group
+            - generic [ref=f91e43]: Registered Users
+          - link "inventory Manage Inventory" [ref=f91e44] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/admin/inventory
+            - generic [ref=f91e45]: inventory
+            - generic [ref=f91e46]: Manage Inventory
+          - link "tune Passenger Rules & Discounts" [ref=f91e47] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/admin/passenger-rules
+            - generic [ref=f91e48]: tune
+            - generic [ref=f91e49]: Passenger Rules & Discounts
+      - generic [ref=f91e50]:
+        - heading "Catalog" [level=2] [ref=f91e51]
+        - generic [ref=f91e52]:
+          - link "place Destinations" [ref=f91e53] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/admin/destinations
+            - generic [ref=f91e54]: place
+            - generic [ref=f91e55]: Destinations
+          - link "house Add Hotel Information" [ref=f91e56] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/admin/hotels/manage
+            - generic [ref=f91e57]: house
+            - generic [ref=f91e58]: Add Hotel Information
+          - link "hotel Show Hotel Listing" [ref=f91e59] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/admin/hotels
+            - generic [ref=f91e60]: hotel
+            - generic [ref=f91e61]: Show Hotel Listing
+          - link "card_travel Tour Packages & Promos" [ref=f91e62] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/admin/packages
+            - generic [ref=f91e63]: card_travel
+            - generic [ref=f91e64]: Tour Packages & Promos
+          - link "explore Activities & Tours" [ref=f91e65] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/admin/activities
+            - generic [ref=f91e66]: explore
+            - generic [ref=f91e67]: Activities & Tours
+          - link "extension Transfers and Add-ons" [ref=f91e68] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/admin/addons
+            - generic [ref=f91e69]: extension
+            - generic [ref=f91e70]: Transfers and Add-ons
+          - link "psychology Manage AI" [ref=f91e71] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=f91e72]: psychology
+            - generic [ref=f91e73]: Manage AI
+      - generic [ref=f91e74]:
+        - heading "Legal" [level=2] [ref=f91e75]
+        - link "gavel Legal Documents" [ref=f91e77] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/admin/legal
+          - generic [ref=f91e78]: gavel
+          - generic [ref=f91e79]: Legal Documents
+      - generic [ref=f91e80]:
+        - heading "Community" [level=2] [ref=f91e81]
+        - link "reviews Reviews & Sentiment" [ref=f91e83] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/admin/reviews
+          - generic [ref=f91e84]: reviews
+          - generic [ref=f91e85]: Reviews & Sentiment
+  - main [ref=f91e86]

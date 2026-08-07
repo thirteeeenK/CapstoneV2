@@ -69,6 +69,10 @@ export default {
                 },
                 // Warm coral accent (optional highlights)
                 coral: {
+                    50:  '#fdf1ec',
+                    100: '#fbe0d5',
+                    200: '#f6c1ac',
+                    300: '#f09a77',
                     400: '#f07250',
                     500: '#e85e37',
                     600: '#d24f29',

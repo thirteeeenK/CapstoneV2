@@ -1,0 +1,271 @@
+- generic [active] [ref=f14e1]:
+  - complementary [ref=f14e2]:
+    - generic [ref=f14e4]:
+      - link "SunnyTrips" [ref=f14e5] [cursor=pointer]:
+        - /url: http://127.0.0.1:8000/dashboard
+      - paragraph [ref=f14e7]:
+        - generic [ref=f14e9]: Traveler Portal
+    - navigation [ref=f14e10]:
+      - generic [ref=f14e11]:
+        - heading "Main Navigation" [level=2] [ref=f14e12]
+        - generic [ref=f14e13]:
+          - link "space_dashboard Dashboard" [ref=f14e14] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/dashboard
+            - generic [ref=f14e15]: space_dashboard
+            - generic [ref=f14e16]: Dashboard
+          - link "shopping_basket My Trip Basket" [ref=f14e17] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/cart
+            - generic [ref=f14e18]: shopping_basket
+            - generic [ref=f14e19]: My Trip Basket
+          - link "auto_stories My Bookings" [ref=f14e20] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/bookings
+            - generic [ref=f14e21]: auto_stories
+            - generic [ref=f14e22]: My Bookings
+          - link "reviews Guest Reviews" [ref=f14e23] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/reviews
+            - generic [ref=f14e24]: reviews
+            - generic [ref=f14e25]: Guest Reviews
+      - generic [ref=f14e26]:
+        - heading "Explore Catalog" [level=2] [ref=f14e27]
+        - generic [ref=f14e28]:
+          - link "location_on Island Destinations" [ref=f14e29] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/destinations
+            - generic [ref=f14e30]: location_on
+            - generic [ref=f14e31]: Island Destinations
+          - link "hotel Hotels & Sanctuaries" [ref=f14e32] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/hotels
+            - generic [ref=f14e33]: hotel
+            - generic [ref=f14e34]: Hotels & Sanctuaries
+          - link "king_bed Rooms & Stays" [ref=f14e35] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/rooms
+            - generic [ref=f14e36]: king_bed
+            - generic [ref=f14e37]: Rooms & Stays
+          - link "explore Activities & Tours" [ref=f14e38] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/activities
+            - generic [ref=f14e39]: explore
+            - generic [ref=f14e40]: Activities & Tours
+          - link "extension Transfers & Add-ons" [ref=f14e41] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/addons
+            - generic [ref=f14e42]: extension
+            - generic [ref=f14e43]: Transfers & Add-ons
+          - link "card_travel Tour Packages & Promos" [ref=f14e44] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/packages
+            - generic [ref=f14e45]: card_travel
+            - generic [ref=f14e46]: Tour Packages & Promos
+      - generic [ref=f14e47]:
+        - heading "Personalization" [level=2] [ref=f14e48]
+        - generic [ref=f14e49]:
+          - link "tune AI Preferences Quiz" [ref=f14e50] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/onboarding
+            - generic [ref=f14e51]: tune
+            - generic [ref=f14e52]: AI Preferences Quiz
+          - link "manage_accounts Account Profile" [ref=f14e53] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/profile
+            - generic [ref=f14e54]: manage_accounts
+            - generic [ref=f14e55]: Account Profile
+    - generic [ref=f14e56]:
+      - generic [ref=f14e57]:
+        - generic [ref=f14e58]: T
+        - generic [ref=f14e59]:
+          - generic [ref=f14e60]: Test User
+          - generic [ref=f14e61]: test@example.com
+      - button "logout Log Out" [ref=f14e63] [cursor=pointer]:
+        - generic [ref=f14e64]: logout
+        - generic [ref=f14e65]: Log Out
+  - main [ref=f14e66]:
+    - generic [ref=f14e68]:
+      - generic [ref=f14e70]:
+        - generic [ref=f14e72]:
+          - generic [ref=f14e73]: travel_explore
+          - generic [ref=f14e74]: Popular Highlights Active
+        - heading "Welcome back, Test User!" [level=1] [ref=f14e75]
+        - paragraph [ref=f14e76]: Logged in as test@example.com. Explore your island recommendations below.
+      - generic [ref=f14e77]:
+        - generic [ref=f14e78]:
+          - generic [ref=f14e79]:
+            - heading "Explore Islands on the Map" [level=2] [ref=f14e80]
+            - paragraph [ref=f14e81]: Tap a marker to see what each destination has in store — then plan your next escape.
+          - link "map Open Full Map" [ref=f14e82] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/explore
+            - generic [ref=f14e83]: map
+            - text: Open Full Map
+        - generic [ref=f14e85]:
+          - generic:
+            - generic:
+              - button [ref=f14e86] [cursor=pointer]
+              - button [ref=f14e88] [cursor=pointer]
+          - generic:
+            - generic [ref=f14e90]:
+              - button "Zoom in" [ref=f14e91] [cursor=pointer]: +
+              - button "Zoom out" [ref=f14e92] [cursor=pointer]: −
+            - generic [ref=f14e93]:
+              - link "Leaflet" [ref=f14e94] [cursor=pointer]:
+                - /url: https://leafletjs.com
+              - text: "| ©"
+              - link "OpenStreetMap" [ref=f14e99] [cursor=pointer]:
+                - /url: https://www.openstreetmap.org/copyright
+              - text: contributors
+      - generic [ref=f14e100]:
+        - generic [ref=f14e101]:
+          - generic [ref=f14e102]:
+            - generic [ref=f14e103]:
+              - button "auto_awesome AI Recommendations" [ref=f14e104] [cursor=pointer]:
+                - generic [ref=f14e105]: auto_awesome
+                - generic [ref=f14e106]: AI Recommendations
+              - button "travel_explore Default Listings" [ref=f14e107] [cursor=pointer]:
+                - generic [ref=f14e108]: travel_explore
+                - generic [ref=f14e109]: Default Listings
+              - button "card_travel Tour Packages" [ref=f14e110] [cursor=pointer]:
+                - generic [ref=f14e111]: card_travel
+                - generic [ref=f14e112]: Tour Packages
+            - paragraph [ref=f14e113]: Popular island highlights across top destinations.
+          - generic [ref=f14e114]:
+            - link "tune Personalize My Profile" [ref=f14e115] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/onboarding/reset
+              - generic [ref=f14e116]: tune
+              - generic [ref=f14e117]: Personalize My Profile
+            - generic [ref=f14e118]:
+              - generic [ref=f14e119]:
+                - generic [ref=f14e120]: filter_alt
+                - generic [ref=f14e121]: "Sanctuary:"
+              - button "location_on Boracay" [ref=f14e122] [cursor=pointer]:
+                - generic [ref=f14e123]: location_on
+                - generic [ref=f14e124]: Boracay
+              - button "location_on El Nido" [ref=f14e125] [cursor=pointer]:
+                - generic [ref=f14e126]: location_on
+                - generic [ref=f14e127]: El Nido
+        - generic [ref=f14e129]:
+          - generic [ref=f14e130]:
+            - generic [ref=f14e131]:
+              - generic [ref=f14e132]:
+                - generic [ref=f14e133]: hotel
+                - heading "Popular Hotels in Boracay" [level=3] [ref=f14e134]
+              - generic [ref=f14e135]: Popular Stays
+            - generic [ref=f14e136]:
+              - link "Canyon Hotels & Resorts Boracay High End Luxury Hotels Canyon Hotels & Resorts Boracay Canyon is nestled in Station 2, just a short walk from White Beach and D'Mall. This boutique hotel offers cozy, well-appointed rooms and a peaceful atmosphere. With its quiet location yet easy access to shops and restaurants, it's great for couples and families seeking a balance of relaxation and convenience. Explore Sanctuary arrow_forward" [ref=f14e137] [cursor=pointer]:
+                - /url: http://127.0.0.1:8000/hotels/2
+                - generic [ref=f14e138]:
+                  - generic [ref=f14e139]:
+                    - img "Canyon Hotels & Resorts Boracay" [ref=f14e140]
+                    - generic [ref=f14e142]: High End Luxury Hotels
+                  - generic [ref=f14e143]:
+                    - heading "Canyon Hotels & Resorts Boracay" [level=4] [ref=f14e144]
+                    - paragraph [ref=f14e145]: Canyon is nestled in Station 2, just a short walk from White Beach and D'Mall. This boutique hotel offers cozy, well-appointed rooms and a peaceful atmosphere. With its quiet location yet easy access to shops and restaurants, it's great for couples and families seeking a balance of relaxation and convenience.
+                - generic [ref=f14e147]:
+                  - generic [ref=f14e148]: Explore Sanctuary
+                  - generic [ref=f14e149]: arrow_forward
+              - link "Boracay Ocean Club Beach Resort High End Luxury Hotels Boracay Ocean Club Beach Resort Boracay Ocean Club is located in Station 3, right along White Beach with direct beachfront access. The resort features a beachfront pool, spa services, and dive center, making it ideal for adventure seekers and beach lovers. With ocean-view rooms and a quieter location, it's perfect for travelers who want a more laid-back Boracay experience. Explore Sanctuary arrow_forward" [ref=f14e150] [cursor=pointer]:
+                - /url: http://127.0.0.1:8000/hotels/3
+                - generic [ref=f14e151]:
+                  - generic [ref=f14e152]:
+                    - img "Boracay Ocean Club Beach Resort" [ref=f14e153]
+                    - generic [ref=f14e155]: High End Luxury Hotels
+                  - generic [ref=f14e156]:
+                    - heading "Boracay Ocean Club Beach Resort" [level=4] [ref=f14e157]
+                    - paragraph [ref=f14e158]: Boracay Ocean Club is located in Station 3, right along White Beach with direct beachfront access. The resort features a beachfront pool, spa services, and dive center, making it ideal for adventure seekers and beach lovers. With ocean-view rooms and a quieter location, it's perfect for travelers who want a more laid-back Boracay experience.
+                - generic [ref=f14e160]:
+                  - generic [ref=f14e161]: Explore Sanctuary
+                  - generic [ref=f14e162]: arrow_forward
+              - link "Henann Garden Resort High End Luxury Hotels Henann Garden Resort Henann Garden is located in Station 2, just a 2-minute walk from White Beach and close to D'Mall. It has several lagoon-style pools and lush landscaping. With spacious rooms and on-site dining, it's perfect for travelers seeking comfort and convenience in the island's center. Explore Sanctuary arrow_forward" [ref=f14e163] [cursor=pointer]:
+                - /url: http://127.0.0.1:8000/hotels/4
+                - generic [ref=f14e164]:
+                  - generic [ref=f14e165]:
+                    - img "Henann Garden Resort" [ref=f14e166]
+                    - generic [ref=f14e168]: High End Luxury Hotels
+                  - generic [ref=f14e169]:
+                    - heading "Henann Garden Resort" [level=4] [ref=f14e170]
+                    - paragraph [ref=f14e171]: Henann Garden is located in Station 2, just a 2-minute walk from White Beach and close to D'Mall. It has several lagoon-style pools and lush landscaping. With spacious rooms and on-site dining, it's perfect for travelers seeking comfort and convenience in the island's center.
+                - generic [ref=f14e173]:
+                  - generic [ref=f14e174]: Explore Sanctuary
+                  - generic [ref=f14e175]: arrow_forward
+              - link "My Station Hotel Mid Affordable Hotels My Station Hotel Located in Station 1, My Station Hotel is just a short walk from the pristine White Beach. With modern, comfortable rooms and a welcoming atmosphere, this hotel offers a relaxing stay while being close to local attractions. Guests can enjoy easy access to restaurants, shopping, and the island's nightlife, making it perfect for both relaxation and adventure seekers. Explore Sanctuary arrow_forward" [ref=f14e176] [cursor=pointer]:
+                - /url: http://127.0.0.1:8000/hotels/5
+                - generic [ref=f14e177]:
+                  - generic [ref=f14e178]:
+                    - img "My Station Hotel" [ref=f14e179]
+                    - generic [ref=f14e181]: Mid Affordable Hotels
+                  - generic [ref=f14e182]:
+                    - heading "My Station Hotel" [level=4] [ref=f14e183]
+                    - paragraph [ref=f14e184]: Located in Station 1, My Station Hotel is just a short walk from the pristine White Beach. With modern, comfortable rooms and a welcoming atmosphere, this hotel offers a relaxing stay while being close to local attractions. Guests can enjoy easy access to restaurants, shopping, and the island's nightlife, making it perfect for both relaxation and adventure seekers.
+                - generic [ref=f14e186]:
+                  - generic [ref=f14e187]: Explore Sanctuary
+                  - generic [ref=f14e188]: arrow_forward
+              - link "Frendz Resort & Hostel Mid Affordable Hotels Frendz Resort & Hostel Found in Station 1, Frendz is a popular social spot for travelers. It's about a 5-minute walk to White Beach and has a pool and a common area that often hosts events. It's close to bars and restaurants but still maintains a laid-back vibe. Explore Sanctuary arrow_forward" [ref=f14e189] [cursor=pointer]:
+                - /url: http://127.0.0.1:8000/hotels/6
+                - generic [ref=f14e190]:
+                  - generic [ref=f14e191]:
+                    - img "Frendz Resort & Hostel" [ref=f14e192]
+                    - generic [ref=f14e194]: Mid Affordable Hotels
+                  - generic [ref=f14e195]:
+                    - heading "Frendz Resort & Hostel" [level=4] [ref=f14e196]
+                    - paragraph [ref=f14e197]: Found in Station 1, Frendz is a popular social spot for travelers. It's about a 5-minute walk to White Beach and has a pool and a common area that often hosts events. It's close to bars and restaurants but still maintains a laid-back vibe.
+                - generic [ref=f14e199]:
+                  - generic [ref=f14e200]: Explore Sanctuary
+                  - generic [ref=f14e201]: arrow_forward
+          - generic [ref=f14e202]:
+            - generic [ref=f14e203]:
+              - generic [ref=f14e204]:
+                - generic [ref=f14e205]: explore
+                - heading "Popular Experiences in Boracay" [level=3] [ref=f14e206]
+              - generic [ref=f14e207]: Top Highlights
+            - generic [ref=f14e208]:
+              - generic [ref=f14e209]:
+                - generic [ref=f14e210]:
+                  - generic [ref=f14e211]:
+                    - img "Joiners Island Hopping" [ref=f14e212]
+                    - generic [ref=f14e214]: ₱850/person
+                  - generic [ref=f14e215]:
+                    - heading "Joiners Island Hopping" [level=4] [ref=f14e216]
+                    - paragraph [ref=f14e217]: Explore Boracay's surrounding pristine islands including Crocodile Island, Puka Beach, and Magic Island. Enjoy swimming, snorkeling in coral gardens, and a hot kawa bath experience with a complimentary seafood & BBQ buffet lunch.
+                - link "View Experience arrow_forward" [ref=f14e219] [cursor=pointer]:
+                  - /url: http://127.0.0.1:8000/activities
+                  - generic [ref=f14e220]: View Experience
+                  - generic [ref=f14e221]: arrow_forward
+              - generic [ref=f14e222]:
+                - generic [ref=f14e223]:
+                  - generic [ref=f14e224]:
+                    - img "6–7 Destinations (E-Trike)" [ref=f14e225]
+                    - generic [ref=f14e227]: ₱2,000
+                  - generic [ref=f14e228]:
+                    - heading "6–7 Destinations (E-Trike)" [level=4] [ref=f14e229]
+                    - paragraph [ref=f14e230]: Hop on an eco-friendly electric trike for an intimate island tour covering Keyhole, Newcoast Beach, Puka Beach, Mt. Luho viewpoint, and Ilig-Iligan Beach at your own pace.
+                - link "View Experience arrow_forward" [ref=f14e232] [cursor=pointer]:
+                  - /url: http://127.0.0.1:8000/activities
+                  - generic [ref=f14e233]: View Experience
+                  - generic [ref=f14e234]: arrow_forward
+              - generic [ref=f14e235]:
+                - generic [ref=f14e236]:
+                  - generic [ref=f14e237]:
+                    - img "6–7 Destinations (FB Van/Multicab)" [ref=f14e238]
+                    - generic [ref=f14e240]: ₱3,000
+                  - generic [ref=f14e241]:
+                    - heading "6–7 Destinations (FB Van/Multicab)" [level=4] [ref=f14e242]
+                    - paragraph [ref=f14e243]: Group land tour around Boracay's famous spots in an open-air multicab. Ideal for medium-sized barkadas exploring the island's northern beaches and coastal views.
+                - link "View Experience arrow_forward" [ref=f14e245] [cursor=pointer]:
+                  - /url: http://127.0.0.1:8000/activities
+                  - generic [ref=f14e246]: View Experience
+                  - generic [ref=f14e247]: arrow_forward
+              - generic [ref=f14e248]:
+                - generic [ref=f14e249]:
+                  - generic [ref=f14e250]:
+                    - img "6–7 Destinations (Aircon Van)" [ref=f14e251]
+                    - generic [ref=f14e253]: ₱3,700
+                  - generic [ref=f14e254]:
+                    - heading "6–7 Destinations (Aircon Van)" [level=4] [ref=f14e255]
+                    - paragraph [ref=f14e256]: Travel around Boracay in climate-controlled luxury. Visit Keyhole, Puka Beach, Mangrove Park, and scenic heights without breaking a sweat.
+                - link "View Experience arrow_forward" [ref=f14e258] [cursor=pointer]:
+                  - /url: http://127.0.0.1:8000/activities
+                  - generic [ref=f14e259]: View Experience
+                  - generic [ref=f14e260]: arrow_forward
+              - generic [ref=f14e261]:
+                - generic [ref=f14e262]:
+                  - generic [ref=f14e263]:
+                    - img "Parasailing" [ref=f14e264]
+                    - generic [ref=f14e266]: ₱1,700/person
+                  - generic [ref=f14e267]:
+                    - heading "Parasailing" [level=4] [ref=f14e268]
+                    - paragraph [ref=f14e269]: Soar 150 meters above the azure waters of Boracay! Experience breathtaking 360-degree aerial views of the entire 7km island while strapped securely into a parachute canopy.
+                - link "View Experience arrow_forward" [ref=f14e271] [cursor=pointer]:
+                  - /url: http://127.0.0.1:8000/activities
+                  - generic [ref=f14e272]: View Experience
+                  - generic [ref=f14e273]: arrow_forward

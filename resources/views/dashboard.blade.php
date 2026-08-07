@@ -42,6 +42,28 @@
                 </div>
             </div>
 
+            {{-- DSS Destination Overview Map --}}
+            @if(!empty($mapMarkers))
+                <section class="space-y-4">
+                    <div class="flex flex-wrap items-end justify-between gap-3">
+                        <div>
+                            <h2 class="text-xl sm:text-2xl font-black text-slate-900 font-headline tracking-tight">
+                                Explore Islands on the Map
+                            </h2>
+                            <p class="text-slate-500 text-xs sm:text-sm font-body">
+                                Tap a marker to see what each destination has in store — then plan your next escape.
+                            </p>
+                        </div>
+                        <a href="{{ route('explore') }}"
+                            class="inline-flex items-center gap-1.5 rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-slate-700">
+                            <span class="material-symbols-outlined text-[16px]">map</span>
+                            Open Full Map
+                        </a>
+                    </div>
+                    <x-frontend.map :markers="$mapMarkers" :center="null" :zoom="6" height="h-80" />
+                </section>
+            @endif
+
             {{-- AI Recommendations & Default Listings Tabs Section --}}
             <x-frontend.recommendations :is-personalized="$isPersonalized" :ai-recommendations="$aiRecommendations"
                 :default-recommendations="$defaultRecommendations" />

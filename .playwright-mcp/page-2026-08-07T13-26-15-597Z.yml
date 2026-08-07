@@ -1,0 +1,270 @@
+- generic [active] [ref=f93e1]:
+  - banner [ref=f93e2]:
+    - generic [ref=f93e3]:
+      - generic [ref=f93e4]:
+        - generic [ref=f93e5]: admin_panel_settings
+        - generic [ref=f93e6]:
+          - generic [ref=f93e7]: SunnyTrips
+          - generic [ref=f93e8]: Admin
+      - generic [ref=f93e9]:
+        - generic [ref=f93e10]:
+          - generic [ref=f93e11]: A
+          - generic "sunnytrips@gmail.com" [ref=f93e12]: Administrator
+        - button "logout Sign out" [ref=f93e15] [cursor=pointer]:
+          - generic [ref=f93e16]: logout
+          - generic [ref=f93e17]: Sign out
+  - complementary [ref=f93e18]:
+    - generic [ref=f93e19]:
+      - heading "SunnyTrips" [level=1] [ref=f93e20]
+      - paragraph [ref=f93e21]: Admin Portal
+    - navigation [ref=f93e22]:
+      - generic [ref=f93e23]:
+        - heading "Overview" [level=2] [ref=f93e24]
+        - generic [ref=f93e25]:
+          - link "dashboard Dashboard" [ref=f93e26] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/admin/dashboard
+            - generic [ref=f93e27]: dashboard
+            - generic [ref=f93e28]: Dashboard
+          - link "psychology AI Insights" [ref=f93e29] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=f93e30]: psychology
+            - generic [ref=f93e31]: AI Insights
+          - link "analytics Generate Reports" [ref=f93e32] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=f93e33]: analytics
+            - generic [ref=f93e34]: Generate Reports
+      - generic [ref=f93e35]:
+        - heading "Operations" [level=2] [ref=f93e36]
+        - generic [ref=f93e37]:
+          - link "calendar_month Bookings" [ref=f93e38] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/admin/bookings
+            - generic [ref=f93e39]: calendar_month
+            - generic [ref=f93e40]: Bookings
+          - link "group Registered Users" [ref=f93e41] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/admin/registered-users
+            - generic [ref=f93e42]: group
+            - generic [ref=f93e43]: Registered Users
+          - link "inventory Manage Inventory" [ref=f93e44] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/admin/inventory
+            - generic [ref=f93e45]: inventory
+            - generic [ref=f93e46]: Manage Inventory
+          - link "tune Passenger Rules & Discounts" [ref=f93e47] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/admin/passenger-rules
+            - generic [ref=f93e48]: tune
+            - generic [ref=f93e49]: Passenger Rules & Discounts
+      - generic [ref=f93e50]:
+        - heading "Catalog" [level=2] [ref=f93e51]
+        - generic [ref=f93e52]:
+          - link "place Destinations" [ref=f93e53] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/admin/destinations
+            - generic [ref=f93e54]: place
+            - generic [ref=f93e55]: Destinations
+          - link "house Add Hotel Information" [ref=f93e56] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/admin/hotels/manage
+            - generic [ref=f93e57]: house
+            - generic [ref=f93e58]: Add Hotel Information
+          - link "hotel Show Hotel Listing" [ref=f93e59] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/admin/hotels
+            - generic [ref=f93e60]: hotel
+            - generic [ref=f93e61]: Show Hotel Listing
+          - link "card_travel Tour Packages & Promos" [ref=f93e62] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/admin/packages
+            - generic [ref=f93e63]: card_travel
+            - generic [ref=f93e64]: Tour Packages & Promos
+          - link "explore Activities & Tours" [ref=f93e65] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/admin/activities
+            - generic [ref=f93e66]: explore
+            - generic [ref=f93e67]: Activities & Tours
+          - link "extension Transfers and Add-ons" [ref=f93e68] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/admin/addons
+            - generic [ref=f93e69]: extension
+            - generic [ref=f93e70]: Transfers and Add-ons
+          - link "psychology Manage AI" [ref=f93e71] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=f93e72]: psychology
+            - generic [ref=f93e73]: Manage AI
+      - generic [ref=f93e74]:
+        - heading "Legal" [level=2] [ref=f93e75]
+        - link "gavel Legal Documents" [ref=f93e77] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/admin/legal
+          - generic [ref=f93e78]: gavel
+          - generic [ref=f93e79]: Legal Documents
+      - generic [ref=f93e80]:
+        - heading "Community" [level=2] [ref=f93e81]
+        - link "reviews Reviews & Sentiment" [ref=f93e83] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/admin/reviews
+          - generic [ref=f93e84]: reviews
+          - generic [ref=f93e85]: Reviews & Sentiment
+  - main [ref=f93e86]:
+    - generic [ref=f93e88]:
+      - generic [ref=f93e89]:
+        - generic [ref=f93e90]:
+          - 'heading "Edit Activity: Joiners Island Hopping" [level=1] [ref=f93e91]'
+          - paragraph [ref=f93e92]: Update activity details. Vector embeddings will automatically regenerate on save.
+        - link "arrow_back Back to Activities" [ref=f93e93] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/admin/activities
+          - generic [ref=f93e94]: arrow_back
+          - text: Back to Activities
+      - generic [ref=f93e95]:
+        - generic [ref=f93e96]:
+          - generic [ref=f93e97]:
+            - heading "General Information" [level=2] [ref=f93e98]
+            - generic [ref=f93e100]:
+              - generic [ref=f93e101]:
+                - generic [ref=f93e102]: Destination *
+                - combobox "Destination *" [ref=f93e103]:
+                  - option "Select Destination..."
+                  - option "Boracay" [selected]
+                  - option "El Nido"
+              - generic [ref=f93e104]:
+                - generic [ref=f93e105]: Activity Name *
+                - textbox "Activity Name *" [ref=f93e106]: Joiners Island Hopping
+              - generic [ref=f93e107]:
+                - generic [ref=f93e108]: Category *
+                - combobox "Category *" [ref=f93e109]:
+                  - option "Select Category..."
+                  - option "Island Hopping" [selected]
+                  - option "Land Tour"
+                  - option "Water Activity"
+                  - option "Diving"
+                  - option "Adventure"
+                  - option "Sailing"
+                  - option "Other"
+              - generic [ref=f93e110]:
+                - generic [ref=f93e111]: Activity Level *
+                - combobox "Activity Level *" [ref=f93e112]:
+                  - option "Select Level..."
+                  - option "Relaxing" [selected]
+                  - option "Sightseeing"
+                  - option "Adventure"
+                  - option "Extreme"
+                  - option "Underwater"
+              - generic [ref=f93e113]:
+                - generic [ref=f93e114]: Rate / Pricing *
+                - textbox "Rate / Pricing *" [ref=f93e115]: ₱850/person
+              - generic [ref=f93e116]:
+                - generic [ref=f93e117]: Duration
+                - textbox "Duration" [ref=f93e118]:
+                  - /placeholder: e.g. 3 Hours, Half Day, Full Day, 15 Mins
+                  - text: Full Day (9:00 AM - 4:00 PM)
+              - generic [ref=f93e119]:
+                - generic [ref=f93e120]: Group Capacity
+                - textbox "Group Capacity" [ref=f93e121]:
+                  - /placeholder: e.g. 1-6 Pax, Max 10 Guests, Solo or Groups
+                  - text: Joiner Group (Max 20 pax)
+              - generic [ref=f93e122]:
+                - generic [ref=f93e123]: Target Audience / Ideal Participants
+                - textbox "Target Audience / Ideal Participants" [ref=f93e124]:
+                  - /placeholder: e.g. Couples, Thrill Seekers, Families with Kids, Solo Explorers
+                  - text: Budget Travelers, Families, Social Groups, Solo Explorers
+              - generic [ref=f93e125]:
+                - generic [ref=f93e126]: Requirements or Restrictions
+                - textbox "Requirements or Restrictions" [ref=f93e127]:
+                  - /placeholder: e.g. Must be at least 12 years old; bring extra swim clothes and towels
+                  - text: Bring own swimwear and towel.
+              - generic [ref=f93e128]:
+                - generic [ref=f93e129]: Experience Vibes / Tags (Comma-separated)
+                - textbox "Experience Vibes / Tags (Comma-separated)" [ref=f93e130]:
+                  - /placeholder: e.g. Snorkeling, Island Hopping, Panoramic Views, Adrenaline
+                  - text: Snorkeling, Island Hopping, Buffet Lunch, Kawa Bath, Group Friendly
+              - generic [ref=f93e131]:
+                - generic [ref=f93e132]: Detailed Experience Description
+                - textbox "Detailed Experience Description" [ref=f93e133]:
+                  - /placeholder: Describe the experience in detail...
+                  - text: Explore Boracay's surrounding pristine islands including Crocodile Island, Puka Beach, and Magic Island. Enjoy swimming, snorkeling in coral gardens, and a hot kawa bath experience with a complimentary seafood & BBQ buffet lunch.
+              - generic [ref=f93e134]:
+                - generic [ref=f93e135]:
+                  - text: Inclusions
+                  - button "Inclusions" [ref=f93e136] [cursor=pointer]: + Add Item
+                - generic [ref=f93e137]:
+                  - generic [ref=f93e138]:
+                    - textbox [ref=f93e139]: Boat transfer
+                    - button "delete" [ref=f93e140] [cursor=pointer]
+                  - generic [ref=f93e142]:
+                    - textbox [ref=f93e143]: Buffet Lunch
+                    - button "delete" [ref=f93e144] [cursor=pointer]
+                  - generic [ref=f93e146]:
+                    - textbox [ref=f93e147]: Kawa Bath
+                    - button "delete" [ref=f93e148] [cursor=pointer]
+                  - generic [ref=f93e150]:
+                    - textbox [ref=f93e151]: Tour Guide
+                    - button "delete" [ref=f93e152] [cursor=pointer]
+              - generic [ref=f93e154]:
+                - generic [ref=f93e155]:
+                  - text: Exclusions / Optional Add-ons
+                  - button "Exclusions / Optional Add-ons" [ref=f93e156] [cursor=pointer]: + Add Item
+                - generic [ref=f93e157]:
+                  - generic [ref=f93e158]:
+                    - textbox [ref=f93e159]: Snorkeling Fee (₱40)
+                    - button "delete" [ref=f93e160] [cursor=pointer]
+                  - generic [ref=f93e162]:
+                    - textbox [ref=f93e163]: Crystal Cove Entrance (₱300)
+                    - button "delete" [ref=f93e164] [cursor=pointer]
+                  - generic [ref=f93e166]:
+                    - textbox [ref=f93e167]: Magic Island Cliff Diving (₱250)
+                    - button "delete" [ref=f93e168] [cursor=pointer]
+              - generic [ref=f93e170]:
+                - generic [ref=f93e171]:
+                  - text: Itinerary
+                  - button "Itinerary" [ref=f93e172] [cursor=pointer]: + Add Step
+                - generic [ref=f93e173]:
+                  - generic [ref=f93e174]:
+                    - button "close" [ref=f93e175] [cursor=pointer]
+                    - textbox "Step Title (e.g. Puka Beach)" [ref=f93e177]: Meetup at Station 2
+                    - textbox "Duration (e.g. 30-40 minutes)" [ref=f93e178]: 30 mins
+                  - generic [ref=f93e179]:
+                    - button "close" [ref=f93e180] [cursor=pointer]
+                    - textbox "Step Title (e.g. Puka Beach)" [ref=f93e182]: Puka Beach
+                    - textbox "Duration (e.g. 30-40 minutes)" [ref=f93e183]: 1 hour
+                  - generic [ref=f93e184]:
+                    - button "close" [ref=f93e185] [cursor=pointer]
+                    - textbox "Step Title (e.g. Puka Beach)" [ref=f93e187]: Crocodile Island Snorkeling
+                    - textbox "Duration (e.g. 30-40 minutes)" [ref=f93e188]: 1 hour
+                  - generic [ref=f93e189]:
+                    - button "close" [ref=f93e190] [cursor=pointer]
+                    - textbox "Step Title (e.g. Puka Beach)" [ref=f93e192]: Buffet Lunch & Kawa Bath
+                    - textbox "Duration (e.g. 30-40 minutes)" [ref=f93e193]: 1.5 hours
+                  - generic [ref=f93e194]:
+                    - button "close" [ref=f93e195] [cursor=pointer]
+                    - textbox "Step Title (e.g. Puka Beach)" [ref=f93e197]: Magic Island (Optional)
+                    - textbox "Duration (e.g. 30-40 minutes)" [ref=f93e198]: 1 hour
+              - generic [ref=f93e199]:
+                - generic [ref=f93e200]: Additional Notes
+                - textbox "Additional Notes" [ref=f93e201]: Includes free buffet lunch + kawa bath
+              - generic [ref=f93e202]:
+                - generic [ref=f93e203]:
+                  - generic [ref=f93e204]: Latitude
+                  - spinbutton "e.g., 11.9674" [ref=f93e205]: "11.96580000"
+                - generic [ref=f93e206]:
+                  - generic [ref=f93e207]: Longitude
+                  - spinbutton "e.g., 121.9246" [ref=f93e208]: "121.92600000"
+          - generic [ref=f93e210]:
+            - generic [ref=f93e211]:
+              - generic [ref=f93e212]: Photo Gallery
+              - button "cloud_upload Upload Images" [ref=f93e213] [cursor=pointer]:
+                - generic [ref=f93e214]: cloud_upload
+                - text: Upload Images
+            - generic [ref=f93e215]:
+              - generic [ref=f93e217] [cursor=pointer]:
+                - generic [ref=f93e218]: image
+                - generic [ref=f93e219]: Main Photo
+              - generic [ref=f93e221] [cursor=pointer]:
+                - generic [ref=f93e222]: image
+                - generic [ref=f93e223]: Photo Slot
+              - generic [ref=f93e225] [cursor=pointer]:
+                - generic [ref=f93e226]: image
+                - generic [ref=f93e227]: Photo Slot
+              - generic [ref=f93e228] [cursor=pointer]:
+                - generic [ref=f93e229]: add_circle
+                - generic [ref=f93e230]: More Photos
+        - generic [ref=f93e232]:
+          - heading "Publishing" [level=3] [ref=f93e233]
+          - paragraph [ref=f93e234]: Review your changes and click the button below to update the activity.
+          - generic [ref=f93e235]:
+            - generic [ref=f93e236] [cursor=pointer]:
+              - generic [ref=f93e237]: Show to Public Users
+              - checkbox "Show to Public Users" [checked] [ref=f93e238]
+            - paragraph [ref=f93e239]: If unchecked, this activity remains hidden from public website and AI search.
+          - button "sync Update & Regenerate Embedding" [ref=f93e240] [cursor=pointer]:
+            - generic [ref=f93e241]: sync
+            - text: Update & Regenerate Embedding

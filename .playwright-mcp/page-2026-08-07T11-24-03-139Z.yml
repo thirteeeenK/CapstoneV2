@@ -1,0 +1,43 @@
+- generic [ref=f6e2]:
+  - generic [ref=f6e3]:
+    - img "El Nido, Palawan — Philippines" [ref=f6e4]
+    - generic [ref=f6e6]:
+      - paragraph [ref=f6e7]:
+        - text: "\"Discover the Islands"
+        - emphasis [ref=f6e8]: Worth Getting Lost In."
+      - paragraph [ref=f6e11]: El Nido, Palawan · Philippines
+  - generic [ref=f6e13]:
+    - link "SunnyTrips — Go to homepage" [ref=f6e14] [cursor=pointer]:
+      - /url: /
+      - generic [ref=f6e15]: wb_sunny
+      - generic [ref=f6e16]: SunnyTrips
+    - generic [ref=f6e17]:
+      - generic [ref=f6e18]:
+        - heading "Welcome back." [level=1] [ref=f6e19]
+        - paragraph [ref=f6e20]: Sign in to continue planning your next escape.
+      - generic [ref=f6e21]:
+        - generic [ref=f6e22]:
+          - generic [ref=f6e23]: Email address
+          - textbox "Email address" [active] [ref=f6e24]:
+            - /placeholder: you@example.com
+            - text: johnkenlypamor13@gmail.com
+          - list [ref=f6e25]:
+            - listitem [ref=f6e26]: These credentials do not match our records.
+        - generic [ref=f6e27]:
+          - generic [ref=f6e28]: Password
+          - generic [ref=f6e29]:
+            - textbox "Password" [ref=f6e30]:
+              - /placeholder: ••••••••
+            - button "Toggle password visibility" [ref=f6e31] [cursor=pointer]:
+              - generic [ref=f6e32]: visibility
+          - link "Forgot your password?" [ref=f6e34] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/forgot-password
+        - generic [ref=f6e35]:
+          - checkbox "Keep me signed in" [ref=f6e36] [cursor=pointer]
+          - generic [ref=f6e37] [cursor=pointer]: Keep me signed in
+        - button "Sign in" [ref=f6e39] [cursor=pointer]
+        - generic [ref=f6e40]: or
+        - paragraph [ref=f6e45]:
+          - text: Don't have an account?
+          - link "Create one" [ref=f6e46] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/register

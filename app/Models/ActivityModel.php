@@ -29,7 +29,9 @@ class ActivityModel extends Model
         'notes',
         'images',
         'embedding',
-        'is_shown'
+        'is_shown',
+        'latitude',
+        'longitude',
     ];
 
     protected $casts = [
@@ -38,12 +40,34 @@ class ActivityModel extends Model
         'exclusions' => 'array',
         'itinerary' => 'array',
         'images' => 'array',
-        'is_shown' => 'boolean'
+        'is_shown' => 'boolean',
+        'latitude' => 'decimal:8',
+        'longitude' => 'decimal:8',
     ];
 
     public function destination()
     {
         return $this->belongsTo(DestinationModel::class, 'destination_id');
+    }
+
+    /**
+     * Resolve effective coordinates for this activity, falling back to its
+     * destination center when the activity has no precise coordinates set.
+     */
+    public function getLatitudeWithFallbackAttribute(): ?float
+    {
+        if ($this->latitude !== null) {
+            return (float) $this->latitude;
+        }
+        return $this->destination ? (float) $this->destination->latitude : null;
+    }
+
+    public function getLongitudeWithFallbackAttribute(): ?float
+    {
+        if ($this->longitude !== null) {
+            return (float) $this->longitude;
+        }
+        return $this->destination ? (float) $this->destination->longitude : null;
     }
 
     public function packages()

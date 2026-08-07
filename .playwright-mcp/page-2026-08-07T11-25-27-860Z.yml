@@ -1,0 +1,149 @@
+- generic [active] [ref=f12e1]:
+  - complementary [ref=f12e2]:
+    - generic [ref=f12e4]:
+      - link "SunnyTrips" [ref=f12e5] [cursor=pointer]:
+        - /url: http://127.0.0.1:8000/dashboard
+      - paragraph [ref=f12e7]:
+        - generic [ref=f12e9]: Traveler Portal
+    - navigation [ref=f12e10]:
+      - generic [ref=f12e11]:
+        - heading "Main Navigation" [level=2] [ref=f12e12]
+        - generic [ref=f12e13]:
+          - link "space_dashboard Dashboard" [ref=f12e14] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/dashboard
+            - generic [ref=f12e15]: space_dashboard
+            - generic [ref=f12e16]: Dashboard
+          - link "shopping_basket My Trip Basket" [ref=f12e17] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/cart
+            - generic [ref=f12e18]: shopping_basket
+            - generic [ref=f12e19]: My Trip Basket
+          - link "auto_stories My Bookings" [ref=f12e20] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/bookings
+            - generic [ref=f12e21]: auto_stories
+            - generic [ref=f12e22]: My Bookings
+          - link "reviews Guest Reviews" [ref=f12e23] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/reviews
+            - generic [ref=f12e24]: reviews
+            - generic [ref=f12e25]: Guest Reviews
+      - generic [ref=f12e26]:
+        - heading "Explore Catalog" [level=2] [ref=f12e27]
+        - generic [ref=f12e28]:
+          - link "location_on Island Destinations" [ref=f12e29] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/destinations
+            - generic [ref=f12e30]: location_on
+            - generic [ref=f12e31]: Island Destinations
+          - link "hotel Hotels & Sanctuaries" [ref=f12e32] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/hotels
+            - generic [ref=f12e33]: hotel
+            - generic [ref=f12e34]: Hotels & Sanctuaries
+          - link "king_bed Rooms & Stays" [ref=f12e35] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/rooms
+            - generic [ref=f12e36]: king_bed
+            - generic [ref=f12e37]: Rooms & Stays
+          - link "explore Activities & Tours" [ref=f12e38] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/activities
+            - generic [ref=f12e39]: explore
+            - generic [ref=f12e40]: Activities & Tours
+          - link "extension Transfers & Add-ons" [ref=f12e41] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/addons
+            - generic [ref=f12e42]: extension
+            - generic [ref=f12e43]: Transfers & Add-ons
+          - link "card_travel Tour Packages & Promos" [ref=f12e44] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/packages
+            - generic [ref=f12e45]: card_travel
+            - generic [ref=f12e46]: Tour Packages & Promos
+      - generic [ref=f12e47]:
+        - heading "Personalization" [level=2] [ref=f12e48]
+        - generic [ref=f12e49]:
+          - link "tune AI Preferences Quiz" [ref=f12e50] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/onboarding
+            - generic [ref=f12e51]: tune
+            - generic [ref=f12e52]: AI Preferences Quiz
+          - link "manage_accounts Account Profile" [ref=f12e53] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/profile
+            - generic [ref=f12e54]: manage_accounts
+            - generic [ref=f12e55]: Account Profile
+    - generic [ref=f12e56]:
+      - generic [ref=f12e57]:
+        - generic [ref=f12e58]: T
+        - generic [ref=f12e59]:
+          - generic [ref=f12e60]: Test User
+          - generic [ref=f12e61]: test@example.com
+      - button "logout Log Out" [ref=f12e63] [cursor=pointer]:
+        - generic [ref=f12e64]: logout
+        - generic [ref=f12e65]: Log Out
+  - main [ref=f12e66]:
+    - generic [ref=f12e68]:
+      - generic [ref=f12e69]:
+        - generic [ref=f12e70]:
+          - heading "Explore the Islands" [level=1] [ref=f12e71]
+          - paragraph [ref=f12e72]: Every hotel, experience and destination across the Philippines — in one interactive view.
+        - generic [ref=f12e73]:
+          - button "All" [ref=f12e74] [cursor=pointer]
+          - button "Hotels" [ref=f12e75] [cursor=pointer]
+          - button "Activities" [ref=f12e76] [cursor=pointer]
+      - generic [ref=f12e77]:
+        - generic [ref=f12e79]:
+          - generic:
+            - generic:
+              - button [ref=f12e80] [cursor=pointer]
+              - button [ref=f12e82] [cursor=pointer]
+              - button [ref=f12e84] [cursor=pointer]
+              - button [ref=f12e86] [cursor=pointer]
+              - button [ref=f12e88] [cursor=pointer]
+              - button [ref=f12e90] [cursor=pointer]
+              - button [ref=f12e92] [cursor=pointer]
+              - button [ref=f12e94] [cursor=pointer]
+              - button [ref=f12e96] [cursor=pointer]
+              - button [ref=f12e98] [cursor=pointer]
+              - button [ref=f12e100] [cursor=pointer]
+              - button [ref=f12e102] [cursor=pointer]
+              - button [ref=f12e104] [cursor=pointer]
+              - button [ref=f12e106] [cursor=pointer]
+              - button [ref=f12e108] [cursor=pointer]
+              - button [ref=f12e110] [cursor=pointer]
+              - button [ref=f12e112] [cursor=pointer]
+              - button [ref=f12e114] [cursor=pointer]
+              - button [ref=f12e116] [cursor=pointer]
+              - button [ref=f12e118] [cursor=pointer]
+              - button [ref=f12e120] [cursor=pointer]
+              - button [ref=f12e122] [cursor=pointer]
+              - button [ref=f12e124] [cursor=pointer]
+              - button [ref=f12e126] [cursor=pointer]
+              - button [ref=f12e128] [cursor=pointer]
+              - button [ref=f12e130] [cursor=pointer]
+              - button [ref=f12e132] [cursor=pointer]
+              - button [ref=f12e134] [cursor=pointer]
+              - button [ref=f12e136] [cursor=pointer]
+              - button [ref=f12e138] [cursor=pointer]
+              - button [ref=f12e140] [cursor=pointer]
+              - button [ref=f12e142] [cursor=pointer]
+              - button [ref=f12e144] [cursor=pointer]
+              - button [ref=f12e146] [cursor=pointer]
+              - button [ref=f12e148] [cursor=pointer]
+              - button [ref=f12e150] [cursor=pointer]
+              - button [ref=f12e152] [cursor=pointer]
+              - button [ref=f12e154] [cursor=pointer]
+              - button [ref=f12e156] [cursor=pointer]
+              - button [ref=f12e158] [cursor=pointer]
+              - button [ref=f12e160] [cursor=pointer]
+              - button [ref=f12e162] [cursor=pointer]
+              - button [ref=f12e164] [cursor=pointer]
+              - button [ref=f12e166] [cursor=pointer]
+              - button [ref=f12e168] [cursor=pointer]
+              - button [ref=f12e170] [cursor=pointer]
+              - button [ref=f12e172] [cursor=pointer]
+              - button [ref=f12e174] [cursor=pointer]
+              - button [ref=f12e176] [cursor=pointer]
+              - button [ref=f12e178] [cursor=pointer]
+              - button [ref=f12e180] [cursor=pointer]
+          - generic:
+            - generic [ref=f12e182]:
+              - button "Zoom in" [ref=f12e183] [cursor=pointer]: +
+              - button "Zoom out" [ref=f12e184] [cursor=pointer]: −
+            - generic [ref=f12e185]:
+              - link "Leaflet" [ref=f12e186] [cursor=pointer]:
+                - /url: https://leafletjs.com
+              - text: "| © OpenStreetMap contributors"
+        - complementary [ref=f12e191]:
+          - generic [ref=f12e192]: Tap a marker on the map to see its details here.

@@ -1,0 +1,346 @@
+- generic [active] [ref=f75e1]:
+  - complementary [ref=f75e2]:
+    - generic [ref=f75e4]:
+      - link "SunnyTrips" [ref=f75e5] [cursor=pointer]:
+        - /url: http://127.0.0.1:8000/dashboard
+      - paragraph [ref=f75e7]:
+        - generic [ref=f75e9]: Traveler Portal
+    - navigation [ref=f75e10]:
+      - generic [ref=f75e11]:
+        - heading "Main Navigation" [level=2] [ref=f75e12]
+        - generic [ref=f75e13]:
+          - link "space_dashboard Dashboard" [ref=f75e14] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/dashboard
+            - generic [ref=f75e15]: space_dashboard
+            - generic [ref=f75e16]: Dashboard
+          - link "shopping_basket My Trip Basket" [ref=f75e17] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/cart
+            - generic [ref=f75e18]: shopping_basket
+            - generic [ref=f75e19]: My Trip Basket
+          - link "auto_stories My Bookings" [ref=f75e20] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/bookings
+            - generic [ref=f75e21]: auto_stories
+            - generic [ref=f75e22]: My Bookings
+          - link "reviews Guest Reviews" [ref=f75e23] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/reviews
+            - generic [ref=f75e24]: reviews
+            - generic [ref=f75e25]: Guest Reviews
+      - generic [ref=f75e26]:
+        - heading "Explore Catalog" [level=2] [ref=f75e27]
+        - generic [ref=f75e28]:
+          - link "location_on Island Destinations" [ref=f75e29] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/destinations
+            - generic [ref=f75e30]: location_on
+            - generic [ref=f75e31]: Island Destinations
+          - link "hotel Hotels & Sanctuaries" [ref=f75e32] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/hotels
+            - generic [ref=f75e33]: hotel
+            - generic [ref=f75e34]: Hotels & Sanctuaries
+          - link "king_bed Rooms & Stays" [ref=f75e35] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/rooms
+            - generic [ref=f75e36]: king_bed
+            - generic [ref=f75e37]: Rooms & Stays
+          - link "explore Activities & Tours" [ref=f75e38] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/activities
+            - generic [ref=f75e39]: explore
+            - generic [ref=f75e40]: Activities & Tours
+          - link "extension Transfers & Add-ons" [ref=f75e41] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/addons
+            - generic [ref=f75e42]: extension
+            - generic [ref=f75e43]: Transfers & Add-ons
+          - link "card_travel Tour Packages & Promos" [ref=f75e44] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/packages
+            - generic [ref=f75e45]: card_travel
+            - generic [ref=f75e46]: Tour Packages & Promos
+      - generic [ref=f75e47]:
+        - heading "Account" [level=2] [ref=f75e48]
+        - link "manage_accounts Account Profile" [ref=f75e50] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/profile
+          - generic [ref=f75e51]: manage_accounts
+          - generic [ref=f75e52]: Account Profile
+    - generic [ref=f75e53]:
+      - generic [ref=f75e54]:
+        - generic [ref=f75e55]: T
+        - generic [ref=f75e56]:
+          - generic [ref=f75e57]: Test User
+          - generic [ref=f75e58]: test@example.com
+      - button "logout Log Out" [ref=f75e60] [cursor=pointer]:
+        - generic [ref=f75e61]: logout
+        - generic [ref=f75e62]: Log Out
+  - main [ref=f75e63]:
+    - generic [ref=f75e65]:
+      - generic [ref=f75e66]:
+        - img "Henann Garden Resort" [ref=f75e67]
+        - generic [ref=f75e69]:
+          - generic [ref=f75e70]:
+            - generic [ref=f75e71]: High End Luxury Hotels
+            - generic [ref=f75e72]:
+              - generic [ref=f75e73]: location_on
+              - text: Boracay
+          - heading "Henann Garden Resort" [level=1] [ref=f75e74]
+          - paragraph [ref=f75e75]:
+            - generic [ref=f75e76]: pin_drop
+            - text: Station 2, White Beach
+          - generic [ref=f75e77]:
+            - generic [ref=f75e78]: "#Tropical Garden"
+            - generic [ref=f75e79]: "#Lagoon Pools"
+            - generic [ref=f75e80]: "#Central Location"
+            - generic [ref=f75e81]: "#Resort Oasis"
+      - generic [ref=f75e82]:
+        - generic [ref=f75e83]:
+          - generic [ref=f75e84]:
+            - heading "Hotel Description" [level=2] [ref=f75e85]
+            - paragraph [ref=f75e87]: Henann Garden is located in Station 2, just a 2-minute walk from White Beach and close to D'Mall. It has several lagoon-style pools and lush landscaping. With spacious rooms and on-site dining, it's perfect for travelers seeking comfort and convenience in the island's center.
+          - generic [ref=f75e88]:
+            - heading "Exclusive Amenities & Services" [level=3] [ref=f75e91]
+            - generic [ref=f75e92]:
+              - generic [ref=f75e93]:
+                - generic [ref=f75e94]: pool
+                - paragraph [ref=f75e97]: Multiple Lagoon Pools
+              - generic [ref=f75e98]:
+                - generic [ref=f75e99]: star
+                - paragraph [ref=f75e102]: Lush Gardens
+              - generic [ref=f75e103]:
+                - generic [ref=f75e104]: restaurant
+                - paragraph [ref=f75e107]: Buffet Breakfast
+              - generic [ref=f75e108]:
+                - generic [ref=f75e109]: fitness_center
+                - paragraph [ref=f75e112]: Fitness Center
+        - generic [ref=f75e115]:
+          - generic [ref=f75e116]: king_bed
+          - generic [ref=f75e118]:
+            - heading "Select a Room" [level=3] [ref=f75e119]
+            - paragraph [ref=f75e120]: Choose your preferred room type from the gallery below to view live pricing and details.
+          - link "Browse Available Rooms arrow_downward" [ref=f75e121] [cursor=pointer]:
+            - /url: "#room-gallery"
+            - generic [ref=f75e122]: Browse Available Rooms
+            - generic [ref=f75e123]: arrow_downward
+      - generic [ref=f75e124]:
+        - generic [ref=f75e125]:
+          - generic [ref=f75e126]:
+            - heading "Available Room Types" [level=2] [ref=f75e127]
+            - paragraph [ref=f75e128]: Explore available suites & rooms at Henann Garden Resort
+          - generic [ref=f75e129]: 1 Room Type
+        - generic [ref=f75e131]:
+          - generic [ref=f75e132]:
+            - generic [ref=f75e133] [cursor=pointer]:
+              - img "Premier Family Room" [ref=f75e134]
+              - generic [ref=f75e136]:
+                - generic [ref=f75e137]: visibility
+                - text: Quick Preview
+              - generic [ref=f75e138]: ₱8,400.00 / night
+              - generic [ref=f75e139]:
+                - generic [ref=f75e140]: visibility
+                - text: Lagoon Pool View
+            - generic [ref=f75e141]:
+              - heading "Premier Family Room" [level=3] [ref=f75e143] [cursor=pointer]
+              - paragraph [ref=f75e144]: Large family-oriented room surrounding the resort lagoon pool. Multiple bed options and spacious lounge area.
+              - generic [ref=f75e145]:
+                - generic [ref=f75e146]:
+                  - generic [ref=f75e147]: bed
+                  - text: 1 Queen Bed & 2 Twin Beds
+                - generic [ref=f75e148]:
+                  - generic [ref=f75e149]: group
+                  - text: "Base: 2 • Max: 4 Guests"
+                - generic [ref=f75e150]:
+                  - generic [ref=f75e151]: aspect_ratio
+                  - text: 52 sq.m
+          - generic [ref=f75e152]:
+            - button "visibility Preview" [ref=f75e153] [cursor=pointer]:
+              - generic [ref=f75e154]: visibility
+              - generic [ref=f75e155]: Preview
+            - button "touch_app Select" [ref=f75e156] [cursor=pointer]:
+              - generic [ref=f75e157]: touch_app
+              - generic [ref=f75e158]: Select
+      - generic [ref=f75e159]:
+        - generic [ref=f75e160]:
+          - heading "Hotel Photo Gallery" [level=2] [ref=f75e161]
+          - paragraph [ref=f75e162]: Immerse yourself in the atmosphere of Henann Garden Resort
+        - generic [ref=f75e163]:
+          - generic [ref=f75e164] [cursor=pointer]:
+            - img "Hotel photo 1" [ref=f75e165]
+            - generic [ref=f75e166]: zoom_in
+          - generic [ref=f75e168] [cursor=pointer]:
+            - img "Hotel photo 2" [ref=f75e169]
+            - generic [ref=f75e170]: zoom_in
+      - generic [ref=f75e172]:
+        - generic [ref=f75e173]:
+          - generic [ref=f75e174]:
+            - heading "Location & Weather" [level=2] [ref=f75e175]
+            - paragraph [ref=f75e176]: Where you'll be staying and what to expect
+          - generic [ref=f75e178]:
+            - paragraph [ref=f75e179]: 28°C
+            - paragraph [ref=f75e180]: light rain
+        - generic [ref=f75e181]:
+          - button "my_location Distance from me" [ref=f75e185] [cursor=pointer]:
+            - generic [ref=f75e186]: my_location
+            - generic [ref=f75e187]: Distance from me
+          - generic [ref=f75e188]:
+            - generic [ref=f75e189]:
+              - heading "Boracay Forecast" [level=3] [ref=f75e190]
+              - generic [ref=f75e191]:
+                - generic [ref=f75e192]:
+                  - generic [ref=f75e193]:
+                    - img "light rain" [ref=f75e194]
+                    - generic [ref=f75e195]:
+                      - paragraph [ref=f75e196]: 28°C
+                      - paragraph [ref=f75e197]: light rain
+                  - generic [ref=f75e198]: ☔ 100% rain
+                - generic [ref=f75e199]:
+                  - generic [ref=f75e200]:
+                    - paragraph [ref=f75e201]: Feels like
+                    - paragraph [ref=f75e202]: 33°C
+                  - generic [ref=f75e203]:
+                    - paragraph [ref=f75e204]: Humidity
+                    - paragraph [ref=f75e205]: 79%
+                  - generic [ref=f75e206]:
+                    - paragraph [ref=f75e207]: High
+                    - paragraph [ref=f75e208]: 28°C
+                - generic [ref=f75e209]:
+                  - generic [ref=f75e210]:
+                    - paragraph [ref=f75e211]: Fri, Aug 7
+                    - paragraph [ref=f75e212]: 28°/28°
+                  - generic [ref=f75e213]:
+                    - paragraph [ref=f75e214]: Sat, Aug 8
+                    - paragraph [ref=f75e215]: 28°/28°
+                  - generic [ref=f75e216]:
+                    - paragraph [ref=f75e217]: Sun, Aug 9
+                    - paragraph [ref=f75e218]: 28°/28°
+                  - generic [ref=f75e219]:
+                    - paragraph [ref=f75e220]: Mon, Aug 10
+                    - paragraph [ref=f75e221]: 28°/28°
+                  - generic [ref=f75e222]:
+                    - paragraph [ref=f75e223]: Tue, Aug 11
+                    - paragraph [ref=f75e224]: 28°/28°
+            - generic [ref=f75e225]:
+              - heading "Nearby Experiences" [level=3] [ref=f75e226]
+              - list [ref=f75e227]:
+                - listitem [ref=f75e228]:
+                  - generic [ref=f75e229]:
+                    - generic [ref=f75e230]:
+                      - paragraph [ref=f75e231]: Party Yacht
+                      - paragraph [ref=f75e232]: Boracay
+                    - generic [ref=f75e233]: 359 m from hotel
+                  - generic [ref=f75e234]:
+                    - button "my_location Calculate Distance" [ref=f75e235] [cursor=pointer]:
+                      - generic [ref=f75e236]: my_location
+                      - text: Calculate Distance
+                    - button "visibility View Details" [ref=f75e237] [cursor=pointer]:
+                      - generic [ref=f75e238]: visibility
+                      - text: View Details
+                - listitem [ref=f75e239]:
+                  - generic [ref=f75e240]:
+                    - generic [ref=f75e241]:
+                      - paragraph [ref=f75e242]: Crystal Kayak
+                      - paragraph [ref=f75e243]: Boracay
+                    - generic [ref=f75e244]: 380 m from hotel
+                  - generic [ref=f75e245]:
+                    - button "my_location Calculate Distance" [ref=f75e246] [cursor=pointer]:
+                      - generic [ref=f75e247]: my_location
+                      - text: Calculate Distance
+                    - button "visibility View Details" [ref=f75e248] [cursor=pointer]:
+                      - generic [ref=f75e249]: visibility
+                      - text: View Details
+                - listitem [ref=f75e250]:
+                  - generic [ref=f75e251]:
+                    - generic [ref=f75e252]:
+                      - paragraph [ref=f75e253]: Party Boat
+                      - paragraph [ref=f75e254]: Boracay
+                    - generic [ref=f75e255]: 398 m from hotel
+                  - generic [ref=f75e256]:
+                    - button "my_location Calculate Distance" [ref=f75e257] [cursor=pointer]:
+                      - generic [ref=f75e258]: my_location
+                      - text: Calculate Distance
+                    - button "visibility View Details" [ref=f75e259] [cursor=pointer]:
+                      - generic [ref=f75e260]: visibility
+                      - text: View Details
+                - listitem [ref=f75e261]:
+                  - generic [ref=f75e262]:
+                    - generic [ref=f75e263]:
+                      - paragraph [ref=f75e264]: Banana Boat
+                      - paragraph [ref=f75e265]: Boracay
+                    - generic [ref=f75e266]: 414 m from hotel
+                  - generic [ref=f75e267]:
+                    - button "my_location Calculate Distance" [ref=f75e268] [cursor=pointer]:
+                      - generic [ref=f75e269]: my_location
+                      - text: Calculate Distance
+                    - button "visibility View Details" [ref=f75e270] [cursor=pointer]:
+                      - generic [ref=f75e271]: visibility
+                      - text: View Details
+                - listitem [ref=f75e272]:
+                  - generic [ref=f75e273]:
+                    - generic [ref=f75e274]:
+                      - paragraph [ref=f75e275]: 6–7 Destinations (Aircon Van)
+                      - paragraph [ref=f75e276]: Boracay
+                    - generic [ref=f75e277]: 414 m from hotel
+                  - generic [ref=f75e278]:
+                    - button "my_location Calculate Distance" [ref=f75e279] [cursor=pointer]:
+                      - generic [ref=f75e280]: my_location
+                      - text: Calculate Distance
+                    - button "visibility View Details" [ref=f75e281] [cursor=pointer]:
+                      - generic [ref=f75e282]: visibility
+                      - text: View Details
+                - listitem [ref=f75e283]:
+                  - generic [ref=f75e284]:
+                    - generic [ref=f75e285]:
+                      - paragraph [ref=f75e286]: 6–7 Destinations (E-Trike)
+                      - paragraph [ref=f75e287]: Boracay
+                    - generic [ref=f75e288]: 741 m from hotel
+                  - generic [ref=f75e289]:
+                    - button "my_location Calculate Distance" [ref=f75e290] [cursor=pointer]:
+                      - generic [ref=f75e291]: my_location
+                      - text: Calculate Distance
+                    - button "visibility View Details" [ref=f75e292] [cursor=pointer]:
+                      - generic [ref=f75e293]: visibility
+                      - text: View Details
+      - generic [ref=f75e294]:
+        - article [ref=f75e295]:
+          - generic [ref=f75e296]:
+            - generic [ref=f75e297]:
+              - generic [ref=f75e298]: J
+              - generic [ref=f75e299]:
+                - paragraph [ref=f75e300]: Jose R.
+                - paragraph [ref=f75e301]:
+                  - generic [ref=f75e302]: verified
+                  - text: Verified booking · Aug 3, 2026
+            - generic [ref=f75e303]:
+              - generic [ref=f75e304]:
+                - generic [ref=f75e305]: star
+                - generic [ref=f75e306]: star
+                - generic [ref=f75e307]: star
+                - generic [ref=f75e308]: star
+                - generic [ref=f75e309]: star
+              - generic [ref=f75e310]:
+                - generic [ref=f75e311]: sentiment_neutral
+                - text: Neutral
+          - paragraph [ref=f75e312]: Spacious balcony with a perfect beachfront view. Water pressure can be low during peak hours though.
+          - generic [ref=f75e313]:
+            - generic [ref=f75e314]: "#spacious balcony"
+            - generic [ref=f75e315]: "#beachfront view"
+            - generic [ref=f75e316]: "#low water pressure"
+            - generic [ref=f75e317]: "#peak hours"
+        - article [ref=f75e318]:
+          - generic [ref=f75e319]:
+            - generic [ref=f75e320]:
+              - generic [ref=f75e321]: A
+              - generic [ref=f75e322]:
+                - paragraph [ref=f75e323]: Ana R.
+                - paragraph [ref=f75e324]:
+                  - generic [ref=f75e325]: verified
+                  - text: Verified booking · Jul 1, 2026
+            - generic [ref=f75e326]:
+              - generic [ref=f75e327]:
+                - generic [ref=f75e328]: star
+                - generic [ref=f75e329]: star
+                - generic [ref=f75e330]: star
+                - generic [ref=f75e331]: star
+                - generic [ref=f75e332]: star
+              - generic [ref=f75e333]:
+                - generic [ref=f75e334]: sentiment_neutral
+                - text: Neutral
+          - paragraph [ref=f75e335]: Nice modern room with a great view. Extra person fee was a bit steep though.
+          - generic [ref=f75e336]:
+            - generic [ref=f75e337]: "#modern room"
+            - generic [ref=f75e338]: "#great view"
+            - generic [ref=f75e339]: "#extra person fee"
+            - generic [ref=f75e340]: "#steep fee"

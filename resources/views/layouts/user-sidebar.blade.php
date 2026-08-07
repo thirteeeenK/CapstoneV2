@@ -66,8 +66,8 @@
                     ['route' => 'packages.*', 'icon' => 'card_travel', 'label' => 'Tour Packages & Promos', 'href' => route('packages.index')],
                    
                 ],
-                'Personalization' => [
-                    ['route' => 'onboarding.*', 'icon' => 'tune', 'label' => 'AI Preferences Quiz', 'href' => route('onboarding.index')],
+                'Account' => [
+                    // ['route' => 'onboarding.*', 'icon' => 'tune', 'label' => 'AI Preferences Quiz', 'href' => route('onboarding.index')],
                     ['route' => 'profile.edit', 'icon' => 'manage_accounts', 'label' => 'Account Profile', 'href' => route('profile.edit')],
                 ],
             ];
