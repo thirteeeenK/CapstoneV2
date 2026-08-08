@@ -1,0 +1,540 @@
+- generic [active] [ref=f3e1]:
+  - banner [ref=f3e2]:
+    - generic [ref=f3e3]:
+      - generic [ref=f3e4]:
+        - generic [ref=f3e5]: admin_panel_settings
+        - generic [ref=f3e6]:
+          - generic [ref=f3e7]: SunnyTrips
+          - generic [ref=f3e8]: Admin
+      - generic [ref=f3e9]:
+        - generic [ref=f3e10]:
+          - generic [ref=f3e11]: A
+          - generic "sunnytrips@gmail.com" [ref=f3e12]: Administrator
+        - button "logout Sign out" [ref=f3e15] [cursor=pointer]:
+          - generic [ref=f3e16]: logout
+          - generic [ref=f3e17]: Sign out
+  - complementary [ref=f3e18]:
+    - generic [ref=f3e19]:
+      - heading "SunnyTrips" [level=1] [ref=f3e20]
+      - paragraph [ref=f3e21]: Admin Portal
+    - navigation [ref=f3e22]:
+      - generic [ref=f3e23]:
+        - heading "Overview" [level=2] [ref=f3e24]
+        - generic [ref=f3e25]:
+          - link "dashboard Dashboard" [ref=f3e26] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/dashboard
+            - generic [ref=f3e27]: dashboard
+            - generic [ref=f3e28]: Dashboard
+          - link "psychology AI Insights" [ref=f3e29] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=f3e30]: psychology
+            - generic [ref=f3e31]: AI Insights
+          - link "analytics Generate Reports" [ref=f3e32] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/reports
+            - generic [ref=f3e33]: analytics
+            - generic [ref=f3e34]: Generate Reports
+      - generic [ref=f3e35]:
+        - heading "Operations" [level=2] [ref=f3e36]
+        - generic [ref=f3e37]:
+          - link "calendar_month Bookings" [ref=f3e38] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/bookings
+            - generic [ref=f3e39]: calendar_month
+            - generic [ref=f3e40]: Bookings
+          - link "group Registered Users" [ref=f3e41] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/registered-users
+            - generic [ref=f3e42]: group
+            - generic [ref=f3e43]: Registered Users
+          - link "inventory Manage Inventory" [ref=f3e44] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/inventory
+            - generic [ref=f3e45]: inventory
+            - generic [ref=f3e46]: Manage Inventory
+          - link "tune Passenger Rules & Discounts" [ref=f3e47] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/passenger-rules
+            - generic [ref=f3e48]: tune
+            - generic [ref=f3e49]: Passenger Rules & Discounts
+      - generic [ref=f3e50]:
+        - heading "Catalog" [level=2] [ref=f3e51]
+        - generic [ref=f3e52]:
+          - link "place Destinations" [ref=f3e53] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/destinations
+            - generic [ref=f3e54]: place
+            - generic [ref=f3e55]: Destinations
+          - link "house Add Hotel Information" [ref=f3e56] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/hotels/manage
+            - generic [ref=f3e57]: house
+            - generic [ref=f3e58]: Add Hotel Information
+          - link "hotel Show Hotel Listing" [ref=f3e59] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/hotels
+            - generic [ref=f3e60]: hotel
+            - generic [ref=f3e61]: Show Hotel Listing
+          - link "card_travel Tour Packages & Promos" [ref=f3e62] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/packages
+            - generic [ref=f3e63]: card_travel
+            - generic [ref=f3e64]: Tour Packages & Promos
+          - link "explore Activities & Tours" [ref=f3e65] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/activities
+            - generic [ref=f3e66]: explore
+            - generic [ref=f3e67]: Activities & Tours
+          - link "extension Transfers and Add-ons" [ref=f3e68] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/addons
+            - generic [ref=f3e69]: extension
+            - generic [ref=f3e70]: Transfers and Add-ons
+          - link "psychology Manage AI" [ref=f3e71] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=f3e72]: psychology
+            - generic [ref=f3e73]: Manage AI
+      - generic [ref=f3e74]:
+        - heading "Legal" [level=2] [ref=f3e75]
+        - link "gavel Legal Documents" [ref=f3e77] [cursor=pointer]:
+          - /url: http://localhost:8000/admin/legal
+          - generic [ref=f3e78]: gavel
+          - generic [ref=f3e79]: Legal Documents
+      - generic [ref=f3e80]:
+        - heading "Community" [level=2] [ref=f3e81]
+        - link "reviews Reviews & Sentiment" [ref=f3e83] [cursor=pointer]:
+          - /url: http://localhost:8000/admin/reviews
+          - generic [ref=f3e84]: reviews
+          - generic [ref=f3e85]: Reviews & Sentiment
+  - main [ref=f3e86]:
+    - generic [ref=f3e88]:
+      - generic [ref=f3e90]:
+        - heading "Registered Users & Moderation" [level=1] [ref=f3e91]
+        - paragraph [ref=f3e92]: Manage user accounts, monitor AI chatbot abuse flags, and handle account suspensions.
+      - generic [ref=f3e94]:
+        - generic [ref=f3e95]:
+          - generic [ref=f3e96]:
+            - generic [ref=f3e97]: filter_list
+            - text: "Status:"
+          - link "All Users 13" [ref=f3e98] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/registered-users?tab=all
+            - generic [ref=f3e99]: All Users
+            - generic [ref=f3e100]: "13"
+          - link "warning Flagged Users 0" [ref=f3e101] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/registered-users?tab=flagged
+            - generic [ref=f3e102]: warning
+            - generic [ref=f3e103]: Flagged Users
+            - generic [ref=f3e104]: "0"
+          - link "block Banned Users 0" [ref=f3e105] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/registered-users?tab=banned
+            - generic [ref=f3e106]: block
+            - generic [ref=f3e107]: Banned Users
+            - generic [ref=f3e108]: "0"
+        - generic [ref=f3e109]:
+          - generic [ref=f3e110]:
+            - generic [ref=f3e111]: search
+            - textbox "Search user name or email..." [ref=f3e112]
+          - button "Search" [ref=f3e113] [cursor=pointer]
+      - table [ref=f3e116]:
+        - rowgroup [ref=f3e117]:
+          - row [ref=f3e118]:
+            - columnheader "#" [ref=f3e119]
+            - columnheader "Registered User" [ref=f3e120]
+            - columnheader "Contact & Address" [ref=f3e121]
+            - columnheader "Joined Date" [ref=f3e122]
+            - columnheader "Account Status" [ref=f3e123]
+            - columnheader "Chatbot Abuse Flags" [ref=f3e124]
+            - columnheader "Actions" [ref=f3e125]
+        - rowgroup [ref=f3e126]:
+          - row [ref=f3e127]:
+            - cell "1" [ref=f3e128]
+            - cell "BA Ban Test bantest@example.com" [ref=f3e129]:
+              - generic [ref=f3e130]:
+                - generic [ref=f3e131]: BA
+                - generic [ref=f3e132]:
+                  - generic [ref=f3e133]: Ban Test
+                  - generic [ref=f3e134]: bantest@example.com
+            - 'cell "Phone: N/A No address set" [ref=f3e135]':
+              - generic [ref=f3e136]:
+                - strong [ref=f3e137]: "Phone:"
+                - text: N/A
+              - generic [ref=f3e138]: No address set
+            - cell "Aug 08, 2026" [ref=f3e139]
+            - cell "check_circle Active" [ref=f3e140]:
+              - generic [ref=f3e141]:
+                - generic [ref=f3e142]: check_circle
+                - text: Active
+            - cell "shield Clean" [ref=f3e143]:
+              - generic [ref=f3e144]:
+                - generic [ref=f3e145]: shield
+                - text: Clean
+            - cell [ref=f3e146]:
+              - generic [ref=f3e147]:
+                - link "visibility View Logs" [ref=f3e148] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/registered-users/13
+                  - generic [ref=f3e149]: visibility
+                  - text: View Logs
+                - button "gavel Moderate" [ref=f3e151] [cursor=pointer]:
+                  - generic [ref=f3e152]: gavel
+                  - text: Moderate
+          - row [ref=f3e153]:
+            - cell "2" [ref=f3e154]
+            - cell "RE Rey Gann Pamor johnkenly1120@gmail.com" [ref=f3e155]:
+              - generic [ref=f3e156]:
+                - generic [ref=f3e157]: RE
+                - generic [ref=f3e158]:
+                  - generic [ref=f3e159]: Rey Gann Pamor
+                  - generic [ref=f3e160]: johnkenly1120@gmail.com
+            - 'cell "Phone: 09517644005 Zone 4, New San Roque, Pili, Camarines Sur" [ref=f3e161]':
+              - generic [ref=f3e162]:
+                - strong [ref=f3e163]: "Phone:"
+                - text: "09517644005"
+              - generic "Zone 4, New San Roque, Pili, Camarines Sur" [ref=f3e164]
+            - cell "Aug 08, 2026" [ref=f3e165]
+            - cell "check_circle Active" [ref=f3e166]:
+              - generic [ref=f3e167]:
+                - generic [ref=f3e168]: check_circle
+                - text: Active
+            - cell "shield Clean" [ref=f3e169]:
+              - generic [ref=f3e170]:
+                - generic [ref=f3e171]: shield
+                - text: Clean
+            - cell [ref=f3e172]:
+              - generic [ref=f3e173]:
+                - link "visibility View Logs" [ref=f3e174] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/registered-users/12
+                  - generic [ref=f3e175]: visibility
+                  - text: View Logs
+                - button "gavel Moderate" [ref=f3e177] [cursor=pointer]:
+                  - generic [ref=f3e178]: gavel
+                  - text: Moderate
+          - row [ref=f3e179]:
+            - cell "3" [ref=f3e180]
+            - cell "PR Prof. Abelardo Borer caroline88@example.net" [ref=f3e181]:
+              - generic [ref=f3e182]:
+                - generic [ref=f3e183]: PR
+                - generic [ref=f3e184]:
+                  - generic [ref=f3e185]: Prof. Abelardo Borer
+                  - generic [ref=f3e186]: caroline88@example.net
+            - 'cell "Phone: N/A No address set" [ref=f3e187]':
+              - generic [ref=f3e188]:
+                - strong [ref=f3e189]: "Phone:"
+                - text: N/A
+              - generic [ref=f3e190]: No address set
+            - cell "Aug 08, 2026" [ref=f3e191]
+            - cell "check_circle Active" [ref=f3e192]:
+              - generic [ref=f3e193]:
+                - generic [ref=f3e194]: check_circle
+                - text: Active
+            - cell "shield Clean" [ref=f3e195]:
+              - generic [ref=f3e196]:
+                - generic [ref=f3e197]: shield
+                - text: Clean
+            - cell [ref=f3e198]:
+              - generic [ref=f3e199]:
+                - link "visibility View Logs" [ref=f3e200] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/registered-users/11
+                  - generic [ref=f3e201]: visibility
+                  - text: View Logs
+                - button "gavel Moderate" [ref=f3e203] [cursor=pointer]:
+                  - generic [ref=f3e204]: gavel
+                  - text: Moderate
+          - row [ref=f3e205]:
+            - cell "4" [ref=f3e206]
+            - cell "NI Nicole Bautista nicole.bautista@example.com" [ref=f3e207]:
+              - generic [ref=f3e208]:
+                - generic [ref=f3e209]: NI
+                - generic [ref=f3e210]:
+                  - generic [ref=f3e211]: Nicole Bautista
+                  - generic [ref=f3e212]: nicole.bautista@example.com
+            - 'cell "Phone: N/A No address set" [ref=f3e213]':
+              - generic [ref=f3e214]:
+                - strong [ref=f3e215]: "Phone:"
+                - text: N/A
+              - generic [ref=f3e216]: No address set
+            - cell "Aug 06, 2026" [ref=f3e217]
+            - cell "check_circle Active" [ref=f3e218]:
+              - generic [ref=f3e219]:
+                - generic [ref=f3e220]: check_circle
+                - text: Active
+            - cell "shield Clean" [ref=f3e221]:
+              - generic [ref=f3e222]:
+                - generic [ref=f3e223]: shield
+                - text: Clean
+            - cell [ref=f3e224]:
+              - generic [ref=f3e225]:
+                - link "visibility View Logs" [ref=f3e226] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/registered-users/10
+                  - generic [ref=f3e227]: visibility
+                  - text: View Logs
+                - button "gavel Moderate" [ref=f3e229] [cursor=pointer]:
+                  - generic [ref=f3e230]: gavel
+                  - text: Moderate
+          - row [ref=f3e231]:
+            - cell "5" [ref=f3e232]
+            - cell "PA Paolo Garcia paolo.garcia@example.com" [ref=f3e233]:
+              - generic [ref=f3e234]:
+                - generic [ref=f3e235]: PA
+                - generic [ref=f3e236]:
+                  - generic [ref=f3e237]: Paolo Garcia
+                  - generic [ref=f3e238]: paolo.garcia@example.com
+            - 'cell "Phone: N/A No address set" [ref=f3e239]':
+              - generic [ref=f3e240]:
+                - strong [ref=f3e241]: "Phone:"
+                - text: N/A
+              - generic [ref=f3e242]: No address set
+            - cell "Aug 06, 2026" [ref=f3e243]
+            - cell "check_circle Active" [ref=f3e244]:
+              - generic [ref=f3e245]:
+                - generic [ref=f3e246]: check_circle
+                - text: Active
+            - cell "shield Clean" [ref=f3e247]:
+              - generic [ref=f3e248]:
+                - generic [ref=f3e249]: shield
+                - text: Clean
+            - cell [ref=f3e250]:
+              - generic [ref=f3e251]:
+                - link "visibility View Logs" [ref=f3e252] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/registered-users/9
+                  - generic [ref=f3e253]: visibility
+                  - text: View Logs
+                - button "gavel Moderate" [ref=f3e255] [cursor=pointer]:
+                  - generic [ref=f3e256]: gavel
+                  - text: Moderate
+          - row [ref=f3e257]:
+            - cell "6" [ref=f3e258]
+            - cell "KA Kaye Villanueva kaye.villanueva@example.com" [ref=f3e259]:
+              - generic [ref=f3e260]:
+                - generic [ref=f3e261]: KA
+                - generic [ref=f3e262]:
+                  - generic [ref=f3e263]: Kaye Villanueva
+                  - generic [ref=f3e264]: kaye.villanueva@example.com
+            - 'cell "Phone: N/A No address set" [ref=f3e265]':
+              - generic [ref=f3e266]:
+                - strong [ref=f3e267]: "Phone:"
+                - text: N/A
+              - generic [ref=f3e268]: No address set
+            - cell "Aug 06, 2026" [ref=f3e269]
+            - cell "check_circle Active" [ref=f3e270]:
+              - generic [ref=f3e271]:
+                - generic [ref=f3e272]: check_circle
+                - text: Active
+            - cell "shield Clean" [ref=f3e273]:
+              - generic [ref=f3e274]:
+                - generic [ref=f3e275]: shield
+                - text: Clean
+            - cell [ref=f3e276]:
+              - generic [ref=f3e277]:
+                - link "visibility View Logs" [ref=f3e278] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/registered-users/8
+                  - generic [ref=f3e279]: visibility
+                  - text: View Logs
+                - button "gavel Moderate" [ref=f3e281] [cursor=pointer]:
+                  - generic [ref=f3e282]: gavel
+                  - text: Moderate
+          - row [ref=f3e283]:
+            - cell "7" [ref=f3e284]
+            - cell "MI Michael Tan michael.tan@example.com" [ref=f3e285]:
+              - generic [ref=f3e286]:
+                - generic [ref=f3e287]: MI
+                - generic [ref=f3e288]:
+                  - generic [ref=f3e289]: Michael Tan
+                  - generic [ref=f3e290]: michael.tan@example.com
+            - 'cell "Phone: N/A No address set" [ref=f3e291]':
+              - generic [ref=f3e292]:
+                - strong [ref=f3e293]: "Phone:"
+                - text: N/A
+              - generic [ref=f3e294]: No address set
+            - cell "Aug 06, 2026" [ref=f3e295]
+            - cell "check_circle Active" [ref=f3e296]:
+              - generic [ref=f3e297]:
+                - generic [ref=f3e298]: check_circle
+                - text: Active
+            - cell "shield Clean" [ref=f3e299]:
+              - generic [ref=f3e300]:
+                - generic [ref=f3e301]: shield
+                - text: Clean
+            - cell [ref=f3e302]:
+              - generic [ref=f3e303]:
+                - link "visibility View Logs" [ref=f3e304] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/registered-users/7
+                  - generic [ref=f3e305]: visibility
+                  - text: View Logs
+                - button "gavel Moderate" [ref=f3e307] [cursor=pointer]:
+                  - generic [ref=f3e308]: gavel
+                  - text: Moderate
+          - row [ref=f3e309]:
+            - cell "8" [ref=f3e310]
+            - cell "AN Ana Reyes ana.reyes@example.com" [ref=f3e311]:
+              - generic [ref=f3e312]:
+                - generic [ref=f3e313]: AN
+                - generic [ref=f3e314]:
+                  - generic [ref=f3e315]: Ana Reyes
+                  - generic [ref=f3e316]: ana.reyes@example.com
+            - 'cell "Phone: N/A No address set" [ref=f3e317]':
+              - generic [ref=f3e318]:
+                - strong [ref=f3e319]: "Phone:"
+                - text: N/A
+              - generic [ref=f3e320]: No address set
+            - cell "Aug 06, 2026" [ref=f3e321]
+            - cell "check_circle Active" [ref=f3e322]:
+              - generic [ref=f3e323]:
+                - generic [ref=f3e324]: check_circle
+                - text: Active
+            - cell "shield Clean" [ref=f3e325]:
+              - generic [ref=f3e326]:
+                - generic [ref=f3e327]: shield
+                - text: Clean
+            - cell [ref=f3e328]:
+              - generic [ref=f3e329]:
+                - link "visibility View Logs" [ref=f3e330] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/registered-users/6
+                  - generic [ref=f3e331]: visibility
+                  - text: View Logs
+                - button "gavel Moderate" [ref=f3e333] [cursor=pointer]:
+                  - generic [ref=f3e334]: gavel
+                  - text: Moderate
+          - row [ref=f3e335]:
+            - cell "9" [ref=f3e336]
+            - cell "JO Jose Ramirez jose.ramirez@example.com" [ref=f3e337]:
+              - generic [ref=f3e338]:
+                - generic [ref=f3e339]: JO
+                - generic [ref=f3e340]:
+                  - generic [ref=f3e341]: Jose Ramirez
+                  - generic [ref=f3e342]: jose.ramirez@example.com
+            - 'cell "Phone: N/A No address set" [ref=f3e343]':
+              - generic [ref=f3e344]:
+                - strong [ref=f3e345]: "Phone:"
+                - text: N/A
+              - generic [ref=f3e346]: No address set
+            - cell "Aug 06, 2026" [ref=f3e347]
+            - cell "check_circle Active" [ref=f3e348]:
+              - generic [ref=f3e349]:
+                - generic [ref=f3e350]: check_circle
+                - text: Active
+            - cell "shield Clean" [ref=f3e351]:
+              - generic [ref=f3e352]:
+                - generic [ref=f3e353]: shield
+                - text: Clean
+            - cell [ref=f3e354]:
+              - generic [ref=f3e355]:
+                - link "visibility View Logs" [ref=f3e356] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/registered-users/5
+                  - generic [ref=f3e357]: visibility
+                  - text: View Logs
+                - button "gavel Moderate" [ref=f3e359] [cursor=pointer]:
+                  - generic [ref=f3e360]: gavel
+                  - text: Moderate
+          - row [ref=f3e361]:
+            - cell "10" [ref=f3e362]
+            - cell "JO John Dela Cruz john.delacruz@example.com" [ref=f3e363]:
+              - generic [ref=f3e364]:
+                - generic [ref=f3e365]: JO
+                - generic [ref=f3e366]:
+                  - generic [ref=f3e367]: John Dela Cruz
+                  - generic [ref=f3e368]: john.delacruz@example.com
+            - 'cell "Phone: N/A No address set" [ref=f3e369]':
+              - generic [ref=f3e370]:
+                - strong [ref=f3e371]: "Phone:"
+                - text: N/A
+              - generic [ref=f3e372]: No address set
+            - cell "Aug 06, 2026" [ref=f3e373]
+            - cell "check_circle Active" [ref=f3e374]:
+              - generic [ref=f3e375]:
+                - generic [ref=f3e376]: check_circle
+                - text: Active
+            - cell "shield Clean" [ref=f3e377]:
+              - generic [ref=f3e378]:
+                - generic [ref=f3e379]: shield
+                - text: Clean
+            - cell [ref=f3e380]:
+              - generic [ref=f3e381]:
+                - link "visibility View Logs" [ref=f3e382] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/registered-users/4
+                  - generic [ref=f3e383]: visibility
+                  - text: View Logs
+                - button "gavel Moderate" [ref=f3e385] [cursor=pointer]:
+                  - generic [ref=f3e386]: gavel
+                  - text: Moderate
+          - row [ref=f3e387]:
+            - cell "11" [ref=f3e388]
+            - cell "MA Maria Santos maria.santos@example.com" [ref=f3e389]:
+              - generic [ref=f3e390]:
+                - generic [ref=f3e391]: MA
+                - generic [ref=f3e392]:
+                  - generic [ref=f3e393]: Maria Santos
+                  - generic [ref=f3e394]: maria.santos@example.com
+            - 'cell "Phone: N/A No address set" [ref=f3e395]':
+              - generic [ref=f3e396]:
+                - strong [ref=f3e397]: "Phone:"
+                - text: N/A
+              - generic [ref=f3e398]: No address set
+            - cell "Aug 06, 2026" [ref=f3e399]
+            - cell "check_circle Active" [ref=f3e400]:
+              - generic [ref=f3e401]:
+                - generic [ref=f3e402]: check_circle
+                - text: Active
+            - cell "shield Clean" [ref=f3e403]:
+              - generic [ref=f3e404]:
+                - generic [ref=f3e405]: shield
+                - text: Clean
+            - cell [ref=f3e406]:
+              - generic [ref=f3e407]:
+                - link "visibility View Logs" [ref=f3e408] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/registered-users/3
+                  - generic [ref=f3e409]: visibility
+                  - text: View Logs
+                - button "gavel Moderate" [ref=f3e411] [cursor=pointer]:
+                  - generic [ref=f3e412]: gavel
+                  - text: Moderate
+          - row [ref=f3e413]:
+            - cell "12" [ref=f3e414]
+            - cell "JO John Kenly Pamor johnkenlypamor13@gmail.com" [ref=f3e415]:
+              - generic [ref=f3e416]:
+                - generic [ref=f3e417]: JO
+                - generic [ref=f3e418]:
+                  - generic [ref=f3e419]: John Kenly Pamor
+                  - generic [ref=f3e420]: johnkenlypamor13@gmail.com
+            - 'cell "Phone: 09517644005 Zone 4, New San Roque, Pili, Camarines Sur" [ref=f3e421]':
+              - generic [ref=f3e422]:
+                - strong [ref=f3e423]: "Phone:"
+                - text: "09517644005"
+              - generic "Zone 4, New San Roque, Pili, Camarines Sur" [ref=f3e424]
+            - cell "Aug 05, 2026" [ref=f3e425]
+            - cell "check_circle Active" [ref=f3e426]:
+              - generic [ref=f3e427]:
+                - generic [ref=f3e428]: check_circle
+                - text: Active
+            - cell "shield Clean" [ref=f3e429]:
+              - generic [ref=f3e430]:
+                - generic [ref=f3e431]: shield
+                - text: Clean
+            - cell [ref=f3e432]:
+              - generic [ref=f3e433]:
+                - link "visibility View Logs" [ref=f3e434] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/registered-users/2
+                  - generic [ref=f3e435]: visibility
+                  - text: View Logs
+                - button "gavel Moderate" [ref=f3e437] [cursor=pointer]:
+                  - generic [ref=f3e438]: gavel
+                  - text: Moderate
+          - row [ref=f3e439]:
+            - cell "13" [ref=f3e440]
+            - cell "TE Test User test@example.com" [ref=f3e441]:
+              - generic [ref=f3e442]:
+                - generic [ref=f3e443]: TE
+                - generic [ref=f3e444]:
+                  - generic [ref=f3e445]: Test User
+                  - generic [ref=f3e446]: test@example.com
+            - 'cell "Phone: N/A No address set" [ref=f3e447]':
+              - generic [ref=f3e448]:
+                - strong [ref=f3e449]: "Phone:"
+                - text: N/A
+              - generic [ref=f3e450]: No address set
+            - cell "Aug 05, 2026" [ref=f3e451]
+            - cell "check_circle Active" [ref=f3e452]:
+              - generic [ref=f3e453]:
+                - generic [ref=f3e454]: check_circle
+                - text: Active
+            - cell "shield Clean" [ref=f3e455]:
+              - generic [ref=f3e456]:
+                - generic [ref=f3e457]: shield
+                - text: Clean
+            - cell [ref=f3e458]:
+              - generic [ref=f3e459]:
+                - link "visibility View Logs" [ref=f3e460] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/registered-users/1
+                  - generic [ref=f3e461]: visibility
+                  - text: View Logs
+                - button "gavel Moderate" [ref=f3e463] [cursor=pointer]:
+                  - generic [ref=f3e464]: gavel
+                  - text: Moderate

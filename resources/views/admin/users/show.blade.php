@@ -15,46 +15,7 @@
             </div>
 
             <div class="flex items-center gap-3">
-                @if(!$user->is_banned)
-                    <div x-data="{ openBanModal: false }">
-                        <button @click="openBanModal = true" type="button"
-                                class="inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-sm transition-colors cursor-pointer">
-                            <span class="material-symbols-outlined text-[18px]">block</span>
-                            Ban User Account
-                        </button>
-
-                        <!-- Ban Confirmation Modal -->
-                        <div x-show="openBanModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm" x-cloak style="display: none;">
-                            <div @click.away="openBanModal = false" class="bg-white rounded-lg p-6 w-full max-w-sm border border-slate-200 shadow-lg text-left">
-                                <div class="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center mb-4 text-rose-600">
-                                    <span class="material-symbols-outlined text-xl">block</span>
-                                </div>
-                                <h3 class="text-sm font-bold text-slate-900">Ban User Account</h3>
-                                <p class="text-xs text-slate-500 mt-1 leading-relaxed">
-                                    Are you sure you want to suspend <strong class="text-slate-700">{{ $user->name }}</strong>? They will be blocked from using the AI Chatbot.
-                                </p>
-
-                                <form action="{{ route('admin.users.ban', $user->id) }}" method="POST" class="mt-4 space-y-4">
-                                    @csrf
-                                    <div class="space-y-1">
-                                        <label class="block text-xs font-semibold text-slate-700">Reason for Suspension</label>
-                                        <textarea name="ban_reason" rows="3" required placeholder="e.g. Repeated inappropriate queries and chatbot rule abuse."
-                                                  class="w-full text-xs bg-slate-50 border border-slate-300 rounded p-2 text-slate-900 focus:ring-2 focus:ring-rose-500/20 focus:border-rose-600"></textarea>
-                                    </div>
-
-                                    <div class="flex gap-3 pt-2">
-                                        <button @click="openBanModal = false" type="button" class="flex-1 h-8 px-3 bg-white border border-slate-300 text-slate-700 text-xs font-medium rounded hover:bg-slate-50 transition-colors">
-                                            Cancel
-                                        </button>
-                                        <button type="submit" class="flex-1 h-8 px-3 bg-rose-600 hover:bg-rose-700 text-white text-xs font-medium rounded transition-colors">
-                                            Confirm Ban
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                @else
+                @if($user->ban_level)
                     <form action="{{ route('admin.users.unban', $user->id) }}" method="POST">
                         @csrf
                         <button type="submit" onclick="return confirm('Restore normal access for {{ $user->name }}?')"
@@ -63,6 +24,86 @@
                             Restore Account Access
                         </button>
                     </form>
+                @endif
+
+                @if(!$user->isPermanentlyBanned() && !$user->isTemporarilyBanned())
+                    <div x-data="{ openBanModal: false, level: 'temporary' }">
+                        <button @click="openBanModal = true" type="button"
+                                class="inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-sm transition-colors cursor-pointer">
+                            <span class="material-symbols-outlined text-[18px]">gavel</span>
+                            Moderate Account
+                        </button>
+
+                        <!-- Ban Confirmation Modal -->
+                        <div x-show="openBanModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm" x-cloak style="display: none;">
+                            <div @click.away="openBanModal = false" class="bg-white rounded-lg p-6 w-full max-w-md border border-slate-200 shadow-lg text-left">
+                                <div class="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center mb-4 text-rose-600">
+                                    <span class="material-symbols-outlined text-xl">gavel</span>
+                                </div>
+                                <h3 class="text-sm font-bold text-slate-900">Moderate {{ $user->name }}'s Account</h3>
+                                <p class="text-xs text-slate-500 mt-1 leading-relaxed">
+                                    Warnings are notices only. Temporary suspensions and permanent bans revoke login access.
+                                </p>
+
+                                <form action="{{ route('admin.users.ban', $user->id) }}" method="POST" class="mt-4 space-y-4">
+                                    @csrf
+                                    <div class="space-y-2">
+                                        <label class="block text-xs font-semibold text-slate-700">Action Level</label>
+
+                                        <label class="flex items-start gap-2.5 p-2.5 border rounded-md cursor-pointer transition-colors"
+                                               :class="level === 'warning' ? 'border-amber-400 bg-amber-50/60' : 'border-slate-200 hover:bg-slate-50'">
+                                            <input type="radio" name="ban_level" value="warning" x-model="level" class="mt-0.5 accent-amber-600" />
+                                            <span>
+                                                <span class="block text-xs font-semibold text-slate-800">Warning</span>
+                                                <span class="block text-[11px] text-slate-500">Records a notice; account stays fully active.</span>
+                                            </span>
+                                        </label>
+
+                                        <label class="flex items-start gap-2.5 p-2.5 border rounded-md cursor-pointer transition-colors"
+                                               :class="level === 'temporary' ? 'border-rose-400 bg-rose-50/60' : 'border-slate-200 hover:bg-slate-50'">
+                                            <input type="radio" name="ban_level" value="temporary" x-model="level" checked class="mt-0.5 accent-rose-600" />
+                                            <span>
+                                                <span class="block text-xs font-semibold text-slate-800">Temporary suspension</span>
+                                                <span class="block text-[11px] text-slate-500">Blocks login until the expiry date.</span>
+                                            </span>
+                                        </label>
+
+                                        <label class="flex items-start gap-2.5 p-2.5 border rounded-md cursor-pointer transition-colors"
+                                               :class="level === 'permanent' ? 'border-rose-600 bg-rose-50/60' : 'border-slate-200 hover:bg-slate-50'">
+                                            <input type="radio" name="ban_level" value="permanent" x-model="level" class="mt-0.5 accent-rose-700" />
+                                            <span>
+                                                <span class="block text-xs font-semibold text-slate-800">Permanent ban</span>
+                                                <span class="block text-[11px] text-slate-500">Permanently revokes access.</span>
+                                            </span>
+                                        </label>
+                                    </div>
+
+                                    <div x-show="level === 'temporary'" x-cloak class="space-y-1">
+                                        <label for="ban_duration_days" class="block text-xs font-semibold text-slate-700">Suspension Duration (days)</label>
+                                        <input id="ban_duration_days" type="number" name="ban_duration_days" min="1" max="365" value="7"
+                                               x-bind:required="level === 'temporary'"
+                                               class="w-full text-xs bg-slate-50 border border-slate-300 rounded p-2 text-slate-900 focus:ring-2 focus:ring-rose-500/20 focus:border-rose-600" />
+                                    </div>
+
+                                    <div class="space-y-1">
+                                        <label class="block text-xs font-semibold text-slate-700">Reason</label>
+                                        <textarea name="ban_reason" rows="3" x-bind:required="level !== 'warning'"
+                                                  placeholder="e.g. Repeated inappropriate queries and rule abuse."
+                                                  class="w-full text-xs bg-slate-50 border border-slate-300 rounded p-2 text-slate-900 focus:ring-2 focus:ring-rose-500/20 focus:border-rose-600"></textarea>
+                                    </div>
+
+                                    <div class="flex gap-3 pt-2">
+                                        <button @click="openBanModal = false" type="button" class="flex-1 h-8 px-3 bg-white border border-slate-300 text-slate-700 text-xs font-medium rounded hover:bg-slate-50 transition-colors">
+                                            Cancel
+                                        </button>
+                                        <button type="submit" class="flex-1 h-8 px-3 bg-rose-600 hover:bg-rose-700 text-white text-xs font-medium rounded transition-colors">
+                                            Apply Action
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
                 @endif
             </div>
         </div>
@@ -102,9 +143,17 @@
                 <div>
                     <span class="text-slate-400 font-medium block uppercase tracking-wider">Account Status</span>
                     <div class="mt-1 flex items-center gap-2">
-                        @if($user->is_banned)
-                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                        @if($user->isPermanentlyBanned())
+                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-600 text-white border border-rose-700">
                                 <span class="material-symbols-outlined text-[14px]">block</span> Banned
+                            </span>
+                        @elseif($user->isTemporarilyBanned())
+                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                                <span class="material-symbols-outlined text-[14px]">schedule</span> Suspended until {{ $user->ban_expires_at->format('M d, Y') }}
+                            </span>
+                        @elseif($user->isWarned())
+                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-800 border border-amber-300">
+                                <span class="material-symbols-outlined text-[14px]">warning</span> Warned
                             </span>
                         @else
                             <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
@@ -121,9 +170,18 @@
                 </div>
             </div>
 
-            @if($user->is_banned && $user->ban_reason)
-                <div class="mt-4 p-3 bg-rose-50 border border-rose-200/80 rounded-md text-xs text-rose-800">
-                    <strong>Suspension Reason:</strong> {{ $user->ban_reason }}
+            @if($user->ban_level)
+                <div class="mt-4 p-3 bg-rose-50 border border-rose-200/80 rounded-md text-xs text-rose-800 space-y-1">
+                    @if($user->isWarned())
+                        <div><strong>Warning recorded</strong>@if($user->banned_at) on {{ $user->banned_at->format('M d, Y') }}@endif.</div>
+                    @elseif($user->isTemporarilyBanned())
+                        <div><strong>Temporary suspension</strong> issued {{ $user->banned_at?->format('M d, Y') }} · expires {{ $user->ban_expires_at->format('M d, Y') }}.</div>
+                    @else
+                        <div><strong>Permanent ban</strong> issued {{ $user->banned_at?->format('M d, Y') }}.</div>
+                    @endif
+                    @if($user->ban_reason)
+                        <div><strong>Reason:</strong> {{ $user->ban_reason }}</div>
+                    @endif
                 </div>
             @endif
         </div>

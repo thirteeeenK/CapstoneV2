@@ -115,7 +115,7 @@
                 <button type="button" @click="shuffle()" :disabled="loading || accepting"
                         class="inline-flex items-center gap-2.5 px-10 sm:px-14 py-4 rounded-full bg-gradient-to-r from-ocean-700 to-sky-500 text-white font-display font-bold text-base sm:text-lg shadow-lg shadow-ocean-600/30 hover:shadow-xl hover:shadow-ocean-600/40 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer disabled:opacity-60 disabled:cursor-wait disabled:hover:translate-y-0">
                     <template x-if="loading">
-                        <span class="w-5 h-5 rounded-full border-2 border-white/40 border-t-white animate-spin"></span>
+                        <x-thinking-orb state="working" :size="20" light class="shrink-0" />
                     </template>
                     <template x-if="!loading">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -378,6 +378,8 @@ gantt
     Response Caching & Rate Limiting   :p9, after p8, 1d
 ```
 
+> **UI loading indicator (Phase 3)**: While `POST /api/v1/chat` is in flight, render the bot's "thinking" state with the shared `<x-thinking-orb state="composing" :size="28" />` component (`resources/views/components/thinking-orb.blade.php`, engine in `resources/js/thinking-orb.js`). Use `paused`/`x-show` to stop animating when the bubble is hidden, and `light` when the orb sits on a colored background.
+
 ---
 
 ## 12. Best Practices, Caching & Performance

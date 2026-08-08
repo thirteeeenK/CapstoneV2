@@ -20,9 +20,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'no.cache' => NoCacheHeaders::class,
             'check.onboarding' => \App\Http\Middleware\CheckUserOnboarding::class,
+            'check.ban' => \App\Http\Middleware\CheckUserBan::class,
         ]);
 
         $middleware->web(append: [
+            \App\Http\Middleware\CheckUserBan::class,
             \App\Http\Middleware\CheckUserOnboarding::class,
         ]);
 

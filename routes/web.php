@@ -8,6 +8,10 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', [LandingController::class, 'index'])->name('landing');
 
+Route::get('/account-suspended', function () {
+    return view('account-suspended');
+})->name('account.suspended');
+
 Route::get('/terms-and-conditions', [LegalContentController::class, 'show'])->defaults('slug', 'terms')->name('terms');
 Route::get('/privacy-policy', [LegalContentController::class, 'show'])->defaults('slug', 'privacy-policy')->name('privacy-policy');
 Route::get('/ai-disclosure', [LegalContentController::class, 'show'])->defaults('slug', 'ai-disclosure')->name('ai-disclosure');

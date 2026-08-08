@@ -50,6 +50,17 @@ class LoginRequest extends FormRequest
             ]);
         }
 
+        $user = Auth::user();
+
+        if ($user && $user->isBanned()) {
+            Auth::logout();
+            RateLimiter::clear($this->throttleKey());
+
+            throw redirect()->route('account.suspended')
+                ->with('suspended', $user->banNotice())
+                ->throwResponse();
+        }
+
         RateLimiter::clear($this->throttleKey());
     }
 

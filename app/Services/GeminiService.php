@@ -1275,7 +1275,7 @@ class GeminiService
     public function detectAbuseAndGuard(User $user, string $message): ?array
     {
         // 1. Account Suspension Check
-        if ($user->is_banned) {
+        if ($user->isBanned()) {
             return [
                 'blocked' => true,
                 'response' => 'Your account has been suspended from using the AI Chatbot due to terms of service violations. Reason: ' . ($user->ban_reason ?? 'Repeated community guideline violations.'),

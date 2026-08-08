@@ -23,7 +23,7 @@ class RegisteredUserController extends Controller
         if ($tab === 'flagged') {
             $query->where('chatbot_flag_count', '>', 0);
         } elseif ($tab === 'banned') {
-            $query->where('is_banned', true);
+            $query->activeBan();
         }
 
         if ($search) {
@@ -39,7 +39,7 @@ class RegisteredUserController extends Controller
 
         $allCount = User::count();
         $flaggedCount = User::where('chatbot_flag_count', '>', 0)->count();
-        $bannedCount = User::where('is_banned', true)->count();
+        $bannedCount = User::activeBan()->count();
 
         return view('admin.users.index', compact(
             'users',
@@ -66,28 +66,45 @@ class RegisteredUserController extends Controller
     }
 
     /**
-     * Ban a registered user and update pending abuse reports.
+     * Apply a leveled action to a registered user: warning, temporary ban, or permanent ban.
      */
     public function ban(Request $request, $id)
     {
         $request->validate([
-            'ban_reason' => 'required|string|max:500',
+            'ban_level' => ['required', 'in:warning,temporary,permanent'],
+            'ban_reason' => ['required_unless:ban_level,warning', 'nullable', 'string', 'max:500'],
+            'ban_duration_days' => ['nullable', 'required_if:ban_level,temporary', 'integer', 'min:1', 'max:365'],
         ]);
 
         $user = User::findOrFail($id);
-        $user->is_banned = true;
-        $user->ban_reason = $request->ban_reason;
+        $user->ban_level = $request->ban_level;
+        $user->banned_at = now();
+        $user->ban_reason = $request->ban_reason ?: null;
+
+        if ($request->ban_level === 'temporary') {
+            $user->ban_expires_at = now()->addDays((int) $request->ban_duration_days);
+        } else {
+            $user->ban_expires_at = null;
+        }
+
         $user->save();
 
-        // Update pending abuse reports for this user
+        // Resolve any pending abuse reports (best effort; chatbot flow is a future feature).
+        $reportStatus = $request->ban_level === 'warning' ? 'reviewed_dismissed' : 'banned';
         ChatbotAbuseReport::where('user_id', $id)
             ->where('status', 'pending')
             ->update([
-                'status' => 'banned',
+                'status' => $reportStatus,
                 'reviewed_by' => Auth::guard('admin')->id(),
             ]);
 
-        return redirect()->back()->with('success', "User account {$user->name} has been suspended.");
+        $message = match ($request->ban_level) {
+            'warning' => "Warning recorded for user account {$user->name}.",
+            'temporary' => "User account {$user->name} has been temporarily suspended until {$user->ban_expires_at->format('M d, Y')}.",
+            default => "User account {$user->name} has been permanently suspended.",
+        };
+
+        return redirect()->back()->with('success', $message);
     }
 
     /**
@@ -96,7 +113,9 @@ class RegisteredUserController extends Controller
     public function unban($id)
     {
         $user = User::findOrFail($id);
-        $user->is_banned = false;
+        $user->ban_level = null;
+        $user->banned_at = null;
+        $user->ban_expires_at = null;
         $user->ban_reason = null;
         $user->save();
 

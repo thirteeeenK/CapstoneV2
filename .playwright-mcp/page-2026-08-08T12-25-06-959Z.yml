@@ -1,0 +1,22 @@
+- generic [ref=f27e2]:
+  - generic [ref=f27e3]:
+    - generic [ref=f27e4]:
+      - paragraph [ref=f27e5]: SunnyTrips · Traveler Console
+      - paragraph [ref=f27e6]: Aug 8, 2026
+    - generic [ref=f27e23]:
+      - paragraph [ref=f27e24]: SUS · Account Restricted
+      - generic [ref=f27e25]:
+        - generic [ref=f27e26]: block
+        - generic [ref=f27e27]: SUS
+      - heading "Your account has been suspended" [level=1] [ref=f27e28]
+      - paragraph [ref=f27e29]: "Your account has been permanently banned. Suspended on Aug 08, 2026. Reason: Repeated violations of the community guidelines."
+      - generic [ref=f27e30]:
+        - link "home Return Home" [ref=f27e31] [cursor=pointer]:
+          - /url: http://localhost:8000
+          - generic [ref=f27e32]: home
+          - generic [ref=f27e33]: Return Home
+        - link "support_agent Contact Support" [ref=f27e34] [cursor=pointer]:
+          - /url: mailto:support@sunnytripts.ph
+          - generic [ref=f27e35]: support_agent
+          - generic [ref=f27e36]: Contact Support
+  - paragraph [ref=f27e37]: SunnyTrips · Curated island escapes, verified before payment

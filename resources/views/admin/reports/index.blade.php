@@ -126,7 +126,7 @@
                     <button type="submit" :disabled="analyzing"
                             class="px-5 py-2.5 rounded-xl bg-sky-600 text-white font-extrabold text-xs transition-all hover:bg-sky-500 shadow-lg shadow-sky-600/25 flex items-center gap-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
                         <span class="material-symbols-outlined text-[16px]" x-show="!analyzing">auto_awesome</span>
-                        <span class="material-symbols-outlined text-[16px] animate-spin" x-show="analyzing">progress_activity</span>
+                        <x-thinking-orb state="searching" :size="16" light x-show="analyzing" class="shrink-0" aria-hidden="true" />
                         <span x-text="analyzing ? 'Analyzing...' : 'Analyze with AI'"></span>
                     </button>
                 </form>

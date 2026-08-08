@@ -17,11 +17,13 @@ class CheckUserOnboarding
         $user = Auth::user();
 
         if ($user && empty($user->preferences_embedding)) {
-            // Skip onboarding check for onboarding routes, logout, admin routes, or API calls
+            // Skip onboarding check for onboarding routes, logout, admin routes, the
+            // account-suspended page, or API calls
             if (
                 !$request->routeIs('onboarding.*') &&
                 !$request->routeIs('logout') &&
                 !$request->routeIs('admin.*') &&
+                !$request->routeIs('account.suspended') &&
                 !$request->is('admin*') &&
                 !$request->expectsJson()
             ) {

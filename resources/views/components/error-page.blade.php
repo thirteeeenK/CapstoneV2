@@ -38,6 +38,7 @@
         'dashboard'    => $adminAuthed ? 'Back to Admin Dashboard' : ($authed ? 'Return to Dashboard' : 'Sign In'),
         'reload'       => 'Refresh Page',
         'countdown'    => 'Try Again Later',
+        'support'      => 'Contact Support',
     ];
 
     $actionIcons = [
@@ -48,6 +49,7 @@
         'dashboard'    => 'space_dashboard',
         'reload'       => 'refresh',
         'countdown'    => 'hourglass_top',
+        'support'      => 'support_agent',
     ];
 
     $resolved = [];
@@ -95,6 +97,10 @@
             case 'reload':
             case 'countdown':
                 $js = 'window.location.reload()';
+                break;
+
+            case 'support':
+                $href = 'mailto:support@sunnytripts.ph';
                 break;
         }
 
