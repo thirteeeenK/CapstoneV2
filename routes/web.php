@@ -60,6 +60,7 @@ require __DIR__ . '/passengerRulesRoute.php';
 require __DIR__ . '/adminPackageRoute.php';
 require __DIR__ . '/bookingRoute.php';
 require __DIR__ . '/adminBookingRoute.php';
+require __DIR__ . '/adminReportRoute.php';
 require __DIR__ . '/paymentWebhookRoute.php';
 require __DIR__ . '/reviewRoute.php';
 require __DIR__ . '/adminReviewRoute.php';

@@ -106,7 +106,7 @@
 
         {{-- Lower Left User Profile & Logout --}}
         <div class="mt-auto px-4 pt-4 border-t border-slate-200 space-y-3">
-            <div class="flex items-center gap-3 px-2">
+            <!-- <div class="flex items-center gap-3 px-2">
                 <div
                     class="w-9 h-9 rounded-xl bg-sky-500/10 border border-sky-200 text-sky-700 font-bold flex items-center justify-center text-xs shrink-0">
                     {{ strtoupper(substr(Auth::user()->name ?? 'U', 0, 1)) }}
@@ -115,7 +115,7 @@
                     <div class="font-bold text-xs text-slate-900 truncate">{{ Auth::user()->name }}</div>
                     <div class="text-[10px] text-slate-400 truncate">{{ Auth::user()->email }}</div>
                 </div>
-            </div>
+            </div> -->
 
             {{-- Logout Form Button positioned at lower left --}}
             <form method="POST" action="{{ route('logout') }}">

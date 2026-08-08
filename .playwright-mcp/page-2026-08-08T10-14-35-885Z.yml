@@ -1,0 +1,25 @@
+- generic [ref=f6e2]:
+  - generic [ref=f6e3]:
+    - generic [ref=f6e4]:
+      - paragraph [ref=f6e5]: SunnyTrips · Traveler Console
+      - paragraph [ref=f6e6]: Aug 8, 2026
+    - generic [ref=f6e23]:
+      - paragraph [ref=f6e24]: 404 · Page Not Found
+      - generic [ref=f6e25]:
+        - generic [ref=f6e26]: explore_off
+        - generic [ref=f6e27]: "404"
+      - heading "Lost at sea" [level=1] [ref=f6e28]
+      - paragraph [ref=f6e29]: The page you're looking for has drifted off the map — it may have moved, been renamed, or no longer exists. The rest of the islands are still open for exploring.
+      - generic [ref=f6e30]:
+        - button "arrow_back Go Back" [ref=f6e31] [cursor=pointer]:
+          - generic [ref=f6e32]: arrow_back
+          - generic [ref=f6e33]: Go Back
+        - link "explore Browse Destinations" [ref=f6e34] [cursor=pointer]:
+          - /url: http://localhost:8000/destinations
+          - generic [ref=f6e35]: explore
+          - generic [ref=f6e36]: Browse Destinations
+        - link "home Return Home" [ref=f6e37] [cursor=pointer]:
+          - /url: http://localhost:8000
+          - generic [ref=f6e38]: home
+          - generic [ref=f6e39]: Return Home
+  - paragraph [ref=f6e40]: SunnyTrips · Curated island escapes, verified before payment

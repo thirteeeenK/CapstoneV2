@@ -555,6 +555,19 @@
                                 @endif
                             @endif
 
+                            @if($booking->admin_discount_amount > 0)
+                                <div class="flex items-center justify-between text-emerald-700 font-semibold">
+                                    <dt>Admin discount</dt>
+                                    <dd>-₱{{ number_format($booking->admin_discount_amount, 2) }}</dd>
+                                </div>
+                            @endif
+                            @if($booking->admin_surcharge_amount > 0)
+                                <div class="flex items-center justify-between text-amber-800 font-semibold">
+                                    <dt>Additional amount</dt>
+                                    <dd>+₱{{ number_format($booking->admin_surcharge_amount, 2) }}</dd>
+                                </div>
+                            @endif
+
                             <div class="flex items-center justify-between pt-3 mt-2 border-t-2 border-dashed border-sand-200">
                                 <dt class="font-headline text-sm font-bold text-slate-900">
                                     {{ $paidOrDone ? 'Total paid' : 'Total due' }}
@@ -562,6 +575,24 @@
                                 <dd class="font-headline text-xl font-black text-ocean-800">₱{{ number_format($booking->net_amount, 2) }}</dd>
                             </div>
                         </dl>
+
+                        @if($booking->price_adjusted_at && ($booking->admin_discount_amount > 0 || $booking->admin_surcharge_amount > 0) && $booking->price_adjustment_reason)
+                            @php
+                                $adjOnlyDiscount = $booking->admin_discount_amount > 0 && $booking->admin_surcharge_amount == 0;
+                                $adjOnlySurcharge = $booking->admin_surcharge_amount > 0 && $booking->admin_discount_amount == 0;
+                                $adjCardClasses = $adjOnlySurcharge
+                                    ? 'bg-amber-50 border-amber-200 text-amber-900'
+                                    : 'bg-emerald-50 border-emerald-200 text-emerald-900';
+                                $adjIcon = $adjOnlyDiscount ? 'savings' : ($adjOnlySurcharge ? 'add_card' : 'swap_vert');
+                            @endphp
+                            <div class="mt-4 rounded-2xl border px-4 py-3 text-xs leading-relaxed {{ $adjCardClasses }}">
+                                <p class="font-bold flex items-center gap-1.5 mb-1">
+                                    <span class="material-symbols-outlined text-[14px]">{{ $adjIcon }}</span>
+                                    Note from SunnyTrips
+                                </p>
+                                <p>{{ $booking->price_adjustment_reason }}</p>
+                            </div>
+                        @endif
                     </section>
 
                     {{-- Under-review checklist (pending only) --}}

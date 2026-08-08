@@ -271,12 +271,46 @@
                             <span>+₱{{ number_format((float)$booking->tax_amount, 2) }}</span>
                         </div>
                     @endif
+                    @if((float)$booking->admin_discount_amount > 0)
+                        <div class="flex items-center justify-between text-emerald-700 font-semibold">
+                            <span>Admin Discount</span>
+                            <span>-₱{{ number_format((float)$booking->admin_discount_amount, 2) }}</span>
+                        </div>
+                    @endif
+                    @if((float)$booking->admin_surcharge_amount > 0)
+                        <div class="flex items-center justify-between text-amber-800 font-semibold">
+                            <span>Additional Amount</span>
+                            <span>+₱{{ number_format((float)$booking->admin_surcharge_amount, 2) }}</span>
+                        </div>
+                    @endif
                     <div class="flex items-center justify-between text-sm font-black text-slate-900 pt-2 border-t border-slate-200">
                         <span>Net Amount Charged After Approval</span>
                         <span class="text-base text-sky-900">₱{{ number_format((float)$booking->net_amount, 2) }}</span>
                     </div>
 
                     @if($booking->status === 'pending')
+                        <div class="pt-3 border-t border-slate-200">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block mb-1">Admin discount (−)</label>
+                                    <input type="number" name="admin_discount_amount" min="0" step="0.01" value="{{ old('admin_discount_amount', '') }}"
+                                           placeholder="0.00"
+                                           class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">
+                                </div>
+                                <div>
+                                    <label class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block mb-1">Additional amount (+)</label>
+                                    <input type="number" name="admin_surcharge_amount" min="0" step="0.01" value="{{ old('admin_surcharge_amount', '') }}"
+                                           placeholder="0.00"
+                                           class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <label class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block mb-1">Reason for adjustment (shown to customer)</label>
+                                <textarea name="price_adjustment_reason" rows="2" placeholder="e.g. Applied a ₱500 courtesy discount because the room was unavailable on the first night."
+                                          class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">{{ old('price_adjustment_reason', '') }}</textarea>
+                            </div>
+                            <p class="text-[10px] text-slate-400 font-medium mt-1.5">A reason is required when either amount is set. Adjustments are locked in at approval.</p>
+                        </div>
                         <div class="pt-3">
                             <label class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block mb-1">Admin notes to customer (optional)</label>
                             <textarea name="admin_notes" rows="2" placeholder="e.g. Room upgraded to a higher floor at no extra cost."

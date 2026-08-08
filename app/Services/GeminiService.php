@@ -950,6 +950,125 @@ class GeminiService
         return array_slice(array_keys($freq), 0, 6);
     }
 
+    // =========================================================================
+    //  Admin Booking Report Analysis (DSS)
+    // =========================================================================
+
+    /**
+     * AI analysis of an admin booking report.
+     *
+     * @param  array  $stats  Compact report payload from AdminReportController.
+     * @return array  ['executive_summary' => string,
+     *                'insights' => string[],
+     *                'anomalies' => string[],
+     *                'recommendations' => string[]]
+     */
+    public function analyzeBookingReport(array $stats): array
+    {
+        $systemInstruction = $this->loadSystemPrompt('booking-report-analysis-prompt.md');
+
+        $prompt = "Booking Report Stats (JSON):\n" . json_encode($stats, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+
+        $raw = $this->generateContent($systemInstruction, $prompt);
+
+        if ($raw) {
+            $decoded = json_decode($raw, true);
+            if (is_array($decoded)) {
+                $stringList = fn($list) => array_values(array_filter(array_map(
+                    fn($item) => is_string($item) ? mb_substr(trim($item), 0, 300) : null,
+                    is_array($list) ? $list : []
+                )));
+
+                $summary = isset($decoded['executive_summary']) && is_string($decoded['executive_summary'])
+                    ? mb_substr(trim($decoded['executive_summary']), 0, 1000)
+                    : '';
+
+                return [
+                    'executive_summary' => $summary,
+                    'insights' => $stringList($decoded['insights'] ?? []),
+                    'anomalies' => $stringList($decoded['anomalies'] ?? []),
+                    'recommendations' => $stringList($decoded['recommendations'] ?? []),
+                ];
+            }
+        }
+
+        return $this->fallbackBookingReportAnalysis($stats);
+    }
+
+    /**
+     * Deterministic offline fallback for booking report analysis
+     * (no API key, timeout, or malformed response).
+     */
+    public function fallbackBookingReportAnalysis(array $stats): array
+    {
+        $total = (int) ($stats['total_bookings'] ?? 0);
+        $collected = (float) ($stats['revenue']['collected'] ?? 0);
+        $estimated = (float) ($stats['revenue']['estimated_awaiting_payment'] ?? 0);
+        $avg = (float) ($stats['average_booking_value'] ?? 0);
+        $breakdown = $stats['status_breakdown'] ?? [];
+        $range = $stats['range'] ?? '';
+        $peak = $stats['peak_day'] ?? null;
+        $stale = (int) ($stats['stale_pending_count'] ?? 0);
+        $refunds = (int) ($stats['refunded_count'] ?? 0);
+        $adjustments = (int) ($stats['admin_price_adjustments'] ?? 0);
+        $expired = (int) ($stats['expired_count'] ?? 0);
+        $statusLabel = $stats['status_filter'] ?? 'all statuses';
+
+        $summary = "This report covers {$range} ({$statusLabel}). "
+            . ($total > 0
+                ? "It contains {$total} booking" . ($total > 1 ? 's' : '') . " worth ₱" . number_format($collected) . " collected (paid) plus ₱" . number_format($estimated) . " awaiting payment, averaging ₱" . number_format($avg, 2) . " per booking."
+                : 'It contains no bookings matching the current filters.');
+
+        $insights = [];
+        if ($total > 0) {
+            $insights[] = "Average booking value is ₱" . number_format($avg, 2) . " across the period.";
+            if ($estimated > 0) {
+                $insights[] = "₱" . number_format($estimated) . " is awaiting payment from approved bookings not yet settled.";
+            }
+            foreach (['pending', 'paid', 'completed', 'rejected', 'cancelled', 'expired'] as $key) {
+                if (isset($breakdown[$key]) && $breakdown[$key] > 0) {
+                    $pct = round(($breakdown[$key] / $total) * 100);
+                    $insights[] = ucfirst($key) . " bookings account for {$pct}% of the period volume ({$breakdown[$key]} total).";
+                }
+            }
+            if ($peak) {
+                $insights[] = "Busiest day was {$peak['date']} with {$peak['bookings']} booking(s).";
+            }
+        }
+
+        $anomalies = [];
+        if ($stale > 0) {
+            $anomalies[] = "{$stale} pending booking(s) have not been reviewed for over 48 hours.";
+        }
+        if ($expired > 0) {
+            $anomalies[] = "{$expired} booking(s) expired without payment during this period.";
+        }
+        if ($refunds > 0) {
+            $anomalies[] = "{$refunds} booking(s) were refunded, worth reviewing for recurring causes.";
+        }
+        if ($adjustments > 0) {
+            $anomalies[] = "{$adjustments} booking(s) received manual admin price adjustments.";
+        }
+        if (empty($anomalies)) {
+            $anomalies[] = 'No major anomalies detected in the current period.';
+        }
+
+        $recommendations = [
+            'Review the oldest pending bookings first to keep the approval queue within 48 hours.',
+            'Keep monitoring approved bookings against their payment deadlines to reduce expiries.',
+        ];
+        if ($refunds > 0 || $adjustments > 0) {
+            $recommendations[] = 'Audit the reasons behind refunds and admin price adjustments for service improvements.';
+        }
+
+        return [
+            'executive_summary' => $summary,
+            'insights' => array_slice($insights, 0, 5),
+            'anomalies' => array_slice($anomalies, 0, 4),
+            'recommendations' => array_slice($recommendations, 0, 4),
+        ];
+    }
+
     /**
      * Generates an AI consensus summary for an entity from its recent reviews.
      *

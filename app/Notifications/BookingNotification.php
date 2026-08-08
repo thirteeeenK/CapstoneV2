@@ -21,12 +21,22 @@ abstract class BookingNotification extends Notification
 
     public function toArray(object $notifiable): array
     {
-        return [
+        $data = [
             'booking_code' => $this->booking->booking_code,
             'booking_url' => route('booking.show', $this->booking->booking_code),
             'status' => $this->booking->status,
             'message' => $this->message(),
         ];
+
+        if ((float) $this->booking->admin_discount_amount > 0 || (float) $this->booking->admin_surcharge_amount > 0) {
+            $data['admin_adjustment'] = [
+                'discount' => (float) $this->booking->admin_discount_amount,
+                'surcharge' => (float) $this->booking->admin_surcharge_amount,
+                'reason' => $this->booking->price_adjustment_reason,
+            ];
+        }
+
+        return $data;
     }
 
     abstract protected function message(): string;

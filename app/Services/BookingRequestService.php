@@ -132,7 +132,7 @@ class BookingRequestService
             $totalAmount += $itemSubtotal;
         }
 
-        $netAmount = max(0.00, $totalAmount - $discountAmount + $surchargeAmount);
+        $netAmount = max(0.00, $totalAmount - $discountAmount + $surchargeAmount - (float) ($validated['admin_discount_amount'] ?? 0) + (float) ($validated['admin_surcharge_amount'] ?? 0));
 
         return DB::transaction(function () use ($request, $validated, $cartItems, $calculatedItemSubtotals, $bookingCode, $guestManifest, $totalAmount, $discountAmount, $surchargeAmount, $netAmount) {
             $booking = Booking::create([
@@ -224,7 +224,9 @@ class BookingRequestService
 
         $discount = (float) $booking->discount_amount;
         $surcharge = (float) $booking->tax_amount;
-        $net = max(0.00, $total - $discount + $surcharge);
+        $adminDiscount = (float) $booking->admin_discount_amount;
+        $adminSurcharge = (float) $booking->admin_surcharge_amount;
+        $net = max(0.00, $total - $discount + $surcharge - $adminDiscount + $adminSurcharge);
 
         $booking->total_amount = round($total, 2);
         $booking->net_amount = round($net, 2);

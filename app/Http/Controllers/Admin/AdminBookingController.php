@@ -68,6 +68,10 @@ class AdminBookingController extends Controller
             'total' => Booking::count(),
         ];
 
+        if ($request->ajax()) {
+            return view('admin.bookings._table', compact('bookings'));
+        }
+
         return view('admin.bookings.index', compact('bookings', 'search', 'status', 'stats'));
     }
 
@@ -111,7 +115,24 @@ class AdminBookingController extends Controller
             'items.*.quantity' => 'nullable|integer|min:1|max:50',
             'items.*.admin_note' => 'nullable|string|max:500',
             'admin_notes' => 'nullable|string|max:2000',
+            'admin_discount_amount' => 'nullable|numeric|min:0|max:999999',
+            'admin_surcharge_amount' => 'nullable|numeric|min:0|max:999999',
+            'price_adjustment_reason' => 'nullable|string|max:500',
         ]);
+
+        $adminDiscount = (float) ($validated['admin_discount_amount'] ?? 0);
+        $adminSurcharge = (float) ($validated['admin_surcharge_amount'] ?? 0);
+
+        if ($adminDiscount > 0 || $adminSurcharge > 0) {
+            if (empty(trim($validated['price_adjustment_reason'] ?? ''))) {
+                return back()->withInput()->with('error', 'Please provide a reason for the price adjustment.');
+            }
+
+            $booking->admin_discount_amount = $adminDiscount;
+            $booking->admin_surcharge_amount = $adminSurcharge;
+            $booking->price_adjustment_reason = trim($validated['price_adjustment_reason']);
+            $booking->price_adjusted_at = now();
+        }
 
         $adjustments = [];
         foreach ($booking->items as $item) {
@@ -131,15 +152,28 @@ class AdminBookingController extends Controller
             return back()->with('error', 'Cannot approve a booking with no available items. Reject it instead.');
         }
 
+        $approvalNote = sprintf(
+            'Approved with %d item(s) available%s.',
+            $totals['included'],
+            $totals['excluded'] > 0 ? ", {$totals['excluded']} unavailable" : ''
+        );
+
+        if ($booking->admin_discount_amount > 0 || $booking->admin_surcharge_amount > 0) {
+            $approvalNote .= ' Admin price adjustment applied';
+            if ($booking->admin_discount_amount > 0) {
+                $approvalNote .= ' (-₱' . number_format((float) $booking->admin_discount_amount, 2) . ')';
+            }
+            if ($booking->admin_surcharge_amount > 0) {
+                $approvalNote .= ' (+₱' . number_format((float) $booking->admin_surcharge_amount, 2) . ')';
+            }
+            $approvalNote .= ': ' . $booking->price_adjustment_reason;
+        }
+
         $booking->approved_at = now();
         $booking->payment_deadline = now()->addHours(48);
         $booking->reviewed_by_admin_id = auth('admin')->id();
         $booking->admin_notes = $validated['admin_notes'] ?? null;
-        $booking->markStatus(Booking::STATUS_APPROVED, sprintf(
-            'Approved with %d item(s) available%s.',
-            $totals['included'],
-            $totals['excluded'] > 0 ? ", {$totals['excluded']} unavailable" : ''
-        ));
+        $booking->markStatus(Booking::STATUS_APPROVED, $approvalNote);
 
         BookingNotification::send($booking, new BookingApproved($booking));
 

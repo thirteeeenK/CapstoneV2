@@ -1,0 +1,273 @@
+- generic [active] [ref=f3e1]:
+  - complementary [ref=f3e2]:
+    - generic [ref=f3e4]:
+      - link "SunnyTrips" [ref=f3e5] [cursor=pointer]:
+        - /url: http://localhost:8000/dashboard
+      - paragraph [ref=f3e7]:
+        - generic [ref=f3e9]: Traveler Portal
+    - navigation [ref=f3e10]:
+      - generic [ref=f3e11]:
+        - heading "Main Navigation" [level=2] [ref=f3e12]
+        - generic [ref=f3e13]:
+          - link "space_dashboard Dashboard" [ref=f3e14] [cursor=pointer]:
+            - /url: http://localhost:8000/dashboard
+            - generic [ref=f3e15]: space_dashboard
+            - generic [ref=f3e16]: Dashboard
+          - link "casino I'm Feeling Lucky" [ref=f3e17] [cursor=pointer]:
+            - /url: http://localhost:8000/lucky
+            - generic [ref=f3e18]: casino
+            - generic [ref=f3e19]: I'm Feeling Lucky
+          - link "shopping_basket My Trip Basket" [ref=f3e20] [cursor=pointer]:
+            - /url: http://localhost:8000/cart
+            - generic [ref=f3e21]: shopping_basket
+            - generic [ref=f3e22]: My Trip Basket
+          - link "auto_stories My Bookings" [ref=f3e23] [cursor=pointer]:
+            - /url: http://localhost:8000/bookings
+            - generic [ref=f3e24]: auto_stories
+            - generic [ref=f3e25]: My Bookings
+          - link "reviews Guest Reviews" [ref=f3e26] [cursor=pointer]:
+            - /url: http://localhost:8000/reviews
+            - generic [ref=f3e27]: reviews
+            - generic [ref=f3e28]: Guest Reviews
+      - generic [ref=f3e29]:
+        - heading "Explore Catalog" [level=2] [ref=f3e30]
+        - generic [ref=f3e31]:
+          - link "location_on Island Destinations" [ref=f3e32] [cursor=pointer]:
+            - /url: http://localhost:8000/destinations
+            - generic [ref=f3e33]: location_on
+            - generic [ref=f3e34]: Island Destinations
+          - link "hotel Hotels & Sanctuaries" [ref=f3e35] [cursor=pointer]:
+            - /url: http://localhost:8000/hotels
+            - generic [ref=f3e36]: hotel
+            - generic [ref=f3e37]: Hotels & Sanctuaries
+          - link "king_bed Rooms & Stays" [ref=f3e38] [cursor=pointer]:
+            - /url: http://localhost:8000/rooms
+            - generic [ref=f3e39]: king_bed
+            - generic [ref=f3e40]: Rooms & Stays
+          - link "explore Activities & Tours" [ref=f3e41] [cursor=pointer]:
+            - /url: http://localhost:8000/activities
+            - generic [ref=f3e42]: explore
+            - generic [ref=f3e43]: Activities & Tours
+          - link "extension Transfers & Add-ons" [ref=f3e44] [cursor=pointer]:
+            - /url: http://localhost:8000/addons
+            - generic [ref=f3e45]: extension
+            - generic [ref=f3e46]: Transfers & Add-ons
+          - link "card_travel Tour Packages & Promos" [ref=f3e47] [cursor=pointer]:
+            - /url: http://localhost:8000/packages
+            - generic [ref=f3e48]: card_travel
+            - generic [ref=f3e49]: Tour Packages & Promos
+      - generic [ref=f3e50]:
+        - heading "Account" [level=2] [ref=f3e51]
+        - link "manage_accounts Account Profile" [ref=f3e53] [cursor=pointer]:
+          - /url: http://localhost:8000/profile
+          - generic [ref=f3e54]: manage_accounts
+          - generic [ref=f3e55]: Account Profile
+    - button "logout Log Out" [ref=f3e58] [cursor=pointer]:
+      - generic [ref=f3e59]: logout
+      - generic [ref=f3e60]: Log Out
+  - main [ref=f3e61]:
+    - generic [ref=f3e63]:
+      - generic [ref=f3e65]:
+        - generic [ref=f3e67]:
+          - generic [ref=f3e68]: auto_awesome
+          - generic [ref=f3e69]: AI Personalization Active
+        - heading "Welcome back, Prof. Abelardo Borer!" [level=1] [ref=f3e70]
+        - paragraph [ref=f3e71]: Logged in as caroline88@example.net. Explore your island recommendations below.
+      - generic [ref=f3e72]:
+        - generic [ref=f3e73]:
+          - generic [ref=f3e74]:
+            - heading "Explore Islands on the Map" [level=2] [ref=f3e75]
+            - paragraph [ref=f3e76]: Tap a marker to see what each destination has in store — then plan your next escape.
+          - link "map Open Full Map" [ref=f3e77] [cursor=pointer]:
+            - /url: http://localhost:8000/explore
+            - generic [ref=f3e78]: map
+            - text: Open Full Map
+        - generic [ref=f3e79]:
+          - generic [ref=f3e80]:
+            - generic:
+              - generic:
+                - button [ref=f3e81] [cursor=pointer]
+                - button [ref=f3e83] [cursor=pointer]
+            - generic:
+              - generic [ref=f3e85]:
+                - button "Zoom in" [ref=f3e86] [cursor=pointer]: +
+                - button "Zoom out" [ref=f3e87] [cursor=pointer]: −
+              - generic [ref=f3e88]:
+                - link "Leaflet" [ref=f3e89] [cursor=pointer]:
+                  - /url: https://leafletjs.com
+                - text: "| ©"
+                - link "OpenStreetMap" [ref=f3e94] [cursor=pointer]:
+                  - /url: https://www.openstreetmap.org/copyright
+                - text: contributors
+          - button "my_location Distance from me" [ref=f3e95] [cursor=pointer]:
+            - generic [ref=f3e96]: my_location
+            - generic [ref=f3e97]: Distance from me
+      - generic [ref=f3e98]:
+        - generic [ref=f3e99]:
+          - generic [ref=f3e100]:
+            - generic [ref=f3e101]:
+              - button "auto_awesome AI Recommendations" [ref=f3e102] [cursor=pointer]:
+                - generic [ref=f3e103]: auto_awesome
+                - generic [ref=f3e104]: AI Recommendations
+              - button "travel_explore Default Listings" [ref=f3e106] [cursor=pointer]:
+                - generic [ref=f3e107]: travel_explore
+                - generic [ref=f3e108]: Default Listings
+              - button "card_travel Tour Packages" [ref=f3e109] [cursor=pointer]:
+                - generic [ref=f3e110]: card_travel
+                - generic [ref=f3e111]: Tour Packages
+            - paragraph [ref=f3e112]: Top 5 sanctuary stays and top 5 experiences matched to your travel preference profile.
+          - generic [ref=f3e113]:
+            - link "tune Reset Preferences" [ref=f3e114] [cursor=pointer]:
+              - /url: http://localhost:8000/onboarding/reset
+              - generic [ref=f3e115]: tune
+              - generic [ref=f3e116]: Reset Preferences
+            - generic [ref=f3e117]:
+              - generic [ref=f3e118]:
+                - generic [ref=f3e119]: filter_alt
+                - generic [ref=f3e120]: "Sanctuary:"
+              - button "location_on Boracay" [ref=f3e121] [cursor=pointer]:
+                - generic [ref=f3e122]: location_on
+                - generic [ref=f3e123]: Boracay
+              - button "location_on El Nido" [ref=f3e124] [cursor=pointer]:
+                - generic [ref=f3e125]: location_on
+                - generic [ref=f3e126]: El Nido
+        - generic [ref=f3e128]:
+          - generic [ref=f3e129]:
+            - generic [ref=f3e130]:
+              - generic [ref=f3e131]:
+                - generic [ref=f3e132]: hotel
+                - heading "Top 5 Recommended Sanctuary Stays in Boracay" [level=3] [ref=f3e133]
+              - generic [ref=f3e134]: Ranked by AI Match
+            - generic [ref=f3e135]:
+              - 'link "Henann Garden Resort #1 AI Match High End Luxury Hotels Henann Garden Resort Henann Garden is located in Station 2, just a 2-minute walk from White Beach and close to D''Mall. It has several lagoon-style pools and lush landscaping. With spacious rooms and on-site dining, it''s perfect for travelers seeking comfort and convenience in the island''s center. View Sanctuary arrow_forward" [ref=f3e136] [cursor=pointer]':
+                - /url: http://localhost:8000/hotels/4
+                - generic [ref=f3e137]:
+                  - generic [ref=f3e138]:
+                    - img "Henann Garden Resort" [ref=f3e139]
+                    - generic [ref=f3e141]: "#1 AI Match"
+                    - generic [ref=f3e142]: High End Luxury Hotels
+                  - generic [ref=f3e143]:
+                    - heading "Henann Garden Resort" [level=4] [ref=f3e144]
+                    - paragraph [ref=f3e145]: Henann Garden is located in Station 2, just a 2-minute walk from White Beach and close to D'Mall. It has several lagoon-style pools and lush landscaping. With spacious rooms and on-site dining, it's perfect for travelers seeking comfort and convenience in the island's center.
+                - generic [ref=f3e147]:
+                  - generic [ref=f3e148]: View Sanctuary
+                  - generic [ref=f3e149]: arrow_forward
+              - 'link "Canyon Hotels & Resorts Boracay #2 AI Match High End Luxury Hotels Canyon Hotels & Resorts Boracay Canyon is nestled in Station 2, just a short walk from White Beach and D''Mall. This boutique hotel offers cozy, well-appointed rooms and a peaceful atmosphere. With its quiet location yet easy access to shops and restaurants, it''s great for couples and families seeking a balance of relaxation and convenience. View Sanctuary arrow_forward" [ref=f3e150] [cursor=pointer]':
+                - /url: http://localhost:8000/hotels/2
+                - generic [ref=f3e151]:
+                  - generic [ref=f3e152]:
+                    - img "Canyon Hotels & Resorts Boracay" [ref=f3e153]
+                    - generic [ref=f3e155]: "#2 AI Match"
+                    - generic [ref=f3e156]: High End Luxury Hotels
+                  - generic [ref=f3e157]:
+                    - heading "Canyon Hotels & Resorts Boracay" [level=4] [ref=f3e158]
+                    - paragraph [ref=f3e159]: Canyon is nestled in Station 2, just a short walk from White Beach and D'Mall. This boutique hotel offers cozy, well-appointed rooms and a peaceful atmosphere. With its quiet location yet easy access to shops and restaurants, it's great for couples and families seeking a balance of relaxation and convenience.
+                - generic [ref=f3e161]:
+                  - generic [ref=f3e162]: View Sanctuary
+                  - generic [ref=f3e163]: arrow_forward
+              - 'link "The Muse Hotel #3 AI Match Mid Affordable Hotels The Muse Hotel Located in Station 1, The Muse is a stylish beachfront hotel with easy access to White Beach. It features an indoor pool, restaurant, and modern rooms. The quieter beachfront location is perfect for relaxation, while still being near several restaurants. View Sanctuary arrow_forward" [ref=f3e164] [cursor=pointer]':
+                - /url: http://localhost:8000/hotels/9
+                - generic [ref=f3e165]:
+                  - generic [ref=f3e166]:
+                    - img "The Muse Hotel" [ref=f3e167]
+                    - generic [ref=f3e169]: "#3 AI Match"
+                    - generic [ref=f3e170]: Mid Affordable Hotels
+                  - generic [ref=f3e171]:
+                    - heading "The Muse Hotel" [level=4] [ref=f3e172]
+                    - paragraph [ref=f3e173]: Located in Station 1, The Muse is a stylish beachfront hotel with easy access to White Beach. It features an indoor pool, restaurant, and modern rooms. The quieter beachfront location is perfect for relaxation, while still being near several restaurants.
+                - generic [ref=f3e175]:
+                  - generic [ref=f3e176]: View Sanctuary
+                  - generic [ref=f3e177]: arrow_forward
+              - 'link "Boracay Ocean Club Beach Resort #4 AI Match High End Luxury Hotels Boracay Ocean Club Beach Resort Boracay Ocean Club is located in Station 3, right along White Beach with direct beachfront access. The resort features a beachfront pool, spa services, and dive center, making it ideal for adventure seekers and beach lovers. With ocean-view rooms and a quieter location, it''s perfect for travelers who want a more laid-back Boracay experience. View Sanctuary arrow_forward" [ref=f3e178] [cursor=pointer]':
+                - /url: http://localhost:8000/hotels/3
+                - generic [ref=f3e179]:
+                  - generic [ref=f3e180]:
+                    - img "Boracay Ocean Club Beach Resort" [ref=f3e181]
+                    - generic [ref=f3e183]: "#4 AI Match"
+                    - generic [ref=f3e184]: High End Luxury Hotels
+                  - generic [ref=f3e185]:
+                    - heading "Boracay Ocean Club Beach Resort" [level=4] [ref=f3e186]
+                    - paragraph [ref=f3e187]: Boracay Ocean Club is located in Station 3, right along White Beach with direct beachfront access. The resort features a beachfront pool, spa services, and dive center, making it ideal for adventure seekers and beach lovers. With ocean-view rooms and a quieter location, it's perfect for travelers who want a more laid-back Boracay experience.
+                - generic [ref=f3e189]:
+                  - generic [ref=f3e190]: View Sanctuary
+                  - generic [ref=f3e191]: arrow_forward
+              - 'link "Henann Palm Beach Resort #5 AI Match High End Luxury Hotels Henann Palm Beach Resort Henann Palm Beach is located in Station 2, right along White Beach, offering direct beachfront access. The resort features a stunning beachfront infinity pool, swim-up bar, and spacious modern rooms. It''s an ideal spot for travelers looking to enjoy luxury and ocean views in the heart of Boracay. View Sanctuary arrow_forward" [ref=f3e192] [cursor=pointer]':
+                - /url: http://localhost:8000/hotels/1
+                - generic [ref=f3e193]:
+                  - generic [ref=f3e194]:
+                    - img "Henann Palm Beach Resort" [ref=f3e195]
+                    - generic [ref=f3e197]: "#5 AI Match"
+                    - generic [ref=f3e198]: High End Luxury Hotels
+                  - generic [ref=f3e199]:
+                    - heading "Henann Palm Beach Resort" [level=4] [ref=f3e200]
+                    - paragraph [ref=f3e201]: Henann Palm Beach is located in Station 2, right along White Beach, offering direct beachfront access. The resort features a stunning beachfront infinity pool, swim-up bar, and spacious modern rooms. It's an ideal spot for travelers looking to enjoy luxury and ocean views in the heart of Boracay.
+                - generic [ref=f3e203]:
+                  - generic [ref=f3e204]: View Sanctuary
+                  - generic [ref=f3e205]: arrow_forward
+          - generic [ref=f3e206]:
+            - generic [ref=f3e207]:
+              - generic [ref=f3e208]:
+                - generic [ref=f3e209]: explore
+                - heading "Top 5 Must-Try Experiences in Boracay" [level=3] [ref=f3e210]
+              - generic [ref=f3e211]: Curated AI Matches
+            - generic [ref=f3e212]:
+              - generic [ref=f3e213]:
+                - generic [ref=f3e214]:
+                  - generic [ref=f3e215]:
+                    - img "Helmet Diving" [ref=f3e216]
+                    - generic [ref=f3e218]: ₱850/person
+                  - generic [ref=f3e219]:
+                    - heading "Helmet Diving" [level=4] [ref=f3e220]
+                    - paragraph [ref=f3e221]: Walk on the ocean floor 10 feet underwater! Special heavy air-helmet lets you breathe normally while tropical fish swim around your hands.
+                - link "View Experience arrow_forward" [ref=f3e223] [cursor=pointer]:
+                  - /url: http://localhost:8000/activities
+                  - generic [ref=f3e224]: View Experience
+                  - generic [ref=f3e225]: arrow_forward
+              - generic [ref=f3e226]:
+                - generic [ref=f3e227]:
+                  - generic [ref=f3e228]:
+                    - img "Jet Ski (30 mins)" [ref=f3e229]
+                    - generic [ref=f3e231]: ₱3,800
+                  - generic [ref=f3e232]:
+                    - heading "Jet Ski (30 mins)" [level=4] [ref=f3e233]
+                    - paragraph [ref=f3e234]: Double the time, double the adrenaline! 30 full minutes of high-speed jet ski action with plenty of time to explore the coast.
+                - link "View Experience arrow_forward" [ref=f3e236] [cursor=pointer]:
+                  - /url: http://localhost:8000/activities
+                  - generic [ref=f3e237]: View Experience
+                  - generic [ref=f3e238]: arrow_forward
+              - generic [ref=f3e239]:
+                - generic [ref=f3e240]:
+                  - generic [ref=f3e241]:
+                    - img "Paraw Sailing (Joiners)" [ref=f3e242]
+                    - generic [ref=f3e244]: ₱850/person
+                  - generic [ref=f3e245]:
+                    - heading "Paraw Sailing (Joiners)" [level=4] [ref=f3e246]
+                    - paragraph [ref=f3e247]: Experience traditional Filipino wind sailing on an outrigger boat shared with fellow sunset seekers.
+                - link "View Experience arrow_forward" [ref=f3e249] [cursor=pointer]:
+                  - /url: http://localhost:8000/activities
+                  - generic [ref=f3e250]: View Experience
+                  - generic [ref=f3e251]: arrow_forward
+              - generic [ref=f3e252]:
+                - generic [ref=f3e253]:
+                  - generic [ref=f3e254]:
+                    - img "Scuba Diving" [ref=f3e255]
+                    - generic [ref=f3e257]: ₱1,350/person
+                  - generic [ref=f3e258]:
+                    - heading "Scuba Diving" [level=4] [ref=f3e259]
+                    - paragraph [ref=f3e260]: Discover Scuba Diving for beginners with PADI certified divemasters. Dive into coral reefs, interact with marine life, and experience weightless underwater flight.
+                - link "View Experience arrow_forward" [ref=f3e262] [cursor=pointer]:
+                  - /url: http://localhost:8000/activities
+                  - generic [ref=f3e263]: View Experience
+                  - generic [ref=f3e264]: arrow_forward
+              - generic [ref=f3e265]:
+                - generic [ref=f3e266]:
+                  - generic [ref=f3e267]:
+                    - img "Party Yacht" [ref=f3e268]
+                    - generic [ref=f3e270]: ₱1,300/person
+                  - generic [ref=f3e271]:
+                    - heading "Party Yacht" [level=4] [ref=f3e272]
+                    - paragraph [ref=f3e273]: Set sail on a stylish multi-deck catamaran yacht. Dance to DJ music, enjoy drinks & appetizers, swim off the stern, and watch Boracay's legendary sunset from the deck.
+                - link "View Experience arrow_forward" [ref=f3e275] [cursor=pointer]:
+                  - /url: http://localhost:8000/activities
+                  - generic [ref=f3e276]: View Experience
+                  - generic [ref=f3e277]: arrow_forward

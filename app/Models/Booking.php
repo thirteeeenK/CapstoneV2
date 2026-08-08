@@ -44,6 +44,10 @@ class Booking extends Model
         'total_amount',
         'discount_amount',
         'tax_amount',
+        'admin_discount_amount',
+        'admin_surcharge_amount',
+        'price_adjustment_reason',
+        'price_adjusted_at',
         'net_amount',
         'payment_status',
         'payment_method',
@@ -62,6 +66,8 @@ class Booking extends Model
         'total_amount' => 'decimal:2',
         'discount_amount' => 'decimal:2',
         'tax_amount' => 'decimal:2',
+        'admin_discount_amount' => 'decimal:2',
+        'admin_surcharge_amount' => 'decimal:2',
         'net_amount' => 'decimal:2',
         'guest_manifest' => 'array',
         'approved_at' => 'datetime',
@@ -70,6 +76,7 @@ class Booking extends Model
         'rejected_at' => 'datetime',
         'cancelled_at' => 'datetime',
         'expired_at' => 'datetime',
+        'price_adjusted_at' => 'datetime',
     ];
 
     public function user()

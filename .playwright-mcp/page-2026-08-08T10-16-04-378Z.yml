@@ -1,0 +1,152 @@
+- generic [active] [ref=f16e1]:
+  - banner [ref=f16e2]:
+    - generic [ref=f16e3]:
+      - generic [ref=f16e4]:
+        - generic [ref=f16e5]: admin_panel_settings
+        - generic [ref=f16e6]:
+          - generic [ref=f16e7]: SunnyTrips
+          - generic [ref=f16e8]: Admin
+      - generic [ref=f16e9]:
+        - generic [ref=f16e10]:
+          - generic [ref=f16e11]: A
+          - generic "sunnytrips@gmail.com" [ref=f16e12]: Administrator
+        - button "logout Sign out" [ref=f16e15] [cursor=pointer]:
+          - generic [ref=f16e16]: logout
+          - generic [ref=f16e17]: Sign out
+  - complementary [ref=f16e18]:
+    - generic [ref=f16e19]:
+      - heading "SunnyTrips" [level=1] [ref=f16e20]
+      - paragraph [ref=f16e21]: Admin Portal
+    - navigation [ref=f16e22]:
+      - generic [ref=f16e23]:
+        - heading "Overview" [level=2] [ref=f16e24]
+        - generic [ref=f16e25]:
+          - link "dashboard Dashboard" [ref=f16e26] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/dashboard
+            - generic [ref=f16e27]: dashboard
+            - generic [ref=f16e28]: Dashboard
+          - link "psychology AI Insights" [ref=f16e29] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=f16e30]: psychology
+            - generic [ref=f16e31]: AI Insights
+          - link "analytics Generate Reports" [ref=f16e32] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=f16e33]: analytics
+            - generic [ref=f16e34]: Generate Reports
+      - generic [ref=f16e35]:
+        - heading "Operations" [level=2] [ref=f16e36]
+        - generic [ref=f16e37]:
+          - link "calendar_month Bookings" [ref=f16e38] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/bookings
+            - generic [ref=f16e39]: calendar_month
+            - generic [ref=f16e40]: Bookings
+          - link "group Registered Users" [ref=f16e41] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/registered-users
+            - generic [ref=f16e42]: group
+            - generic [ref=f16e43]: Registered Users
+          - link "inventory Manage Inventory" [ref=f16e44] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/inventory
+            - generic [ref=f16e45]: inventory
+            - generic [ref=f16e46]: Manage Inventory
+          - link "tune Passenger Rules & Discounts" [ref=f16e47] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/passenger-rules
+            - generic [ref=f16e48]: tune
+            - generic [ref=f16e49]: Passenger Rules & Discounts
+      - generic [ref=f16e50]:
+        - heading "Catalog" [level=2] [ref=f16e51]
+        - generic [ref=f16e52]:
+          - link "place Destinations" [ref=f16e53] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/destinations
+            - generic [ref=f16e54]: place
+            - generic [ref=f16e55]: Destinations
+          - link "house Add Hotel Information" [ref=f16e56] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/hotels/manage
+            - generic [ref=f16e57]: house
+            - generic [ref=f16e58]: Add Hotel Information
+          - link "hotel Show Hotel Listing" [ref=f16e59] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/hotels
+            - generic [ref=f16e60]: hotel
+            - generic [ref=f16e61]: Show Hotel Listing
+          - link "card_travel Tour Packages & Promos" [ref=f16e62] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/packages
+            - generic [ref=f16e63]: card_travel
+            - generic [ref=f16e64]: Tour Packages & Promos
+          - link "explore Activities & Tours" [ref=f16e65] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/activities
+            - generic [ref=f16e66]: explore
+            - generic [ref=f16e67]: Activities & Tours
+          - link "extension Transfers and Add-ons" [ref=f16e68] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/addons
+            - generic [ref=f16e69]: extension
+            - generic [ref=f16e70]: Transfers and Add-ons
+          - link "psychology Manage AI" [ref=f16e71] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=f16e72]: psychology
+            - generic [ref=f16e73]: Manage AI
+      - generic [ref=f16e74]:
+        - heading "Legal" [level=2] [ref=f16e75]
+        - link "gavel Legal Documents" [ref=f16e77] [cursor=pointer]:
+          - /url: http://localhost:8000/admin/legal
+          - generic [ref=f16e78]: gavel
+          - generic [ref=f16e79]: Legal Documents
+      - generic [ref=f16e80]:
+        - heading "Community" [level=2] [ref=f16e81]
+        - link "reviews Reviews & Sentiment" [ref=f16e83] [cursor=pointer]:
+          - /url: http://localhost:8000/admin/reviews
+          - generic [ref=f16e84]: reviews
+          - generic [ref=f16e85]: Reviews & Sentiment
+  - main [ref=f16e86]:
+    - generic [ref=f16e88]:
+      - generic [ref=f16e89]:
+        - generic [ref=f16e90]:
+          - link "arrow_back Bookings" [ref=f16e92] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/bookings
+            - generic [ref=f16e93]: arrow_back
+            - text: Bookings
+          - 'heading "ST-TEST-1 approved payment: unpaid" [level=1] [ref=f16e94]':
+            - generic [ref=f16e95]: ST-TEST-1
+            - generic [ref=f16e96]: approved
+            - generic [ref=f16e97]: "payment: unpaid"
+          - paragraph [ref=f16e98]: "Requested Aug 8, 2026 9:44 AM • Payment deadline: Aug 10, 2026 9:44 AM"
+        - generic [ref=f16e99]:
+          - button "block Cancel Booking" [ref=f16e101] [cursor=pointer]:
+            - generic [ref=f16e102]: block
+            - text: Cancel Booking
+          - generic [ref=f16e103]:
+            - textbox "Manual reference (optional)" [ref=f16e104]
+            - button "payments Mark as Paid" [ref=f16e105] [cursor=pointer]:
+              - generic [ref=f16e106]: payments
+              - text: Mark as Paid
+      - generic [ref=f16e107]:
+        - generic [ref=f16e108]:
+          - heading "person Lead Guest & Contact" [level=3] [ref=f16e109]:
+            - generic [ref=f16e110]: person
+            - text: Lead Guest & Contact
+          - generic [ref=f16e111]:
+            - paragraph [ref=f16e112]: Juan
+            - paragraph [ref=f16e113]:
+              - generic [ref=f16e114]: mail
+              - text: caroline88@example.net
+            - paragraph [ref=f16e115]:
+              - generic [ref=f16e116]: call
+              - text: "0917"
+            - paragraph [ref=f16e117]: "Account: Prof. Abelardo Borer"
+        - generic [ref=f16e118]:
+          - heading "groups Passenger Manifest (0)" [level=3] [ref=f16e119]:
+            - generic [ref=f16e120]: groups
+            - text: Passenger Manifest (0)
+          - paragraph [ref=f16e121]: No guest manifest submitted.
+      - generic [ref=f16e122]:
+        - heading "fact_check Items & Availability Verification" [level=3] [ref=f16e124]:
+          - generic [ref=f16e125]: fact_check
+          - text: Items & Availability Verification
+        - generic [ref=f16e127]:
+          - generic [ref=f16e128]:
+            - generic [ref=f16e129]: Item Subtotal
+            - generic [ref=f16e130]: ₱6,000.00
+          - generic [ref=f16e131]:
+            - generic [ref=f16e132]: Admin Discount
+            - generic [ref=f16e133]: "-₱2,000.00"
+          - generic [ref=f16e134]:
+            - generic [ref=f16e135]: Net Amount Charged After Approval
+            - generic [ref=f16e136]: ₱4,000.00

@@ -1,0 +1,187 @@
+- generic [active] [ref=f10e1]:
+  - complementary [ref=f10e2]:
+    - generic [ref=f10e4]:
+      - link "SunnyTrips" [ref=f10e5] [cursor=pointer]:
+        - /url: http://localhost:8000/dashboard
+      - paragraph [ref=f10e7]:
+        - generic [ref=f10e9]: Traveler Portal
+    - navigation [ref=f10e10]:
+      - generic [ref=f10e11]:
+        - heading "Main Navigation" [level=2] [ref=f10e12]
+        - generic [ref=f10e13]:
+          - link "space_dashboard Dashboard" [ref=f10e14] [cursor=pointer]:
+            - /url: http://localhost:8000/dashboard
+            - generic [ref=f10e15]: space_dashboard
+            - generic [ref=f10e16]: Dashboard
+          - link "casino I'm Feeling Lucky" [ref=f10e17] [cursor=pointer]:
+            - /url: http://localhost:8000/lucky
+            - generic [ref=f10e18]: casino
+            - generic [ref=f10e19]: I'm Feeling Lucky
+          - link "shopping_basket My Trip Basket" [ref=f10e20] [cursor=pointer]:
+            - /url: http://localhost:8000/cart
+            - generic [ref=f10e21]: shopping_basket
+            - generic [ref=f10e22]: My Trip Basket
+          - link "auto_stories My Bookings" [ref=f10e23] [cursor=pointer]:
+            - /url: http://localhost:8000/bookings
+            - generic [ref=f10e24]: auto_stories
+            - generic [ref=f10e25]: My Bookings
+          - link "reviews Guest Reviews" [ref=f10e26] [cursor=pointer]:
+            - /url: http://localhost:8000/reviews
+            - generic [ref=f10e27]: reviews
+            - generic [ref=f10e28]: Guest Reviews
+      - generic [ref=f10e29]:
+        - heading "Explore Catalog" [level=2] [ref=f10e30]
+        - generic [ref=f10e31]:
+          - link "location_on Island Destinations" [ref=f10e32] [cursor=pointer]:
+            - /url: http://localhost:8000/destinations
+            - generic [ref=f10e33]: location_on
+            - generic [ref=f10e34]: Island Destinations
+          - link "hotel Hotels & Sanctuaries" [ref=f10e35] [cursor=pointer]:
+            - /url: http://localhost:8000/hotels
+            - generic [ref=f10e36]: hotel
+            - generic [ref=f10e37]: Hotels & Sanctuaries
+          - link "king_bed Rooms & Stays" [ref=f10e38] [cursor=pointer]:
+            - /url: http://localhost:8000/rooms
+            - generic [ref=f10e39]: king_bed
+            - generic [ref=f10e40]: Rooms & Stays
+          - link "explore Activities & Tours" [ref=f10e41] [cursor=pointer]:
+            - /url: http://localhost:8000/activities
+            - generic [ref=f10e42]: explore
+            - generic [ref=f10e43]: Activities & Tours
+          - link "extension Transfers & Add-ons" [ref=f10e44] [cursor=pointer]:
+            - /url: http://localhost:8000/addons
+            - generic [ref=f10e45]: extension
+            - generic [ref=f10e46]: Transfers & Add-ons
+          - link "card_travel Tour Packages & Promos" [ref=f10e47] [cursor=pointer]:
+            - /url: http://localhost:8000/packages
+            - generic [ref=f10e48]: card_travel
+            - generic [ref=f10e49]: Tour Packages & Promos
+      - generic [ref=f10e50]:
+        - heading "Account" [level=2] [ref=f10e51]
+        - link "manage_accounts Account Profile" [ref=f10e53] [cursor=pointer]:
+          - /url: http://localhost:8000/profile
+          - generic [ref=f10e54]: manage_accounts
+          - generic [ref=f10e55]: Account Profile
+    - button "logout Log Out" [ref=f10e58] [cursor=pointer]:
+      - generic [ref=f10e59]: logout
+      - generic [ref=f10e60]: Log Out
+  - main [ref=f10e61]:
+    - generic [ref=f10e63]:
+      - generic [ref=f10e64]:
+        - paragraph [ref=f10e65]: SunnyTrips · Traveler Journal
+        - paragraph [ref=f10e66]: Aug 8, 2026
+      - generic [ref=f10e83]:
+        - paragraph [ref=f10e84]: Journal No. ST-TEST-1
+        - generic [ref=f10e85]: schedule_send
+        - heading "All clear — your dates are reserved" [level=1] [ref=f10e87]
+        - paragraph [ref=f10e88]:
+          - text: Every item in your journal checked out. Complete payment of
+          - strong [ref=f10e89]: ₱4,000.00
+          - text: before
+          - strong [ref=f10e90]: Aug 10, 2026 · 9:44 AM
+          - text: to lock in your reservation.
+        - generic [ref=f10e91]:
+          - button "lock Proceed to Payment · ₱4,000.00" [ref=f10e93] [cursor=pointer]:
+            - generic [ref=f10e94]: lock
+            - generic [ref=f10e95]: Proceed to Payment · ₱4,000.00
+          - link "home Return to Dashboard" [ref=f10e96] [cursor=pointer]:
+            - /url: http://localhost:8000/dashboard
+            - generic [ref=f10e97]: home
+            - generic [ref=f10e98]: Return to Dashboard
+      - generic [ref=f10e99]:
+        - generic [ref=f10e100]:
+          - generic [ref=f10e102]:
+            - heading "luggage Expedition Itinerary" [level=2] [ref=f10e103]:
+              - generic [ref=f10e104]: luggage
+              - text: Expedition Itinerary
+            - generic [ref=f10e106]: 0 items
+          - generic [ref=f10e107]:
+            - heading "explore The Journey Ahead" [level=2] [ref=f10e108]:
+              - generic [ref=f10e109]: explore
+              - text: The Journey Ahead
+            - list [ref=f10e111]:
+              - listitem [ref=f10e112]:
+                - generic [ref=f10e113]:
+                  - generic [ref=f10e114]: check
+                  - generic [ref=f10e117]:
+                    - paragraph [ref=f10e118]: Request received
+                    - paragraph [ref=f10e119]: Your journal landed on our desk.
+              - listitem [ref=f10e120]:
+                - generic [ref=f10e121]:
+                  - generic [ref=f10e122]: check
+                  - generic [ref=f10e125]:
+                    - paragraph [ref=f10e126]: Availability check
+                    - paragraph [ref=f10e127]: Crew verifies dates, rooms & tours.
+              - listitem [ref=f10e128]:
+                - generic [ref=f10e129]:
+                  - generic [ref=f10e130]: check
+                  - generic [ref=f10e133]:
+                    - paragraph [ref=f10e134]: Approved & notified
+                    - paragraph [ref=f10e135]: You'll get an email with your payment link.
+              - listitem [ref=f10e136]:
+                - generic [ref=f10e137]:
+                  - generic [ref=f10e138]: schedule
+                  - generic [ref=f10e143]:
+                    - paragraph [ref=f10e144]: Pay to confirm
+                    - paragraph [ref=f10e145]: Settle the balance within 48 hours.
+        - generic [ref=f10e146]:
+          - generic [ref=f10e147]:
+            - heading "menu_book Captain's Ledger" [level=2] [ref=f10e148]:
+              - generic [ref=f10e149]: menu_book
+              - text: Captain's Ledger
+            - generic [ref=f10e151]:
+              - generic [ref=f10e152]:
+                - term [ref=f10e153]: Status
+                - definition [ref=f10e154]:
+                  - generic [ref=f10e155]: Approved
+              - generic [ref=f10e157]:
+                - term [ref=f10e158]: Payment
+                - definition [ref=f10e159]: unpaid
+              - generic [ref=f10e160]:
+                - term [ref=f10e161]: Deadline
+                - definition [ref=f10e162]: Aug 10 · 9:44 AM
+              - generic [ref=f10e163]:
+                - term [ref=f10e164]: Submitted
+                - definition [ref=f10e165]: Aug 8, 2026
+          - generic [ref=f10e166]:
+            - heading "sailing Lead Traveler" [level=2] [ref=f10e167]:
+              - generic [ref=f10e168]: sailing
+              - text: Lead Traveler
+            - paragraph [ref=f10e170]: Juan
+            - generic [ref=f10e171]:
+              - paragraph [ref=f10e172]:
+                - generic [ref=f10e173]: mail
+                - generic [ref=f10e174]: caroline88@example.net
+              - paragraph [ref=f10e175]:
+                - generic [ref=f10e176]: call
+                - text: "0917"
+          - generic [ref=f10e177]:
+            - heading "receipt_long Settlement" [level=2] [ref=f10e178]:
+              - generic [ref=f10e179]: receipt_long
+              - text: Settlement
+            - generic [ref=f10e181]:
+              - generic [ref=f10e182]:
+                - term [ref=f10e183]: Subtotal
+                - definition [ref=f10e184]: ₱6,000.00
+              - generic [ref=f10e185]:
+                - term [ref=f10e186]: Admin discount
+                - definition [ref=f10e187]: "-₱2,000.00"
+              - generic [ref=f10e188]:
+                - term [ref=f10e189]: Total due
+                - definition [ref=f10e190]: ₱4,000.00
+            - generic [ref=f10e191]:
+              - paragraph [ref=f10e192]:
+                - generic [ref=f10e193]: savings
+                - text: Note from SunnyTrips
+              - paragraph [ref=f10e194]: Room was listed with outdated photos, sorry for the inconvenience.
+      - generic [ref=f10e195]:
+        - generic [ref=f10e196]:
+          - generic [ref=f10e197]:
+            - generic [ref=f10e198]: event_busy
+            - generic [ref=f10e200]:
+              - heading "Cancel this booking?" [level=3] [ref=f10e201]
+              - paragraph [ref=f10e202]: No payment has been taken — cancelling releases your reserved dates immediately.
+          - button "close Cancel Booking" [ref=f10e204] [cursor=pointer]:
+            - generic [ref=f10e205]: close
+            - generic [ref=f10e206]: Cancel Booking
+        - paragraph [ref=f10e207]: SunnyTrips · Curated island escapes, verified before payment
