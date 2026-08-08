@@ -71,6 +71,13 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(10)->by('ai:' . $key);
         });
 
+        // -- CHATBOT GUEST LIMITER (IP-keyed burst; daily cap enforced in middleware) --
+        RateLimiter::for('chat-guest', function (Request $request) {
+            $key = $request->user()?->getAuthIdentifier() ?: $request->ip();
+
+            return Limit::perMinute(5)->by('chat-guest:' . $key);
+        });
+
         // -- PAYMENT WEBHOOK (IP based; forged requests fail signature check) --
         RateLimiter::for('webhook', function (Request $request) {
             return Limit::perMinute(10)->by('webhook:' . $request->ip());

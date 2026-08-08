@@ -1,19 +1,19 @@
-# Task Checklist — Booking Saving + Approval + Payment
+# Task Checklist — Chatbot Implementation
 
-- [x] 1. Migrations (bookings alter, booking_items alter, booking_status_history, notifications)
-- [x] 2. Models (Booking, BookingItem, BookingStatusHistory)
-- [x] 3. Services (BookingRequestService, RoomAvailabilityService, PaymentService + drivers)
-- [x] 4. CheckoutController refactor + checkout view (remove payment UI)
-- [x] 5. RoomAvailabilityController → use service
-- [x] 6. BookingConfirmationController status-aware + lazy expiry + booking/show view rework + pay page
-- [x] 7. BookingPaymentController (pay/cancel/rebook/simulator) + bookingRoute.php
-- [x] 8. PaymentWebhookController + paymentWebhookRoute.php
-- [x] 9. AdminBookingController + adminBookingRoute.php + admin views + sidebar link
-- [x] 10. Notifications (6) + NotificationController + notifications view + table
-- [x] 11. ExpireBookings command + schedule in routes/console.php
-- [x] 12. config/services.php + .env.example
-- [x] 13. routes/web.php requires
-- [x] 14. Tests (BookingFlowTest)
-- [x] 15. php artisan migrate + composer test + manual verification
+- [x] 1. Migrations (chat_sessions, chat_messages — PostgreSQL)
+- [x] 2. Models (ChatSession, ChatMessage — #[Fillable] attribute style)
+- [x] 3. Services/Chat/IntentRouter (8 intents + constraint extraction)
+- [x] 4. Services/Chat/ConversationManager (resolve/claim session, history, persist)
+- [x] 5. Services/Chat/ChatbotService (orchestrator + per-intent handlers incl. itinerary)
+- [x] 6. GeminiService additions (searchRoomsHybrid, generateChatResponse, buildItineraryContext)
+- [x] 7. SystemPrompts/chatbot-system-prompt.md
+- [x] 8. chat-guest rate limiter in AppServiceProvider + EnforceGuestChatLimits middleware
+- [x] 9. ChatbotController + chatRoute.php + require in web.php
+- [x] 10. chat-widget.blade.php (Alpine + thinking-orb + room/itinerary cards + guest-limit + session_token)
+- [x] 11. Mount widget in frontend/layout.blade.php
+- [x] 12. .env.example GEMINI_API_KEY + OPENWEATHER_API_KEY
+- [x] 13. Tests (IntentRouterTest: 13/13 + ChatbotTest: 13/13 — Gemini faked via Http::fake)
+- [x] 14. php artisan migrate + verify
+- [x] 15. composer test (142/153 pass, 11 pre-existing Auth/Profile failures unchanged)
 
-Note: pre-existing Auth/Profile scaffold tests fail because CheckUserOnboarding redirects factory users to /onboarding (expected per AGENTS.md). BookingFlowTest: 9/9 passing.
+Note: 11 pre-existing Auth/Profile scaffold tests fail because CheckUserOnboarding redirects factory users to /onboarding (expected per AGENTS.md). IntentRouterTest: 13/13 passing. ChatbotTest: 13/13 passing.

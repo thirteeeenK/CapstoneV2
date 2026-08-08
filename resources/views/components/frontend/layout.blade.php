@@ -139,5 +139,6 @@
     
     <x-frontend.cart-drawer />
     <x-frontend.cart-success-modal />
+    <x-frontend.chat-widget />
 </body>
 </html>

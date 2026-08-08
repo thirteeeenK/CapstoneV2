@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\HotelModel;
+use App\Models\Package;
 use App\Models\RoomType;
 use App\Models\ActivityModel;
 use App\Models\AddOnModel;
@@ -123,6 +124,19 @@ class GeminiService
             "Duration: " . ($package->days ?: 3) . " Days / " . ($package->nights ?: 2) . " Nights",
             "Minimum Guests Required: " . ($package->min_pax ?: 2) . " Pax",
             $inclusions ? "Included Inclusions & Features: {$inclusions}" : "All-inclusive promo package",
+        ]));
+    }
+
+    /**
+     * Builds structured, semantically optimized text for FAQ embedding generation.
+     */
+    public function buildFaqEmbeddingText(\App\Models\Faq $faq): string
+    {
+        return implode("\n", array_filter([
+            "Question: {$faq->question}",
+            $faq->category ? "Category: {$faq->category}" : null,
+            $faq->keywords ? "Related Keywords: {$faq->keywords}" : null,
+            "Answer: {$faq->answer}",
         ]));
     }
 
@@ -437,7 +451,6 @@ class GeminiService
         $hotels = HotelModel::with('destination')
             ->where('is_shown', true)
             ->whereNotNull('embedding')
-            ->where('embedding', '!=', '')
             ->get();
 
         if ($hotels->isEmpty()) {
@@ -472,6 +485,11 @@ class GeminiService
             $destName = $hotel->destination->name ?? 'Unknown Destination';
             $typeLabel = ucwords(str_replace('-', ' ', $hotel->type ?? 'N/A'));
 
+            $cheapestRate = $hotel->rooms()->where('is_shown', true)->min('base_price');
+            $rates = $cheapestRate !== null
+                ? "From ₱" . number_format((float) $cheapestRate, 2) . "/night"
+                : 'Rates: not available';
+
             $vibes = $this->formatListToString($hotel->vibe_tags);
             $amenities = $this->formatListToString($hotel->featured_amenities);
 
@@ -482,6 +500,7 @@ class GeminiService
                 "Name: {$hotel->hotel_name}",
                 "Destination: {$destName}",
                 "Category: {$typeLabel}",
+                "Rates: {$rates}",
                 $vibes ? "Vibes & Atmosphere: {$vibes}" : null,
                 $amenities ? "Featured Amenities: {$amenities}" : null,
                 "Address: {$hotel->specific_address}",
@@ -510,7 +529,6 @@ class GeminiService
         $hotels = HotelModel::with('destination')
             ->where('is_shown', true)
             ->whereNotNull('embedding')
-            ->where('embedding', '!=', '')
             ->get();
 
         if ($hotels->isEmpty()) {
@@ -544,7 +562,6 @@ class GeminiService
         $rooms = RoomType::with('hotel.destination')
             ->where('is_shown', true)
             ->whereNotNull('embedding')
-            ->where('embedding', '!=', '')
             ->get();
 
         if ($rooms->isEmpty()) {
@@ -624,7 +641,6 @@ class GeminiService
         $rooms = RoomType::with('hotel.destination')
             ->where('is_shown', true)
             ->whereNotNull('embedding')
-            ->where('embedding', '!=', '')
             ->get();
 
         if ($rooms->isEmpty()) {
@@ -658,7 +674,6 @@ class GeminiService
         $activities = ActivityModel::with('destination')
             ->where('is_shown', true)
             ->whereNotNull('embedding')
-            ->where('embedding', '!=', '')
             ->get();
 
         if ($activities->isEmpty()) {
@@ -730,7 +745,6 @@ class GeminiService
         $activities = ActivityModel::with('destination')
             ->where('is_shown', true)
             ->whereNotNull('embedding')
-            ->where('embedding', '!=', '')
             ->get();
 
         if ($activities->isEmpty()) {
@@ -738,6 +752,110 @@ class GeminiService
         }
 
         return $this->rankRecommendations($userPreferenceVector, $activities, $limit);
+    }
+
+    // =========================================================================
+    //  Package-Specific RAG & Recommendation Methods
+    // =========================================================================
+
+    /**
+     * Semantic search over packages using pgvector cosine distance (<=>).
+     */
+    public function searchPackages(string $query, int $limit = 5): array
+    {
+        $queryVector = $this->generateEmbedding($query, 'RETRIEVAL_QUERY');
+
+        if (!$queryVector) {
+            Log::warning('searchPackages: Failed to generate query embedding.', ['query' => $query]);
+            return [];
+        }
+
+        $vectorStr = $this->formatVectorForDb($queryVector);
+        if (!$vectorStr) return [];
+
+        $packages = Package::with('destination')
+            ->where('is_active', true)
+            ->whereNotNull('embedding')
+            ->select('*')
+            ->selectRaw('1.0 - (embedding <=> ?) AS similarity', [$vectorStr])
+            ->orderByRaw('embedding <=> ? ASC', [$vectorStr])
+            ->limit($limit)
+            ->get();
+
+        $results = [];
+        foreach ($packages as $pkg) {
+            $results[] = ['item' => $pkg, 'score' => (float) $pkg->similarity];
+        }
+
+        return $results;
+    }
+
+    /**
+     * Semantic search over FAQs using pgvector cosine distance (<=>).
+     */
+    public function searchFaqs(string $query, int $limit = 3): array
+    {
+        $queryVector = $this->generateEmbedding($query, 'RETRIEVAL_QUERY');
+
+        if (!$queryVector) {
+            Log::warning('searchFaqs: Failed to generate query embedding.', ['query' => $query]);
+            return [];
+        }
+
+        $vectorStr = $this->formatVectorForDb($queryVector);
+        if (!$vectorStr) return [];
+
+        $faqs = \App\Models\Faq::where('is_active', true)
+            ->whereNotNull('embedding')
+            ->select('*')
+            ->selectRaw('1.0 - (embedding <=> ?) AS similarity', [$vectorStr])
+            ->orderByRaw('embedding <=> ? ASC', [$vectorStr])
+            ->limit($limit)
+            ->get();
+
+        $results = [];
+        foreach ($faqs as $faq) {
+            $results[] = ['item' => $faq, 'score' => (float) $faq->similarity];
+        }
+
+        return $results;
+    }
+
+    /**
+     * Formats scored package results into structured context text for RAG prompt injection.
+     */
+    public function getPackageContext(array $scoredPackages): string
+    {
+        if (empty($scoredPackages)) {
+            return '';
+        }
+
+        $blocks = [];
+
+        foreach ($scoredPackages as $index => $entry) {
+            /** @var Package $package */
+            $package = $entry['item'];
+            $score = round($entry['score'], 4);
+            $rank = $index + 1;
+
+            $destName = $package->destination->name ?? 'Philippines';
+            $inclusions = is_array($package->generic_inclusions) ? implode(', ', $package->generic_inclusions) : '';
+
+            $lines = array_filter([
+                "--- Package #{$rank} (relevance: {$score}) ---",
+                "Package Name: {$package->name}",
+                "Destination: {$destName}",
+                "Type: " . ($package->type ?: 'Standard Tour Promo'),
+                "Price: ₱" . number_format($package->price, 2),
+                "Duration: {$package->days}D/{$package->nights}N",
+                "Minimum Guests: {$package->min_pax} pax",
+                $inclusions ? "Inclusions: {$inclusions}" : null,
+            ]);
+
+            $blocks[] = implode("\n", $lines);
+        }
+
+        return "=== PACKAGE DATABASE RESULTS ===\n\n" . implode("\n\n", $blocks) . "\n\n=== END PACKAGE RESULTS ===";
     }
 
     // =========================================================================
@@ -1350,5 +1468,238 @@ class GeminiService
         }
 
         return null; // Clean query
+    }
+
+    // =========================================================================
+    //  Chatbot: Hybrid Search, Multi-Turn Chat, Itinerary Builder
+    // =========================================================================
+
+    public function searchRoomsHybrid(string $query, array $constraints, int $limit = 5): array
+    {
+        $queryVector = $this->generateEmbedding($query, 'RETRIEVAL_QUERY');
+        if (!$queryVector) {
+            Log::warning('searchRoomsHybrid: Failed to generate query embedding.', ['query' => $query]);
+            return [];
+        }
+
+        $roomsQuery = RoomType::with('hotel.destination')
+            ->where('is_shown', true)
+            ->whereNotNull('embedding');
+
+        if (!empty($constraints['destination_id'])) {
+            $roomsQuery->whereHas('hotel', fn($q) => $q->where('destination_id', $constraints['destination_id']));
+        }
+        if (!empty($constraints['pax'])) {
+            $roomsQuery->where('max_occupancy', '>=', $constraints['pax']);
+        }
+        if (!empty($constraints['max_price'])) {
+            $roomsQuery->where('base_price', '<=', $constraints['max_price']);
+        }
+
+        $rooms = $roomsQuery->get();
+
+        if ($rooms->isEmpty()) {
+            $rooms = RoomType::with('hotel.destination')
+                ->where('is_shown', true)
+                ->whereNotNull('embedding')
+                ->get();
+        }
+
+        if ($rooms->isEmpty()) {
+            return [];
+        }
+
+        return $this->rankRecommendations($queryVector, $rooms, $limit);
+    }
+
+    /**
+     * Multi-turn chat response (plain-text, no forced JSON).
+     */
+    public function generateChatResponse(string $systemInstruction, array $history, string $userPrompt): ?string
+    {
+        $apiKey = config('services.gemini.api_key');
+        if (!$apiKey) {
+            Log::warning('Gemini API key is not configured.');
+            return null;
+        }
+
+        $modelName = config('services.gemini.chat_model') ?? 'models/gemini-2.5-flash-lite';
+        $url = "https://generativelanguage.googleapis.com/v1beta/{$modelName}:generateContent?key={$apiKey}";
+
+        $contents = [];
+        foreach ($history as $entry) {
+            $contents[] = [
+                'role' => $entry['role'],
+                'parts' => [['text' => $entry['parts'][0]['text'] ?? '']],
+            ];
+        }
+        $contents[] = ['role' => 'user', 'parts' => [['text' => $userPrompt]]];
+
+        $payload = [
+            'systemInstruction' => [
+                'parts' => [['text' => $systemInstruction]],
+            ],
+            'contents' => $contents,
+            'generationConfig' => [
+                'temperature' => 0.4,
+                'topP' => 0.95,
+                'maxOutputTokens' => 1024,
+            ],
+        ];
+
+        try {
+            $response = Http::withHeaders([
+                'Content-Type' => 'application/json',
+            ])->timeout(30)->post($url, $payload);
+
+            if ($response->successful()) {
+                $text = $response->json('candidates.0.content.parts.0.text');
+                if (is_string($text) && trim($text) !== '') {
+                    return trim($text);
+                }
+            }
+
+            Log::error('Gemini ChatResponse Failed: ', ['response' => $response->body()]);
+        } catch (\Exception $e) {
+            Log::error('Gemini ChatResponse Exception: ' . $e->getMessage());
+        }
+
+        return null;
+    }
+
+    /**
+     * Load the chatbot system prompt from the standardized location.
+     */
+    public function loadChatbotSystemPrompt(): string
+    {
+        return $this->loadSystemPrompt('chatbot-system-prompt.md');
+    }
+
+    /**
+     * Build a deterministic itinerary context for Gemini narration.
+     */
+    public function buildItineraryContext(string $query, array $constraints, int $pax, int $nights, float $maxBudget): array
+    {
+        $destinationId = $constraints['destination_id'] ?? null;
+        if (!$destinationId) {
+            return ['success' => false, 'message' => 'Which destination would you like an itinerary for?'];
+        }
+
+        $destination = DestinationModel::find($destinationId);
+        if (!$destination) {
+            return ['success' => false, 'message' => 'I could not find that destination.'];
+        }
+
+        $hotels = HotelModel::where('destination_id', $destinationId)
+            ->where('is_shown', true)
+            ->with(['rooms' => fn($q) => $q->where('is_shown', true)->where('max_occupancy', '>=', $pax)])
+            ->get()
+            ->filter(fn($h) => $h->rooms->isNotEmpty());
+
+        $pickedRoom = null;
+        $pickedHotel = null;
+        foreach ($hotels as $hotel) {
+            foreach ($hotel->rooms as $room) {
+                $nightlyRate = $room->calculateNightlyRate($pax);
+                $roomTotal = $nightlyRate * $nights;
+
+                if ($roomTotal <= $maxBudget * 0.5) {
+                    $pickedRoom = $room;
+                    $pickedHotel = $hotel;
+                    break 2;
+                }
+            }
+        }
+
+        if (!$pickedRoom) {
+            foreach ($hotels as $hotel) {
+                $best = $hotel->rooms->sortBy(fn($r) => $r->calculateNightlyRate($pax))->first();
+                if ($best) {
+                    $pickedRoom = $best;
+                    $pickedHotel = $hotel;
+                    break;
+                }
+            }
+        }
+
+        if (!$pickedRoom || !$pickedHotel) {
+            return ['success' => false, 'message' => "I could not find any available rooms in {$destination->name} for {$pax} guests."];
+        }
+
+        $activityCount = min(4, $nights + 1);
+        $budgetForActivities = $maxBudget - ($pickedRoom->calculateNightlyRate($pax) * $nights);
+
+        $activities = ActivityModel::where('destination_id', $destinationId)
+            ->where('is_shown', true)
+            ->get()
+            ->map(function ($activity) use ($pax) {
+                $cost = $activity->isPerPersonRate()
+                    ? round($activity->calculateRateForPax($pax) * $pax, 2)
+                    : round($activity->calculateRateForPax($pax), 2);
+                $activity->_computed_cost = $cost;
+                return $activity;
+            })
+            ->filter(fn($a) => $a->_computed_cost <= $budgetForActivities * 0.8)
+            ->sortBy('_computed_cost')
+            ->take($activityCount)
+            ->values();
+
+        $roomRate = $pickedRoom->calculateNightlyRate($pax);
+        $roomTotal = $roomRate * $nights;
+        $activitiesTotal = $activities->sum('_computed_cost');
+        $grandTotal = round($roomTotal + $activitiesTotal, 2);
+
+        $context = "DESTINATION: {$destination->name}\n";
+        $context .= "PAX: {$pax} guest(s) | NIGHTS: {$nights} | BUDGET: ₱" . number_format($maxBudget, 2) . "\n\n";
+
+        $context .= "HOTEL & ROOM:\n";
+        $context .= "- {$pickedHotel->hotel_name}: {$pickedRoom->room_name}\n";
+        $context .= "- Bed: {$pickedRoom->bed_configuration} | Occupancy: {$pickedRoom->max_occupancy} pax\n";
+        $context .= "- Nightly rate: ₱" . number_format($roomRate, 2) . " | " . $nights . " nights = ₱" . number_format($roomTotal, 2) . "\n\n";
+
+        $context .= "ACTIVITIES (₱" . number_format($activitiesTotal, 2) . " total):\n";
+        foreach ($activities as $i => $activity) {
+            $day = min($nights + 1, intdiv($i, 2) + 1);
+            $slot = $i % 2 === 0 ? 'main activity' : 'afternoon activity';
+            $context .= "- Day {$day} ({$slot}): {$activity->activity_name} | {$activity->category} | {$activity->duration} | ₱" . number_format($activity->_computed_cost, 2) . " for {$pax} pax\n";
+        }
+
+        $context .= "\nTOTAL: ₱" . number_format($grandTotal, 2);
+        $context .= $grandTotal > $maxBudget
+            ? " (OVER BUDGET by ₱" . number_format($grandTotal - $maxBudget, 2) . " — inform the user)"
+            : " (WITHIN BUDGET)";
+
+        $data = [
+            'destination' => ['id' => $destination->id, 'name' => $destination->name],
+            'hotel' => ['id' => $pickedHotel->id, 'name' => $pickedHotel->hotel_name],
+            'room' => [
+                'id' => $pickedRoom->id,
+                'room_name' => $pickedRoom->room_name,
+                'nightly_rate' => $roomRate,
+                'formatted_nightly_rate' => '₱' . number_format($roomRate, 2),
+                'total' => $roomTotal,
+                'formatted_total' => '₱' . number_format($roomTotal, 2),
+            ],
+            'activities' => $activities->map(fn($a) => [
+                'id' => $a->id,
+                'activity_name' => $a->activity_name,
+                'category' => $a->category,
+                'duration' => $a->duration,
+                'cost' => $a->_computed_cost,
+                'formatted_cost' => '₱' . number_format($a->_computed_cost, 2),
+            ])->values()->all(),
+            'nights' => $nights,
+            'pax' => $pax,
+            'grand_total' => $grandTotal,
+            'formatted_grand_total' => '₱' . number_format($grandTotal, 2),
+            'budget' => $maxBudget,
+            'within_budget' => $grandTotal <= $maxBudget,
+        ];
+
+        return [
+            'success' => true,
+            'context' => $context,
+            'data' => $data,
+        ];
     }
 }
