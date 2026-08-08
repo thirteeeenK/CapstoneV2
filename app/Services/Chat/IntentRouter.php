@@ -3,6 +3,7 @@
 namespace App\Services\Chat;
 
 use App\Models\DestinationModel;
+use App\Models\HotelModel;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 
@@ -98,6 +99,8 @@ class IntentRouter
             'max_price' => null,
             'destination_id' => null,
             'destination_name' => null,
+            'hotel_id' => null,
+            'hotel_name' => null,
             'check_in_date' => null,
             'check_out_date' => null,
             'nights' => null,
@@ -144,6 +147,11 @@ class IntentRouter
             $constraints['destination_id'] = $this->resolveDestinationId($constraints['destination_name']);
         }
 
+        $constraints['hotel_name'] = $this->extractHotelName($query);
+        if ($constraints['hotel_name']) {
+            $constraints['hotel_id'] = HotelModel::where('hotel_name', 'ILIKE', $constraints['hotel_name'])->value('id');
+        }
+
         $constraints['place_names'] = $this->extractPlaceNames($query);
 
         return $constraints;
@@ -166,6 +174,41 @@ class IntentRouter
     protected function resolveDestinationId(string $name): ?int
     {
         return DestinationModel::where('name', 'ILIKE', $name)->value('id');
+    }
+
+    public function extractHotelName(string $query): ?string
+    {
+        $hotels = HotelModel::pluck('hotel_name')->sortByDesc(fn($n) => mb_strlen($n));
+        $lower = mb_strtolower($query);
+
+        foreach ($hotels as $name) {
+            if (str_contains($lower, mb_strtolower($name))) {
+                return $name;
+            }
+        }
+
+        $genericWords = [
+            'resort', 'hotel', 'hostel', 'inn', 'lodge', 'suites', 'suite', 'beach', 'island', 'bay', 'villa',
+            'residences', 'vacation', 'holiday', 'guest', 'house', 'home', 'the', 'and', 'de', 'del', 'la', 'of',
+        ];
+        $destinationNames = array_map(
+            fn($name) => mb_strtolower((string) $name),
+            DestinationModel::pluck('name')->all()
+        );
+
+        foreach ($hotels as $name) {
+            $tokens = preg_split('/\s+/', mb_strtolower((string) $name));
+            foreach ($tokens as $token) {
+                if (strlen($token) < 3 || in_array($token, $genericWords, true) || in_array($token, $destinationNames, true)) {
+                    continue;
+                }
+                if (preg_match('/\b' . preg_quote($token, '/') . '\b/', $lower)) {
+                    return (string) $name;
+                }
+            }
+        }
+
+        return null;
     }
 
     protected function extractPlaceNames(string $query): array

@@ -65,9 +65,27 @@ class SupportQueueController extends Controller
                 ];
             });
 
+        $myReturned = SupportInquiry::with(['chatSession', 'user'])
+            ->where('assigned_admin_id', $admin->id)
+            ->where('status', SupportInquiry::STATUS_RETURNED_AI)
+            ->orderBy('returned_to_ai_at', 'desc')
+            ->get()
+            ->map(function ($inquiry) {
+                return [
+                    'id' => $inquiry->id,
+                    'ticket_number' => $inquiry->ticket_number,
+                    'user_name' => $inquiry->user?->name ?? 'Guest',
+                    'user_id' => $inquiry->user_id,
+                    'requested_at' => $inquiry->requested_at?->diffForHumans() ?? '',
+                    'returned_to_ai_at' => $inquiry->returned_to_ai_at?->diffForHumans() ?? '',
+                    'status' => $inquiry->status,
+                ];
+            });
+
         return response()->json([
             'pending' => $pending,
             'my_active' => $myActive,
+            'my_returned' => $myReturned,
             'pending_count' => $pending->count(),
         ]);
     }

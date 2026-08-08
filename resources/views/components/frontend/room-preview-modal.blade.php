@@ -48,7 +48,8 @@
                 <div class="space-y-3">
                     <div class="relative h-64 sm:h-80 rounded-2xl overflow-hidden bg-slate-900 group">
                         <img :src="$store.preview.room.images[$store.preview.roomImgIndex]"
-                            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            onerror="this.style.display='none'">
                         <div class="absolute bottom-3 right-3 bg-slate-950/70 backdrop-blur-md text-white text-xs px-3 py-1 rounded-lg border border-white/20">
                             Photo <span x-text="$store.preview.roomImgIndex + 1"></span> of <span x-text="$store.preview.room.images.length"></span>
                         </div>

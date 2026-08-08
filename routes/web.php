@@ -20,7 +20,7 @@ Route::get('/legal/{slug}', [LegalContentController::class, 'show'])->name('lega
 use App\Http\Controllers\RecommendationController;
 
 Route::get('/dashboard', [RecommendationController::class, 'index'])
-    ->middleware(['auth', 'verified', 'throttle:ai'])
+    ->middleware(['auth', 'verified'])
     ->name('dashboard');
 
 use App\Http\Controllers\OnboardingController;

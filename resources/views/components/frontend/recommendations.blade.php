@@ -20,11 +20,11 @@
         class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 border-b border-slate-100 pb-6">
 
         {{-- Header Mode Tabs: AI Recommendations vs Default Listings vs Tour Packages --}}
-        <div class="space-y-3">
+        <div class="space-y-3 min-h-[72px]">
             <div class="inline-flex flex-wrap items-center gap-1.5 p-1.5 bg-slate-100/80 rounded-2xl border border-slate-200">
                 <button type="button" @click="mode = 'ai'"
-                    :class="mode === 'ai' ? 'bg-gradient-to-r from-sky-500 to-sky-600 text-white font-extrabold shadow-sm' : 'text-slate-600 hover:text-slate-900 font-semibold'"
-                    class="px-4 py-2.5 rounded-xl text-xs transition-all duration-200 flex items-center gap-2 cursor-pointer">
+                    :class="mode === 'ai' ? 'bg-gradient-to-r from-sky-500 to-sky-600 text-white font-extrabold shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 font-semibold'"
+                    class="px-4 py-2.5 rounded-xl text-xs transition-colors duration-150 flex items-center gap-2 cursor-pointer">
                     <span class="material-symbols-outlined text-[18px]">auto_awesome</span>
                     <span>AI Recommendations</span>
                     @if($isPersonalized)
@@ -33,106 +33,103 @@
                 </button>
 
                 <button type="button" @click="mode = 'default'"
-                    :class="mode === 'default' ? 'bg-gradient-to-r from-sky-500 to-sky-600 text-white font-extrabold shadow-sm' : 'text-slate-600 hover:text-slate-900 font-semibold'"
-                    class="px-4 py-2.5 rounded-xl text-xs transition-all duration-200 flex items-center gap-2 cursor-pointer">
+                    :class="mode === 'default' ? 'bg-gradient-to-r from-sky-500 to-sky-600 text-white font-extrabold shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 font-semibold'"
+                    class="px-4 py-2.5 rounded-xl text-xs transition-colors duration-150 flex items-center gap-2 cursor-pointer">
                     <span class="material-symbols-outlined text-[18px]">travel_explore</span>
                     <span>Default Listings</span>
                 </button>
 
                 <button type="button" @click="mode = 'packages'"
-                    :class="mode === 'packages' ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black shadow-sm' : 'text-slate-600 hover:text-slate-900 font-semibold'"
-                    class="px-4 py-2.5 rounded-xl text-xs transition-all duration-200 flex items-center gap-2 cursor-pointer">
+                    :class="mode === 'packages' ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 font-semibold'"
+                    class="px-4 py-2.5 rounded-xl text-xs transition-colors duration-150 flex items-center gap-2 cursor-pointer">
                     <span class="material-symbols-outlined text-[18px]">card_travel</span>
                     <span>Tour Packages</span>
                 </button>
             </div>
 
-            <p class="text-slate-500 text-xs font-body max-w-xl">
-                <template x-if="mode === 'ai'">
-                    <span>Top 5 sanctuary stays and top 5 experiences matched to your travel preference profile.</span>
-                </template>
-                <template x-if="mode === 'default'">
-                    <span>Popular island highlights across top destinations.</span>
-                </template>
-                <template x-if="mode === 'packages'">
-                    <span>Curated all-inclusive island tour packages combining flights, hotels, transfers, and activities.</span>
-                </template>
+            <p class="text-slate-500 text-xs font-body max-w-xl h-5 flex items-center">
+                <span x-show="mode === 'ai'" x-cloak>Top 5 sanctuary stays and top 5 experiences matched to your preference profile.</span>
+                <span x-show="mode === 'default'" x-cloak>Popular island highlights across top destinations.</span>
+                <span x-show="mode === 'packages'" x-cloak>Curated all-inclusive island tour packages combining stays, transfers, and activities.</span>
             </p>
         </div>
 
         {{-- Action & Destination Tabs --}}
-        <div class="flex flex-col items-start lg:items-end gap-3 shrink-0 w-full lg:w-auto">
+        <div class="flex flex-col items-start lg:items-end gap-3 shrink-0 w-full lg:w-auto min-h-[72px] justify-between">
             {{-- Reset / Personalize Profile Button --}}
             <a href="{{ route('onboarding.reset') }}"
-                class="px-4 py-2.5 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-700 font-bold text-xs shadow-xs border border-sky-200/80 transition-all flex items-center gap-1.5 cursor-pointer">
+                class="px-4 py-2 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-700 font-bold text-xs shadow-xs border border-sky-200/80 transition-colors flex items-center gap-1.5 cursor-pointer">
                 <span class="material-symbols-outlined text-[16px] text-sky-600">tune</span>
                 <span>{{ $isPersonalized ? 'Reset Preferences' : 'Personalize My Profile' }}</span>
             </a>
 
-            {{-- Destination Filter Tabs for AI Mode --}}
-            @if($hasAi)
-                <div x-show="mode === 'ai'"
-                    class="flex items-center gap-2 overflow-x-auto pb-1 lg:pb-0 max-w-full p-1.5 bg-slate-100/90 rounded-2xl border border-slate-200">
-                    <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-2 shrink-0 flex items-center gap-1">
-                        <span class="material-symbols-outlined text-[15px] text-slate-400">filter_alt</span>
-                        <span>Sanctuary:</span>
-                    </span>
-                    @foreach($aiRecommendations as $item)
-                        @php $dest = $item['destination']; @endphp
-                        <button type="button" @click="activeAiDestId = {{ $dest->id }}"
-                            :class="activeAiDestId === {{ $dest->id }} ? 'bg-sky-600 text-white font-extrabold shadow-xs border-sky-600' : 'bg-white text-slate-600 hover:bg-slate-200/80 hover:text-slate-900 font-semibold border-slate-200/80'"
-                            class="px-3.5 py-1.5 rounded-xl text-xs transition-all shrink-0 flex items-center gap-1.5 border cursor-pointer">
-                            <span class="material-symbols-outlined text-[15px]" :class="activeAiDestId === {{ $dest->id }} ? 'text-white' : 'text-sky-600'">location_on</span>
-                            <span>{{ $dest->name }}</span>
-                        </button>
-                    @endforeach
-                </div>
-            @endif
+            {{-- Destination Filter Tabs (Instant Swap with Zero Vertical Shift) --}}
+            <div class="relative w-full lg:w-auto">
+                {{-- AI Mode Filters --}}
+                @if($hasAi)
+                    <div x-show="mode === 'ai'" x-cloak
+                        class="flex items-center gap-2 overflow-x-auto pb-1 lg:pb-0 max-w-full p-1.5 bg-slate-100/90 rounded-2xl border border-slate-200">
+                        <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-2 shrink-0 flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[15px] text-slate-400">filter_alt</span>
+                            <span>Sanctuary:</span>
+                        </span>
+                        @foreach($aiRecommendations as $item)
+                            @php $dest = $item['destination']; @endphp
+                            <button type="button" @click="activeAiDestId = {{ $dest->id }}"
+                                :class="activeAiDestId === {{ $dest->id }} ? 'bg-sky-600 text-white font-extrabold shadow-xs border-sky-600' : 'bg-white text-slate-600 hover:bg-slate-200/80 hover:text-slate-900 font-semibold border-slate-200/80'"
+                                class="px-3.5 py-1.5 rounded-xl text-xs transition-colors shrink-0 flex items-center gap-1.5 border cursor-pointer">
+                                <span class="material-symbols-outlined text-[15px]" :class="activeAiDestId === {{ $dest->id }} ? 'text-white' : 'text-sky-600'">location_on</span>
+                                <span>{{ $dest->name }}</span>
+                            </button>
+                        @endforeach
+                    </div>
+                @endif
 
-            {{-- Destination Filter Tabs for Default Mode --}}
-            @if($hasDefault)
-                <div x-show="mode === 'default'"
-                    class="flex items-center gap-2 overflow-x-auto pb-1 lg:pb-0 max-w-full p-1.5 bg-slate-100/90 rounded-2xl border border-slate-200">
-                    <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-2 shrink-0 flex items-center gap-1">
-                        <span class="material-symbols-outlined text-[15px] text-slate-400">filter_alt</span>
-                        <span>Sanctuary:</span>
-                    </span>
-                    @foreach($defaultRecommendations as $item)
-                        @php $dest = $item['destination']; @endphp
-                        <button type="button" @click="activeDefaultDestId = {{ $dest->id }}"
-                            :class="activeDefaultDestId === {{ $dest->id }} ? 'bg-sky-600 text-white font-extrabold shadow-xs border-sky-600' : 'bg-white text-slate-600 hover:bg-slate-200/80 hover:text-slate-900 font-semibold border-slate-200/80'"
-                            class="px-3.5 py-1.5 rounded-xl text-xs transition-all shrink-0 flex items-center gap-1.5 border cursor-pointer">
-                            <span class="material-symbols-outlined text-[15px]" :class="activeDefaultDestId === {{ $dest->id }} ? 'text-white' : 'text-sky-600'">location_on</span>
-                            <span>{{ $dest->name }}</span>
-                        </button>
-                    @endforeach
-                </div>
-            @endif
+                {{-- Default Mode Filters --}}
+                @if($hasDefault)
+                    <div x-show="mode === 'default'" x-cloak
+                        class="flex items-center gap-2 overflow-x-auto pb-1 lg:pb-0 max-w-full p-1.5 bg-slate-100/90 rounded-2xl border border-slate-200">
+                        <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-2 shrink-0 flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[15px] text-slate-400">filter_alt</span>
+                            <span>Sanctuary:</span>
+                        </span>
+                        @foreach($defaultRecommendations as $item)
+                            @php $dest = $item['destination']; @endphp
+                            <button type="button" @click="activeDefaultDestId = {{ $dest->id }}"
+                                :class="activeDefaultDestId === {{ $dest->id }} ? 'bg-sky-600 text-white font-extrabold shadow-xs border-sky-600' : 'bg-white text-slate-600 hover:bg-slate-200/80 hover:text-slate-900 font-semibold border-slate-200/80'"
+                                class="px-3.5 py-1.5 rounded-xl text-xs transition-colors shrink-0 flex items-center gap-1.5 border cursor-pointer">
+                                <span class="material-symbols-outlined text-[15px]" :class="activeDefaultDestId === {{ $dest->id }} ? 'text-white' : 'text-sky-600'">location_on</span>
+                                <span>{{ $dest->name }}</span>
+                            </button>
+                        @endforeach
+                    </div>
+                @endif
 
-            {{-- Destination Filter Tabs for Packages Mode --}}
-            @if($hasDefault)
-                <div x-show="mode === 'packages'"
-                    class="flex items-center gap-2 overflow-x-auto pb-1 lg:pb-0 max-w-full p-1.5 bg-slate-100/90 rounded-2xl border border-slate-200">
-                    <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-2 shrink-0 flex items-center gap-1">
-                        <span class="material-symbols-outlined text-[15px] text-slate-400">filter_alt</span>
-                        <span>Sanctuary:</span>
-                    </span>
-                    @foreach($defaultRecommendations as $item)
-                        @php $dest = $item['destination']; @endphp
-                        <button type="button" @click="activePackageDestId = {{ $dest->id }}"
-                            :class="activePackageDestId === {{ $dest->id }} ? 'bg-amber-500 text-slate-950 font-extrabold shadow-xs border-amber-500' : 'bg-white text-slate-600 hover:bg-slate-200/80 hover:text-slate-900 font-semibold border-slate-200/80'"
-                            class="px-3.5 py-1.5 rounded-xl text-xs transition-all shrink-0 flex items-center gap-1.5 border cursor-pointer">
-                            <span class="material-symbols-outlined text-[15px]" :class="activePackageDestId === {{ $dest->id }} ? 'text-slate-950' : 'text-amber-600'">location_on</span>
-                            <span>{{ $dest->name }}</span>
-                        </button>
-                    @endforeach
-                </div>
-            @endif
+                {{-- Packages Mode Filters --}}
+                @if($hasDefault)
+                    <div x-show="mode === 'packages'" x-cloak
+                        class="flex items-center gap-2 overflow-x-auto pb-1 lg:pb-0 max-w-full p-1.5 bg-slate-100/90 rounded-2xl border border-slate-200">
+                        <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-2 shrink-0 flex items-center gap-1">
+                            <span class="material-symbols-outlined text-[15px] text-slate-400">filter_alt</span>
+                            <span>Sanctuary:</span>
+                        </span>
+                        @foreach($defaultRecommendations as $item)
+                            @php $dest = $item['destination']; @endphp
+                            <button type="button" @click="activePackageDestId = {{ $dest->id }}"
+                                :class="activePackageDestId === {{ $dest->id }} ? 'bg-amber-500 text-slate-950 font-extrabold shadow-xs border-amber-500' : 'bg-white text-slate-600 hover:bg-slate-200/80 hover:text-slate-900 font-semibold border-slate-200/80'"
+                                class="px-3.5 py-1.5 rounded-xl text-xs transition-colors shrink-0 flex items-center gap-1.5 border cursor-pointer">
+                                <span class="material-symbols-outlined text-[15px]" :class="activePackageDestId === {{ $dest->id }} ? 'text-slate-950' : 'text-amber-600'">location_on</span>
+                                <span>{{ $dest->name }}</span>
+                            </button>
+                        @endforeach
+                    </div>
+                @endif
+            </div>
         </div>
     </div>
 
     {{-- Content Area 1: AI Recommendations Mode --}}
-    <div x-show="mode === 'ai'" class="space-y-8">
+    <div x-show="mode === 'ai'" x-cloak class="space-y-8">
         @if(!$hasAi)
             <div class="p-8 text-center bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
                 <span class="material-symbols-outlined text-4xl text-sky-500">auto_awesome</span>
@@ -149,7 +146,7 @@
                     $hotels = $item['hotels'];
                     $activities = $item['activities'];
                 @endphp
-                <div x-show="activeAiDestId === {{ $dest->id }}" class="space-y-8">
+                <div x-show="activeAiDestId === {{ $dest->id }}" x-cloak class="space-y-8">
                     {{-- 1. AI HOTELS --}}
                     @if($hotels->isNotEmpty())
                         <div class="space-y-4">
@@ -299,7 +296,7 @@
     </div>
 
     {{-- Content Area 2: Default Listings Mode --}}
-    <div x-show="mode === 'default'" class="space-y-8">
+    <div x-show="mode === 'default'" x-cloak class="space-y-8">
         @if(!$hasDefault)
             <div class="p-8 text-center bg-slate-50 rounded-2xl border border-slate-200 text-slate-400 text-sm">
                 No listings available.
@@ -311,7 +308,7 @@
                     $hotels = $item['hotels'];
                     $activities = $item['activities'];
                 @endphp
-                <div x-show="activeDefaultDestId === {{ $dest->id }}" class="space-y-8">
+                <div x-show="activeDefaultDestId === {{ $dest->id }}" x-cloak class="space-y-8">
                     {{-- 1. DEFAULT HOTELS --}}
                     @if($hotels->isNotEmpty())
                         <div class="space-y-4">
@@ -459,7 +456,7 @@
     </div>
 
     {{-- Content Area 3: Tour Packages Mode --}}
-    <div x-show="mode === 'packages'" class="space-y-8">
+    <div x-show="mode === 'packages'" x-cloak class="space-y-8">
         @if(!$hasDefault)
             <div class="p-8 text-center bg-slate-50 rounded-2xl border border-slate-200 text-slate-400 text-sm">
                 No packages available.
@@ -470,7 +467,7 @@
                     $dest = $item['destination'];
                     $packages = $item['packages'] ?? collect();
                 @endphp
-                <div x-show="activePackageDestId === {{ $dest->id }}" class="space-y-6">
+                <div x-show="activePackageDestId === {{ $dest->id }}" x-cloak class="space-y-6">
                     <div class="flex items-center justify-between border-b border-slate-100 pb-3">
                         <div class="flex items-center gap-2">
                             <span class="material-symbols-outlined text-amber-600 text-[24px]">card_travel</span>

@@ -42,31 +42,38 @@
                 </div>
             </div>
 
-            {{-- DSS Destination Overview Map --}}
+            {{-- AI Recommendations & Default Listings Tabs Section (First Priority) --}}
+            <x-frontend.recommendations :is-personalized="$isPersonalized" :ai-recommendations="$aiRecommendations"
+                :default-recommendations="$defaultRecommendations" />
+
+            {{-- DSS Destination Overview Map Section (Below Recommendations) --}}
             @if(!empty($mapMarkers))
-                <section class="space-y-4">
-                    <div class="flex flex-wrap items-end justify-between gap-3">
-                        <div>
+                <section class="bg-white border border-slate-200/80 rounded-3xl p-6 sm:p-8 shadow-sm space-y-5">
+                    <div class="flex flex-wrap items-end justify-between gap-4 border-b border-slate-100 pb-4">
+                        <div class="space-y-1">
+                            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-ocean-50 text-ocean-700 text-xs font-bold uppercase tracking-widest border border-ocean-200">
+                                <span class="material-symbols-outlined text-[16px] text-ocean-600">map</span>
+                                <span>Interactive Map Explorer</span>
+                            </div>
                             <h2 class="text-xl sm:text-2xl font-black text-slate-900 font-headline tracking-tight">
-                                Explore Islands on the Map
+                                Explore Destinations Across the Philippines
                             </h2>
                             <p class="text-slate-500 text-xs sm:text-sm font-body">
-                                Tap a marker to see what each destination has in store — then plan your next escape.
+                                Tap markers on the map to explore sanctuary hotels and local experiences across all partner islands.
                             </p>
                         </div>
                         <a href="{{ route('explore') }}"
-                            class="inline-flex items-center gap-1.5 rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white transition hover:bg-slate-700">
-                            <span class="material-symbols-outlined text-[16px]">map</span>
-                            Open Full Map
+                            class="inline-flex items-center gap-2 rounded-xl bg-slate-900 hover:bg-slate-800 px-4 py-2.5 text-xs font-bold text-white transition-all shadow-xs cursor-pointer">
+                            <span class="material-symbols-outlined text-[16px]">explore</span>
+                            <span>Open Full Explorer Map</span>
                         </a>
                     </div>
-                    <x-frontend.map :markers="$mapMarkers" :center="null" :zoom="6" height="h-80" />
+
+                    <div class="rounded-2xl border border-slate-200/80 overflow-hidden shadow-xs">
+                        <x-frontend.map :markers="$mapMarkers" :center="null" :zoom="6" height="h-80 sm:h-96" />
+                    </div>
                 </section>
             @endif
-
-            {{-- AI Recommendations & Default Listings Tabs Section --}}
-            <x-frontend.recommendations :is-personalized="$isPersonalized" :ai-recommendations="$aiRecommendations"
-                :default-recommendations="$defaultRecommendations" />
 
         </div>
     </div>

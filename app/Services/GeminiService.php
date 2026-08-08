@@ -439,7 +439,7 @@ class GeminiService
      * @param  int     $limit   Maximum results to return
      * @return array   Scored results: [['item' => HotelModel, 'score' => float], ...]
      */
-    public function searchHotels(string $query, int $limit = 5): array
+    public function searchHotels(string $query, int $limit = 5, ?int $hotelId = null): array
     {
         $queryVector = $this->generateEmbedding($query, 'RETRIEVAL_QUERY');
 
@@ -450,8 +450,13 @@ class GeminiService
 
         $hotels = HotelModel::with('destination')
             ->where('is_shown', true)
-            ->whereNotNull('embedding')
-            ->get();
+            ->whereNotNull('embedding');
+
+        if ($hotelId) {
+            $hotels->where('id', $hotelId);
+        }
+
+        $hotels = $hotels->get();
 
         if ($hotels->isEmpty()) {
             return [];
@@ -1489,6 +1494,9 @@ class GeminiService
         if (!empty($constraints['destination_id'])) {
             $roomsQuery->whereHas('hotel', fn($q) => $q->where('destination_id', $constraints['destination_id']));
         }
+        if (!empty($constraints['hotel_id'])) {
+            $roomsQuery->where('hotel_id', $constraints['hotel_id']);
+        }
         if (!empty($constraints['pax'])) {
             $roomsQuery->where('max_occupancy', '>=', $constraints['pax']);
         }
@@ -1498,7 +1506,7 @@ class GeminiService
 
         $rooms = $roomsQuery->get();
 
-        if ($rooms->isEmpty()) {
+        if ($rooms->isEmpty() && empty($constraints['hotel_id'])) {
             $rooms = RoomType::with('hotel.destination')
                 ->where('is_shown', true)
                 ->whereNotNull('embedding')

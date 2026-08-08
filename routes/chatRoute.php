@@ -10,7 +10,7 @@ Route::post('/chat', [ChatbotController::class, 'chat'])
 
 Route::get('/chat/history', [ChatbotController::class, 'history'])
     ->name('chat.history')
-    ->middleware(['throttle:ai']);
+    ->middleware(['throttle:chat-poll']);
 
 Route::post('/chat/handoff', [ChatbotController::class, 'handoff'])
     ->name('chat.handoff')
@@ -20,6 +20,10 @@ Route::post('/chat/handoff/cancel', [ChatbotController::class, 'cancelHandoff'])
     ->name('chat.handoff.cancel')
     ->middleware(['throttle:ai']);
 
+Route::post('/chat/handoff/return', [ChatbotController::class, 'returnToBot'])
+    ->name('chat.handoff.return')
+    ->middleware(['throttle:ai']);
+
 Route::get('/chat/poll', [ChatbotController::class, 'poll'])
     ->name('chat.poll')
-    ->middleware(['throttle:ai']);
+    ->middleware(['throttle:chat-poll']);

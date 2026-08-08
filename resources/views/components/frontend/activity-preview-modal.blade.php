@@ -45,7 +45,8 @@
                 <div class="space-y-3">
                     <div class="relative h-64 sm:h-80 rounded-2xl overflow-hidden bg-slate-900 group border border-slate-200/80">
                         <img :src="$store.preview.activity.images[$store.preview.actImgIndex]"
-                            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                            class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            onerror="this.style.display='none'">
                         <div class="absolute bottom-3 right-3 bg-slate-950/75 backdrop-blur-md text-white text-xs px-3 py-1 rounded-lg border border-white/20">
                             Photo <span x-text="$store.preview.actImgIndex + 1"></span> of <span x-text="$store.preview.activity.images.length"></span>
                         </div>

@@ -64,8 +64,13 @@ class ChatbotController extends Controller
                 'context_data' => $msg->context_data,
             ]);
 
+        $inquiry = SupportInquiry::where('chat_session_id', $session->id)
+            ->orderBy('created_at', 'desc')
+            ->first();
+
         return response()->json([
             'session_token' => $session->session_token,
+            'handoff_status' => $inquiry?->status ?? null,
             'messages' => $messages,
         ]);
     }
@@ -99,6 +104,31 @@ class ChatbotController extends Controller
         $this->supportQueue->cancelHandoff($session);
 
         return response()->json(['status' => 'success', 'handoff_status' => SupportInquiry::STATUS_AI_ACTIVE]);
+    }
+
+    public function returnToBot(Request $request): JsonResponse
+    {
+        $token = $request->input('session_token');
+        if (!$token) {
+            return response()->json(['status' => 'error', 'message' => 'No session token.'], 400);
+        }
+
+        $session = $this->conversation->resolveSession($token, $request->user());
+
+        $inquiry = SupportInquiry::where('chat_session_id', $session->id)
+            ->where('status', SupportInquiry::STATUS_HUMAN_ACTIVE)
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        if ($inquiry) {
+            $this->supportQueue->resumeAi($inquiry);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'handoff_status' => $inquiry?->status ?? SupportInquiry::STATUS_AI_ACTIVE,
+            'session_token' => $session->session_token,
+        ]);
     }
 
     public function poll(Request $request): JsonResponse

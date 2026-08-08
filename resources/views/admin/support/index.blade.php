@@ -58,7 +58,29 @@
                 </div>
             </template>
 
-            <template x-if="pending.length === 0 && myActive.length === 0">
+            {{-- Returned to SunnyBot --}}
+            <template x-if="myReturned.length > 0">
+                <div>
+                    <p class="px-4 py-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">Returned to SunnyBot</p>
+                    <template x-for="ticket in myReturned" :key="ticket.id">
+                        <div class="px-4 py-2.5 border-b border-slate-50 hover:bg-slate-50 cursor-pointer transition-colors"
+                            :class="{ 'bg-amber-50 border-amber-100': selectedInquiry?.id === ticket.id }"
+                            @click="openInquiry(ticket)"
+                        >
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs font-semibold text-ink-700" x-text="'#' + ticket.ticket_number"></span>
+                                <button @click.stop="resolveTicket(ticket)"
+                                    class="text-[10px] bg-green-100 text-green-700 px-2 py-0.5 rounded-full hover:bg-green-200 transition-colors font-body font-semibold"
+                                >Resolve</button>
+                            </div>
+                            <p class="text-xs text-slate-500 mt-0.5 truncate" x-text="ticket.user_name"></p>
+                            <p class="text-[10px] text-amber-600 font-semibold mt-0.5">User returned to SunnyBot &middot; <span x-text="ticket.returned_to_ai_at"></span></p>
+                        </div>
+                    </template>
+                </div>
+            </template>
+
+            <template x-if="pending.length === 0 && myActive.length === 0 && myReturned.length === 0">
                 <div class="text-center py-10 text-slate-400 text-sm">
                     <span class="material-symbols-outlined text-4xl block mb-2">inbox</span>
                     <p>No support requests yet.</p>
@@ -84,10 +106,12 @@
                 <div class="px-4 py-2.5 border-b border-slate-200 bg-white flex items-center justify-between shrink-0">
                     <div>
                         <p class="text-sm font-semibold text-ink-800" x-text="'#' + selectedInquiry.ticket_number + ' — ' + selectedInquiry.user_name"></p>
-                        <p class="text-xs text-slate-500" x-text="selectedInquiry.status === 'HUMAN_SUPPORT_ACTIVE' ? 'Assigned to you' : 'Unassigned'"></p>
+                        <p class="text-xs text-slate-500">
+                            <span x-text="selectedInquiry.status === 'HUMAN_SUPPORT_ACTIVE' ? 'Assigned to you' : (selectedInquiry.status === 'RETURNED_TO_AI' ? 'User returned to SunnyBot' : 'Unassigned')"></span>
+                        </p>
                     </div>
-                    <div class="flex gap-2" x-show="selectedInquiry.status === 'HUMAN_SUPPORT_ACTIVE'">
-                        <button @click="resumeAi()"
+                    <div class="flex gap-2" x-show="selectedInquiry.status === 'HUMAN_SUPPORT_ACTIVE' || selectedInquiry.status === 'RETURNED_TO_AI'">
+                        <button @click="resumeAi()" x-show="selectedInquiry.status === 'HUMAN_SUPPORT_ACTIVE'"
                             class="text-xs bg-amber-100 text-amber-700 px-3 py-1 rounded-lg hover:bg-amber-200 transition-colors font-body"
                         >Resume AI</button>
                         <button @click="resolveTicket()"
@@ -95,6 +119,13 @@
                         >Resolve</button>
                     </div>
                 </div>
+
+                {{-- Returned to SunnyBot notice --}}
+                <template x-if="selectedInquiry.status === 'RETURNED_TO_AI'">
+                    <div class="px-4 py-2 bg-amber-50 border-b border-amber-200 text-xs text-amber-700 font-body">
+                        This user returned to SunnyBot. The conversation is back with the AI assistant.
+                    </div>
+                </template>
 
                 {{-- Messages --}}
                 <div class="flex-1 overflow-y-auto px-4 py-3 space-y-2" x-ref="adminMessages">
@@ -158,6 +189,7 @@ function supportInbox() {
     return {
         pending: [],
         myActive: [],
+        myReturned: [],
         selectedInquiry: null,
         conversationMessages: [],
         adminInput: '',
@@ -185,6 +217,7 @@ function supportInbox() {
                 const data = await res.json();
                 this.pending = data.pending || [];
                 this.myActive = data.my_active || [];
+                this.myReturned = data.my_returned || [];
             } catch (e) {
                 console.error('Support poll error:', e);
             }
@@ -312,20 +345,23 @@ function supportInbox() {
             }
         },
 
-        async resolveTicket() {
-            if (!this.selectedInquiry) return;
+        async resolveTicket(ticket = null) {
+            const target = ticket || this.selectedInquiry;
+            if (!target) return;
             if (!confirm('Mark this support inquiry as resolved?')) return;
 
             try {
                 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
-                const res = await fetch(`/admin/support/inquiries/${this.selectedInquiry.id}/resolve`, {
+                const res = await fetch(`/admin/support/inquiries/${target.id}/resolve`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrfToken, 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
                 });
                 const data = await res.json();
                 if (data.status === 'success') {
-                    this.selectedInquiry = null;
-                    this.conversationMessages = [];
+                    if (this.selectedInquiry?.id === target.id) {
+                        this.selectedInquiry = null;
+                        this.conversationMessages = [];
+                    }
                     await this.fetchQueue();
                 }
             } catch (e) {

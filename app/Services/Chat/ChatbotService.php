@@ -47,6 +47,7 @@ class ChatbotService
             if ($inquiry->status === SupportInquiry::STATUS_PENDING) {
                 return [
                     'status' => 'pending_assignment',
+                    'control' => 'pending',
                     'reply' => 'An administrator will be with you shortly. Your message has been added to the queue.',
                     'session_token' => $session->session_token,
                 ];
@@ -55,7 +56,7 @@ class ChatbotService
             if ($inquiry->status === SupportInquiry::STATUS_HUMAN_ACTIVE) {
                 return [
                     'status' => 'human_support_active',
-                    'reply' => '',
+                    'control' => 'admin',
                     'session_token' => $session->session_token,
                 ];
             }
@@ -67,7 +68,7 @@ class ChatbotService
             $text = $reply['reply'] ?? 'Sorry, I could not process that request. Please try again.';
             $this->conversation->persist($session, 'bot', $text, $reply);
 
-            return array_merge(['status' => 'success', 'session_token' => $session->session_token, 'reply' => $text], $reply);
+            return array_merge(['status' => 'success', 'control' => 'ai', 'session_token' => $session->session_token, 'reply' => $text], $reply);
         }
 
         $faq = $this->faq->findBestMatch($message);
@@ -75,7 +76,7 @@ class ChatbotService
             $reply = ['reply' => $faq->answer, 'faq' => ['id' => $faq->id, 'question' => $faq->question, 'answer' => $faq->answer]];
             $this->conversation->persist($session, 'bot', $reply['reply'], $reply);
 
-            return array_merge(['status' => 'success', 'session_token' => $session->session_token], $reply);
+            return array_merge(['status' => 'success', 'control' => 'ai', 'session_token' => $session->session_token], $reply);
         }
 
         $intent = $this->intentRouter->classify($message);
@@ -98,7 +99,7 @@ class ChatbotService
         $text = $reply['reply'] ?? 'Sorry, I could not process that request. Please try again.';
         $this->conversation->persist($session, 'bot', $text, $reply);
 
-        return array_merge(['status' => 'success', 'session_token' => $session->session_token, 'reply' => $text], $reply);
+        return array_merge(['status' => 'success', 'control' => 'ai', 'session_token' => $session->session_token, 'reply' => $text], $reply);
     }
 
     // ────────────────────────────────────────────────
@@ -124,6 +125,10 @@ class ChatbotService
             return false;
         }
 
+        if ($this->isRefinementQuery($lower, $lastBot)) {
+            return true;
+        }
+
         if ($this->startsNewSearch($lower)) {
             return false;
         }
@@ -132,6 +137,55 @@ class ChatbotService
         $continuation = '/^(how much|how about|what about|what is|what are|what\'s|and what|what else|and how|tell me more|more info|more details|more options|why|is it|are they|does it|do they|can you|give me the|whose|price of|prices of|cost of)/';
 
         return (bool) (preg_match($referential, $lower) || preg_match($continuation, $lower));
+    }
+
+    /**
+     * A refinement narrows the previous recommendation ("no, in Boracay only",
+     * "focusing on budget", "actually just Palawan") without starting a fresh
+     * search. It must carry a refinement prefix, tie back to the previous
+     * context (a destination, a previously recommended item, or a price word),
+     * and not introduce a fresh-searchable entity.
+     */
+    protected function isRefinementQuery(string $lower, ChatMessage $lastBot): bool
+    {
+        if (! preg_match('/^(no|nope|not that|actually|just|only|yes|yep|ok|okay|alright|ah|focus|focusing on|focus on)\b/', $lower)) {
+            return false;
+        }
+
+        if (preg_match('/\b(hotel|hotels|room|rooms|resort|resorts|activity|activities|tour|tours|package|packages|itinerary|availability|weather|where is|how far)\b.*\b(in|near|at|for|with)\b/', $lower)) {
+            return false;
+        }
+
+        foreach (DestinationModel::pluck('name') as $name) {
+            $name = mb_strtolower((string) $name);
+            if ($name !== '' && str_contains($lower, $name)) {
+                return true;
+            }
+        }
+
+        $data = $lastBot->context_data ?: [];
+        $names = [];
+        foreach (($data['retrieved_rooms'] ?? []) as $r) {
+            $names[] = $r['room_name'] ?? '';
+            $names[] = $r['hotel_name'] ?? '';
+        }
+        foreach (($data['retrieved_hotels'] ?? []) as $h) {
+            $names[] = $h['hotel_name'] ?? '';
+        }
+        foreach (($data['retrieved_activities'] ?? []) as $a) {
+            $names[] = $a['activity_name'] ?? '';
+        }
+        foreach (($data['retrieved_packages'] ?? []) as $p) {
+            $names[] = $p['name'] ?? '';
+        }
+        foreach ($names as $name) {
+            $name = mb_strtolower(trim((string) $name));
+            if ($name !== '' && str_contains($lower, $name)) {
+                return true;
+            }
+        }
+
+        return (bool) preg_match('/\b(price|prices|cheap|cheaper|cheapest|expensive|budget|best|better|top|under|less than)\b/', $lower);
     }
 
     /**
@@ -172,7 +226,34 @@ class ChatbotService
 
         $reply = $this->geminiChatResponse($prompt, $session);
 
-        return ['reply' => $reply];
+        // Carry the previous turn's recommendation cards so the widget can
+        // keep them clickable (image, preview, Add to Trip Basket) while the
+        // user refines or asks follow-ups about the same items.
+        $carry = [];
+        if ($lastBot) {
+            $data = $lastBot->context_data ?: [];
+            $carry = array_intersect_key($data, array_flip([
+                'retrieved_rooms', 'retrieved_hotels', 'retrieved_activities',
+                'retrieved_packages', 'itinerary', 'availability',
+            ]));
+
+            $hotelName = $this->intentRouter->extractHotelName($query);
+            if ($hotelName) {
+                $hotelId = HotelModel::where('hotel_name', 'ILIKE', $hotelName)->value('id');
+                if ($hotelId) {
+                    foreach (['retrieved_rooms' => 'hotel_id', 'retrieved_hotels' => 'id'] as $key => $idKey) {
+                        if (! empty($carry[$key])) {
+                            $carry[$key] = array_values(array_filter(
+                                $carry[$key],
+                                fn($item) => (int) ($item[$idKey] ?? 0) === (int) $hotelId
+                            ));
+                        }
+                    }
+                }
+            }
+        }
+
+        return array_merge(['reply' => $reply], $carry);
     }
 
     protected function followUpContext(ChatMessage $lastBot): string
@@ -263,6 +344,11 @@ class ChatbotService
     {
         $scored = $this->gemini->searchRoomsHybrid($query, $constraints, 5);
 
+        $priceIntent = $this->detectPriceIntent($query);
+        if ($priceIntent) {
+            $scored = $this->sortRoomsByPrice($scored, $priceIntent);
+        }
+
         foreach ($scored as &$entry) {
             $entry['check_in_date'] = $constraints['check_in_date'] ?? null;
             $entry['check_out_date'] = $constraints['check_out_date'] ?? null;
@@ -287,7 +373,7 @@ class ChatbotService
 
     protected function handleHotelSearch(string $query, array $constraints, ?User $user, ChatSession $session): array
     {
-        $scored = $this->gemini->searchHotels($query, 3);
+        $scored = $this->gemini->searchHotels($query, 3, $constraints['hotel_id'] ?? null);
 
         $priceIntent = $this->detectPriceIntent($query);
         if ($priceIntent) {
@@ -343,6 +429,26 @@ class ChatbotService
         usort($scored, function ($a, $b) use ($priceMap, $direction) {
             $pa = $priceMap[$a['item']->id];
             $pb = $priceMap[$b['item']->id];
+
+            if ($pa === $pb) {
+                return $b['score'] <=> $a['score'];
+            }
+
+            return $direction === 'expensive' ? $pb <=> $pa : $pa <=> $pb;
+        });
+
+        return array_values($scored);
+    }
+
+    /**
+     * Sort scored rooms by base price so the cheapest/most expensive rooms
+     * surface first for budget/luxury queries. Ties fall back to similarity.
+     */
+    protected function sortRoomsByPrice(array $scored, string $direction): array
+    {
+        usort($scored, function ($a, $b) use ($direction) {
+            $pa = (float) $a['item']->base_price;
+            $pb = (float) $b['item']->base_price;
 
             if ($pa === $pb) {
                 return $b['score'] <=> $a['score'];
@@ -694,6 +800,7 @@ class ChatbotService
             'id' => $e['item']->id,
             'room_name' => $e['item']->room_name,
             'hotel_name' => $e['item']->hotel?->hotel_name ?? 'Unknown Hotel',
+            'hotel_id' => $e['item']->hotel_id ?? $e['item']->hotel?->id ?? null,
             'destination' => $e['item']->hotel?->destination?->name ?? null,
             'base_price' => (float) $e['item']->base_price,
             'occupancy' => $e['item']->occupancy,

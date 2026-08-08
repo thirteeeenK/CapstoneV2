@@ -8,6 +8,7 @@ use App\Models\HotelModel;
 use App\Models\RoomType;
 use App\Models\SupportInquiry;
 use App\Models\User;
+use App\Models\AdminModel;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 
@@ -210,6 +211,129 @@ test('guest handoff polling cannot read an authenticated users session', functio
     expect($inquiry->fresh()->status)->toBe(SupportInquiry::STATUS_HUMAN_ACTIVE);
 });
 
+test('bot stays silent while an admin controls the conversation', function () {
+    $token = ChatSession::generateToken();
+    $session = ChatSession::create(['session_token' => $token]);
+    SupportInquiry::create([
+        'ticket_number' => 'TKT-SILENT-001',
+        'chat_session_id' => $session->id,
+        'status' => SupportInquiry::STATUS_HUMAN_ACTIVE,
+        'requested_at' => now(),
+    ]);
+
+    $response = $this->postJson('/chat', [
+        'message' => 'is this the admin?',
+        'session_token' => $token,
+    ]);
+
+    $response->assertOk()
+        ->assertJson([
+            'status' => 'human_support_active',
+            'control' => 'admin',
+            'session_token' => $token,
+        ])
+        ->assertJsonMissingPath('reply');
+
+    expect($session->messages()->where('sender', 'user')->count())->toBe(1);
+    expect($session->messages()->where('sender', 'bot')->count())->toBe(0);
+});
+
+test('chat returns a pending assignment notice while awaiting an agent', function () {
+    $token = ChatSession::generateToken();
+    $session = ChatSession::create(['session_token' => $token]);
+    SupportInquiry::create([
+        'ticket_number' => 'TKT-PENDING-001',
+        'chat_session_id' => $session->id,
+        'status' => SupportInquiry::STATUS_PENDING,
+        'requested_at' => now(),
+    ]);
+
+    $response = $this->postJson('/chat', [
+        'message' => 'Please help me',
+        'session_token' => $token,
+    ]);
+
+    $response->assertOk()
+        ->assertJson([
+            'status' => 'pending_assignment',
+            'control' => 'pending',
+        ]);
+    expect($response->json('reply'))->toContain('An administrator will be with you shortly');
+});
+
+test('user can return control to SunnyBot and get AI answers again', function () {
+    $admin = AdminModel::create([
+        'name' => 'Support Admin',
+        'email' => 'support@returntest.com',
+        'password' => 'password',
+    ]);
+
+    $token = ChatSession::generateToken();
+    $session = ChatSession::create(['session_token' => $token]);
+    $inquiry = SupportInquiry::create([
+        'ticket_number' => 'TKT-RETURN-001',
+        'chat_session_id' => $session->id,
+        'status' => SupportInquiry::STATUS_HUMAN_ACTIVE,
+        'assigned_admin_id' => $admin->id,
+        'requested_at' => now(),
+        'assigned_at' => now(),
+    ]);
+
+    $response = $this->postJson('/chat/handoff/return', ['session_token' => $token]);
+
+    $response->assertOk()->assertJson([
+        'status' => 'success',
+        'handoff_status' => SupportInquiry::STATUS_RETURNED_AI,
+    ]);
+    expect($inquiry->fresh()->status)->toBe(SupportInquiry::STATUS_RETURNED_AI);
+    expect($inquiry->fresh()->returned_to_ai_at)->not->toBeNull();
+
+    $chat = $this->postJson('/chat', [
+        'message' => 'Hello again',
+        'session_token' => $token,
+    ]);
+
+    $chat->assertOk()->assertJson(['status' => 'success', 'control' => 'ai']);
+});
+
+test('chat history exposes the current handoff status', function () {
+    $token = ChatSession::generateToken();
+    $session = ChatSession::create(['session_token' => $token]);
+    SupportInquiry::create([
+        'ticket_number' => 'TKT-HIST-001',
+        'chat_session_id' => $session->id,
+        'status' => SupportInquiry::STATUS_HUMAN_ACTIVE,
+        'requested_at' => now(),
+    ]);
+
+    $response = $this->getJson('/chat/history?session_token=' . $token);
+
+    $response->assertOk()->assertJsonPath('handoff_status', SupportInquiry::STATUS_HUMAN_ACTIVE);
+});
+
+test('admin poll returns tickets returned to SunnyBot', function () {
+    $admin = AdminModel::create([
+        'name' => 'Support Admin',
+        'email' => 'support@polltest.com',
+        'password' => 'password',
+    ]);
+
+    $session = ChatSession::create(['session_token' => ChatSession::generateToken()]);
+    SupportInquiry::create([
+        'ticket_number' => 'TKT-RETURNED-001',
+        'chat_session_id' => $session->id,
+        'status' => SupportInquiry::STATUS_RETURNED_AI,
+        'assigned_admin_id' => $admin->id,
+        'requested_at' => now(),
+        'returned_to_ai_at' => now(),
+    ]);
+
+    $this->actingAs($admin, 'admin')
+        ->get(route('admin.support.poll'))
+        ->assertOk()
+        ->assertJsonPath('my_returned.0.ticket_number', 'TKT-RETURNED-001');
+});
+
 test('message validation fails gracefully', function () {
     $response = $this->postJson('/chat', ['message' => '']);
     $response->assertStatus(422);
@@ -234,6 +358,65 @@ test('retrieved rooms are included in response', function () {
         expect($data['retrieved_rooms'])->toBeArray();
         expect($data['retrieved_rooms'][0])->toHaveKeys(['id', 'room_name', 'hotel_name', 'base_price']);
     }
+});
+
+test('budget room search returns cards sorted by price ascending', function () {
+    foreach ([5000, 1000, 2000] as $price) {
+        RoomType::create([
+            'hotel_id' => $this->hotel->id,
+            'room_name' => 'Budget Test Room ' . $price,
+            'base_price' => $price,
+            'base_occupancy' => 2,
+            'max_occupancy' => 2,
+            'extra_person_fee' => 0,
+            'total_rooms' => 2,
+            'room_amenities' => json_encode([]),
+            'images' => json_encode([]),
+            'is_shown' => true,
+            'embedding' => '[' . implode(',', array_fill(0, 3072, '0.01')) . ']',
+        ]);
+    }
+
+    $response = $this->postJson('/chat', [
+        'message' => 'find me cheap budget rooms in Boracay',
+    ]);
+
+    $response->assertOk()->assertJson(['status' => 'success', 'control' => 'ai']);
+
+    $prices = collect($response->json('retrieved_rooms'))->pluck('base_price')->map(fn($p) => (int) $p)->values()->all();
+
+    expect($prices)->not->toBeEmpty();
+    expect($prices)->toBe(collect($prices)->sort()->values()->all());
+    expect($prices[0])->toBe(1000);
+});
+
+test('luxury room search returns cards sorted by price descending', function () {
+    foreach ([5000, 1000, 2000] as $price) {
+        RoomType::create([
+            'hotel_id' => $this->hotel->id,
+            'room_name' => 'Luxury Test Room ' . $price,
+            'base_price' => $price,
+            'base_occupancy' => 2,
+            'max_occupancy' => 2,
+            'extra_person_fee' => 0,
+            'total_rooms' => 2,
+            'room_amenities' => json_encode([]),
+            'images' => json_encode([]),
+            'is_shown' => true,
+            'embedding' => '[' . implode(',', array_fill(0, 3072, '0.01')) . ']',
+        ]);
+    }
+
+    $response = $this->postJson('/chat', [
+        'message' => 'find me a luxurious premium room in Boracay',
+    ]);
+
+    $response->assertOk()->assertJson(['status' => 'success', 'control' => 'ai']);
+
+    $prices = collect($response->json('retrieved_rooms'))->pluck('base_price')->map(fn($p) => (int) $p)->values()->all();
+
+    expect($prices)->not->toBeEmpty();
+    expect($prices)->toBe(collect($prices)->sortDesc()->values()->all());
 });
 
 test('authed user is blocked on abuse keywords', function () {
@@ -475,6 +658,8 @@ test('price follow-up on hotel recommendations lists those hotels rooms', functi
 
     $second->assertOk()->assertJsonPath('status', 'success');
     expect($second->json('reply'))->toBe('Here is a recommendation for you!');
+    expect($second->json('retrieved_hotels'))->toBeArray()->not->toBeEmpty();
+    expect($second->json('retrieved_hotels.0.hotel_name'))->toBe('Test Beach Resort');
 
     Http::assertSent(fn (Request $r) =>
         str_contains(json_encode($r->data()), 'PREVIOUS RECOMMENDATIONS')
@@ -530,4 +715,228 @@ test('hotel search ranks by price when the query asks for the most expensive', f
         && str_contains(json_encode($r->data(), JSON_UNESCAPED_UNICODE), 'From ₱1,000.00')
         && strpos(json_encode($r->data(), JSON_UNESCAPED_UNICODE), 'Test Beach Resort') < strpos(json_encode($r->data(), JSON_UNESCAPED_UNICODE), 'Budget Beach Inn')
     );
+});
+
+test('poll and history use the dedicated chat-poll rate limiter', function () {
+    $routes = app('router')->getRoutes();
+
+    expect($routes->getByName('chat.poll')->gatherMiddleware())
+        ->toContain('throttle:chat-poll')
+        ->not->toContain('throttle:ai');
+
+    expect($routes->getByName('chat.history')->gatherMiddleware())
+        ->toContain('throttle:chat-poll')
+        ->not->toContain('throttle:ai');
+});
+
+test('heavy widget polling does not exhaust the AI chat rate limit', function () {
+    $token = ChatSession::generateToken();
+    ChatSession::create(['session_token' => $token]);
+
+    // The widget polls /chat/poll every 5s while a handoff is active (12/min).
+    // It must not share the 10/min 'ai' budget, or real messages get 429'd.
+    for ($i = 0; $i < 30; $i++) {
+        $this->getJson('/chat/poll?session_token=' . $token)->assertOk();
+    }
+
+    $response = $this->postJson('/chat', [
+        'message' => 'hello there',
+        'session_token' => $token,
+    ]);
+
+    $response->assertOk()->assertJsonPath('status', 'success');
+});
+
+test('refinement follow-ups keep the previous recommendation cards', function () {
+    $embedding = '[' . implode(',', array_fill(0, 3072, '0.01')) . ']';
+    $this->hotel->update(['embedding' => $embedding]);
+
+    $first = $this->postJson('/chat', [
+        'message' => 'what is the best hotel in Boracay?',
+    ]);
+    $first->assertOk()->assertJsonPath('status', 'success');
+    expect($first->json('retrieved_hotels'))->toBeArray()->not->toBeEmpty();
+
+    $token = $first->json('session_token');
+
+    $refine = $this->postJson('/chat', [
+        'message' => 'no, in boracay only',
+        'session_token' => $token,
+    ]);
+
+    $refine->assertOk()->assertJsonPath('status', 'success');
+    expect($refine->json('retrieved_hotels'))->toBeArray()->not->toBeEmpty();
+    expect($refine->json('retrieved_hotels.0.hotel_name'))->toBe('Test Beach Resort');
+
+    Http::assertSent(fn (Request $r) =>
+        str_contains(json_encode($r->data()), 'FOLLOW-UP QUESTION: no, in boracay only')
+        && str_contains(json_encode($r->data()), 'PREVIOUS RECOMMENDATIONS')
+    );
+
+    $session = ChatSession::where('session_token', $token)->first();
+    $lastBot = $session->messages()->where('sender', 'bot')->latest()->first();
+    expect($lastBot->context_data)->toHaveKey('retrieved_hotels');
+});
+
+test('a fresh search is not hijacked by the refinement rule', function () {
+    $embedding = '[' . implode(',', array_fill(0, 3072, '0.01')) . ']';
+    $this->hotel->update(['embedding' => $embedding]);
+
+    $first = $this->postJson('/chat', ['message' => 'no, in boracay only'])->assertOk();
+
+    $second = $this->postJson('/chat', [
+        'message' => 'recommend a hotel in boracay',
+        'session_token' => $first->json('session_token'),
+    ]);
+
+    $second->assertOk()->assertJsonPath('status', 'success');
+    expect($second->json('retrieved_hotels'))->toBeArray()->not->toBeEmpty();
+
+    Http::assertSent(fn (Request $r) =>
+        str_contains(json_encode($r->data()), 'TASK: Recommend hotels based on the database results below.')
+        && str_contains(json_encode($r->data()), 'DATABASE RESULTS')
+    );
+});
+
+test('page and DSS endpoints do not consume the AI chat budget', function () {
+    $routes = app('router')->getRoutes();
+
+    expect($routes->getByName('dashboard')->gatherMiddleware())
+        ->not->toContain('throttle:ai');
+
+    expect($routes->getByName('explore')->gatherMiddleware())
+        ->not->toContain('throttle:ai');
+
+    expect($routes->getByName('api.dss.markers')->gatherMiddleware())
+        ->toContain('throttle:dss')
+        ->not->toContain('throttle:ai');
+
+    expect($routes->getByName('chat.send')->gatherMiddleware())
+        ->toContain('throttle:ai');
+});
+
+test('rapid dashboard page loads are not throttled by the AI chat limit', function () {
+    $this->actingAs($this->user);
+
+    for ($i = 0; $i < 12; $i++) {
+        $this->get('/dashboard')->assertOk();
+    }
+});
+
+test('asking about a specific hotel returns only that hotels rooms', function () {
+    $embedding = '[' . implode(',', array_fill(0, 3072, '0.01')) . ']';
+
+    $frendz = HotelModel::create([
+        'hotel_name' => 'Frendz Resort & Hostel',
+        'destination_id' => $this->destination->id,
+        'type' => 'Hostel',
+        'hotel_description' => 'Social hostel for solo travelers.',
+        'specific_address' => 'Station 2',
+        'latitude' => 11.9674,
+        'longitude' => 121.9251,
+        'is_shown' => true,
+        'images' => json_encode([]),
+    ]);
+
+    RoomType::create([
+        'hotel_id' => $frendz->id,
+        'room_name' => 'Social Mixed Dormitory Bed',
+        'base_price' => 850.00,
+        'base_occupancy' => 1,
+        'max_occupancy' => 1,
+        'extra_person_fee' => 0,
+        'total_rooms' => 10,
+        'room_amenities' => json_encode([]),
+        'images' => json_encode([]),
+        'is_shown' => true,
+        'embedding' => $embedding,
+    ]);
+
+    $response = $this->postJson('/chat', [
+        'message' => 'what rooms are available at Frendz Resort?',
+    ]);
+
+    $response->assertOk()->assertJsonPath('status', 'success');
+    $rooms = $response->json('retrieved_rooms');
+
+    expect($rooms)->toBeArray()->not->toBeEmpty();
+    foreach ($rooms as $room) {
+        expect((int) $room['hotel_id'])->toBe((int) $frendz->id);
+    }
+});
+
+test('asking about a specific hotel returns only that hotel card', function () {
+    $embedding = '[' . implode(',', array_fill(0, 3072, '0.01')) . ']';
+    $this->hotel->update(['embedding' => $embedding]);
+
+    $frendz = HotelModel::create([
+        'hotel_name' => 'Frendz Resort & Hostel',
+        'destination_id' => $this->destination->id,
+        'type' => 'Hostel',
+        'hotel_description' => 'Social hostel for solo travelers.',
+        'specific_address' => 'Station 2',
+        'latitude' => 11.9674,
+        'longitude' => 121.9251,
+        'is_shown' => true,
+        'images' => json_encode([]),
+        'embedding' => $embedding,
+    ]);
+
+    $response = $this->postJson('/chat', [
+        'message' => 'tell me about Frendz Resort',
+    ]);
+
+    $response->assertOk()->assertJsonPath('status', 'success');
+    $hotels = $response->json('retrieved_hotels');
+
+    expect($hotels)->toHaveCount(1);
+    expect($hotels[0]['hotel_name'])->toBe('Frendz Resort & Hostel');
+    expect((int) $hotels[0]['id'])->toBe((int) $frendz->id);
+});
+
+test('follow-ups about a specific hotel keep only that hotels cards', function () {
+    $embedding = '[' . implode(',', array_fill(0, 3072, '0.01')) . ']';
+    $this->hotel->update(['embedding' => $embedding]);
+
+    HotelModel::create([
+        'hotel_name' => 'Frendz Resort & Hostel',
+        'destination_id' => $this->destination->id,
+        'type' => 'Hostel',
+        'hotel_description' => 'Social hostel for solo travelers.',
+        'specific_address' => 'Station 2',
+        'latitude' => 11.9674,
+        'longitude' => 121.9251,
+        'is_shown' => true,
+        'images' => json_encode([]),
+        'embedding' => $embedding,
+    ]);
+
+    $first = $this->postJson('/chat', [
+        'message' => 'What is the best hotel in Boracay?',
+    ]);
+    $first->assertOk()->assertJsonPath('status', 'success');
+    expect($first->json('retrieved_hotels'))->toHaveCount(2);
+
+    $second = $this->postJson('/chat', [
+        'message' => 'what about Frendz?',
+        'session_token' => $first->json('session_token'),
+    ]);
+
+    $second->assertOk()->assertJsonPath('status', 'success');
+    $hotels = $second->json('retrieved_hotels');
+
+    expect($hotels)->toHaveCount(1);
+    expect($hotels[0]['hotel_name'])->toBe('Frendz Resort & Hostel');
+});
+
+test('asking about a hotel not in the database falls back to similar options', function () {
+    $embedding = '[' . implode(',', array_fill(0, 3072, '0.01')) . ']';
+    $this->hotel->update(['embedding' => $embedding]);
+
+    $response = $this->postJson('/chat', [
+        'message' => 'what rooms are available at Atlantis Resort?',
+    ]);
+
+    $response->assertOk()->assertJsonPath('status', 'success');
+    expect($response->json('retrieved_rooms'))->toBeArray()->not->toBeEmpty();
 });

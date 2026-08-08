@@ -1,0 +1,356 @@
+- generic [ref=f2e1]:
+  - complementary [ref=f2e2]:
+    - generic [ref=f2e4]:
+      - link "SunnyTrips" [ref=f2e5] [cursor=pointer]:
+        - /url: http://127.0.0.1:8000/dashboard
+      - paragraph [ref=f2e7]:
+        - generic [ref=f2e9]: Traveler Portal
+    - navigation [ref=f2e10]:
+      - generic [ref=f2e11]:
+        - heading "Main Navigation" [level=2] [ref=f2e12]
+        - generic [ref=f2e13]:
+          - link "space_dashboard Dashboard" [ref=f2e14] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/dashboard
+            - generic [ref=f2e15]: space_dashboard
+            - generic [ref=f2e16]: Dashboard
+          - link "casino I'm Feeling Lucky" [ref=f2e17] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/lucky
+            - generic [ref=f2e18]: casino
+            - generic [ref=f2e19]: I'm Feeling Lucky
+          - link "shopping_basket My Trip Basket" [ref=f2e20] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/cart
+            - generic [ref=f2e21]: shopping_basket
+            - generic [ref=f2e22]: My Trip Basket
+          - link "auto_stories My Bookings" [ref=f2e23] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/bookings
+            - generic [ref=f2e24]: auto_stories
+            - generic [ref=f2e25]: My Bookings
+          - link "reviews Guest Reviews" [ref=f2e26] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/reviews
+            - generic [ref=f2e27]: reviews
+            - generic [ref=f2e28]: Guest Reviews
+      - generic [ref=f2e29]:
+        - heading "Explore Catalog" [level=2] [ref=f2e30]
+        - generic [ref=f2e31]:
+          - link "location_on Island Destinations" [ref=f2e32] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/destinations
+            - generic [ref=f2e33]: location_on
+            - generic [ref=f2e34]: Island Destinations
+          - link "hotel Hotels & Sanctuaries" [ref=f2e35] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/hotels
+            - generic [ref=f2e36]: hotel
+            - generic [ref=f2e37]: Hotels & Sanctuaries
+          - link "king_bed Rooms & Stays" [ref=f2e38] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/rooms
+            - generic [ref=f2e39]: king_bed
+            - generic [ref=f2e40]: Rooms & Stays
+          - link "explore Activities & Tours" [ref=f2e41] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/activities
+            - generic [ref=f2e42]: explore
+            - generic [ref=f2e43]: Activities & Tours
+          - link "extension Transfers & Add-ons" [ref=f2e44] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/addons
+            - generic [ref=f2e45]: extension
+            - generic [ref=f2e46]: Transfers & Add-ons
+          - link "card_travel Tour Packages & Promos" [ref=f2e47] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/packages
+            - generic [ref=f2e48]: card_travel
+            - generic [ref=f2e49]: Tour Packages & Promos
+      - generic [ref=f2e50]:
+        - heading "Account" [level=2] [ref=f2e51]
+        - link "manage_accounts Account Profile" [ref=f2e53] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/profile
+          - generic [ref=f2e54]: manage_accounts
+          - generic [ref=f2e55]: Account Profile
+    - button "logout Log Out" [ref=f2e58] [cursor=pointer]:
+      - generic [ref=f2e59]: logout
+      - generic [ref=f2e60]: Log Out
+  - main [ref=f2e61]:
+    - generic [ref=f2e63]:
+      - generic [ref=f2e65]:
+        - generic [ref=f2e67]:
+          - generic [ref=f2e68]: travel_explore
+          - generic [ref=f2e69]: Popular Highlights Active
+        - heading "Welcome back, Test User!" [level=1] [ref=f2e70]
+        - paragraph [ref=f2e71]: Logged in as test@example.com. Explore your island recommendations below.
+      - generic [ref=f2e72]:
+        - generic [ref=f2e73]:
+          - generic [ref=f2e74]:
+            - heading "Explore Islands on the Map" [level=2] [ref=f2e75]
+            - paragraph [ref=f2e76]: Tap a marker to see what each destination has in store — then plan your next escape.
+          - link "map Open Full Map" [ref=f2e77] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/explore
+            - generic [ref=f2e78]: map
+            - text: Open Full Map
+        - generic [ref=f2e79]:
+          - generic [ref=f2e80]:
+            - generic:
+              - generic:
+                - button [ref=f2e81] [cursor=pointer]
+                - button [ref=f2e83] [cursor=pointer]
+            - generic:
+              - generic [ref=f2e85]:
+                - button "Zoom in" [ref=f2e86] [cursor=pointer]: +
+                - button "Zoom out" [ref=f2e87] [cursor=pointer]: −
+              - generic [ref=f2e88]:
+                - link "Leaflet" [ref=f2e89] [cursor=pointer]:
+                  - /url: https://leafletjs.com
+                - text: "| ©"
+                - link "OpenStreetMap" [ref=f2e94] [cursor=pointer]:
+                  - /url: https://www.openstreetmap.org/copyright
+                - text: contributors
+          - button "my_location Distance from me" [ref=f2e95] [cursor=pointer]:
+            - generic [ref=f2e96]: my_location
+            - generic [ref=f2e97]: Distance from me
+      - generic [ref=f2e98]:
+        - generic [ref=f2e99]:
+          - generic [ref=f2e100]:
+            - generic [ref=f2e101]:
+              - button "auto_awesome AI Recommendations" [ref=f2e102] [cursor=pointer]:
+                - generic [ref=f2e103]: auto_awesome
+                - generic [ref=f2e104]: AI Recommendations
+              - button "travel_explore Default Listings" [ref=f2e105] [cursor=pointer]:
+                - generic [ref=f2e106]: travel_explore
+                - generic [ref=f2e107]: Default Listings
+              - button "card_travel Tour Packages" [ref=f2e108] [cursor=pointer]:
+                - generic [ref=f2e109]: card_travel
+                - generic [ref=f2e110]: Tour Packages
+            - paragraph [ref=f2e111]: Popular island highlights across top destinations.
+          - generic [ref=f2e112]:
+            - link "tune Personalize My Profile" [ref=f2e113] [cursor=pointer]:
+              - /url: http://127.0.0.1:8000/onboarding/reset
+              - generic [ref=f2e114]: tune
+              - generic [ref=f2e115]: Personalize My Profile
+            - generic [ref=f2e116]:
+              - generic [ref=f2e117]:
+                - generic [ref=f2e118]: filter_alt
+                - generic [ref=f2e119]: "Sanctuary:"
+              - button "location_on Boracay" [ref=f2e120] [cursor=pointer]:
+                - generic [ref=f2e121]: location_on
+                - generic [ref=f2e122]: Boracay
+              - button "location_on El Nido" [ref=f2e123] [cursor=pointer]:
+                - generic [ref=f2e124]: location_on
+                - generic [ref=f2e125]: El Nido
+        - generic [ref=f2e127]:
+          - generic [ref=f2e128]:
+            - generic [ref=f2e129]:
+              - generic [ref=f2e130]:
+                - generic [ref=f2e131]: hotel
+                - heading "Popular Hotels in Boracay" [level=3] [ref=f2e132]
+              - generic [ref=f2e133]: Popular Stays
+            - generic [ref=f2e134]:
+              - link "Canyon Hotels & Resorts Boracay High End Luxury Hotels Canyon Hotels & Resorts Boracay Canyon is nestled in Station 2, just a short walk from White Beach and D'Mall. This boutique hotel offers cozy, well-appointed rooms and a peaceful atmosphere. With its quiet location yet easy access to shops and restaurants, it's great for couples and families seeking a balance of relaxation and convenience. Explore Sanctuary arrow_forward" [ref=f2e135] [cursor=pointer]:
+                - /url: http://127.0.0.1:8000/hotels/2
+                - generic [ref=f2e136]:
+                  - generic [ref=f2e137]:
+                    - img "Canyon Hotels & Resorts Boracay" [ref=f2e138]
+                    - generic [ref=f2e140]: High End Luxury Hotels
+                  - generic [ref=f2e141]:
+                    - heading "Canyon Hotels & Resorts Boracay" [level=4] [ref=f2e142]
+                    - paragraph [ref=f2e143]: Canyon is nestled in Station 2, just a short walk from White Beach and D'Mall. This boutique hotel offers cozy, well-appointed rooms and a peaceful atmosphere. With its quiet location yet easy access to shops and restaurants, it's great for couples and families seeking a balance of relaxation and convenience.
+                - generic [ref=f2e145]:
+                  - generic [ref=f2e146]: Explore Sanctuary
+                  - generic [ref=f2e147]: arrow_forward
+              - link "Boracay Ocean Club Beach Resort High End Luxury Hotels Boracay Ocean Club Beach Resort Boracay Ocean Club is located in Station 3, right along White Beach with direct beachfront access. The resort features a beachfront pool, spa services, and dive center, making it ideal for adventure seekers and beach lovers. With ocean-view rooms and a quieter location, it's perfect for travelers who want a more laid-back Boracay experience. Explore Sanctuary arrow_forward" [ref=f2e148] [cursor=pointer]:
+                - /url: http://127.0.0.1:8000/hotels/3
+                - generic [ref=f2e149]:
+                  - generic [ref=f2e150]:
+                    - img "Boracay Ocean Club Beach Resort" [ref=f2e151]
+                    - generic [ref=f2e153]: High End Luxury Hotels
+                  - generic [ref=f2e154]:
+                    - heading "Boracay Ocean Club Beach Resort" [level=4] [ref=f2e155]
+                    - paragraph [ref=f2e156]: Boracay Ocean Club is located in Station 3, right along White Beach with direct beachfront access. The resort features a beachfront pool, spa services, and dive center, making it ideal for adventure seekers and beach lovers. With ocean-view rooms and a quieter location, it's perfect for travelers who want a more laid-back Boracay experience.
+                - generic [ref=f2e158]:
+                  - generic [ref=f2e159]: Explore Sanctuary
+                  - generic [ref=f2e160]: arrow_forward
+              - link "Henann Garden Resort High End Luxury Hotels Henann Garden Resort Henann Garden is located in Station 2, just a 2-minute walk from White Beach and close to D'Mall. It has several lagoon-style pools and lush landscaping. With spacious rooms and on-site dining, it's perfect for travelers seeking comfort and convenience in the island's center. Explore Sanctuary arrow_forward" [ref=f2e161] [cursor=pointer]:
+                - /url: http://127.0.0.1:8000/hotels/4
+                - generic [ref=f2e162]:
+                  - generic [ref=f2e163]:
+                    - img "Henann Garden Resort" [ref=f2e164]
+                    - generic [ref=f2e166]: High End Luxury Hotels
+                  - generic [ref=f2e167]:
+                    - heading "Henann Garden Resort" [level=4] [ref=f2e168]
+                    - paragraph [ref=f2e169]: Henann Garden is located in Station 2, just a 2-minute walk from White Beach and close to D'Mall. It has several lagoon-style pools and lush landscaping. With spacious rooms and on-site dining, it's perfect for travelers seeking comfort and convenience in the island's center.
+                - generic [ref=f2e171]:
+                  - generic [ref=f2e172]: Explore Sanctuary
+                  - generic [ref=f2e173]: arrow_forward
+              - link "My Station Hotel Mid Affordable Hotels My Station Hotel Located in Station 1, My Station Hotel is just a short walk from the pristine White Beach. With modern, comfortable rooms and a welcoming atmosphere, this hotel offers a relaxing stay while being close to local attractions. Guests can enjoy easy access to restaurants, shopping, and the island's nightlife, making it perfect for both relaxation and adventure seekers. Explore Sanctuary arrow_forward" [ref=f2e174] [cursor=pointer]:
+                - /url: http://127.0.0.1:8000/hotels/5
+                - generic [ref=f2e175]:
+                  - generic [ref=f2e176]:
+                    - img "My Station Hotel" [ref=f2e177]
+                    - generic [ref=f2e179]: Mid Affordable Hotels
+                  - generic [ref=f2e180]:
+                    - heading "My Station Hotel" [level=4] [ref=f2e181]
+                    - paragraph [ref=f2e182]: Located in Station 1, My Station Hotel is just a short walk from the pristine White Beach. With modern, comfortable rooms and a welcoming atmosphere, this hotel offers a relaxing stay while being close to local attractions. Guests can enjoy easy access to restaurants, shopping, and the island's nightlife, making it perfect for both relaxation and adventure seekers.
+                - generic [ref=f2e184]:
+                  - generic [ref=f2e185]: Explore Sanctuary
+                  - generic [ref=f2e186]: arrow_forward
+              - link "Frendz Resort & Hostel Mid Affordable Hotels Frendz Resort & Hostel Found in Station 1, Frendz is a popular social spot for travelers. It's about a 5-minute walk to White Beach and has a pool and a common area that often hosts events. It's close to bars and restaurants but still maintains a laid-back vibe. Explore Sanctuary arrow_forward" [ref=f2e187] [cursor=pointer]:
+                - /url: http://127.0.0.1:8000/hotels/6
+                - generic [ref=f2e188]:
+                  - generic [ref=f2e189]:
+                    - img "Frendz Resort & Hostel" [ref=f2e190]
+                    - generic [ref=f2e192]: Mid Affordable Hotels
+                  - generic [ref=f2e193]:
+                    - heading "Frendz Resort & Hostel" [level=4] [ref=f2e194]
+                    - paragraph [ref=f2e195]: Found in Station 1, Frendz is a popular social spot for travelers. It's about a 5-minute walk to White Beach and has a pool and a common area that often hosts events. It's close to bars and restaurants but still maintains a laid-back vibe.
+                - generic [ref=f2e197]:
+                  - generic [ref=f2e198]: Explore Sanctuary
+                  - generic [ref=f2e199]: arrow_forward
+          - generic [ref=f2e200]:
+            - generic [ref=f2e201]:
+              - generic [ref=f2e202]:
+                - generic [ref=f2e203]: explore
+                - heading "Popular Experiences in Boracay" [level=3] [ref=f2e204]
+              - generic [ref=f2e205]: Top Highlights
+            - generic [ref=f2e206]:
+              - generic [ref=f2e207]:
+                - generic [ref=f2e208]:
+                  - generic [ref=f2e209]:
+                    - img "Parasailing" [ref=f2e210]
+                    - generic [ref=f2e212]: ₱1,700/person
+                  - generic [ref=f2e213]:
+                    - heading "Parasailing" [level=4] [ref=f2e214]
+                    - paragraph [ref=f2e215]: Soar 150 meters above the azure waters of Boracay! Experience breathtaking 360-degree aerial views of the entire 7km island while strapped securely into a parachute canopy.
+                - link "View Experience arrow_forward" [ref=f2e217] [cursor=pointer]:
+                  - /url: http://127.0.0.1:8000/activities
+                  - generic [ref=f2e218]: View Experience
+                  - generic [ref=f2e219]: arrow_forward
+              - generic [ref=f2e220]:
+                - generic [ref=f2e221]:
+                  - generic [ref=f2e222]:
+                    - img "Banana Boat" [ref=f2e223]
+                    - generic [ref=f2e225]: ₱450/person
+                  - generic [ref=f2e226]:
+                    - heading "Banana Boat" [level=4] [ref=f2e227]
+                    - paragraph [ref=f2e228]: Hold on tight as a high-speed speedboat pulls your giant yellow inflatable boat across waves. Bumpy, splashy, and laughter-filled fun!
+                - link "View Experience arrow_forward" [ref=f2e230] [cursor=pointer]:
+                  - /url: http://127.0.0.1:8000/activities
+                  - generic [ref=f2e231]: View Experience
+                  - generic [ref=f2e232]: arrow_forward
+              - generic [ref=f2e233]:
+                - generic [ref=f2e234]:
+                  - generic [ref=f2e235]:
+                    - img "Jet Ski (15 mins)" [ref=f2e236]
+                    - generic [ref=f2e238]: ₱2,200
+                  - generic [ref=f2e239]:
+                    - heading "Jet Ski (15 mins)" [level=4] [ref=f2e240]
+                    - paragraph [ref=f2e241]: Feel the power of high-performance personal watercraft as you race across open ocean waters. Take turns steering and riding the waves.
+                - link "View Experience arrow_forward" [ref=f2e243] [cursor=pointer]:
+                  - /url: http://127.0.0.1:8000/activities
+                  - generic [ref=f2e244]: View Experience
+                  - generic [ref=f2e245]: arrow_forward
+              - generic [ref=f2e246]:
+                - generic [ref=f2e247]:
+                  - generic [ref=f2e248]:
+                    - img "Jet Ski (30 mins)" [ref=f2e249]
+                    - generic [ref=f2e251]: ₱3,800
+                  - generic [ref=f2e252]:
+                    - heading "Jet Ski (30 mins)" [level=4] [ref=f2e253]
+                    - paragraph [ref=f2e254]: Double the time, double the adrenaline! 30 full minutes of high-speed jet ski action with plenty of time to explore the coast.
+                - link "View Experience arrow_forward" [ref=f2e256] [cursor=pointer]:
+                  - /url: http://127.0.0.1:8000/activities
+                  - generic [ref=f2e257]: View Experience
+                  - generic [ref=f2e258]: arrow_forward
+              - generic [ref=f2e259]:
+                - generic [ref=f2e260]:
+                  - generic [ref=f2e261]:
+                    - img "Party Yacht" [ref=f2e262]
+                    - generic [ref=f2e264]: ₱1,300/person
+                  - generic [ref=f2e265]:
+                    - heading "Party Yacht" [level=4] [ref=f2e266]
+                    - paragraph [ref=f2e267]: Set sail on a stylish multi-deck catamaran yacht. Dance to DJ music, enjoy drinks & appetizers, swim off the stern, and watch Boracay's legendary sunset from the deck.
+                - link "View Experience arrow_forward" [ref=f2e269] [cursor=pointer]:
+                  - /url: http://127.0.0.1:8000/activities
+                  - generic [ref=f2e270]: View Experience
+                  - generic [ref=f2e271]: arrow_forward
+  - generic [ref=f2e272]:
+    - button "Chat with SunnyTrips AI" [active] [ref=f2e273] [cursor=pointer]
+    - generic [ref=f2e278]:
+      - generic [ref=f2e279]:
+        - generic [ref=f2e280]:
+          - generic [ref=f2e281]: S
+          - generic [ref=f2e282]:
+            - paragraph [ref=f2e283]: SunnyTrips AI
+            - paragraph [ref=f2e284]: SunnyBot — your travel assistant
+        - generic [ref=f2e285]:
+          - button "Talk to agent" [ref=f2e286] [cursor=pointer]
+          - button "Close chat" [ref=f2e289] [cursor=pointer]
+      - generic [ref=f2e292]:
+        - paragraph [ref=f2e306]: recommend a hotel in boracay
+        - generic [ref=f2e308]:
+          - generic [ref=f2e309]: S
+          - generic [ref=f2e310]:
+            - generic [ref=f2e311]:
+              - paragraph [ref=f2e312]:
+                - text: Hello! I can help you find a hotel in
+                - strong [ref=f2e313]: Boracay
+                - text: ". Here are a few options from our database:"
+              - heading "Hotel Recommendations in Boracay" [level=4] [ref=f2e314]
+              - list [ref=f2e315]:
+                - listitem [ref=f2e316]:
+                  - strong [ref=f2e317]: My Station Hotel
+                  - text: ": This is a"
+                  - strong [ref=f2e318]: Mid Affordable Hotel
+                  - text: located in
+                  - strong [ref=f2e319]: Station 1
+                  - text: . It offers
+                  - strong [ref=f2e320]: Affordable Comfort
+                  - text: with a
+                  - strong [ref=f2e321]: Modern Minimalist
+                  - text: vibe and is just a short walk from White Beach. Rates start from
+                  - strong [ref=f2e322]: ₱2,200.00/night
+                  - text: .
+                - listitem [ref=f2e323]:
+                  - strong [ref=f2e324]: Canyon Hotels & Resorts Boracay
+                  - text: ": A"
+                  - strong [ref=f2e325]: High End Luxury Hotel
+                  - text: in
+                  - strong [ref=f2e326]: Station 2
+                  - text: (near D'Mall). It boasts
+                  - strong [ref=f2e327]: Boutique Luxury
+                  - text: and a
+                  - strong [ref=f2e328]: Quiet & Cozy
+                  - text: atmosphere, perfect for families. Rates start from
+                  - strong [ref=f2e329]: ₱5,200.00/night
+                  - text: .
+                - listitem [ref=f2e330]:
+                  - strong [ref=f2e331]: Happiness Hostel
+                  - text: ": This"
+                  - strong [ref=f2e332]: Mid Affordable Hotel
+                  - text: is in
+                  - strong [ref=f2e333]: Station 2 / Bulabog
+                  - text: . It has a
+                  - strong [ref=f2e334]: Bohemian Vibe
+                  - text: and offers a
+                  - strong [ref=f2e335]: Community Spirit
+                  - text: . Rates start from
+                  - strong [ref=f2e336]: ₱3,200.00/night
+                  - text: .
+              - paragraph [ref=f2e337]: Let me know if you'd like more details on any of these or if you have other preferences!
+            - generic [ref=f2e338]:
+              - generic [ref=f2e339]:
+                - paragraph [ref=f2e340]: My Station Hotel
+                - paragraph [ref=f2e341]: Boracay
+                - generic [ref=f2e342]: mid-affordable-hotels
+                - link "View Hotel" [ref=f2e344] [cursor=pointer]:
+                  - /url: /hotels/5
+              - generic [ref=f2e345]:
+                - paragraph [ref=f2e346]: Canyon Hotels & Resorts Boracay
+                - paragraph [ref=f2e347]: Boracay
+                - generic [ref=f2e348]: high-end-luxury-hotels
+                - link "View Hotel" [ref=f2e350] [cursor=pointer]:
+                  - /url: /hotels/2
+              - generic [ref=f2e351]:
+                - paragraph [ref=f2e352]: Happiness Hostel
+                - paragraph [ref=f2e353]: Boracay
+                - generic [ref=f2e354]: mid-affordable-hotels
+                - link "View Hotel" [ref=f2e356] [cursor=pointer]:
+                  - /url: /hotels/8
+      - generic [ref=f2e296]:
+        - paragraph [ref=f2e297]: SunnyBot is an AI and can make mistakes. For the most accurate answers, include your destination, travel dates, and number of guests.
+        - generic [ref=f2e298]:
+          - textbox "Ask me anything about your trip..." [ref=f2e299]
+          - button "Send message" [disabled] [ref=f2e300]

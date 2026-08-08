@@ -71,6 +71,22 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(10)->by('ai:' . $key);
         });
 
+        // -- CHAT WIDGET POLLING / HISTORY (DB reads only; keeps the 10/min 'ai'
+        //    budget reserved for the LLM calls. 5s active polling = 12/min. --
+        RateLimiter::for('chat-poll', function (Request $request) {
+            $key = $request->user()?->getAuthIdentifier() ?: $request->ip();
+
+            return Limit::perMinute(60)->by('chat-poll:' . $key);
+        });
+
+        // -- DSS PAGES / EXPLORER MAP APIs (DB reads + cached weather; guards
+        //    against map-drag hammering without touching the LLM budget) --
+        RateLimiter::for('dss', function (Request $request) {
+            $key = $request->user()?->getAuthIdentifier() ?: $request->ip();
+
+            return Limit::perMinute(60)->by('dss:' . $key);
+        });
+
         // -- CHATBOT GUEST LIMITER (IP-keyed burst; daily cap enforced in middleware) --
         RateLimiter::for('chat-guest', function (Request $request) {
             $key = $request->user()?->getAuthIdentifier() ?: $request->ip();
