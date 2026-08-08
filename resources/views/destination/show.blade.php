@@ -1,4 +1,4 @@
-<x-frontend.layout :title="$destination->name . ' — SunnyTrips'">
+﻿<x-frontend.layout :title="$destination->name . ' — SunnyTrips'">
 
     @php
         $heroImage = App\Concerns\ResolvesImages::resolveImg(
@@ -8,8 +8,6 @@
     @endphp
 
     <div x-data="{
-        previewActivity: null,
-        activePreviewImgIdx: 0,
         levelFilter: 'all',
         searchQuery: '',
         matchesActivity(level, searchableText) {
@@ -66,9 +64,9 @@
 
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16 pt-12">
 
-            {{-- ══════════════════════════════════════════
+            {{-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             HOTELS SECTION (SANCTUARY STAYS)
-            ══════════════════════════════════════════ --}}
+            â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• --}}
             <section class="space-y-8">
                 <div class="flex items-center justify-between border-b border-slate-200 pb-4">
                     <div>
@@ -174,9 +172,9 @@
                 @endif
             </section>
 
-            {{-- ══════════════════════════════════════════
+            {{-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             ACTIVITIES SECTION
-            ══════════════════════════════════════════ --}}
+            â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• --}}
             <section class="space-y-6">
                 <div class="flex items-center justify-between border-b border-slate-200 pb-4">
                     <div>
@@ -259,9 +257,6 @@
                                 $resolvedActImages = [$actImg];
                                 $formattedActRate = App\Concerns\ResolvesImages::formatRate($activity->rate);
 
-                                $inclusionsRaw = is_array($activity->inclusions) ? $activity->inclusions : (is_string($activity->inclusions) ? array_filter(array_map('trim', explode(',', $activity->inclusions))) : []);
-                                $exclusionsRaw = is_array($activity->exclusions) ? $activity->exclusions : (is_string($activity->exclusions) ? array_filter(array_map('trim', explode(',', $activity->exclusions))) : []);
-                                $itineraryRaw = is_array($activity->itinerary) ? $activity->itinerary : (is_string($activity->itinerary) ? (json_decode($activity->itinerary, true) ?: []) : []);
                                 $vibeTagsRaw = is_array($activity->vibe_tags) ? $activity->vibe_tags : (is_string($activity->vibe_tags) ? array_filter(array_map('trim', explode(',', $activity->vibe_tags))) : []);
 
                                 $searchablePayload = implode(' ', [
@@ -271,31 +266,10 @@
                                     $activity->description ?? '',
                                     $activity->requirements ?? '',
                                     $activity->ideal_for ?? '',
-                                    implode(' ', $inclusionsRaw),
                                     implode(' ', $vibeTagsRaw)
                                 ]);
 
-                                $actPayload = [
-                                    'id' => $activity->id,
-                                    'activity_name' => $activity->activity_name,
-                                    'category' => $activity->category,
-                                    'category_icon' => App\Concerns\ResolvesImages::getCategoryIcon($activity->category),
-                                    'rate' => $formattedActRate,
-                                    'duration' => $activity->duration,
-                                    'activity_level' => $activity->activity_level,
-                                    'capacity' => $activity->capacity,
-                                    'requirements' => $activity->requirements,
-                                    'ideal_for' => $activity->ideal_for,
-                                    'description' => $activity->description,
-                                    'notes' => $activity->notes,
-                                    'destination_name' => $destination->name,
-                                    'destination_id' => $destination->id,
-                                    'images' => $resolvedActImages,
-                                    'inclusions' => array_values($inclusionsRaw),
-                                    'exclusions' => array_values($exclusionsRaw),
-                                    'itinerary' => array_values($itineraryRaw),
-                                    'vibe_tags' => array_values($vibeTagsRaw),
-                                ];
+                                $actPayload = app(App\Services\Preview\ActivityPreviewService::class)->build($activity);
                             @endphp
                             <div x-show="matchesActivity('{{ addslashes($activity->activity_level ?? '') }}', {{ json_encode($searchablePayload) }})"
                                 class="bg-white rounded-3xl border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between group hover:-translate-y-1">
@@ -364,7 +338,7 @@
                                 {{-- Footer Action --}}
                                 <div class="p-5 pt-0 grid grid-cols-2 gap-2">
                                     <button type="button"
-                                        @click="previewActivity = {{ json_encode($actPayload) }}; activePreviewImgIdx = 0;"
+                                        @click="$store.preview.openActivity({{ json_encode($actPayload) }})"
                                         class="w-full py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition-colors flex items-center justify-center gap-1">
                                         <span class="material-symbols-outlined text-[15px]">visibility</span>
                                         <span>Details</span>
@@ -384,237 +358,8 @@
 
         </div>
 
-        {{-- Dynamic Activity Preview Modal --}}
-        <div x-show="previewActivity" x-transition.opacity @keydown.escape.window="previewActivity = null"
-            class="fixed inset-0 z-[110] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
-            style="display: none;">
-            <div @click.away="previewActivity = null"
-                class="bg-white rounded-3xl shadow-2xl max-w-4xl w-full overflow-hidden border border-slate-200/80 my-auto transform transition-all">
 
-                {{-- Modal Header --}}
-                <div class="relative bg-slate-900 text-white p-6 sm:p-8 overflow-hidden">
-                    <div
-                        class="absolute top-0 right-0 w-64 h-64 bg-ocean-500/10 rounded-full blur-3xl pointer-events-none">
-                    </div>
-
-                    <button @click="previewActivity = null"
-                        class="absolute top-4 right-4 text-slate-400 hover:text-white bg-white/10 hover:bg-white/20 p-2 rounded-full transition-colors">
-                        <span class="material-symbols-outlined text-[20px]">close</span>
-                    </button>
-
-                    <div class="flex flex-wrap items-center gap-2 mb-2">
-                        <span
-                            class="px-2.5 py-0.5 rounded-full bg-ocean-500/20 text-ocean-300 text-[10px] font-bold uppercase tracking-wider border border-ocean-400/30">
-                            <span x-text="previewActivity?.category || 'Activity'"></span>
-                        </span>
-                        <template x-if="previewActivity?.destination_name">
-                            <span
-                                class="px-2.5 py-0.5 rounded-full bg-white/10 text-slate-200 text-[10px] font-medium flex items-center gap-1">
-                                <span class="material-symbols-outlined text-[12px]">location_on</span>
-                                <span x-text="previewActivity.destination_name"></span>
-                            </span>
-                        </template>
-                    </div>
-
-                    <h2 class="text-2xl sm:text-3xl font-black text-white font-headline"
-                        x-text="previewActivity?.activity_name"></h2>
-
-                    <div class="mt-3 flex items-baseline gap-2">
-                        <span class="text-2xl sm:text-3xl font-black text-emerald-400 font-headline"
-                            x-text="previewActivity?.rate"></span>
-                        <span class="text-xs text-slate-300 font-medium">/ person</span>
-                    </div>
-                </div>
-
-                {{-- Modal Body --}}
-                <div class="p-6 sm:p-8 space-y-6 max-h-[65vh] overflow-y-auto text-xs sm:text-sm text-slate-700">
-
-                    {{-- Image Carousel --}}
-                    <template x-if="previewActivity?.images && previewActivity.images.length > 0">
-                        <div class="space-y-3">
-                            <div
-                                class="relative h-64 sm:h-80 rounded-2xl overflow-hidden bg-slate-900 group border border-slate-200/80">
-                                <img :src="previewActivity.images[activePreviewImgIdx]"
-                                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-                                <div
-                                    class="absolute bottom-3 right-3 bg-slate-950/75 backdrop-blur-md text-white text-xs px-3 py-1 rounded-lg border border-white/20">
-                                    Photo <span x-text="activePreviewImgIdx + 1"></span> of <span
-                                        x-text="previewActivity.images.length"></span>
-                                </div>
-                            </div>
-
-                            <template x-if="previewActivity.images.length > 1">
-                                <div class="flex items-center gap-2 overflow-x-auto pb-2">
-                                    <template x-for="(img, idx) in previewActivity.images" :key="idx">
-                                        <button @click="activePreviewImgIdx = idx"
-                                            :class="activePreviewImgIdx === idx ? 'ring-2 ring-ocean-600 scale-105' : 'opacity-70 hover:opacity-100'"
-                                            class="w-16 h-12 rounded-lg overflow-hidden border border-slate-200 shrink-0 transition-all">
-                                            <img :src="img" class="w-full h-full object-cover">
-                                        </button>
-                                    </template>
-                                </div>
-                            </template>
-                        </div>
-                    </template>
-
-                    {{-- Quick Specs Grid --}}
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/80 space-y-1">
-                            <span
-                                class="text-slate-400 text-[10px] block uppercase font-bold tracking-wider">Duration</span>
-                            <span class="font-bold text-slate-800 flex items-center gap-1">
-                                <span class="material-symbols-outlined text-[16px] text-ocean-600">schedule</span>
-                                <span x-text="previewActivity?.duration || 'Flexible'"></span>
-                            </span>
-                        </div>
-                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/80 space-y-1">
-                            <span class="text-slate-400 text-[10px] block uppercase font-bold tracking-wider">Activity
-                                Level</span>
-                            <span class="font-bold text-slate-800 flex items-center gap-1">
-                                <span
-                                    class="material-symbols-outlined text-[16px] text-ocean-600">signal_cellular_alt</span>
-                                <span x-text="previewActivity?.activity_level || 'General'"></span>
-                            </span>
-                        </div>
-                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/80 space-y-1">
-                            <span
-                                class="text-slate-400 text-[10px] block uppercase font-bold tracking-wider">Capacity</span>
-                            <span class="font-bold text-slate-800 flex items-center gap-1">
-                                <span class="material-symbols-outlined text-[16px] text-ocean-600">group</span>
-                                <span x-text="previewActivity?.capacity || 'Standard Group'"></span>
-                            </span>
-                        </div>
-                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/80 space-y-1"
-                            x-show="previewActivity?.ideal_for">
-                            <span class="text-slate-400 text-[10px] block uppercase font-bold tracking-wider">Ideal
-                                For</span>
-                            <span class="font-bold text-slate-800 flex items-center gap-1">
-                                <span class="material-symbols-outlined text-[16px] text-ocean-600">face</span>
-                                <span x-text="previewActivity?.ideal_for"></span>
-                            </span>
-                        </div>
-                    </div>
-
-                    {{-- Description --}}
-                    <template x-if="previewActivity?.description">
-                        <div class="space-y-2">
-                            <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Activity Overview</h4>
-                            <p class="text-xs sm:text-sm text-slate-600 leading-relaxed bg-slate-50/80 p-4 rounded-2xl border border-slate-200/70"
-                                x-text="previewActivity.description"></p>
-                        </div>
-                    </template>
-
-                    {{-- Requirements --}}
-                    <template x-if="previewActivity?.requirements">
-                        <div class="space-y-2">
-                            <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Participant
-                                Requirements</h4>
-                            <p
-                                class="text-xs text-amber-900 bg-amber-50/80 p-3 rounded-xl border border-amber-200/70 flex items-center gap-2">
-                                <span class="material-symbols-outlined text-[18px] text-amber-600">info</span>
-                                <span x-text="previewActivity.requirements"></span>
-                            </p>
-                        </div>
-                    </template>
-
-                    {{-- Inclusions & Exclusions --}}
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <template x-if="previewActivity?.inclusions && previewActivity.inclusions.length > 0">
-                            <div class="space-y-2 bg-emerald-50/40 p-4 rounded-2xl border border-emerald-100">
-                                <h4
-                                    class="text-xs font-bold text-emerald-900 uppercase tracking-wider flex items-center gap-1">
-                                    <span
-                                        class="material-symbols-outlined text-[16px] text-emerald-600">check_circle</span>
-                                    Included
-                                </h4>
-                                <div class="flex flex-wrap gap-1.5">
-                                    <template x-for="(inc, idx) in previewActivity.inclusions" :key="idx">
-                                        <span
-                                            class="px-2.5 py-1 bg-white text-emerald-800 text-xs font-semibold rounded-lg border border-emerald-200/80 shadow-2xs">
-                                            <span x-text="inc"></span>
-                                        </span>
-                                    </template>
-                                </div>
-                            </div>
-                        </template>
-
-                        <template x-if="previewActivity?.exclusions && previewActivity.exclusions.length > 0">
-                            <div class="space-y-2 bg-rose-50/40 p-4 rounded-2xl border border-rose-100">
-                                <h4
-                                    class="text-xs font-bold text-rose-900 uppercase tracking-wider flex items-center gap-1">
-                                    <span class="material-symbols-outlined text-[16px] text-rose-600">cancel</span>
-                                    Excluded / Add-ons
-                                </h4>
-                                <div class="flex flex-wrap gap-1.5">
-                                    <template x-for="(exc, idx) in previewActivity.exclusions" :key="idx">
-                                        <span
-                                            class="px-2.5 py-1 bg-white text-rose-800 text-xs font-semibold rounded-lg border border-rose-200/80 shadow-2xs">
-                                            <span x-text="exc"></span>
-                                        </span>
-                                    </template>
-                                </div>
-                            </div>
-                        </template>
-                    </div>
-
-                    {{-- Itinerary Timeline --}}
-                    <template x-if="previewActivity?.itinerary && previewActivity.itinerary.length > 0">
-                        <div class="space-y-3 pt-2">
-                            <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Suggested Itinerary
-                            </h4>
-                            <div class="space-y-2 relative border-l-2 border-ocean-200 ml-3 pl-4">
-                                <template x-for="(step, idx) in previewActivity.itinerary" :key="idx">
-                                    <div class="relative group">
-                                        <span
-                                            class="absolute -left-[23px] top-0.5 w-3 h-3 rounded-full bg-ocean-500 ring-4 ring-white"></span>
-                                        <div
-                                            class="bg-slate-50 p-3 rounded-xl border border-slate-200/80 flex items-center justify-between">
-                                            <span class="font-bold text-slate-800 text-xs"
-                                                x-text="step.title || step"></span>
-                                            <span
-                                                class="text-[11px] font-semibold text-ocean-600 bg-ocean-50 px-2 py-0.5 rounded-md border border-ocean-100"
-                                                x-show="step.duration" x-text="step.duration"></span>
-                                        </div>
-                                    </div>
-                                </template>
-                            </div>
-                        </div>
-                    </template>
-
-                    {{-- Vibe Tags --}}
-                    <template x-if="previewActivity?.vibe_tags && previewActivity.vibe_tags.length > 0">
-                        <div class="space-y-2 pt-2">
-                            <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Atmosphere & Vibe</h4>
-                            <div class="flex flex-wrap gap-1.5">
-                                <template x-for="(tag, idx) in previewActivity.vibe_tags" :key="idx">
-                                    <span
-                                        class="px-2.5 py-1 bg-ocean-50 text-ocean-700 text-xs font-semibold rounded-lg border border-ocean-100">
-                                        #<span x-text="tag"></span>
-                                    </span>
-                                </template>
-                            </div>
-                        </div>
-                    </template>
-
-                </div>
-
-                {{-- Modal Footer --}}
-                <div
-                    class="bg-slate-50 p-4 sm:p-6 border-t border-slate-200/80 flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <button type="button" @click="previewActivity = null"
-                        class="w-full sm:w-auto px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-bold text-xs hover:bg-slate-200 transition-colors">
-                        Close Preview
-                    </button>
-                    <button type="button" @click="window.addToCart('activity', previewActivity.id); previewActivity = null;"
-                        class="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-sky-600 to-sky-700 hover:from-sky-500 hover:to-sky-600 text-white font-bold text-xs shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2">
-                        <span class="material-symbols-outlined text-[18px]">shopping_cart</span>
-                        <span>Add to Trip Basket</span>
-                    </button>
-                </div>
-
-            </div>
-        </div>
-
+        <x-frontend.activity-preview-modal />
     </div>
 
 </x-frontend.layout>

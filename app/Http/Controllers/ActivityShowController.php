@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Concerns\ResolvesImages;
 use App\Models\ActivityModel;
 use App\Models\DestinationModel;
+use App\Services\Preview\ActivityPreviewService;
 use Illuminate\Http\Request;
 
 class ActivityShowController extends Controller
@@ -31,5 +32,19 @@ class ActivityShowController extends Controller
         $activities = $query->orderBy('activity_name', 'asc')->get();
 
         return view('activity.index', compact('activities', 'destinations'));
+    }
+
+    /**
+     * Return the JSON payload used by the shared activity preview modal.
+     */
+    public function preview($id, ActivityPreviewService $service)
+    {
+        $activity = ActivityModel::with('destination')->find($id);
+
+        if (! $activity || (! $activity->is_shown && ! auth('admin')->check())) {
+            abort(404);
+        }
+
+        return response()->json($service->build($activity));
     }
 }

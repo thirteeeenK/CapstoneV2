@@ -131,16 +131,20 @@
                                                     </div>
                                                 </template>
                                                 <template x-if="!room.check_in_date || !room.check_out_date">
-                                                    <div class="flex gap-1 mt-1">
-                                                        <input type="date" x-model="room._checkIn" class="text-xs w-full border border-sand-300 rounded px-1 py-0.5 bg-white focus:ring-ocean-400 focus:border-ocean-400" placeholder="Check-in">
-                                                        <input type="date" x-model="room._checkOut" class="text-xs w-full border border-sand-300 rounded px-1 py-0.5 bg-white focus:ring-ocean-400 focus:border-ocean-400" placeholder="Check-out">
+                                                    <div class="mt-1" @date-range-changed.stop="room._checkIn = $event.detail.checkIn; room._checkOut = $event.detail.checkOut; room._available = $event.detail.available">
+                                                        <x-frontend.date-range-picker :dynamic-room-id="'room.id'" :dynamic-base-price="'room.base_price'" />
                                                     </div>
                                                 </template>
-                                                <button
-                                                    @click="addToBasket('room', room.id, room.check_in_date ? { check_in_date: room.check_in_date, check_out_date: room.check_out_date, selected_pax: room.pax || 1 } : { check_in_date: room._checkIn, check_out_date: room._checkOut, selected_pax: 1 })"
-                                                    :disabled="(!room.check_in_date || !room.check_out_date) && (!room._checkIn || !room._checkOut)"
-                                                    class="mt-1 w-full text-xs bg-ocean-600 text-white px-2 py-1 rounded hover:bg-ocean-700 transition-colors font-body disabled:opacity-40 disabled:cursor-not-allowed"
-                                                >+ Add to Trip Basket</button>
+                                                <div class="flex gap-1 mt-1">
+                                                    <button @click="$store.preview.openRoomById(room.id)"
+                                                        class="flex-1 text-xs bg-ink-100 text-ink-700 px-2 py-1 rounded hover:bg-ink-200 transition-colors font-body"
+                                                    >Preview</button>
+                                                    <button
+                                                        @click="addToBasket('room', room.id, room.check_in_date ? { check_in_date: room.check_in_date, check_out_date: room.check_out_date, selected_pax: room.pax || 1 } : { check_in_date: room._checkIn, check_out_date: room._checkOut, selected_pax: 1 })"
+                                                        :disabled="(!room.check_in_date || !room.check_out_date) && (!room._checkIn || !room._checkOut)"
+                                                        class="flex-1 text-xs bg-ocean-600 text-white px-2 py-1 rounded hover:bg-ocean-700 transition-colors font-body disabled:opacity-40 disabled:cursor-not-allowed"
+                                                    >+ Add to Trip Basket</button>
+                                                </div>
                                             </div>
                                         </template>
                                     </div>
@@ -159,7 +163,7 @@
                                                     <span class="text-xs text-ink-400" x-text="act.category"></span>
                                                 </div>
                                                 <div class="flex gap-1 mt-1">
-                                                    <button @click="previewActivity = act"
+                                                    <button @click="$store.preview.openActivityById(act.id)"
                                                         class="flex-1 text-xs bg-ink-100 text-ink-700 px-2 py-1 rounded hover:bg-ink-200 transition-colors font-body"
                                                     >Preview</button>
                                                     <button @click="addToBasket('activity', act.id, { selected_pax: 1 })"
@@ -287,29 +291,9 @@
             </form>
         </div>
 
-        {{-- Activity Preview Modal --}}
-        <div x-show="previewActivity" class="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" @click.self="previewActivity = null">
-            <div class="bg-white rounded-xl max-w-sm w-full p-4 shadow-xl max-h-[80vh] overflow-y-auto">
-                <div class="flex items-center justify-between mb-3">
-                    <h3 class="text-sm font-semibold text-ink-800 font-body" x-text="previewActivity?.activity_name"></h3>
-                    <button @click="previewActivity = null" class="text-ink-400 hover:text-ink-600">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                    </button>
-                </div>
-                <img x-show="previewActivity?.image" :src="'/storage/' + previewActivity?.image" class="w-full h-32 object-cover rounded-lg mb-3" alt="">
-                <div class="space-y-2 text-xs font-body">
-                    <p x-show="previewActivity?.destination"><span class="text-ink-400">Destination:</span> <span class="text-ink-700 font-medium" x-text="previewActivity?.destination"></span></p>
-                    <p x-show="previewActivity?.category"><span class="text-ink-400">Category:</span> <span class="text-ink-700 font-medium" x-text="previewActivity?.category"></span></p>
-                    <p x-show="previewActivity?.rate"><span class="text-ink-400">Rate:</span> <span class="text-coral-600 font-bold" x-text="previewActivity?.rate"></span></p>
-                    <p x-show="previewActivity?.description" class="text-ink-600 leading-relaxed" x-text="previewActivity?.description"></p>
-                </div>
-                <div class="flex gap-2 mt-4">
-                    <button @click="addToBasket('activity', previewActivity.id, { selected_pax: 1 }); previewActivity = null"
-                        class="flex-1 bg-coral-500 text-white text-sm px-3 py-2 rounded-lg hover:bg-coral-600 transition-colors font-body font-semibold"
-                    >+ Add to Trip Basket</button>
-                </div>
-            </div>
-        </div>
+        {{-- Shared Preview Modals --}}
+        <x-frontend.room-preview-modal />
+        <x-frontend.activity-preview-modal />
     </div>
 </div>
 
@@ -325,7 +309,6 @@ function chatWidget() {
         loginUrl: '{{ route('login') }}',
         registerUrl: '{{ route('register') }}',
         sessionToken: null,
-        previewActivity: null,
         handoffStatus: null,
         handoffTicket: '',
         handoffPollTimer: null,

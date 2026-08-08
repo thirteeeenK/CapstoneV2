@@ -1,0 +1,1048 @@
+- generic [active] [ref=f7e1]:
+  - banner [ref=f7e2]:
+    - navigation [ref=f7e3]:
+      - link "SunnyTrips Travel Services" [ref=f7e4] [cursor=pointer]:
+        - /url: /
+      - generic [ref=f7e6]:
+        - link:
+          - /url: /
+        - link "Destinations" [ref=f7e7] [cursor=pointer]:
+          - /url: /#destinations
+        - link "Experiences" [ref=f7e8] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/activities
+        - link "Packages" [ref=f7e9] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/packages
+        - link "Journals" [ref=f7e10] [cursor=pointer]:
+          - /url: /#brand-story
+      - generic [ref=f7e11]:
+        - button "View Trip Basket" [ref=f7e12] [cursor=pointer]
+        - link "Login" [ref=f7e15] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/login
+        - link "Register" [ref=f7e16] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/register
+  - main [ref=f7e17]:
+    - generic [ref=f7e19]:
+      - generic [ref=f7e20]:
+        - generic [ref=f7e21]:
+          - generic [ref=f7e22]:
+            - generic [ref=f7e23]: explore
+            - generic [ref=f7e24]: Full Activities Catalog
+          - heading "Island Activities & Tours" [level=1] [ref=f7e25]
+          - paragraph [ref=f7e26]: Discover guided island tours, water sports, diving adventures, and cultural experiences. Select any activity to view complete itinerary, inclusions, and island details.
+        - generic [ref=f7e27]:
+          - generic [ref=f7e28]:
+            - generic [ref=f7e29]: location_on
+            - generic [ref=f7e30]: "Location:"
+          - button "All Islands (32)" [ref=f7e31] [cursor=pointer]
+          - button "Boracay 22" [ref=f7e32] [cursor=pointer]:
+            - generic [ref=f7e33]: Boracay
+            - generic [ref=f7e34]: "22"
+          - button "El Nido 10" [ref=f7e35] [cursor=pointer]:
+            - generic [ref=f7e36]: El Nido
+            - generic [ref=f7e37]: "10"
+      - generic [ref=f7e38]:
+        - generic [ref=f7e39]:
+          - generic [ref=f7e40]: search
+          - textbox "Search activity, level, tags, or inclusions..." [ref=f7e41]
+        - generic [ref=f7e42]:
+          - generic [ref=f7e43]:
+            - generic [ref=f7e44]: signal_cellular_alt
+            - generic [ref=f7e45]: "Level Filter:"
+          - button "All Levels" [ref=f7e46] [cursor=pointer]
+          - button "ðŸ§˜ Relaxing" [ref=f7e47] [cursor=pointer]:
+            - generic [ref=f7e48]: ðŸ§˜
+            - generic [ref=f7e49]: Relaxing
+          - 'button "ðŸ—ºï¸ Sightseeing" [ref=f7e50] [cursor=pointer]':
+            - generic [ref=f7e51]: "ðŸ—ºï¸\x8f"
+            - generic [ref=f7e52]: Sightseeing
+          - 'button "ðŸ”ï¸ Adventure" [ref=f7e53] [cursor=pointer]':
+            - generic [ref=f7e54]: "ðŸ\x8f”ï¸\x8f"
+            - generic [ref=f7e55]: Adventure
+          - button "âš¡ Extreme" [ref=f7e56] [cursor=pointer]:
+            - generic [ref=f7e57]: âš¡
+            - generic [ref=f7e58]: Extreme
+          - button "ðŸ¤¿ Underwater" [ref=f7e59] [cursor=pointer]:
+            - generic [ref=f7e60]: ðŸ¤¿
+            - generic [ref=f7e61]: Underwater
+      - generic [ref=f7e62]:
+        - generic [ref=f7e63]:
+          - generic [ref=f7e64]:
+            - generic [ref=f7e65]:
+              - img "6–7 Destinations (Aircon Van)" [ref=f7e66]
+              - generic [ref=f7e68]: Land Tour
+              - generic [ref=f7e70]: ₱3,700
+              - generic [ref=f7e71]:
+                - generic [ref=f7e72]: location_on
+                - generic [ref=f7e73]: Boracay
+            - generic [ref=f7e74]:
+              - heading "6–7 Destinations (Aircon Van)" [level=3] [ref=f7e75]
+              - paragraph [ref=f7e76]: Travel around Boracay in climate-controlled luxury. Visit Keyhole, Puka Beach, Mangrove Park, and scenic heights without breaking a sweat.
+              - generic [ref=f7e78]:
+                - generic [ref=f7e79]: signal_cellular_alt
+                - generic [ref=f7e80]: Sightseeing
+              - generic [ref=f7e81]:
+                - generic [ref=f7e82]: "#Air-conditioned"
+                - generic [ref=f7e83]: "#Comfort Tour"
+                - generic [ref=f7e84]: "#Family Friendly"
+          - generic [ref=f7e85]:
+            - button "visibility Preview" [ref=f7e86] [cursor=pointer]:
+              - generic [ref=f7e87]: visibility
+              - generic [ref=f7e88]: Preview
+            - button "shopping_cart Add to Trip Basket" [ref=f7e89] [cursor=pointer]:
+              - generic [ref=f7e90]: shopping_cart
+              - generic [ref=f7e91]: Add to Trip Basket
+        - generic [ref=f7e92]:
+          - generic [ref=f7e93]:
+            - generic [ref=f7e94]:
+              - img "6–7 Destinations (E-Trike)" [ref=f7e95]
+              - generic [ref=f7e97]: Land Tour
+              - generic [ref=f7e99]: ₱2,000
+              - generic [ref=f7e100]:
+                - generic [ref=f7e101]: location_on
+                - generic [ref=f7e102]: Boracay
+            - generic [ref=f7e103]:
+              - heading "6–7 Destinations (E-Trike)" [level=3] [ref=f7e104]
+              - paragraph [ref=f7e105]: Hop on an eco-friendly electric trike for an intimate island tour covering Keyhole, Newcoast Beach, Puka Beach, Mt. Luho viewpoint, and Ilig-Iligan Beach at your own pace.
+              - generic [ref=f7e106]:
+                - generic [ref=f7e107]:
+                  - generic [ref=f7e108]: schedule
+                  - generic [ref=f7e109]: 3 to 4 Hours
+                - generic [ref=f7e110]:
+                  - generic [ref=f7e111]: signal_cellular_alt
+                  - generic [ref=f7e112]: Sightseeing
+                - generic [ref=f7e113]:
+                  - generic [ref=f7e114]: group
+                  - generic [ref=f7e115]: Max 1–6 Persons
+              - generic [ref=f7e116]:
+                - generic [ref=f7e117]: "#Eco-Friendly"
+                - generic [ref=f7e118]: "#Sightseeing"
+                - generic [ref=f7e119]: "#Custom Pace"
+          - generic [ref=f7e120]:
+            - button "visibility Preview" [ref=f7e121] [cursor=pointer]:
+              - generic [ref=f7e122]: visibility
+              - generic [ref=f7e123]: Preview
+            - button "shopping_cart Add to Trip Basket" [ref=f7e124] [cursor=pointer]:
+              - generic [ref=f7e125]: shopping_cart
+              - generic [ref=f7e126]: Add to Trip Basket
+        - generic [ref=f7e127]:
+          - generic [ref=f7e128]:
+            - generic [ref=f7e129]:
+              - img "6–7 Destinations (FB Van/Multicab)" [ref=f7e130]
+              - generic [ref=f7e132]: Land Tour
+              - generic [ref=f7e134]: ₱3,000
+              - generic [ref=f7e135]:
+                - generic [ref=f7e136]: location_on
+                - generic [ref=f7e137]: Boracay
+            - generic [ref=f7e138]:
+              - heading "6–7 Destinations (FB Van/Multicab)" [level=3] [ref=f7e139]
+              - paragraph [ref=f7e140]: Group land tour around Boracay's famous spots in an open-air multicab. Ideal for medium-sized barkadas exploring the island's northern beaches and coastal views.
+              - generic [ref=f7e142]:
+                - generic [ref=f7e143]: signal_cellular_alt
+                - generic [ref=f7e144]: Sightseeing
+              - generic [ref=f7e145]:
+                - generic [ref=f7e146]: "#Group Tour"
+                - generic [ref=f7e147]: "#Open Air"
+                - generic [ref=f7e148]: "#Sightseeing"
+          - generic [ref=f7e149]:
+            - button "visibility Preview" [ref=f7e150] [cursor=pointer]:
+              - generic [ref=f7e151]: visibility
+              - generic [ref=f7e152]: Preview
+            - button "shopping_cart Add to Trip Basket" [ref=f7e153] [cursor=pointer]:
+              - generic [ref=f7e154]: shopping_cart
+              - generic [ref=f7e155]: Add to Trip Basket
+        - generic [ref=f7e156]:
+          - generic [ref=f7e157]:
+            - generic [ref=f7e158]:
+              - img "ATV (New Coast)" [ref=f7e159]
+              - generic [ref=f7e161]: Adventure
+              - generic [ref=f7e163]: ₱1,500/person
+              - generic [ref=f7e164]:
+                - generic [ref=f7e165]: location_on
+                - generic [ref=f7e166]: Boracay
+            - generic [ref=f7e167]:
+              - heading "ATV (New Coast)" [level=3] [ref=f7e168]
+              - paragraph [ref=f7e169]: Guided premium ATV tour through Boracay Newcoast's private roads, pine trees, and exclusive private beach viewing deck.
+              - generic [ref=f7e171]:
+                - generic [ref=f7e172]: signal_cellular_alt
+                - generic [ref=f7e173]: Adventure
+              - generic [ref=f7e174]:
+                - generic [ref=f7e175]: "#Premium ATV Trail"
+                - generic [ref=f7e176]: "#Private Coastline"
+                - generic [ref=f7e177]: "#Scenic Ocean Deck"
+          - generic [ref=f7e178]:
+            - button "visibility Preview" [ref=f7e179] [cursor=pointer]:
+              - generic [ref=f7e180]: visibility
+              - generic [ref=f7e181]: Preview
+            - button "shopping_cart Add to Trip Basket" [ref=f7e182] [cursor=pointer]:
+              - generic [ref=f7e183]: shopping_cart
+              - generic [ref=f7e184]: Add to Trip Basket
+        - generic [ref=f7e185]:
+          - generic [ref=f7e186]:
+            - generic [ref=f7e187]:
+              - img "ATV + Zipline Package (Mega Paraw Company)" [ref=f7e188]
+              - generic [ref=f7e190]: Adventure
+              - generic [ref=f7e192]: ₱1,000/person
+              - generic [ref=f7e193]:
+                - generic [ref=f7e194]: location_on
+                - generic [ref=f7e195]: Boracay
+            - generic [ref=f7e196]:
+              - heading "ATV + Zipline Package (Mega Paraw Company)" [level=3] [ref=f7e197]
+              - paragraph [ref=f7e198]: "Action-packed combo feature: power your quad bike through dirt tracks followed by a thrilling zipline descent."
+              - generic [ref=f7e200]:
+                - generic [ref=f7e201]: signal_cellular_alt
+                - generic [ref=f7e202]: Adventure
+              - generic [ref=f7e203]:
+                - generic [ref=f7e204]: "#Off-Road ATV"
+                - generic [ref=f7e205]: "#Zipline Adventure"
+                - generic [ref=f7e206]: "#Outdoor Thrills"
+          - generic [ref=f7e207]:
+            - button "visibility Preview" [ref=f7e208] [cursor=pointer]:
+              - generic [ref=f7e209]: visibility
+              - generic [ref=f7e210]: Preview
+            - button "shopping_cart Add to Trip Basket" [ref=f7e211] [cursor=pointer]:
+              - generic [ref=f7e212]: shopping_cart
+              - generic [ref=f7e213]: Add to Trip Basket
+        - generic [ref=f7e214]:
+          - generic [ref=f7e215]:
+            - generic [ref=f7e216]:
+              - img "ATV + Zipline Package (Shingley Company)" [ref=f7e217]
+              - generic [ref=f7e219]: Adventure
+              - generic [ref=f7e221]: ₱1,100/person
+              - generic [ref=f7e222]:
+                - generic [ref=f7e223]: location_on
+                - generic [ref=f7e224]: Boracay
+            - generic [ref=f7e225]:
+              - heading "ATV + Zipline Package (Shingley Company)" [level=3] [ref=f7e226]
+              - paragraph [ref=f7e227]: Combines off-road quad bike riding through rugged mountain trails with a high-flying zip line ride across green valleys on mainland Aklan.
+              - generic [ref=f7e229]:
+                - generic [ref=f7e230]: signal_cellular_alt
+                - generic [ref=f7e231]: Adventure
+              - generic [ref=f7e232]:
+                - generic [ref=f7e233]: "#Off-Road ATV"
+                - generic [ref=f7e234]: "#Zipline Flight"
+                - generic [ref=f7e235]: "#Mountain Combo"
+          - generic [ref=f7e236]:
+            - button "visibility Preview" [ref=f7e237] [cursor=pointer]:
+              - generic [ref=f7e238]: visibility
+              - generic [ref=f7e239]: Preview
+            - button "shopping_cart Add to Trip Basket" [ref=f7e240] [cursor=pointer]:
+              - generic [ref=f7e241]: shopping_cart
+              - generic [ref=f7e242]: Add to Trip Basket
+        - generic [ref=f7e243]:
+          - generic [ref=f7e244]:
+            - generic [ref=f7e245]:
+              - img "ATV Only (Mainland)" [ref=f7e246]
+              - generic [ref=f7e248]: Adventure
+              - generic [ref=f7e250]: ₱850
+              - generic [ref=f7e251]:
+                - generic [ref=f7e252]: location_on
+                - generic [ref=f7e253]: Boracay
+            - generic [ref=f7e254]:
+              - heading "ATV Only (Mainland)" [level=3] [ref=f7e255]
+              - paragraph [ref=f7e256]: Conquer mud, rocks, and winding dirt paths driving your own 4x4 all-terrain vehicle through rural mainland landscapes.
+              - generic [ref=f7e258]:
+                - generic [ref=f7e259]: signal_cellular_alt
+                - generic [ref=f7e260]: Adventure
+              - generic [ref=f7e261]:
+                - generic [ref=f7e262]: "#Off-Road 4x4"
+                - generic [ref=f7e263]: "#Trail Riding"
+                - generic [ref=f7e264]: "#Dirt & Mud Action"
+          - generic [ref=f7e265]:
+            - button "visibility Preview" [ref=f7e266] [cursor=pointer]:
+              - generic [ref=f7e267]: visibility
+              - generic [ref=f7e268]: Preview
+            - button "shopping_cart Add to Trip Basket" [ref=f7e269] [cursor=pointer]:
+              - generic [ref=f7e270]: shopping_cart
+              - generic [ref=f7e271]: Add to Trip Basket
+        - generic [ref=f7e272]:
+          - generic [ref=f7e273]:
+            - generic [ref=f7e274]:
+              - img "Banana Boat" [ref=f7e275]
+              - generic [ref=f7e277]: Water Activity
+              - generic [ref=f7e279]: ₱450/person
+              - generic [ref=f7e280]:
+                - generic [ref=f7e281]: location_on
+                - generic [ref=f7e282]: Boracay
+            - generic [ref=f7e283]:
+              - heading "Banana Boat" [level=3] [ref=f7e284]
+              - paragraph [ref=f7e285]: Hold on tight as a high-speed speedboat pulls your giant yellow inflatable boat across waves. Bumpy, splashy, and laughter-filled fun!
+              - generic [ref=f7e287]:
+                - generic [ref=f7e288]: signal_cellular_alt
+                - generic [ref=f7e289]: Adventure
+              - generic [ref=f7e290]:
+                - generic [ref=f7e291]: "#Splash & Fun"
+                - generic [ref=f7e292]: "#High Speed"
+                - generic [ref=f7e293]: "#Group Laughs"
+          - generic [ref=f7e294]:
+            - button "visibility Preview" [ref=f7e295] [cursor=pointer]:
+              - generic [ref=f7e296]: visibility
+              - generic [ref=f7e297]: Preview
+            - button "shopping_cart Add to Trip Basket" [ref=f7e298] [cursor=pointer]:
+              - generic [ref=f7e299]: shopping_cart
+              - generic [ref=f7e300]: Add to Trip Basket
+        - generic [ref=f7e301]:
+          - generic [ref=f7e302]:
+            - generic [ref=f7e303]:
+              - img "Clear Kayak Rental" [ref=f7e304]
+              - generic [ref=f7e306]: Water Activity
+              - generic [ref=f7e308]: ₱300 - ₱500/hour
+              - generic [ref=f7e309]:
+                - generic [ref=f7e310]: location_on
+                - generic [ref=f7e311]: El Nido
+            - generic [ref=f7e312]:
+              - heading "Clear Kayak Rental" [level=3] [ref=f7e313]
+              - paragraph [ref=f7e314]: Rent a completely transparent kayak to paddle around the lagoons or shoreline. Get stunning, unobstructed views of the corals and fishes beneath you, plus amazing Instagram-worthy drone-style photos.
+              - generic [ref=f7e315]:
+                - generic [ref=f7e316]:
+                  - generic [ref=f7e317]: schedule
+                  - generic [ref=f7e318]: 1 Hour
+                - generic [ref=f7e319]:
+                  - generic [ref=f7e320]: signal_cellular_alt
+                  - generic [ref=f7e321]: Relaxing
+                - generic [ref=f7e322]:
+                  - generic [ref=f7e323]: group
+                  - generic [ref=f7e324]: Max 1–2 Persons
+              - generic [ref=f7e325]:
+                - generic [ref=f7e326]: "#Transparent Kayak"
+                - generic [ref=f7e327]: "#Instagram Photoshoot"
+                - generic [ref=f7e328]: "#Crystal Water"
+          - generic [ref=f7e329]:
+            - button "visibility Preview" [ref=f7e330] [cursor=pointer]:
+              - generic [ref=f7e331]: visibility
+              - generic [ref=f7e332]: Preview
+            - button "shopping_cart Add to Trip Basket" [ref=f7e333] [cursor=pointer]:
+              - generic [ref=f7e334]: shopping_cart
+              - generic [ref=f7e335]: Add to Trip Basket
+        - generic [ref=f7e336]:
+          - generic [ref=f7e337]:
+            - generic [ref=f7e338]:
+              - img "Crystal Kayak" [ref=f7e339]
+              - generic [ref=f7e341]: Other
+              - generic [ref=f7e343]: ₱300/person
+              - generic [ref=f7e344]:
+                - generic [ref=f7e345]: location_on
+                - generic [ref=f7e346]: Boracay
+            - generic [ref=f7e347]:
+              - heading "Crystal Kayak" [level=3] [ref=f7e348]
+              - paragraph [ref=f7e349]: Paddle a completely clear, transparent kayak over crystal waters with local guide photo assistance. Get stunning Instagram photo shoots.
+              - generic [ref=f7e350]:
+                - generic [ref=f7e351]:
+                  - generic [ref=f7e352]: schedule
+                  - generic [ref=f7e353]: 30 mins
+                - generic [ref=f7e354]:
+                  - generic [ref=f7e355]: signal_cellular_alt
+                  - generic [ref=f7e356]: Relaxing
+                - generic [ref=f7e357]:
+                  - generic [ref=f7e358]: group
+                  - generic [ref=f7e359]: Max 1 Pax
+              - generic [ref=f7e360]:
+                - generic [ref=f7e361]: "#Transparent Kayak"
+                - generic [ref=f7e362]: "#Instagram Photoshoot"
+                - generic [ref=f7e363]: "#Crystal Water"
+          - generic [ref=f7e364]:
+            - button "visibility Preview" [ref=f7e365] [cursor=pointer]:
+              - generic [ref=f7e366]: visibility
+              - generic [ref=f7e367]: Preview
+            - button "shopping_cart Add to Trip Basket" [ref=f7e368] [cursor=pointer]:
+              - generic [ref=f7e369]: shopping_cart
+              - generic [ref=f7e370]: Add to Trip Basket
+        - generic [ref=f7e371]:
+          - generic [ref=f7e372]:
+            - generic [ref=f7e373]:
+              - img "Discover Scuba Diving (DSD)" [ref=f7e374]
+              - generic [ref=f7e376]: Diving
+              - generic [ref=f7e378]: ₱4,500/person
+              - generic [ref=f7e379]:
+                - generic [ref=f7e380]: location_on
+                - generic [ref=f7e381]: El Nido
+            - generic [ref=f7e382]:
+              - heading "Discover Scuba Diving (DSD)" [level=3] [ref=f7e383]
+              - paragraph [ref=f7e384]: Experience breathing underwater for the first time with a certified PADI instructor. Explore El Nido’s vibrant coral reefs, sea turtles, and colorful marine life without needing a certification.
+              - generic [ref=f7e385]:
+                - generic [ref=f7e386]:
+                  - generic [ref=f7e387]: schedule
+                  - generic [ref=f7e388]: Full Day (Includes 2 Dives)
+                - generic [ref=f7e389]:
+                  - generic [ref=f7e390]: signal_cellular_alt
+                  - generic [ref=f7e391]: Underwater
+                - generic [ref=f7e392]:
+                  - generic [ref=f7e393]: group
+                  - generic [ref=f7e394]: Max Small Group (Max 4 students per instructor)
+              - generic [ref=f7e395]:
+                - generic [ref=f7e396]: "#PADI Guided"
+                - generic [ref=f7e397]: "#Coral Reefs"
+                - generic [ref=f7e398]: "#Sea Turtles"
+          - generic [ref=f7e399]:
+            - button "visibility Preview" [ref=f7e400] [cursor=pointer]:
+              - generic [ref=f7e401]: visibility
+              - generic [ref=f7e402]: Preview
+            - button "shopping_cart Add to Trip Basket" [ref=f7e403] [cursor=pointer]:
+              - generic [ref=f7e404]: shopping_cart
+              - generic [ref=f7e405]: Add to Trip Basket
+        - generic [ref=f7e406]:
+          - generic [ref=f7e407]:
+            - generic [ref=f7e408]:
+              - img "El Nido Tour A (Lagoons & Beaches)" [ref=f7e409]
+              - generic [ref=f7e411]: Island Hopping
+              - generic [ref=f7e413]: ₱1,200/person
+              - generic [ref=f7e414]:
+                - generic [ref=f7e415]: location_on
+                - generic [ref=f7e416]: El Nido
+            - generic [ref=f7e417]:
+              - heading "El Nido Tour A (Lagoons & Beaches)" [level=3] [ref=f7e418]
+              - paragraph [ref=f7e419]: The most popular island-hopping tour in El Nido. Explore the breathtaking Big Lagoon, Secret Lagoon, Shimizu Island, and Seven Commandos Beach. Enjoy kayaking through towering limestone cliffs and snorkeling in pristine waters.
+              - generic [ref=f7e420]:
+                - generic [ref=f7e421]:
+                  - generic [ref=f7e422]: schedule
+                  - generic [ref=f7e423]: Full Day (9:00 AM - 4:00 PM)
+                - generic [ref=f7e424]:
+                  - generic [ref=f7e425]: signal_cellular_alt
+                  - generic [ref=f7e426]: Adventure
+                - generic [ref=f7e427]:
+                  - generic [ref=f7e428]: group
+                  - generic [ref=f7e429]: Max Joiner Group (Max 15-20 pax)
+              - generic [ref=f7e430]:
+                - generic [ref=f7e431]: "#Lagoons"
+                - generic [ref=f7e432]: "#Kayaking"
+                - generic [ref=f7e433]: "#Snorkeling"
+          - generic [ref=f7e434]:
+            - button "visibility Preview" [ref=f7e435] [cursor=pointer]:
+              - generic [ref=f7e436]: visibility
+              - generic [ref=f7e437]: Preview
+            - button "shopping_cart Add to Trip Basket" [ref=f7e438] [cursor=pointer]:
+              - generic [ref=f7e439]: shopping_cart
+              - generic [ref=f7e440]: Add to Trip Basket
+        - generic [ref=f7e441]:
+          - generic [ref=f7e442]:
+            - generic [ref=f7e443]:
+              - img "El Nido Tour B (Caves & Coves)" [ref=f7e444]
+              - generic [ref=f7e446]: Island Hopping
+              - generic [ref=f7e448]: ₱1,300/person
+              - generic [ref=f7e449]:
+                - generic [ref=f7e450]: location_on
+                - generic [ref=f7e451]: El Nido
+            - generic [ref=f7e452]:
+              - heading "El Nido Tour B (Caves & Coves)" [level=3] [ref=f7e453]
+              - paragraph [ref=f7e454]: Discover the historical and geographical wonders of Bacuit Bay. Walk along the famous Snake Island sandbar, explore Cudugnon Cave and Cathedral Cave, and relax at Pinagbuyutan Island.
+              - generic [ref=f7e455]:
+                - generic [ref=f7e456]:
+                  - generic [ref=f7e457]: schedule
+                  - generic [ref=f7e458]: Full Day (9:00 AM - 4:00 PM)
+                - generic [ref=f7e459]:
+                  - generic [ref=f7e460]: signal_cellular_alt
+                  - generic [ref=f7e461]: Adventure
+                - generic [ref=f7e462]:
+                  - generic [ref=f7e463]: group
+                  - generic [ref=f7e464]: Max Joiner Group (Max 15-20 pax)
+              - generic [ref=f7e465]:
+                - generic [ref=f7e466]: "#Caves"
+                - generic [ref=f7e467]: "#Sandbar"
+                - generic [ref=f7e468]: "#Historical"
+          - generic [ref=f7e469]:
+            - button "visibility Preview" [ref=f7e470] [cursor=pointer]:
+              - generic [ref=f7e471]: visibility
+              - generic [ref=f7e472]: Preview
+            - button "shopping_cart Add to Trip Basket" [ref=f7e473] [cursor=pointer]:
+              - generic [ref=f7e474]: shopping_cart
+              - generic [ref=f7e475]: Add to Trip Basket
+        - generic [ref=f7e476]:
+          - generic [ref=f7e477]:
+            - generic [ref=f7e478]:
+              - img "El Nido Tour C (Hidden Beaches & Shrines)" [ref=f7e479]
+              - generic [ref=f7e481]: Island Hopping
+              - generic [ref=f7e483]: ₱1,400/person
+              - generic [ref=f7e484]:
+                - generic [ref=f7e485]: location_on
+                - generic [ref=f7e486]: El Nido
+            - generic [ref=f7e487]:
+              - heading "El Nido Tour C (Hidden Beaches & Shrines)" [level=3] [ref=f7e488]
+              - paragraph [ref=f7e489]: Known for its stunning hidden beaches and snorkeling spots. Visit Hidden Beach, Secret Beach, Matinloc Shrine, Talisay Beach, and Helicopter Island. Offers some of the best underwater views in El Nido.
+              - generic [ref=f7e490]:
+                - generic [ref=f7e491]:
+                  - generic [ref=f7e492]: schedule
+                  - generic [ref=f7e493]: Full Day (9:00 AM - 4:00 PM)
+                - generic [ref=f7e494]:
+                  - generic [ref=f7e495]: signal_cellular_alt
+                  - generic [ref=f7e496]: Adventure
+                - generic [ref=f7e497]:
+                  - generic [ref=f7e498]: group
+                  - generic [ref=f7e499]: Max Joiner Group (Max 15-20 pax)
+              - generic [ref=f7e500]:
+                - generic [ref=f7e501]: "#Hidden Beaches"
+                - generic [ref=f7e502]: "#Top Snorkeling"
+                - generic [ref=f7e503]: "#Marine Life"
+          - generic [ref=f7e504]:
+            - button "visibility Preview" [ref=f7e505] [cursor=pointer]:
+              - generic [ref=f7e506]: visibility
+              - generic [ref=f7e507]: Preview
+            - button "shopping_cart Add to Trip Basket" [ref=f7e508] [cursor=pointer]:
+              - generic [ref=f7e509]: shopping_cart
+              - generic [ref=f7e510]: Add to Trip Basket
+        - generic [ref=f7e511]:
+          - generic [ref=f7e512]:
+            - generic [ref=f7e513]:
+              - img "El Nido Tour D (Island Beaches)" [ref=f7e514]
+              - generic [ref=f7e516]: Island Hopping
+              - generic [ref=f7e518]: ₱1,200/person
+              - generic [ref=f7e519]:
+                - generic [ref=f7e520]: location_on
+                - generic [ref=f7e521]: El Nido
+            - generic [ref=f7e522]:
+              - heading "El Nido Tour D (Island Beaches)" [level=3] [ref=f7e523]
+              - paragraph [ref=f7e524]: A more relaxed tour focusing on beautiful sandy beaches and laid-back swimming. Visit Small Lagoon, Nat Nat Beach, Cadlao Lagoon, Pasandigan Beach, and Paradise Beach.
+              - generic [ref=f7e525]:
+                - generic [ref=f7e526]:
+                  - generic [ref=f7e527]: schedule
+                  - generic [ref=f7e528]: Full Day (9:00 AM - 4:00 PM)
+                - generic [ref=f7e529]:
+                  - generic [ref=f7e530]: signal_cellular_alt
+                  - generic [ref=f7e531]: Relaxing
+                - generic [ref=f7e532]:
+                  - generic [ref=f7e533]: group
+                  - generic [ref=f7e534]: Max Joiner Group (Max 15 pax)
+              - generic [ref=f7e535]:
+                - generic [ref=f7e536]: "#Relaxing"
+                - generic [ref=f7e537]: "#Beaches"
+                - generic [ref=f7e538]: "#Chill"
+          - generic [ref=f7e539]:
+            - button "visibility Preview" [ref=f7e540] [cursor=pointer]:
+              - generic [ref=f7e541]: visibility
+              - generic [ref=f7e542]: Preview
+            - button "shopping_cart Add to Trip Basket" [ref=f7e543] [cursor=pointer]:
+              - generic [ref=f7e544]: shopping_cart
+              - generic [ref=f7e545]: Add to Trip Basket
+        - generic [ref=f7e546]:
+          - generic [ref=f7e547]:
+            - generic [ref=f7e548]:
+              - img "Helmet Diving" [ref=f7e549]
+              - generic [ref=f7e551]: Diving
+              - generic [ref=f7e553]: ₱850/person
+              - generic [ref=f7e554]:
+                - generic [ref=f7e555]: location_on
+                - generic [ref=f7e556]: Boracay
+            - generic [ref=f7e557]:
+              - heading "Helmet Diving" [level=3] [ref=f7e558]
+              - paragraph [ref=f7e559]: Walk on the ocean floor 10 feet underwater! Special heavy air-helmet lets you breathe normally while tropical fish swim around your hands.
+              - generic [ref=f7e561]:
+                - generic [ref=f7e562]: signal_cellular_alt
+                - generic [ref=f7e563]: Underwater
+              - generic [ref=f7e564]:
+                - generic [ref=f7e565]: "#Ocean Floor Walk"
+                - generic [ref=f7e566]: "#No Swim Required"
+                - generic [ref=f7e567]: "#Fish Feeding"
+          - generic [ref=f7e568]:
+            - button "visibility Preview" [ref=f7e569] [cursor=pointer]:
+              - generic [ref=f7e570]: visibility
+              - generic [ref=f7e571]: Preview
+            - button "shopping_cart Add to Trip Basket" [ref=f7e572] [cursor=pointer]:
+              - generic [ref=f7e573]: shopping_cart
+              - generic [ref=f7e574]: Add to Trip Basket
+        - generic [ref=f7e575]:
+          - generic [ref=f7e576]:
+            - generic [ref=f7e577]:
+              - img "Jet Ski (15 mins)" [ref=f7e578]
+              - generic [ref=f7e580]: Water Activity
+              - generic [ref=f7e582]: ₱2,200
+              - generic [ref=f7e583]:
+                - generic [ref=f7e584]: location_on
+                - generic [ref=f7e585]: Boracay
+            - generic [ref=f7e586]:
+              - heading "Jet Ski (15 mins)" [level=3] [ref=f7e587]
+              - paragraph [ref=f7e588]: Feel the power of high-performance personal watercraft as you race across open ocean waters. Take turns steering and riding the waves.
+              - generic [ref=f7e590]:
+                - generic [ref=f7e591]: signal_cellular_alt
+                - generic [ref=f7e592]: Extreme
+              - generic [ref=f7e593]:
+                - generic [ref=f7e594]: "#High Speed"
+                - generic [ref=f7e595]: "#Self Drive"
+                - generic [ref=f7e596]: "#Wave Racing"
+          - generic [ref=f7e597]:
+            - button "visibility Preview" [ref=f7e598] [cursor=pointer]:
+              - generic [ref=f7e599]: visibility
+              - generic [ref=f7e600]: Preview
+            - button "shopping_cart Add to Trip Basket" [ref=f7e601] [cursor=pointer]:
+              - generic [ref=f7e602]: shopping_cart
+              - generic [ref=f7e603]: Add to Trip Basket
+        - generic [ref=f7e604]:
+          - generic [ref=f7e605]:
+            - generic [ref=f7e606]:
+              - img "Jet Ski (30 mins)" [ref=f7e607]
+              - generic [ref=f7e609]: Water Activity
+              - generic [ref=f7e611]: ₱3,800
+              - generic [ref=f7e612]:
+                - generic [ref=f7e613]: location_on
+                - generic [ref=f7e614]: Boracay
+            - generic [ref=f7e615]:
+              - heading "Jet Ski (30 mins)" [level=3] [ref=f7e616]
+              - paragraph [ref=f7e617]: Double the time, double the adrenaline! 30 full minutes of high-speed jet ski action with plenty of time to explore the coast.
+              - generic [ref=f7e619]:
+                - generic [ref=f7e620]: signal_cellular_alt
+                - generic [ref=f7e621]: Extreme
+              - generic [ref=f7e622]:
+                - generic [ref=f7e623]: "#Extended High Speed"
+                - generic [ref=f7e624]: "#Wave Racing"
+                - generic [ref=f7e625]: "#Water Motorsport"
+          - generic [ref=f7e626]:
+            - button "visibility Preview" [ref=f7e627] [cursor=pointer]:
+              - generic [ref=f7e628]: visibility
+              - generic [ref=f7e629]: Preview
+            - button "shopping_cart Add to Trip Basket" [ref=f7e630] [cursor=pointer]:
+              - generic [ref=f7e631]: shopping_cart
+              - generic [ref=f7e632]: Add to Trip Basket
+        - generic [ref=f7e633]:
+          - generic [ref=f7e634]:
+            - generic [ref=f7e635]:
+              - img "Joiners Island Hopping" [ref=f7e636]
+              - generic [ref=f7e638]: Island Hopping
+              - generic [ref=f7e640]: ₱850/person
+              - generic [ref=f7e641]:
+                - generic [ref=f7e642]: location_on
+                - generic [ref=f7e643]: Boracay
+            - generic [ref=f7e644]:
+              - heading "Joiners Island Hopping" [level=3] [ref=f7e645]
+              - paragraph [ref=f7e646]: Explore Boracay's surrounding pristine islands including Crocodile Island, Puka Beach, and Magic Island. Enjoy swimming, snorkeling in coral gardens, and a hot kawa bath experience with a complimentary seafood & BBQ buffet lunch.
+              - generic [ref=f7e647]:
+                - generic [ref=f7e648]:
+                  - generic [ref=f7e649]: schedule
+                  - generic [ref=f7e650]: Full Day (9:00 AM - 4:00 PM)
+                - generic [ref=f7e651]:
+                  - generic [ref=f7e652]: signal_cellular_alt
+                  - generic [ref=f7e653]: Relaxing
+                - generic [ref=f7e654]:
+                  - generic [ref=f7e655]: group
+                  - generic [ref=f7e656]: Max Joiner Group (Max 20 pax)
+              - generic [ref=f7e657]:
+                - generic [ref=f7e658]: "#Snorkeling"
+                - generic [ref=f7e659]: "#Island Hopping"
+                - generic [ref=f7e660]: "#Buffet Lunch"
+          - generic [ref=f7e661]:
+            - button "visibility Preview" [ref=f7e662] [cursor=pointer]:
+              - generic [ref=f7e663]: visibility
+              - generic [ref=f7e664]: Preview
+            - button "shopping_cart Add to Trip Basket" [ref=f7e665] [cursor=pointer]:
+              - generic [ref=f7e666]: shopping_cart
+              - generic [ref=f7e667]: Add to Trip Basket
+        - generic [ref=f7e668]:
+          - generic [ref=f7e669]:
+            - generic [ref=f7e670]:
+              - img "Nacpan Beach Inland Tour" [ref=f7e671]
+              - generic [ref=f7e673]: Land Tour
+              - generic [ref=f7e675]: ₱600/person (Joiner) | ₱1,500 (Private Tricycle)
+              - generic [ref=f7e676]:
+                - generic [ref=f7e677]: location_on
+                - generic [ref=f7e678]: El Nido
+            - generic [ref=f7e679]:
+              - heading "Nacpan Beach Inland Tour" [level=3] [ref=f7e680]
+              - paragraph [ref=f7e681]: Travel north of the main town to visit the world-famous Nacpan Beach, known for its 4-kilometer stretch of golden sand and clear blue waters. Perfect for swimming, sunbathing, and sunset watching.
+              - generic [ref=f7e682]:
+                - generic [ref=f7e683]:
+                  - generic [ref=f7e684]: schedule
+                  - generic [ref=f7e685]: Half Day (4 to 5 Hours)
+                - generic [ref=f7e686]:
+                  - generic [ref=f7e687]: signal_cellular_alt
+                  - generic [ref=f7e688]: Relaxing
+                - generic [ref=f7e689]:
+                  - generic [ref=f7e690]: group
+                  - generic [ref=f7e691]: Max 1–4 pax (Tricycle) / Joiner Van
+              - generic [ref=f7e692]:
+                - generic [ref=f7e693]: "#Long Beach"
+                - generic [ref=f7e694]: "#Golden Sand"
+                - generic [ref=f7e695]: "#Sunset Views"
+          - generic [ref=f7e696]:
+            - button "visibility Preview" [ref=f7e697] [cursor=pointer]:
+              - generic [ref=f7e698]: visibility
+              - generic [ref=f7e699]: Preview
+            - button "shopping_cart Add to Trip Basket" [ref=f7e700] [cursor=pointer]:
+              - generic [ref=f7e701]: shopping_cart
+              - generic [ref=f7e702]: Add to Trip Basket
+        - generic [ref=f7e703]:
+          - generic [ref=f7e704]:
+            - generic [ref=f7e705]:
+              - img "Parasailing" [ref=f7e706]
+              - generic [ref=f7e708]: Water Activity
+              - generic [ref=f7e710]: ₱1,700/person
+              - generic [ref=f7e711]:
+                - generic [ref=f7e712]: location_on
+                - generic [ref=f7e713]: Boracay
+            - generic [ref=f7e714]:
+              - heading "Parasailing" [level=3] [ref=f7e715]
+              - paragraph [ref=f7e716]: Soar 150 meters above the azure waters of Boracay! Experience breathtaking 360-degree aerial views of the entire 7km island while strapped securely into a parachute canopy.
+              - generic [ref=f7e718]:
+                - generic [ref=f7e719]: signal_cellular_alt
+                - generic [ref=f7e720]: Extreme
+              - generic [ref=f7e721]:
+                - generic [ref=f7e722]: "#Panoramic Aerial Views"
+                - generic [ref=f7e723]: "#Extreme Height"
+                - generic [ref=f7e724]: "#High Flying"
+          - generic [ref=f7e725]:
+            - button "visibility Preview" [ref=f7e726] [cursor=pointer]:
+              - generic [ref=f7e727]: visibility
+              - generic [ref=f7e728]: Preview
+            - button "shopping_cart Add to Trip Basket" [ref=f7e729] [cursor=pointer]:
+              - generic [ref=f7e730]: shopping_cart
+              - generic [ref=f7e731]: Add to Trip Basket
+        - generic [ref=f7e732]:
+          - generic [ref=f7e733]:
+            - generic [ref=f7e734]:
+              - img "Parasailing (Solo)" [ref=f7e735]
+              - generic [ref=f7e737]: Water Activity
+              - generic [ref=f7e739]: ₱2,500
+              - generic [ref=f7e740]:
+                - generic [ref=f7e741]: location_on
+                - generic [ref=f7e742]: Boracay
+            - generic [ref=f7e743]:
+              - heading "Parasailing (Solo)" [level=3] [ref=f7e744]
+              - paragraph [ref=f7e745]: Command the skies alone on a dedicated solo parasail flight over White Beach. Ultimate freedom and adrenaline in the air.
+              - generic [ref=f7e747]:
+                - generic [ref=f7e748]: signal_cellular_alt
+                - generic [ref=f7e749]: Extreme
+              - generic [ref=f7e750]:
+                - generic [ref=f7e751]: "#Solo Extreme"
+                - generic [ref=f7e752]: "#High Flying"
+                - generic [ref=f7e753]: "#Panoramic Views"
+          - generic [ref=f7e754]:
+            - button "visibility Preview" [ref=f7e755] [cursor=pointer]:
+              - generic [ref=f7e756]: visibility
+              - generic [ref=f7e757]: Preview
+            - button "shopping_cart Add to Trip Basket" [ref=f7e758] [cursor=pointer]:
+              - generic [ref=f7e759]: shopping_cart
+              - generic [ref=f7e760]: Add to Trip Basket
+        - generic [ref=f7e761]:
+          - generic [ref=f7e762]:
+            - generic [ref=f7e763]:
+              - img "Paraw Sailing (Joiners)" [ref=f7e764]
+              - generic [ref=f7e766]: Sailing
+              - generic [ref=f7e768]: ₱850/person
+              - generic [ref=f7e769]:
+                - generic [ref=f7e770]: location_on
+                - generic [ref=f7e771]: Boracay
+            - generic [ref=f7e772]:
+              - heading "Paraw Sailing (Joiners)" [level=3] [ref=f7e773]
+              - paragraph [ref=f7e774]: Experience traditional Filipino wind sailing on an outrigger boat shared with fellow sunset seekers.
+              - generic [ref=f7e776]:
+                - generic [ref=f7e777]: signal_cellular_alt
+                - generic [ref=f7e778]: Relaxing
+              - generic [ref=f7e779]:
+                - generic [ref=f7e780]: "#Wind Sailing"
+                - generic [ref=f7e781]: "#Sunset Views"
+                - generic [ref=f7e782]: "#Cultural Boat"
+          - generic [ref=f7e783]:
+            - button "visibility Preview" [ref=f7e784] [cursor=pointer]:
+              - generic [ref=f7e785]: visibility
+              - generic [ref=f7e786]: Preview
+            - button "shopping_cart Add to Trip Basket" [ref=f7e787] [cursor=pointer]:
+              - generic [ref=f7e788]: shopping_cart
+              - generic [ref=f7e789]: Add to Trip Basket
+        - generic [ref=f7e790]:
+          - generic [ref=f7e791]:
+            - generic [ref=f7e792]:
+              - img "Paraw Sailing (Private)" [ref=f7e793]
+              - generic [ref=f7e795]: Sailing
+              - generic [ref=f7e797]: ₱750/person
+              - generic [ref=f7e798]:
+                - generic [ref=f7e799]: location_on
+                - generic [ref=f7e800]: Boracay
+            - generic [ref=f7e801]:
+              - heading "Paraw Sailing (Private)" [level=3] [ref=f7e802]
+              - paragraph [ref=f7e803]: Charter an authentic outrigger sailboat driven by breeze alone. Glide peacefully along White Beach during golden hour for unforgettable sunset photos.
+              - generic [ref=f7e805]:
+                - generic [ref=f7e806]: signal_cellular_alt
+                - generic [ref=f7e807]: Relaxing
+              - generic [ref=f7e808]:
+                - generic [ref=f7e809]: "#Traditional Sailboat"
+                - generic [ref=f7e810]: "#Private Sunset Cruise"
+                - generic [ref=f7e811]: "#Eco Wind Sailing"
+          - generic [ref=f7e812]:
+            - button "visibility Preview" [ref=f7e813] [cursor=pointer]:
+              - generic [ref=f7e814]: visibility
+              - generic [ref=f7e815]: Preview
+            - button "shopping_cart Add to Trip Basket" [ref=f7e816] [cursor=pointer]:
+              - generic [ref=f7e817]: shopping_cart
+              - generic [ref=f7e818]: Add to Trip Basket
+        - generic [ref=f7e819]:
+          - generic [ref=f7e820]:
+            - generic [ref=f7e821]:
+              - img "Party Boat" [ref=f7e822]
+              - generic [ref=f7e824]: Water Activity
+              - generic [ref=f7e826]: ₱800/person
+              - generic [ref=f7e827]:
+                - generic [ref=f7e828]: location_on
+                - generic [ref=f7e829]: Boracay
+            - generic [ref=f7e830]:
+              - heading "Party Boat" [level=3] [ref=f7e831]
+              - paragraph [ref=f7e832]: Join fellow fun-loving travelers on a lively ocean party cruise featuring music, water slides, paddleboards, and sunset golden hour vibes.
+              - generic [ref=f7e834]:
+                - generic [ref=f7e835]: signal_cellular_alt
+                - generic [ref=f7e836]: Relaxing
+              - generic [ref=f7e837]:
+                - generic [ref=f7e838]: "#Social Party"
+                - generic [ref=f7e839]: "#Sunset Golden Hour"
+                - generic [ref=f7e840]: "#Water Slides"
+          - generic [ref=f7e841]:
+            - button "visibility Preview" [ref=f7e842] [cursor=pointer]:
+              - generic [ref=f7e843]: visibility
+              - generic [ref=f7e844]: Preview
+            - button "shopping_cart Add to Trip Basket" [ref=f7e845] [cursor=pointer]:
+              - generic [ref=f7e846]: shopping_cart
+              - generic [ref=f7e847]: Add to Trip Basket
+        - generic [ref=f7e848]:
+          - generic [ref=f7e849]:
+            - generic [ref=f7e850]:
+              - img "Party Yacht" [ref=f7e851]
+              - generic [ref=f7e853]: Water Activity
+              - generic [ref=f7e855]: ₱1,300/person
+              - generic [ref=f7e856]:
+                - generic [ref=f7e857]: location_on
+                - generic [ref=f7e858]: Boracay
+            - generic [ref=f7e859]:
+              - heading "Party Yacht" [level=3] [ref=f7e860]
+              - paragraph [ref=f7e861]: Set sail on a stylish multi-deck catamaran yacht. Dance to DJ music, enjoy drinks & appetizers, swim off the stern, and watch Boracay's legendary sunset from the deck.
+              - generic [ref=f7e863]:
+                - generic [ref=f7e864]: signal_cellular_alt
+                - generic [ref=f7e865]: Relaxing
+              - generic [ref=f7e866]:
+                - generic [ref=f7e867]: "#VIP Sunset Cruise"
+                - generic [ref=f7e868]: "#Yacht Party"
+                - generic [ref=f7e869]: "#Music & Drinks"
+          - generic [ref=f7e870]:
+            - button "visibility Preview" [ref=f7e871] [cursor=pointer]:
+              - generic [ref=f7e872]: visibility
+              - generic [ref=f7e873]: Preview
+            - button "shopping_cart Add to Trip Basket" [ref=f7e874] [cursor=pointer]:
+              - generic [ref=f7e875]: shopping_cart
+              - generic [ref=f7e876]: Add to Trip Basket
+        - generic [ref=f7e877]:
+          - generic [ref=f7e878]:
+            - generic [ref=f7e879]:
+              - img "Scuba Diving" [ref=f7e880]
+              - generic [ref=f7e882]: Diving
+              - generic [ref=f7e884]: ₱1,350/person
+              - generic [ref=f7e885]:
+                - generic [ref=f7e886]: location_on
+                - generic [ref=f7e887]: Boracay
+            - generic [ref=f7e888]:
+              - heading "Scuba Diving" [level=3] [ref=f7e889]
+              - paragraph [ref=f7e890]: Discover Scuba Diving for beginners with PADI certified divemasters. Dive into coral reefs, interact with marine life, and experience weightless underwater flight.
+              - generic [ref=f7e892]:
+                - generic [ref=f7e893]: signal_cellular_alt
+                - generic [ref=f7e894]: Underwater
+              - generic [ref=f7e895]:
+                - generic [ref=f7e896]: "#PADI Guided"
+                - generic [ref=f7e897]: "#Coral Reef Dive"
+                - generic [ref=f7e898]: "#Marine Life"
+          - generic [ref=f7e899]:
+            - button "visibility Preview" [ref=f7e900] [cursor=pointer]:
+              - generic [ref=f7e901]: visibility
+              - generic [ref=f7e902]: Preview
+            - button "shopping_cart Add to Trip Basket" [ref=f7e903] [cursor=pointer]:
+              - generic [ref=f7e904]: shopping_cart
+              - generic [ref=f7e905]: Add to Trip Basket
+        - generic [ref=f7e906]:
+          - generic [ref=f7e907]:
+            - generic [ref=f7e908]:
+              - img "Stand-Up Paddleboarding (SUP)" [ref=f7e909]
+              - generic [ref=f7e911]: Water Activity
+              - generic [ref=f7e913]: ₱400/hour
+              - generic [ref=f7e914]:
+                - generic [ref=f7e915]: location_on
+                - generic [ref=f7e916]: El Nido
+            - generic [ref=f7e917]:
+              - heading "Stand-Up Paddleboarding (SUP)" [level=3] [ref=f7e918]
+              - paragraph [ref=f7e919]: Rent a paddleboard and glide along the calm waters of Corong-Corong or Lio Beach. A great core workout and a peaceful way to explore the coastline at your own pace.
+              - generic [ref=f7e920]:
+                - generic [ref=f7e921]:
+                  - generic [ref=f7e922]: schedule
+                  - generic [ref=f7e923]: 1 Hour
+                - generic [ref=f7e924]:
+                  - generic [ref=f7e925]: signal_cellular_alt
+                  - generic [ref=f7e926]: Adventure
+                - generic [ref=f7e927]:
+                  - generic [ref=f7e928]: group
+                  - generic [ref=f7e929]: Max 1 Person per board
+              - generic [ref=f7e930]:
+                - generic [ref=f7e931]: "#Paddleboarding"
+                - generic [ref=f7e932]: "#Core Workout"
+                - generic [ref=f7e933]: "#Coastline Exploration"
+          - generic [ref=f7e934]:
+            - button "visibility Preview" [ref=f7e935] [cursor=pointer]:
+              - generic [ref=f7e936]: visibility
+              - generic [ref=f7e937]: Preview
+            - button "shopping_cart Add to Trip Basket" [ref=f7e938] [cursor=pointer]:
+              - generic [ref=f7e939]: shopping_cart
+              - generic [ref=f7e940]: Add to Trip Basket
+        - generic [ref=f7e941]:
+          - generic [ref=f7e942]:
+            - generic [ref=f7e943]:
+              - img "Sunset Cruise / Party Boat" [ref=f7e944]
+              - generic [ref=f7e946]: Sailing
+              - generic [ref=f7e948]: ₱1,500/person
+              - generic [ref=f7e949]:
+                - generic [ref=f7e950]: location_on
+                - generic [ref=f7e951]: El Nido
+            - generic [ref=f7e952]:
+              - heading "Sunset Cruise / Party Boat" [level=3] [ref=f7e953]
+              - paragraph [ref=f7e954]: Sail along the coast of Bacuit Bay as the sun goes down. Enjoy free-flowing drinks, acoustic music or DJ sets, and a relaxing vibe with fellow travelers.
+              - generic [ref=f7e955]:
+                - generic [ref=f7e956]:
+                  - generic [ref=f7e957]: schedule
+                  - generic [ref=f7e958]: 3 Hours (4:00 PM - 7:00 PM)
+                - generic [ref=f7e959]:
+                  - generic [ref=f7e960]: signal_cellular_alt
+                  - generic [ref=f7e961]: Relaxing
+                - generic [ref=f7e962]:
+                  - generic [ref=f7e963]: group
+                  - generic [ref=f7e964]: Max Joiner Group (Max 30 pax)
+              - generic [ref=f7e965]:
+                - generic [ref=f7e966]: "#Sunset Golden Hour"
+                - generic [ref=f7e967]: "#Social Party"
+                - generic [ref=f7e968]: "#Music & Drinks"
+          - generic [ref=f7e969]:
+            - button "visibility Preview" [ref=f7e970] [cursor=pointer]:
+              - generic [ref=f7e971]: visibility
+              - generic [ref=f7e972]: Preview
+            - button "shopping_cart Add to Trip Basket" [ref=f7e973] [cursor=pointer]:
+              - generic [ref=f7e974]: shopping_cart
+              - generic [ref=f7e975]: Add to Trip Basket
+        - generic [ref=f7e976]:
+          - generic [ref=f7e977]:
+            - generic [ref=f7e978]:
+              - img "Taraw Cliff Canopy Walk" [ref=f7e979]
+              - generic [ref=f7e981]: Adventure
+              - generic [ref=f7e983]: ₱500/person
+              - generic [ref=f7e984]:
+                - generic [ref=f7e985]: location_on
+                - generic [ref=f7e986]: El Nido
+            - generic [ref=f7e987]:
+              - heading "Taraw Cliff Canopy Walk" [level=3] [ref=f7e988]
+              - paragraph [ref=f7e989]: Conquer the jagged limestone cliffs of El Nido town via a safe suspension bridge and canopy walkway. Reach the view deck for an incredible panoramic shot of the entire Bacuit Bay.
+              - generic [ref=f7e990]:
+                - generic [ref=f7e991]:
+                  - generic [ref=f7e992]: schedule
+                  - generic [ref=f7e993]: 1 to 2 Hours
+                - generic [ref=f7e994]:
+                  - generic [ref=f7e995]: signal_cellular_alt
+                  - generic [ref=f7e996]: Extreme
+                - generic [ref=f7e997]:
+                  - generic [ref=f7e998]: group
+                  - generic [ref=f7e999]: Max Small Groups / Individuals
+              - generic [ref=f7e1000]:
+                - generic [ref=f7e1001]: "#Viewpoint"
+                - generic [ref=f7e1002]: "#Suspension Bridge"
+                - generic [ref=f7e1003]: "#Panoramic Views"
+          - generic [ref=f7e1004]:
+            - button "visibility Preview" [ref=f7e1005] [cursor=pointer]:
+              - generic [ref=f7e1006]: visibility
+              - generic [ref=f7e1007]: Preview
+            - button "shopping_cart Add to Trip Basket" [ref=f7e1008] [cursor=pointer]:
+              - generic [ref=f7e1009]: shopping_cart
+              - generic [ref=f7e1010]: Add to Trip Basket
+        - generic [ref=f7e1011]:
+          - generic [ref=f7e1012]:
+            - generic [ref=f7e1013]:
+              - img "UFO Ride" [ref=f7e1014]
+              - generic [ref=f7e1016]: Water Activity
+              - generic [ref=f7e1018]: ₱650/person
+              - generic [ref=f7e1019]:
+                - generic [ref=f7e1020]: location_on
+                - generic [ref=f7e1021]: Boracay
+            - generic [ref=f7e1022]:
+              - heading "UFO Ride" [level=3] [ref=f7e1023]
+              - paragraph [ref=f7e1024]: Ride a floating, spinning saucer towed by a speedboat. Bounce off waves and hold on as centrifugal force spins you across the ocean surface!
+              - generic [ref=f7e1026]:
+                - generic [ref=f7e1027]: signal_cellular_alt
+                - generic [ref=f7e1028]: Adventure
+              - generic [ref=f7e1029]:
+                - generic [ref=f7e1030]: "#Spinning Action"
+                - generic [ref=f7e1031]: "#Inflatable Watersport"
+                - generic [ref=f7e1032]: "#Extreme Bouncing"
+          - generic [ref=f7e1033]:
+            - button "visibility Preview" [ref=f7e1034] [cursor=pointer]:
+              - generic [ref=f7e1035]: visibility
+              - generic [ref=f7e1036]: Preview
+            - button "shopping_cart Add to Trip Basket" [ref=f7e1037] [cursor=pointer]:
+              - generic [ref=f7e1038]: shopping_cart
+              - generic [ref=f7e1039]: Add to Trip Basket
+        - generic [ref=f7e1040]:
+          - generic [ref=f7e1041]:
+            - generic [ref=f7e1042]:
+              - img "Zipline Only" [ref=f7e1043]
+              - generic [ref=f7e1045]: Adventure
+              - generic [ref=f7e1047]: ₱750
+              - generic [ref=f7e1048]:
+                - generic [ref=f7e1049]: location_on
+                - generic [ref=f7e1050]: Boracay
+            - generic [ref=f7e1051]:
+              - heading "Zipline Only" [level=3] [ref=f7e1052]
+              - paragraph [ref=f7e1053]: Fly superman-style across a 600-meter cable line high above the trees with stunning coastline views.
+              - generic [ref=f7e1055]:
+                - generic [ref=f7e1056]: signal_cellular_alt
+                - generic [ref=f7e1057]: Adventure
+              - generic [ref=f7e1058]:
+                - generic [ref=f7e1059]: "#High Aerial Cable"
+                - generic [ref=f7e1060]: "#Superman Flight"
+                - generic [ref=f7e1061]: "#Forest Canopy"
+          - generic [ref=f7e1062]:
+            - button "visibility Preview" [ref=f7e1063] [cursor=pointer]:
+              - generic [ref=f7e1064]: visibility
+              - generic [ref=f7e1065]: Preview
+            - button "shopping_cart Add to Trip Basket" [ref=f7e1066] [cursor=pointer]:
+              - generic [ref=f7e1067]: shopping_cart
+              - generic [ref=f7e1068]: Add to Trip Basket
+  - contentinfo [ref=f7e1069]:
+    - generic [ref=f7e1070]:
+      - generic [ref=f7e1071]:
+        - generic [ref=f7e1072]:
+          - generic [ref=f7e1073]: SunnyTrips
+          - paragraph [ref=f7e1074]: Redefining tropical exploration through curated luxury and local intelligence. We are the modern navigator for the Philippine archipelago.
+        - generic [ref=f7e1076]:
+          - heading "JOURNEY" [level=4] [ref=f7e1077]
+          - generic [ref=f7e1078]:
+            - link "Curations" [ref=f7e1079] [cursor=pointer]:
+              - /url: "#"
+            - link "Navigators" [ref=f7e1080] [cursor=pointer]:
+              - /url: "#"
+            - link "Private Charters" [ref=f7e1081] [cursor=pointer]:
+              - /url: "#"
+            - link "Eco-Projects" [ref=f7e1082] [cursor=pointer]:
+              - /url: "#"
+        - generic [ref=f7e1083]:
+          - heading "CONCIERGE" [level=4] [ref=f7e1084]
+          - generic [ref=f7e1085]:
+            - link "Help Center" [ref=f7e1086] [cursor=pointer]:
+              - /url: "#"
+            - link "Safe Travel" [ref=f7e1087] [cursor=pointer]:
+              - /url: "#"
+            - link "Booking Policy" [ref=f7e1088] [cursor=pointer]:
+              - /url: "#"
+        - generic [ref=f7e1089]:
+          - heading "THE OFFICE" [level=4] [ref=f7e1090]
+          - paragraph [ref=f7e1091]: Brgy. San Agustin, Pili, Camarines Sur Philippines, 4418
+      - separator [ref=f7e1092]
+      - generic [ref=f7e1093]:
+        - paragraph [ref=f7e1094]: © 2026 SunnyTrips. All rights reserved. Made for the sun-seekers.
+        - generic [ref=f7e1095]:
+          - link "AI Usage Disclosure" [ref=f7e1096] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/legal/ai_disclosure
+          - link "Privacy Policy" [ref=f7e1097] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/legal/privacy
+          - link "Terms and Conditions" [ref=f7e1098] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/legal/terms
+  - dialog "Added to trip basket" [ref=f7e1169]:
+    - generic [ref=f7e1170]:
+      - button "Close" [ref=f7e1171] [cursor=pointer]
+      - generic [ref=f7e1174]:
+        - heading "Added to your trip basket" [level=3] [ref=f7e1178]
+        - paragraph [ref=f7e1179]: This piece of your journey is ready when you are.
+      - generic [ref=f7e1180]:
+        - generic [ref=f7e1181]:
+          - img "6–7 Destinations (Aircon Van)" [ref=f7e1182]
+          - generic [ref=f7e1183]:
+            - heading "6–7 Destinations (Aircon Van)" [level=4] [ref=f7e1184]
+            - paragraph [ref=f7e1185]: Boracay • 2 pax
+            - generic [ref=f7e1186]:
+              - generic [ref=f7e1187]: "Qty: 2"
+              - generic [ref=f7e1188]: ₱7,400.00
+        - generic [ref=f7e1189]:
+          - button "Keep Exploring" [ref=f7e1190] [cursor=pointer]
+          - button "View Basket" [ref=f7e1191] [cursor=pointer]
+  - button "Chat with SunnyTrips AI" [ref=f7e1100] [cursor=pointer]

@@ -1,4 +1,4 @@
-<x-frontend.layout title="Activities, Tours & Adventures — SunnyTrips">
+﻿<x-frontend.layout title="Activities, Tours & Adventures — SunnyTrips">
     @php
         $selectedDestId = request('destination_id');
         $selectedLevel = request('level');
@@ -8,9 +8,6 @@
         activeDestId: '{{ $selectedDestId ?: 'all' }}',
         levelFilter: '{{ $selectedLevel ?: 'all' }}',
         searchQuery: '',
-        previewActivity: null,
-        modalPax: 1,
-        activePreviewImgIdx: 0,
         matchesActivity(destId, level, searchableText) {
             if (this.activeDestId !== 'all' && String(this.activeDestId) !== String(destId)) {
                 return false;
@@ -131,8 +128,6 @@
                         $formattedRate = App\Concerns\ResolvesImages::formatRate($act->rate);
 
                         $inclusionsRaw = is_array($act->inclusions) ? $act->inclusions : (is_string($act->inclusions) ? array_filter(array_map('trim', explode(',', $act->inclusions))) : []);
-                        $exclusionsRaw = is_array($act->exclusions) ? $act->exclusions : (is_string($act->exclusions) ? array_filter(array_map('trim', explode(',', $act->exclusions))) : []);
-                        $itineraryRaw = is_array($act->itinerary) ? $act->itinerary : (is_string($act->itinerary) ? (json_decode($act->itinerary, true) ?: []) : []);
                         $vibeTagsRaw = is_array($act->vibe_tags) ? $act->vibe_tags : (is_string($act->vibe_tags) ? array_filter(array_map('trim', explode(',', $act->vibe_tags))) : []);
 
                         $destName = $act->destination->name ?? '';
@@ -152,27 +147,7 @@
                             $vibeTagsStr
                         ]);
 
-                        $actPayload = [
-                            'id' => $act->id,
-                            'activity_name' => $act->activity_name,
-                            'category' => $act->category,
-                            'category_icon' => App\Concerns\ResolvesImages::getCategoryIcon($act->category),
-                            'rate' => $formattedRate,
-                            'duration' => $act->duration,
-                            'activity_level' => $act->activity_level,
-                            'capacity' => $act->capacity,
-                            'requirements' => $act->requirements,
-                            'ideal_for' => $act->ideal_for,
-                            'description' => $act->description,
-                            'notes' => $act->notes,
-                            'destination_name' => $destName,
-                            'destination_id' => $act->destination_id,
-                            'images' => $resolvedImages,
-                            'inclusions' => array_values($inclusionsRaw),
-                            'exclusions' => array_values($exclusionsRaw),
-                            'itinerary' => array_values($itineraryRaw),
-                            'vibe_tags' => array_values($vibeTagsRaw),
-                        ];
+                        $actPayload = app(App\Services\Preview\ActivityPreviewService::class)->build($act);
                     @endphp
 
                     <div x-show="matchesActivity('{{ $act->destination_id }}', '{{ addslashes($act->activity_level ?? '') }}', {{ json_encode($searchablePayload) }})"
@@ -260,7 +235,7 @@
                         {{-- Card Footer --}}
                         <div class="p-5 pt-0 grid grid-cols-2 gap-2">
                             <button type="button"
-                                @click="previewActivity = {{ json_encode($actPayload) }}; activePreviewImgIdx = 0;"
+                                @click="$store.preview.openActivity({{ json_encode($actPayload) }})"
                                 class="w-full py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-colors flex items-center justify-center gap-1 cursor-pointer">
                                 <span class="material-symbols-outlined text-[15px]">visibility</span>
                                 <span>Preview</span>
@@ -279,141 +254,7 @@
 
         </div>
 
-        {{-- Dynamic Activity Preview Modal --}}
-        <div x-show="previewActivity" x-transition.opacity @keydown.escape.window="previewActivity = null"
-            class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-slate-950/75 backdrop-blur-md" x-cloak style="display: none;">
-            
-            <div @click.away="previewActivity = null"
-                class="bg-white border border-slate-200 rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative flex flex-col">
-                
-                {{-- Modal Header --}}
-                <div class="sticky top-0 bg-white/90 backdrop-blur-md px-6 py-4 border-b border-slate-200 flex items-center justify-between z-20">
-                    <div class="flex items-center gap-2">
-                        <span class="material-symbols-outlined text-sky-600 text-xl" x-text="previewActivity?.category_icon || 'explore'"></span>
-                        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider" x-text="previewActivity?.category || 'Activity'"></span>
-                        <template x-if="previewActivity?.destination_name">
-                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-sky-50 text-sky-700 text-[11px] font-bold border border-sky-200">
-                                <span class="material-symbols-outlined text-[13px] text-sky-500">location_on</span>
-                                <span x-text="previewActivity.destination_name"></span>
-                            </span>
-                        </template>
-                    </div>
-                    <button @click="previewActivity = null" class="p-1 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors">
-                        <span class="material-symbols-outlined text-xl">close</span>
-                    </button>
-                </div>
 
-                {{-- Modal Body --}}
-                <div class="p-6 space-y-6">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-4">
-                        <h2 class="text-xl sm:text-2xl font-black text-slate-900 font-headline" x-text="previewActivity?.activity_name"></h2>
-                        <span class="text-xl font-black text-emerald-600 font-mono bg-emerald-50 px-3 py-1 rounded-xl border border-emerald-200/80 inline-block w-fit" x-text="previewActivity?.rate"></span>
-                    </div>
-
-                    {{-- Image Carousel Preview --}}
-                    <template x-if="previewActivity?.images && previewActivity.images.length > 0">
-                        <div class="space-y-3">
-                            <div class="relative h-64 sm:h-80 rounded-2xl overflow-hidden bg-slate-900 shadow-inner">
-                                <img :src="previewActivity.images[activePreviewImgIdx]" class="w-full h-full object-cover">
-                                <span class="absolute bottom-3 right-3 bg-slate-950/80 text-white text-[10px] font-bold px-2.5 py-1 rounded-full backdrop-blur-xs border border-white/10">
-                                    <span x-text="activePreviewImgIdx + 1"></span> / <span x-text="previewActivity.images.length"></span>
-                                </span>
-                            </div>
-                            <template x-if="previewActivity.images.length > 1">
-                                <div class="flex items-center gap-2 overflow-x-auto pb-1">
-                                    <template x-for="(img, idx) in previewActivity.images" :key="idx">
-                                        <button @click="activePreviewImgIdx = idx"
-                                            :class="activePreviewImgIdx === idx ? 'ring-2 ring-sky-500 scale-95' : 'opacity-70 hover:opacity-100'"
-                                            class="w-16 h-12 rounded-lg overflow-hidden shrink-0 transition-all cursor-pointer">
-                                            <img :src="img" class="w-full h-full object-cover">
-                                        </button>
-                                    </template>
-                                </div>
-                            </template>
-                        </div>
-                    </template>
-
-                    {{-- Quick Specs Grid --}}
-                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
-                        <div>
-                            <span class="text-slate-400 text-[10px] block uppercase font-bold tracking-wider">Duration</span>
-                            <span class="text-xs font-bold text-slate-800" x-text="previewActivity?.duration || 'Flexible'"></span>
-                        </div>
-                        <div>
-                            <span class="text-slate-400 text-[10px] block uppercase font-bold tracking-wider">Activity Level</span>
-                            <span class="text-xs font-bold text-sky-700" x-text="previewActivity?.activity_level || 'General'"></span>
-                        </div>
-                        <div>
-                            <span class="text-slate-400 text-[10px] block uppercase font-bold tracking-wider">Max Group</span>
-                            <span class="text-xs font-bold text-slate-800" x-text="previewActivity?.capacity ? 'Up to ' + previewActivity.capacity + ' guests' : 'Flexible'"></span>
-                        </div>
-                    </div>
-
-                    {{-- Pax Selector Control --}}
-                    <div class="flex items-center justify-between p-3.5 bg-sky-50/80 rounded-2xl border border-sky-200/80">
-                        <div class="flex items-center gap-2">
-                            <span class="material-symbols-outlined text-sky-600">group</span>
-                            <div>
-                                <span class="text-xs font-bold text-slate-800 block">Number of Participants / Pax</span>
-                                <span class="text-[11px] text-slate-500">Manifest entries will be generated for each participant</span>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-2xs">
-                            <button type="button" @click="modalPax = Math.max(1, modalPax - 1)" :disabled="modalPax <= 1" class="text-slate-600 font-bold hover:text-sky-600 disabled:opacity-40 cursor-pointer">-</button>
-                            <span class="text-xs font-black text-slate-900 w-6 text-center" x-text="modalPax"></span>
-                            <button type="button" @click="modalPax += 1" class="text-slate-600 font-bold hover:text-sky-600 cursor-pointer">+</button>
-                        </div>
-                    </div>
-
-                    {{-- Description --}}
-                    <div class="space-y-1.5">
-                        <h4 class="text-xs font-extrabold uppercase tracking-wider text-slate-400">Description</h4>
-                        <p class="text-xs sm:text-sm text-slate-600 leading-relaxed" x-text="previewActivity?.description"></p>
-                    </div>
-
-                    {{-- Requirements --}}
-                    <template x-if="previewActivity?.requirements">
-                        <div class="space-y-1.5 bg-amber-50/80 border border-amber-200/80 p-3.5 rounded-xl text-amber-900 text-xs">
-                            <span class="font-bold block flex items-center gap-1">
-                                <span class="material-symbols-outlined text-[15px]">info</span>
-                                Requirements & Guidelines
-                            </span>
-                            <p x-text="previewActivity.requirements" class="leading-relaxed"></p>
-                        </div>
-                    </template>
-
-                    {{-- Inclusions --}}
-                    <template x-if="previewActivity?.inclusions && previewActivity.inclusions.length > 0">
-                        <div class="space-y-2">
-                            <h4 class="text-xs font-extrabold uppercase tracking-wider text-slate-400">What's Included</h4>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                <template x-for="(inc, idx) in previewActivity.inclusions" :key="idx">
-                                    <div class="flex items-center gap-2 text-xs text-slate-700 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200/80">
-                                        <span class="material-symbols-outlined text-[15px] text-emerald-500">check_circle</span>
-                                        <span x-text="inc"></span>
-                                    </div>
-                                </template>
-                            </div>
-                        </div>
-                    </template>
-                </div>
-
-                {{-- Modal Footer --}}
-                <div class="sticky bottom-0 bg-slate-50 px-6 py-4 border-t border-slate-200 flex items-center justify-between gap-4">
-                    <button @click="previewActivity = null" class="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs transition-colors">
-                        Close Preview
-                    </button>
-
-                    <button type="button"
-                        @click="window.addToCart('activity', previewActivity.id, { selected_pax: modalPax }); previewActivity = null;"
-                        class="px-6 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs shadow-md transition-colors flex items-center gap-1.5 cursor-pointer">
-                        <span class="material-symbols-outlined text-sm">shopping_cart</span>
-                        <span>Add to Trip Basket</span>
-                    </button>
-                </div>
-
-            </div>
-        </div>
-
+        <x-frontend.activity-preview-modal />
     </div>
 </x-frontend.layout>

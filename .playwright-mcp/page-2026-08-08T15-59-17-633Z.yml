@@ -1,0 +1,608 @@
+- generic [active] [ref=f12e1]:
+  - banner [ref=f12e2]:
+    - navigation [ref=f12e3]:
+      - link "SunnyTrips Travel Services" [ref=f12e4] [cursor=pointer]:
+        - /url: /
+      - generic [ref=f12e6]:
+        - link:
+          - /url: /
+        - link "Destinations" [ref=f12e7] [cursor=pointer]:
+          - /url: /#destinations
+        - link "Experiences" [ref=f12e8] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/activities
+        - link "Packages" [ref=f12e9] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/packages
+        - link "Journals" [ref=f12e10] [cursor=pointer]:
+          - /url: /#brand-story
+      - generic [ref=f12e11]:
+        - button "View Trip Basket" [ref=f12e12] [cursor=pointer]
+        - link "Login" [ref=f12e15] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/login
+        - link "Register" [ref=f12e16] [cursor=pointer]:
+          - /url: http://127.0.0.1:8000/register
+  - main [ref=f12e17]:
+    - generic [ref=f12e19]:
+      - generic [ref=f12e20]:
+        - generic [ref=f12e21]:
+          - generic [ref=f12e22]:
+            - generic [ref=f12e23]: king_bed
+            - generic [ref=f12e24]: Accommodations Catalog
+          - heading "Rooms, Suites & Ocean Villas" [level=1] [ref=f12e25]
+          - paragraph [ref=f12e26]: Browse all available luxury room types across our partner sanctuary hotels. Select any room to view full hotel details and reservation options.
+        - generic [ref=f12e27]:
+          - generic [ref=f12e28]:
+            - generic [ref=f12e29]: filter_alt
+            - generic [ref=f12e30]: "Location:"
+          - button "All Islands (19)" [ref=f12e31] [cursor=pointer]
+          - button "Boracay 10" [ref=f12e32] [cursor=pointer]:
+            - generic [ref=f12e33]: Boracay
+            - generic [ref=f12e34]: "10"
+          - button "El Nido 9" [ref=f12e35] [cursor=pointer]:
+            - generic [ref=f12e36]: El Nido
+            - generic [ref=f12e37]: "9"
+      - generic [ref=f12e39]:
+        - generic [ref=f12e40]:
+          - generic [ref=f12e41]: search
+          - textbox "Search room suite name, hotel, tags, or amenities..." [ref=f12e42]
+        - generic [ref=f12e43]:
+          - generic [ref=f12e44]:
+            - generic [ref=f12e45]: payments
+            - generic [ref=f12e46]: "Rate Filter:"
+          - button "All Rates" [ref=f12e47] [cursor=pointer]
+          - button "Under ₱2,500" [ref=f12e48] [cursor=pointer]
+          - button "₱2.5k - ₱6k" [ref=f12e49] [cursor=pointer]
+          - button "₱6,000+" [ref=f12e50] [cursor=pointer]
+      - generic [ref=f12e51]:
+        - generic [ref=f12e52]:
+          - generic [ref=f12e53]:
+            - generic [ref=f12e54]:
+              - img "Beach Villa" [ref=f12e55]
+              - generic [ref=f12e57]:
+                - generic [ref=f12e58]: hotel
+                - generic [ref=f12e59]: El Nido Resorts - Pangulasian Island
+              - generic [ref=f12e60]: ₱52,000.00 / night
+            - generic [ref=f12e61]:
+              - heading "Beach Villa" [level=3] [ref=f12e62]
+              - paragraph [ref=f12e63]: Located right on the powdery white sand beach, allowing guests immediate access to the clear waters. Includes a spacious private veranda.
+              - generic [ref=f12e64]:
+                - generic [ref=f12e65]:
+                  - generic [ref=f12e66]: group
+                  - generic [ref=f12e67]: "Base: 2 • Max: 3 Guests"
+                - generic [ref=f12e68]:
+                  - generic [ref=f12e69]: visibility
+                  - generic [ref=f12e70]: Beachfront
+              - generic [ref=f12e71]:
+                - generic [ref=f12e72]: Direct Beach Access
+                - generic [ref=f12e73]: Private Veranda
+                - generic [ref=f12e74]: Air Conditioning
+                - generic [ref=f12e75]: "+3"
+          - link "View Hotel & Book Room arrow_forward" [ref=f12e77] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/hotels/10#room-12
+            - generic [ref=f12e78]: View Hotel & Book Room
+            - generic [ref=f12e79]: arrow_forward
+        - generic [ref=f12e80]:
+          - generic [ref=f12e81]:
+            - generic [ref=f12e82]:
+              - img "Beachfront Executive Suite" [ref=f12e83]
+              - generic [ref=f12e85]:
+                - generic [ref=f12e86]: hotel
+                - generic [ref=f12e87]: The Muse Hotel
+              - generic [ref=f12e88]: ₱4,900.00 / night
+            - generic [ref=f12e89]:
+              - heading "Beachfront Executive Suite" [level=3] [ref=f12e90]
+              - paragraph [ref=f12e91]: Elegant Station 1 suite boasting sea breeze balconies, modern indoor pool privileges, and high-end furnishings.
+              - generic [ref=f12e92]:
+                - generic [ref=f12e93]:
+                  - generic [ref=f12e94]: group
+                  - generic [ref=f12e95]: "Base: 2 • Max: 2 Guests"
+                - generic [ref=f12e96]:
+                  - generic [ref=f12e97]: visibility
+                  - generic [ref=f12e98]: Partial Ocean View
+              - generic [ref=f12e99]:
+                - generic [ref=f12e100]: Balcony
+                - generic [ref=f12e101]: Air Conditioning
+                - generic [ref=f12e102]: Free Wi-Fi
+                - generic [ref=f12e103]: "+2"
+          - link "View Hotel & Book Room arrow_forward" [ref=f12e105] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/hotels/9#room-10
+            - generic [ref=f12e106]: View Hotel & Book Room
+            - generic [ref=f12e107]: arrow_forward
+        - generic [ref=f12e108]:
+          - generic [ref=f12e109]:
+            - generic [ref=f12e110]:
+              - img "Boho Private Double Room" [ref=f12e111]
+              - generic [ref=f12e113]:
+                - generic [ref=f12e114]: hotel
+                - generic [ref=f12e115]: Happiness Hostel
+              - generic [ref=f12e116]: ₱3,200.00 / night
+            - generic [ref=f12e117]:
+              - heading "Boho Private Double Room" [level=3] [ref=f12e118]
+              - paragraph [ref=f12e119]: Chic bohemian styled private room with handmade bamboo accents, en-suite bath, and access to communal plunge pool.
+              - generic [ref=f12e120]:
+                - generic [ref=f12e121]:
+                  - generic [ref=f12e122]: group
+                  - generic [ref=f12e123]: "Base: 2 • Max: 2 Guests"
+                - generic [ref=f12e124]:
+                  - generic [ref=f12e125]: visibility
+                  - generic [ref=f12e126]: Pool / Courtyard View
+              - generic [ref=f12e127]:
+                - generic [ref=f12e128]: En-suite Bathroom
+                - generic [ref=f12e129]: Air Conditioning
+                - generic [ref=f12e130]: Free Wi-Fi
+                - generic [ref=f12e131]: "+1"
+          - link "View Hotel & Book Room arrow_forward" [ref=f12e133] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/hotels/8#room-9
+            - generic [ref=f12e134]: View Hotel & Book Room
+            - generic [ref=f12e135]: arrow_forward
+        - generic [ref=f12e136]:
+          - generic [ref=f12e137]:
+            - generic [ref=f12e138]:
+              - img "Breeze Garden Room" [ref=f12e139]
+              - generic [ref=f12e141]:
+                - generic [ref=f12e142]: hotel
+                - generic [ref=f12e143]: Lazy Dog Bed & Breakfast
+              - generic [ref=f12e144]: ₱2,800.00 / night
+            - generic [ref=f12e145]:
+              - heading "Breeze Garden Room" [level=3] [ref=f12e146]
+              - paragraph [ref=f12e147]: Pet-friendly rustic room surrounded by lush tropical courtyard greenery, seconds away from Bulabog kiteboarding beach.
+              - generic [ref=f12e148]:
+                - generic [ref=f12e149]:
+                  - generic [ref=f12e150]: group
+                  - generic [ref=f12e151]: "Base: 2 • Max: 2 Guests"
+                - generic [ref=f12e152]:
+                  - generic [ref=f12e153]: visibility
+                  - generic [ref=f12e154]: Garden View
+              - generic [ref=f12e155]:
+                - generic [ref=f12e156]: Pet Friendly
+                - generic [ref=f12e157]: Garden Patio
+                - generic [ref=f12e158]: Air Conditioning
+                - generic [ref=f12e159]: "+2"
+          - link "View Hotel & Book Room arrow_forward" [ref=f12e161] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/hotels/7#room-8
+            - generic [ref=f12e162]: View Hotel & Book Room
+            - generic [ref=f12e163]: arrow_forward
+        - generic [ref=f12e164]:
+          - generic [ref=f12e165]:
+            - generic [ref=f12e166]:
+              - img "Canopy Villa" [ref=f12e167]
+              - generic [ref=f12e169]:
+                - generic [ref=f12e170]: hotel
+                - generic [ref=f12e171]: El Nido Resorts - Pangulasian Island
+              - generic [ref=f12e172]: ₱45,000.00 / night
+            - generic [ref=f12e173]:
+              - heading "Canopy Villa" [level=3] [ref=f12e174]
+              - paragraph [ref=f12e175]: Perched 15 meters off the ground inside the forest canopy, offering a unique treetop view of the island and Bacuit Bay. Reached via a wooden buggy trail.
+              - generic [ref=f12e176]:
+                - generic [ref=f12e177]:
+                  - generic [ref=f12e178]: group
+                  - generic [ref=f12e179]: "Base: 2 • Max: 2 Guests"
+                - generic [ref=f12e180]:
+                  - generic [ref=f12e181]: visibility
+                  - generic [ref=f12e182]: Canopy & Bay View
+              - generic [ref=f12e183]:
+                - generic [ref=f12e184]: Private Balcony
+                - generic [ref=f12e185]: Air Conditioning
+                - generic [ref=f12e186]: Free Wi-Fi
+                - generic [ref=f12e187]: "+4"
+          - link "View Hotel & Book Room arrow_forward" [ref=f12e189] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/hotels/10#room-11
+            - generic [ref=f12e190]: View Hotel & Book Room
+            - generic [ref=f12e191]: arrow_forward
+        - generic [ref=f12e192]:
+          - generic [ref=f12e193]:
+            - generic [ref=f12e194]:
+              - img "Deluxe Room" [ref=f12e195]
+              - generic [ref=f12e197]:
+                - generic [ref=f12e198]: hotel
+                - generic [ref=f12e199]: Seda Lio
+              - generic [ref=f12e200]: ₱12,500.00 / night
+            - generic [ref=f12e201]:
+              - heading "Deluxe Room" [level=3] [ref=f12e202]
+              - paragraph [ref=f12e203]: Bright and airy room featuring contemporary Filipino design accents, a private balcony, and proximity to the Lio beach strip.
+              - generic [ref=f12e204]:
+                - generic [ref=f12e205]:
+                  - generic [ref=f12e206]: group
+                  - generic [ref=f12e207]: "Base: 2 • Max: 2 Guests"
+                - generic [ref=f12e208]:
+                  - generic [ref=f12e209]: visibility
+                  - generic [ref=f12e210]: Garden/Pool View
+              - generic [ref=f12e211]:
+                - generic [ref=f12e212]: Balcony
+                - generic [ref=f12e213]: Air Conditioning
+                - generic [ref=f12e214]: 48-inch LED TV
+                - generic [ref=f12e215]: "+3"
+          - link "View Hotel & Book Room arrow_forward" [ref=f12e217] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/hotels/11#room-13
+            - generic [ref=f12e218]: View Hotel & Book Room
+            - generic [ref=f12e219]: arrow_forward
+        - generic [ref=f12e220]:
+          - generic [ref=f12e221]:
+            - generic [ref=f12e222]:
+              - img "Deluxe Room with Pool Access" [ref=f12e223]
+              - generic [ref=f12e225]:
+                - generic [ref=f12e226]: hotel
+                - generic [ref=f12e227]: Charlie's El Nido
+              - generic [ref=f12e228]: ₱7,500.00 / night
+            - generic [ref=f12e229]:
+              - heading "Deluxe Room with Pool Access" [level=3] [ref=f12e230]
+              - paragraph [ref=f12e231]: Modern tropical room with seamless step-out access to the central swimming pool. Features premium bedding and chic interior design.
+              - generic [ref=f12e232]:
+                - generic [ref=f12e233]:
+                  - generic [ref=f12e234]: group
+                  - generic [ref=f12e235]: "Base: 2 • Max: 2 Guests"
+                - generic [ref=f12e236]:
+                  - generic [ref=f12e237]: visibility
+                  - generic [ref=f12e238]: Pool View
+              - generic [ref=f12e239]:
+                - generic [ref=f12e240]: Direct Pool Access
+                - generic [ref=f12e241]: Air Conditioning
+                - generic [ref=f12e242]: Smart TV
+                - generic [ref=f12e243]: "+2"
+          - link "View Hotel & Book Room arrow_forward" [ref=f12e245] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/hotels/15#room-17
+            - generic [ref=f12e246]: View Hotel & Book Room
+            - generic [ref=f12e247]: arrow_forward
+        - generic [ref=f12e248]:
+          - generic [ref=f12e249]:
+            - generic [ref=f12e250]:
+              - img "Deluxe Suite" [ref=f12e251]
+              - generic [ref=f12e253]:
+                - generic [ref=f12e254]: hotel
+                - generic [ref=f12e255]: Canyon Hotels & Resorts Boracay
+              - generic [ref=f12e256]: ₱5,200.00 / night
+            - generic [ref=f12e257]:
+              - heading "Deluxe Suite" [level=3] [ref=f12e258]
+              - paragraph [ref=f12e259]: Cozy modern suite featuring warm wooden finishes, plush bedding, and proximity to D'Mall shopping district. Quiet and serene atmosphere.
+              - generic [ref=f12e260]:
+                - generic [ref=f12e261]:
+                  - generic [ref=f12e262]: group
+                  - generic [ref=f12e263]: "Base: 2 • Max: 2 Guests"
+                - generic [ref=f12e264]:
+                  - generic [ref=f12e265]: visibility
+                  - generic [ref=f12e266]: Garden View
+              - generic [ref=f12e267]:
+                - generic [ref=f12e268]: Air Conditioning
+                - generic [ref=f12e269]: Free Wi-Fi
+                - generic [ref=f12e270]: Coffee Maker
+                - generic [ref=f12e271]: "+2"
+          - link "View Hotel & Book Room arrow_forward" [ref=f12e273] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/hotels/2#room-3
+            - generic [ref=f12e274]: View Hotel & Book Room
+            - generic [ref=f12e275]: arrow_forward
+        - generic [ref=f12e276]:
+          - generic [ref=f12e277]:
+            - generic [ref=f12e278]:
+              - img "Diamond Oceanfront Room" [ref=f12e279]
+              - generic [ref=f12e281]:
+                - generic [ref=f12e282]: hotel
+                - generic [ref=f12e283]: Boracay Ocean Club Beach Resort
+              - generic [ref=f12e284]: ₱6,800.00 / night
+            - generic [ref=f12e285]:
+              - heading "Diamond Oceanfront Room" [level=3] [ref=f12e286]
+              - paragraph [ref=f12e287]: Tranquil beachfront sanctuary in Station 3. Panoramic sea views and immediate access to the resort's PADI diving facility.
+              - generic [ref=f12e288]:
+                - generic [ref=f12e289]:
+                  - generic [ref=f12e290]: group
+                  - generic [ref=f12e291]: "Base: 2 • Max: 2 Guests"
+                - generic [ref=f12e292]:
+                  - generic [ref=f12e293]: visibility
+                  - generic [ref=f12e294]: Ocean View
+              - generic [ref=f12e295]:
+                - generic [ref=f12e296]: Ocean View
+                - generic [ref=f12e297]: Balcony
+                - generic [ref=f12e298]: Air Conditioning
+                - generic [ref=f12e299]: "+2"
+          - link "View Hotel & Book Room arrow_forward" [ref=f12e301] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/hotels/3#room-4
+            - generic [ref=f12e302]: View Hotel & Book Room
+            - generic [ref=f12e303]: arrow_forward
+        - generic [ref=f12e304]:
+          - generic [ref=f12e305]:
+            - generic [ref=f12e306]:
+              - img "Direct Pool Access Suite" [ref=f12e307]
+              - generic [ref=f12e309]:
+                - generic [ref=f12e310]: hotel
+                - generic [ref=f12e311]: Henann Palm Beach Resort
+              - generic [ref=f12e312]: ₱11,200.00 / night
+            - generic [ref=f12e313]:
+              - heading "Direct Pool Access Suite" [level=3] [ref=f12e314]
+              - paragraph [ref=f12e315]: Ground floor luxury room with step-out access straight from your private terrace into the resort swimming pool. Ultimate resort relaxation.
+              - generic [ref=f12e316]:
+                - generic [ref=f12e317]:
+                  - generic [ref=f12e318]: group
+                  - generic [ref=f12e319]: "Base: 2 • Max: 2 Guests"
+                - generic [ref=f12e320]:
+                  - generic [ref=f12e321]: visibility
+                  - generic [ref=f12e322]: Pool View
+              - generic [ref=f12e323]:
+                - generic [ref=f12e324]: Direct Pool Access
+                - generic [ref=f12e325]: Private Terrace
+                - generic [ref=f12e326]: Air Conditioning
+                - generic [ref=f12e327]: "+4"
+          - link "View Hotel & Book Room arrow_forward" [ref=f12e329] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/hotels/1#room-2
+            - generic [ref=f12e330]: View Hotel & Book Room
+            - generic [ref=f12e331]: arrow_forward
+        - generic [ref=f12e332]:
+          - generic [ref=f12e333]:
+            - generic [ref=f12e334]:
+              - img "Luxury Villa" [ref=f12e335]
+              - generic [ref=f12e337]:
+                - generic [ref=f12e338]: hotel
+                - generic [ref=f12e339]: Lihim Resorts
+              - generic [ref=f12e340]: ₱60,000.00 / night
+            - generic [ref=f12e341]:
+              - heading "Luxury Villa" [level=3] [ref=f12e342]
+              - paragraph [ref=f12e343]: An expansive and heavily secluded villa blending seamlessly into the El Nido forest. Offers a highly personalized luxury experience with a dedicated butler.
+              - generic [ref=f12e344]:
+                - generic [ref=f12e345]:
+                  - generic [ref=f12e346]: group
+                  - generic [ref=f12e347]: "Base: 2 • Max: 2 Guests"
+                - generic [ref=f12e348]:
+                  - generic [ref=f12e349]: visibility
+                  - generic [ref=f12e350]: Forest / Partial Sea View
+              - generic [ref=f12e351]:
+                - generic [ref=f12e352]: Butler Service
+                - generic [ref=f12e353]: Private Plunge Pool
+                - generic [ref=f12e354]: Smart Home Features
+                - generic [ref=f12e355]: "+2"
+          - link "View Hotel & Book Room arrow_forward" [ref=f12e357] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/hotels/19#room-19
+            - generic [ref=f12e358]: View Hotel & Book Room
+            - generic [ref=f12e359]: arrow_forward
+        - generic [ref=f12e360]:
+          - generic [ref=f12e361]:
+            - generic [ref=f12e362]:
+              - img "Panoramic Beach Villa" [ref=f12e363]
+              - generic [ref=f12e365]:
+                - generic [ref=f12e366]: hotel
+                - generic [ref=f12e367]: Panorama Resort
+              - generic [ref=f12e368]: ₱18,000.00 / night
+            - generic [ref=f12e369]:
+              - heading "Panoramic Beach Villa" [level=3] [ref=f12e370]
+              - paragraph [ref=f12e371]: Iconic dome-shaped boutique villa combining native elements with bohemian chic interiors. Steps away from the adults-only beach club.
+              - generic [ref=f12e372]:
+                - generic [ref=f12e373]:
+                  - generic [ref=f12e374]: group
+                  - generic [ref=f12e375]: "Base: 2 • Max: 2 Guests"
+                - generic [ref=f12e376]:
+                  - generic [ref=f12e377]: visibility
+                  - generic [ref=f12e378]: Ocean / Beachfront View
+              - generic [ref=f12e379]:
+                - generic [ref=f12e380]: Air Conditioning
+                - generic [ref=f12e381]: Outdoor Lounge Area
+                - generic [ref=f12e382]: Mini Fridge
+                - generic [ref=f12e383]: "+2"
+          - link "View Hotel & Book Room arrow_forward" [ref=f12e385] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/hotels/16#room-18
+            - generic [ref=f12e386]: View Hotel & Book Room
+            - generic [ref=f12e387]: arrow_forward
+        - generic [ref=f12e388]:
+          - generic [ref=f12e389]:
+            - generic [ref=f12e390]:
+              - img "Premier Family Room" [ref=f12e391]
+              - generic [ref=f12e393]:
+                - generic [ref=f12e394]: hotel
+                - generic [ref=f12e395]: Henann Garden Resort
+              - generic [ref=f12e396]: ₱8,400.00 / night
+            - generic [ref=f12e397]:
+              - heading "Premier Family Room" [level=3] [ref=f12e398]
+              - paragraph [ref=f12e399]: Large family-oriented room surrounding the resort lagoon pool. Multiple bed options and spacious lounge area.
+              - generic [ref=f12e400]:
+                - generic [ref=f12e401]:
+                  - generic [ref=f12e402]: group
+                  - generic [ref=f12e403]: "Base: 2 • Max: 4 Guests"
+                - generic [ref=f12e404]:
+                  - generic [ref=f12e405]: visibility
+                  - generic [ref=f12e406]: Lagoon Pool View
+              - generic [ref=f12e407]:
+                - generic [ref=f12e408]: Lagoon View
+                - generic [ref=f12e409]: Balcony
+                - generic [ref=f12e410]: Air Conditioning
+                - generic [ref=f12e411]: "+3"
+          - link "View Hotel & Book Room arrow_forward" [ref=f12e413] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/hotels/4#room-5
+            - generic [ref=f12e414]: View Hotel & Book Room
+            - generic [ref=f12e415]: arrow_forward
+        - generic [ref=f12e416]:
+          - generic [ref=f12e417]:
+            - generic [ref=f12e418]:
+              - img "Premier Ocean View Room" [ref=f12e419]
+              - generic [ref=f12e421]:
+                - generic [ref=f12e422]: hotel
+                - generic [ref=f12e423]: Henann Palm Beach Resort
+              - generic [ref=f12e424]: ₱9,500.00 / night
+            - generic [ref=f12e425]:
+              - heading "Premier Ocean View Room" [level=3] [ref=f12e426]
+              - paragraph [ref=f12e427]: Spacious luxury oceanfront room with floor-to-ceiling glass doors opening directly onto a private balcony overlooking White Beach. Features marble bathroom, rainfall shower, and luxury toiletries.
+              - generic [ref=f12e428]:
+                - generic [ref=f12e429]:
+                  - generic [ref=f12e430]: group
+                  - generic [ref=f12e431]: "Base: 2 • Max: 3 Guests"
+                - generic [ref=f12e432]:
+                  - generic [ref=f12e433]: visibility
+                  - generic [ref=f12e434]: Ocean View
+              - generic [ref=f12e435]:
+                - generic [ref=f12e436]: Balcony
+                - generic [ref=f12e437]: Ocean View
+                - generic [ref=f12e438]: Air Conditioning
+                - generic [ref=f12e439]: "+5"
+          - link "View Hotel & Book Room arrow_forward" [ref=f12e441] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/hotels/1#room-1
+            - generic [ref=f12e442]: View Hotel & Book Room
+            - generic [ref=f12e443]: arrow_forward
+        - generic [ref=f12e444]:
+          - generic [ref=f12e445]:
+            - generic [ref=f12e446]:
+              - img "Social Mixed Dormitory Bed" [ref=f12e447]
+              - generic [ref=f12e449]:
+                - generic [ref=f12e450]: hotel
+                - generic [ref=f12e451]: Spin Designer Hostel
+              - generic [ref=f12e452]: ₱1,100.00 / night
+            - generic [ref=f12e453]:
+              - heading "Social Mixed Dormitory Bed" [level=3] [ref=f12e454]
+              - paragraph [ref=f12e455]: Air-conditioned shared dorm bunk bed with privacy curtains, personal reading lamp, and lockable storage in a highly social, award-winning hostel.
+              - generic [ref=f12e456]:
+                - generic [ref=f12e457]:
+                  - generic [ref=f12e458]: group
+                  - generic [ref=f12e459]: "Base: 2 • Max: 1 Guests"
+                - generic [ref=f12e460]:
+                  - generic [ref=f12e461]: visibility
+                  - generic [ref=f12e462]: Courtyard View
+              - generic [ref=f12e463]:
+                - generic [ref=f12e464]: Privacy Curtain
+                - generic [ref=f12e465]: Reading Lamp
+                - generic [ref=f12e466]: Personal Locker
+                - generic [ref=f12e467]: "+3"
+          - link "View Hotel & Book Room arrow_forward" [ref=f12e469] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/hotels/14#room-16
+            - generic [ref=f12e470]: View Hotel & Book Room
+            - generic [ref=f12e471]: arrow_forward
+        - generic [ref=f12e472]:
+          - generic [ref=f12e473]:
+            - generic [ref=f12e474]:
+              - img "Social Mixed Dormitory Bed" [ref=f12e475]
+              - generic [ref=f12e477]:
+                - generic [ref=f12e478]: hotel
+                - generic [ref=f12e479]: Frendz Resort & Hostel
+              - generic [ref=f12e480]: ₱850.00 / night
+            - generic [ref=f12e481]:
+              - heading "Social Mixed Dormitory Bed" [level=3] [ref=f12e482]
+              - paragraph [ref=f12e483]: Air-conditioned shared dorm bunk bed with privacy curtains, personal reading lamp, lockable storage, and access to nightly hostel social events.
+              - generic [ref=f12e484]:
+                - generic [ref=f12e485]:
+                  - generic [ref=f12e486]: group
+                  - generic [ref=f12e487]: "Base: 2 • Max: 1 Guests"
+                - generic [ref=f12e488]:
+                  - generic [ref=f12e489]: visibility
+                  - generic [ref=f12e490]: Courtyard View
+              - generic [ref=f12e491]:
+                - generic [ref=f12e492]: Privacy Curtain
+                - generic [ref=f12e493]: Reading Lamp
+                - generic [ref=f12e494]: Personal Locker
+                - generic [ref=f12e495]: "+3"
+          - link "View Hotel & Book Room arrow_forward" [ref=f12e497] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/hotels/6#room-7
+            - generic [ref=f12e498]: View Hotel & Book Room
+            - generic [ref=f12e499]: arrow_forward
+        - generic [ref=f12e500]:
+          - generic [ref=f12e501]:
+            - generic [ref=f12e502]:
+              - img "Standard Double Room" [ref=f12e503]
+              - generic [ref=f12e505]:
+                - generic [ref=f12e506]: hotel
+                - generic [ref=f12e507]: My Station Hotel
+              - generic [ref=f12e508]: ₱2,200.00 / night
+            - generic [ref=f12e509]:
+              - heading "Standard Double Room" [level=3] [ref=f12e510]
+              - paragraph [ref=f12e511]: Clean, efficient, and affordable accommodation in Station 1. High-speed internet and quick access to White Beach.
+              - generic [ref=f12e512]:
+                - generic [ref=f12e513]:
+                  - generic [ref=f12e514]: group
+                  - generic [ref=f12e515]: "Base: 2 • Max: 2 Guests"
+                - generic [ref=f12e516]:
+                  - generic [ref=f12e517]: visibility
+                  - generic [ref=f12e518]: City View
+              - generic [ref=f12e519]:
+                - generic [ref=f12e520]: Air Conditioning
+                - generic [ref=f12e521]: Free Wi-Fi
+                - generic [ref=f12e522]: En-suite Bathroom
+                - generic [ref=f12e523]: "+1"
+          - link "View Hotel & Book Room arrow_forward" [ref=f12e525] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/hotels/5#room-6
+            - generic [ref=f12e526]: View Hotel & Book Room
+            - generic [ref=f12e527]: arrow_forward
+        - generic [ref=f12e528]:
+          - generic [ref=f12e529]:
+            - generic [ref=f12e530]:
+              - img "Water Cottage" [ref=f12e531]
+              - generic [ref=f12e533]:
+                - generic [ref=f12e534]: hotel
+                - generic [ref=f12e535]: El Nido Resorts - Miniloc Island
+              - generic [ref=f12e536]: ₱28,000.00 / night
+            - generic [ref=f12e537]:
+              - heading "Water Cottage" [level=3] [ref=f12e538]
+              - paragraph [ref=f12e539]: Rustic, eco-friendly cottage built on stilts right beside the stunning limestone cliffs. Offers a traditional island village vibe.
+              - generic [ref=f12e540]:
+                - generic [ref=f12e541]:
+                  - generic [ref=f12e542]: group
+                  - generic [ref=f12e543]: "Base: 2 • Max: 2 Guests"
+                - generic [ref=f12e544]:
+                  - generic [ref=f12e545]: visibility
+                  - generic [ref=f12e546]: Sea View
+              - generic [ref=f12e547]:
+                - generic [ref=f12e548]: Private Veranda
+                - generic [ref=f12e549]: Air Conditioning
+                - generic [ref=f12e550]: En-suite Bathroom
+                - generic [ref=f12e551]: "+1"
+          - link "View Hotel & Book Room arrow_forward" [ref=f12e553] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/hotels/13#room-15
+            - generic [ref=f12e554]: View Hotel & Book Room
+            - generic [ref=f12e555]: arrow_forward
+        - generic [ref=f12e556]:
+          - generic [ref=f12e557]:
+            - generic [ref=f12e558]:
+              - img "Water Villa" [ref=f12e559]
+              - generic [ref=f12e561]:
+                - generic [ref=f12e562]: hotel
+                - generic [ref=f12e563]: Cauayan Island Resort
+              - generic [ref=f12e564]: ₱38,000.00 / night
+            - generic [ref=f12e565]:
+              - heading "Water Villa" [level=3] [ref=f12e566]
+              - paragraph [ref=f12e567]: Built directly on stilts over the crystal-clear water of the lagoon. Features a wooden deck with sun loungers and stairs leading straight into the sea.
+              - generic [ref=f12e568]:
+                - generic [ref=f12e569]:
+                  - generic [ref=f12e570]: group
+                  - generic [ref=f12e571]: "Base: 2 • Max: 2 Guests"
+                - generic [ref=f12e572]:
+                  - generic [ref=f12e573]: visibility
+                  - generic [ref=f12e574]: Sea View
+              - generic [ref=f12e575]:
+                - generic [ref=f12e576]: Overwater Deck
+                - generic [ref=f12e577]: Direct Lagoon Access
+                - generic [ref=f12e578]: Air Conditioning
+                - generic [ref=f12e579]: "+3"
+          - link "View Hotel & Book Room arrow_forward" [ref=f12e581] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/hotels/12#room-14
+            - generic [ref=f12e582]: View Hotel & Book Room
+            - generic [ref=f12e583]: arrow_forward
+  - contentinfo [ref=f12e584]:
+    - generic [ref=f12e585]:
+      - generic [ref=f12e586]:
+        - generic [ref=f12e587]:
+          - generic [ref=f12e588]: SunnyTrips
+          - paragraph [ref=f12e589]: Redefining tropical exploration through curated luxury and local intelligence. We are the modern navigator for the Philippine archipelago.
+        - generic [ref=f12e591]:
+          - heading "JOURNEY" [level=4] [ref=f12e592]
+          - generic [ref=f12e593]:
+            - link "Curations" [ref=f12e594] [cursor=pointer]:
+              - /url: "#"
+            - link "Navigators" [ref=f12e595] [cursor=pointer]:
+              - /url: "#"
+            - link "Private Charters" [ref=f12e596] [cursor=pointer]:
+              - /url: "#"
+            - link "Eco-Projects" [ref=f12e597] [cursor=pointer]:
+              - /url: "#"
+        - generic [ref=f12e598]:
+          - heading "CONCIERGE" [level=4] [ref=f12e599]
+          - generic [ref=f12e600]:
+            - link "Help Center" [ref=f12e601] [cursor=pointer]:
+              - /url: "#"
+            - link "Safe Travel" [ref=f12e602] [cursor=pointer]:
+              - /url: "#"
+            - link "Booking Policy" [ref=f12e603] [cursor=pointer]:
+              - /url: "#"
+        - generic [ref=f12e604]:
+          - heading "THE OFFICE" [level=4] [ref=f12e605]
+          - paragraph [ref=f12e606]: Brgy. San Agustin, Pili, Camarines Sur Philippines, 4418
+      - separator [ref=f12e607]
+      - generic [ref=f12e608]:
+        - paragraph [ref=f12e609]: © 2026 SunnyTrips. All rights reserved. Made for the sun-seekers.
+        - generic [ref=f12e610]:
+          - link "AI Usage Disclosure" [ref=f12e611] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/legal/ai_disclosure
+          - link "Privacy Policy" [ref=f12e612] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/legal/privacy
+          - link "Terms and Conditions" [ref=f12e613] [cursor=pointer]:
+            - /url: http://127.0.0.1:8000/legal/terms
+  - button "Chat with SunnyTrips AI" [ref=f12e615] [cursor=pointer]

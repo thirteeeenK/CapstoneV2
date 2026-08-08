@@ -19,41 +19,41 @@
 @endphp
 
 @if ($items->isNotEmpty())
-    <section class="space-y-3">
+    <section class="space-y-2.5">
         @foreach ($items as $review)
-            <article class="bg-white rounded-3xl border border-sand-200/80 shadow-sm p-5 sm:p-6">
+            <article class="bg-white rounded-xl border border-slate-200/80 shadow-2xs px-4 py-3 sm:px-5 sm:py-3.5 hover:border-slate-300 transition-all">
                 <div class="flex items-center justify-between gap-3 flex-wrap">
-                    <div class="flex items-center gap-3">
-                        <div class="w-10 h-10 rounded-full bg-ocean-50 border border-ocean-100 text-ocean-700 font-headline font-black text-xs flex items-center justify-center">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-7 h-7 rounded-full bg-ocean-50 border border-ocean-100 text-ocean-700 font-headline font-black text-[10px] flex items-center justify-center shrink-0">
                             {{ mb_substr(explode(' ', $review->reviewer_alias)[0] ?? 'G', 0, 1) }}
                         </div>
-                        <div>
-                            <p class="text-sm font-bold text-slate-900 font-headline">{{ $review->reviewer_alias }}</p>
-                            <p class="text-[11px] text-slate-400 flex items-center gap-1">
-                                <span class="material-symbols-outlined text-[12px]">verified</span>
-                                Verified booking · {{ $review->created_at?->format('M j, Y') }}
-                            </p>
+                        <div class="flex items-center gap-2">
+                            <p class="text-xs sm:text-sm font-bold text-slate-900 font-headline leading-tight">{{ $review->reviewer_alias }}</p>
+                            <span class="text-[10px] text-slate-400 flex items-center gap-0.5 font-medium">
+                                <span class="material-symbols-outlined text-[11px] text-emerald-600">verified</span>
+                                Verified · {{ $review->created_at?->format('M j, Y') }}
+                            </span>
                         </div>
                     </div>
                     <div class="flex items-center gap-2">
                         <span class="flex items-center gap-0.5 text-amber-400">
                             @for ($i = 1; $i <= 5; $i++)
-                                <span class="material-symbols-outlined text-[16px]" style="font-variation-settings: 'FILL' {{ $i <= (int) $review->rating ? 1 : 0 }}">star</span>
+                                <span class="material-symbols-outlined text-[14px]" style="font-variation-settings: 'FILL' {{ $i <= (int) $review->rating ? 1 : 0 }}">star</span>
                             @endfor
                         </span>
-                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold border {{ $sentimentTint[$review->sentiment] ?? $sentimentTint['neutral'] }}">
-                            <span class="material-symbols-outlined text-[12px]">{{ $sentimentIcon[$review->sentiment] ?? 'sentiment_neutral' }}</span>
+                        <span class="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-md text-[9px] font-bold border {{ $sentimentTint[$review->sentiment] ?? $sentimentTint['neutral'] }}">
+                            <span class="material-symbols-outlined text-[11px]">{{ $sentimentIcon[$review->sentiment] ?? 'sentiment_neutral' }}</span>
                             {{ ucfirst($review->sentiment) }}
                         </span>
                     </div>
                 </div>
 
-                <p class="text-sm text-slate-600 leading-relaxed mt-4">{{ $review->comment }}</p>
+                <p class="text-xs text-slate-600 leading-relaxed mt-2">{{ $review->comment }}</p>
 
                 @if (is_array($review->extracted_keywords) && count($review->extracted_keywords))
-                    <div class="mt-4 flex items-center gap-1.5 flex-wrap">
+                    <div class="flex items-center gap-1 flex-wrap mt-2">
                         @foreach (array_slice($review->extracted_keywords, 0, 5) as $tag)
-                            <span class="px-2.5 py-1 rounded-lg bg-sand-100 border border-sand-200 text-slate-600 text-[10px] font-bold">#{{ $tag }}</span>
+                            <span class="px-2 py-0.5 rounded-md bg-slate-100 border border-slate-200/60 text-slate-600 text-[9px] font-medium">#{{ $tag }}</span>
                         @endforeach
                     </div>
                 @endif

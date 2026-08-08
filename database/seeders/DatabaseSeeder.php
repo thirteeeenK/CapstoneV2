@@ -32,6 +32,7 @@ class DatabaseSeeder extends Seeder
             HotelSeeder::class,
             RoomSeeder::class,
             ElNidoRoomSeeder::class,
+            RoomExtraPersonFeeSeeder::class,
             ActivitySeeder::class,
             ElNidoActivitySeeder::class,
             ActivityCoordinatesSeeder::class,

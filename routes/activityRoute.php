@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 
 // Public Activities & Tours Catalog Listing
 Route::get('/activities', [ActivityShowController::class, 'index'])->name('activities.index');
+Route::get('/activities/{id}/preview', [ActivityShowController::class, 'preview'])->name('activities.preview');
 
 Route::prefix('admin')->group(function () {
     Route::middleware(['auth:admin', 'no.cache', 'throttle:admin'])->group(function () {

@@ -38,16 +38,12 @@
         activeModalImg: null,
         activeModalImgIndex: 0,
         galleryImages: {{ json_encode($galleryImages) }},
-        previewRoom: null,
-        activePreviewImgIndex: 0,
         routeHistory: [],
         userHotel: null,
-        previewActivity: null,
-        modalPax: 1,
         autoPreviewRoomId: {{ request('preview_room') ? (int)request('preview_room') : 'null' }},
 
         get computedNightlyRate() {
-            const target = this.previewRoom || this.selectedRoom;
+            const target = this.selectedRoom;
             if (!target) return 0;
             const basePrice = Number(target.base_price) || 0;
             const basePax = Number(target.base_occupancy) || 2;
@@ -57,16 +53,6 @@
                 return basePrice + ((pax - basePax) * extraFee);
             }
             return basePrice;
-        },
-
-        getPaxOptions(room) {
-            if (!room) return [1, 2];
-            const max = Math.max(1, Number(room.max_occupancy) || Number(room.occupancy) || 3);
-            const opts = [];
-            for (let i = 1; i <= max; i++) {
-                opts.push(i);
-            }
-            return opts;
         },
 
         init() {
@@ -96,23 +82,6 @@
                 }
             });
         },
-        openRoomPreview(room) {
-            this.previewRoom = room;
-            this.selectedPax = Number(room.base_occupancy) || 2;
-            this.roomCheckIn = '';
-            this.roomCheckOut = '';
-            this.roomAvailable = true;
-            this.activePreviewImgIndex = 0;
-        },
-        closeRoomPreview() {
-            this.previewRoom = null;
-            this.roomCheckIn = '';
-            this.roomCheckOut = '';
-        },
-        confirmRoomSelection(room) {
-            this.selectRoom(room);
-            this.closeRoomPreview();
-        },
         openGallery(idx) {
             this.activeModalImgIndex = idx;
             this.activeModalImg = this.galleryImages[idx] || null;
@@ -131,11 +100,11 @@
 
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
 
-            {{-- ══════════════════════════════════════════
+            {{-- ════════════════════════════════════════════════════════════════════ 
             1. HERO BANNER
-            ══════════════════════════════════════════ --}}
+            ════════════════════════════════════════════════════════════════════  --}}
             <div
-                class="relative rounded-3xl overflow-hidden shadow-2xl min-h-[550px] sm:min-h-[640px] lg:min-h-[720px] flex items-end p-6 sm:p-12 group">
+                class="relative rounded-3xl overflow-hidden shadow-2xl min-h-[420px] sm:min-h-[500px] lg:min-h-[540px] flex items-end p-6 sm:p-12 group">
                 {{-- Background Image --}}
                 <img src="{{ $heroImage }}" alt="{{ $hotel->hotel_name }}"
                     class="absolute inset-0 w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-700 ease-out">
@@ -160,7 +129,7 @@
                     </div>
 
                     <h1
-                        class="text-3xl sm:text-5xl font-black text-white font-headline tracking-tight leading-tight drop-shadow-md">
+                        class="text-3xl sm:text-4xl lg:text-5xl font-black text-white font-headline tracking-tight leading-tight drop-shadow-md">
                         {{ $hotel->hotel_name }}
                     </h1>
 
@@ -183,9 +152,9 @@
                 </div>
             </div>
 
-            {{-- ══════════════════════════════════════════
+            {{-- ════════════════════════════════════════════════════════════════════ 
             2. MAIN OVERVIEW & STICKY SELECT ROOM SIDEBAR
-            ══════════════════════════════════════════ --}}
+            ════════════════════════════════════════════════════════════════════  --}}
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
                 {{-- LEFT COLUMN (8 cols on desktop): Description + Amenities --}}
@@ -203,7 +172,7 @@
 
                     {{-- Exclusive Amenities Grid --}}
                     @if(!empty($hotel->featured_amenities) && is_array($hotel->featured_amenities))
-                        <div class="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-6">
+                        <div class="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-5">
                             <div class="flex items-center gap-2 border-b border-slate-100 pb-4">
                                 <span class="w-1.5 h-6 bg-ocean-600 rounded-full"></span>
                                 <h3 class="text-lg font-bold text-slate-900 font-headline">
@@ -211,22 +180,19 @@
                                 </h3>
                             </div>
 
-                            <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                                 @foreach($hotel->featured_amenities as $amenity)
                                     <div
-                                        class="bg-slate-50 hover:bg-ocean-50/50 p-4 rounded-xl border border-slate-200/60 transition-all duration-200 flex flex-col justify-between space-y-2 group">
+                                        class="bg-slate-50 hover:bg-ocean-50/70 px-3.5 py-2.5 rounded-xl border border-slate-200/70 transition-all duration-200 flex items-center gap-2.5 group">
                                         <div
-                                            class="w-10 h-10 rounded-lg bg-white shadow-xs border border-slate-200 text-ocean-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-                                            <span class="material-symbols-outlined text-[22px]">
+                                            class="w-7 h-7 rounded-lg bg-white shadow-xs border border-slate-200/80 text-ocean-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                                            <span class="material-symbols-outlined text-[16px]">
                                                 {{ App\Concerns\ResolvesImages::getAmenityIcon($amenity) }}
                                             </span>
                                         </div>
-                                        <div>
-                                            <p
-                                                class="text-xs font-bold text-slate-900 group-hover:text-ocean-700 transition-colors">
-                                                {{ $amenity }}
-                                            </p>
-                                        </div>
+                                        <span class="text-xs font-semibold text-slate-800 group-hover:text-ocean-700 transition-colors leading-snug">
+                                            {{ $amenity }}
+                                        </span>
                                     </div>
                                 @endforeach
                             </div>
@@ -339,9 +305,9 @@
 
             </div>
 
-            {{-- ══════════════════════════════════════════
+            {{-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             3. ROOM GALLERY & TYPE SELECTION
-            ══════════════════════════════════════════ --}}
+            â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• --}}
             <div id="room-gallery" class="space-y-6 pt-6">
                 <div class="flex items-center justify-between border-b border-slate-200 pb-4">
                     <div>
@@ -377,52 +343,13 @@
                                 }
                                 $roomImg = $resolvedRoomImages[0];
 
-                                $roomAmenitiesRaw = is_array($room->room_amenities) ? $room->room_amenities : (is_string($room->room_amenities) ? array_filter(array_map('trim', explode(',', $room->room_amenities))) : []);
-
-                                $roomPublishedReviews = $room->reviews->where('is_published', true)
-                                    ->sortByDesc('created_at')->take(3)->values();
-
-                                $roomReviewPayload = $roomPublishedReviews->map(fn($rv) => [
-                                    'reviewer_alias' => $rv->reviewer_alias,
-                                    'rating' => (int) $rv->rating,
-                                    'sentiment' => $rv->sentiment,
-                                    'comment' => $rv->comment,
-                                    'keywords' => $rv->extracted_keywords ?? [],
-                                    'created_at_label' => $rv->created_at?->format('M j, Y'),
-                                ]);
-
-                                $roomSummary = $room->reviewSummary;
-
-                                $roomPayload = [
-                                    'id' => $room->id,
-                                    'room_name' => $room->room_name,
-                                    'base_price' => (float)$room->base_price,
-                                    'occupancy' => $room->occupancy,
-                                    'bed_configuration' => $room->bed_configuration,
-                                    'room_size' => $room->room_size,
-                                    'view_type' => $room->view_type,
-                                    'description' => $room->description,
-                                    'ideal_guest' => $room->ideal_guest ?? $room->ideal_for ?? null,
-                                    'total_rooms' => $room->total_rooms ?? null,
-                                    'is_shown' => (bool)$room->is_shown,
-                                    'images' => $resolvedRoomImages,
-                                    'amenities' => array_values($roomAmenitiesRaw),
-                                    'review_summary' => $roomSummary && $roomSummary->total_reviews > 0 ? [
-                                        'average_rating' => (float) $roomSummary->average_rating,
-                                        'total_reviews' => (int) $roomSummary->total_reviews,
-                                        'positive_percentage' => (float) $roomSummary->positive_percentage,
-                                        'neutral_percentage' => (float) $roomSummary->neutral_percentage,
-                                        'negative_percentage' => (float) $roomSummary->negative_percentage,
-                                        'ai_summary_text' => $roomSummary->ai_summary_text,
-                                    ] : null,
-                                    'reviews' => $roomReviewPayload,
-                                ];
+                                $roomPayload = app(App\Services\Preview\RoomPreviewService::class)->build($room, $heroImage);
                             @endphp
                             <div id="room-card-{{ $room->id }}"
                                 class="bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-xs hover:shadow-md transition-all duration-300 flex flex-col justify-between group">
                                 <div>
                                     {{-- Room Image with Hover Preview Overlay --}}
-                                    <div @click="openRoomPreview({{ json_encode($roomPayload) }})"
+                                    <div @click="$store.preview.openRoom({{ json_encode($roomPayload) }})"
                                         class="relative h-56 sm:h-64 overflow-hidden bg-slate-100 cursor-pointer">
                                         <img src="{{ $roomImg }}" alt="{{ $room->room_name }}"
                                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
@@ -457,7 +384,7 @@
                                     {{-- Room Information --}}
                                     <div class="p-5 space-y-3">
                                         <div class="flex items-center justify-between gap-2">
-                                            <h3 @click="openRoomPreview({{ json_encode($roomPayload) }})"
+                                            <h3 @click="$store.preview.openRoom({{ json_encode($roomPayload) }})"
                                                 class="text-base font-bold text-slate-900 group-hover:text-ocean-600 transition-colors font-headline cursor-pointer">
                                                 {{ $room->room_name }}
                                             </h3>
@@ -492,7 +419,7 @@
 
                                  {{-- Card Footer / Action Buttons --}}
                                 <div class="p-5 pt-0 grid grid-cols-2 gap-2">
-                                    <button type="button" id="preview-btn-{{ $room->id }}" @click.stop="openRoomPreview({{ json_encode($roomPayload) }})"
+                                    <button type="button" id="preview-btn-{{ $room->id }}" @click.stop="$store.preview.openRoom({{ json_encode($roomPayload) }})"
                                         class="w-full py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-colors flex items-center justify-center gap-1 cursor-pointer">
                                         <span class="material-symbols-outlined text-[15px]">visibility</span>
                                         <span>Preview</span>
@@ -509,9 +436,9 @@
                 @endif
             </div>
 
-            {{-- ══════════════════════════════════════════
+            {{-- â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             4. HOTEL PHOTO GALLERY & LIGHTBOX
-            ══════════════════════════════════════════ --}}
+            â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• --}}
             @if(!empty($hotel->images) && is_array($hotel->images) && count($hotel->images) > 1)
                 <div class="space-y-4 pt-6">
                     <div class="border-b border-slate-200 pb-4">
@@ -582,131 +509,128 @@
                         );
                     @endphp
 
-                    <div class="grid lg:grid-cols-3 gap-6">
-                        <div class="lg:col-span-2 space-y-4">
-                            <x-frontend.map id="hotel-location-map" :markers="$mapMarkers"
-                                :center="$mapContext['hotel']" :zoom="13" height="h-96" route-mode />
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                        {{-- MAP & ROUTE DISTANCES COLUMN (7 cols) --}}
+                        <div class="lg:col-span-7 space-y-4">
+                            <div class="rounded-2xl border border-slate-200/80 overflow-hidden shadow-xs">
+                                <x-frontend.map id="hotel-location-map" :markers="$mapMarkers"
+                                    :center="$mapContext['hotel']" :zoom="13" height="h-80 sm:h-96" route-mode />
+                            </div>
 
                             {{-- Trip distances: hotel->activity routes + user->hotel --}}
-                            <div x-show="routeHistory.length || userHotel" x-cloak x-transition
-                                 @sunnytrip:hotel-route.window="routeHistory = routeHistory.filter(r => r.activity !== $event.detail.activity); routeHistory.push($event.detail)"
+                            <div @sunnytrip:hotel-route.window="routeHistory = routeHistory.filter(r => r.activity !== $event.detail.activity); routeHistory.push($event.detail)"
                                  @sunnytrip:user-hotel-distance.window="userHotel = $event.detail"
-                                 class="rounded-2xl border border-ocean-200 bg-ocean-50 p-5">
-                                <div class="mb-3 flex items-center gap-2">
-                                    <span class="material-symbols-outlined text-[18px] text-ocean-600">route</span>
-                                    <h3 class="text-sm font-bold uppercase tracking-wider text-ocean-800">
-                                        Trip Distances
-                                    </h3>
+                                 class="rounded-2xl border border-ocean-200/80 bg-ocean-50/70 p-4 space-y-2.5">
+                                <div class="flex items-center justify-between gap-2 flex-wrap">
+                                    <div class="flex items-center gap-2">
+                                        <span class="material-symbols-outlined text-[16px] text-ocean-600">route</span>
+                                        <h3 class="text-xs font-bold uppercase tracking-wider text-ocean-800 font-headline">
+                                            Trip Distance Estimator
+                                        </h3>
+                                        <span class="px-2 py-0.5 rounded-full bg-ocean-100/80 text-ocean-700 text-[10px] font-bold border border-ocean-200/60">
+                                            Approximate Direct
+                                        </span>
+                                    </div>
+                                    <template x-if="routeHistory.length">
+                                        <button type="button" @click="routeHistory = []" class="text-[10px] text-ocean-600 hover:text-ocean-800 font-bold underline cursor-pointer">
+                                            Clear Routes
+                                        </button>
+                                    </template>
                                 </div>
-                                <div class="space-y-2.5">
+
+                                {{-- Default Helper Text when no route is calculated yet --}}
+                                <div x-show="!routeHistory.length && !userHotel" class="text-xs text-slate-500 flex items-center gap-2 py-0.5">
+                                    <span class="material-symbols-outlined text-[16px] text-ocean-500 shrink-0">touch_app</span>
+                                    <span>Click <strong class="text-slate-700">Distance</strong> on any nearby experience to view estimated travel distances from {{ $hotel->hotel_name }}.</span>
+                                </div>
+
+                                {{-- Active Route List --}}
+                                <div x-show="routeHistory.length || userHotel" x-cloak class="space-y-1.5 text-xs text-slate-700">
                                     <template x-for="r in routeHistory" :key="r.activity">
-                                        <p class="text-sm text-slate-700">
-                                            Distance from
-                                            <span class="font-semibold text-slate-900" x-text="r.hotel"></span>
-                                            to
-                                            <span class="font-semibold text-slate-900" x-text="r.activity"></span>
-                                            : Approximately
-                                            <span class="font-bold text-ocean-700" x-text="r.distance_label"></span>
+                                        <p class="flex items-center justify-between gap-2 bg-white/80 px-3 py-1.5 rounded-lg border border-ocean-100/60">
+                                            <span class="truncate">
+                                                From <span class="font-bold text-slate-900" x-text="r.hotel"></span>
+                                                to <span class="font-bold text-slate-900" x-text="r.activity"></span>
+                                            </span>
+                                            <span class="font-black text-ocean-700 shrink-0" x-text="'Approx. ~ ' + r.distance_label"></span>
                                         </p>
                                     </template>
-                                    <p x-show="userHotel" x-cloak class="text-sm text-slate-700">
-                                        Distance from your location to
-                                        <span class="font-semibold text-slate-900" x-text="userHotel?.hotel"></span>
-                                        : Approximately
-                                        <span class="font-bold text-ocean-700" x-text="userHotel?.distance_label"></span>
+                                    <p x-show="userHotel" x-cloak class="flex items-center justify-between gap-2 bg-white/80 px-3 py-1.5 rounded-lg border border-ocean-100/60">
+                                        <span class="truncate">
+                                            From your current location to <span class="font-bold text-slate-900" x-text="userHotel?.hotel"></span>
+                                        </span>
+                                        <span class="font-black text-ocean-700 shrink-0" x-text="'Approx. ~ ' + userHotel?.distance_label"></span>
                                     </p>
+                                </div>
+
+                                {{-- Haversine Disclaimer Note --}}
+                                <div class="pt-2 border-t border-ocean-200/60 flex items-start gap-1.5 text-[10px] text-slate-500 leading-tight">
+                                    <span class="material-symbols-outlined text-[13px] text-amber-600 shrink-0 mt-0.5">info</span>
+                                    <span><strong>Note:</strong> Distances shown are approximate straight-line (Haversine) estimates. Actual travel distance and duration may vary based on island terrain, road networks, or boat transport.</span>
                                 </div>
                             </div>
                         </div>
-                        <div class="space-y-4">
+
+                        {{-- WEATHER & NEARBY EXPERIENCES COLUMN (5 cols) --}}
+                        <div class="lg:col-span-5 space-y-4">
                             @if(isset($weatherSummary))
-                                <div>
-                                    <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider mb-2">
+                                <div class="space-y-1.5">
+                                    <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider font-headline px-1">
                                         {{ $hotel->destination->name ?? 'Local' }} Forecast
                                     </h3>
                                     <x-frontend.weather-card :summary="$weatherSummary" />
                                 </div>
                             @endif
+
                             @if(count($mapContext['activities']))
-                                <div>
-                                    <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider mb-2">
+                                <div class="space-y-1.5">
+                                    <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider font-headline px-1">
                                         Nearby Experiences
                                     </h3>
-                                    <ul class="divide-y divide-slate-100 rounded-2xl border border-slate-200 bg-white shadow-sm">
+                                    <ul class="divide-y divide-slate-100 rounded-2xl border border-slate-200/80 bg-white shadow-xs max-h-[300px] overflow-y-auto">
                                         @php $mapMarkerIdx = 1; @endphp
                                         @foreach($mapContext['activities'] as $index => $activity)
                                             @php
                                                 $actModel = $mapContext['activityModels'][$index] ?? null;
                                                 $hasLocation = !empty($activity['lat']) && !empty($activity['lng']);
                                             @endphp
-                                            <li class="px-4 py-3 space-y-2.5">
-                                                <div class="flex items-start justify-between gap-3">
+                                            <li class="p-3 space-y-2 hover:bg-slate-50/60 transition-colors">
+                                                <div class="flex items-start justify-between gap-2">
                                                     <div class="min-w-0">
-                                                        <p class="font-medium text-slate-800 truncate text-sm">{{ $activity['name'] }}</p>
-                                                        <p class="text-xs text-slate-400">{{ $activity['subtitle'] }}</p>
+                                                        <p class="font-bold text-slate-900 truncate text-xs font-headline">{{ $activity['name'] }}</p>
+                                                        <p class="text-[11px] text-slate-400 truncate">{{ $activity['subtitle'] }}</p>
                                                     </div>
-                                                    @if($hasLocation)
-                                                        <!-- <span class="shrink-0 text-xs font-medium text-ocean-600">
-                                                            {{ $activity['distance_label'] }} from hotel
-                                                        </span> -->
-                                                    @else
-                                                        <span class="shrink-0 rounded-full bg-amber-50 border border-amber-200 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-600">
-                                                            No location data available
+                                                    @if(!$hasLocation)
+                                                        <span class="shrink-0 rounded-md bg-amber-50 border border-amber-200 px-1.5 py-0.5 text-[9px] font-bold text-amber-700">
+                                                            No GPS
                                                         </span>
                                                     @endif
                                                 </div>
-                                                <div class="flex items-center gap-2">
+                                                <div class="flex items-center gap-1.5">
                                                     @if($hasLocation)
                                                         <button type="button"
                                                             onclick="window['hotel-location-map']?.reveal({{ $mapMarkerIdx }})"
-                                                            class="inline-flex flex-1 items-center justify-center gap-1 rounded-lg bg-ocean-600 px-3 py-1.5 text-[11px] font-bold text-white transition hover:bg-ocean-700 cursor-pointer">
-                                                            <span class="material-symbols-outlined text-[14px]">my_location</span>
-                                                            Calculate Distance
+                                                            class="inline-flex flex-1 items-center justify-center gap-1 rounded-lg bg-ocean-600 px-2.5 py-1.5 text-[10px] font-bold text-white transition hover:bg-ocean-700 cursor-pointer">
+                                                            <span class="material-symbols-outlined text-[13px]">my_location</span>
+                                                            Distance
                                                         </button>
                                                     @else
                                                         <button type="button"
                                                             onclick="alert('No location data recorded for this experience yet.')"
-                                                            class="inline-flex flex-1 items-center justify-center gap-1 rounded-lg bg-ocean-600 px-3 py-1.5 text-[11px] font-bold text-white transition hover:bg-ocean-700 cursor-pointer">
-                                                            <span class="material-symbols-outlined text-[14px]">my_location</span>
-                                                            Calculate Distance
+                                                            class="inline-flex flex-1 items-center justify-center gap-1 rounded-lg bg-slate-300 px-2.5 py-1.5 text-[10px] font-bold text-white cursor-not-allowed">
+                                                            <span class="material-symbols-outlined text-[13px]">my_location</span>
+                                                            Distance
                                                         </button>
                                                     @endif
                                                     @if($actModel)
                                                         @php
-                                                            $imagesRaw = is_array($actModel->images) ? $actModel->images : (is_string($actModel->images) ? (json_decode($actModel->images, true) ?: []) : []);
-                                                            $resolvedImages = [App\Concerns\ResolvesImages::resolveActivityImage($imagesRaw[0] ?? null, $actModel->activity_name, $actModel->category)];
-                                                            $inclusionsRaw = is_array($actModel->inclusions) ? $actModel->inclusions : (is_string($actModel->inclusions) ? array_filter(array_map('trim', explode(',', $actModel->inclusions))) : []);
-                                                            $exclusionsRaw = is_array($actModel->exclusions) ? $actModel->exclusions : (is_string($actModel->exclusions) ? array_filter(array_map('trim', explode(',', $actModel->exclusions))) : []);
-                                                            $itineraryRaw = is_array($actModel->itinerary) ? $actModel->itinerary : (is_string($actModel->itinerary) ? (json_decode($actModel->itinerary, true) ?: []) : []);
-                                                            $vibeTagsRaw = is_array($actModel->vibe_tags) ? $actModel->vibe_tags : (is_string($actModel->vibe_tags) ? array_filter(array_map('trim', explode(',', $actModel->vibe_tags))) : []);
-
-                                                            $actPayload = [
-                                                                'id' => $actModel->id,
-                                                                'activity_name' => $actModel->activity_name,
-                                                                'category' => $actModel->category,
-                                                                'category_icon' => App\Concerns\ResolvesImages::getCategoryIcon($actModel->category),
-                                                                'rate' => App\Concerns\ResolvesImages::formatRate($actModel->rate),
-                                                                'duration' => $actModel->duration,
-                                                                'activity_level' => $actModel->activity_level,
-                                                                'capacity' => $actModel->capacity,
-                                                                'requirements' => $actModel->requirements,
-                                                                'ideal_for' => $actModel->ideal_for,
-                                                                'description' => $actModel->description,
-                                                                'notes' => $actModel->notes,
-                                                                'destination_name' => $actModel->destination?->name,
-                                                                'destination_id' => $actModel->destination_id,
-                                                                'images' => array_values($resolvedImages),
-                                                                'inclusions' => array_values($inclusionsRaw),
-                                                                'exclusions' => array_values($exclusionsRaw),
-                                                                'itinerary' => array_values($itineraryRaw),
-                                                                'vibe_tags' => array_values($vibeTagsRaw),
-                                                            ];
+                                                            $actPayload = app(App\Services\Preview\ActivityPreviewService::class)->build($actModel);
                                                         @endphp
                                                         <button type="button"
-                                                            @click="previewActivity = {{ json_encode($actPayload) }}; activePreviewImgIdx = 0;"
-                                                            class="inline-flex flex-1 items-center justify-center gap-1 rounded-lg bg-slate-100 px-3 py-1.5 text-[11px] font-bold text-slate-700 transition hover:bg-slate-200 cursor-pointer">
-                                                            <span class="material-symbols-outlined text-[14px]">visibility</span>
-                                                            View Details
+                                                            @click="$store.preview.openActivity({{ json_encode($actPayload) }})"
+                                                            class="inline-flex flex-1 items-center justify-center gap-1 rounded-lg bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 text-[10px] font-bold text-slate-700 transition cursor-pointer">
+                                                            <span class="material-symbols-outlined text-[13px]">visibility</span>
+                                                            Preview
                                                         </button>
                                                     @endif
                                                 </div>
@@ -730,199 +654,8 @@
 
         
 
-        {{-- Dynamic Room Preview Modal --}}
-        <div x-show="previewRoom" x-transition.opacity @keydown.escape.window="closeRoomPreview()"
-            class="fixed inset-0 z-[110] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
-            style="display: none;">
-            <div @click.away="closeRoomPreview()"
-                class="bg-white rounded-3xl shadow-2xl max-w-4xl w-full overflow-hidden border border-slate-200/80 my-auto transform transition-all">
-                
-                {{-- Modal Header --}}
-                <div class="relative bg-slate-900 text-white p-6 sm:p-8 overflow-hidden">
-                    <div class="absolute top-0 right-0 w-64 h-64 bg-ocean-500/10 rounded-full blur-3xl pointer-events-none"></div>
-                    
-                    <button @click="closeRoomPreview()"
-                        class="absolute top-4 right-4 text-slate-400 hover:text-white bg-white/10 hover:bg-white/20 p-2 rounded-full transition-colors">
-                        <span class="material-symbols-outlined text-[20px]">close</span>
-                    </button>
+        <x-frontend.room-preview-modal />
 
-                    <div class="flex flex-wrap items-center gap-2 mb-2">
-                        <span class="px-2.5 py-0.5 rounded-full bg-ocean-500/20 text-ocean-300 text-[10px] font-bold uppercase tracking-wider border border-ocean-400/30">
-                            Room Details & Overview
-                        </span>
-                        <template x-if="previewRoom?.view_type">
-                            <span class="px-2.5 py-0.5 rounded-full bg-white/10 text-slate-200 text-[10px] font-medium flex items-center gap-1">
-                                <span class="material-symbols-outlined text-[12px]">visibility</span>
-                                <span x-text="previewRoom.view_type"></span>
-                            </span>
-                        </template>
-                    </div>
-
-                    <h2 class="text-2xl sm:text-3xl font-black text-white font-headline" x-text="previewRoom?.room_name"></h2>
-                    
-                    <div class="mt-3 flex items-baseline gap-2">
-                        <span class="text-2xl sm:text-3xl font-black text-emerald-400 font-headline">
-                            ₱<span x-text="Number(computedNightlyRate).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})"></span>
-                        </span>
-                        <span class="text-xs text-slate-300 font-medium">/ night</span>
-                        <span x-show="selectedPax > (previewRoom?.base_occupancy || 2)" class="text-[10px] font-bold bg-amber-400 text-slate-950 px-2 py-0.5 rounded-full ml-2" x-cloak>
-                            +₱<span x-text="((selectedPax - (previewRoom?.base_occupancy || 2)) * (previewRoom?.extra_person_fee || 0)).toLocaleString('en-US')"></span> Extra Guest Fee
-                        </span>
-                    </div>
-                </div>
-
-                {{-- Modal Body --}}
-                <div class="p-6 sm:p-8 space-y-6 max-h-[65vh] overflow-y-auto">
-                    
-                    {{-- Image Carousel / Selector --}}
-                    <template x-if="previewRoom?.images && previewRoom.images.length > 0">
-                        <div class="space-y-3">
-                            <div class="relative h-64 sm:h-80 rounded-2xl overflow-hidden bg-slate-900 group">
-                                <img :src="previewRoom.images[activePreviewImgIndex]" 
-                                    class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-                                <div class="absolute bottom-3 right-3 bg-slate-950/70 backdrop-blur-md text-white text-xs px-3 py-1 rounded-lg border border-white/20">
-                                    Photo <span x-text="activePreviewImgIndex + 1"></span> of <span x-text="previewRoom.images.length"></span>
-                                </div>
-                            </div>
-
-                            <template x-if="previewRoom.images.length > 1">
-                                <div class="flex items-center gap-2 overflow-x-auto pb-2">
-                                    <template x-for="(img, idx) in previewRoom.images" :key="idx">
-                                        <button @click="activePreviewImgIndex = idx"
-                                            :class="activePreviewImgIndex === idx ? 'ring-2 ring-ocean-600 scale-105' : 'opacity-70 hover:opacity-100'"
-                                            class="w-16 h-12 rounded-lg overflow-hidden border border-slate-200 shrink-0 transition-all">
-                                            <img :src="img" class="w-full h-full object-cover">
-                                        </button>
-                                    </template>
-                                </div>
-                            </template>
-                        </div>
-                    </template>
-
-                    {{-- Specs Quick Grid --}}
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/80 space-y-1">
-                            <span class="text-slate-400 text-[10px] block uppercase font-bold tracking-wider">Bed Layout</span>
-                            <span class="font-bold text-slate-800 flex items-center gap-1">
-                                <span class="material-symbols-outlined text-[16px] text-ocean-600">bed</span>
-                                <span x-text="previewRoom?.bed_configuration || 'Standard'"></span>
-                            </span>
-                        </div>
-                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/80 space-y-1">
-                            <span class="text-slate-400 text-[10px] block uppercase font-bold tracking-wider">Base Occupancy</span>
-                            <span class="font-bold text-slate-800 flex items-center gap-1">
-                                <span class="material-symbols-outlined text-[16px] text-ocean-600">person</span>
-                                <span x-text="(previewRoom?.base_occupancy || 2) + ' Guests'"></span>
-                            </span>
-                        </div>
-                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/80 space-y-1">
-                            <span class="text-slate-400 text-[10px] block uppercase font-bold tracking-wider">Max Occupancy</span>
-                            <span class="font-bold text-slate-800 flex items-center gap-1">
-                                <span class="material-symbols-outlined text-[16px] text-ocean-600">group</span>
-                                <span x-text="(previewRoom?.max_occupancy || previewRoom?.occupancy || 4) + ' Guests'"></span>
-                            </span>
-                        </div>
-                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/80 space-y-1" x-show="previewRoom?.room_size">
-                            <span class="text-slate-400 text-[10px] block uppercase font-bold tracking-wider">Room Size</span>
-                            <span class="font-bold text-slate-800 flex items-center gap-1">
-                                <span class="material-symbols-outlined text-[16px] text-ocean-600">straighten</span>
-                                    <span x-text="previewRoom?.room_size"></span>
-                                </span>
-                            </div>
-                        </div>
-
-                    {{-- Description --}}
-                    <template x-if="previewRoom?.description">
-                        <div class="space-y-2">
-                            <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Room Description</h4>
-                            <p class="text-xs sm:text-sm text-slate-600 leading-relaxed bg-slate-50/70 p-4 rounded-xl border border-slate-200/60"
-                                x-text="previewRoom.description"></p>
-                        </div>
-                    </template>
-
-                    {{-- Amenities Badges --}}
-                    <template x-if="previewRoom?.amenities && previewRoom.amenities.length > 0">
-                        <div class="space-y-3">
-                            <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Included Amenities</h4>
-                            <div class="flex flex-wrap gap-2">
-                                <template x-for="(amenity, idx) in previewRoom.amenities" :key="idx">
-                                    <span class="px-3 py-1.5 bg-ocean-50 text-ocean-800 rounded-lg text-xs font-semibold border border-ocean-100 flex items-center gap-1.5">
-                                        <span class="material-symbols-outlined text-[16px] text-ocean-600">check_circle</span>
-                                        <span x-text="amenity"></span>
-                                    </span>
-                                </template>
-                            </div>
-                        </div>
-                    </template>
-
-                    {{-- Room Review Summary (DSS) --}}
-                    <template x-if="previewRoom?.review_summary">
-                        <div class="space-y-3 rounded-2xl bg-gradient-to-br from-ocean-50/70 to-sand-50/70 border border-ocean-100 p-4">
-                            <div class="flex items-center justify-between gap-2 flex-wrap">
-                                <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-                                    <span class="material-symbols-outlined text-[15px] text-ocean-600">reviews</span>
-                                    Guest Reviews & Sentiment
-                                </h4>
-                                <span class="flex items-center gap-1 text-amber-400">
-                                    <template x-for="i in 5" :key="i">
-                                        <span class="material-symbols-outlined text-[14px]" :style="'font-variation-settings: \'FILL\' ' + (i <= Math.round(previewRoom.review_summary.average_rating) ? 1 : 0)">star</span>
-                                    </template>
-                                </span>
-                            </div>
-                            <p class="text-[11px] text-slate-600 font-bold">
-                                <span x-text="previewRoom.review_summary.average_rating.toFixed(1)"></span> / 5.0 ·
-                                <span x-text="previewRoom.review_summary.total_reviews"></span> verified reviews
-                            </p>
-                            <p class="text-[11px] text-slate-500" x-text="previewRoom.review_summary.ai_summary_text"></p>
-                        </div>
-                    </template>
-
-                    {{-- Room Recent Reviews --}}
-                    <template x-if="previewRoom?.reviews && previewRoom.reviews.length > 0">
-                        <div class="space-y-3">
-                            <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Recent Verified Reviews</h4>
-                            <template x-for="(rv, idx) in previewRoom.reviews" :key="idx">
-                                <div class="bg-white border border-sand-200 rounded-xl p-3.5 space-y-1.5">
-                                    <div class="flex items-center justify-between gap-2">
-                                        <p class="text-xs font-bold text-slate-900" x-text="rv.reviewer_alias"></p>
-                                        <span class="flex items-center gap-0.5 text-amber-400">
-                                            <template x-for="i in 5" :key="i">
-                                                <span class="material-symbols-outlined text-[13px]" :style="'font-variation-settings: \'FILL\' ' + (i <= rv.rating ? 1 : 0)">star</span>
-                                            </template>
-                                        </span>
-                                    </div>
-                                    <p class="text-[11px] text-slate-600 leading-relaxed" x-text="rv.comment"></p>
-                                    <p class="text-[9px] font-label uppercase tracking-[0.15em] text-slate-400 font-bold" x-text="rv.created_at_label"></p>
-                                </div>
-                            </template>
-                        </div>
-                    </template>
-
-                    {{-- Date Picker Section --}}
-                    <div class="pt-3 border-t border-slate-200" @date-range-changed.stop="roomCheckIn = $event.detail.checkIn; roomCheckOut = $event.detail.checkOut; roomAvailable = $event.detail.available">
-                        <x-frontend.date-range-picker :room-id="null" :base-price="0" />
-                    </div>
-
-                </div>
-
-                {{-- Modal Footer --}}
-                <div class="bg-slate-50 p-4 sm:p-6 border-t border-slate-200/80 flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <button type="button" @click="closeRoomPreview()"
-                        class="w-full sm:w-auto px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-bold text-xs hover:bg-slate-200 transition-colors">
-                        Close Preview
-                    </button>
-                    <button type="button" 
-                        @click="if (!roomCheckIn || !roomCheckOut) { alert('Please select your stay check-in and check-out dates first!'); return; } window.addToCart('room', previewRoom.id, { check_in_date: roomCheckIn, check_out_date: roomCheckOut, selected_pax: selectedPax }); closeRoomPreview();"
-                        :disabled="!roomAvailable || !roomCheckIn || !roomCheckOut"
-                        :class="(!roomAvailable || !roomCheckIn || !roomCheckOut) ? 'opacity-50 cursor-not-allowed bg-slate-400' : 'bg-gradient-to-r from-sky-600 to-sky-700 hover:from-sky-500 hover:to-sky-600 shadow-md shadow-sky-600/20 hover:shadow-lg cursor-pointer'"
-                        class="w-full sm:w-auto px-6 py-2.5 rounded-xl text-white font-bold text-xs transition-all flex items-center justify-center gap-2">
-                        <span class="material-symbols-outlined text-[18px]">shopping_cart</span>
-                        <span x-text="(!roomCheckIn || !roomCheckOut) ? 'Select Dates to Add' : 'Add to Trip Basket'"></span>
-                    </button>
-                </div>
-
-            </div>
-        </div>
 
         {{-- Hotel Photo Lightbox --}}
         <div x-show="activeModalImg" x-transition.opacity
@@ -960,141 +693,8 @@
             </div>
         </div>
 
-        {{-- Activity Preview Modal --}}
-        <div x-show="previewActivity" x-transition.opacity @keydown.escape.window="previewActivity = null"
-            class="fixed inset-0 z-[130] flex items-center justify-center p-4 sm:p-6 bg-slate-950/75 backdrop-blur-md" x-cloak style="display: none;">
 
-            <div @click.away="previewActivity = null"
-                class="bg-white border border-slate-200 rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative flex flex-col">
-
-                {{-- Modal Header --}}
-                <div class="sticky top-0 bg-white/90 backdrop-blur-md px-6 py-4 border-b border-slate-200 flex items-center justify-between z-20">
-                    <div class="flex items-center gap-2">
-                        <span class="material-symbols-outlined text-sky-600 text-xl" x-text="previewActivity?.category_icon || 'explore'"></span>
-                        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider" x-text="previewActivity?.category || 'Activity'"></span>
-                        <template x-if="previewActivity?.destination_name">
-                            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-sky-50 text-sky-700 text-[11px] font-bold border border-sky-200">
-                                <span class="material-symbols-outlined text-[13px] text-sky-500">location_on</span>
-                                <span x-text="previewActivity.destination_name"></span>
-                            </span>
-                        </template>
-                    </div>
-                    <button @click="previewActivity = null" class="p-1 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors cursor-pointer">
-                        <span class="material-symbols-outlined text-xl">close</span>
-                    </button>
-                </div>
-
-                {{-- Modal Body --}}
-                <div class="p-6 space-y-6">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-4">
-                        <h2 class="text-xl sm:text-2xl font-black text-slate-900 font-headline" x-text="previewActivity?.activity_name"></h2>
-                        <span class="text-xl font-black text-emerald-600 font-mono bg-emerald-50 px-3 py-1 rounded-xl border border-emerald-200/80 inline-block w-fit" x-text="previewActivity?.rate"></span>
-                    </div>
-
-                    {{-- Image Carousel Preview --}}
-                    <template x-if="previewActivity?.images && previewActivity.images.length > 0">
-                        <div class="space-y-3">
-                            <div class="relative h-64 sm:h-80 rounded-2xl overflow-hidden bg-slate-900 shadow-inner">
-                                <img :src="previewActivity.images[activePreviewImgIndex]" class="w-full h-full object-cover">
-                                <span class="absolute bottom-3 right-3 bg-slate-950/80 text-white text-[10px] font-bold px-2.5 py-1 rounded-full backdrop-blur-xs border border-white/10">
-                                    <span x-text="activePreviewImgIndex + 1"></span> / <span x-text="previewActivity.images.length"></span>
-                                </span>
-                            </div>
-                            <template x-if="previewActivity.images.length > 1">
-                                <div class="flex items-center gap-2 overflow-x-auto pb-1">
-                                    <template x-for="(img, idx) in previewActivity.images" :key="idx">
-                                        <button @click="activePreviewImgIndex = idx"
-                                            :class="activePreviewImgIndex === idx ? 'ring-2 ring-sky-500 scale-95' : 'opacity-70 hover:opacity-100'"
-                                            class="w-16 h-12 rounded-lg overflow-hidden shrink-0 transition-all cursor-pointer">
-                                            <img :src="img" class="w-full h-full object-cover">
-                                        </button>
-                                    </template>
-                                </div>
-                            </template>
-                        </div>
-                    </template>
-
-                    {{-- Quick Specs Grid --}}
-                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
-                        <div>
-                            <span class="text-slate-400 text-[10px] block uppercase font-bold tracking-wider">Duration</span>
-                            <span class="text-xs font-bold text-slate-800" x-text="previewActivity?.duration || 'Flexible'"></span>
-                        </div>
-                        <div>
-                            <span class="text-slate-400 text-[10px] block uppercase font-bold tracking-wider">Activity Level</span>
-                            <span class="text-xs font-bold text-sky-700" x-text="previewActivity?.activity_level || 'General'"></span>
-                        </div>
-                        <div>
-                            <span class="text-slate-400 text-[10px] block uppercase font-bold tracking-wider">Max Group</span>
-                            <span class="text-xs font-bold text-slate-800" x-text="previewActivity?.capacity ? 'Up to ' + previewActivity.capacity + ' guests' : 'Flexible'"></span>
-                        </div>
-                    </div>
-
-                    {{-- Pax Selector Control --}}
-                    <div class="flex items-center justify-between p-3.5 bg-sky-50/80 rounded-2xl border border-sky-200/80">
-                        <div class="flex items-center gap-2">
-                            <span class="material-symbols-outlined text-sky-600">group</span>
-                            <div>
-                                <span class="text-xs font-bold text-slate-800 block">Number of Participants / Pax</span>
-                                <span class="text-[11px] text-slate-500">Manifest entries will be generated for each participant</span>
-                            </div>
-                        </div>
-                        <div class="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-2xs">
-                            <button type="button" @click="modalPax = Math.max(1, modalPax - 1)" :disabled="modalPax <= 1" class="text-slate-600 font-bold hover:text-sky-600 disabled:opacity-40 cursor-pointer">-</button>
-                            <span class="text-xs font-black text-slate-900 w-6 text-center" x-text="modalPax"></span>
-                            <button type="button" @click="modalPax += 1" class="text-slate-600 font-bold hover:text-sky-600 cursor-pointer">+</button>
-                        </div>
-                    </div>
-
-                    {{-- Description --}}
-                    <div class="space-y-1.5">
-                        <h4 class="text-xs font-extrabold uppercase tracking-wider text-slate-400">Description</h4>
-                        <p class="text-xs sm:text-sm text-slate-600 leading-relaxed" x-text="previewActivity?.description"></p>
-                    </div>
-
-                    {{-- Requirements --}}
-                    <template x-if="previewActivity?.requirements">
-                        <div class="space-y-1.5 bg-amber-50/80 border border-amber-200/80 p-3.5 rounded-xl text-amber-900 text-xs">
-                            <span class="font-bold block flex items-center gap-1">
-                                <span class="material-symbols-outlined text-[15px]">info</span>
-                                Requirements & Guidelines
-                            </span>
-                            <p x-text="previewActivity.requirements" class="leading-relaxed"></p>
-                        </div>
-                    </template>
-
-                    {{-- Inclusions --}}
-                    <template x-if="previewActivity?.inclusions && previewActivity.inclusions.length > 0">
-                        <div class="space-y-2">
-                            <h4 class="text-xs font-extrabold uppercase tracking-wider text-slate-400">What's Included</h4>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                <template x-for="(inc, idx) in previewActivity.inclusions" :key="idx">
-                                    <div class="flex items-center gap-2 text-xs text-slate-700 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200/80">
-                                        <span class="material-symbols-outlined text-[15px] text-emerald-500">check_circle</span>
-                                        <span x-text="inc"></span>
-                                    </div>
-                                </template>
-                            </div>
-                        </div>
-                    </template>
-                </div>
-
-                {{-- Modal Footer --}}
-                <div class="sticky bottom-0 bg-slate-50 px-6 py-4 border-t border-slate-200 flex items-center justify-between gap-4">
-                    <button @click="previewActivity = null" class="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs transition-colors cursor-pointer">
-                        Close Preview
-                    </button>
-
-                    <button type="button"
-                        @click="window.addToCart('activity', previewActivity.id, { selected_pax: modalPax }); previewActivity = null;"
-                        class="px-6 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs shadow-md transition-colors flex items-center gap-1.5 cursor-pointer">
-                        <span class="material-symbols-outlined text-sm">shopping_cart</span>
-                        <span>Add to Trip Basket</span>
-                    </button>
-                </div>
-
-            </div>
-        </div>
+        <x-frontend.activity-preview-modal />
 
     </div>
 
