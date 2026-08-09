@@ -12,34 +12,16 @@ use Illuminate\Support\Facades\Notification;
 beforeEach(function () {
     Notification::fake();
 
-    $destination = DestinationModel::create(['name' => 'Boracay', 'description' => 'Test', 'image' => null]);
-    $hotel = HotelModel::create([
-        'hotel_name' => 'Test Beach Resort',
-        'destination_id' => $destination->id,
-        'type' => 'Resort',
-        'hotel_description' => 'A test resort.',
-        'specific_address' => 'Station 1, White Beach',
-        'latitude' => 11.9674,
-        'longitude' => 121.9251,
-        'is_shown' => true,
-        'images' => [],
-    ]);
-    $this->room = RoomType::create([
-        'hotel_id' => $hotel->id,
+    $this->room = RoomType::factory()->create([
         'room_name' => 'Deluxe Ocean View',
         'base_price' => 2000.00,
         'base_occupancy' => 2,
         'max_occupancy' => 4,
         'extra_person_fee' => 500.00,
         'total_rooms' => 5,
-        'room_amenities' => [],
-        'images' => [],
-        'is_shown' => true,
     ]);
 
-    $this->user = User::factory()->create();
-    $this->user->preferences_embedding = '[' . implode(',', array_fill(0, 3072, '0.1')) . ']';
-    $this->user->save();
+    $this->user = onboardedUser();
 
     $this->admin = \App\Models\AdminModel::create([
         'name' => 'Test Admin',
@@ -317,9 +299,7 @@ it('hides another user booking (IDOR) with a 404 for owner-only views', function
 
     $booking = Booking::first();
 
-    $attacker = User::factory()->create();
-    $attacker->preferences_embedding = '[' . implode(',', array_fill(0, 3072, '0.1')) . ']';
-    $attacker->save();
+    $attacker = onboardedUser();
 
     $this->actingAs($attacker)->get(route('booking.show', $booking->booking_code))->assertNotFound();
     $this->actingAs($attacker)->post(route('booking.cancel', $booking->booking_code))->assertNotFound();

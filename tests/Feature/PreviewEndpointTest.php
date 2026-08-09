@@ -10,26 +10,19 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    $this->destination = DestinationModel::create([
+    $this->destination = DestinationModel::factory()->create([
         'name' => 'Test Island',
         'region' => 'Test Region',
         'description' => 'A test destination.',
-        'image' => null,
     ]);
 
-    $this->hotel = HotelModel::create([
+    $this->hotel = HotelModel::factory()->create([
         'hotel_name' => 'Test Beach Resort',
         'destination_id' => $this->destination->id,
-        'type' => 'Resort',
-        'hotel_description' => 'A test resort.',
         'specific_address' => 'Station 1',
-        'latitude' => 11.9674,
-        'longitude' => 121.9251,
-        'is_shown' => true,
-        'images' => [],
     ]);
 
-    $this->room = RoomType::create([
+    $this->room = RoomType::factory()->create([
         'hotel_id' => $this->hotel->id,
         'room_name' => 'Deluxe Ocean View',
         'base_price' => 2500.00,
@@ -40,11 +33,9 @@ beforeEach(function () {
         'bed_configuration' => '1 King Bed',
         'room_size' => '35 sqm',
         'room_amenities' => ['WiFi', 'Pool'],
-        'images' => [],
-        'is_shown' => true,
     ]);
 
-    $this->activity = ActivityModel::create([
+    $this->activity = ActivityModel::factory()->create([
         'destination_id' => $this->destination->id,
         'activity_name' => 'Island Hopping',
         'category' => 'Water Activity',
@@ -53,8 +44,6 @@ beforeEach(function () {
         'duration' => '4 hours',
         'capacity' => 'Up to 12 guests',
         'inclusions' => ['Lunch', 'Life vest'],
-        'is_shown' => true,
-        'images' => [],
     ]);
 });
 

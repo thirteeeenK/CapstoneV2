@@ -255,6 +255,25 @@ class BookingRequestService
 
         $count = 0;
         foreach ($booking->items()->where('availability_status', '!=', BookingItem::AVAIL_UNAVAILABLE)->get() as $item) {
+            $matching = CartItem::query()
+                ->when($user, fn ($q) => $q->where('user_id', $user->id), fn ($q) => $q->whereNull('user_id'))
+                ->when($sessionToken, fn ($q) => $q->where('session_token', $sessionToken), fn ($q) => $q->whereNull('session_token'))
+                ->where('item_type', $item->item_type)
+                ->where('item_id', $item->item_id)
+                ->get()
+                ->first(fn (CartItem $cart) =>
+                    (string) $cart->check_in_date === (string) $item->check_in_date &&
+                    (string) $cart->check_out_date === (string) $item->check_out_date &&
+                    (int) $cart->selected_pax === (int) $item->selected_pax
+                );
+
+            if ($matching) {
+                $matching->quantity = ($matching->quantity ?? 1) + $item->quantity;
+                $matching->save();
+                $count++;
+                continue;
+            }
+
             CartItem::create([
                 'user_id' => $user?->id,
                 'session_token' => $sessionToken,

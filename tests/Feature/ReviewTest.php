@@ -29,42 +29,26 @@ beforeEach(function () {
         ], 200),
     ]);
 
-    $destination = DestinationModel::create(['name' => 'Boracay', 'description' => 'Test', 'image' => null]);
-    $hotel = HotelModel::create([
-        'hotel_name' => 'Test Beach Resort',
-        'destination_id' => $destination->id,
-        'type' => 'Resort',
-        'hotel_description' => 'A test resort.',
-        'specific_address' => 'Station 1, White Beach',
-        'latitude' => 11.9674,
-        'longitude' => 121.9251,
-        'is_shown' => true,
-        'images' => [],
-    ]);
-    $this->room = RoomType::create([
-        'hotel_id' => $hotel->id,
+$this->room = RoomType::factory()->create([
         'room_name' => 'Deluxe Ocean View',
         'base_price' => 2000.00,
         'base_occupancy' => 2,
         'max_occupancy' => 4,
         'extra_person_fee' => 500.00,
         'total_rooms' => 5,
-        'room_amenities' => [],
-        'images' => [],
-        'is_shown' => true,
     ]);
-    $this->activity = ActivityModel::create([
-        'destination_id' => $destination->id,
+
+    $this->activity = ActivityModel::factory()->create([
+        'destination_id' => $this->room->hotel->destination_id,
         'activity_name' => 'Island Hopping Tour',
         'description' => 'Tour the islands.',
         'category' => 'island-hopping',
         'activity_level' => 'Easy',
         'rate' => '₱1,500 / person',
-        'is_shown' => true,
-        'images' => [],
     ]);
-    $this->package = Package::create([
-        'destination_id' => $destination->id,
+
+    $this->package = Package::factory()->create([
+        'destination_id' => $this->room->hotel->destination_id,
         'name' => 'Boracay Escape Promo',
         'type' => 'standard',
         'price' => 9999.00,
@@ -72,13 +56,9 @@ beforeEach(function () {
         'nights' => 2,
         'min_pax' => 2,
         'generic_inclusions' => ['Hotel', 'Tour'],
-        'images' => [],
-        'is_active' => true,
     ]);
 
-    $this->user = User::factory()->create(['name' => 'Juan Dela Cruz']);
-    $this->user->preferences_embedding = '[' . implode(',', array_fill(0, 3072, '0.1')) . ']';
-    $this->user->save();
+    $this->user = onboardedUser(['name' => 'Juan Dela Cruz']);
 
     $this->admin = \App\Models\AdminModel::create([
         'name' => 'Test Admin',
@@ -89,13 +69,11 @@ beforeEach(function () {
 
 function makeCompletedBooking(User $user, RoomType $room, string $status = 'completed'): Booking
 {
-    $booking = Booking::create([
+    $booking = Booking::factory()->create([
         'booking_code' => 'RVT-' . strtoupper(\Illuminate\Support\Str::random(8)),
         'user_id' => $user->id,
         'status' => $status,
         'total_amount' => 6000,
-        'discount_amount' => 0,
-        'tax_amount' => 0,
         'net_amount' => 6000,
         'payment_status' => 'paid',
         'payment_method' => 'Simulator',
@@ -104,7 +82,7 @@ function makeCompletedBooking(User $user, RoomType $room, string $status = 'comp
         'contact_phone' => '09171234567',
     ]);
 
-    $item = BookingItem::create([
+    $item = BookingItem::factory()->create([
         'booking_id' => $booking->id,
         'item_type' => 'room',
         'item_id' => $room->id,
@@ -112,11 +90,9 @@ function makeCompletedBooking(User $user, RoomType $room, string $status = 'comp
         'item_subtitle' => '1 night stay',
         'hotel_name' => 'Test Beach Resort',
         'unit_price' => 2000,
-        'quantity' => 1,
         'selected_pax' => 2,
         'subtotal' => 6000,
         'availability_status' => 'available',
-        'item_snapshot' => [],
     ]);
 
     $booking->review_item_id = $item->id;

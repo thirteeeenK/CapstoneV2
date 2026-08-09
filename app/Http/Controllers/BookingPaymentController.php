@@ -138,9 +138,12 @@ class BookingPaymentController extends Controller
                 ->with('error', 'This booking can no longer be cancelled.');
         }
 
-        $booking->cancelled_at = now();
-        $booking->cancellation_reason = request('reason') ?: 'Cancelled by customer before payment.';
-        $booking->markStatus(Booking::STATUS_CANCELLED, $booking->cancellation_reason);
+        $booking->transitionTo(
+            Booking::STATUS_CANCELLED,
+            [Booking::STATUS_PENDING, Booking::STATUS_APPROVED],
+            ['cancelled_at' => now(), 'cancellation_reason' => request('reason') ?: 'Cancelled by customer before payment.'],
+            request('reason') ?: 'Cancelled by customer before payment.'
+        );
 
         BookingNotification::send($booking, new BookingCancelled($booking));
 
@@ -191,14 +194,8 @@ class BookingPaymentController extends Controller
      */
     protected function markAsPaid(Booking $booking): void
     {
-        if ($booking->status === Booking::STATUS_PAID) {
-            return;
+        if ($booking->markPaid()) {
+            BookingNotification::send($booking, new BookingPaid($booking));
         }
-
-        $booking->paid_at = now();
-        $booking->payment_status = Booking::PAYMENT_PAID;
-        $booking->markStatus(Booking::STATUS_PAID, 'Payment completed.');
-
-        BookingNotification::send($booking, new BookingPaid($booking));
     }
 }

@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class Booking extends Model
 {
@@ -143,5 +144,64 @@ class Booking extends Model
             'actor_type' => $actor ? get_class($actor) : null,
             'actor_id' => $actor?->getKey(),
         ]);
+    }
+
+    /**
+     * Atomically transition the status from one of $expectedFrom to $to.
+     * The update only affects rows still in an expected state, so concurrent
+     * or repeated callers cannot double-apply a transition; the audit entry
+     * is written only when the transition actually happened.
+     *
+     * @return bool true when this call performed the transition
+     */
+    public function transitionTo(string $to, array $expectedFrom, array $data = [], ?string $note = null, $actor = null): bool
+    {
+        $from = $this->status;
+
+        $affected = DB::transaction(function () use ($to, $expectedFrom, $data) {
+            return static::query()
+                ->whereKey($this->getKey())
+                ->whereIn('status', $expectedFrom)
+                ->update(array_merge(['status' => $to], $data));
+        });
+
+        if ($affected === 0) {
+            return false;
+        }
+
+        $this->status = $to;
+        foreach ($data as $key => $value) {
+            $this->{$key} = $value;
+        }
+
+        if ($actor === null && Auth::check()) {
+            $actor = Auth::user();
+        }
+
+        BookingStatusHistory::create([
+            'booking_id' => $this->id,
+            'from_status' => $from,
+            'to_status' => $to,
+            'note' => $note,
+            'actor_type' => $actor ? get_class($actor) : null,
+            'actor_id' => $actor?->getKey(),
+        ]);
+
+        return true;
+    }
+
+    /**
+     * Idempotently mark an approved booking as paid.
+     *
+     * @return bool true when this call performed the transition
+     */
+    public function markPaid(string $note = 'Payment completed.'): bool
+    {
+        return $this->transitionTo(
+            self::STATUS_PAID,
+            [self::STATUS_APPROVED],
+            ['paid_at' => now(), 'payment_status' => self::PAYMENT_PAID],
+            $note
+        );
     }
 }

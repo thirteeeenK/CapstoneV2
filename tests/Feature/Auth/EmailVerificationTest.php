@@ -7,6 +7,8 @@ use Illuminate\Support\Facades\URL;
 
 test('email verification screen can be rendered', function () {
     $user = User::factory()->unverified()->create();
+    $user->preferences_embedding = '[' . implode(',', array_fill(0, 3072, '0.01')) . ']';
+    $user->save();
 
     $response = $this->actingAs($user)->get('/verify-email');
 
@@ -15,6 +17,8 @@ test('email verification screen can be rendered', function () {
 
 test('email can be verified', function () {
     $user = User::factory()->unverified()->create();
+    $user->preferences_embedding = '[' . implode(',', array_fill(0, 3072, '0.01')) . ']';
+    $user->save();
 
     Event::fake();
 

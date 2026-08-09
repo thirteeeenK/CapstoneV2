@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -19,6 +20,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 ])]
 class SupportInquiry extends Model
 {
+    use HasFactory;
+
     public const STATUS_AI_ACTIVE = 'AI_ACTIVE';
     public const STATUS_PENDING = 'PENDING_ASSIGNMENT';
     public const STATUS_HUMAN_ACTIVE = 'HUMAN_SUPPORT_ACTIVE';

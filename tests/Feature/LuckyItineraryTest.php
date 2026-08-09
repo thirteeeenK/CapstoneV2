@@ -13,33 +13,24 @@ use Illuminate\Support\Facades\Notification;
 beforeEach(function () {
     Notification::fake();
 
-    $this->user = User::factory()->create();
-    $this->user->preferences_embedding = '[' . implode(',', array_fill(0, 3072, '0.1')) . ']';
-    $this->user->save();
+    $this->user = onboardedUser();
 });
 
 function createLuckyDestination(string $name, int $activityCount = 2): array
 {
-    $destination = DestinationModel::create([
+    $destination = DestinationModel::factory()->create([
         'name' => $name,
         'region' => 'Test Region',
         'description' => 'A test destination.',
-        'image' => null,
     ]);
 
-    $hotel = HotelModel::create([
+    $hotel = HotelModel::factory()->create([
         'hotel_name' => $name . ' Beach Resort',
         'destination_id' => $destination->id,
-        'type' => 'Resort',
-        'hotel_description' => 'A test resort.',
         'specific_address' => 'Station 1',
-        'latitude' => 11.9674,
-        'longitude' => 121.9251,
-        'is_shown' => true,
-        'images' => [],
     ]);
 
-    $room = RoomType::create([
+    $room = RoomType::factory()->create([
         'hotel_id' => $hotel->id,
         'room_name' => 'Deluxe Ocean View',
         'base_price' => 1000.00,
@@ -47,22 +38,17 @@ function createLuckyDestination(string $name, int $activityCount = 2): array
         'max_occupancy' => 4,
         'extra_person_fee' => 500.00,
         'total_rooms' => 5,
-        'room_amenities' => [],
-        'images' => [],
-        'is_shown' => true,
     ]);
 
     $activities = collect();
     for ($i = 1; $i <= $activityCount; $i++) {
-        $activities->push(ActivityModel::create([
+        $activities->push(ActivityModel::factory()->create([
             'destination_id' => $destination->id,
             'activity_name' => "$name Activity $i",
             'category' => 'Water Activity',
             'activity_level' => 'Adventure',
             'rate' => '₱500/person',
             'duration' => '4 hours',
-            'is_shown' => true,
-            'images' => [],
         ]));
     }
 

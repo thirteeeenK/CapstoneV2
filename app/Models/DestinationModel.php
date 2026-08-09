@@ -3,9 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class DestinationModel extends Model
 {
+    use HasFactory;
+
     protected $table = 'destinations';
     protected $fillable = [
         'name',

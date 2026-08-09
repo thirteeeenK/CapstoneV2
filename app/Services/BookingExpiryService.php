@@ -10,7 +10,11 @@ class BookingExpiryService
     /**
      * Expire an approved booking whose payment window has passed.
      *
-     * @return bool true when the booking was expired
+     * The approved→expired transition is atomic, so concurrent requests
+     * cannot double-expire or expire an already-paid booking; the customer
+     * is only notified by the caller that actually performed the transition.
+     *
+     * @return bool true when this call expired the booking
      */
     public function expireIfDue(Booking $booking): bool
     {
@@ -18,8 +22,14 @@ class BookingExpiryService
             return false;
         }
 
-        $booking->expired_at = now();
-        $booking->markStatus(Booking::STATUS_EXPIRED, 'Payment window expired 48 hours after approval.');
+        if (!$booking->transitionTo(
+            Booking::STATUS_EXPIRED,
+            [Booking::STATUS_APPROVED],
+            ['expired_at' => now()],
+            'Payment window expired 48 hours after approval.'
+        )) {
+            return false;
+        }
 
         $user = $booking->user;
         if ($user) {

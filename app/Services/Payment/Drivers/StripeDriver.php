@@ -78,6 +78,7 @@ class StripeDriver implements PaymentDriver
         }
 
         $eventData = [
+            'event_id' => $event['id'] ?? null,
             'reference' => $session['id'] ?? null,
             'booking_code' => $session['client_reference_id'] ?? ($session['metadata']['booking_code'] ?? null),
         ];

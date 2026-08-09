@@ -38,11 +38,33 @@ class PaymentService
 
     /**
      * Create the payment session for a booking and persist gateway metadata.
+     * When an approved booking already has a session (e.g. the user double-clicked
+     * Pay, or the Stripe webhook beat the redirect), the existing session is
+     * returned instead of minting a duplicate.
      *
      * @return array{url: string, reference: string, gateway: string}
      */
     public function createPayment(Booking $booking): array
     {
+        if (
+            $booking->status === Booking::STATUS_APPROVED
+            && $booking->gateway_reference
+            && $booking->payment_url
+            && ($driver = $this->resolveDriver($booking->gateway))
+        ) {
+            Log::info('Reusing existing payment session', [
+                'booking' => $booking->booking_code,
+                'gateway' => $driver->name(),
+                'reference' => $booking->gateway_reference,
+            ]);
+
+            return [
+                'url' => $booking->payment_url,
+                'reference' => $booking->gateway_reference,
+                'gateway' => $driver->name(),
+            ];
+        }
+
         $driver = $this->driver();
         $result = $driver->createPayment($booking);
 
@@ -67,9 +89,10 @@ class PaymentService
     /**
      * Handle an inbound webhook for a gateway.
      *
-     * @return string|null booking code when a payment was confirmed, null otherwise
+     * @return array{booking_code?: string, reference?: string, event_id?: string}|null
+     *         verified event data, null when unverified or not actionable
      */
-    public function handleWebhook(string $gateway, Request $request): ?string
+    public function handleWebhook(string $gateway, Request $request): ?array
     {
         $driver = $this->resolveDriver($gateway);
         if (!$driver) {
@@ -82,7 +105,7 @@ class PaymentService
             return null;
         }
 
-        return $eventData['booking_code'] ?? $eventData['reference'] ?? null;
+        return $eventData;
     }
 
     /**

@@ -32,15 +32,14 @@ beforeEach(function () {
         ]),
     ]);
 
-    $this->destination = DestinationModel::create([
+    $this->destination = DestinationModel::factory()->create([
         'name' => 'Boracay',
         'description' => 'White beach',
-        'image' => null,
         'latitude' => 11.9674,
         'longitude' => 121.9251,
     ]);
 
-    $this->hotel = HotelModel::create([
+    $this->hotel = HotelModel::factory()->create([
         'hotel_name' => 'Test Beach Resort',
         'destination_id' => $this->destination->id,
         'type' => 'Resort',
@@ -48,13 +47,11 @@ beforeEach(function () {
         'specific_address' => 'Station 1',
         'latitude' => 11.9674,
         'longitude' => 121.9251,
-        'is_shown' => true,
-        'images' => json_encode([]),
     ]);
 
     $embedding = '[' . implode(',', array_fill(0, 3072, '0.01')) . ']';
 
-    $this->room = RoomType::create([
+    $this->room = RoomType::factory()->create([
         'hotel_id' => $this->hotel->id,
         'room_name' => 'Deluxe Ocean View',
         'base_price' => 2500.00,
@@ -62,15 +59,10 @@ beforeEach(function () {
         'max_occupancy' => 4,
         'extra_person_fee' => 500.00,
         'total_rooms' => 5,
-        'room_amenities' => json_encode([]),
-        'images' => json_encode([]),
-        'is_shown' => true,
         'embedding' => $embedding,
     ]);
 
-    $this->user = User::factory()->create([
-        'preferences_embedding' => '[' . implode(',', array_fill(0, 3072, '0.01')) . ']',
-    ]);
+    $this->user = onboardedUser();
 });
 
 test('guest can send a chat message and get a response', function () {

@@ -48,3 +48,12 @@ function something()
 {
     // ..
 }
+
+function onboardedUser(array $attributes = []): \App\Models\User
+{
+    $user = \App\Models\User::factory()->create($attributes);
+    $user->preferences_embedding = '[' . implode(',', array_fill(0, 3072, '0.01')) . ']';
+    $user->save();
+
+    return $user;
+}

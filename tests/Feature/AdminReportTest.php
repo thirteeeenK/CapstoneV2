@@ -2,9 +2,18 @@
 
 use App\Models\AdminModel;
 use App\Models\Booking;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 
 beforeEach(function () {
+    Http::fake([
+        '*generateContent*' => Http::response([
+            'candidates' => [
+                ['content' => ['parts' => [['text' => 'not-valid-json']]]],
+            ],
+        ]),
+    ]);
+
     $this->admin = AdminModel::create([
         'name' => 'Test Admin',
         'email' => 'admin@sunnytripstest.com',
