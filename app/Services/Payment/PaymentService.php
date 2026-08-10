@@ -66,7 +66,19 @@ class PaymentService
         }
 
         $driver = $this->driver();
-        $result = $driver->createPayment($booking);
+
+        try {
+            $result = $driver->createPayment($booking);
+        } catch (\Illuminate\Http\Client\ConnectionException $e) {
+            Log::warning('Payment gateway unreachable — falling back to simulator', [
+                'booking' => $booking->booking_code,
+                'gateway' => $driver->name(),
+                'error' => $e->getMessage(),
+            ]);
+
+            $driver = new SimulatorDriver();
+            $result = $driver->createPayment($booking);
+        }
 
         $booking->gateway = $driver->name();
         $booking->gateway_reference = $result['reference'];

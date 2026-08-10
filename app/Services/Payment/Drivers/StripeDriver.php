@@ -26,6 +26,7 @@ class StripeDriver implements PaymentDriver
     public function createPayment(Booking $booking): array
     {
         $response = Http::withBasicAuth($this->secretKey, '')
+            ->timeout(6)
             ->asForm()
             ->post('https://api.stripe.com/v1/checkout/sessions', [
                 'mode' => 'payment',
@@ -89,6 +90,7 @@ class StripeDriver implements PaymentDriver
     public function verifyPaymentByReference(string $reference): bool
     {
         $response = Http::withBasicAuth($this->secretKey, '')
+            ->timeout(6)
             ->get('https://api.stripe.com/v1/checkout/sessions/' . $reference);
 
         if ($response->failed()) {
