@@ -1,6 +1,7 @@
 @php
     $roomInstances = [];
     $firstRoomMaxPax = 10;
+    $roomLineTotals = []; // fee-exclusive per-line totals for display
     $itemManifests = []; // per-item manifests for extra rooms, activities and addons
     $hasRoom = false;
 
@@ -17,6 +18,8 @@
             $extraFee = (float) ($room->extra_person_fee ?: 0.00);
             $qty = max(1, (int) $cItem->quantity);
 
+            $roomLineTotals[$cItem->id] = (float) $room->base_price * $nights * $qty;
+
             if (!$hasRoom) {
                 // First room uses the main Lead Traveler & Hotel Guest Manifest component
                 $firstRoomMaxPax = $roomMaxOccupancy;
@@ -29,6 +32,7 @@
                     'base_occupancy' => $baseOccupancy,
                     'extra_person_fee' => $extraFee,
                     'nights' => $nights,
+                    'selected_pax' => $pax,
                 ];
 
                 // If this first room item has quantity > 1, add manifests for Room 2..N
@@ -50,6 +54,7 @@
                         'base_occupancy' => $baseOccupancy,
                         'extra_person_fee' => $extraFee,
                         'nights' => $nights,
+                        'selected_pax' => $pax,
                     ];
                 }
             } else {
@@ -72,6 +77,7 @@
                         'base_occupancy' => $baseOccupancy,
                         'extra_person_fee' => $extraFee,
                         'nights' => $nights,
+                        'selected_pax' => $pax,
                     ];
                 }
             }
@@ -460,7 +466,7 @@
                                     </div>
                                 </div>
                                 <span
-                                    class="font-bold text-slate-900 shrink-0">₱{{ number_format($item->subtotal, 2) }}</span>
+                                    class="font-bold text-slate-900 shrink-0">₱{{ number_format($roomLineTotals[$item->id] ?? $item->subtotal, 2) }}</span>
                             </div>
                         @endforeach
                     </div>
@@ -568,7 +574,7 @@
                 get extraPersonFeeTotal() {
                     let fee = 0;
                     this.roomInstances.forEach(inst => {
-                        const count = this.manifestGuestsMap[inst.key] || 1;
+                        const count = Math.max(this.manifestGuestsMap[inst.key] || 1, inst.selected_pax || 1);
                         if (count > inst.base_occupancy && inst.extra_person_fee > 0) {
                             const extraPaxCount = count - inst.base_occupancy;
                             fee += (extraPaxCount * inst.extra_person_fee * inst.nights);
@@ -580,7 +586,7 @@
                 get extraPersonFeeBreakdownItems() {
                     const items = [];
                     this.roomInstances.forEach(inst => {
-                        const count = this.manifestGuestsMap[inst.key] || 1;
+                        const count = Math.max(this.manifestGuestsMap[inst.key] || 1, inst.selected_pax || 1);
                         if (count > inst.base_occupancy && inst.extra_person_fee > 0) {
                             const extraPaxCount = count - inst.base_occupancy;
                             const feePerNight = Number(inst.extra_person_fee);

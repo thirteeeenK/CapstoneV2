@@ -25,9 +25,9 @@ class AdminFaqController extends Controller
 
         if ($search) {
             $query->where(function ($q) use ($search) {
-                $q->where('question', 'like', "%{$search}%")
-                    ->orWhere('answer', 'like', "%{$search}%")
-                    ->orWhere('keywords', 'like', "%{$search}%");
+                $q->where('question', 'ilike', "%{$search}%")
+                    ->orWhere('answer', 'ilike', "%{$search}%")
+                    ->orWhere('keywords', 'ilike', "%{$search}%");
             });
         }
 
@@ -48,6 +48,10 @@ class AdminFaqController extends Controller
             'visible' => Faq::where('is_active', true)->count(),
             'hidden' => Faq::where('is_active', false)->count(),
         ];
+
+        if ($request->ajax()) {
+            return view('admin.faqs._table', compact('faqs', 'categories', 'search', 'category', 'visibility'));
+        }
 
         return view('admin.faqs.index', compact('faqs', 'categories', 'search', 'category', 'visibility', 'stats'));
     }

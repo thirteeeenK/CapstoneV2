@@ -1,0 +1,814 @@
+- generic [active] [ref=f10e1]:
+  - banner [ref=f10e2]:
+    - generic [ref=f10e3]:
+      - generic [ref=f10e4]:
+        - generic [ref=f10e5]: admin_panel_settings
+        - generic [ref=f10e6]:
+          - generic [ref=f10e7]: SunnyTrips
+          - generic [ref=f10e8]: Admin
+      - generic [ref=f10e9]:
+        - generic [ref=f10e10]:
+          - generic [ref=f10e11]: A
+          - generic "sunnytrips@gmail.com" [ref=f10e12]: Administrator
+        - button "logout Sign out" [ref=f10e15] [cursor=pointer]:
+          - generic [ref=f10e16]: logout
+          - generic [ref=f10e17]: Sign out
+  - complementary [ref=f10e18]:
+    - generic [ref=f10e19]:
+      - heading "SunnyTrips" [level=1] [ref=f10e20]
+      - paragraph [ref=f10e21]: Admin Portal
+    - navigation [ref=f10e22]:
+      - generic [ref=f10e23]:
+        - heading "Overview" [level=2] [ref=f10e24]
+        - generic [ref=f10e25]:
+          - link "dashboard Dashboard" [ref=f10e26] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/dashboard
+            - generic [ref=f10e27]: dashboard
+            - generic [ref=f10e28]: Dashboard
+          - link "psychology AI Insights" [ref=f10e29] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=f10e30]: psychology
+            - generic [ref=f10e31]: AI Insights
+          - link "analytics Generate Reports" [ref=f10e32] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/reports
+            - generic [ref=f10e33]: analytics
+            - generic [ref=f10e34]: Generate Reports
+      - generic [ref=f10e35]:
+        - heading "Operations" [level=2] [ref=f10e36]
+        - generic [ref=f10e37]:
+          - link "calendar_month Bookings" [ref=f10e38] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/bookings
+            - generic [ref=f10e39]: calendar_month
+            - generic [ref=f10e40]: Bookings
+          - link "group Registered Users" [ref=f10e41] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/registered-users
+            - generic [ref=f10e42]: group
+            - generic [ref=f10e43]: Registered Users
+          - link "support_agent Support Inbox" [ref=f10e44] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/support
+            - generic [ref=f10e45]: support_agent
+            - generic [ref=f10e46]: Support Inbox
+          - link "quiz FAQ Manager" [ref=f10e47] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/faqs
+            - generic [ref=f10e48]: quiz
+            - generic [ref=f10e49]: FAQ Manager
+          - link "inventory Manage Inventory" [ref=f10e50] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/inventory
+            - generic [ref=f10e51]: inventory
+            - generic [ref=f10e52]: Manage Inventory
+          - link "tune Passenger Rules & Discounts" [ref=f10e53] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/passenger-rules
+            - generic [ref=f10e54]: tune
+            - generic [ref=f10e55]: Passenger Rules & Discounts
+      - generic [ref=f10e56]:
+        - heading "Catalog" [level=2] [ref=f10e57]
+        - generic [ref=f10e58]:
+          - link "place Destinations" [ref=f10e59] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/destinations
+            - generic [ref=f10e60]: place
+            - generic [ref=f10e61]: Destinations
+          - link "house Add Hotel Information" [ref=f10e62] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/hotels/manage
+            - generic [ref=f10e63]: house
+            - generic [ref=f10e64]: Add Hotel Information
+          - link "hotel Show Hotel Listing" [ref=f10e65] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/hotels
+            - generic [ref=f10e66]: hotel
+            - generic [ref=f10e67]: Show Hotel Listing
+          - link "card_travel Tour Packages & Promos" [ref=f10e68] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/packages
+            - generic [ref=f10e69]: card_travel
+            - generic [ref=f10e70]: Tour Packages & Promos
+          - link "explore Activities & Tours" [ref=f10e71] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/activities
+            - generic [ref=f10e72]: explore
+            - generic [ref=f10e73]: Activities & Tours
+          - link "extension Transfers and Add-ons" [ref=f10e74] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/addons
+            - generic [ref=f10e75]: extension
+            - generic [ref=f10e76]: Transfers and Add-ons
+          - link "psychology Manage AI" [ref=f10e77] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=f10e78]: psychology
+            - generic [ref=f10e79]: Manage AI
+      - generic [ref=f10e80]:
+        - heading "Legal" [level=2] [ref=f10e81]
+        - link "gavel Legal Documents" [ref=f10e83] [cursor=pointer]:
+          - /url: http://localhost:8000/admin/legal
+          - generic [ref=f10e84]: gavel
+          - generic [ref=f10e85]: Legal Documents
+      - generic [ref=f10e86]:
+        - heading "Community" [level=2] [ref=f10e87]
+        - link "reviews Reviews & Sentiment" [ref=f10e89] [cursor=pointer]:
+          - /url: http://localhost:8000/admin/reviews
+          - generic [ref=f10e90]: reviews
+          - generic [ref=f10e91]: Reviews & Sentiment
+  - main [ref=f10e92]:
+    - generic [ref=f10e94]:
+      - generic [ref=f10e95]:
+        - generic [ref=f10e96]:
+          - heading "Activities & Tours" [level=1] [ref=f10e97]
+          - paragraph [ref=f10e98]: Manage destination activities, pricing, activity levels, and AI embeddings.
+        - link "add Add New Activity" [ref=f10e99] [cursor=pointer]:
+          - /url: http://localhost:8000/admin/activities/create
+          - generic [ref=f10e100]: add
+          - text: Add New Activity
+      - generic [ref=f10e101]:
+        - generic [ref=f10e102]:
+          - generic [ref=f10e103]:
+            - generic [ref=f10e104]:
+              - generic [ref=f10e105]: location_on
+              - text: "LOCATION:"
+            - link "All Locations" [ref=f10e106] [cursor=pointer]:
+              - /url: http://localhost:8000/admin/activities
+            - link "Boracay" [ref=f10e107] [cursor=pointer]:
+              - /url: http://localhost:8000/admin/activities?destination_id=2
+            - link "El Nido" [ref=f10e108] [cursor=pointer]:
+              - /url: http://localhost:8000/admin/activities?destination_id=1
+          - generic [ref=f10e109]:
+            - generic [ref=f10e110]:
+              - generic [ref=f10e111]: search
+              - textbox "Search activity, level, or tags..." [ref=f10e112]
+              - link "close" [ref=f10e113] [cursor=pointer]:
+                - /url: http://localhost:8000/admin/activities
+            - button "Search" [ref=f10e115] [cursor=pointer]
+        - generic [ref=f10e116]:
+          - generic [ref=f10e117]:
+            - generic [ref=f10e118]: signal_cellular_alt
+            - text: "ACTIVITY LEVEL:"
+          - link "All Levels" [ref=f10e119] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/activities
+          - link "Relaxing" [ref=f10e120] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/activities?level=Relaxing
+          - link "Sightseeing" [ref=f10e121] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/activities?level=Sightseeing
+          - link "Adventure" [ref=f10e122] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/activities?level=Adventure
+          - link "Extreme" [ref=f10e123] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/activities?level=Extreme
+          - link "Underwater" [ref=f10e124] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/activities?level=Underwater
+          - link "restart_alt Reset Filters" [ref=f10e125] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/activities
+            - generic [ref=f10e126]: restart_alt
+            - text: Reset Filters
+      - table [ref=f10e131]:
+        - rowgroup [ref=f10e132]:
+          - row [ref=f10e133]:
+            - columnheader "#" [ref=f10e134]
+            - columnheader "Activity Name" [ref=f10e135]
+            - columnheader "Level" [ref=f10e136]
+            - columnheader "Rate" [ref=f10e137]
+            - columnheader "Visibility" [ref=f10e138]
+            - columnheader "Actions" [ref=f10e139]
+        - rowgroup [ref=f10e140]:
+          - row [ref=f10e141]:
+            - cell "location_on El Nido" [ref=f10e142]:
+              - generic [ref=f10e143]:
+                - generic [ref=f10e144]: location_on
+                - generic [ref=f10e145]: El Nido
+          - row [ref=f10e146]:
+            - cell "1" [ref=f10e147]
+            - cell "El Nido Tour A (Lagoons & Beaches) psychology AI Embedded" [ref=f10e148]:
+              - generic [ref=f10e149]:
+                - generic [ref=f10e150]: El Nido Tour A (Lagoons & Beaches)
+                - generic "AI Vector Embedding Active" [ref=f10e151]:
+                  - generic [ref=f10e152]: psychology
+                  - text: AI Embedded
+            - cell [ref=f10e153]
+            - cell "₱1,200/person" [ref=f10e156]
+            - cell [ref=f10e157]
+            - cell [ref=f10e160]:
+              - generic [ref=f10e161]:
+                - link "edit Edit" [ref=f10e162] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/activities/23/edit
+                  - generic [ref=f10e163]: edit
+                  - text: Edit
+                - button "delete Delete" [ref=f10e165] [cursor=pointer]:
+                  - generic [ref=f10e166]: delete
+                  - text: Delete
+          - row [ref=f10e167]:
+            - cell "2" [ref=f10e168]
+            - cell "El Nido Tour B (Caves & Coves) psychology AI Embedded" [ref=f10e169]:
+              - generic [ref=f10e170]:
+                - generic [ref=f10e171]: El Nido Tour B (Caves & Coves)
+                - generic "AI Vector Embedding Active" [ref=f10e172]:
+                  - generic [ref=f10e173]: psychology
+                  - text: AI Embedded
+            - cell [ref=f10e174]
+            - cell "₱1,300/person" [ref=f10e177]
+            - cell [ref=f10e178]
+            - cell [ref=f10e181]:
+              - generic [ref=f10e182]:
+                - link "edit Edit" [ref=f10e183] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/activities/24/edit
+                  - generic [ref=f10e184]: edit
+                  - text: Edit
+                - button "delete Delete" [ref=f10e186] [cursor=pointer]:
+                  - generic [ref=f10e187]: delete
+                  - text: Delete
+          - row [ref=f10e188]:
+            - cell "3" [ref=f10e189]
+            - cell "El Nido Tour C (Hidden Beaches & Shrines) psychology AI Embedded" [ref=f10e190]:
+              - generic [ref=f10e191]:
+                - generic [ref=f10e192]: El Nido Tour C (Hidden Beaches & Shrines)
+                - generic "AI Vector Embedding Active" [ref=f10e193]:
+                  - generic [ref=f10e194]: psychology
+                  - text: AI Embedded
+            - cell [ref=f10e195]
+            - cell "₱1,400/person" [ref=f10e198]
+            - cell [ref=f10e199]
+            - cell [ref=f10e202]:
+              - generic [ref=f10e203]:
+                - link "edit Edit" [ref=f10e204] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/activities/25/edit
+                  - generic [ref=f10e205]: edit
+                  - text: Edit
+                - button "delete Delete" [ref=f10e207] [cursor=pointer]:
+                  - generic [ref=f10e208]: delete
+                  - text: Delete
+          - row [ref=f10e209]:
+            - cell "4" [ref=f10e210]
+            - cell "El Nido Tour D (Island Beaches) psychology AI Embedded" [ref=f10e211]:
+              - generic [ref=f10e212]:
+                - generic [ref=f10e213]: El Nido Tour D (Island Beaches)
+                - generic "AI Vector Embedding Active" [ref=f10e214]:
+                  - generic [ref=f10e215]: psychology
+                  - text: AI Embedded
+            - cell [ref=f10e216]
+            - cell "₱1,200/person" [ref=f10e219]
+            - cell [ref=f10e220]
+            - cell [ref=f10e223]:
+              - generic [ref=f10e224]:
+                - link "edit Edit" [ref=f10e225] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/activities/26/edit
+                  - generic [ref=f10e226]: edit
+                  - text: Edit
+                - button "delete Delete" [ref=f10e228] [cursor=pointer]:
+                  - generic [ref=f10e229]: delete
+                  - text: Delete
+          - row [ref=f10e230]:
+            - cell "5" [ref=f10e231]
+            - cell "Taraw Cliff Canopy Walk psychology AI Embedded" [ref=f10e232]:
+              - generic [ref=f10e233]:
+                - generic [ref=f10e234]: Taraw Cliff Canopy Walk
+                - generic "AI Vector Embedding Active" [ref=f10e235]:
+                  - generic [ref=f10e236]: psychology
+                  - text: AI Embedded
+            - cell [ref=f10e237]
+            - cell "₱500/person" [ref=f10e240]
+            - cell [ref=f10e241]
+            - cell [ref=f10e244]:
+              - generic [ref=f10e245]:
+                - link "edit Edit" [ref=f10e246] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/activities/27/edit
+                  - generic [ref=f10e247]: edit
+                  - text: Edit
+                - button "delete Delete" [ref=f10e249] [cursor=pointer]:
+                  - generic [ref=f10e250]: delete
+                  - text: Delete
+          - row [ref=f10e251]:
+            - cell "6" [ref=f10e252]
+            - cell "Nacpan Beach Inland Tour psychology AI Embedded" [ref=f10e253]:
+              - generic [ref=f10e254]:
+                - generic [ref=f10e255]: Nacpan Beach Inland Tour
+                - generic "AI Vector Embedding Active" [ref=f10e256]:
+                  - generic [ref=f10e257]: psychology
+                  - text: AI Embedded
+            - cell [ref=f10e258]
+            - cell "₱600/person (Joiner) | ₱1,500 (Private Tricycle)" [ref=f10e261]
+            - cell [ref=f10e262]
+            - cell [ref=f10e265]:
+              - generic [ref=f10e266]:
+                - link "edit Edit" [ref=f10e267] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/activities/28/edit
+                  - generic [ref=f10e268]: edit
+                  - text: Edit
+                - button "delete Delete" [ref=f10e270] [cursor=pointer]:
+                  - generic [ref=f10e271]: delete
+                  - text: Delete
+          - row [ref=f10e272]:
+            - cell "7" [ref=f10e273]
+            - cell "Discover Scuba Diving (DSD) psychology AI Embedded" [ref=f10e274]:
+              - generic [ref=f10e275]:
+                - generic [ref=f10e276]: Discover Scuba Diving (DSD)
+                - generic "AI Vector Embedding Active" [ref=f10e277]:
+                  - generic [ref=f10e278]: psychology
+                  - text: AI Embedded
+            - cell [ref=f10e279]
+            - cell "₱4,500/person" [ref=f10e282]
+            - cell [ref=f10e283]
+            - cell [ref=f10e286]:
+              - generic [ref=f10e287]:
+                - link "edit Edit" [ref=f10e288] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/activities/29/edit
+                  - generic [ref=f10e289]: edit
+                  - text: Edit
+                - button "delete Delete" [ref=f10e291] [cursor=pointer]:
+                  - generic [ref=f10e292]: delete
+                  - text: Delete
+          - row [ref=f10e293]:
+            - cell "8" [ref=f10e294]
+            - cell "Clear Kayak Rental psychology AI Embedded" [ref=f10e295]:
+              - generic [ref=f10e296]:
+                - generic [ref=f10e297]: Clear Kayak Rental
+                - generic "AI Vector Embedding Active" [ref=f10e298]:
+                  - generic [ref=f10e299]: psychology
+                  - text: AI Embedded
+            - cell [ref=f10e300]
+            - cell "₱300 - ₱500/hour" [ref=f10e303]
+            - cell [ref=f10e304]
+            - cell [ref=f10e307]:
+              - generic [ref=f10e308]:
+                - link "edit Edit" [ref=f10e309] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/activities/30/edit
+                  - generic [ref=f10e310]: edit
+                  - text: Edit
+                - button "delete Delete" [ref=f10e312] [cursor=pointer]:
+                  - generic [ref=f10e313]: delete
+                  - text: Delete
+          - row [ref=f10e314]:
+            - cell "9" [ref=f10e315]
+            - cell "Sunset Cruise / Party Boat psychology AI Embedded" [ref=f10e316]:
+              - generic [ref=f10e317]:
+                - generic [ref=f10e318]: Sunset Cruise / Party Boat
+                - generic "AI Vector Embedding Active" [ref=f10e319]:
+                  - generic [ref=f10e320]: psychology
+                  - text: AI Embedded
+            - cell [ref=f10e321]
+            - cell "₱1,500/person" [ref=f10e324]
+            - cell [ref=f10e325]
+            - cell [ref=f10e328]:
+              - generic [ref=f10e329]:
+                - link "edit Edit" [ref=f10e330] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/activities/31/edit
+                  - generic [ref=f10e331]: edit
+                  - text: Edit
+                - button "delete Delete" [ref=f10e333] [cursor=pointer]:
+                  - generic [ref=f10e334]: delete
+                  - text: Delete
+          - row [ref=f10e335]:
+            - cell "10" [ref=f10e336]
+            - cell "Stand-Up Paddleboarding (SUP) psychology AI Embedded" [ref=f10e337]:
+              - generic [ref=f10e338]:
+                - generic [ref=f10e339]: Stand-Up Paddleboarding (SUP)
+                - generic "AI Vector Embedding Active" [ref=f10e340]:
+                  - generic [ref=f10e341]: psychology
+                  - text: AI Embedded
+            - cell [ref=f10e342]
+            - cell "₱400/hour" [ref=f10e345]
+            - cell [ref=f10e346]
+            - cell [ref=f10e349]:
+              - generic [ref=f10e350]:
+                - link "edit Edit" [ref=f10e351] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/activities/32/edit
+                  - generic [ref=f10e352]: edit
+                  - text: Edit
+                - button "delete Delete" [ref=f10e354] [cursor=pointer]:
+                  - generic [ref=f10e355]: delete
+                  - text: Delete
+          - row [ref=f10e356]:
+            - cell "location_on Boracay" [ref=f10e357]:
+              - generic [ref=f10e358]:
+                - generic [ref=f10e359]: location_on
+                - generic [ref=f10e360]: Boracay
+          - row [ref=f10e361]:
+            - cell "1" [ref=f10e362]
+            - cell "Joiners Island Hopping psychology AI Embedded" [ref=f10e363]:
+              - generic [ref=f10e364]:
+                - generic [ref=f10e365]: Joiners Island Hopping
+                - generic "AI Vector Embedding Active" [ref=f10e366]:
+                  - generic [ref=f10e367]: psychology
+                  - text: AI Embedded
+            - cell [ref=f10e368]
+            - cell "₱850/person" [ref=f10e371]
+            - cell [ref=f10e372]
+            - cell [ref=f10e375]:
+              - generic [ref=f10e376]:
+                - link "edit Edit" [ref=f10e377] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/activities/1/edit
+                  - generic [ref=f10e378]: edit
+                  - text: Edit
+                - button "delete Delete" [ref=f10e380] [cursor=pointer]:
+                  - generic [ref=f10e381]: delete
+                  - text: Delete
+          - row [ref=f10e382]:
+            - cell "2" [ref=f10e383]
+            - cell "6–7 Destinations (E-Trike) psychology AI Embedded" [ref=f10e384]:
+              - generic [ref=f10e385]:
+                - generic [ref=f10e386]: 6–7 Destinations (E-Trike)
+                - generic "AI Vector Embedding Active" [ref=f10e387]:
+                  - generic [ref=f10e388]: psychology
+                  - text: AI Embedded
+            - cell [ref=f10e389]
+            - cell "₱2,000" [ref=f10e392]
+            - cell [ref=f10e393]
+            - cell [ref=f10e396]:
+              - generic [ref=f10e397]:
+                - link "edit Edit" [ref=f10e398] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/activities/2/edit
+                  - generic [ref=f10e399]: edit
+                  - text: Edit
+                - button "delete Delete" [ref=f10e401] [cursor=pointer]:
+                  - generic [ref=f10e402]: delete
+                  - text: Delete
+          - row [ref=f10e403]:
+            - cell "3" [ref=f10e404]
+            - cell "6–7 Destinations (FB Van/Multicab) psychology AI Embedded" [ref=f10e405]:
+              - generic [ref=f10e406]:
+                - generic [ref=f10e407]: 6–7 Destinations (FB Van/Multicab)
+                - generic "AI Vector Embedding Active" [ref=f10e408]:
+                  - generic [ref=f10e409]: psychology
+                  - text: AI Embedded
+            - cell [ref=f10e410]
+            - cell "₱3,000" [ref=f10e413]
+            - cell [ref=f10e414]
+            - cell [ref=f10e417]:
+              - generic [ref=f10e418]:
+                - link "edit Edit" [ref=f10e419] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/activities/3/edit
+                  - generic [ref=f10e420]: edit
+                  - text: Edit
+                - button "delete Delete" [ref=f10e422] [cursor=pointer]:
+                  - generic [ref=f10e423]: delete
+                  - text: Delete
+          - row [ref=f10e424]:
+            - cell "4" [ref=f10e425]
+            - cell "6–7 Destinations (Aircon Van) psychology AI Embedded" [ref=f10e426]:
+              - generic [ref=f10e427]:
+                - generic [ref=f10e428]: 6–7 Destinations (Aircon Van)
+                - generic "AI Vector Embedding Active" [ref=f10e429]:
+                  - generic [ref=f10e430]: psychology
+                  - text: AI Embedded
+            - cell [ref=f10e431]
+            - cell "₱3,700" [ref=f10e434]
+            - cell [ref=f10e435]
+            - cell [ref=f10e438]:
+              - generic [ref=f10e439]:
+                - link "edit Edit" [ref=f10e440] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/activities/4/edit
+                  - generic [ref=f10e441]: edit
+                  - text: Edit
+                - button "delete Delete" [ref=f10e443] [cursor=pointer]:
+                  - generic [ref=f10e444]: delete
+                  - text: Delete
+          - row [ref=f10e445]:
+            - cell "5" [ref=f10e446]
+            - cell "Parasailing psychology AI Embedded" [ref=f10e447]:
+              - generic [ref=f10e448]:
+                - generic [ref=f10e449]: Parasailing
+                - generic "AI Vector Embedding Active" [ref=f10e450]:
+                  - generic [ref=f10e451]: psychology
+                  - text: AI Embedded
+            - cell [ref=f10e452]
+            - cell "₱1,700/person" [ref=f10e455]
+            - cell [ref=f10e456]
+            - cell [ref=f10e459]:
+              - generic [ref=f10e460]:
+                - link "edit Edit" [ref=f10e461] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/activities/5/edit
+                  - generic [ref=f10e462]: edit
+                  - text: Edit
+                - button "delete Delete" [ref=f10e464] [cursor=pointer]:
+                  - generic [ref=f10e465]: delete
+                  - text: Delete
+          - row [ref=f10e466]:
+            - cell "6" [ref=f10e467]
+            - cell "Parasailing (Solo) psychology AI Embedded" [ref=f10e468]:
+              - generic [ref=f10e469]:
+                - generic [ref=f10e470]: Parasailing (Solo)
+                - generic "AI Vector Embedding Active" [ref=f10e471]:
+                  - generic [ref=f10e472]: psychology
+                  - text: AI Embedded
+            - cell [ref=f10e473]
+            - cell "₱2,500" [ref=f10e476]
+            - cell [ref=f10e477]
+            - cell [ref=f10e480]:
+              - generic [ref=f10e481]:
+                - link "edit Edit" [ref=f10e482] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/activities/6/edit
+                  - generic [ref=f10e483]: edit
+                  - text: Edit
+                - button "delete Delete" [ref=f10e485] [cursor=pointer]:
+                  - generic [ref=f10e486]: delete
+                  - text: Delete
+          - row [ref=f10e487]:
+            - cell "7" [ref=f10e488]
+            - cell "Banana Boat psychology AI Embedded" [ref=f10e489]:
+              - generic [ref=f10e490]:
+                - generic [ref=f10e491]: Banana Boat
+                - generic "AI Vector Embedding Active" [ref=f10e492]:
+                  - generic [ref=f10e493]: psychology
+                  - text: AI Embedded
+            - cell [ref=f10e494]
+            - cell "₱450/person" [ref=f10e497]
+            - cell [ref=f10e498]
+            - cell [ref=f10e501]:
+              - generic [ref=f10e502]:
+                - link "edit Edit" [ref=f10e503] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/activities/7/edit
+                  - generic [ref=f10e504]: edit
+                  - text: Edit
+                - button "delete Delete" [ref=f10e506] [cursor=pointer]:
+                  - generic [ref=f10e507]: delete
+                  - text: Delete
+          - row [ref=f10e508]:
+            - cell "8" [ref=f10e509]
+            - cell "UFO Ride psychology AI Embedded" [ref=f10e510]:
+              - generic [ref=f10e511]:
+                - generic [ref=f10e512]: UFO Ride
+                - generic "AI Vector Embedding Active" [ref=f10e513]:
+                  - generic [ref=f10e514]: psychology
+                  - text: AI Embedded
+            - cell [ref=f10e515]
+            - cell "₱650/person" [ref=f10e518]
+            - cell [ref=f10e519]
+            - cell [ref=f10e522]:
+              - generic [ref=f10e523]:
+                - link "edit Edit" [ref=f10e524] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/activities/8/edit
+                  - generic [ref=f10e525]: edit
+                  - text: Edit
+                - button "delete Delete" [ref=f10e527] [cursor=pointer]:
+                  - generic [ref=f10e528]: delete
+                  - text: Delete
+          - row [ref=f10e529]:
+            - cell "9" [ref=f10e530]
+            - cell "Jet Ski (15 mins) psychology AI Embedded" [ref=f10e531]:
+              - generic [ref=f10e532]:
+                - generic [ref=f10e533]: Jet Ski (15 mins)
+                - generic "AI Vector Embedding Active" [ref=f10e534]:
+                  - generic [ref=f10e535]: psychology
+                  - text: AI Embedded
+            - cell [ref=f10e536]
+            - cell "₱2,200" [ref=f10e539]
+            - cell [ref=f10e540]
+            - cell [ref=f10e543]:
+              - generic [ref=f10e544]:
+                - link "edit Edit" [ref=f10e545] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/activities/9/edit
+                  - generic [ref=f10e546]: edit
+                  - text: Edit
+                - button "delete Delete" [ref=f10e548] [cursor=pointer]:
+                  - generic [ref=f10e549]: delete
+                  - text: Delete
+          - row [ref=f10e550]:
+            - cell "10" [ref=f10e551]
+            - cell "Jet Ski (30 mins) psychology AI Embedded" [ref=f10e552]:
+              - generic [ref=f10e553]:
+                - generic [ref=f10e554]: Jet Ski (30 mins)
+                - generic "AI Vector Embedding Active" [ref=f10e555]:
+                  - generic [ref=f10e556]: psychology
+                  - text: AI Embedded
+            - cell [ref=f10e557]
+            - cell "₱3,800" [ref=f10e560]
+            - cell [ref=f10e561]
+            - cell [ref=f10e564]:
+              - generic [ref=f10e565]:
+                - link "edit Edit" [ref=f10e566] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/activities/10/edit
+                  - generic [ref=f10e567]: edit
+                  - text: Edit
+                - button "delete Delete" [ref=f10e569] [cursor=pointer]:
+                  - generic [ref=f10e570]: delete
+                  - text: Delete
+          - row [ref=f10e571]:
+            - cell "11" [ref=f10e572]
+            - cell "Party Yacht psychology AI Embedded" [ref=f10e573]:
+              - generic [ref=f10e574]:
+                - generic [ref=f10e575]: Party Yacht
+                - generic "AI Vector Embedding Active" [ref=f10e576]:
+                  - generic [ref=f10e577]: psychology
+                  - text: AI Embedded
+            - cell [ref=f10e578]
+            - cell "₱1,300/person" [ref=f10e581]
+            - cell [ref=f10e582]
+            - cell [ref=f10e585]:
+              - generic [ref=f10e586]:
+                - link "edit Edit" [ref=f10e587] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/activities/11/edit
+                  - generic [ref=f10e588]: edit
+                  - text: Edit
+                - button "delete Delete" [ref=f10e590] [cursor=pointer]:
+                  - generic [ref=f10e591]: delete
+                  - text: Delete
+          - row [ref=f10e592]:
+            - cell "12" [ref=f10e593]
+            - cell "Party Boat psychology AI Embedded" [ref=f10e594]:
+              - generic [ref=f10e595]:
+                - generic [ref=f10e596]: Party Boat
+                - generic "AI Vector Embedding Active" [ref=f10e597]:
+                  - generic [ref=f10e598]: psychology
+                  - text: AI Embedded
+            - cell [ref=f10e599]
+            - cell "₱800/person" [ref=f10e602]
+            - cell [ref=f10e603]
+            - cell [ref=f10e606]:
+              - generic [ref=f10e607]:
+                - link "edit Edit" [ref=f10e608] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/activities/12/edit
+                  - generic [ref=f10e609]: edit
+                  - text: Edit
+                - button "delete Delete" [ref=f10e611] [cursor=pointer]:
+                  - generic [ref=f10e612]: delete
+                  - text: Delete
+          - row [ref=f10e613]:
+            - cell "13" [ref=f10e614]
+            - cell "Helmet Diving psychology AI Embedded" [ref=f10e615]:
+              - generic [ref=f10e616]:
+                - generic [ref=f10e617]: Helmet Diving
+                - generic "AI Vector Embedding Active" [ref=f10e618]:
+                  - generic [ref=f10e619]: psychology
+                  - text: AI Embedded
+            - cell [ref=f10e620]
+            - cell "₱850/person" [ref=f10e623]
+            - cell [ref=f10e624]
+            - cell [ref=f10e627]:
+              - generic [ref=f10e628]:
+                - link "edit Edit" [ref=f10e629] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/activities/13/edit
+                  - generic [ref=f10e630]: edit
+                  - text: Edit
+                - button "delete Delete" [ref=f10e632] [cursor=pointer]:
+                  - generic [ref=f10e633]: delete
+                  - text: Delete
+          - row [ref=f10e634]:
+            - cell "14" [ref=f10e635]
+            - cell "Scuba Diving psychology AI Embedded" [ref=f10e636]:
+              - generic [ref=f10e637]:
+                - generic [ref=f10e638]: Scuba Diving
+                - generic "AI Vector Embedding Active" [ref=f10e639]:
+                  - generic [ref=f10e640]: psychology
+                  - text: AI Embedded
+            - cell [ref=f10e641]
+            - cell "₱1,350/person" [ref=f10e644]
+            - cell [ref=f10e645]
+            - cell [ref=f10e648]:
+              - generic [ref=f10e649]:
+                - link "edit Edit" [ref=f10e650] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/activities/14/edit
+                  - generic [ref=f10e651]: edit
+                  - text: Edit
+                - button "delete Delete" [ref=f10e653] [cursor=pointer]:
+                  - generic [ref=f10e654]: delete
+                  - text: Delete
+          - row [ref=f10e655]:
+            - cell "15" [ref=f10e656]
+            - cell "ATV + Zipline Package (Shingley Company) psychology AI Embedded" [ref=f10e657]:
+              - generic [ref=f10e658]:
+                - generic [ref=f10e659]: ATV + Zipline Package (Shingley Company)
+                - generic "AI Vector Embedding Active" [ref=f10e660]:
+                  - generic [ref=f10e661]: psychology
+                  - text: AI Embedded
+            - cell [ref=f10e662]
+            - cell "₱1,100/person" [ref=f10e665]
+            - cell [ref=f10e666]
+            - cell [ref=f10e669]:
+              - generic [ref=f10e670]:
+                - link "edit Edit" [ref=f10e671] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/activities/15/edit
+                  - generic [ref=f10e672]: edit
+                  - text: Edit
+                - button "delete Delete" [ref=f10e674] [cursor=pointer]:
+                  - generic [ref=f10e675]: delete
+                  - text: Delete
+          - row [ref=f10e676]:
+            - cell "16" [ref=f10e677]
+            - cell "ATV + Zipline Package (Mega Paraw Company) psychology AI Embedded" [ref=f10e678]:
+              - generic [ref=f10e679]:
+                - generic [ref=f10e680]: ATV + Zipline Package (Mega Paraw Company)
+                - generic "AI Vector Embedding Active" [ref=f10e681]:
+                  - generic [ref=f10e682]: psychology
+                  - text: AI Embedded
+            - cell [ref=f10e683]
+            - cell "₱1,000/person" [ref=f10e686]
+            - cell [ref=f10e687]
+            - cell [ref=f10e690]:
+              - generic [ref=f10e691]:
+                - link "edit Edit" [ref=f10e692] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/activities/16/edit
+                  - generic [ref=f10e693]: edit
+                  - text: Edit
+                - button "delete Delete" [ref=f10e695] [cursor=pointer]:
+                  - generic [ref=f10e696]: delete
+                  - text: Delete
+          - row [ref=f10e697]:
+            - cell "17" [ref=f10e698]
+            - cell "ATV Only (Mainland) psychology AI Embedded" [ref=f10e699]:
+              - generic [ref=f10e700]:
+                - generic [ref=f10e701]: ATV Only (Mainland)
+                - generic "AI Vector Embedding Active" [ref=f10e702]:
+                  - generic [ref=f10e703]: psychology
+                  - text: AI Embedded
+            - cell [ref=f10e704]
+            - cell "₱850" [ref=f10e707]
+            - cell [ref=f10e708]
+            - cell [ref=f10e711]:
+              - generic [ref=f10e712]:
+                - link "edit Edit" [ref=f10e713] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/activities/17/edit
+                  - generic [ref=f10e714]: edit
+                  - text: Edit
+                - button "delete Delete" [ref=f10e716] [cursor=pointer]:
+                  - generic [ref=f10e717]: delete
+                  - text: Delete
+          - row [ref=f10e718]:
+            - cell "18" [ref=f10e719]
+            - cell "Zipline Only psychology AI Embedded" [ref=f10e720]:
+              - generic [ref=f10e721]:
+                - generic [ref=f10e722]: Zipline Only
+                - generic "AI Vector Embedding Active" [ref=f10e723]:
+                  - generic [ref=f10e724]: psychology
+                  - text: AI Embedded
+            - cell [ref=f10e725]
+            - cell "₱750" [ref=f10e728]
+            - cell [ref=f10e729]
+            - cell [ref=f10e732]:
+              - generic [ref=f10e733]:
+                - link "edit Edit" [ref=f10e734] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/activities/18/edit
+                  - generic [ref=f10e735]: edit
+                  - text: Edit
+                - button "delete Delete" [ref=f10e737] [cursor=pointer]:
+                  - generic [ref=f10e738]: delete
+                  - text: Delete
+          - row [ref=f10e739]:
+            - cell "19" [ref=f10e740]
+            - cell "ATV (New Coast) psychology AI Embedded" [ref=f10e741]:
+              - generic [ref=f10e742]:
+                - generic [ref=f10e743]: ATV (New Coast)
+                - generic "AI Vector Embedding Active" [ref=f10e744]:
+                  - generic [ref=f10e745]: psychology
+                  - text: AI Embedded
+            - cell [ref=f10e746]
+            - cell "₱1,500/person" [ref=f10e749]
+            - cell [ref=f10e750]
+            - cell [ref=f10e753]:
+              - generic [ref=f10e754]:
+                - link "edit Edit" [ref=f10e755] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/activities/19/edit
+                  - generic [ref=f10e756]: edit
+                  - text: Edit
+                - button "delete Delete" [ref=f10e758] [cursor=pointer]:
+                  - generic [ref=f10e759]: delete
+                  - text: Delete
+          - row [ref=f10e760]:
+            - cell "20" [ref=f10e761]
+            - cell "Paraw Sailing (Private) psychology AI Embedded" [ref=f10e762]:
+              - generic [ref=f10e763]:
+                - generic [ref=f10e764]: Paraw Sailing (Private)
+                - generic "AI Vector Embedding Active" [ref=f10e765]:
+                  - generic [ref=f10e766]: psychology
+                  - text: AI Embedded
+            - cell [ref=f10e767]
+            - cell "₱750/person" [ref=f10e770]
+            - cell [ref=f10e771]
+            - cell [ref=f10e774]:
+              - generic [ref=f10e775]:
+                - link "edit Edit" [ref=f10e776] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/activities/20/edit
+                  - generic [ref=f10e777]: edit
+                  - text: Edit
+                - button "delete Delete" [ref=f10e779] [cursor=pointer]:
+                  - generic [ref=f10e780]: delete
+                  - text: Delete
+          - row [ref=f10e781]:
+            - cell "21" [ref=f10e782]
+            - cell "Paraw Sailing (Joiners) psychology AI Embedded" [ref=f10e783]:
+              - generic [ref=f10e784]:
+                - generic [ref=f10e785]: Paraw Sailing (Joiners)
+                - generic "AI Vector Embedding Active" [ref=f10e786]:
+                  - generic [ref=f10e787]: psychology
+                  - text: AI Embedded
+            - cell [ref=f10e788]
+            - cell "₱850/person" [ref=f10e791]
+            - cell [ref=f10e792]
+            - cell [ref=f10e795]:
+              - generic [ref=f10e796]:
+                - link "edit Edit" [ref=f10e797] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/activities/21/edit
+                  - generic [ref=f10e798]: edit
+                  - text: Edit
+                - button "delete Delete" [ref=f10e800] [cursor=pointer]:
+                  - generic [ref=f10e801]: delete
+                  - text: Delete
+          - row [ref=f10e802]:
+            - cell "22" [ref=f10e803]
+            - cell "Crystal Kayak psychology AI Embedded" [ref=f10e804]:
+              - generic [ref=f10e805]:
+                - generic [ref=f10e806]: Crystal Kayak
+                - generic "AI Vector Embedding Active" [ref=f10e807]:
+                  - generic [ref=f10e808]: psychology
+                  - text: AI Embedded
+            - cell [ref=f10e809]
+            - cell "₱300/person" [ref=f10e812]
+            - cell [ref=f10e813]
+            - cell [ref=f10e816]:
+              - generic [ref=f10e817]:
+                - link "edit Edit" [ref=f10e818] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/activities/22/edit
+                  - generic [ref=f10e819]: edit
+                  - text: Edit
+                - button "delete Delete" [ref=f10e821] [cursor=pointer]:
+                  - generic [ref=f10e822]: delete
+                  - text: Delete

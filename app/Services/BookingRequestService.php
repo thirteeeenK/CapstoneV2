@@ -108,21 +108,41 @@ class BookingRequestService
         }
 
         $bookingCode = $this->generateBookingCode();
-        $manifestCount = count($guestManifest);
         $totalAmount = 0.00;
         $calculatedItemSubtotals = [];
+        $isFirstRoomItem = true;
 
         foreach ($cartItems as $item) {
             $itemSubtotal = $item->subtotal;
             $effectivePax = max(1, (int) $item->selected_pax);
 
             if ($item->item_type === 'room' && $item->itemable && method_exists($item->itemable, 'calculateNightlyRate')) {
-                $effectivePax = max($effectivePax, $manifestCount);
                 $nights = ($item->check_in_date && $item->check_out_date)
                     ? max(1, (int) (strtotime($item->check_out_date) - strtotime($item->check_in_date)) / 86400)
                     : 1;
-                $unitRate = $item->itemable->calculateNightlyRate($effectivePax);
-                $itemSubtotal = $unitRate * $nights * max(1, $item->quantity);
+                $qty = max(1, (int) $item->quantity);
+
+                // Resolve one pax count per room instance, mirroring the checkout manifest forms:
+                // the first instance of the first room item uses the main Lead Traveler & Hotel
+                // Guest Manifest field; every other instance uses its own room_manifest_* field.
+                $instancePaxes = [];
+                if ($isFirstRoomItem) {
+                    $instancePaxes[] = max($effectivePax, $this->countManifestPax($validated['guest_manifest'] ?? ''));
+                    for ($rNum = 2; $rNum <= $qty; $rNum++) {
+                        $instancePaxes[] = max($effectivePax, $this->countManifestPax((string) ($request->input("room_manifest_{$item->id}_{$rNum}") ?? '')));
+                    }
+                    $isFirstRoomItem = false;
+                } else {
+                    for ($rNum = 1; $rNum <= $qty; $rNum++) {
+                        $instancePaxes[] = max($effectivePax, $this->countManifestPax((string) ($request->input("room_manifest_{$item->id}_{$rNum}") ?? '')));
+                    }
+                }
+
+                $itemSubtotal = 0.00;
+                foreach ($instancePaxes as $instancePax) {
+                    $itemSubtotal += $item->itemable->calculateNightlyRate($instancePax) * $nights;
+                }
+                $effectivePax = max($instancePaxes);
             }
 
             $calculatedItemSubtotals[$item->id] = [
@@ -186,6 +206,19 @@ class BookingRequestService
 
             return $booking;
         });
+    }
+
+    /**
+     * Count passengers with a filled name inside a serialized manifest payload.
+     */
+    private function countManifestPax(string $raw): int
+    {
+        $decoded = json_decode($raw, true);
+        if (!is_array($decoded)) {
+            return 0;
+        }
+
+        return count(array_filter($decoded, fn ($g) => !empty($g['full_name'])));
     }
 
     /**

@@ -66,7 +66,7 @@
             <div class="flex-1 relative">
                 <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>
                 <input type="text" name="search" x-model="search" value="{{ $search }}"
-                       @input="clearTimeout(timer); timer = setTimeout(() => fetchResults(), 400)"
+                       @input="clearTimeout(timer); timer = setTimeout(() => fetchResults(), 250)"
                        placeholder="Search booking code, guest name, or email..."
                        class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">
             </div>
@@ -92,7 +92,7 @@
         </form>
 
         {{-- Bookings Table --}}
-        <div :class="loading ? 'opacity-50 pointer-events-none transition-opacity' : 'transition-opacity'">
+        <div :class="loading ? 'opacity-60 transition-opacity' : 'transition-opacity'">
             @include('admin.bookings._table', compact('bookings'))
         </div>
     </div>

@@ -24,13 +24,17 @@ class AddOnController extends Controller
 
         if ($search) {
             $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('type', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
+                $q->where('name', 'ilike', "%{$search}%")
+                  ->orWhere('type', 'ilike', "%{$search}%")
+                  ->orWhere('description', 'ilike', "%{$search}%");
             });
         }
 
         $addons = $query->get();
+
+        if ($request->ajax()) {
+            return view('admin.addons._table', compact('addons', 'destinations', 'selectedDestinationId', 'search'));
+        }
 
         return view('admin.addons.index', compact('addons', 'destinations', 'selectedDestinationId', 'search'));
     }

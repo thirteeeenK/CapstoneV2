@@ -285,7 +285,7 @@
 
                                 {{-- Date Range Picker Component --}}
                                 <div class="pt-2" @date-range-changed.stop="roomCheckIn = $event.detail.checkIn; roomCheckOut = $event.detail.checkOut; roomAvailable = $event.detail.available">
-                                    <x-frontend.date-range-picker :room-id="null" :base-price="0" />
+                                    <x-frontend.date-range-picker :dynamic-room-id="'selectedRoom?.id'" :dynamic-base-price="'selectedRoom?.base_price || 0'" />
                                 </div>
 
                                 {{-- Action Button --}}

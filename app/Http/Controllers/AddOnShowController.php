@@ -22,7 +22,7 @@ class AddOnShowController extends Controller
         }
 
         if ($request->has('type') && !empty($request->type)) {
-            $query->where('type', 'like', '%' . $request->type . '%');
+            $query->where('type', 'ilike', '%' . $request->type . '%');
         }
 
         $addons = $query->orderBy('name', 'asc')->get();

@@ -1,0 +1,168 @@
+- generic [ref=f18e1]:
+  - banner [ref=f18e2]:
+    - generic [ref=f18e3]:
+      - generic [ref=f18e4]:
+        - generic [ref=f18e5]: admin_panel_settings
+        - generic [ref=f18e6]:
+          - generic [ref=f18e7]: SunnyTrips
+          - generic [ref=f18e8]: Admin
+      - generic [ref=f18e9]:
+        - generic [ref=f18e10]:
+          - generic [ref=f18e11]: A
+          - generic "sunnytrips@gmail.com" [ref=f18e12]: Administrator
+        - button "logout Sign out" [ref=f18e15] [cursor=pointer]:
+          - generic [ref=f18e16]: logout
+          - generic [ref=f18e17]: Sign out
+  - complementary [ref=f18e18]:
+    - generic [ref=f18e19]:
+      - heading "SunnyTrips" [level=1] [ref=f18e20]
+      - paragraph [ref=f18e21]: Admin Portal
+    - navigation [ref=f18e22]:
+      - generic [ref=f18e23]:
+        - heading "Overview" [level=2] [ref=f18e24]
+        - generic [ref=f18e25]:
+          - link "dashboard Dashboard" [ref=f18e26] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/dashboard
+            - generic [ref=f18e27]: dashboard
+            - generic [ref=f18e28]: Dashboard
+          - link "psychology AI Insights" [ref=f18e29] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=f18e30]: psychology
+            - generic [ref=f18e31]: AI Insights
+          - link "analytics Generate Reports" [ref=f18e32] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/reports
+            - generic [ref=f18e33]: analytics
+            - generic [ref=f18e34]: Generate Reports
+      - generic [ref=f18e35]:
+        - heading "Operations" [level=2] [ref=f18e36]
+        - generic [ref=f18e37]:
+          - link "calendar_month Bookings" [ref=f18e38] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/bookings
+            - generic [ref=f18e39]: calendar_month
+            - generic [ref=f18e40]: Bookings
+          - link "group Registered Users" [ref=f18e41] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/registered-users
+            - generic [ref=f18e42]: group
+            - generic [ref=f18e43]: Registered Users
+          - link "support_agent Support Inbox" [ref=f18e44] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/support
+            - generic [ref=f18e45]: support_agent
+            - generic [ref=f18e46]: Support Inbox
+          - link "quiz FAQ Manager" [ref=f18e47] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/faqs
+            - generic [ref=f18e48]: quiz
+            - generic [ref=f18e49]: FAQ Manager
+          - link "inventory Manage Inventory" [ref=f18e50] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/inventory
+            - generic [ref=f18e51]: inventory
+            - generic [ref=f18e52]: Manage Inventory
+          - link "tune Passenger Rules & Discounts" [ref=f18e53] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/passenger-rules
+            - generic [ref=f18e54]: tune
+            - generic [ref=f18e55]: Passenger Rules & Discounts
+      - generic [ref=f18e56]:
+        - heading "Catalog" [level=2] [ref=f18e57]
+        - generic [ref=f18e58]:
+          - link "place Destinations" [ref=f18e59] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/destinations
+            - generic [ref=f18e60]: place
+            - generic [ref=f18e61]: Destinations
+          - link "house Add Hotel Information" [ref=f18e62] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/hotels/manage
+            - generic [ref=f18e63]: house
+            - generic [ref=f18e64]: Add Hotel Information
+          - link "hotel Show Hotel Listing" [ref=f18e65] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/hotels
+            - generic [ref=f18e66]: hotel
+            - generic [ref=f18e67]: Show Hotel Listing
+          - link "card_travel Tour Packages & Promos" [ref=f18e68] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/packages
+            - generic [ref=f18e69]: card_travel
+            - generic [ref=f18e70]: Tour Packages & Promos
+          - link "explore Activities & Tours" [ref=f18e71] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/activities
+            - generic [ref=f18e72]: explore
+            - generic [ref=f18e73]: Activities & Tours
+          - link "extension Transfers and Add-ons" [ref=f18e74] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/addons
+            - generic [ref=f18e75]: extension
+            - generic [ref=f18e76]: Transfers and Add-ons
+          - link "psychology Manage AI" [ref=f18e77] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=f18e78]: psychology
+            - generic [ref=f18e79]: Manage AI
+      - generic [ref=f18e80]:
+        - heading "Legal" [level=2] [ref=f18e81]
+        - link "gavel Legal Documents" [ref=f18e83] [cursor=pointer]:
+          - /url: http://localhost:8000/admin/legal
+          - generic [ref=f18e84]: gavel
+          - generic [ref=f18e85]: Legal Documents
+      - generic [ref=f18e86]:
+        - heading "Community" [level=2] [ref=f18e87]
+        - link "reviews Reviews & Sentiment" [ref=f18e89] [cursor=pointer]:
+          - /url: http://localhost:8000/admin/reviews
+          - generic [ref=f18e90]: reviews
+          - generic [ref=f18e91]: Reviews & Sentiment
+  - main [ref=f18e92]:
+    - generic [ref=f18e94]:
+      - generic [ref=f18e95]:
+        - generic [ref=f18e96]:
+          - heading "Transfers & Add-ons" [level=1] [ref=f18e97]
+          - paragraph [ref=f18e98]: Manage destination Add-ons and Transfer Related
+        - link "add Add Add-ons" [ref=f18e99] [cursor=pointer]:
+          - /url: http://localhost:8000/admin/addons/create
+          - generic [ref=f18e100]: add
+          - text: Add Add-ons
+      - generic [ref=f18e102]:
+        - generic [ref=f18e103]:
+          - generic [ref=f18e104]:
+            - generic [ref=f18e105]: filter_alt
+            - text: "LOCATION:"
+          - link "All Locations" [ref=f18e106] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/addons
+          - link "El Nido" [ref=f18e107] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/addons?destination_id=1
+          - link "Boracay" [ref=f18e108] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/addons?destination_id=2
+        - generic [ref=f18e109]:
+          - generic [ref=f18e110]:
+            - generic [ref=f18e111]: search
+            - textbox "Search Add-ons and Transfers..." [active] [ref=f18e112]: van
+            - link "close" [ref=f18e152] [cursor=pointer]:
+              - /url: http://localhost:8000/admin/addons
+          - button "Search" [ref=f18e113] [cursor=pointer]
+      - table [ref=f18e156]:
+        - rowgroup [ref=f18e157]:
+          - row [ref=f18e158]:
+            - columnheader "#" [ref=f18e159]
+            - columnheader "Name" [ref=f18e160]
+            - columnheader "Type" [ref=f18e161]
+            - columnheader "Pricing Tiers" [ref=f18e162]
+            - columnheader "Visibility" [ref=f18e163]
+            - columnheader "Actions" [ref=f18e164]
+        - rowgroup [ref=f18e165]:
+          - row [ref=f18e166]:
+            - cell "location_on Boracay" [ref=f18e167]:
+              - generic [ref=f18e168]:
+                - generic [ref=f18e169]: location_on
+                - generic [ref=f18e170]: Boracay
+          - row [ref=f18e171]:
+            - cell "1" [ref=f18e172]
+            - cell "Airport to Hotel Roundtrip Transfer psychology AI Embedded" [ref=f18e173]:
+              - generic [ref=f18e174]:
+                - generic [ref=f18e175]: Airport to Hotel Roundtrip Transfer
+                - generic "AI Vector Embedding Active" [ref=f18e176]:
+                  - generic [ref=f18e177]: psychology
+                  - text: AI Embedded
+            - cell "Transfer" [ref=f18e178]
+            - cell "8 Tiers" [ref=f18e179]
+            - cell [ref=f18e180]
+            - cell [ref=f18e183]:
+              - generic [ref=f18e184]:
+                - link "edit Edit" [ref=f18e185] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/addons/1/edit
+                  - generic [ref=f18e186]: edit
+                  - text: Edit
+                - button "delete Delete" [ref=f18e188] [cursor=pointer]:
+                  - generic [ref=f18e189]: delete
+                  - text: Delete

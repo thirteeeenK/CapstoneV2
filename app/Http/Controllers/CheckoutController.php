@@ -65,7 +65,20 @@ class CheckoutController extends Controller
             }
         }
 
-        $totalAmount = $cartItems->sum('subtotal');
+        // Rooms contribute their base price only — any extra-person charges are
+        // computed from the passenger manifests at checkout (see Extra Guest Charge).
+        // Other item types keep their cart subtotal (already pax-aware).
+        $totalAmount = 0.00;
+        foreach ($cartItems as $cItem) {
+            if ($cItem->item_type === 'room' && $cItem->itemable) {
+                $nights = ($cItem->check_in_date && $cItem->check_out_date)
+                    ? max(1, (int) $cItem->check_in_date->diffInDays($cItem->check_out_date))
+                    : 1;
+                $totalAmount += (float) $cItem->itemable->base_price * max(1, (int) $cItem->quantity) * $nights;
+            } else {
+                $totalAmount += (float) $cItem->subtotal;
+            }
+        }
         $netAmount = $totalAmount;
 
         // Fetch dynamic active category rules from database

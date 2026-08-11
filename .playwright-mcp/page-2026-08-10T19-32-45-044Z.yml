@@ -1,0 +1,244 @@
+- generic [ref=f17e1]:
+  - banner [ref=f17e2]:
+    - generic [ref=f17e3]:
+      - generic [ref=f17e4]:
+        - generic [ref=f17e5]: admin_panel_settings
+        - generic [ref=f17e6]:
+          - generic [ref=f17e7]: SunnyTrips
+          - generic [ref=f17e8]: Admin
+      - generic [ref=f17e9]:
+        - generic [ref=f17e10]:
+          - generic [ref=f17e11]: A
+          - generic "sunnytrips@gmail.com" [ref=f17e12]: Administrator
+        - button "logout Sign out" [ref=f17e15] [cursor=pointer]:
+          - generic [ref=f17e16]: logout
+          - generic [ref=f17e17]: Sign out
+  - complementary [ref=f17e18]:
+    - generic [ref=f17e19]:
+      - heading "SunnyTrips" [level=1] [ref=f17e20]
+      - paragraph [ref=f17e21]: Admin Portal
+    - navigation [ref=f17e22]:
+      - generic [ref=f17e23]:
+        - heading "Overview" [level=2] [ref=f17e24]
+        - generic [ref=f17e25]:
+          - link "dashboard Dashboard" [ref=f17e26] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/dashboard
+            - generic [ref=f17e27]: dashboard
+            - generic [ref=f17e28]: Dashboard
+          - link "psychology AI Insights" [ref=f17e29] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=f17e30]: psychology
+            - generic [ref=f17e31]: AI Insights
+          - link "analytics Generate Reports" [ref=f17e32] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/reports
+            - generic [ref=f17e33]: analytics
+            - generic [ref=f17e34]: Generate Reports
+      - generic [ref=f17e35]:
+        - heading "Operations" [level=2] [ref=f17e36]
+        - generic [ref=f17e37]:
+          - link "calendar_month Bookings" [ref=f17e38] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/bookings
+            - generic [ref=f17e39]: calendar_month
+            - generic [ref=f17e40]: Bookings
+          - link "group Registered Users" [ref=f17e41] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/registered-users
+            - generic [ref=f17e42]: group
+            - generic [ref=f17e43]: Registered Users
+          - link "support_agent Support Inbox" [ref=f17e44] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/support
+            - generic [ref=f17e45]: support_agent
+            - generic [ref=f17e46]: Support Inbox
+          - link "quiz FAQ Manager" [ref=f17e47] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/faqs
+            - generic [ref=f17e48]: quiz
+            - generic [ref=f17e49]: FAQ Manager
+          - link "inventory Manage Inventory" [ref=f17e50] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/inventory
+            - generic [ref=f17e51]: inventory
+            - generic [ref=f17e52]: Manage Inventory
+          - link "tune Passenger Rules & Discounts" [ref=f17e53] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/passenger-rules
+            - generic [ref=f17e54]: tune
+            - generic [ref=f17e55]: Passenger Rules & Discounts
+      - generic [ref=f17e56]:
+        - heading "Catalog" [level=2] [ref=f17e57]
+        - generic [ref=f17e58]:
+          - link "place Destinations" [ref=f17e59] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/destinations
+            - generic [ref=f17e60]: place
+            - generic [ref=f17e61]: Destinations
+          - link "house Add Hotel Information" [ref=f17e62] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/hotels/manage
+            - generic [ref=f17e63]: house
+            - generic [ref=f17e64]: Add Hotel Information
+          - link "hotel Show Hotel Listing" [ref=f17e65] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/hotels
+            - generic [ref=f17e66]: hotel
+            - generic [ref=f17e67]: Show Hotel Listing
+          - link "card_travel Tour Packages & Promos" [ref=f17e68] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/packages
+            - generic [ref=f17e69]: card_travel
+            - generic [ref=f17e70]: Tour Packages & Promos
+          - link "explore Activities & Tours" [ref=f17e71] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/activities
+            - generic [ref=f17e72]: explore
+            - generic [ref=f17e73]: Activities & Tours
+          - link "extension Transfers and Add-ons" [ref=f17e74] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/addons
+            - generic [ref=f17e75]: extension
+            - generic [ref=f17e76]: Transfers and Add-ons
+          - link "psychology Manage AI" [ref=f17e77] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=f17e78]: psychology
+            - generic [ref=f17e79]: Manage AI
+      - generic [ref=f17e80]:
+        - heading "Legal" [level=2] [ref=f17e81]
+        - link "gavel Legal Documents" [ref=f17e83] [cursor=pointer]:
+          - /url: http://localhost:8000/admin/legal
+          - generic [ref=f17e84]: gavel
+          - generic [ref=f17e85]: Legal Documents
+      - generic [ref=f17e86]:
+        - heading "Community" [level=2] [ref=f17e87]
+        - link "reviews Reviews & Sentiment" [ref=f17e89] [cursor=pointer]:
+          - /url: http://localhost:8000/admin/reviews
+          - generic [ref=f17e90]: reviews
+          - generic [ref=f17e91]: Reviews & Sentiment
+  - main [ref=f17e92]:
+    - generic [ref=f17e94]:
+      - generic [ref=f17e95]:
+        - generic [ref=f17e96]:
+          - heading "Activities & Tours" [level=1] [ref=f17e97]
+          - paragraph [ref=f17e98]: Manage destination activities, pricing, activity levels, and AI embeddings.
+        - link "add Add New Activity" [ref=f17e99] [cursor=pointer]:
+          - /url: http://localhost:8000/admin/activities/create
+          - generic [ref=f17e100]: add
+          - text: Add New Activity
+      - generic [ref=f17e101]:
+        - generic [ref=f17e102]:
+          - generic [ref=f17e103]:
+            - generic [ref=f17e104]:
+              - generic [ref=f17e105]: location_on
+              - text: "LOCATION:"
+            - link "All Locations" [ref=f17e106] [cursor=pointer]:
+              - /url: http://localhost:8000/admin/activities
+            - link "Boracay" [ref=f17e107] [cursor=pointer]:
+              - /url: http://localhost:8000/admin/activities?destination_id=2
+            - link "El Nido" [ref=f17e108] [cursor=pointer]:
+              - /url: http://localhost:8000/admin/activities?destination_id=1
+          - generic [ref=f17e109]:
+            - generic [ref=f17e110]:
+              - generic [ref=f17e111]: search
+              - textbox "Search activity, level, or tags..." [active] [ref=f17e112]: island
+              - link "close" [ref=f17e113] [cursor=pointer]:
+                - /url: http://localhost:8000/admin/activities?destination_id=1
+            - button "Search" [ref=f17e115] [cursor=pointer]
+        - generic [ref=f17e116]:
+          - generic [ref=f17e117]:
+            - generic [ref=f17e118]: signal_cellular_alt
+            - text: "ACTIVITY LEVEL:"
+          - link "All Levels" [ref=f17e119] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/activities?destination_id=1
+          - link "Relaxing" [ref=f17e120] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/activities?level=Relaxing&destination_id=1
+          - link "Sightseeing" [ref=f17e121] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/activities?level=Sightseeing&destination_id=1
+          - link "Adventure" [ref=f17e122] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/activities?level=Adventure&destination_id=1
+          - link "Extreme" [ref=f17e123] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/activities?level=Extreme&destination_id=1
+          - link "Underwater" [ref=f17e124] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/activities?level=Underwater&destination_id=1
+          - link "restart_alt Reset Filters" [ref=f17e125] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/activities
+            - generic [ref=f17e126]: restart_alt
+            - text: Reset Filters
+      - table [ref=f17e353]:
+        - rowgroup [ref=f17e354]:
+          - row [ref=f17e355]:
+            - columnheader "#" [ref=f17e356]
+            - columnheader "Activity Name" [ref=f17e357]
+            - columnheader "Level" [ref=f17e358]
+            - columnheader "Rate" [ref=f17e359]
+            - columnheader "Visibility" [ref=f17e360]
+            - columnheader "Actions" [ref=f17e361]
+        - rowgroup [ref=f17e362]:
+          - row [ref=f17e363]:
+            - cell "1" [ref=f17e364]
+            - cell "El Nido Tour A (Lagoons & Beaches) psychology AI Embedded" [ref=f17e365]:
+              - generic [ref=f17e366]:
+                - generic [ref=f17e367]: El Nido Tour A (Lagoons & Beaches)
+                - generic "AI Vector Embedding Active" [ref=f17e368]:
+                  - generic [ref=f17e369]: psychology
+                  - text: AI Embedded
+            - cell [ref=f17e370]
+            - cell "₱1,200/person" [ref=f17e373]
+            - cell [ref=f17e374]
+            - cell [ref=f17e377]:
+              - generic [ref=f17e378]:
+                - link "edit Edit" [ref=f17e379] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/activities/23/edit
+                  - generic [ref=f17e380]: edit
+                  - text: Edit
+                - button "delete Delete" [ref=f17e382] [cursor=pointer]:
+                  - generic [ref=f17e383]: delete
+                  - text: Delete
+          - row [ref=f17e384]:
+            - cell "2" [ref=f17e385]
+            - cell "El Nido Tour B (Caves & Coves) psychology AI Embedded" [ref=f17e386]:
+              - generic [ref=f17e387]:
+                - generic [ref=f17e388]: El Nido Tour B (Caves & Coves)
+                - generic "AI Vector Embedding Active" [ref=f17e389]:
+                  - generic [ref=f17e390]: psychology
+                  - text: AI Embedded
+            - cell [ref=f17e391]
+            - cell "₱1,300/person" [ref=f17e394]
+            - cell [ref=f17e395]
+            - cell [ref=f17e398]:
+              - generic [ref=f17e399]:
+                - link "edit Edit" [ref=f17e400] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/activities/24/edit
+                  - generic [ref=f17e401]: edit
+                  - text: Edit
+                - button "delete Delete" [ref=f17e403] [cursor=pointer]:
+                  - generic [ref=f17e404]: delete
+                  - text: Delete
+          - row [ref=f17e405]:
+            - cell "3" [ref=f17e406]
+            - cell "El Nido Tour C (Hidden Beaches & Shrines) psychology AI Embedded" [ref=f17e407]:
+              - generic [ref=f17e408]:
+                - generic [ref=f17e409]: El Nido Tour C (Hidden Beaches & Shrines)
+                - generic "AI Vector Embedding Active" [ref=f17e410]:
+                  - generic [ref=f17e411]: psychology
+                  - text: AI Embedded
+            - cell [ref=f17e412]
+            - cell "₱1,400/person" [ref=f17e415]
+            - cell [ref=f17e416]
+            - cell [ref=f17e419]:
+              - generic [ref=f17e420]:
+                - link "edit Edit" [ref=f17e421] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/activities/25/edit
+                  - generic [ref=f17e422]: edit
+                  - text: Edit
+                - button "delete Delete" [ref=f17e424] [cursor=pointer]:
+                  - generic [ref=f17e425]: delete
+                  - text: Delete
+          - row [ref=f17e426]:
+            - cell "4" [ref=f17e427]
+            - cell "El Nido Tour D (Island Beaches) psychology AI Embedded" [ref=f17e428]:
+              - generic [ref=f17e429]:
+                - generic [ref=f17e430]: El Nido Tour D (Island Beaches)
+                - generic "AI Vector Embedding Active" [ref=f17e431]:
+                  - generic [ref=f17e432]: psychology
+                  - text: AI Embedded
+            - cell [ref=f17e433]
+            - cell "₱1,200/person" [ref=f17e436]
+            - cell [ref=f17e437]
+            - cell [ref=f17e440]:
+              - generic [ref=f17e441]:
+                - link "edit Edit" [ref=f17e442] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/activities/26/edit
+                  - generic [ref=f17e443]: edit
+                  - text: Edit
+                - button "delete Delete" [ref=f17e445] [cursor=pointer]:
+                  - generic [ref=f17e446]: delete
+                  - text: Delete

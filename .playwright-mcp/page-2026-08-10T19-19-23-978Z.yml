@@ -1,0 +1,232 @@
+- generic [active] [ref=f6e1]:
+  - banner [ref=f6e2]:
+    - generic [ref=f6e3]:
+      - generic [ref=f6e4]:
+        - generic [ref=f6e5]: admin_panel_settings
+        - generic [ref=f6e6]:
+          - generic [ref=f6e7]: SunnyTrips
+          - generic [ref=f6e8]: Admin
+      - generic [ref=f6e9]:
+        - generic [ref=f6e10]:
+          - generic [ref=f6e11]: A
+          - generic "sunnytrips@gmail.com" [ref=f6e12]: Administrator
+        - button "logout Sign out" [ref=f6e15] [cursor=pointer]:
+          - generic [ref=f6e16]: logout
+          - generic [ref=f6e17]: Sign out
+  - complementary [ref=f6e18]:
+    - generic [ref=f6e19]:
+      - heading "SunnyTrips" [level=1] [ref=f6e20]
+      - paragraph [ref=f6e21]: Admin Portal
+    - navigation [ref=f6e22]:
+      - generic [ref=f6e23]:
+        - heading "Overview" [level=2] [ref=f6e24]
+        - generic [ref=f6e25]:
+          - link "dashboard Dashboard" [ref=f6e26] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/dashboard
+            - generic [ref=f6e27]: dashboard
+            - generic [ref=f6e28]: Dashboard
+          - link "psychology AI Insights" [ref=f6e29] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=f6e30]: psychology
+            - generic [ref=f6e31]: AI Insights
+          - link "analytics Generate Reports" [ref=f6e32] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/reports
+            - generic [ref=f6e33]: analytics
+            - generic [ref=f6e34]: Generate Reports
+      - generic [ref=f6e35]:
+        - heading "Operations" [level=2] [ref=f6e36]
+        - generic [ref=f6e37]:
+          - link "calendar_month Bookings" [ref=f6e38] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/bookings
+            - generic [ref=f6e39]: calendar_month
+            - generic [ref=f6e40]: Bookings
+          - link "group Registered Users" [ref=f6e41] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/registered-users
+            - generic [ref=f6e42]: group
+            - generic [ref=f6e43]: Registered Users
+          - link "support_agent Support Inbox" [ref=f6e44] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/support
+            - generic [ref=f6e45]: support_agent
+            - generic [ref=f6e46]: Support Inbox
+          - link "quiz FAQ Manager" [ref=f6e47] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/faqs
+            - generic [ref=f6e48]: quiz
+            - generic [ref=f6e49]: FAQ Manager
+          - link "inventory Manage Inventory" [ref=f6e50] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/inventory
+            - generic [ref=f6e51]: inventory
+            - generic [ref=f6e52]: Manage Inventory
+          - link "tune Passenger Rules & Discounts" [ref=f6e53] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/passenger-rules
+            - generic [ref=f6e54]: tune
+            - generic [ref=f6e55]: Passenger Rules & Discounts
+      - generic [ref=f6e56]:
+        - heading "Catalog" [level=2] [ref=f6e57]
+        - generic [ref=f6e58]:
+          - link "place Destinations" [ref=f6e59] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/destinations
+            - generic [ref=f6e60]: place
+            - generic [ref=f6e61]: Destinations
+          - link "house Add Hotel Information" [ref=f6e62] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/hotels/manage
+            - generic [ref=f6e63]: house
+            - generic [ref=f6e64]: Add Hotel Information
+          - link "hotel Show Hotel Listing" [ref=f6e65] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/hotels
+            - generic [ref=f6e66]: hotel
+            - generic [ref=f6e67]: Show Hotel Listing
+          - link "card_travel Tour Packages & Promos" [ref=f6e68] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/packages
+            - generic [ref=f6e69]: card_travel
+            - generic [ref=f6e70]: Tour Packages & Promos
+          - link "explore Activities & Tours" [ref=f6e71] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/activities
+            - generic [ref=f6e72]: explore
+            - generic [ref=f6e73]: Activities & Tours
+          - link "extension Transfers and Add-ons" [ref=f6e74] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/addons
+            - generic [ref=f6e75]: extension
+            - generic [ref=f6e76]: Transfers and Add-ons
+          - link "psychology Manage AI" [ref=f6e77] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=f6e78]: psychology
+            - generic [ref=f6e79]: Manage AI
+      - generic [ref=f6e80]:
+        - heading "Legal" [level=2] [ref=f6e81]
+        - link "gavel Legal Documents" [ref=f6e83] [cursor=pointer]:
+          - /url: http://localhost:8000/admin/legal
+          - generic [ref=f6e84]: gavel
+          - generic [ref=f6e85]: Legal Documents
+      - generic [ref=f6e86]:
+        - heading "Community" [level=2] [ref=f6e87]
+        - link "reviews Reviews & Sentiment" [ref=f6e89] [cursor=pointer]:
+          - /url: http://localhost:8000/admin/reviews
+          - generic [ref=f6e90]: reviews
+          - generic [ref=f6e91]: Reviews & Sentiment
+  - main [ref=f6e92]:
+    - generic [ref=f6e94]:
+      - generic [ref=f6e96]:
+        - heading "Central Inventory Management" [level=1] [ref=f6e97]
+        - paragraph [ref=f6e98]:
+          - text: Control public visibility (
+          - code [ref=f6e99]: is_shown
+          - text: ) and monitor inventory availability for hotels, room types, activities, and add-ons/transfers.
+      - generic [ref=f6e100]:
+        - generic [ref=f6e101]:
+          - generic [ref=f6e102]: inventory_2
+          - generic [ref=f6e104]:
+            - paragraph [ref=f6e105]: Hotels Inventory
+            - generic [ref=f6e106]:
+              - generic [ref=f6e107]: "19"
+              - generic [ref=f6e108]: 19 Visible
+              - generic [ref=f6e109]: •
+              - generic [ref=f6e110]: 0 Hidden
+        - generic [ref=f6e111]:
+          - generic [ref=f6e112]: king_bed
+          - generic [ref=f6e114]:
+            - paragraph [ref=f6e115]: Rooms Inventory
+            - generic [ref=f6e116]:
+              - generic [ref=f6e117]: "19"
+              - generic [ref=f6e118]: 19 Visible
+              - generic [ref=f6e119]: •
+              - generic [ref=f6e120]: 0 Hidden
+        - generic [ref=f6e121]:
+          - generic [ref=f6e122]: explore
+          - generic [ref=f6e124]:
+            - paragraph [ref=f6e125]: Activities Inventory
+            - generic [ref=f6e126]:
+              - generic [ref=f6e127]: "32"
+              - generic [ref=f6e128]: 32 Visible
+              - generic [ref=f6e129]: •
+              - generic [ref=f6e130]: 0 Hidden
+        - generic [ref=f6e131]:
+          - generic [ref=f6e132]: extension
+          - generic [ref=f6e134]:
+            - paragraph [ref=f6e135]: Add-ons & Transfers
+            - generic [ref=f6e136]:
+              - generic [ref=f6e137]: "1"
+              - generic [ref=f6e138]: 1 Visible
+              - generic [ref=f6e139]: •
+              - generic [ref=f6e140]: 0 Hidden
+      - generic [ref=f6e141]:
+        - generic [ref=f6e142]:
+          - generic [ref=f6e144]:
+            - generic [ref=f6e145]:
+              - generic [ref=f6e146]: place
+              - text: "Location:"
+            - link "All Locations" [ref=f6e147] [cursor=pointer]:
+              - /url: http://localhost:8000/admin/inventory?tab=hotels
+            - link "Boracay" [ref=f6e148] [cursor=pointer]:
+              - /url: http://localhost:8000/admin/inventory?tab=hotels&destination_id=2
+            - link "El Nido" [ref=f6e149] [cursor=pointer]:
+              - /url: http://localhost:8000/admin/inventory?tab=hotels&destination_id=1
+          - generic [ref=f6e150]:
+            - generic [ref=f6e151]:
+              - generic [ref=f6e152]:
+                - generic [ref=f6e153]: visibility
+                - text: "Visibility:"
+              - link "All Statuses" [ref=f6e154] [cursor=pointer]:
+                - /url: http://localhost:8000/admin/inventory?tab=hotels
+              - link "Visible Only" [ref=f6e155] [cursor=pointer]:
+                - /url: http://localhost:8000/admin/inventory?tab=hotels&visibility=visible
+              - link "Hidden Only" [ref=f6e157] [cursor=pointer]:
+                - /url: http://localhost:8000/admin/inventory?tab=hotels&visibility=hidden
+            - generic [ref=f6e159]:
+              - generic [ref=f6e160]:
+                - generic [ref=f6e161]: search
+                - textbox "Search inventory items..." [ref=f6e162]: White beach
+                - link "close" [ref=f6e549] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/inventory?tab=hotels
+              - button "Search" [ref=f6e163] [cursor=pointer]
+        - generic [ref=f6e631]:
+          - navigation [ref=f6e633]:
+            - link "house Hotels Inventory (3)" [ref=f6e634] [cursor=pointer]:
+              - /url: http://localhost:8000/admin/inventory?tab=hotels&search=White%20beach
+              - generic [ref=f6e635]: house
+              - text: Hotels Inventory (3)
+            - link "bed Room Types Inventory (2)" [ref=f6e636] [cursor=pointer]:
+              - /url: http://localhost:8000/admin/inventory?tab=rooms&search=White%20beach
+              - generic [ref=f6e637]: bed
+              - text: Room Types Inventory (2)
+            - link "explore Activities Inventory (0)" [ref=f6e638] [cursor=pointer]:
+              - /url: http://localhost:8000/admin/inventory?tab=activities&search=White%20beach
+              - generic [ref=f6e639]: explore
+              - text: Activities Inventory (0)
+            - link "extension Transfers & Add-ons (0)" [ref=f6e640] [cursor=pointer]:
+              - /url: http://localhost:8000/admin/inventory?tab=addons&search=White%20beach
+              - generic [ref=f6e641]: extension
+              - text: Transfers & Add-ons (0)
+          - table [ref=f6e644]:
+            - rowgroup [ref=f6e645]:
+              - row [ref=f6e646]:
+                - columnheader "Room Name" [ref=f6e647]
+                - columnheader "Hotel" [ref=f6e648]
+                - columnheader "Base Rate" [ref=f6e649]
+                - columnheader "Total Inventory" [ref=f6e650]
+                - columnheader "Public Visibility" [ref=f6e651]
+                - columnheader "Actions" [ref=f6e652]
+            - rowgroup [ref=f6e653]:
+              - row [ref=f6e654]:
+                - cell "Premier Ocean View Room" [ref=f6e655]
+                - cell "Henann Palm Beach Resort" [ref=f6e656]
+                - cell "₱9,500.00" [ref=f6e657]
+                - cell "4 rooms" [ref=f6e658]
+                - cell [ref=f6e659]:
+                  - button "Visible to Users" [ref=f6e661] [cursor=pointer]
+                - cell [ref=f6e663]:
+                  - link "edit Edit Room" [ref=f6e664] [cursor=pointer]:
+                    - /url: http://localhost:8000/admin/rooms/1/edit
+                    - generic [ref=f6e665]: edit
+                    - text: Edit Room
+              - row [ref=f6e666]:
+                - cell "Standard Double Room" [ref=f6e667]
+                - cell "My Station Hotel" [ref=f6e668]
+                - cell "₱2,200.00" [ref=f6e669]
+                - cell "2 rooms" [ref=f6e670]
+                - cell [ref=f6e671]:
+                  - button "Visible to Users" [ref=f6e673] [cursor=pointer]
+                - cell [ref=f6e675]:
+                  - link "edit Edit Room" [ref=f6e676] [cursor=pointer]:
+                    - /url: http://localhost:8000/admin/rooms/6/edit
+                    - generic [ref=f6e677]: edit
+                    - text: Edit Room

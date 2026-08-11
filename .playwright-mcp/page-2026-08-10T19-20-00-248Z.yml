@@ -1,0 +1,410 @@
+- generic [active] [ref=f7e1]:
+  - banner [ref=f7e2]:
+    - generic [ref=f7e3]:
+      - generic [ref=f7e4]:
+        - generic [ref=f7e5]: admin_panel_settings
+        - generic [ref=f7e6]:
+          - generic [ref=f7e7]: SunnyTrips
+          - generic [ref=f7e8]: Admin
+      - generic [ref=f7e9]:
+        - generic [ref=f7e10]:
+          - generic [ref=f7e11]: A
+          - generic "sunnytrips@gmail.com" [ref=f7e12]: Administrator
+        - button "logout Sign out" [ref=f7e15] [cursor=pointer]:
+          - generic [ref=f7e16]: logout
+          - generic [ref=f7e17]: Sign out
+  - complementary [ref=f7e18]:
+    - generic [ref=f7e19]:
+      - heading "SunnyTrips" [level=1] [ref=f7e20]
+      - paragraph [ref=f7e21]: Admin Portal
+    - navigation [ref=f7e22]:
+      - generic [ref=f7e23]:
+        - heading "Overview" [level=2] [ref=f7e24]
+        - generic [ref=f7e25]:
+          - link "dashboard Dashboard" [ref=f7e26] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/dashboard
+            - generic [ref=f7e27]: dashboard
+            - generic [ref=f7e28]: Dashboard
+          - link "psychology AI Insights" [ref=f7e29] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=f7e30]: psychology
+            - generic [ref=f7e31]: AI Insights
+          - link "analytics Generate Reports" [ref=f7e32] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/reports
+            - generic [ref=f7e33]: analytics
+            - generic [ref=f7e34]: Generate Reports
+      - generic [ref=f7e35]:
+        - heading "Operations" [level=2] [ref=f7e36]
+        - generic [ref=f7e37]:
+          - link "calendar_month Bookings" [ref=f7e38] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/bookings
+            - generic [ref=f7e39]: calendar_month
+            - generic [ref=f7e40]: Bookings
+          - link "group Registered Users" [ref=f7e41] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/registered-users
+            - generic [ref=f7e42]: group
+            - generic [ref=f7e43]: Registered Users
+          - link "support_agent Support Inbox" [ref=f7e44] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/support
+            - generic [ref=f7e45]: support_agent
+            - generic [ref=f7e46]: Support Inbox
+          - link "quiz FAQ Manager" [ref=f7e47] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/faqs
+            - generic [ref=f7e48]: quiz
+            - generic [ref=f7e49]: FAQ Manager
+          - link "inventory Manage Inventory" [ref=f7e50] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/inventory
+            - generic [ref=f7e51]: inventory
+            - generic [ref=f7e52]: Manage Inventory
+          - link "tune Passenger Rules & Discounts" [ref=f7e53] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/passenger-rules
+            - generic [ref=f7e54]: tune
+            - generic [ref=f7e55]: Passenger Rules & Discounts
+      - generic [ref=f7e56]:
+        - heading "Catalog" [level=2] [ref=f7e57]
+        - generic [ref=f7e58]:
+          - link "place Destinations" [ref=f7e59] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/destinations
+            - generic [ref=f7e60]: place
+            - generic [ref=f7e61]: Destinations
+          - link "house Add Hotel Information" [ref=f7e62] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/hotels/manage
+            - generic [ref=f7e63]: house
+            - generic [ref=f7e64]: Add Hotel Information
+          - link "hotel Show Hotel Listing" [ref=f7e65] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/hotels
+            - generic [ref=f7e66]: hotel
+            - generic [ref=f7e67]: Show Hotel Listing
+          - link "card_travel Tour Packages & Promos" [ref=f7e68] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/packages
+            - generic [ref=f7e69]: card_travel
+            - generic [ref=f7e70]: Tour Packages & Promos
+          - link "explore Activities & Tours" [ref=f7e71] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/activities
+            - generic [ref=f7e72]: explore
+            - generic [ref=f7e73]: Activities & Tours
+          - link "extension Transfers and Add-ons" [ref=f7e74] [cursor=pointer]:
+            - /url: http://localhost:8000/admin/addons
+            - generic [ref=f7e75]: extension
+            - generic [ref=f7e76]: Transfers and Add-ons
+          - link "psychology Manage AI" [ref=f7e77] [cursor=pointer]:
+            - /url: "#"
+            - generic [ref=f7e78]: psychology
+            - generic [ref=f7e79]: Manage AI
+      - generic [ref=f7e80]:
+        - heading "Legal" [level=2] [ref=f7e81]
+        - link "gavel Legal Documents" [ref=f7e83] [cursor=pointer]:
+          - /url: http://localhost:8000/admin/legal
+          - generic [ref=f7e84]: gavel
+          - generic [ref=f7e85]: Legal Documents
+      - generic [ref=f7e86]:
+        - heading "Community" [level=2] [ref=f7e87]
+        - link "reviews Reviews & Sentiment" [ref=f7e89] [cursor=pointer]:
+          - /url: http://localhost:8000/admin/reviews
+          - generic [ref=f7e90]: reviews
+          - generic [ref=f7e91]: Reviews & Sentiment
+  - main [ref=f7e92]:
+    - generic [ref=f7e94]:
+      - generic [ref=f7e95]:
+        - generic [ref=f7e96]:
+          - heading "Booking Requests" [level=1] [ref=f7e97]
+          - paragraph [ref=f7e98]: Verify availability, approve bookings, and manage payments.
+        - generic [ref=f7e99]:
+          - generic [ref=f7e100]: 2 pending
+          - generic [ref=f7e101]: 3 awaiting payment
+          - generic [ref=f7e102]: 1 paid
+      - generic [ref=f7e103]:
+        - generic [ref=f7e104]:
+          - generic [ref=f7e105]: search
+          - textbox "Search booking code, guest name, or email..." [ref=f7e106]
+        - combobox [ref=f7e107]:
+          - option "All statuses" [selected]
+          - option "Pending review"
+          - option "Approved (awaiting payment)"
+          - option "Paid"
+          - option "Completed"
+          - option "Rejected"
+          - option "Cancelled"
+          - option "Expired"
+          - option "Closed (rejected/cancelled/expired/completed)"
+        - button "filter_alt Filter" [ref=f7e108] [cursor=pointer]:
+          - generic [ref=f7e109]: filter_alt
+          - text: Filter
+        - link "refresh Reset" [ref=f7e110] [cursor=pointer]:
+          - /url: http://localhost:8000/admin/bookings
+          - generic [ref=f7e111]: refresh
+          - text: Reset
+      - generic [ref=f7e113]:
+        - table [ref=f7e115]:
+          - rowgroup [ref=f7e116]:
+            - row [ref=f7e117]:
+              - columnheader "#" [ref=f7e118]
+              - columnheader "Booking Code" [ref=f7e119]
+              - columnheader "Guest" [ref=f7e120]
+              - columnheader "Items" [ref=f7e121]
+              - columnheader "Net Amount" [ref=f7e122]
+              - columnheader "Status" [ref=f7e123]
+              - columnheader "Payment" [ref=f7e124]
+              - columnheader "Requested" [ref=f7e125]
+              - columnheader "Actions" [ref=f7e126]
+          - rowgroup [ref=f7e127]:
+            - row [ref=f7e128]:
+              - cell "1" [ref=f7e129]
+              - cell "ST-2026-BYLVJ" [ref=f7e130]
+              - cell [ref=f7e132]:
+                - paragraph [ref=f7e133]: John Kenly Pamor
+                - paragraph [ref=f7e134]: johnkenlypamor13@gmail.com
+              - cell "1" [ref=f7e135]
+              - cell "₱19,000.00" [ref=f7e136]
+              - cell "pending" [ref=f7e137]
+              - cell "Unpaid" [ref=f7e138]
+              - cell "Aug 11, 1:56 AM" [ref=f7e139]
+              - cell [ref=f7e140]:
+                - link "visibility Review" [ref=f7e141] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/bookings/75
+                  - generic [ref=f7e142]: visibility
+                  - text: Review
+            - row [ref=f7e143]:
+              - cell "2" [ref=f7e144]
+              - cell "ST-2026-SEIW6" [ref=f7e145]
+              - cell [ref=f7e147]:
+                - paragraph [ref=f7e148]: John Kenly Pamor
+                - paragraph [ref=f7e149]: johnkenlypamor13@gmail.com
+              - cell "1" [ref=f7e150]
+              - cell "₱10,000.00" [ref=f7e151]
+              - cell "pending" [ref=f7e152]
+              - cell "Unpaid" [ref=f7e153]
+              - cell "Aug 10, 2:43 PM" [ref=f7e154]
+              - cell [ref=f7e155]:
+                - link "visibility Review" [ref=f7e156] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/bookings/72
+                  - generic [ref=f7e157]: visibility
+                  - text: Review
+            - row [ref=f7e158]:
+              - cell "3" [ref=f7e159]
+              - cell "ST-2026-GDRKJ" [ref=f7e160]
+              - cell [ref=f7e162]:
+                - paragraph [ref=f7e163]: John Kenly Pamor
+                - paragraph [ref=f7e164]: johnkenlypamor13@gmail.com
+              - cell "1" [ref=f7e165]
+              - cell "₱9,500.00" [ref=f7e166]
+              - cell "approved" [ref=f7e167]
+              - cell "Unpaid" [ref=f7e168]
+              - cell "Aug 11, 1:55 AM" [ref=f7e169]
+              - cell [ref=f7e170]:
+                - link "visibility Review" [ref=f7e171] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/bookings/74
+                  - generic [ref=f7e172]: visibility
+                  - text: Review
+            - row [ref=f7e173]:
+              - cell "4" [ref=f7e174]
+              - cell "ST-2026-UFQQP" [ref=f7e175]
+              - cell [ref=f7e177]:
+                - paragraph [ref=f7e178]: John Kenly Pamor
+                - paragraph [ref=f7e179]: johnkenlypamor13@gmail.com
+              - cell "3" [ref=f7e180]
+              - cell "₱19,800.00" [ref=f7e181]
+              - cell "approved" [ref=f7e182]
+              - cell "Unpaid" [ref=f7e183]
+              - cell "Aug 10, 2:40 PM" [ref=f7e184]
+              - cell [ref=f7e185]:
+                - link "visibility Review" [ref=f7e186] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/bookings/71
+                  - generic [ref=f7e187]: visibility
+                  - text: Review
+            - row [ref=f7e188]:
+              - cell "5" [ref=f7e189]
+              - cell "ST-2026-DTSHG" [ref=f7e190]
+              - cell [ref=f7e192]:
+                - paragraph [ref=f7e193]: John Kenly Pamor
+                - paragraph [ref=f7e194]: johnkenlypamor13@gmail.com
+              - cell "3" [ref=f7e195]
+              - cell "₱14,000.00" [ref=f7e196]
+              - cell "approved" [ref=f7e197]
+              - cell "Unpaid" [ref=f7e198]
+              - cell "Aug 10, 2:36 PM" [ref=f7e199]
+              - cell [ref=f7e200]:
+                - link "visibility Review" [ref=f7e201] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/bookings/70
+                  - generic [ref=f7e202]: visibility
+                  - text: Review
+            - row [ref=f7e203]:
+              - cell "6" [ref=f7e204]
+              - cell "ST-2026-WQUBR" [ref=f7e205]
+              - cell [ref=f7e207]:
+                - paragraph [ref=f7e208]: John Kenly Pamor
+                - paragraph [ref=f7e209]: johnkenlypamor13@gmail.com
+              - cell "1" [ref=f7e210]
+              - cell "₱9,500.00" [ref=f7e211]
+              - cell "paid" [ref=f7e212]
+              - cell "Paid" [ref=f7e213]
+              - cell "Aug 11, 1:53 AM" [ref=f7e214]
+              - cell [ref=f7e215]:
+                - link "visibility Review" [ref=f7e216] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/bookings/73
+                  - generic [ref=f7e217]: visibility
+                  - text: Review
+            - row [ref=f7e218]:
+              - cell "7" [ref=f7e219]
+              - cell "ST-2026-BYYN9" [ref=f7e220]
+              - cell [ref=f7e222]:
+                - paragraph [ref=f7e223]: John Kenly Pamor
+                - paragraph [ref=f7e224]: johnkenlypamor13@gmail.com
+              - cell "1" [ref=f7e225]
+              - cell "₱13,600.00" [ref=f7e226]
+              - cell "completed" [ref=f7e227]
+              - cell "Paid" [ref=f7e228]
+              - cell "Aug 8, 3:45 PM" [ref=f7e229]
+              - cell [ref=f7e230]:
+                - link "visibility Review" [ref=f7e231] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/bookings/69
+                  - generic [ref=f7e232]: visibility
+                  - text: Review
+            - row [ref=f7e233]:
+              - cell "8" [ref=f7e234]
+              - cell "ST-2026-CDPUC" [ref=f7e235]
+              - cell [ref=f7e237]:
+                - paragraph [ref=f7e238]: Rey Gann Pamor
+                - paragraph [ref=f7e239]: juan@gmail.com
+              - cell "1" [ref=f7e240]
+              - cell "₱4,200.00" [ref=f7e241]
+              - cell "completed" [ref=f7e242]
+              - cell "Paid" [ref=f7e243]
+              - cell "Aug 8, 9:52 AM" [ref=f7e244]
+              - cell [ref=f7e245]:
+                - link "visibility Review" [ref=f7e246] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/bookings/68
+                  - generic [ref=f7e247]: visibility
+                  - text: Review
+            - row [ref=f7e248]:
+              - cell "9" [ref=f7e249]
+              - cell "ST-TEST-1" [ref=f7e250]
+              - cell [ref=f7e252]:
+                - paragraph [ref=f7e253]: Juan
+                - paragraph [ref=f7e254]: caroline88@example.net
+              - cell "0" [ref=f7e255]
+              - cell "₱4,000.00" [ref=f7e256]
+              - cell "completed" [ref=f7e257]
+              - cell "Paid" [ref=f7e258]
+              - cell "Aug 8, 9:44 AM" [ref=f7e259]
+              - cell [ref=f7e260]:
+                - link "visibility Review" [ref=f7e261] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/bookings/67
+                  - generic [ref=f7e262]: visibility
+                  - text: Review
+            - row [ref=f7e263]:
+              - cell "10" [ref=f7e264]
+              - cell "ST-2026-UE1KE" [ref=f7e265]
+              - cell [ref=f7e267]:
+                - paragraph [ref=f7e268]: John Kenly Pamor
+                - paragraph [ref=f7e269]: johnkenlypamor13@gmail.com
+              - cell "5" [ref=f7e270]
+              - cell "₱34,000.00" [ref=f7e271]
+              - cell "completed" [ref=f7e272]
+              - cell "Refunded" [ref=f7e273]
+              - cell "Aug 7, 5:34 PM" [ref=f7e274]
+              - cell [ref=f7e275]:
+                - link "visibility Review" [ref=f7e276] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/bookings/66
+                  - generic [ref=f7e277]: visibility
+                  - text: Review
+            - row [ref=f7e278]:
+              - cell "11" [ref=f7e279]
+              - cell "ST-2026-0HFWX" [ref=f7e280]
+              - cell [ref=f7e282]:
+                - paragraph [ref=f7e283]: John Kenly Pamor
+                - paragraph [ref=f7e284]: johnkenlypamor13@gmail.com
+              - cell "2" [ref=f7e285]
+              - cell "₱11,950.00" [ref=f7e286]
+              - cell "completed" [ref=f7e287]
+              - cell "Paid" [ref=f7e288]
+              - cell "Aug 6, 2:20 PM" [ref=f7e289]
+              - cell [ref=f7e290]:
+                - link "visibility Review" [ref=f7e291] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/bookings/65
+                  - generic [ref=f7e292]: visibility
+                  - text: Review
+            - row [ref=f7e293]:
+              - cell "12" [ref=f7e294]
+              - cell "ST-2026-CAQBB" [ref=f7e295]
+              - cell [ref=f7e297]:
+                - paragraph [ref=f7e298]: John Kenly Pamor
+                - paragraph [ref=f7e299]: johnkenlypamor13@gmail.com
+              - cell "4" [ref=f7e300]
+              - cell "₱61,850.00" [ref=f7e301]
+              - cell "completed" [ref=f7e302]
+              - cell "Paid" [ref=f7e303]
+              - cell "Aug 6, 2:18 PM" [ref=f7e304]
+              - cell [ref=f7e305]:
+                - link "visibility Review" [ref=f7e306] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/bookings/64
+                  - generic [ref=f7e307]: visibility
+                  - text: Review
+            - row [ref=f7e308]:
+              - cell "13" [ref=f7e309]
+              - cell "RVT-CLDQPW1I" [ref=f7e310]
+              - cell [ref=f7e312]:
+                - paragraph [ref=f7e313]: Paolo Garcia
+                - paragraph [ref=f7e314]: paolo.garcia@example.com
+              - cell "1" [ref=f7e315]
+              - cell "₱0.00" [ref=f7e316]
+              - cell "completed" [ref=f7e317]
+              - cell "Paid" [ref=f7e318]
+              - cell "Aug 6, 1:00 PM" [ref=f7e319]
+              - cell [ref=f7e320]:
+                - link "visibility Review" [ref=f7e321] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/bookings/63
+                  - generic [ref=f7e322]: visibility
+                  - text: Review
+            - row [ref=f7e323]:
+              - cell "14" [ref=f7e324]
+              - cell "RVT-IMWXY3PJ" [ref=f7e325]
+              - cell [ref=f7e327]:
+                - paragraph [ref=f7e328]: Kaye Villanueva
+                - paragraph [ref=f7e329]: kaye.villanueva@example.com
+              - cell "1" [ref=f7e330]
+              - cell "₱0.00" [ref=f7e331]
+              - cell "completed" [ref=f7e332]
+              - cell "Paid" [ref=f7e333]
+              - cell "Aug 6, 1:00 PM" [ref=f7e334]
+              - cell [ref=f7e335]:
+                - link "visibility Review" [ref=f7e336] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/bookings/62
+                  - generic [ref=f7e337]: visibility
+                  - text: Review
+            - row [ref=f7e338]:
+              - cell "15" [ref=f7e339]
+              - cell "RVT-U57YAUTB" [ref=f7e340]
+              - cell [ref=f7e342]:
+                - paragraph [ref=f7e343]: Michael Tan
+                - paragraph [ref=f7e344]: michael.tan@example.com
+              - cell "1" [ref=f7e345]
+              - cell "₱0.00" [ref=f7e346]
+              - cell "completed" [ref=f7e347]
+              - cell "Paid" [ref=f7e348]
+              - cell "Aug 6, 1:00 PM" [ref=f7e349]
+              - cell [ref=f7e350]:
+                - link "visibility Review" [ref=f7e351] [cursor=pointer]:
+                  - /url: http://localhost:8000/admin/bookings/61
+                  - generic [ref=f7e352]: visibility
+                  - text: Review
+        - navigation "Pagination Navigation" [ref=f7e354]:
+          - generic [ref=f7e355]:
+            - paragraph [ref=f7e357]: Showing 1 to 15 of 75 results
+            - generic [ref=f7e359]:
+              - generic "&laquo; Previous" [ref=f7e360]
+              - generic [ref=f7e364]: "1"
+              - link "Go to page 2" [ref=f7e366] [cursor=pointer]:
+                - /url: http://localhost:8000/admin/bookings?page=2
+                - text: "2"
+              - link "Go to page 3" [ref=f7e367] [cursor=pointer]:
+                - /url: http://localhost:8000/admin/bookings?page=3
+                - text: "3"
+              - link "Go to page 4" [ref=f7e368] [cursor=pointer]:
+                - /url: http://localhost:8000/admin/bookings?page=4
+                - text: "4"
+              - link "Go to page 5" [ref=f7e369] [cursor=pointer]:
+                - /url: http://localhost:8000/admin/bookings?page=5
+                - text: "5"
+              - link "Next &raquo;" [ref=f7e370] [cursor=pointer]:
+                - /url: http://localhost:8000/admin/bookings?page=2

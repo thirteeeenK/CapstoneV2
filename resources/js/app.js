@@ -20,8 +20,8 @@ Alpine.data('dateRangePicker', (config = {}) => ({
     formattedSubtotal: '₱0.00',
     formattedDateRange: '',
     checking: false,
-    available: true,
-    availabilityMessage: '',
+    available: false,
+    availabilityMessage: 'Select a room to check availability',
 
     initFlatpickr() {
         this.$nextTick(() => {
@@ -70,7 +70,7 @@ Alpine.data('dateRangePicker', (config = {}) => ({
                         this.nights = 0;
                         this.subtotal = 0;
                         this.formattedDateRange = '';
-                        this.available = true;
+                        this.available = false;
                     }
 
                     this.$dispatch('date-range-changed', {
@@ -94,8 +94,8 @@ Alpine.data('dateRangePicker', (config = {}) => ({
         this.nights = 0;
         this.subtotal = 0;
         this.formattedDateRange = '';
-        this.available = true;
-        this.$dispatch('date-range-changed', { checkIn: '', checkOut: '', nights: 0, subtotal: 0, available: true });
+        this.available = false;
+        this.$dispatch('date-range-changed', { checkIn: '', checkOut: '', nights: 0, subtotal: 0, available: false });
     },
 
     effectiveRoomId() {

@@ -28,10 +28,10 @@ class RegisteredUserController extends Controller
 
         if ($search) {
             $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%")
-                    ->orWhere('phone_number', 'like', "%{$search}%")
-                    ->orWhere('address', 'like', "%{$search}%");
+                $q->where('name', 'ilike', "%{$search}%")
+                    ->orWhere('email', 'ilike', "%{$search}%")
+                    ->orWhere('phone_number', 'ilike', "%{$search}%")
+                    ->orWhere('address', 'ilike', "%{$search}%");
             });
         }
 
@@ -40,6 +40,17 @@ class RegisteredUserController extends Controller
         $allCount = User::count();
         $flaggedCount = User::where('chatbot_flag_count', '>', 0)->count();
         $bannedCount = User::activeBan()->count();
+
+        if ($request->ajax()) {
+            return view('admin.users._table', compact(
+                'users',
+                'tab',
+                'search',
+                'allCount',
+                'flaggedCount',
+                'bannedCount'
+            ));
+        }
 
         return view('admin.users.index', compact(
             'users',

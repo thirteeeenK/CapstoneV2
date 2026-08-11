@@ -35,16 +35,27 @@ class ActivityController extends Controller
 
         if ($search) {
             $query->where(function ($q) use ($search) {
-                $q->where('activity_name', 'like', '%' . $search . '%')
-                    ->orWhere('category', 'like', '%' . $search . '%')
-                    ->orWhere('activity_level', 'like', '%' . $search . '%')
-                    ->orWhere('description', 'like', '%' . $search . '%')
-                    ->orWhere('vibe_tags', 'like', '%' . $search . '%')
-                    ->orWhere('notes', 'like', '%' . $search . '%');
+                $q->where('activity_name', 'ilike', '%' . $search . '%')
+                    ->orWhere('category', 'ilike', '%' . $search . '%')
+                    ->orWhere('activity_level', 'ilike', '%' . $search . '%')
+                    ->orWhere('description', 'ilike', '%' . $search . '%')
+                    ->orWhere('vibe_tags', 'ilike', '%' . $search . '%')
+                    ->orWhere('notes', 'ilike', '%' . $search . '%');
             });
         }
 
         $activities = $query->orderBy('destination_id', 'asc')->orderBy('id', 'asc')->get();
+
+        if ($request->ajax()) {
+            return view('admin.activities._table', compact(
+                'activities',
+                'destinations',
+                'selectedDestinationId',
+                'search',
+                'selectedCategory',
+                'selectedLevel'
+            ));
+        }
 
         return view('admin.activities.index', compact(
             'activities',

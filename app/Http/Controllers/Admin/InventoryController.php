@@ -58,8 +58,8 @@ class InventoryController extends Controller
         }
         if ($search) {
             $hotelQuery->where(function ($q) use ($search) {
-                $q->where('hotel_name', 'like', '%' . $search . '%')
-                    ->orWhere('specific_address', 'like', '%' . $search . '%');
+                $q->where('hotel_name', 'ilike', '%' . $search . '%')
+                    ->orWhere('specific_address', 'ilike', '%' . $search . '%');
             });
         }
         $hotels = $hotelQuery->orderBy('id', 'asc')->get();
@@ -78,8 +78,8 @@ class InventoryController extends Controller
         }
         if ($search) {
             $roomQuery->where(function ($q) use ($search) {
-                $q->where('room_name', 'like', '%' . $search . '%')
-                    ->orWhere('description', 'like', '%' . $search . '%');
+                $q->where('room_name', 'ilike', '%' . $search . '%')
+                    ->orWhere('description', 'ilike', '%' . $search . '%');
             });
         }
         $rooms = $roomQuery->orderBy('id', 'asc')->get();
@@ -96,9 +96,9 @@ class InventoryController extends Controller
         }
         if ($search) {
             $activityQuery->where(function ($q) use ($search) {
-                $q->where('activity_name', 'like', '%' . $search . '%')
-                    ->orWhere('category', 'like', '%' . $search . '%')
-                    ->orWhere('notes', 'like', '%' . $search . '%');
+                $q->where('activity_name', 'ilike', '%' . $search . '%')
+                    ->orWhere('category', 'ilike', '%' . $search . '%')
+                    ->orWhere('notes', 'ilike', '%' . $search . '%');
             });
         }
         $activities = $activityQuery->orderBy('id', 'asc')->get();
@@ -115,12 +115,26 @@ class InventoryController extends Controller
         }
         if ($search) {
             $addonQuery->where(function ($q) use ($search) {
-                $q->where('name', 'like', '%' . $search . '%')
-                    ->orWhere('type', 'like', '%' . $search . '%')
-                    ->orWhere('description', 'like', '%' . $search . '%');
+                $q->where('name', 'ilike', '%' . $search . '%')
+                    ->orWhere('type', 'ilike', '%' . $search . '%')
+                    ->orWhere('description', 'ilike', '%' . $search . '%');
             });
         }
         $addons = $addonQuery->orderBy('id', 'asc')->get();
+
+        if ($request->ajax()) {
+            return view('admin.inventory._results', compact(
+                'hotels',
+                'rooms',
+                'activities',
+                'addons',
+                'destinations',
+                'activeTab',
+                'selectedDestinationId',
+                'visibility',
+                'search'
+            ));
+        }
 
         return view('admin.inventory.index', compact(
             'hotels',

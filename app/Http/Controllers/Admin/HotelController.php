@@ -91,12 +91,16 @@ class HotelController extends Controller
 
         if ($search) {
             $query->where(function ($q) use ($search) {
-                $q->where('hotel_name', 'like', '%' . $search . '%')
-                    ->orWhere('specific_address', 'like', '%' . $search . '%');
+                $q->where('hotel_name', 'ilike', '%' . $search . '%')
+                    ->orWhere('specific_address', 'ilike', '%' . $search . '%');
             });
         }
 
         $hotels = $query->orderBy('destination_id', 'asc')->orderBy('id', 'asc')->get();
+
+        if ($request->ajax()) {
+            return view('admin.hotel._hotel_rows', compact('hotels', 'destinations', 'selectedDestinationId', 'search'));
+        }
 
         return view('admin.hotel.hotel_listings', compact('hotels', 'destinations', 'selectedDestinationId', 'search'));
     }

@@ -24,8 +24,8 @@ class AdminPackageController extends Controller
         $query = Package::with('destination');
 
         if ($search) {
-            $query->where('name', 'like', "%{$search}%")
-                  ->orWhere('type', 'like', "%{$search}%");
+            $query->where('name', 'ilike', "%{$search}%")
+                  ->orWhere('type', 'ilike', "%{$search}%");
         }
 
         if ($destinationId) {
@@ -45,6 +45,10 @@ class AdminPackageController extends Controller
             'visible' => Package::where('is_active', true)->count(),
             'hidden' => Package::where('is_active', false)->count(),
         ];
+
+        if ($request->ajax()) {
+            return view('admin.packages._table', compact('packages', 'destinations', 'search', 'destinationId', 'visibility'));
+        }
 
         return view('admin.packages.index', compact('packages', 'destinations', 'search', 'destinationId', 'visibility', 'stats'));
     }
