@@ -15,6 +15,7 @@ use App\Models\ChatbotAbuseReport;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Collection;
 
 class GeminiService
 {
@@ -111,7 +112,7 @@ class GeminiService
     /**
      * Builds structured, semantically optimized text for Package embedding generation.
      */
-    public function buildPackageEmbeddingText(\App\Models\Package $package): string
+    public function buildPackageEmbeddingText(Package $package): string
     {
         $destinationName = $package->destination ? $package->destination->name : 'Philippines';
         $inclusions = is_array($package->generic_inclusions) ? implode(', ', $package->generic_inclusions) : '';
@@ -776,7 +777,8 @@ class GeminiService
         }
 
         $vectorStr = $this->formatVectorForDb($queryVector);
-        if (!$vectorStr) return [];
+        if (!$vectorStr)
+            return [];
 
         $packages = Package::with('destination')
             ->where('is_active', true)
@@ -808,7 +810,8 @@ class GeminiService
         }
 
         $vectorStr = $this->formatVectorForDb($queryVector);
-        if (!$vectorStr) return [];
+        if (!$vectorStr)
+            return [];
 
         $faqs = \App\Models\Faq::where('is_active', true)
             ->whereNotNull('embedding')
@@ -989,20 +992,79 @@ class GeminiService
         $lower = mb_strtolower($comment);
 
         $positiveTerms = [
-            'ganda', 'maganda', 'super', 'clean', 'spotless', 'linis', 'friendly',
-            'polite', 'mabait', 'amazing', 'breathtaking', 'love', 'loved',
-            'recommend', 'excellent', 'great', 'nice', 'good', 'perfect',
-            'beautiful', 'comfortable', 'worth', 'masarap', 'sulit', 'fun',
-            'enjoy', 'best', 'awesome', 'courteous', 'delicious', 'quiet',
-            'spacious', 'cozy', 'helpful', 'fast', 'mabilis', 'bait', 'ang galing',
+            'ganda',
+            'maganda',
+            'super',
+            'clean',
+            'spotless',
+            'linis',
+            'friendly',
+            'polite',
+            'mabait',
+            'amazing',
+            'breathtaking',
+            'love',
+            'loved',
+            'recommend',
+            'excellent',
+            'great',
+            'nice',
+            'good',
+            'perfect',
+            'beautiful',
+            'comfortable',
+            'worth',
+            'masarap',
+            'sulit',
+            'fun',
+            'enjoy',
+            'best',
+            'awesome',
+            'courteous',
+            'delicious',
+            'quiet',
+            'spacious',
+            'cozy',
+            'helpful',
+            'fast',
+            'mabilis',
+            'bait',
+            'ang galing',
         ];
 
         $negativeTerms = [
-            'bad', 'poor', 'slow', 'spotty', 'dirty', 'rude', 'terrible',
-            'worst', 'expensive', 'mahal', 'pangit', 'mabagal', 'bagal',
-            'maingay', 'noisy', 'broken', 'mold', 'smell', 'smelled',
-            'disappoint', 'late', 'delay', 'delayed', 'uncomfortable', 'awful',
-            'sucks', 'problem', 'issue', 'masama', 'mainit', 'reklamo', 'antipatiko',
+            'bad',
+            'poor',
+            'slow',
+            'spotty',
+            'dirty',
+            'rude',
+            'terrible',
+            'worst',
+            'expensive',
+            'mahal',
+            'pangit',
+            'mabagal',
+            'bagal',
+            'maingay',
+            'noisy',
+            'broken',
+            'mold',
+            'smell',
+            'smelled',
+            'disappoint',
+            'late',
+            'delay',
+            'delayed',
+            'uncomfortable',
+            'awful',
+            'sucks',
+            'problem',
+            'issue',
+            'masama',
+            'mainit',
+            'reklamo',
+            'antipatiko',
         ];
 
         $matchedPositive = [];
@@ -1048,10 +1110,47 @@ class GeminiService
     public function extractKeywordsFallback(string $comment, array $seedTerms = []): array
     {
         $stopwords = [
-            'the', 'and', 'was', 'were', 'with', 'that', 'this', 'have', 'has', 'had',
-            'for', 'not', 'but', 'you', 'our', 'your', 'from', 'they', 'there', 'were',
-            'ang', 'ng', 'sa', 'at', 'ako', 'kami', 'namin', 'naman', 'kasi', 'kaya',
-            'na', 'si', 'sila', 'daw', 'rin', 'din', 'po', 'yung', 'pero', 'then', 'also',
+            'the',
+            'and',
+            'was',
+            'were',
+            'with',
+            'that',
+            'this',
+            'have',
+            'has',
+            'had',
+            'for',
+            'not',
+            'but',
+            'you',
+            'our',
+            'your',
+            'from',
+            'they',
+            'there',
+            'were',
+            'ang',
+            'ng',
+            'sa',
+            'at',
+            'ako',
+            'kami',
+            'namin',
+            'naman',
+            'kasi',
+            'kaya',
+            'na',
+            'si',
+            'sila',
+            'daw',
+            'rin',
+            'din',
+            'po',
+            'yung',
+            'pero',
+            'then',
+            'also',
         ];
 
         $tokens = preg_split('/[^\p{L}\p{N}]+/u', mb_strtolower($comment)) ?: [];
@@ -1195,14 +1294,14 @@ class GeminiService
     /**
      * Generates an AI consensus summary for an entity from its recent reviews.
      *
-     * @param  array  $reviews   Collection of Review models (or arrays) to summarize.
+     * @param  Collection|array  $reviews   Collection of Review models (or arrays) to summarize.
      * @param  string $entityLabel  Human label of the entity (e.g. "Deluxe Ocean View Room at Villa Maria Resort").
      * @return array  ['ai_summary_text' => string|null,
      *                'top_positive_highlights' => string[],
      *                'top_negative_highlights' => string[],
      *                'most_frequent_keywords' => ['keyword' => count, ...]]
      */
-    public function summarizeReviews($reviews, string $entityLabel): array
+    public function summarizeReviews(Collection|array $reviews, string $entityLabel): array
     {
         $reviews = collect($reviews)->values();
 
@@ -1585,6 +1684,13 @@ class GeminiService
 
     /**
      * Build a deterministic itinerary context for Gemini narration.
+     *
+     * @param  string  $query
+     * @param  array  $constraints
+     * @param  int  $pax
+     * @param  int  $nights
+     * @param  float  $maxBudget
+     * @return array{success: bool, context?: string, data?: array, message?: string}
      */
     public function buildItineraryContext(string $query, array $constraints, int $pax, int $nights, float $maxBudget): array
     {
@@ -1598,46 +1704,100 @@ class GeminiService
             return ['success' => false, 'message' => 'I could not find that destination.'];
         }
 
+        $selection = $this->selectItineraryHotelAndRoom((int) $destinationId, $pax, $nights, $maxBudget);
+        if (!$selection) {
+            return ['success' => false, 'message' => "I could not find any available rooms in {$destination->name} for {$pax} guests."];
+        }
+
+        /** @var HotelModel $pickedHotel */
+        $pickedHotel = $selection['hotel'];
+        /** @var RoomType $pickedRoom */
+        $pickedRoom = $selection['room'];
+
+        $budgetForActivities = $maxBudget - ($pickedRoom->calculateNightlyRate($pax) * $nights);
+        $activities = $this->selectItineraryActivities((int) $destinationId, $pax, $nights, $budgetForActivities);
+
+        $roomRate = $pickedRoom->calculateNightlyRate($pax);
+        $roomTotal = $roomRate * $nights;
+        $activitiesTotal = (float) $activities->sum('_computed_cost');
+        $grandTotal = round($roomTotal + $activitiesTotal, 2);
+
+        $context = $this->formatItineraryContextText(
+            $destination->name,
+            $pax,
+            $nights,
+            $maxBudget,
+            $pickedHotel,
+            $pickedRoom,
+            $roomRate,
+            $roomTotal,
+            $activities,
+            $activitiesTotal,
+            $grandTotal
+        );
+
+        $data = $this->formatItineraryData(
+            $destination,
+            $pickedHotel,
+            $pickedRoom,
+            $roomRate,
+            $roomTotal,
+            $activities,
+            $nights,
+            $pax,
+            $grandTotal,
+            $maxBudget
+        );
+
+        return [
+            'success' => true,
+            'context' => $context,
+            'data' => $data,
+        ];
+    }
+
+    /**
+     * Select suitable hotel and room for itinerary.
+     *
+     * @return array{hotel: HotelModel, room: RoomType}|null
+     */
+    private function selectItineraryHotelAndRoom(int $destinationId, int $pax, int $nights, float $maxBudget): ?array
+    {
         $hotels = HotelModel::where('destination_id', $destinationId)
             ->where('is_shown', true)
             ->with(['rooms' => fn($q) => $q->where('is_shown', true)->where('max_occupancy', '>=', $pax)])
             ->get()
             ->filter(fn($h) => $h->rooms->isNotEmpty());
 
-        $pickedRoom = null;
-        $pickedHotel = null;
         foreach ($hotels as $hotel) {
             foreach ($hotel->rooms as $room) {
                 $nightlyRate = $room->calculateNightlyRate($pax);
                 $roomTotal = $nightlyRate * $nights;
 
                 if ($roomTotal <= $maxBudget * 0.5) {
-                    $pickedRoom = $room;
-                    $pickedHotel = $hotel;
-                    break 2;
+                    return ['hotel' => $hotel, 'room' => $room];
                 }
             }
         }
 
-        if (!$pickedRoom) {
-            foreach ($hotels as $hotel) {
-                $best = $hotel->rooms->sortBy(fn($r) => $r->calculateNightlyRate($pax))->first();
-                if ($best) {
-                    $pickedRoom = $best;
-                    $pickedHotel = $hotel;
-                    break;
-                }
+        foreach ($hotels as $hotel) {
+            $best = $hotel->rooms->sortBy(fn($r) => $r->calculateNightlyRate($pax))->first();
+            if ($best) {
+                return ['hotel' => $hotel, 'room' => $best];
             }
         }
 
-        if (!$pickedRoom || !$pickedHotel) {
-            return ['success' => false, 'message' => "I could not find any available rooms in {$destination->name} for {$pax} guests."];
-        }
+        return null;
+    }
 
+    /**
+     * Select suitable activities for itinerary.
+     */
+    private function selectItineraryActivities(int $destinationId, int $pax, int $nights, float $budgetForActivities): Collection
+    {
         $activityCount = min(4, $nights + 1);
-        $budgetForActivities = $maxBudget - ($pickedRoom->calculateNightlyRate($pax) * $nights);
 
-        $activities = ActivityModel::where('destination_id', $destinationId)
+        return ActivityModel::where('destination_id', $destinationId)
             ->where('is_shown', true)
             ->get()
             ->map(function ($activity) use ($pax) {
@@ -1651,18 +1811,27 @@ class GeminiService
             ->sortBy('_computed_cost')
             ->take($activityCount)
             ->values();
+    }
 
-        $roomRate = $pickedRoom->calculateNightlyRate($pax);
-        $roomTotal = $roomRate * $nights;
-        $activitiesTotal = $activities->sum('_computed_cost');
-        $grandTotal = round($roomTotal + $activitiesTotal, 2);
-
-        $context = "DESTINATION: {$destination->name}\n";
+    private function formatItineraryContextText(
+        string $destName,
+        int $pax,
+        int $nights,
+        float $maxBudget,
+        HotelModel $hotel,
+        RoomType $room,
+        float $roomRate,
+        float $roomTotal,
+        Collection $activities,
+        float $activitiesTotal,
+        float $grandTotal
+    ): string {
+        $context = "DESTINATION: {$destName}\n";
         $context .= "PAX: {$pax} guest(s) | NIGHTS: {$nights} | BUDGET: ₱" . number_format($maxBudget, 2) . "\n\n";
 
         $context .= "HOTEL & ROOM:\n";
-        $context .= "- {$pickedHotel->hotel_name}: {$pickedRoom->room_name}\n";
-        $context .= "- Bed: {$pickedRoom->bed_configuration} | Occupancy: {$pickedRoom->max_occupancy} pax\n";
+        $context .= "- {$hotel->hotel_name}: {$room->room_name}\n";
+        $context .= "- Bed: {$room->bed_configuration} | Occupancy: {$room->max_occupancy} pax\n";
         $context .= "- Nightly rate: ₱" . number_format($roomRate, 2) . " | " . $nights . " nights = ₱" . number_format($roomTotal, 2) . "\n\n";
 
         $context .= "ACTIVITIES (₱" . number_format($activitiesTotal, 2) . " total):\n";
@@ -1677,12 +1846,27 @@ class GeminiService
             ? " (OVER BUDGET by ₱" . number_format($grandTotal - $maxBudget, 2) . " — inform the user)"
             : " (WITHIN BUDGET)";
 
-        $data = [
+        return $context;
+    }
+
+    private function formatItineraryData(
+        DestinationModel $destination,
+        HotelModel $hotel,
+        RoomType $room,
+        float $roomRate,
+        float $roomTotal,
+        Collection $activities,
+        int $nights,
+        int $pax,
+        float $grandTotal,
+        float $maxBudget
+    ): array {
+        return [
             'destination' => ['id' => $destination->id, 'name' => $destination->name],
-            'hotel' => ['id' => $pickedHotel->id, 'name' => $pickedHotel->hotel_name],
+            'hotel' => ['id' => $hotel->id, 'name' => $hotel->hotel_name],
             'room' => [
-                'id' => $pickedRoom->id,
-                'room_name' => $pickedRoom->room_name,
+                'id' => $room->id,
+                'room_name' => $room->room_name,
                 'nightly_rate' => $roomRate,
                 'formatted_nightly_rate' => '₱' . number_format($roomRate, 2),
                 'total' => $roomTotal,
@@ -1702,12 +1886,6 @@ class GeminiService
             'formatted_grand_total' => '₱' . number_format($grandTotal, 2),
             'budget' => $maxBudget,
             'within_budget' => $grandTotal <= $maxBudget,
-        ];
-
-        return [
-            'success' => true,
-            'context' => $context,
-            'data' => $data,
         ];
     }
 }
