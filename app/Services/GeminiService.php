@@ -15,6 +15,7 @@ use App\Models\ChatbotAbuseReport;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Collection;
 
 class GeminiService
@@ -886,7 +887,18 @@ class GeminiService
 
         abort_unless(File::exists($path), 500, "Missing Gemini system prompt file: {$filename}");
 
-        return self::$promptCache[$filename] = File::get($path);
+        $mtime = File::lastModified($path);
+        $cacheKey = "gemini:system_prompt:{$filename}";
+        $cached = Cache::get($cacheKey);
+
+        if (is_array($cached) && ($cached['mtime'] ?? null) === $mtime) {
+            return self::$promptCache[$filename] = $cached['content'];
+        }
+
+        $content = File::get($path);
+        Cache::put($cacheKey, ['content' => $content, 'mtime' => $mtime], now()->addDay());
+
+        return self::$promptCache[$filename] = $content;
     }
 
     /**
