@@ -32,3 +32,7 @@ SunnyTrips — Philippine travel booking capstone with an AI Decision Support Sy
 - Admin list pages use a live-search pattern: the index view is a slim wrapper holding an Alpine `x-data` (state `search`/`destinationId`/`visibility`/`tab`/`level`/`category`/`loading`/`timer`, methods `fetchResults()` / `debouncedSearch()` / `setTab()` / `handleNavClick($event)` for pagination) that includes a results partial (`_table` / `_hotel_rows` / `_results` / `_booking_rows`) rooted at a `#listings-results` div. The controller's `index()` returns the partial standalone when `$request->ajax()` (X-Requested-With header). Converted pages: bookings, hotels (`hotel_listings`), inventory, activities, add-ons, packages, FAQs, users. Follow this pattern for any new/remaining admin list pages.
 - Root-level `*.md` files are specs/plans/scratch, not instructions: `code.md` and `bugFix.md` are outdated scratch; `Package_System_Plan.md`, `Travel_Cart_Plan.md`, `DASHBOARD.md`, `DSS_*_GUIDE.md`, `HUMAN_AGENT_HANDOFF_SPECIFICATION.md`, `plan.md` are design docs for planned features — verify against the code before trusting.
 - `.npmrc` sets `ignore-scripts=true` (npm installs never run lifecycle scripts).
+
+## Web Interaction Rule
+
+Whenever a task requires opening a web page, browsing, UI testing, or any web-related activity, you MUST ALWAYS use the local playwright MCP server configured with the Brave browser (--executable-path to Brave). Do not use built-in simulated browsers or fallback text search unless explicitly told otherwise.

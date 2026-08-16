@@ -130,10 +130,20 @@
             const modalSubmitBtn = document.getElementById('modal-create-account-btn');
             const consentFields = ['age_confirmed', 'terms_accepted', 'privacy_accepted', 'ai_disclosure_accepted'];
 
+            const progressBar = document.getElementById('consent-progress');
+            const progressCount = document.getElementById('consent-count');
+
             // Enable/disable the modal's Create account button based on all required consents.
             function updateModalSubmitButton() {
-                const allChecked = Array.from(consentCheckboxes).every(checkbox => checkbox.checked);
+                const checked = Array.from(consentCheckboxes).filter(checkbox => checkbox.checked);
+                const allChecked = checked.length === consentCheckboxes.length;
                 modalSubmitBtn.disabled = !allChecked;
+
+                if (progressBar && progressCount) {
+                    const pct = consentCheckboxes.length ? Math.round((checked.length / consentCheckboxes.length) * 100) : 0;
+                    progressBar.style.width = pct + '%';
+                    progressCount.textContent = checked.length + ' of ' + consentCheckboxes.length + ' agreements confirmed';
+                }
             }
 
             consentCheckboxes.forEach(checkbox => {
@@ -155,79 +165,155 @@
     </script>
 
     {{-- Consent + confirmation modal (declared first so detail modals can stack above it) --}}
-    <x-modal name="confirm-submit-modal" :show="false" maxWidth="2xl">
-        <div class="p-6">
-            <h2 class="text-lg font-semibold text-ink-900">Confirm your agreement</h2>
-            <p class="mt-2 text-sm text-ink-600">
-                To create your account, please confirm that you are at least 18 years old and that you have read and agree to the following:
-            </p>
+    <x-modal name="confirm-submit-modal" :show="false" maxWidth="2xl" align="right">
+        <div class="p-6 sm:p-8">
 
-            <div class="mt-5 space-y-4 rounded-lg bg-sand-100/50 p-4">
+            {{-- Header --}}
+            <div class="flex items-start justify-between gap-4">
+                <div>
+                    <p class="font-label text-xs font-bold uppercase tracking-[0.2em] text-ocean-600">
+                        Confirm your agreements
+                    </p>
+                    <h2 class="mt-2 font-headline text-xl font-bold text-ink-900 tracking-tight">
+                        One last step before we set sail.
+                    </h2>
+                    <p class="mt-2 text-sm font-body text-ink-500 leading-relaxed">
+                        To create your account, please confirm the details below. These keep your experience safe, transparent, and fair.
+                    </p>
+                </div>
+                <button type="button" x-on:click="$dispatch('close')"
+                    class="shrink-0 -mr-1 -mt-1 inline-flex h-9 w-9 items-center justify-center rounded-lg text-ink-400 transition-colors hover:bg-ink-100 hover:text-ink-700 focus:outline-none focus:ring-2 focus:ring-ocean-400/40 cursor-pointer"
+                    aria-label="Close">
+                    <span class="material-symbols-outlined text-[22px]">close</span>
+                </button>
+            </div>
+
+            {{-- Progress hint --}}
+            <div class="mt-5 flex items-center gap-3">
+                <div class="h-1.5 flex-1 overflow-hidden rounded-full bg-ink-100">
+                    <div id="consent-progress" class="h-full w-0 rounded-full bg-ocean-500 transition-all duration-300"></div>
+                </div>
+                <span id="consent-count" class="shrink-0 font-label text-xs font-semibold text-ink-500">
+                    0 of 4 agreements confirmed
+                </span>
+            </div>
+
+            {{-- Consent cards --}}
+            <div class="mt-5 space-y-3">
+
                 {{-- Age confirmation --}}
-                <label class="flex items-start gap-3">
-                    <input type="checkbox" name="age_confirmed" value="1" form="register-form"
-                        class="consent-checkbox mt-1 h-4 w-4 rounded border-ink-300 text-ocean-600 focus:ring-ocean-500"
-                        {{ old('age_confirmed') ? 'checked' : '' }}>
-                    <span class="text-sm text-ink-600">
-                        I confirm that I am at least 18 years old and legally capable of entering into contracts.
+                <label class="group flex cursor-pointer items-start gap-3 sm:gap-4 rounded-xl border border-ink-200 bg-white p-3.5 sm:p-4 transition-all duration-150 hover:border-ocean-300 hover:bg-ocean-50/40 has-[:checked]:border-ocean-500 has-[:checked]:bg-ocean-50/60 has-[:checked]:shadow-sm">
+                    <span class="mt-0.5 inline-flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-lg bg-ocean-50 text-ocean-600 ring-1 ring-ocean-100 transition-colors group-has-[:checked]:bg-ocean-500 group-has-[:checked]:text-white">
+                        <span class="material-symbols-outlined text-[20px]">verified_user</span>
+                    </span>
+                    <span class="min-w-0 flex-1">
+                        <span class="block font-headline text-sm font-bold text-ink-900">Age confirmation</span>
+                        <span class="mt-0.5 block text-sm font-body text-ink-500 leading-relaxed">
+                            I confirm that I am at least 18 years old and legally capable of entering into contracts.
+                        </span>
+                    </span>
+                    <span class="relative mt-1 inline-flex h-5 w-5 shrink-0">
+                        <input type="checkbox" name="age_confirmed" value="1" form="register-form"
+                            class="consent-checkbox peer h-5 w-5 cursor-pointer appearance-none rounded-md border border-ink-300 bg-white transition-colors checked:border-ocean-500 checked:bg-ocean-500 focus:outline-none focus:ring-2 focus:ring-ocean-400/40 focus:ring-offset-1"
+                            {{ old('age_confirmed') ? 'checked' : '' }}>
+                        <span class="pointer-events-none absolute inset-0 flex items-center justify-center text-white opacity-0 peer-checked:opacity-100 transition-opacity">
+                            <span class="material-symbols-outlined text-[14px]">check</span>
+                        </span>
                     </span>
                 </label>
-                <div data-error-for="age_confirmed">
+                <div data-error-for="age_confirmed" class="px-1">
                     <x-input-error :messages="$errors->get('age_confirmed')" />
                 </div>
 
                 {{-- Terms and Conditions --}}
-                <label class="flex items-start gap-3">
-                    <input type="checkbox" name="terms_accepted" value="1" form="register-form"
-                        class="consent-checkbox mt-1 h-4 w-4 rounded border-ink-300 text-ocean-600 focus:ring-ocean-500"
-                        {{ old('terms_accepted') ? 'checked' : '' }}>
-                    <span class="text-sm text-ink-600">
-                        I agree to the
-                        <a href="{{ route('terms') }}" target="_blank"
-                            class="font-semibold text-ocean-600 hover:underline">Terms and Conditions</a>,
-                        including the binding arbitration clause.
+                <label class="group flex cursor-pointer items-start gap-3 sm:gap-4 rounded-xl border border-ink-200 bg-white p-3.5 sm:p-4 transition-all duration-150 hover:border-ocean-300 hover:bg-ocean-50/40 has-[:checked]:border-ocean-500 has-[:checked]:bg-ocean-50/60 has-[:checked]:shadow-sm">
+                    <span class="mt-0.5 inline-flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-lg bg-ocean-50 text-ocean-600 ring-1 ring-ocean-100 transition-colors group-has-[:checked]:bg-ocean-500 group-has-[:checked]:text-white">
+                        <span class="material-symbols-outlined text-[20px]">description</span>
+                    </span>
+                    <span class="min-w-0 flex-1">
+                        <span class="block font-headline text-sm font-bold text-ink-900">Terms &amp; Conditions</span>
+                        <span class="mt-0.5 block text-sm font-body text-ink-500 leading-relaxed">
+                            I agree to the
+                            <a href="{{ route('terms') }}" target="_blank"
+                                class="font-semibold text-ocean-600 hover:underline">Terms and Conditions</a>,
+                            including the binding arbitration clause.
+                        </span>
+                    </span>
+                    <span class="relative mt-1 inline-flex h-5 w-5 shrink-0">
+                        <input type="checkbox" name="terms_accepted" value="1" form="register-form"
+                            class="consent-checkbox peer h-5 w-5 cursor-pointer appearance-none rounded-md border border-ink-300 bg-white transition-colors checked:border-ocean-500 checked:bg-ocean-500 focus:outline-none focus:ring-2 focus:ring-ocean-400/40 focus:ring-offset-1"
+                            {{ old('terms_accepted') ? 'checked' : '' }}>
+                        <span class="pointer-events-none absolute inset-0 flex items-center justify-center text-white opacity-0 peer-checked:opacity-100 transition-opacity">
+                            <span class="material-symbols-outlined text-[14px]">check</span>
+                        </span>
                     </span>
                 </label>
-                <div data-error-for="terms_accepted">
+                <div data-error-for="terms_accepted" class="px-1">
                     <x-input-error :messages="$errors->get('terms_accepted')" />
                 </div>
 
                 {{-- Privacy Policy --}}
-                <label class="flex items-start gap-3">
-                    <input type="checkbox" name="privacy_accepted" value="1" form="register-form"
-                        class="consent-checkbox mt-1 h-4 w-4 rounded border-ink-300 text-ocean-600 focus:ring-ocean-500"
-                        {{ old('privacy_accepted') ? 'checked' : '' }}>
-                    <span class="text-sm text-ink-600">
-                        I agree to the
-                        <a href="{{ route('privacy-policy') }}" target="_blank"
-                            class="font-semibold text-ocean-600 hover:underline">Privacy Policy</a>
-                        and Data Disclosure summary.
+                <label class="group flex cursor-pointer items-start gap-3 sm:gap-4 rounded-xl border border-ink-200 bg-white p-3.5 sm:p-4 transition-all duration-150 hover:border-ocean-300 hover:bg-ocean-50/40 has-[:checked]:border-ocean-500 has-[:checked]:bg-ocean-50/60 has-[:checked]:shadow-sm">
+                    <span class="mt-0.5 inline-flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-lg bg-ocean-50 text-ocean-600 ring-1 ring-ocean-100 transition-colors group-has-[:checked]:bg-ocean-500 group-has-[:checked]:text-white">
+                        <span class="material-symbols-outlined text-[20px]">shield</span>
+                    </span>
+                    <span class="min-w-0 flex-1">
+                        <span class="block font-headline text-sm font-bold text-ink-900">Privacy &amp; Data</span>
+                        <span class="mt-0.5 block text-sm font-body text-ink-500 leading-relaxed">
+                            I agree to the
+                            <a href="{{ route('privacy-policy') }}" target="_blank"
+                                class="font-semibold text-ocean-600 hover:underline">Privacy Policy</a>
+                            and Data Disclosure summary.
+                        </span>
+                    </span>
+                    <span class="relative mt-1 inline-flex h-5 w-5 shrink-0">
+                        <input type="checkbox" name="privacy_accepted" value="1" form="register-form"
+                            class="consent-checkbox peer h-5 w-5 cursor-pointer appearance-none rounded-md border border-ink-300 bg-white transition-colors checked:border-ocean-500 checked:bg-ocean-500 focus:outline-none focus:ring-2 focus:ring-ocean-400/40 focus:ring-offset-1"
+                            {{ old('privacy_accepted') ? 'checked' : '' }}>
+                        <span class="pointer-events-none absolute inset-0 flex items-center justify-center text-white opacity-0 peer-checked:opacity-100 transition-opacity">
+                            <span class="material-symbols-outlined text-[14px]">check</span>
+                        </span>
                     </span>
                 </label>
-                <div data-error-for="privacy_accepted">
+                <div data-error-for="privacy_accepted" class="px-1">
                     <x-input-error :messages="$errors->get('privacy_accepted')" />
                 </div>
 
                 {{-- AI Disclosure --}}
-                <label class="flex items-start gap-3">
-                    <input type="checkbox" name="ai_disclosure_accepted" value="1" form="register-form"
-                        class="consent-checkbox mt-1 h-4 w-4 rounded border-ink-300 text-ocean-600 focus:ring-ocean-500"
-                        {{ old('ai_disclosure_accepted') ? 'checked' : '' }}>
-                    <span class="text-sm text-ink-600">
-                        I acknowledge the
-                        <a href="{{ route('ai-disclosure') }}" target="_blank"
-                            class="font-semibold text-ocean-600 hover:underline">AI Usage Disclosure</a>
-                        and understand that AI recommendations may contain errors.
+                <label class="group flex cursor-pointer items-start gap-3 sm:gap-4 rounded-xl border border-ink-200 bg-white p-3.5 sm:p-4 transition-all duration-150 hover:border-ocean-300 hover:bg-ocean-50/40 has-[:checked]:border-ocean-500 has-[:checked]:bg-ocean-50/60 has-[:checked]:shadow-sm">
+                    <span class="mt-0.5 inline-flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-lg bg-ocean-50 text-ocean-600 ring-1 ring-ocean-100 transition-colors group-has-[:checked]:bg-ocean-500 group-has-[:checked]:text-white">
+                        <span class="material-symbols-outlined text-[20px]">smart_toy</span>
+                    </span>
+                    <span class="min-w-0 flex-1">
+                        <span class="block font-headline text-sm font-bold text-ink-900">AI Usage Disclosure</span>
+                        <span class="mt-0.5 block text-sm font-body text-ink-500 leading-relaxed">
+                            I acknowledge the
+                            <a href="{{ route('ai-disclosure') }}" target="_blank"
+                                class="font-semibold text-ocean-600 hover:underline">AI Usage Disclosure</a>
+                            and understand that AI recommendations may contain errors.
+                        </span>
+                    </span>
+                    <span class="relative mt-1 inline-flex h-5 w-5 shrink-0">
+                        <input type="checkbox" name="ai_disclosure_accepted" value="1" form="register-form"
+                            class="consent-checkbox peer h-5 w-5 cursor-pointer appearance-none rounded-md border border-ink-300 bg-white transition-colors checked:border-ocean-500 checked:bg-ocean-500 focus:outline-none focus:ring-2 focus:ring-ocean-400/40 focus:ring-offset-1"
+                            {{ old('ai_disclosure_accepted') ? 'checked' : '' }}>
+                        <span class="pointer-events-none absolute inset-0 flex items-center justify-center text-white opacity-0 peer-checked:opacity-100 transition-opacity">
+                            <span class="material-symbols-outlined text-[14px]">check</span>
+                        </span>
                     </span>
                 </label>
-                <div data-error-for="ai_disclosure_accepted">
+                <div data-error-for="ai_disclosure_accepted" class="px-1">
                     <x-input-error :messages="$errors->get('ai_disclosure_accepted')" />
                 </div>
             </div>
 
-            <div class="mt-6 flex justify-end gap-3">
-                <x-secondary-button x-on:click="$dispatch('close')">Cancel</x-secondary-button>
-                <x-primary-button id="modal-create-account-btn" form="register-form" disabled>
+            {{-- Footer --}}
+            <div class="mt-7 border-t border-ink-100 pt-5 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <button type="button" x-on:click="$dispatch('close')"
+                    class="inline-flex items-center justify-center rounded-lg border border-sand-200 bg-white px-5 py-3 text-sm font-semibold text-ink-600 transition-all duration-150 hover:bg-sand-50 focus:outline-none focus:ring-2 focus:ring-ocean-400/40 cursor-pointer">
+                    Cancel
+                </button>
+                <x-primary-button id="modal-create-account-btn" form="register-form" disabled class="sm:min-w-[12rem]">
                     Create account
                 </x-primary-button>
             </div>
