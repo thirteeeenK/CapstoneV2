@@ -889,14 +889,24 @@ class GeminiService
 
         $mtime = File::lastModified($path);
         $cacheKey = "gemini:system_prompt:{$filename}";
-        $cached = Cache::get($cacheKey);
 
-        if (is_array($cached) && ($cached['mtime'] ?? null) === $mtime) {
-            return self::$promptCache[$filename] = $cached['content'];
+        try {
+            $cached = Cache::get($cacheKey);
+
+            if (is_array($cached) && ($cached['mtime'] ?? null) === $mtime) {
+                return self::$promptCache[$filename] = $cached['content'];
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Gemini prompt cache read failed, falling back to disk: ' . $e->getMessage());
         }
 
         $content = File::get($path);
-        Cache::put($cacheKey, ['content' => $content, 'mtime' => $mtime], now()->addDay());
+
+        try {
+            Cache::put($cacheKey, ['content' => $content, 'mtime' => $mtime], now()->addDay());
+        } catch (\Throwable $e) {
+            Log::warning('Gemini prompt cache write failed: ' . $e->getMessage());
+        }
 
         return self::$promptCache[$filename] = $content;
     }
