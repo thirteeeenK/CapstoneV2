@@ -1695,18 +1695,46 @@ class GeminiService
         }
 
         $key = 'gemini:chat_cache:' . md5($modelName . '|' . $systemInstruction);
-        $cached = Cache::get($key);
 
-        if (is_array($cached) && ($cached['expires_at'] ?? 0) > now()->addHour()->timestamp) {
-            return $cached['name'];
-        }
+        try {
+            $cached = Cache::get($key);
 
-        $name = $this->createChatSystemPromptCache($systemInstruction, $modelName);
-        if ($name === null) {
+            $freshThreshold = ($cached['negative'] ?? false)
+                ? now()->timestamp
+                : now()->addHour()->timestamp;
+
+            if (is_array($cached) && ($cached['expires_at'] ?? 0) > $freshThreshold) {
+                if ($cached['negative'] ?? false) {
+                    return null;
+                }
+
+                if (is_string($cached['name'] ?? null)) {
+                    return $cached['name'];
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::warning('Gemini chat cache read failed, falling back to inline systemInstruction: ' . $e->getMessage());
+
             return null;
         }
 
-        Cache::put($key, ['name' => $name, 'expires_at' => now()->addHours(23)->timestamp], now()->addDay());
+        $name = $this->createChatSystemPromptCache($systemInstruction, $modelName);
+
+        if ($name === null) {
+            try {
+                Cache::put($key, ['name' => null, 'expires_at' => now()->addMinutes(10)->timestamp, 'negative' => true], now()->addMinutes(10));
+            } catch (\Throwable $e) {
+                Log::warning('Gemini chat cache negative marker write failed: ' . $e->getMessage());
+            }
+
+            return null;
+        }
+
+        try {
+            Cache::put($key, ['name' => $name, 'expires_at' => now()->addHours(23)->timestamp], now()->addDay());
+        } catch (\Throwable $e) {
+            Log::warning('Gemini chat cache write failed: ' . $e->getMessage());
+        }
 
         return $name;
     }
@@ -1755,6 +1783,8 @@ class GeminiService
                 $payload['systemInstruction'] = ['parts' => [['text' => $systemInstruction]]];
             }
 
+            $isCacheRelated = false;
+
             try {
                 $response = Http::withHeaders([
                     'Content-Type' => 'application/json',
@@ -1766,16 +1796,22 @@ class GeminiService
                         return trim($text);
                     }
                 }
+
+                $isCacheRelated = $useCache && in_array($response->status(), [400, 404], true);
             } catch (\Exception $e) {
                 Log::error('Gemini ChatResponse Exception: ' . $e->getMessage());
             }
 
-            if (! $useCache) {
+            if (! $useCache || ! $isCacheRelated) {
                 break;
             }
 
             // Retry with inline system instruction; invalidate stale local cache.
-            Cache::forget($cacheKey);
+            try {
+                Cache::forget($cacheKey);
+            } catch (\Throwable $e) {
+                Log::warning('Gemini chat cache invalidation failed: ' . $e->getMessage());
+            }
             $useCache = false;
         }
 
