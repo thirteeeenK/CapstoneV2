@@ -39,6 +39,7 @@ return [
         'embedding_model' => env('EMBEDDING_MODEL', 'models/text-embedding-001'),
         'chat_model' => env('GEMINI_CHAT_MODEL', 'models/gemini-2.5-flash-lite'),
         'review_summary_threshold' => (int) env('REVIEW_SUMMARY_THRESHOLD', 3),
+        'chat_context_cache' => env('GEMINI_CHAT_CONTEXT_CACHE', true),
     ],
 
     'payment' => [
