@@ -708,8 +708,6 @@ class ChatbotService
 
     protected function buildPrompt(string $stage, string $context, string $query, ?User $user): string
     {
-        $system = $this->geminiChatSystemPrompt();
-
         $header = match ($stage) {
             'room-search' => "TASK: Recommend rooms based on the database results below.",
             'hotel-search' => "TASK: Recommend hotels based on the database results below.",
@@ -745,7 +743,7 @@ class ChatbotService
             $header .= "\n- The user is logged in as {$user->name}.";
         }
 
-        return "{$system}\n\n{$header}\n\n=== DATABASE RESULTS ===\n{$context}\n=== END DATABASE RESULTS ===\n\nUSER QUERY: {$query}";
+        return "{$header}\n\n=== DATABASE RESULTS ===\n{$context}\n=== END DATABASE RESULTS ===\n\nUSER QUERY: {$query}";
     }
 
     protected function buildSystemPrompt(string $type, bool $grounded): string
