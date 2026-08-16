@@ -1734,38 +1734,52 @@ class GeminiService
         }
         $contents[] = ['role' => 'user', 'parts' => [['text' => $userPrompt]]];
 
-        $payload = [
-            'contents' => $contents,
-            'generationConfig' => [
-                'temperature' => 0.4,
-                'topP' => 0.95,
-                'maxOutputTokens' => 1024,
-            ],
-        ];
-
         $cacheName = $this->resolveChatSystemPromptCache($systemInstruction, $modelName);
-        if ($cacheName !== null) {
-            $payload['cachedContent'] = $cacheName;
-        } else {
-            $payload['systemInstruction'] = ['parts' => [['text' => $systemInstruction]]];
-        }
+        $useCache = $cacheName !== null;
+        $cacheKey = 'gemini:chat_cache:' . md5($modelName . '|' . $systemInstruction);
+        $response = null;
 
-        try {
-            $response = Http::withHeaders([
-                'Content-Type' => 'application/json',
-            ])->timeout(30)->post($url, $payload);
+        for ($attempt = 0; $attempt < 2; $attempt++) {
+            $payload = [
+                'contents' => $contents,
+                'generationConfig' => [
+                    'temperature' => 0.4,
+                    'topP' => 0.95,
+                    'maxOutputTokens' => 1024,
+                ],
+            ];
 
-            if ($response->successful()) {
-                $text = $response->json('candidates.0.content.parts.0.text');
-                if (is_string($text) && trim($text) !== '') {
-                    return trim($text);
-                }
+            if ($useCache) {
+                $payload['cachedContent'] = $cacheName;
+            } else {
+                $payload['systemInstruction'] = ['parts' => [['text' => $systemInstruction]]];
             }
 
-            Log::error('Gemini ChatResponse Failed: ', ['response' => $response->body()]);
-        } catch (\Exception $e) {
-            Log::error('Gemini ChatResponse Exception: ' . $e->getMessage());
+            try {
+                $response = Http::withHeaders([
+                    'Content-Type' => 'application/json',
+                ])->timeout(30)->post($url, $payload);
+
+                if ($response->successful()) {
+                    $text = $response->json('candidates.0.content.parts.0.text');
+                    if (is_string($text) && trim($text) !== '') {
+                        return trim($text);
+                    }
+                }
+            } catch (\Exception $e) {
+                Log::error('Gemini ChatResponse Exception: ' . $e->getMessage());
+            }
+
+            if (! $useCache) {
+                break;
+            }
+
+            // Retry with inline system instruction; invalidate stale local cache.
+            Cache::forget($cacheKey);
+            $useCache = false;
         }
+
+        Log::error('Gemini ChatResponse Failed: ', ['response' => $response ? $response->body() : 'no response']);
 
         return null;
     }

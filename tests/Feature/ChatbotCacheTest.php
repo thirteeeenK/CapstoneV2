@@ -60,3 +60,46 @@ test('chat falls back to inline systemInstruction when cache create fails', func
     expect($generatePayload)->toHaveKey('systemInstruction');
     expect($generatePayload)->not->toHaveKey('cachedContent');
 });
+
+test('chat falls back to inline systemInstruction when cachedContent is rejected at generate time', function () {
+    config(['services.gemini.chat_context_cache' => true]);
+    Cache::flush();
+
+    $generatePayloads = [];
+    $generateCallCount = 0;
+
+    Http::fake([
+        '*embedContent*' => Http::response(['embedding' => ['values' => array_fill(0, 3072, 0.01)]]),
+        '*cachedContents*' => function (Request $request) {
+            return Http::response([
+                'name' => 'cachedContents/test123',
+                'expireTime' => now()->addDay()->toIso8601String(),
+            ]);
+        },
+        '*generateContent*' => function (Request $request) use (&$generatePayloads, &$generateCallCount) {
+            $generatePayloads[] = $request->data();
+            $generateCallCount++;
+
+            if ($generateCallCount === 1) {
+                return Http::response([], 404);
+            }
+
+            return Http::response(['candidates' => [['content' => ['parts' => [['text' => 'Hello!']]]]]]);
+        },
+    ]);
+
+    $user = onboardedUser();
+    $this->actingAs($user);
+    $this->postJson('/chat', ['message' => 'Hello there'])->assertOk();
+
+    $systemInstruction = app(\App\Services\GeminiService::class)->loadChatbotSystemPrompt();
+    $modelName = config('services.gemini.chat_model') ?? 'models/gemini-2.5-flash-lite';
+    $cacheKey = 'gemini:chat_cache:' . md5($modelName . '|' . $systemInstruction);
+
+    expect($generatePayloads)->toHaveCount(2);
+    expect($generatePayloads[0])->toHaveKey('cachedContent', 'cachedContents/test123');
+    expect($generatePayloads[0])->not->toHaveKey('systemInstruction');
+    expect($generatePayloads[1])->toHaveKey('systemInstruction');
+    expect($generatePayloads[1])->not->toHaveKey('cachedContent');
+    expect(Cache::get($cacheKey))->toBeNull();
+});
