@@ -1642,6 +1642,76 @@ class GeminiService
     }
 
     /**
+     * Create a Gemini cachedContents resource for the chat system prompt.
+     */
+    protected function createChatSystemPromptCache(string $systemInstruction, string $modelName): ?string
+    {
+        $apiKey = config('services.gemini.api_key');
+        if (! $apiKey) {
+            return null;
+        }
+
+        $url = "https://generativelanguage.googleapis.com/v1beta/cachedContents?key={$apiKey}";
+
+        $payload = [
+            'model' => $modelName,
+            'displayName' => 'sunnydot-chat-system-prompt',
+            'contents' => [],
+            'systemInstruction' => ['parts' => [['text' => $systemInstruction]]],
+            'ttl' => '86400s',
+        ];
+
+        try {
+            $response = Http::withHeaders(['Content-Type' => 'application/json'])
+                ->timeout(30)->post($url, $payload);
+
+            if (! $response->successful()) {
+                Log::error('Gemini CachedContent Create Failed: ', ['response' => $response->body()]);
+
+                return null;
+            }
+
+            $name = $response->json('name');
+
+            return is_string($name) ? $name : null;
+        } catch (\Exception $e) {
+            Log::error('Gemini CachedContent Exception: ' . $e->getMessage());
+
+            return null;
+        }
+    }
+
+    /**
+     * Resolve a cachedContents resource name for the chat system prompt.
+     */
+    public function resolveChatSystemPromptCache(string $systemInstruction, string $modelName): ?string
+    {
+        if (! config('services.gemini.chat_context_cache')) {
+            return null;
+        }
+
+        if (strlen($systemInstruction) < 1024) {
+            return null;
+        }
+
+        $key = 'gemini:chat_cache:' . md5($modelName . '|' . $systemInstruction);
+        $cached = Cache::get($key);
+
+        if (is_array($cached) && ($cached['expires_at'] ?? 0) > now()->addHour()->timestamp) {
+            return $cached['name'];
+        }
+
+        $name = $this->createChatSystemPromptCache($systemInstruction, $modelName);
+        if ($name === null) {
+            return null;
+        }
+
+        Cache::put($key, ['name' => $name, 'expires_at' => now()->addHours(23)->timestamp], now()->addDay());
+
+        return $name;
+    }
+
+    /**
      * Multi-turn chat response (plain-text, no forced JSON).
      */
     public function generateChatResponse(string $systemInstruction, array $history, string $userPrompt): ?string
@@ -1665,9 +1735,6 @@ class GeminiService
         $contents[] = ['role' => 'user', 'parts' => [['text' => $userPrompt]]];
 
         $payload = [
-            'systemInstruction' => [
-                'parts' => [['text' => $systemInstruction]],
-            ],
             'contents' => $contents,
             'generationConfig' => [
                 'temperature' => 0.4,
@@ -1675,6 +1742,13 @@ class GeminiService
                 'maxOutputTokens' => 1024,
             ],
         ];
+
+        $cacheName = $this->resolveChatSystemPromptCache($systemInstruction, $modelName);
+        if ($cacheName !== null) {
+            $payload['cachedContent'] = $cacheName;
+        } else {
+            $payload['systemInstruction'] = ['parts' => [['text' => $systemInstruction]]];
+        }
 
         try {
             $response = Http::withHeaders([
