@@ -221,7 +221,7 @@ class ChatbotService
             'Keep responses friendly, concise, and helpful.',
         ];
 
-        $prompt = $this->geminiChatSystemPrompt() . "\n\n{$header}\n\nRULES:\n- " . implode("\n- ", $rules)
+        $prompt = "{$header}\n\nRULES:\n- " . implode("\n- ", $rules)
             . "\n\n=== PREVIOUS RECOMMENDATIONS ===\n{$context}\n=== END PREVIOUS RECOMMENDATIONS ===\n\nFOLLOW-UP QUESTION: {$query}";
 
         $reply = $this->geminiChatResponse($prompt, $session);

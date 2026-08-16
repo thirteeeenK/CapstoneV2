@@ -475,6 +475,45 @@ test('itinerary prompt explicitly rejects ungrounded travel details', function (
     expect($systemPrompt)->toContain('transport, landmarks, restaurants, fees, or meal costs');
 });
 
+test('follow-up prompts do not duplicate the system prompt into user content', function () {
+    $capturedPayload = null;
+
+    Http::fake([
+        '*embedContent*' => Http::response([
+            'embedding' => ['values' => array_fill(0, 3072, 0.01)],
+        ]),
+        '*generateContent*' => function (Request $request) use (&$capturedPayload) {
+            $capturedPayload = $request->data();
+
+            return Http::response([
+                'candidates' => [[
+                    'content' => ['parts' => [['text' => 'Here is a recommendation for you!']]],
+                ]],
+            ]);
+        },
+    ]);
+
+    $first = $this->postJson('/chat', [
+        'message' => 'recommend a hotel in Boracay',
+    ]);
+    $first->assertOk()->assertJsonPath('status', 'success');
+
+    $token = $first->json('session_token');
+
+    $this->postJson('/chat', [
+        'message' => 'how much are they?',
+        'session_token' => $token,
+    ])->assertOk();
+
+    expect($capturedPayload)->not->toBeNull();
+
+    $prompt = $capturedPayload['contents'][array_key_last($capturedPayload['contents'])]['parts'][0]['text'];
+
+    expect($prompt)
+        ->toContain('FOLLOW-UP QUESTION')
+        ->not->toContain('transport, landmarks, restaurants, fees, or meal costs');
+});
+
 test('weather query returns structured response', function () {
     Http::fake([
         '*embedContent*' => Http::response(['embedding' => ['values' => array_fill(0, 3072, 0.01)]]),
