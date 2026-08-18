@@ -34,3 +34,6 @@ Homestead.json
 Homestead.yaml
 Thumbs.db
 .env.testing
+
+Hotel_Room_Data.xlsx
+SEEDER_SYNC_IMPLEMENTATION_PLAN.md

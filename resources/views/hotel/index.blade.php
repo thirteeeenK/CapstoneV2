@@ -134,12 +134,12 @@
                                 <div class="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent"></div>
 
                                 {{-- Destination Badge --}}
-                                @if($hotel->destination)
+                                {{-- @if($hotel->destination)
                                     <div class="absolute top-3 left-3 bg-slate-900/80 backdrop-blur-xs text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-white/10 flex items-center gap-1">
                                         <span class="material-symbols-outlined text-[13px] text-sky-400">location_on</span>
                                         <span>{{ $hotel->destination->name }}</span>
                                     </div>
-                                @endif
+                                @endif --}}
 
                                 @if($hotel->type)
                                     <div class="absolute bottom-3 left-3 bg-white/90 backdrop-blur-xs text-slate-900 text-[10px] font-bold px-2 py-0.5 rounded-md">
