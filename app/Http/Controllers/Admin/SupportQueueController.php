@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\ChatSession;
 use App\Models\SupportInquiry;
 use App\Services\Support\SupportQueueService;
 use Illuminate\Http\JsonResponse;
@@ -33,6 +32,7 @@ class SupportQueueController extends Controller
             ->map(function ($inquiry) {
                 $session = $inquiry->chatSession;
                 $lastMsg = $session?->messages()->where('sender', 'user')->latest('created_at')->first();
+
                 return [
                     'id' => $inquiry->id,
                     'ticket_number' => $inquiry->ticket_number,
@@ -53,6 +53,7 @@ class SupportQueueController extends Controller
             ->map(function ($inquiry) {
                 $session = $inquiry->chatSession;
                 $lastMsg = $session?->messages()->latest('created_at')->first();
+
                 return [
                     'id' => $inquiry->id,
                     'ticket_number' => $inquiry->ticket_number,
@@ -104,13 +105,13 @@ class SupportQueueController extends Controller
 
         $session = $inquiry->chatSession;
         $messages = $session->messages()
-            ->when($afterId > 0, fn($q) => $q->where('id', '>', $afterId))
+            ->when($afterId > 0, fn ($q) => $q->where('id', '>', $afterId))
             ->latest('created_at')
             ->limit(50)
             ->get()
             ->reverse()
             ->values()
-            ->map(fn($msg) => [
+            ->map(fn ($msg) => [
                 'id' => $msg->id,
                 'sender' => $msg->sender,
                 'text' => $msg->message,
@@ -135,6 +136,7 @@ class SupportQueueController extends Controller
 
         try {
             $inquiry = $this->supportQueue->claimInquiry($id, $admin->id);
+
             return response()->json(['status' => 'success', 'inquiry' => ['id' => $inquiry->id, 'ticket_number' => $inquiry->ticket_number, 'status' => $inquiry->status]]);
         } catch (RuntimeException $e) {
             return response()->json(['status' => 'error', 'message' => $e->getMessage()], 409);
@@ -169,9 +171,17 @@ class SupportQueueController extends Controller
             abort(403);
         }
 
-        $this->supportQueue->resumeAi($inquiry);
+        $message = $this->supportQueue->resumeAi($inquiry);
 
-        return response()->json(['status' => 'success']);
+        return response()->json([
+            'status' => 'success',
+            'message' => [
+                'id' => $message->id,
+                'sender' => $message->sender,
+                'text' => $message->message,
+                'created_at' => $message->created_at->toIso8601String(),
+            ],
+        ]);
     }
 
     public function resolve(Request $request, int $id): JsonResponse
@@ -183,8 +193,16 @@ class SupportQueueController extends Controller
             abort(403);
         }
 
-        $this->supportQueue->resolve($inquiry);
+        $message = $this->supportQueue->resolve($inquiry);
 
-        return response()->json(['status' => 'success']);
+        return response()->json([
+            'status' => 'success',
+            'message' => [
+                'id' => $message->id,
+                'sender' => $message->sender,
+                'text' => $message->message,
+                'created_at' => $message->created_at->toIso8601String(),
+            ],
+        ]);
     }
 }

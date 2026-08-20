@@ -32,7 +32,7 @@ class ChatbotController extends Controller
 
         $result = $this->chatbot->handle($session, $user, $validated['message']);
 
-        if (!empty($result['blocked'])) {
+        if (! empty($result['blocked'])) {
             return response()->json([
                 'status' => 'blocked',
                 'reply' => $result['response'],
@@ -45,7 +45,7 @@ class ChatbotController extends Controller
     public function history(Request $request): JsonResponse
     {
         $token = $request->query('session_token');
-        if (!$token) {
+        if (! $token) {
             return response()->json(['messages' => []]);
         }
 
@@ -57,7 +57,7 @@ class ChatbotController extends Controller
             ->get()
             ->reverse()
             ->values()
-            ->map(fn($msg) => [
+            ->map(fn ($msg) => [
                 'id' => $msg->id,
                 'sender' => $msg->sender,
                 'text' => $msg->message,
@@ -78,7 +78,7 @@ class ChatbotController extends Controller
     public function handoff(Request $request): JsonResponse
     {
         $token = $request->input('session_token');
-        if (!$token) {
+        if (! $token) {
             return response()->json(['status' => 'error', 'message' => 'No session token.'], 400);
         }
 
@@ -96,7 +96,7 @@ class ChatbotController extends Controller
     public function cancelHandoff(Request $request): JsonResponse
     {
         $token = $request->input('session_token');
-        if (!$token) {
+        if (! $token) {
             return response()->json(['status' => 'error', 'message' => 'No session token.'], 400);
         }
 
@@ -109,7 +109,7 @@ class ChatbotController extends Controller
     public function returnToBot(Request $request): JsonResponse
     {
         $token = $request->input('session_token');
-        if (!$token) {
+        if (! $token) {
             return response()->json(['status' => 'error', 'message' => 'No session token.'], 400);
         }
 
@@ -120,14 +120,21 @@ class ChatbotController extends Controller
             ->orderBy('created_at', 'desc')
             ->first();
 
+        $message = null;
         if ($inquiry) {
-            $this->supportQueue->resumeAi($inquiry);
+            $message = $this->supportQueue->resumeAi($inquiry);
         }
 
         return response()->json([
             'status' => 'success',
             'handoff_status' => $inquiry?->status ?? SupportInquiry::STATUS_AI_ACTIVE,
             'session_token' => $session->session_token,
+            'message' => $message ? [
+                'id' => $message->id,
+                'sender' => $message->sender,
+                'text' => $message->message,
+                'created_at' => $message->created_at->toIso8601String(),
+            ] : null,
         ]);
     }
 
@@ -136,7 +143,7 @@ class ChatbotController extends Controller
         $token = $request->query('session_token');
         $afterId = (int) ($request->query('after_id', 0));
 
-        if (!$token) {
+        if (! $token) {
             return response()->json(['status' => 'error'], 400);
         }
 
@@ -147,14 +154,14 @@ class ChatbotController extends Controller
             ->first();
 
         $messages = $session->messages()
-            ->when($afterId > 0, fn($q) => $q->where('id', '>', $afterId))
+            ->when($afterId > 0, fn ($q) => $q->where('id', '>', $afterId))
             ->whereIn('sender', ['admin', 'bot'])
             ->latest('created_at')
             ->limit(20)
             ->get()
             ->reverse()
             ->values()
-            ->map(fn($msg) => [
+            ->map(fn ($msg) => [
                 'id' => $msg->id,
                 'sender' => $msg->sender,
                 'text' => $msg->message,

@@ -5,11 +5,16 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\ChatbotAbuseReport;
 use App\Models\User;
+use App\Services\Support\SupportQueueService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class RegisteredUserController extends Controller
 {
+    public function __construct(
+        protected SupportQueueService $supportQueue,
+    ) {}
+
     /**
      * Display a listing of registered users with filter tabs and moderation metrics.
      */
@@ -146,6 +151,11 @@ class RegisteredUserController extends Controller
         // Decrement flag count on user if greater than 0
         if ($report->user && $report->user->chatbot_flag_count > 0) {
             $report->user->decrement('chatbot_flag_count');
+        }
+
+        // Close any open handoff tickets tied to this user's sessions so the bot resumes
+        if ($report->user) {
+            $this->supportQueue->closeOpenInquiriesForUser($report->user->id);
         }
 
         return redirect()->back()->with('success', 'Abuse report warning dismissed.');

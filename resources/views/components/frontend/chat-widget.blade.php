@@ -52,11 +52,11 @@
             </div>
         </div>
 
-        {{-- Messages area --}}
-        <div x-ref="messages" class="flex-1 overflow-y-auto px-4 py-4 space-y-4 bg-slate-50/80">
-            {{-- Handoff pending banner --}}
+        {{-- Handoff status bar (always visible below the header) --}}
+        <div class="px-3.5 py-2.5 border-b border-slate-100 bg-slate-50/80 shrink-0 space-y-2"
+            x-show="!guestLimited && (handoffStatus === 'pending' || handoffStatus === 'active')">
             <template x-if="handoffStatus === 'pending'">
-                <div class="bg-amber-50 border border-amber-200/90 rounded-2xl p-3.5 mx-1 shadow-xs">
+                <div class="bg-amber-50 border border-amber-200/90 rounded-2xl p-3 shadow-xs">
                     <p class="text-xs text-amber-800 font-body leading-relaxed">
                         <span class="font-bold">Waiting for an agent...</span> An administrator will be with you
                         shortly. Ticket: <span class="font-mono font-bold text-amber-900" x-text="handoffTicket"></span>
@@ -67,22 +67,16 @@
                 </div>
             </template>
 
-            {{-- Handoff active banner --}}
             <template x-if="handoffStatus === 'active'">
-                <div class="bg-emerald-50 border border-emerald-200/90 rounded-2xl p-3.5 mx-1 shadow-xs">
+                <div class="bg-emerald-50 border border-emerald-200/90 rounded-2xl p-3 shadow-xs">
                     <p class="text-xs text-emerald-800 font-body leading-relaxed"><span class="font-bold">You're
                             chatting with a human agent.</span> They will respond shortly.</p>
                 </div>
             </template>
+        </div>
 
-            {{-- Handoff resolved banner --}}
-            <template x-if="handoffStatus === 'resolved'">
-                <div class="bg-ocean-50 border border-ocean-200/90 rounded-2xl p-3.5 mx-1 shadow-xs">
-                    <p class="text-xs text-ocean-800 font-body leading-relaxed">The support chat has ended. SunnyBot is
-                        back! You can ask me anything about your island trip.</p>
-                </div>
-            </template>
-
+        {{-- Messages area --}}
+        <div x-ref="messages" class="flex-1 overflow-y-auto px-4 py-4 space-y-4 bg-slate-50/80">
             {{-- Guest rate limit reached --}}
             <template x-if="guestLimited">
                 <div class="text-center py-6 px-4 bg-white rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
@@ -400,6 +394,8 @@
                     } else if (handoffStatus === 'RETURNED_TO_AI' || handoffStatus === 'RESOLVED') {
                         this.handoffStatus = 'resolved';
                     }
+                    this.handoffLastMessageId = Math.max(0, ...data.messages.map(m => m.id));
+
                     if (this.handoffStatus === 'pending' || this.handoffStatus === 'active') {
                         this.startHandoffPolling();
                     }
@@ -671,6 +667,9 @@
                         this.handoffStatus = 'resolved';
                         this.handoffTicket = '';
                         this.stopHandoffPolling();
+                        if (data.message) {
+                            this.addMessage(data.message.sender, data.message.text, { id: data.message.id });
+                        }
                     }
                 } catch (err) {
                     console.error('Return to SunnyBot error:', err);
@@ -742,6 +741,15 @@
                     }
 
                     const newStatus = data.handoff_status;
+
+                    const msgs = data.messages || [];
+                    for (const msg of msgs) {
+                        if (msg.id > this.handoffLastMessageId) this.handoffLastMessageId = msg.id;
+                        if ((msg.sender === 'admin' || msg.sender === 'bot') && !this.messages.some(m => m.id === msg.id)) {
+                            this.addMessage(msg.sender, msg.text, { id: msg.id });
+                        }
+                    }
+
                     if (newStatus && newStatus !== 'PENDING_ASSIGNMENT' && newStatus !== 'HUMAN_SUPPORT_ACTIVE') {
                         if (newStatus === 'RETURNED_TO_AI' || newStatus === 'RESOLVED') {
                             this.handoffStatus = 'resolved';
@@ -755,14 +763,6 @@
                     if (newStatus === 'HUMAN_SUPPORT_ACTIVE' && this.handoffStatus === 'pending') {
                         this.handoffStatus = 'active';
                         this.startHandoffPolling();
-                    }
-
-                    const msgs = data.messages || [];
-                    for (const msg of msgs) {
-                        if (msg.sender === 'admin') {
-                            this.addMessage('admin', msg.text);
-                            this.handoffLastMessageId = msg.id;
-                        }
                     }
                 } catch (err) {
                     console.error('Handoff poll error:', err);

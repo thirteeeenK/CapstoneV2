@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Middleware\EnforceGuestChatLimits;
+use App\Models\AdminModel;
+use App\Models\ChatbotAbuseReport;
 use App\Models\ChatMessage;
 use App\Models\ChatSession;
 use App\Models\DestinationModel;
@@ -7,8 +10,6 @@ use App\Models\Faq;
 use App\Models\HotelModel;
 use App\Models\RoomType;
 use App\Models\SupportInquiry;
-use App\Models\User;
-use App\Models\AdminModel;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 
@@ -49,7 +50,7 @@ beforeEach(function () {
         'longitude' => 121.9251,
     ]);
 
-    $embedding = '[' . implode(',', array_fill(0, 3072, '0.01')) . ']';
+    $embedding = '['.implode(',', array_fill(0, 3072, '0.01')).']';
 
     $this->room = RoomType::factory()->create([
         'hotel_id' => $this->hotel->id,
@@ -130,7 +131,7 @@ test('guest cannot restore an authenticated users chat session', function () {
         'message' => 'Private message',
     ]);
 
-    $response = $this->getJson('/chat/history?session_token=' . $token);
+    $response = $this->getJson('/chat/history?session_token='.$token);
 
     $response->assertOk()->assertJson(['messages' => []]);
     expect($response->json('session_token'))->not->toBe($token);
@@ -149,7 +150,7 @@ test('authenticated owner can restore their chat session', function () {
     ]);
 
     $this->actingAs($this->user);
-    $response = $this->getJson('/chat/history?session_token=' . $token);
+    $response = $this->getJson('/chat/history?session_token='.$token);
 
     $response->assertOk()->assertJsonPath('session_token', $token);
     expect($response->json('messages.0.text'))->toBe('Private response');
@@ -196,7 +197,7 @@ test('guest handoff polling cannot read an authenticated users session', functio
         'message' => 'Private support response',
     ]);
 
-    $response = $this->getJson('/chat/poll?session_token=' . $token);
+    $response = $this->getJson('/chat/poll?session_token='.$token);
 
     $response->assertOk()->assertJson(['messages' => []]);
     expect($response->json('session_token'))->not->toBe($token);
@@ -279,6 +280,11 @@ test('user can return control to SunnyBot and get AI answers again', function ()
     ]);
     expect($inquiry->fresh()->status)->toBe(SupportInquiry::STATUS_RETURNED_AI);
     expect($inquiry->fresh()->returned_to_ai_at)->not->toBeNull();
+    expect($response->json('message.text'))->toContain('support chat has ended');
+    expect(ChatMessage::where('chat_session_id', $session->id)
+        ->where('sender', 'bot')
+        ->where('message', 'like', '%support chat has ended%')
+        ->exists())->toBeTrue();
 
     $chat = $this->postJson('/chat', [
         'message' => 'Hello again',
@@ -298,7 +304,7 @@ test('chat history exposes the current handoff status', function () {
         'requested_at' => now(),
     ]);
 
-    $response = $this->getJson('/chat/history?session_token=' . $token);
+    $response = $this->getJson('/chat/history?session_token='.$token);
 
     $response->assertOk()->assertJsonPath('handoff_status', SupportInquiry::STATUS_HUMAN_ACTIVE);
 });
@@ -335,7 +341,7 @@ test('message validation fails gracefully', function () {
 });
 
 test('guest daily limit returns proper response', function () {
-    $this->withoutMiddleware(\App\Http\Middleware\EnforceGuestChatLimits::class);
+    $this->withoutMiddleware(EnforceGuestChatLimits::class);
 
     $response = $this->postJson('/chat', ['message' => 'Hello']);
     $response->assertStatus(200);
@@ -346,7 +352,7 @@ test('retrieved rooms are included in response', function () {
 
     $res->assertStatus(200);
     $data = $res->json();
-    if (!empty($data['retrieved_rooms'])) {
+    if (! empty($data['retrieved_rooms'])) {
         expect($data['retrieved_rooms'])->toBeArray();
         expect($data['retrieved_rooms'][0])->toHaveKeys(['id', 'room_name', 'hotel_name', 'base_price']);
     }
@@ -356,7 +362,7 @@ test('budget room search returns cards sorted by price ascending', function () {
     foreach ([5000, 1000, 2000] as $price) {
         RoomType::create([
             'hotel_id' => $this->hotel->id,
-            'room_name' => 'Budget Test Room ' . $price,
+            'room_name' => 'Budget Test Room '.$price,
             'base_price' => $price,
             'base_occupancy' => 2,
             'max_occupancy' => 2,
@@ -365,7 +371,7 @@ test('budget room search returns cards sorted by price ascending', function () {
             'room_amenities' => json_encode([]),
             'images' => json_encode([]),
             'is_shown' => true,
-            'embedding' => '[' . implode(',', array_fill(0, 3072, '0.01')) . ']',
+            'embedding' => '['.implode(',', array_fill(0, 3072, '0.01')).']',
         ]);
     }
 
@@ -375,7 +381,7 @@ test('budget room search returns cards sorted by price ascending', function () {
 
     $response->assertOk()->assertJson(['status' => 'success', 'control' => 'ai']);
 
-    $prices = collect($response->json('retrieved_rooms'))->pluck('base_price')->map(fn($p) => (int) $p)->values()->all();
+    $prices = collect($response->json('retrieved_rooms'))->pluck('base_price')->map(fn ($p) => (int) $p)->values()->all();
 
     expect($prices)->not->toBeEmpty();
     expect($prices)->toBe(collect($prices)->sort()->values()->all());
@@ -386,7 +392,7 @@ test('luxury room search returns cards sorted by price descending', function () 
     foreach ([5000, 1000, 2000] as $price) {
         RoomType::create([
             'hotel_id' => $this->hotel->id,
-            'room_name' => 'Luxury Test Room ' . $price,
+            'room_name' => 'Luxury Test Room '.$price,
             'base_price' => $price,
             'base_occupancy' => 2,
             'max_occupancy' => 2,
@@ -395,7 +401,7 @@ test('luxury room search returns cards sorted by price descending', function () 
             'room_amenities' => json_encode([]),
             'images' => json_encode([]),
             'is_shown' => true,
-            'embedding' => '[' . implode(',', array_fill(0, 3072, '0.01')) . ']',
+            'embedding' => '['.implode(',', array_fill(0, 3072, '0.01')).']',
         ]);
     }
 
@@ -405,7 +411,7 @@ test('luxury room search returns cards sorted by price descending', function () 
 
     $response->assertOk()->assertJson(['status' => 'success', 'control' => 'ai']);
 
-    $prices = collect($response->json('retrieved_rooms'))->pluck('base_price')->map(fn($p) => (int) $p)->values()->all();
+    $prices = collect($response->json('retrieved_rooms'))->pluck('base_price')->map(fn ($p) => (int) $p)->values()->all();
 
     expect($prices)->not->toBeEmpty();
     expect($prices)->toBe(collect($prices)->sortDesc()->values()->all());
@@ -646,7 +652,7 @@ test('short conversational follow-ups are not hijacked by FAQs', function () {
 });
 
 test('referential follow-up answers from the previous recommendations', function () {
-    $embedding = '[' . implode(',', array_fill(0, 3072, '0.01')) . ']';
+    $embedding = '['.implode(',', array_fill(0, 3072, '0.01')).']';
     $this->hotel->update(['embedding' => $embedding]);
 
     $first = $this->postJson('/chat', [
@@ -664,15 +670,14 @@ test('referential follow-up answers from the previous recommendations', function
     $second->assertOk()->assertJsonPath('status', 'success');
     expect($second->json('reply'))->toBe('Here is a recommendation for you!');
 
-    Http::assertSent(fn (Request $r) =>
-        str_contains(json_encode($r->data()), 'PREVIOUS RECOMMENDATIONS')
+    Http::assertSent(fn (Request $r) => str_contains(json_encode($r->data()), 'PREVIOUS RECOMMENDATIONS')
         && str_contains(json_encode($r->data()), 'Test Beach Resort')
         && str_contains(json_encode($r->data()), '2,500.00')
     );
 });
 
 test('price follow-up on hotel recommendations lists those hotels rooms', function () {
-    $embedding = '[' . implode(',', array_fill(0, 3072, '0.01')) . ']';
+    $embedding = '['.implode(',', array_fill(0, 3072, '0.01')).']';
     $this->hotel->update(['embedding' => $embedding]);
 
     $first = $this->postJson('/chat', [
@@ -692,8 +697,7 @@ test('price follow-up on hotel recommendations lists those hotels rooms', functi
     expect($second->json('retrieved_hotels'))->toBeArray()->not->toBeEmpty();
     expect($second->json('retrieved_hotels.0.hotel_name'))->toBe('Test Beach Resort');
 
-    Http::assertSent(fn (Request $r) =>
-        str_contains(json_encode($r->data()), 'PREVIOUS RECOMMENDATIONS')
+    Http::assertSent(fn (Request $r) => str_contains(json_encode($r->data()), 'PREVIOUS RECOMMENDATIONS')
         && str_contains(json_encode($r->data()), 'Test Beach Resort')
         && str_contains(json_encode($r->data()), 'Deluxe Ocean View')
         && str_contains(json_encode($r->data()), '2,500.00')
@@ -701,7 +705,7 @@ test('price follow-up on hotel recommendations lists those hotels rooms', functi
 });
 
 test('hotel search ranks by price when the query asks for the most expensive', function () {
-    $embedding = '[' . implode(',', array_fill(0, 3072, '0.01')) . ']';
+    $embedding = '['.implode(',', array_fill(0, 3072, '0.01')).']';
     $this->hotel->update(['embedding' => $embedding]);
 
     $cheapHotel = HotelModel::create([
@@ -767,7 +771,7 @@ test('heavy widget polling does not exhaust the AI chat rate limit', function ()
     // The widget polls /chat/poll every 5s while a handoff is active (12/min).
     // It must not share the 10/min 'ai' budget, or real messages get 429'd.
     for ($i = 0; $i < 30; $i++) {
-        $this->getJson('/chat/poll?session_token=' . $token)->assertOk();
+        $this->getJson('/chat/poll?session_token='.$token)->assertOk();
     }
 
     $response = $this->postJson('/chat', [
@@ -779,7 +783,7 @@ test('heavy widget polling does not exhaust the AI chat rate limit', function ()
 });
 
 test('refinement follow-ups keep the previous recommendation cards', function () {
-    $embedding = '[' . implode(',', array_fill(0, 3072, '0.01')) . ']';
+    $embedding = '['.implode(',', array_fill(0, 3072, '0.01')).']';
     $this->hotel->update(['embedding' => $embedding]);
 
     $first = $this->postJson('/chat', [
@@ -799,8 +803,7 @@ test('refinement follow-ups keep the previous recommendation cards', function ()
     expect($refine->json('retrieved_hotels'))->toBeArray()->not->toBeEmpty();
     expect($refine->json('retrieved_hotels.0.hotel_name'))->toBe('Test Beach Resort');
 
-    Http::assertSent(fn (Request $r) =>
-        str_contains(json_encode($r->data()), 'FOLLOW-UP QUESTION: no, in boracay only')
+    Http::assertSent(fn (Request $r) => str_contains(json_encode($r->data()), 'FOLLOW-UP QUESTION: no, in boracay only')
         && str_contains(json_encode($r->data()), 'PREVIOUS RECOMMENDATIONS')
     );
 
@@ -810,7 +813,7 @@ test('refinement follow-ups keep the previous recommendation cards', function ()
 });
 
 test('a fresh search is not hijacked by the refinement rule', function () {
-    $embedding = '[' . implode(',', array_fill(0, 3072, '0.01')) . ']';
+    $embedding = '['.implode(',', array_fill(0, 3072, '0.01')).']';
     $this->hotel->update(['embedding' => $embedding]);
 
     $first = $this->postJson('/chat', ['message' => 'no, in boracay only'])->assertOk();
@@ -823,8 +826,7 @@ test('a fresh search is not hijacked by the refinement rule', function () {
     $second->assertOk()->assertJsonPath('status', 'success');
     expect($second->json('retrieved_hotels'))->toBeArray()->not->toBeEmpty();
 
-    Http::assertSent(fn (Request $r) =>
-        str_contains(json_encode($r->data()), 'TASK: Recommend hotels based on the database results below.')
+    Http::assertSent(fn (Request $r) => str_contains(json_encode($r->data()), 'TASK: Recommend hotels based on the database results below.')
         && str_contains(json_encode($r->data()), 'DATABASE RESULTS')
     );
 });
@@ -855,7 +857,7 @@ test('rapid dashboard page loads are not throttled by the AI chat limit', functi
 });
 
 test('asking about a specific hotel returns only that hotels rooms', function () {
-    $embedding = '[' . implode(',', array_fill(0, 3072, '0.01')) . ']';
+    $embedding = '['.implode(',', array_fill(0, 3072, '0.01')).']';
 
     $frendz = HotelModel::create([
         'hotel_name' => 'Frendz Resort & Hostel',
@@ -897,7 +899,7 @@ test('asking about a specific hotel returns only that hotels rooms', function ()
 });
 
 test('asking about a specific hotel returns only that hotel card', function () {
-    $embedding = '[' . implode(',', array_fill(0, 3072, '0.01')) . ']';
+    $embedding = '['.implode(',', array_fill(0, 3072, '0.01')).']';
     $this->hotel->update(['embedding' => $embedding]);
 
     $frendz = HotelModel::create([
@@ -926,7 +928,7 @@ test('asking about a specific hotel returns only that hotel card', function () {
 });
 
 test('follow-ups about a specific hotel keep only that hotels cards', function () {
-    $embedding = '[' . implode(',', array_fill(0, 3072, '0.01')) . ']';
+    $embedding = '['.implode(',', array_fill(0, 3072, '0.01')).']';
     $this->hotel->update(['embedding' => $embedding]);
 
     HotelModel::create([
@@ -961,7 +963,7 @@ test('follow-ups about a specific hotel keep only that hotels cards', function (
 });
 
 test('asking about a hotel not in the database falls back to similar options', function () {
-    $embedding = '[' . implode(',', array_fill(0, 3072, '0.01')) . ']';
+    $embedding = '['.implode(',', array_fill(0, 3072, '0.01')).']';
     $this->hotel->update(['embedding' => $embedding]);
 
     $response = $this->postJson('/chat', [
@@ -970,4 +972,83 @@ test('asking about a hotel not in the database falls back to similar options', f
 
     $response->assertOk()->assertJsonPath('status', 'success');
     expect($response->json('retrieved_rooms'))->toBeArray()->not->toBeEmpty();
+});
+
+test('admin resolving an inquiry persists a support-ended chat message', function () {
+    $admin = AdminModel::create([
+        'name' => 'Support Admin',
+        'email' => 'support@resolvetest.com',
+        'password' => 'password',
+    ]);
+
+    $token = ChatSession::generateToken();
+    $session = ChatSession::create(['session_token' => $token, 'user_id' => $this->user->id]);
+    $inquiry = SupportInquiry::create([
+        'ticket_number' => 'TKT-RESOLVE-001',
+        'chat_session_id' => $session->id,
+        'user_id' => $this->user->id,
+        'status' => SupportInquiry::STATUS_HUMAN_ACTIVE,
+        'assigned_admin_id' => $admin->id,
+        'requested_at' => now(),
+        'assigned_at' => now(),
+    ]);
+
+    $this->actingAs($admin, 'admin')
+        ->postJson("/admin/support/inquiries/{$inquiry->id}/resolve")
+        ->assertOk()
+        ->assertJson(['status' => 'success']);
+
+    expect($inquiry->fresh()->status)->toBe(SupportInquiry::STATUS_RESOLVED);
+
+    expect(ChatMessage::where('chat_session_id', $session->id)
+        ->where('sender', 'bot')
+        ->where('message', 'like', '%support chat has ended%')
+        ->exists())->toBeTrue();
+});
+
+test('dismissing an abuse report resolves open handoff tickets and restores normal bot replies', function () {
+    $admin = AdminModel::create([
+        'name' => 'Moderator',
+        'email' => 'moderator@dismisstest.com',
+        'password' => 'password',
+    ]);
+
+    $session = ChatSession::create([
+        'session_token' => ChatSession::generateToken(),
+        'user_id' => $this->user->id,
+    ]);
+
+    $inquiry = SupportInquiry::create([
+        'ticket_number' => 'TKT-DISMISS-001',
+        'chat_session_id' => $session->id,
+        'user_id' => $this->user->id,
+        'status' => SupportInquiry::STATUS_PENDING,
+        'requested_at' => now(),
+    ]);
+
+    $this->user->update(['chatbot_flag_count' => 1]);
+
+    $report = ChatbotAbuseReport::create([
+        'user_id' => $this->user->id,
+        'message' => 'flagged message',
+        'category' => 'hate',
+        'reason' => 'test',
+        'status' => 'pending',
+    ]);
+
+    $this->actingAs($admin, 'admin')
+        ->post("/admin/registered-users/reports/{$report->id}/dismiss")
+        ->assertStatus(302);
+
+    expect($inquiry->fresh()->status)->toBe(SupportInquiry::STATUS_RESOLVED);
+    expect($inquiry->fresh()->resolved_at)->not->toBeNull();
+    expect($this->user->fresh()->chatbot_flag_count)->toBe(0);
+
+    $chat = $this->actingAs($this->user)
+        ->postJson('/chat', [
+            'message' => 'Hello again',
+            'session_token' => $session->session_token,
+        ]);
+
+    $chat->assertOk()->assertJson(['status' => 'success', 'control' => 'ai']);
 });
