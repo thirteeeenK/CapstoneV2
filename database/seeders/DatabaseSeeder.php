@@ -29,6 +29,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             DestinationSeeder::class,
             AdminSeeder::class,
+            OnboardingOptionSeeder::class,
             HotelSeeder::class,
             RoomSeeder::class,
             ElNidoRoomSeeder::class,

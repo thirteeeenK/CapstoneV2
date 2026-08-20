@@ -19,6 +19,7 @@
                 ['route' => 'admin.users.*', 'icon' => 'group', 'label' => 'Registered Users', 'href' => route('admin.users.index')],
                 ['route' => 'admin.support.*', 'icon' => 'support_agent', 'label' => 'Support Inbox', 'href' => route('admin.support.index')],
                 ['route' => 'admin.faqs.*', 'icon' => 'quiz', 'label' => 'FAQ Manager', 'href' => route('admin.faqs.index')],
+                ['route' => 'admin.onboarding-options.*', 'icon' => 'tune', 'label' => 'Onboarding Options', 'href' => route('admin.onboarding-options.index')],
                 ['route' => 'admin.inventory.*', 'icon' => 'inventory', 'label' => 'Manage Inventory', 'href' => Route::has('admin.inventory.index') ? route('admin.inventory.index') : '#'],
                 ['route' => 'admin.passenger-rules.*', 'icon' => 'tune', 'label' => 'Passenger Rules & Discounts', 'href' => route('admin.passenger-rules.index')],
             ],

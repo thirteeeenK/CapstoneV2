@@ -162,6 +162,18 @@
                                 </span>
                             </div>
 
+                            @if(!empty($item['hotels_reason']))
+                                <p class="text-xs sm:text-[13px] text-sky-800 bg-sky-50 border border-sky-100 rounded-xl px-4 py-3 leading-relaxed flex items-start gap-2.5">
+                                    <span class="material-symbols-outlined text-[18px] shrink-0 text-sky-500 mt-0.5">auto_awesome</span>
+                                    <span>{{ $item['hotels_reason'] }}</span>
+                                </p>
+                            @else
+                                <p class="text-xs text-slate-500">
+                                    Complete your travel profile to see why these stays were chosen for you.
+                                    <a href="{{ route('onboarding.reset') }}" class="font-bold text-sky-600 hover:underline">Personalize now</a>
+                                </p>
+                            @endif
+
                             @php
                                 $hCols = match (true) {
                                     $hotels->count() === 1 => 'grid-cols-1 max-w-md mx-auto',
@@ -188,9 +200,6 @@
                                                 <img src="{{ $hotelImg }}" alt="{{ $hotel->hotel_name }}"
                                                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
                                                 <div class="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent"></div>
-                                                <div class="absolute top-2.5 left-2.5 bg-sky-600 text-white font-extrabold text-[10px] px-2 py-0.5 rounded-full shadow-xs">
-                                                    #{{ $rank + 1 }} AI Match
-                                                </div>
                                                 @if($hotel->type)
                                                     <div class="absolute bottom-2.5 left-2.5 bg-slate-900/80 text-white text-[10px] font-semibold px-2 py-0.5 rounded-md">
                                                         {{ ucwords(str_replace('-', ' ', $hotel->type)) }}
@@ -234,6 +243,18 @@
                                     Curated AI Matches
                                 </span>
                             </div>
+
+                            @if(!empty($item['activities_reason']))
+                                <p class="text-xs sm:text-[13px] text-emerald-800 bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3 leading-relaxed flex items-start gap-2.5">
+                                    <span class="material-symbols-outlined text-[18px] shrink-0 text-emerald-500 mt-0.5">auto_awesome</span>
+                                    <span>{{ $item['activities_reason'] }}</span>
+                                </p>
+                            @else
+                                <p class="text-xs text-slate-500">
+                                    Complete your travel profile to see why these experiences were chosen for you.
+                                    <a href="{{ route('onboarding.reset') }}" class="font-bold text-emerald-600 hover:underline">Personalize now</a>
+                                </p>
+                            @endif
 
                             @php
                                 $aCols = match (true) {

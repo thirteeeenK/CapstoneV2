@@ -10,7 +10,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-
 #[Fillable([
     'name', 'email', 'phone_number', 'address', 'password',
     'chatbot_flag_count', 'ban_reason', 'ban_level', 'banned_at', 'ban_expires_at',
@@ -22,7 +21,9 @@ use Illuminate\Notifications\Notifiable;
 class User extends Authenticatable
 {
     public const BAN_LEVEL_WARNING = 'warning';
+
     public const BAN_LEVEL_TEMPORARY = 'temporary';
+
     public const BAN_LEVEL_PERMANENT = 'permanent';
 
     // /** @use HasFactory<UserFactory> */
@@ -109,11 +110,11 @@ class User extends Authenticatable
     {
         if ($this->isTemporarilyBanned()) {
             return 'Your account is temporarily suspended. Access is restored after '
-                . $this->ban_expires_at->format('M d, Y')
-                . '. Reason: ' . ($this->ban_reason ?? 'Terms of service violation.');
+                .$this->ban_expires_at->format('M d, Y')
+                .'. Reason: '.($this->ban_reason ?? 'Terms of service violation.');
         }
 
-        return 'Your account has been permanently banned. Reason: ' . ($this->ban_reason ?? 'Terms of service violation.');
+        return 'Your account has been permanently banned. Reason: '.($this->ban_reason ?? 'Terms of service violation.');
     }
 
     /**
@@ -135,6 +136,14 @@ class User extends Authenticatable
     public function abuseReports()
     {
         return $this->hasMany(ChatbotAbuseReport::class, 'user_id');
+    }
+
+    /**
+     * The structured onboarding preference data persisted alongside the embedding.
+     */
+    public function userPreference()
+    {
+        return $this->hasOne(UserPreference::class, 'user_id');
     }
 
     /**

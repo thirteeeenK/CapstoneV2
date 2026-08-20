@@ -8,6 +8,7 @@ use App\Models\HotelModel;
 use App\Models\Package;
 use App\Services\GeminiService;
 use App\Services\MapService;
+use App\Services\Recommendations\RecommendationExplainer;
 use App\Services\WeatherService;
 use Illuminate\Support\Facades\Auth;
 
@@ -16,11 +17,12 @@ class RecommendationController extends Controller
     /**
      * Display the user dashboard with AI Recommendations and Default Listings tabs.
      */
-    public function index(GeminiService $geminiService, MapService $mapService, WeatherService $weatherService)
+    public function index(GeminiService $geminiService, MapService $mapService, WeatherService $weatherService, RecommendationExplainer $explainer)
     {
         $user = Auth::user();
         $userVector = $user ? $this->parseVector($user->preferences_embedding) : null;
-        $isPersonalized = !empty($userVector) && $user->preferences_embedding !== '[0]' && array_sum(array_map('abs', $userVector)) > 0.0001;
+        $isPersonalized = ! empty($userVector) && $user->preferences_embedding !== '[0]' && array_sum(array_map('abs', $userVector)) > 0.0001;
+        $userPreference = $user?->userPreference;
 
         $destinations = DestinationModel::orderBy('name', 'asc')->get();
 
@@ -58,29 +60,23 @@ class RecommendationController extends Controller
 
             // AI Recommendations for this destination
             if ($isPersonalized) {
-                $aiHotels = HotelModel::where('is_shown', true)
+                $allAiHotels = HotelModel::where('is_shown', true)
                     ->where('destination_id', $destination->id)
                     ->whereNotNull('embedding')
                     ->with(['destination', 'rooms'])
-                    ->get()
-                    ->sortByDesc(function ($hotel) use ($userVector, $geminiService) {
-                        $hotelVector = $this->parseVector($hotel->embedding);
-                        return $hotelVector ? $geminiService->cosineSimilarity($userVector, $hotelVector) : 0;
-                    })
-                    ->take(5)
-                    ->values();
+                    ->get();
 
-                $aiActivities = ActivityModel::where('is_shown', true)
+                $rankedHotels = collect($geminiService->rankRecommendations($userVector, $allAiHotels, 5));
+                $aiHotels = $rankedHotels->map(fn ($entry) => $entry['item']);
+
+                $allAiActivities = ActivityModel::where('is_shown', true)
                     ->where('destination_id', $destination->id)
                     ->whereNotNull('embedding')
                     ->with('destination')
-                    ->get()
-                    ->sortByDesc(function ($activity) use ($userVector, $geminiService) {
-                        $actVector = $this->parseVector($activity->embedding);
-                        return $actVector ? $geminiService->cosineSimilarity($userVector, $actVector) : 0;
-                    })
-                    ->take(5)
-                    ->values();
+                    ->get();
+
+                $rankedActivities = collect($geminiService->rankRecommendations($userVector, $allAiActivities, 5));
+                $aiActivities = $rankedActivities->map(fn ($entry) => $entry['item']);
 
                 $aiPackages = Package::where('is_active', true)
                     ->where('destination_id', $destination->id)
@@ -88,12 +84,18 @@ class RecommendationController extends Controller
                     ->take(4)
                     ->get();
 
+                $reasons = $userPreference
+                    ? $explainer->forDestination($userPreference, $destination, $aiHotels, $aiActivities)
+                    : ['hotels' => '', 'activities' => ''];
+
                 if ($aiHotels->isNotEmpty() || $aiActivities->isNotEmpty() || $aiPackages->isNotEmpty()) {
                     $aiRecommendations[] = [
                         'destination' => $destination,
                         'hotels' => $aiHotels,
                         'activities' => $aiActivities,
                         'packages' => $aiPackages,
+                        'hotels_reason' => $reasons['hotels'] ?? '',
+                        'activities_reason' => $reasons['activities'] ?? '',
                     ];
                 }
             }
@@ -117,8 +119,12 @@ class RecommendationController extends Controller
      */
     private function parseVector($raw): ?array
     {
-        if (empty($raw)) return null;
-        if (is_array($raw)) return $raw;
+        if (empty($raw)) {
+            return null;
+        }
+        if (is_array($raw)) {
+            return $raw;
+        }
 
         if (is_string($raw)) {
             $decoded = json_decode($raw, true);
@@ -126,7 +132,10 @@ class RecommendationController extends Controller
                 return $decoded;
             }
             $clean = trim($raw, "[] \t\n\r");
-            if (empty($clean)) return null;
+            if (empty($clean)) {
+                return null;
+            }
+
             return array_map('floatval', explode(',', $clean));
         }
 

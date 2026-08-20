@@ -132,25 +132,14 @@
                         </div>
 
                         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                            @php
-                                $vibeOptions = [
-                                    ['name' => 'Beachfront', 'icon' => 'beach_access', 'desc' => 'Oceanfront views & white sand'],
-                                    ['name' => 'Luxury & Spa', 'icon' => 'spa', 'desc' => 'High-end pampering & resorts'],
-                                    ['name' => 'Nightlife & Party', 'icon' => 'local_bar', 'desc' => 'Vibrant music & island bars'],
-                                    ['name' => 'Nature & Eco', 'icon' => 'forest', 'desc' => 'Pristine greenery & wildlife'],
-                                    ['name' => 'Quiet & Serene', 'icon' => 'self_improvement', 'desc' => 'Peaceful retreat away from crowds'],
-                                    ['name' => 'Adventure & Thrills', 'icon' => 'hiking', 'desc' => 'Water sports, treks & diving'],
-                                    ['name' => 'Culinary & Dining', 'icon' => 'restaurant', 'desc' => 'Seafood feasts & local cuisine'],
-                                    ['name' => 'Family Friendly', 'icon' => 'family_restroom', 'desc' => 'Safe pools & kid activities'],
-                                ];
-                            @endphp
+
                             @foreach($vibeOptions as $vibe)
-                                <button type="button" @click="toggleVibe('{{ $vibe['name'] }}')"
-                                    :class="vibes.includes('{{ $vibe['name'] }}') ? 'bg-sky-50 border-sky-500 text-sky-900 shadow-xs' : 'bg-slate-50 border-slate-200 hover:bg-slate-100 hover:border-slate-300 text-slate-700'"
+                                <button type="button" @click="toggleVibe(@js($vibe['name']))"
+                                    :class="vibes.includes(@js($vibe['name'])) ? 'bg-sky-50 border-sky-500 text-sky-900 shadow-xs' : 'bg-slate-50 border-slate-200 hover:bg-slate-100 hover:border-slate-300 text-slate-700'"
                                     class="p-4 rounded-2xl border text-left transition-all duration-300 flex flex-col justify-between space-y-2 group cursor-pointer">
                                     <div class="flex items-center justify-between">
-                                        <span class="material-symbols-outlined text-2xl" :class="vibes.includes('{{ $vibe['name'] }}') ? 'text-sky-600' : 'text-slate-400'">{{ $vibe['icon'] }}</span>
-                                        <span x-show="vibes.includes('{{ $vibe['name'] }}')" class="material-symbols-outlined text-sky-600 text-[18px]">check_circle</span>
+                                        <span class="material-symbols-outlined text-2xl" :class="vibes.includes(@js($vibe['name'])) ? 'text-sky-600' : 'text-slate-400'">{{ $vibe['icon'] }}</span>
+                                        <span x-show="vibes.includes(@js($vibe['name']))" class="material-symbols-outlined text-sky-600 text-[18px]">check_circle</span>
                                     </div>
                                     <div>
                                         <div class="font-bold text-xs font-headline">{{ $vibe['name'] }}</div>
@@ -261,17 +250,10 @@
                         </div>
 
                         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                            @php
-                                $groupTypes = [
-                                    ['name' => 'Solo Traveler', 'icon' => 'person', 'desc' => 'Independent & flexible'],
-                                    ['name' => 'Couple / Honeymoon', 'icon' => 'favorite', 'desc' => 'Romantic & private'],
-                                    ['name' => 'Family with Kids', 'icon' => 'family_restroom', 'desc' => 'Spacious & kid friendly'],
-                                    ['name' => 'Friends Group', 'icon' => 'groups', 'desc' => 'Group suites & activities'],
-                                ];
-                            @endphp
+
                             @foreach($groupTypes as $gt)
-                                <button type="button" @click="travelerType = '{{ $gt['name'] }}'; errorMessage = '';"
-                                    :class="travelerType === '{{ $gt['name'] }}' ? 'bg-sky-50 border-sky-500 text-sky-900 shadow-xs' : 'bg-slate-50 border-slate-200 hover:bg-slate-100 text-slate-700'"
+                                <button type="button" @click="travelerType = @js($gt['name']); errorMessage = '';"
+                                    :class="travelerType === @js($gt['name']) ? 'bg-sky-50 border-sky-500 text-sky-900 shadow-xs' : 'bg-slate-50 border-slate-200 hover:bg-slate-100 text-slate-700'"
                                     class="p-4 rounded-2xl border text-left transition-all duration-300 space-y-2 cursor-pointer flex flex-col justify-between">
                                     <span class="material-symbols-outlined text-2xl text-sky-600">{{ $gt['icon'] }}</span>
                                     <div>
@@ -323,18 +305,12 @@
                         </div>
 
                         <div class="flex flex-wrap gap-2">
-                            @php
-                                $amenityPills = [
-                                    'Private Pool', 'Beach Access', 'Infinity Pool', 'Scuba Diving',
-                                    'Sunset Cruise', 'Buffet Breakfast', 'Airport Transfers', 'Spa Services',
-                                    'Island Hopping', 'Free Wi-Fi', 'Balcony Ocean View', 'Water Sports'
-                                ];
-                            @endphp
+
                             @foreach($amenityPills as $am)
-                                <button type="button" @click="toggleAmenity('{{ $am }}')"
-                                    :class="amenities.includes('{{ $am }}') ? 'bg-sky-500 text-white border-sky-500 font-bold shadow-xs' : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'"
+                                <button type="button" @click="toggleAmenity(@js($am))"
+                                    :class="amenities.includes(@js($am)) ? 'bg-sky-500 text-white border-sky-500 font-bold shadow-xs' : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'"
                                     class="px-3.5 py-2 rounded-xl text-xs border transition-all cursor-pointer flex items-center gap-1.5">
-                                    <span class="material-symbols-outlined text-[15px]" x-show="amenities.includes('{{ $am }}')">check</span>
+                                    <span class="material-symbols-outlined text-[15px]" x-show="amenities.includes(@js($am))">check</span>
                                     <span>{{ $am }}</span>
                                 </button>
                             @endforeach
