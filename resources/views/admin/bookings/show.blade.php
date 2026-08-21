@@ -198,6 +198,9 @@
                 @if($booking->gateway_reference)
                     <p class="mt-3 text-[11px] text-slate-400 font-mono">Gateway: {{ $booking->gateway }} / {{ $booking->gateway_reference }}</p>
                 @endif
+                @if($booking->payment_method)
+                    <p class="mt-1 text-[11px] text-slate-500">Method: <span class="font-bold text-slate-700">{{ $booking->payment_method === 'qrph' ? 'QRPH · GCash / GoTyme' : $booking->payment_method }}</span></p>
+                @endif
             </div>
 
             <div class="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs">

@@ -4,15 +4,19 @@ namespace App\Http\Controllers;
 
 use App\Models\Booking;
 use App\Services\BookingExpiryService;
+use App\Services\Payment\PaymentService;
 use Illuminate\Http\Request;
 
 class BookingConfirmationController extends Controller
 {
     protected BookingExpiryService $expiryService;
 
-    public function __construct(BookingExpiryService $expiryService)
+    protected PaymentService $paymentService;
+
+    public function __construct(BookingExpiryService $expiryService, PaymentService $paymentService)
     {
         $this->expiryService = $expiryService;
+        $this->paymentService = $paymentService;
     }
 
     /**
@@ -27,7 +31,10 @@ class BookingConfirmationController extends Controller
                 ->with('error', 'This booking expired because payment was not completed within the 48-hour window.');
         }
 
-        return view('booking.show', compact('booking'));
+        return view('booking.show', [
+            'booking' => $booking,
+            'gateways' => $this->paymentService->availableGateways(),
+        ]);
     }
 
     /**

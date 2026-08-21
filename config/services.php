@@ -53,6 +53,15 @@ return [
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
     ],
 
+    'qrph' => [
+        'provider' => env('QRPH_PROVIDER', 'paymongo'),
+        'secret_key' => env('PAYMONGO_SECRET_KEY'),
+        'webhook_secret' => env('PAYMONGO_WEBHOOK_SECRET'),
+        'merchant_name' => env('QRPH_MERCHANT_NAME', 'SunnyTrips'),
+        'merchant_account' => env('QRPH_MERCHANT_ACCOUNT', ''),
+        'city' => env('QRPH_CITY', 'Manila'),
+    ],
+
     'openweather' => [
         'api_key' => env('OPENWEATHER_API_KEY'),
         'base_url' => env('OPENWEATHER_BASE_URL', 'https://api.openweathermap.org/data/2.5'),

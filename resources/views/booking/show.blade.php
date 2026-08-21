@@ -278,15 +278,7 @@
 
                     {{-- Hero actions --}}
                     <div class="mt-8 flex items-center justify-center gap-3 flex-wrap">
-                        @if ($status === 'approved')
-                            <form action="{{ route('booking.pay.process', $booking->booking_code) }}" method="POST">
-                                @csrf
-                                <button type="submit" class="px-6 py-3 rounded-2xl bg-slate-900 text-white font-bold text-xs hover:bg-slate-800 transition flex items-center gap-1.5 shadow-lg shadow-slate-900/20 cursor-pointer">
-                                    <span class="material-symbols-outlined text-[16px]">lock</span>
-                                    <span>Proceed to Payment · ₱{{ number_format((float)$booking->net_amount, 2) }}</span>
-                                </button>
-                            </form>
-                        @elseif (in_array($status, ['rejected', 'cancelled', 'expired'], true))
+                        @if (in_array($status, ['rejected', 'cancelled', 'expired'], true))
                             <form action="{{ route('booking.rebook', $booking->booking_code) }}" method="POST">
                                 @csrf
                                 <button type="submit" class="px-6 py-3 rounded-2xl bg-slate-900 text-white font-bold text-xs hover:bg-slate-800 transition flex items-center gap-1.5 shadow-lg shadow-slate-900/20 cursor-pointer">
@@ -333,6 +325,71 @@
                     </div>
                 </div>
             </section>
+
+            @if ($status === 'approved')
+                <section class="mt-6 bg-white rounded-[2rem] border border-sand-200/80 shadow-sm overflow-hidden">
+                    <div class="p-6 sm:p-8">
+                        <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
+                            <div class="flex items-start gap-3">
+                                <span class="w-10 h-10 rounded-2xl bg-ocean-50 text-ocean-600 border border-ocean-100 flex items-center justify-center shrink-0">
+                                    <span class="material-symbols-outlined text-[20px]">payments</span>
+                                </span>
+                                <div>
+                                    <h2 class="font-headline text-base font-bold text-slate-900">Secure Payment</h2>
+                                    <p class="text-xs text-slate-500 mt-0.5 leading-relaxed">Choose how you'd like to pay — your reservation is held until the deadline.</p>
+                                </div>
+                            </div>
+                            <div class="text-left sm:text-right shrink-0 bg-sand-50 border border-sand-200 rounded-2xl px-4 py-3 sm:bg-transparent sm:border-0 sm:px-0 sm:py-0">
+                                <p class="font-label text-[10px] uppercase font-bold tracking-[0.15em] text-slate-400">Amount due</p>
+                                <p class="font-headline text-xl font-black text-slate-900">₱{{ number_format((float)$booking->net_amount, 2) }}</p>
+                                @if ($booking->payment_deadline)
+                                    <p class="text-[11px] font-semibold text-amber-700 mt-1 flex items-center gap-1 sm:justify-end">
+                                        <span class="material-symbols-outlined text-[14px]">hourglass_bottom</span>
+                                        Due {{ $booking->payment_deadline->format('M j · g:i A') }}
+                                    </p>
+                                @endif
+                            </div>
+                        </div>
+
+                        <div x-data="{ chosen: '', tried: false }">
+                            <form action="{{ route('booking.pay.process', $booking->booking_code) }}" method="POST"
+                                  @submit="if (!chosen) { tried = true; $event.preventDefault(); }">
+                                @csrf
+                                <p class="font-label text-[10px] uppercase font-bold tracking-[0.15em] text-slate-400 mb-3">Select a payment method</p>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    @if (!empty($gateways['card']))
+                                        <label class="cursor-pointer rounded-2xl border-2 p-4 transition flex items-start gap-3"
+                                               :class="chosen === 'card' ? 'border-sky-500 bg-sky-50/70 shadow-sm' : 'border-slate-200 bg-white hover:border-slate-300'">
+                                            <input type="radio" name="gateway" value="card" x-model="chosen" @change="tried = false" class="mt-0.5 accent-sky-600 cursor-pointer">
+                                            <span>
+                                                <span class="flex items-center gap-1.5 text-sm font-extrabold text-slate-900"><span class="material-symbols-outlined text-[16px] text-sky-600">credit_card</span>Card</span>
+                                                <span class="block text-[11px] text-slate-500 mt-0.5">Visa / Mastercard via Stripe</span>
+                                            </span>
+                                        </label>
+                                    @endif
+                                    @if (!empty($gateways['qrph']))
+                                        <label class="cursor-pointer rounded-2xl border-2 p-4 transition flex items-start gap-3"
+                                               :class="chosen === 'qrph' ? 'border-emerald-500 bg-emerald-50/70 shadow-sm' : 'border-slate-200 bg-white hover:border-slate-300'">
+                                            <input type="radio" name="gateway" value="qrph" x-model="chosen" @change="tried = false" class="mt-0.5 accent-emerald-600 cursor-pointer">
+                                            <span>
+                                                <span class="flex items-center gap-1.5 text-sm font-extrabold text-slate-900"><span class="material-symbols-outlined text-[16px] text-emerald-600">qr_code_2</span>QRPH</span>
+                                                <span class="block text-[11px] text-slate-500 mt-0.5">GCash · GoTyme · Maya — scan to pay</span>
+                                            </span>
+                                        </label>
+                                    @endif
+                                </div>
+                                <p x-show="tried && !chosen" x-cloak style="display: none;" class="text-[11px] font-bold text-rose-600 mt-3 text-center">Please select a payment method before proceeding.</p>
+                                <button type="submit" class="mt-4 w-full px-6 py-3.5 rounded-2xl bg-slate-900 text-white font-bold text-sm hover:bg-slate-800 transition flex items-center justify-center gap-1.5 shadow-lg shadow-slate-900/20 cursor-pointer">
+                                    <span class="material-symbols-outlined text-[16px]">lock</span>
+                                    <span>Proceed to Payment · ₱{{ number_format((float)$booking->net_amount, 2) }}</span>
+                                </button>
+                            </form>
+                        </div>
+
+                        <p class="text-[11px] text-center text-slate-400 font-medium mt-3">Payment can be retried from this page at any time before the deadline. No payment was taken yet.</p>
+                    </div>
+                </section>
+            @endif
 
             {{-- ============ JOURNAL BODY ============ --}}
             <div class="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -510,6 +567,18 @@
                                 <dt class="text-slate-400 font-medium">Payment</dt>
                                 <dd class="font-bold text-slate-900 uppercase tracking-wider">{{ $booking->payment_status }}</dd>
                             </div>
+                            @if ($booking->payment_method)
+                                <div class="flex items-center justify-between gap-2">
+                                    <dt class="text-slate-400 font-medium">Method</dt>
+                                    <dd class="font-bold text-slate-900 uppercase tracking-wider">
+                                        @if($booking->payment_method === 'qrph')
+                                            <span class="inline-flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-emerald-600">qr_code_2</span> QRPH · GCash/GoTyme</span>
+                                        @else
+                                            {{ $booking->payment_method }}
+                                        @endif
+                                    </dd>
+                                </div>
+                            @endif
                             @if ($booking->payment_deadline)
                                 <div class="flex items-center justify-between gap-2">
                                     <dt class="text-slate-400 font-medium">Deadline</dt>
