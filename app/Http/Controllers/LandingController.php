@@ -2,15 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Faq;
 use App\Models\Review;
 use App\Services\ReviewService;
 use Illuminate\Http\Request;
 
 class LandingController extends Controller
 {
-    public function __construct(private readonly ReviewService $reviews)
-    {
-    }
+    public function __construct(private readonly ReviewService $reviews) {}
 
     /**
      * Public landing page with the featured guest reviews highlight.
@@ -26,6 +25,12 @@ class LandingController extends Controller
             ->limit(3)
             ->get();
 
-        return view('welcome', compact('platformSummary', 'featuredReviews'));
+        $faqGroups = Faq::where('is_active', true)
+            ->orderBy('sort_order')
+            ->orderBy('id')
+            ->get()
+            ->groupBy(fn (Faq $faq) => $faq->category ?: 'General');
+
+        return view('welcome', compact('platformSummary', 'featuredReviews', 'faqGroups'));
     }
 }

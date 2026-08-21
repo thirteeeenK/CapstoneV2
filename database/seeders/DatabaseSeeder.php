@@ -42,6 +42,7 @@ class DatabaseSeeder extends Seeder
             PackageSeeder::class,
             PassengerCategoryRuleSeeder::class,
             ReviewSeeder::class,
+            FaqSeeder::class,
         ]);
     }
 }

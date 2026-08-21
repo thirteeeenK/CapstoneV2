@@ -4,4 +4,5 @@
     <x-frontend.experiences />
     <x-frontend.brand-story />
     <x-frontend.reviews-highlight :summary="$platformSummary" :reviews="$featuredReviews" />
+    <x-frontend.faq-accordion :groups="$faqGroups" />
 </x-frontend.layout>
