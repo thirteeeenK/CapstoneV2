@@ -14,18 +14,31 @@ class Booking extends Model
     protected $table = 'bookings';
 
     public const STATUS_PENDING = 'pending';
+
     public const STATUS_APPROVED = 'approved';
+
     public const STATUS_PAID = 'paid';
+
     public const STATUS_COMPLETED = 'completed';
+
     public const STATUS_REJECTED = 'rejected';
+
     public const STATUS_CANCELLED = 'cancelled';
+
     public const STATUS_EXPIRED = 'expired';
 
-    public const HOLD_STATUSES = ['pending', 'approved', 'paid'];
+    public const STATUS_CANCELLATION_REQUESTED = 'cancellation_requested';
+
+    public const STATUS_CANCELLATION_DENIED = 'cancellation_denied';
+
+    public const HOLD_STATUSES = ['pending', 'approved', 'paid', 'cancellation_requested', 'cancellation_denied'];
 
     public const PAYMENT_UNPAID = 'unpaid';
+
     public const PAYMENT_PARTIAL = 'partial';
+
     public const PAYMENT_PAID = 'paid';
+
     public const PAYMENT_REFUNDED = 'refunded';
 
     protected $fillable = [
@@ -39,6 +52,9 @@ class Booking extends Model
         'rejection_reason',
         'cancelled_at',
         'cancellation_reason',
+        'cancellation_request_reason',
+        'cancellation_requested_at',
+        'cancellation_requested_from',
         'expired_at',
         'admin_notes',
         'reviewed_by_admin_id',
@@ -76,6 +92,7 @@ class Booking extends Model
         'paid_at' => 'datetime',
         'rejected_at' => 'datetime',
         'cancelled_at' => 'datetime',
+        'cancellation_requested_at' => 'datetime',
         'expired_at' => 'datetime',
         'price_adjusted_at' => 'datetime',
     ];

@@ -6,6 +6,8 @@
         'completed' => 'bg-teal-50 text-teal-700 border-teal-200',
         'rejected' => 'bg-rose-50 text-rose-700 border-rose-200',
         'cancelled' => 'bg-slate-100 text-slate-600 border-slate-200',
+        'cancellation_requested' => 'bg-orange-50 text-orange-700 border-orange-200',
+        'cancellation_denied' => 'bg-rose-50 text-rose-700 border-rose-200',
         'expired' => 'bg-slate-100 text-slate-500 border-slate-200',
     ];
 @endphp

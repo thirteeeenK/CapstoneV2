@@ -11,6 +11,8 @@
             'completed' => 'bg-teal-50 text-teal-700 border-teal-200',
             'rejected' => 'bg-rose-50 text-rose-700 border-rose-200',
             'cancelled' => 'bg-slate-100 text-slate-600 border-slate-200',
+            'cancellation_requested' => 'bg-orange-50 text-orange-700 border-orange-200',
+            'cancellation_denied' => 'bg-rose-50 text-rose-700 border-rose-200',
             'expired' => 'bg-slate-100 text-slate-500 border-slate-200',
         ];
     @endphp
@@ -98,6 +100,73 @@
             <div class="bg-rose-50 border border-rose-200/80 text-rose-800 text-sm px-4 py-3 rounded-2xl flex items-center gap-2">
                 <span class="material-symbols-outlined text-[20px] text-rose-600">error</span>
                 <span>{{ session('error') }}</span>
+            </div>
+        @endif
+
+        {{-- Cancellation request review (requested) --}}
+        @if($booking->status === 'cancellation_requested')
+            <div class="bg-orange-50 border border-orange-200 rounded-3xl p-6 space-y-4">
+                <div class="flex items-start gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-white text-orange-600 border border-orange-200 flex items-center justify-center shrink-0">
+                        <span class="material-symbols-outlined text-xl">hourglass_top</span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h3 class="text-sm font-extrabold text-orange-900">Cancellation Requested — awaiting your decision</h3>
+                        <p class="text-xs text-orange-800/70 mt-1">Requested {{ $booking->cancellation_requested_at?->format('M j, Y g:i A') }} (was {{ $booking->cancellation_requested_from }}) by {{ $booking->contact_name }} ({{ $booking->contact_email }}).</p>
+                        <div class="mt-3 bg-white border border-orange-200 rounded-2xl p-4">
+                            <p class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-1">Customer reason</p>
+                            <p class="text-xs text-slate-800 leading-relaxed">"{{ $booking->cancellation_request_reason }}"</p>
+                        </div>
+                        <p class="text-[11px] text-orange-800/70 mt-2">Rooms/activities for this booking are still held (counted against availability) until you decide.</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    <form action="{{ route('admin.bookings.cancel-request.approve', $booking->id) }}" method="POST" class="bg-white rounded-2xl border border-emerald-200 p-4 space-y-3" onsubmit="return confirm('Approve cancellation for {{ $booking->booking_code }}? The booking will be cancelled and the customer notified.')">
+                        @csrf
+                        <label class="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 block">Approve — optional message to customer</label>
+                        <textarea name="admin_message" rows="3" maxlength="2000" placeholder="e.g. Approved — sorry to see you go! You may rebook anytime."
+                                  class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs text-slate-900 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20">{{ old('admin_message') }}</textarea>
+                        <button type="submit" class="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer">
+                            <span class="material-symbols-outlined text-[16px]">check_circle</span> Approve Cancellation
+                        </button>
+                    </form>
+                    <form action="{{ route('admin.bookings.cancel-request.deny', $booking->id) }}" method="POST" class="bg-white rounded-2xl border border-rose-200 p-4 space-y-3" onsubmit="return confirm('Deny cancellation for {{ $booking->booking_code }}? The booking will remain active and the customer will be notified with your message.')">
+                        @csrf
+                        <label class="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 block">Deny — message to customer <span class="text-rose-600">*</span></label>
+                        <textarea name="admin_message" rows="3" required minlength="10" maxlength="2000" placeholder="Explain why the request is denied (at least 10 characters)..."
+                                  class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs text-slate-900 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20">{{ old('admin_message') }}</textarea>
+                        @error('admin_message')<p class="text-[11px] text-rose-600">{{ $message }}</p>@enderror
+                        <button type="submit" class="w-full py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer">
+                            <span class="material-symbols-outlined text-[16px]">block</span> Deny Cancellation
+                        </button>
+                    </form>
+                </div>
+            </div>
+        @endif
+
+        @if($booking->status === 'cancellation_denied')
+            <div class="bg-rose-50 border border-rose-200 rounded-3xl p-6">
+                <div class="flex items-start gap-3">
+                    <div class="w-10 h-10 rounded-2xl bg-white text-rose-600 border border-rose-200 flex items-center justify-center shrink-0">
+                        <span class="material-symbols-outlined text-xl">block</span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h3 class="text-sm font-extrabold text-rose-900">Cancellation denied — booking remains active</h3>
+                        <p class="text-xs text-rose-800/70 mt-1">Decision recorded {{ $booking->updated_at->format('M j, Y g:i A') }}. Rooms/activities are still held.</p>
+                        @if($booking->cancellation_request_reason)
+                            <div class="mt-3 bg-white border border-rose-200 rounded-2xl p-4">
+                                <p class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-1">Customer's original request</p>
+                                <p class="text-xs text-slate-700">"{{ $booking->cancellation_request_reason }}" (requested {{ $booking->cancellation_requested_at?->format('M j, Y g:i A') }})</p>
+                            </div>
+                        @endif
+                        @if($booking->cancellation_reason)
+                            <div class="mt-3 bg-white border border-rose-200 rounded-2xl p-4">
+                                <p class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-1">Your denial message</p>
+                                <p class="text-xs text-slate-800">"{{ $booking->cancellation_reason }}"</p>
+                            </div>
+                        @endif
+                    </div>
+                </div>
             </div>
         @endif
 

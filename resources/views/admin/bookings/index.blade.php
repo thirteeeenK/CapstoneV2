@@ -39,10 +39,15 @@
                 <h1 class="text-xl sm:text-2xl font-bold text-slate-900 font-headline">Booking Requests</h1>
                 <p class="text-xs sm:text-sm text-slate-500 mt-1">Verify availability, approve bookings, and manage payments.</p>
             </div>
-            <div class="flex items-center gap-2 text-xs font-bold">
+            <div class="flex items-center gap-2 text-xs font-bold flex-wrap">
                 <span class="px-3 py-1.5 rounded-xl bg-amber-50 text-amber-700 border border-amber-200">{{ $stats['pending'] }} pending</span>
                 <span class="px-3 py-1.5 rounded-xl bg-sky-50 text-sky-700 border border-sky-200">{{ $stats['approved'] }} awaiting payment</span>
                 <span class="px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200">{{ $stats['paid'] }} paid</span>
+                @if(($stats['cancellation_requested'] ?? 0) > 0)
+                    <span class="px-3 py-1.5 rounded-xl bg-orange-50 text-orange-700 border border-orange-200 animate-pulse">{{ $stats['cancellation_requested'] }} cancellation requests</span>
+                @else
+                    <span class="px-3 py-1.5 rounded-xl bg-orange-50 text-orange-700 border border-orange-200 opacity-60">{{ $stats['cancellation_requested'] ?? 0 }} cancellation requests</span>
+                @endif
             </div>
         </div>
 
@@ -74,12 +79,14 @@
                 <option value="">All statuses</option>
                 <option value="pending" {{ $status === 'pending' ? 'selected' : '' }}>Pending review</option>
                 <option value="approved" {{ $status === 'approved' ? 'selected' : '' }}>Approved (awaiting payment)</option>
+                <option value="cancellation_requested" {{ $status === 'cancellation_requested' ? 'selected' : '' }}>Cancellation requests</option>
                 <option value="paid" {{ $status === 'paid' ? 'selected' : '' }}>Paid</option>
                 <option value="completed" {{ $status === 'completed' ? 'selected' : '' }}>Completed</option>
                 <option value="rejected" {{ $status === 'rejected' ? 'selected' : '' }}>Rejected</option>
                 <option value="cancelled" {{ $status === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
+                <option value="cancellation_denied" {{ $status === 'cancellation_denied' ? 'selected' : '' }}>Cancellation denied</option>
                 <option value="expired" {{ $status === 'expired' ? 'selected' : '' }}>Expired</option>
-                <option value="closed" {{ $status === 'closed' ? 'selected' : '' }}>Closed (rejected/cancelled/expired/completed)</option>
+                <option value="closed" {{ $status === 'closed' ? 'selected' : '' }}>Closed (rejected/cancelled/expired/completed/denied)</option>
             </select>
             <button type="submit" class="px-5 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs transition flex items-center justify-center gap-1 cursor-pointer">
                 <span class="material-symbols-outlined text-[16px]">filter_alt</span>

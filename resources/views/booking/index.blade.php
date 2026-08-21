@@ -8,6 +8,8 @@
             'rejected' => ['label' => 'Declined', 'chip' => 'bg-rose-100 text-rose-900 border-rose-200', 'dot' => 'bg-rose-500', 'icon' => 'cancel', 'tint' => 'text-rose-600 bg-rose-50 border-rose-100'],
             'cancelled' => ['label' => 'Cancelled', 'chip' => 'bg-slate-100 text-slate-800 border-slate-200', 'dot' => 'bg-slate-400', 'icon' => 'block', 'tint' => 'text-slate-500 bg-slate-50 border-slate-200'],
             'expired' => ['label' => 'Expired', 'chip' => 'bg-slate-100 text-slate-800 border-slate-200', 'dot' => 'bg-slate-400', 'icon' => 'schedule', 'tint' => 'text-slate-500 bg-slate-50 border-slate-200'],
+            'cancellation_requested' => ['label' => 'Cancellation Pending', 'chip' => 'bg-orange-100 text-orange-900 border-orange-200', 'dot' => 'bg-orange-500', 'icon' => 'hourglass_top', 'tint' => 'text-orange-600 bg-orange-50 border-orange-100'],
+            'cancellation_denied' => ['label' => 'Cancellation Denied', 'chip' => 'bg-rose-100 text-rose-900 border-rose-200', 'dot' => 'bg-rose-500', 'icon' => 'block', 'tint' => 'text-rose-600 bg-rose-50 border-rose-100'],
         ];
 
         $filters = [
@@ -20,8 +22,8 @@
             ['key' => 'closed', 'label' => 'Closed'],
         ];
 
-        $activeKeys = ['pending', 'approved'];
-        $closedKeys = ['rejected', 'cancelled', 'expired'];
+        $activeKeys = ['pending', 'approved', 'cancellation_requested'];
+        $closedKeys = ['rejected', 'cancelled', 'expired', 'cancellation_denied'];
     @endphp
 
     <div class="min-h-screen bg-sand-50/70 font-body">

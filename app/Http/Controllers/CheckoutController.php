@@ -2,9 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityModel;
+use App\Models\AddOnModel;
+use App\Models\Package;
 use App\Models\PassengerCategoryRule;
+use App\Models\RoomType;
+use App\Notifications\BookingNotification;
+use App\Notifications\BookingRequestReceived;
 use App\Services\BookingRequestService;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class CheckoutController extends Controller
 {
@@ -32,17 +39,17 @@ class CheckoutController extends Controller
             ->with([
                 'itemable' => function ($morphTo) {
                     $morphTo->morphWith([
-                        \App\Models\RoomType::class => ['hotel', 'hotel.destination'],
-                        \App\Models\ActivityModel::class => ['destination'],
-                        \App\Models\AddOnModel::class => ['destination'],
-                        \App\Models\Package::class => ['destination'],
+                        RoomType::class => ['hotel', 'hotel.destination'],
+                        ActivityModel::class => ['destination'],
+                        AddOnModel::class => ['destination'],
+                        Package::class => ['destination'],
                     ]);
-                }
+                },
             ])
             ->get();
 
         if ($cartItems->isEmpty()) {
-            return redirect()->route('cart.index')->with('error', 'Your Trip Basket is empty. Please add items before checking out.');
+            return redirect()->route('cart.index');
         }
 
         // Auto-heal/sync existing cart items in DB if quantity or pax was out of sync from older session
@@ -118,9 +125,9 @@ class CheckoutController extends Controller
         try {
             $booking = $this->bookingRequestService->buildFromCart($request, $validated);
 
-            \App\Notifications\BookingNotification::send(
+            BookingNotification::send(
                 $booking,
-                new \App\Notifications\BookingRequestReceived($booking)
+                new BookingRequestReceived($booking)
             );
 
             return response()->json([
@@ -128,12 +135,12 @@ class CheckoutController extends Controller
                 'message' => 'Booking request submitted! We will verify availability and email you once approved.',
                 'redirect_url' => route('booking.show', $booking->booking_code),
             ]);
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             throw $e;
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to submit booking request: ' . $e->getMessage(),
+                'message' => 'Failed to submit booking request: '.$e->getMessage(),
             ], 500);
         }
     }

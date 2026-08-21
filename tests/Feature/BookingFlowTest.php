@@ -1,12 +1,19 @@
 <?php
 
+use App\Models\ActivityModel;
+use App\Models\AddOnModel;
+use App\Models\AdminModel;
 use App\Models\Booking;
-use App\Models\BookingItem;
 use App\Models\CartItem;
 use App\Models\DestinationModel;
-use App\Models\HotelModel;
+use App\Models\Package;
 use App\Models\RoomType;
 use App\Models\User;
+use App\Notifications\BookingApproved;
+use App\Notifications\BookingExpired;
+use App\Notifications\BookingPaid;
+use App\Notifications\BookingRejected;
+use App\Services\RoomAvailabilityService;
 use Illuminate\Support\Facades\Notification;
 
 beforeEach(function () {
@@ -23,7 +30,7 @@ beforeEach(function () {
 
     $this->user = onboardedUser();
 
-    $this->admin = \App\Models\AdminModel::create([
+    $this->admin = AdminModel::create([
         'name' => 'Test Admin',
         'email' => 'admin@sunnytripstest.com',
         'password' => 'password',
@@ -101,7 +108,7 @@ it('admin can approve a pending booking opening a 48-hour payment window', funct
     $item = $booking->items->first();
     expect($item->availability_status)->toBe('available');
 
-    Notification::assertSentTo($this->user, \App\Notifications\BookingApproved::class);
+    Notification::assertSentTo($this->user, BookingApproved::class);
 });
 
 it('supports partial approval excluding unavailable items and recomputing totals', function () {
@@ -152,7 +159,7 @@ it('rejects a pending booking with a required reason', function () {
     expect($booking->status)->toBe('rejected')
         ->and($booking->rejection_reason)->toBe('Rooms unavailable');
 
-    Notification::assertSentTo($this->user, \App\Notifications\BookingRejected::class);
+    Notification::assertSentTo($this->user, BookingRejected::class);
 });
 
 it('expires approved bookings after the 48-hour window', function () {
@@ -175,7 +182,7 @@ it('expires approved bookings after the 48-hour window', function () {
     expect($booking->status)->toBe('expired')
         ->and($booking->expired_at)->not->toBeNull();
 
-    Notification::assertSentTo($this->user, \App\Notifications\BookingExpired::class);
+    Notification::assertSentTo($this->user, BookingExpired::class);
 });
 
 it('marks a booking paid through the simulator', function () {
@@ -200,10 +207,10 @@ it('marks a booking paid through the simulator', function () {
         ->and($booking->payment_status)->toBe('paid')
         ->and($booking->paid_at)->not->toBeNull();
 
-    Notification::assertSentTo($this->user, \App\Notifications\BookingPaid::class);
+    Notification::assertSentTo($this->user, BookingPaid::class);
 });
 
-it('allows the user to cancel a pending booking', function () {
+it('allows the user to request cancellation on a pending booking via admin review', function () {
     addRoomToCart($this->user, $this->room);
     $this->actingAs($this->user)->post(route('checkout.process'), [
         'contact_name' => 'Juan Dela Cruz',
@@ -214,12 +221,15 @@ it('allows the user to cancel a pending booking', function () {
 
     $booking = Booking::first();
 
-    $this->actingAs($this->user)->post(route('booking.cancel', $booking->booking_code))
-        ->assertRedirect(route('booking.show', $booking->booking_code));
+    $this->actingAs($this->user)->post(route('booking.cancel', $booking->booking_code), [
+        'reason' => 'Change of plans, need to cancel this booking for personal reasons.',
+    ])->assertRedirect(route('booking.show', $booking->booking_code));
 
     $booking->refresh();
-    expect($booking->status)->toBe('cancelled')
-        ->and($booking->cancelled_at)->not->toBeNull();
+    expect($booking->status)->toBe(Booking::STATUS_CANCELLATION_REQUESTED)
+        ->and($booking->cancellation_requested_at)->not->toBeNull()
+        ->and($booking->cancellation_request_reason)->toBe('Change of plans, need to cancel this booking for personal reasons.')
+        ->and($booking->isHoldStatus())->toBeTrue();
 });
 
 it('rebooks items back into the cart after expiry', function () {
@@ -252,7 +262,7 @@ it('holds inventory in availability counts and releases on expiry', function () 
         'guest_manifest' => null,
     ]);
 
-    $service = app(\App\Services\RoomAvailabilityService::class);
+    $service = app(RoomAvailabilityService::class);
     $result = $service->check($this->room, now()->parse('2026-12-01'), now()->parse('2026-12-04'));
 
     expect($result['booked_count'])->toBe(1)
@@ -324,7 +334,7 @@ it('allows the owner but not others to view booking pages', function () {
 });
 
 it('correctly calculates activity range pricing and airport transfer tier pricing with passenger manifest', function () {
-    $activity = \App\Models\ActivityModel::create([
+    $activity = ActivityModel::create([
         'destination_id' => $this->room->hotel->destination_id,
         'activity_name' => 'Clear Kayak Rental',
         'rate' => '₱300–₱500/person',
@@ -335,7 +345,7 @@ it('correctly calculates activity range pricing and airport transfer tier pricin
         'is_shown' => true,
     ]);
 
-    $addon = \App\Models\AddOnModel::create([
+    $addon = AddOnModel::create([
         'destination_id' => $this->room->hotel->destination_id,
         'name' => 'Airport to Hotel Roundtrip Transfer',
         'type' => 'Transfer',
@@ -394,7 +404,7 @@ it('correctly calculates activity range pricing and airport transfer tier pricin
 
 test('transfer add-on pax count update dynamically calculates tier rates in cart endpoint', function () {
     $dest = DestinationModel::first();
-    $addon = \App\Models\AddOnModel::create([
+    $addon = AddOnModel::create([
         'destination_id' => $dest->id,
         'name' => 'Airport to Hotel Roundtrip Transfer',
         'type' => 'Transfer',
@@ -445,7 +455,7 @@ test('transfer add-on pax count update dynamically calculates tier rates in cart
 
 test('activity item quantity update syncs pax count and displays matching participant count on checkout page', function () {
     $dest = DestinationModel::first();
-    $activity = \App\Models\ActivityModel::create([
+    $activity = ActivityModel::create([
         'destination_id' => $dest->id,
         'activity_name' => 'Crystal Kayak',
         'category' => 'Water Sports',
@@ -483,7 +493,7 @@ test('activity item quantity update syncs pax count and displays matching partic
 
 test('package item keeps requested pax while min_pax only gates checkout eligibility', function () {
     $dest = DestinationModel::first();
-    $package = \App\Models\Package::create([
+    $package = Package::create([
         'destination_id' => $dest->id,
         'name' => 'Boracay Sulit Deal 3D2N',
         'type' => 'Vacation Deal',
@@ -536,7 +546,7 @@ test('package item keeps requested pax while min_pax only gates checkout eligibi
 
 test('cart data payload exposes min_pax for package items so checkout can be pre-validated', function () {
     $dest = DestinationModel::first();
-    $package = \App\Models\Package::create([
+    $package = Package::create([
         'destination_id' => $dest->id,
         'name' => 'Palawan Explorer',
         'type' => 'Tour Package',
@@ -562,6 +572,3 @@ test('cart data payload exposes min_pax for package items so checkout can be pre
         ->and($packageItem['min_pax'])->toBe(3)
         ->and($packageItem['selected_pax'])->toBe(1);
 });
-
-
-

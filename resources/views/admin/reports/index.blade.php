@@ -48,12 +48,14 @@
                     <option value="">All statuses</option>
                     <option value="pending" {{ $status === 'pending' ? 'selected' : '' }}>Pending review</option>
                     <option value="approved" {{ $status === 'approved' ? 'selected' : '' }}>Approved (awaiting payment)</option>
+                    <option value="cancellation_requested" {{ $status === 'cancellation_requested' ? 'selected' : '' }}>Cancellation requests</option>
                     <option value="paid" {{ $status === 'paid' ? 'selected' : '' }}>Paid</option>
                     <option value="completed" {{ $status === 'completed' ? 'selected' : '' }}>Completed</option>
                     <option value="rejected" {{ $status === 'rejected' ? 'selected' : '' }}>Rejected</option>
                     <option value="cancelled" {{ $status === 'cancelled' ? 'selected' : '' }}>Cancelled</option>
+                    <option value="cancellation_denied" {{ $status === 'cancellation_denied' ? 'selected' : '' }}>Cancellation denied</option>
                     <option value="expired" {{ $status === 'expired' ? 'selected' : '' }}>Expired</option>
-                    <option value="closed" {{ $status === 'closed' ? 'selected' : '' }}>Closed (rejected/cancelled/expired/completed)</option>
+                    <option value="closed" {{ $status === 'closed' ? 'selected' : '' }}>Closed (rejected/cancelled/expired/completed/denied)</option>
                 </select>
             </div>
             <button type="submit" class="px-5 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs transition flex items-center justify-center gap-1 cursor-pointer">
@@ -90,10 +92,12 @@
                     @foreach ([
                         'pending' => ['bg-amber-100 text-amber-700', 'Pending'],
                         'approved' => ['bg-sky-100 text-sky-700', 'Approved'],
+                        'cancellation_requested' => ['bg-orange-100 text-orange-700', 'Cancellation Requests'],
                         'paid' => ['bg-emerald-100 text-emerald-700', 'Paid'],
                         'completed' => ['bg-teal-100 text-teal-700', 'Completed'],
                         'rejected' => ['bg-rose-100 text-rose-700', 'Rejected'],
                         'cancelled' => ['bg-slate-100 text-slate-600', 'Cancelled'],
+                        'cancellation_denied' => ['bg-rose-100 text-rose-700', 'Cancellation Denied'],
                         'expired' => ['bg-slate-100 text-slate-500', 'Expired'],
                     ] as $key => [$classes, $label])
                         @if(($statusCounts[$key] ?? 0) > 0)

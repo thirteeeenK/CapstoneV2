@@ -2,8 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AdminModel;
 use App\Models\Booking;
-use App\Notifications\BookingCancelled;
+use App\Notifications\BookingCancellationRequested;
 use App\Notifications\BookingNotification;
 use App\Notifications\BookingPaid;
 use App\Services\BookingExpiryService;
@@ -14,7 +15,9 @@ use Illuminate\Http\Request;
 class BookingPaymentController extends Controller
 {
     protected PaymentService $paymentService;
+
     protected BookingExpiryService $expiryService;
+
     protected BookingRequestService $bookingRequestService;
 
     public function __construct(
@@ -127,28 +130,88 @@ class BookingPaymentController extends Controller
     }
 
     /**
-     * User-initiated cancellation while pending or approved (before payment).
+     * User requests cancellation (pending/approved → cancellation_requested).
+     * Reason is required.
      */
-    public function cancel($bookingCode)
+    public function cancel(Request $request, $bookingCode)
     {
         $booking = $this->loadOwnedBooking($bookingCode);
 
-        if (!in_array($booking->status, [Booking::STATUS_PENDING, Booking::STATUS_APPROVED], true)) {
+        $validated = $request->validate([
+            'reason' => 'required|string|min:10|max:2000',
+        ]);
+
+        if (! in_array($booking->status, [Booking::STATUS_PENDING, Booking::STATUS_APPROVED], true)) {
             return redirect()->route('booking.show', $booking->booking_code)
                 ->with('error', 'This booking can no longer be cancelled.');
         }
 
-        $booking->transitionTo(
-            Booking::STATUS_CANCELLED,
+        $reason = trim($validated['reason']);
+        $from = $booking->status;
+
+        $updated = $booking->transitionTo(
+            Booking::STATUS_CANCELLATION_REQUESTED,
             [Booking::STATUS_PENDING, Booking::STATUS_APPROVED],
-            ['cancelled_at' => now(), 'cancellation_reason' => request('reason') ?: 'Cancelled by customer before payment.'],
-            request('reason') ?: 'Cancelled by customer before payment.'
+            [
+                'cancellation_request_reason' => $reason,
+                'cancellation_requested_at' => now(),
+                'cancellation_requested_from' => $from,
+            ],
+            'Cancellation requested: '.$reason
         );
 
-        BookingNotification::send($booking, new BookingCancelled($booking));
+        if (! $updated) {
+            return redirect()->route('booking.show', $booking->booking_code)
+                ->with('error', 'This booking can no longer be cancelled.');
+        }
+
+        // Notify admins (DB + mail via Notifiable)
+        try {
+            $admins = AdminModel::all();
+            if ($admins->isNotEmpty()) {
+                foreach ($admins as $admin) {
+                    $admin->notify(new BookingCancellationRequested($booking->fresh()));
+                }
+            }
+        } catch (\Throwable $e) {
+            // Admin notification failure should not block the request.
+        }
 
         return redirect()->route('booking.show', $booking->booking_code)
-            ->with('success', 'Booking cancelled. You can rebook anytime.');
+            ->with('success', 'Cancellation requested. Our team will review your request and reply with a decision.');
+    }
+
+    /**
+     * Withdraw a pending cancellation request (cancellation_requested → prior status).
+     */
+    public function withdrawCancellation($bookingCode)
+    {
+        $booking = $this->loadOwnedBooking($bookingCode);
+
+        if ($booking->status !== Booking::STATUS_CANCELLATION_REQUESTED) {
+            return redirect()->route('booking.show', $booking->booking_code)
+                ->with('error', 'No cancellation request to withdraw.');
+        }
+
+        $restoreTo = $booking->cancellation_requested_from ?: Booking::STATUS_PENDING;
+        if (! in_array($restoreTo, [Booking::STATUS_PENDING, Booking::STATUS_APPROVED], true)) {
+            $restoreTo = Booking::STATUS_PENDING;
+        }
+
+        $updated = $booking->transitionTo(
+            $restoreTo,
+            [Booking::STATUS_CANCELLATION_REQUESTED],
+            [],
+            'Cancellation request withdrawn by customer.'
+        );
+
+        if (! $updated) {
+            return redirect()->route('booking.show', $booking->booking_code)
+                ->with('error', 'Could not withdraw the request.');
+        }
+
+        return redirect()->route('booking.show', $booking->booking_code)
+            ->with('success', 'Cancellation request withdrawn. Your booking is active again.');
     }
 
     /**
@@ -158,7 +221,7 @@ class BookingPaymentController extends Controller
     {
         $booking = $this->loadOwnedBooking($bookingCode);
 
-        if (!in_array($booking->status, [Booking::STATUS_REJECTED, Booking::STATUS_CANCELLED, Booking::STATUS_EXPIRED], true)) {
+        if (! in_array($booking->status, [Booking::STATUS_REJECTED, Booking::STATUS_CANCELLED, Booking::STATUS_EXPIRED], true)) {
             return redirect()->route('booking.show', $booking->booking_code)
                 ->with('error', 'Only rejected, cancelled, or expired bookings can be rebooked.');
         }
@@ -166,7 +229,7 @@ class BookingPaymentController extends Controller
         $count = $this->bookingRequestService->recreateCartFromBooking($booking, $request);
 
         return redirect()->route('cart.index')
-            ->with('success', "Added {$count} item" . ($count === 1 ? '' : 's') . " back to your Trip Basket for rebooking.");
+            ->with('success', "Added {$count} item".($count === 1 ? '' : 's').' back to your Trip Basket for rebooking.');
     }
 
     /**

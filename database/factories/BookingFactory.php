@@ -17,7 +17,7 @@ class BookingFactory extends Factory
     public function definition(): array
     {
         return [
-            'booking_code' => 'ST-' . date('Y') . '-' . strtoupper(Str::random(5)),
+            'booking_code' => 'ST-'.date('Y').'-'.strtoupper(Str::random(5)),
             'user_id' => User::factory(),
             'status' => Booking::STATUS_PENDING,
             'total_amount' => 6000.00,
@@ -29,7 +29,7 @@ class BookingFactory extends Factory
             'payment_reference' => null,
             'contact_name' => fake()->name(),
             'contact_email' => fake()->safeEmail(),
-            'contact_phone' => '0917' . fake()->numerify('#######'),
+            'contact_phone' => '0917'.fake()->numerify('#######'),
             'special_requests' => null,
             'guest_manifest' => null,
         ];
@@ -84,6 +84,28 @@ class BookingFactory extends Factory
         return $this->state(fn () => [
             'status' => Booking::STATUS_EXPIRED,
             'expired_at' => now(),
+        ]);
+    }
+
+    public function cancellationRequested(string $from = Booking::STATUS_PENDING): static
+    {
+        return $this->state(fn () => [
+            'status' => Booking::STATUS_CANCELLATION_REQUESTED,
+            'cancellation_request_reason' => 'Change of travel plans, need to cancel.',
+            'cancellation_requested_at' => now(),
+            'cancellation_requested_from' => $from,
+        ]);
+    }
+
+    public function cancellationDenied(): static
+    {
+        return $this->state(fn () => [
+            'status' => Booking::STATUS_CANCELLATION_DENIED,
+            'cancellation_request_reason' => 'Change of travel plans, need to cancel.',
+            'cancellation_requested_at' => now()->subHour(),
+            'cancellation_requested_from' => Booking::STATUS_PENDING,
+            'cancellation_reason' => 'Denied by admin: booking is within non-cancellable window.',
+            'reviewed_by_admin_id' => null,
         ]);
     }
 }

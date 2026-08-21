@@ -38,7 +38,7 @@ class AdminReportController extends Controller
 
         $pdf = Pdf::loadView('admin.reports.pdf', $data);
 
-        return $pdf->download('sunnytrip-bookings-report-' . now()->format('Y-m-d') . '.pdf');
+        return $pdf->download('sunnytrip-bookings-report-'.now()->format('Y-m-d').'.pdf');
     }
 
     /**
@@ -76,16 +76,16 @@ class AdminReportController extends Controller
             ->where('created_at', '<=', $to);
 
         if ($status === 'closed') {
-            $query->whereIn('status', ['rejected', 'cancelled', 'expired', 'completed']);
+            $query->whereIn('status', ['rejected', 'cancelled', 'expired', 'completed', 'cancellation_denied']);
         } elseif ($status) {
             $query->where('status', $status);
         }
 
         $daily = $query->clone()
             ->selectRaw(
-                "DATE(created_at) as day, COUNT(*) as bookings, "
-                . "COALESCE(SUM(CASE WHEN payment_status = 'paid' THEN net_amount ELSE 0 END), 0) as collected, "
-                . "COALESCE(SUM(CASE WHEN status = 'approved' THEN net_amount ELSE 0 END), 0) as estimated"
+                'DATE(created_at) as day, COUNT(*) as bookings, '
+                ."COALESCE(SUM(CASE WHEN payment_status = 'paid' THEN net_amount ELSE 0 END), 0) as collected, "
+                ."COALESCE(SUM(CASE WHEN status = 'approved' THEN net_amount ELSE 0 END), 0) as estimated"
             )
             ->groupBy('day')
             ->orderByDesc('day')

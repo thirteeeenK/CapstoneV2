@@ -16,6 +16,7 @@ Route::middleware(['auth', 'throttle:users'])->group(function () {
         Route::get('/{code}/pay/simulator', [BookingPaymentController::class, 'simulatorShow'])->name('pay.simulator');
         Route::post('/{code}/pay/simulator/confirm', [BookingPaymentController::class, 'simulatorConfirm'])->name('pay.simulator.confirm');
         Route::post('/{code}/cancel', [BookingPaymentController::class, 'cancel'])->name('cancel');
+        Route::post('/{code}/cancel/withdraw', [BookingPaymentController::class, 'withdrawCancellation'])->name('cancel.withdraw');
         Route::post('/{code}/rebook', [BookingPaymentController::class, 'rebook'])->name('rebook');
     });
 });

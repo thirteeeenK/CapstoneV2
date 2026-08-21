@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
-use App\Models\BookingItem;
+use App\Models\BookingStatusHistory;
 use App\Notifications\BookingApproved;
+use App\Notifications\BookingCancellationApproved;
+use App\Notifications\BookingCancellationDenied;
 use App\Notifications\BookingCancelled;
 use App\Notifications\BookingNotification;
 use App\Notifications\BookingPaid;
@@ -17,6 +19,7 @@ use Illuminate\Http\Request;
 class AdminBookingController extends Controller
 {
     protected RoomAvailabilityService $availabilityService;
+
     protected BookingRequestService $bookingRequestService;
 
     public function __construct(RoomAvailabilityService $availabilityService, BookingRequestService $bookingRequestService)
@@ -43,11 +46,11 @@ class AdminBookingController extends Controller
             });
         }
 
-        $allStatuses = ['pending', 'approved', 'paid', 'completed', 'rejected', 'cancelled', 'expired'];
+        $allStatuses = ['pending', 'approved', 'paid', 'completed', 'rejected', 'cancelled', 'expired', 'cancellation_requested', 'cancellation_denied'];
 
         if ($status) {
             if ($status === 'closed') {
-                $query->whereIn('status', ['rejected', 'cancelled', 'expired', 'completed']);
+                $query->whereIn('status', ['rejected', 'cancelled', 'expired', 'completed', 'cancellation_denied']);
             } elseif (in_array($status, $allStatuses, true)) {
                 $query->where('status', $status);
             }
@@ -65,6 +68,7 @@ class AdminBookingController extends Controller
             'pending' => Booking::where('status', Booking::STATUS_PENDING)->count(),
             'approved' => Booking::where('status', Booking::STATUS_APPROVED)->count(),
             'paid' => Booking::where('status', Booking::STATUS_PAID)->count(),
+            'cancellation_requested' => Booking::where('status', Booking::STATUS_CANCELLATION_REQUESTED)->count(),
             'total' => Booking::count(),
         ];
 
@@ -139,7 +143,7 @@ class AdminBookingController extends Controller
             $raw = $validated['items'][$item->id] ?? null;
             if ($raw) {
                 $adjustments[$item->id] = [
-                    'include' => !empty($raw['include']),
+                    'include' => ! empty($raw['include']),
                     'quantity' => (int) ($raw['quantity'] ?? $item->quantity),
                     'admin_note' => $raw['admin_note'] ?? null,
                 ];
@@ -161,12 +165,12 @@ class AdminBookingController extends Controller
         if ($booking->admin_discount_amount > 0 || $booking->admin_surcharge_amount > 0) {
             $approvalNote .= ' Admin price adjustment applied';
             if ($booking->admin_discount_amount > 0) {
-                $approvalNote .= ' (-₱' . number_format((float) $booking->admin_discount_amount, 2) . ')';
+                $approvalNote .= ' (-₱'.number_format((float) $booking->admin_discount_amount, 2).')';
             }
             if ($booking->admin_surcharge_amount > 0) {
-                $approvalNote .= ' (+₱' . number_format((float) $booking->admin_surcharge_amount, 2) . ')';
+                $approvalNote .= ' (+₱'.number_format((float) $booking->admin_surcharge_amount, 2).')';
             }
-            $approvalNote .= ': ' . $booking->price_adjustment_reason;
+            $approvalNote .= ': '.$booking->price_adjustment_reason;
         }
 
         $updated = $booking->transitionTo(
@@ -191,7 +195,7 @@ class AdminBookingController extends Controller
 
         return redirect()->route('admin.bookings.show', $booking->id)->with(
             'success',
-            "Booking {$booking->booking_code} approved. Payment window of 48 hours opened" .
+            "Booking {$booking->booking_code} approved. Payment window of 48 hours opened".
             ($totals['excluded'] > 0 ? " ({$totals['excluded']} item(s) excluded)." : '.')
         );
     }
@@ -215,10 +219,10 @@ class AdminBookingController extends Controller
                 'rejection_reason' => $validated['rejection_reason'],
                 'reviewed_by_admin_id' => auth('admin')->id(),
             ],
-            'Rejected: ' . $validated['rejection_reason']
+            'Rejected: '.$validated['rejection_reason']
         );
 
-        if (!$updated) {
+        if (! $updated) {
             return back()->with('error', 'Only pending bookings can be rejected.');
         }
 
@@ -241,10 +245,10 @@ class AdminBookingController extends Controller
             Booking::STATUS_CANCELLED,
             [Booking::STATUS_PENDING, Booking::STATUS_APPROVED],
             ['cancelled_at' => now(), 'cancellation_reason' => $cancellationReason],
-            'Cancelled: ' . $cancellationReason
+            'Cancelled: '.$cancellationReason
         );
 
-        if (!$updated) {
+        if (! $updated) {
             return back()->with('error', 'This booking cannot be cancelled in its current state.');
         }
 
@@ -252,6 +256,77 @@ class AdminBookingController extends Controller
 
         return redirect()->route('admin.bookings.show', $booking->id)
             ->with('success', "Booking {$booking->booking_code} cancelled.");
+    }
+
+    /**
+     * Approve a user cancellation request → cancelled.
+     */
+    public function approveCancellation(Request $request, $id)
+    {
+        $booking = Booking::findOrFail($id);
+
+        $validated = $request->validate([
+            'admin_message' => 'nullable|string|max:2000',
+        ]);
+
+        $adminMessage = trim($validated['admin_message'] ?? '') ?: 'Cancellation approved by admin.';
+        $reason = $booking->cancellation_request_reason ?: $adminMessage;
+
+        $updated = $booking->transitionTo(
+            Booking::STATUS_CANCELLED,
+            [Booking::STATUS_CANCELLATION_REQUESTED],
+            [
+                'cancelled_at' => now(),
+                'cancellation_reason' => $adminMessage,
+                'reviewed_by_admin_id' => auth('admin')->id(),
+            ],
+            'Cancellation approved: '.$adminMessage.' (user reason: '.$reason.')'
+        );
+
+        if (! $updated) {
+            return back()->with('error', 'Only bookings with a pending cancellation request can be approved.');
+        }
+
+        $booking->refresh();
+        BookingNotification::send($booking, new BookingCancellationApproved($booking));
+
+        return redirect()->route('admin.bookings.show', $booking->id)
+            ->with('success', "Cancellation approved for {$booking->booking_code}. The customer has been notified.");
+    }
+
+    /**
+     * Deny a user cancellation request → cancellation_denied (still reserved).
+     * Admin message is required.
+     */
+    public function denyCancellation(Request $request, $id)
+    {
+        $booking = Booking::findOrFail($id);
+
+        $validated = $request->validate([
+            'admin_message' => 'required|string|min:10|max:2000',
+        ]);
+
+        $adminMessage = trim($validated['admin_message']);
+
+        $updated = $booking->transitionTo(
+            Booking::STATUS_CANCELLATION_DENIED,
+            [Booking::STATUS_CANCELLATION_REQUESTED],
+            [
+                'cancellation_reason' => $adminMessage,
+                'reviewed_by_admin_id' => auth('admin')->id(),
+            ],
+            'Cancellation denied: '.$adminMessage
+        );
+
+        if (! $updated) {
+            return back()->with('error', 'Only bookings with a pending cancellation request can be denied.');
+        }
+
+        $booking->refresh();
+        BookingNotification::send($booking, new BookingCancellationDenied($booking));
+
+        return redirect()->route('admin.bookings.show', $booking->id)
+            ->with('success', "Cancellation denied for {$booking->booking_code}. The customer has been notified and the booking remains active.");
     }
 
     /**
@@ -266,13 +341,13 @@ class AdminBookingController extends Controller
         ]);
 
         $data = ['paid_at' => now(), 'payment_status' => Booking::PAYMENT_PAID];
-        if (!empty($validated['payment_reference'])) {
+        if (! empty($validated['payment_reference'])) {
             $data['payment_reference'] = $validated['payment_reference'];
         }
 
         $updated = $booking->transitionTo(Booking::STATUS_PAID, [Booking::STATUS_APPROVED], $data, 'Marked paid manually by admin.');
 
-        if (!$updated) {
+        if (! $updated) {
             return back()->with('error', 'Only approved bookings awaiting payment can be marked paid.');
         }
 
@@ -291,7 +366,7 @@ class AdminBookingController extends Controller
 
         $updated = $booking->transitionTo(Booking::STATUS_COMPLETED, [Booking::STATUS_PAID], [], 'Marked completed by admin.');
 
-        if (!$updated) {
+        if (! $updated) {
             return back()->with('error', 'Only paid bookings can be marked completed.');
         }
 
@@ -315,11 +390,11 @@ class AdminBookingController extends Controller
         $booking->payment_status = Booking::PAYMENT_REFUNDED;
         $booking->save();
 
-        \App\Models\BookingStatusHistory::create([
+        BookingStatusHistory::create([
             'booking_id' => $booking->id,
             'from_status' => $booking->status,
             'to_status' => $booking->status,
-            'note' => 'Payment refunded: ' . $note,
+            'note' => 'Payment refunded: '.$note,
             'actor_type' => auth('admin')->user() ? get_class(auth('admin')->user()) : null,
             'actor_id' => auth('admin')->id(),
         ]);
