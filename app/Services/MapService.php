@@ -2,19 +2,18 @@
 
 namespace App\Services;
 
+use App\Concerns\ResolvesImages;
 use App\Models\ActivityModel;
 use App\Models\DestinationModel;
 use App\Models\HotelModel;
-use App\Models\Package;
-use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Str;
 
 class MapService
 {
     public function __construct(
         protected DistanceService $distance,
         protected WeatherService $weather,
-    ) {
-    }
+    ) {}
 
     /**
      * Destination-level overview markers for the dashboard / explorer map.
@@ -27,6 +26,11 @@ class MapService
             ->map(function (DestinationModel $destination) use ($userLat, $userLng) {
                 $weather = $this->weather->summaryForDestination($destination);
 
+                $coverImage = ResolvesImages::resolveImg(
+                    collect($destination->hotels()->where('is_shown', true)->first()?->images ?? [])->first(),
+                    'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80'
+                );
+
                 return [
                     'type' => 'destination',
                     'id' => $destination->id,
@@ -36,12 +40,14 @@ class MapService
                     'hotel_count' => $destination->hotels_count,
                     'activity_count' => $destination->activities_count,
                     'weather' => $weather['current'] ?? null,
-                    'url' => $destination->hotels_count > 0 ? '/hotels?destination=' . $destination->id : null,
+                    'url' => $destination->hotels_count > 0 ? '/hotels?destination='.$destination->id : null,
                     'distance_km' => $userLat ? round($this->distance->haversine($userLat, $userLng, (float) $destination->latitude, (float) $destination->longitude), 2) : null,
                     'distance_label' => $userLat && $destination->latitude ? $this->distance->format($this->distance->haversine($userLat, $userLng, (float) $destination->latitude, (float) $destination->longitude)) : null,
+                    'cover_image' => $coverImage,
+                    'destination_slug' => Str::slug($destination->name),
                 ];
             })
-            ->filter(fn($m) => $m['lat'] && $m['lng'])
+            ->filter(fn ($m) => $m['lat'] && $m['lng'])
             ->values()
             ->all();
     }
@@ -54,7 +60,7 @@ class MapService
         $hotels = HotelModel::where('is_shown', true)
             ->whereNotNull('latitude')
             ->whereNotNull('longitude')
-            ->with('destination')
+            ->with(['destination', 'rooms'])
             ->get();
 
         $activities = ActivityModel::where('is_shown', true)
@@ -71,7 +77,7 @@ class MapService
             $markers[] = $this->activityMarker($activity, $userLat, $userLng);
         }
 
-        return array_values(array_filter($markers, fn($m) => $m['lat'] && $m['lng']));
+        return array_values(array_filter($markers, fn ($m) => $m['lat'] && $m['lng']));
     }
 
     /**
@@ -87,7 +93,7 @@ class MapService
             ->get();
 
         $nearbyActivities = $activities
-            ->filter(fn(ActivityModel $activity) => $activity->latitude !== null && $activity->longitude !== null)
+            ->filter(fn (ActivityModel $activity) => $activity->latitude !== null && $activity->longitude !== null)
             ->filter(function (ActivityModel $activity) use ($userLat, $userLng) {
                 return $this->distance->haversine($userLat, $userLng, (float) $activity->latitude, (float) $activity->longitude) <= 15;
             })
@@ -100,8 +106,8 @@ class MapService
         // those from the hotel's own destination so the UI can say "no
         // location data" instead of silently dropping them.
         $noLocationActivities = $activities
-            ->filter(fn(ActivityModel $activity) => $activity->latitude === null || $activity->longitude === null)
-            ->filter(fn(ActivityModel $activity) => $activity->destination_id === $hotel->destination_id)
+            ->filter(fn (ActivityModel $activity) => $activity->latitude === null || $activity->longitude === null)
+            ->filter(fn (ActivityModel $activity) => $activity->destination_id === $hotel->destination_id)
             ->sortBy('activity_name')
             ->values();
 
@@ -119,7 +125,7 @@ class MapService
             'center' => $this->hotelMarker($hotel, $userLat, $userLng),
             'hotel' => $this->hotelMarker($hotel, $userLat, $userLng),
             'activities' => $nearbyActivities
-                ->map(fn(ActivityModel $activity) => $this->activityMarker($activity, $userLat, $userLng))
+                ->map(fn (ActivityModel $activity) => $this->activityMarker($activity, $userLat, $userLng))
                 ->all(),
             'activityModels' => $nearbyActivities->all(),
         ];
@@ -128,6 +134,7 @@ class MapService
     protected function hotelMarker(HotelModel $hotel, float $userLat, float $userLng): array
     {
         $km = $this->distance->haversine($userLat, $userLng, (float) $hotel->latitude, (float) $hotel->longitude);
+        $cheapest = $hotel->rooms->where('is_shown', true)->min('base_price');
 
         return [
             'type' => 'hotel',
@@ -140,9 +147,13 @@ class MapService
             'rating' => $hotel->reviewSummary?->average_rating ?? null,
             'review_count' => $hotel->reviewSummary?->total_reviews ?? 0,
             'image' => collect($hotel->images ?? [])->first(),
-            'url' => '/hotels/' . $hotel->id,
+            'url' => '/hotels/'.$hotel->id,
             'distance_km' => $userLat ? round($km, 2) : null,
             'distance_label' => $userLat ? $this->distance->format($km) : null,
+            'images' => collect($hotel->images ?? [])->map(fn ($i) => ResolvesImages::resolveImg($i))->values()->all(),
+            'cheapest_price' => $cheapest !== null ? (float) $cheapest : null,
+            'vibe_tags' => array_values(array_slice((array) ($hotel->vibe_tags ?? []), 0, 3)),
+            'featured_amenities' => array_values(array_slice((array) ($hotel->featured_amenities ?? []), 0, 3)),
         ];
     }
 
@@ -168,6 +179,9 @@ class MapService
                 'distance_km' => null,
                 'distance_label' => null,
                 'no_location' => true,
+                'images' => collect($activity->images ?? [])->map(fn ($i) => ResolvesImages::resolveActivityImage($i, $activity->activity_name, $activity->category))->values()->all(),
+                'vibe_tags' => array_values(array_slice((array) ($activity->vibe_tags ?? []), 0, 3)),
+                'inclusions' => array_values(array_slice((array) ($activity->inclusions ?? []), 0, 2)),
             ];
         }
 
@@ -189,6 +203,9 @@ class MapService
             'distance_km' => $userLat ? round($km, 2) : null,
             'distance_label' => $userLat ? $this->distance->format($km) : null,
             'no_location' => false,
+            'images' => collect($activity->images ?? [])->map(fn ($i) => ResolvesImages::resolveActivityImage($i, $activity->activity_name, $activity->category))->values()->all(),
+            'vibe_tags' => array_values(array_slice((array) ($activity->vibe_tags ?? []), 0, 3)),
+            'inclusions' => array_values(array_slice((array) ($activity->inclusions ?? []), 0, 2)),
         ];
     }
 
