@@ -1,5 +1,5 @@
 <section
-    class="py-24 bg-gradient-to-b from-slate-50 via-slate-100/80 to-slate-50 border-y border-slate-200/60 overflow-hidden relative"
+    class="py-24 bg-gradient-to-b from-sand-50/70 via-sand-100/40 to-sand-50/70 border-y border-slate-200/60 overflow-hidden relative"
     id="experiences" x-data="{
         activeTab: 'all',
         levelFilter: 'all',

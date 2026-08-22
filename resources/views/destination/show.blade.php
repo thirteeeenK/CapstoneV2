@@ -22,7 +22,7 @@
             return true;
         }
     }"
-        class="{{ Auth::check() ? 'pt-6 sm:pt-10' : 'pt-32 sm:pt-36' }} pb-24 bg-slate-50 min-h-screen">
+        class="{{ Auth::check() ? 'pt-6 sm:pt-10' : 'pt-32 sm:pt-36' }} pb-24 bg-sand-50/70 min-h-screen">
 
         {{-- HERO BANNER --}}
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

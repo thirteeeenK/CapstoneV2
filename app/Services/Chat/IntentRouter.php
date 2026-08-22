@@ -27,6 +27,8 @@ class IntentRouter
 
     public const WEATHER_QUERY = 'WEATHER_QUERY';
 
+    public const DESTINATIONS_OVERVIEW = 'DESTINATIONS_OVERVIEW';
+
     protected array $travelKeywords = [
         'hotel', 'hotels', 'room', 'rooms', 'resort', 'resorts', 'stay', 'accommodation',
         'book', 'booking', 'check in', 'check-in', 'check out', 'check-out',
@@ -60,6 +62,10 @@ class IntentRouter
     public function classify(string $query): string
     {
         $lower = mb_strtolower($query);
+
+        if ($this->hasDestinationsOverviewIntent($lower)) {
+            return self::DESTINATIONS_OVERVIEW;
+        }
 
         if ($this->hasWeatherIntent($lower)) {
             return self::WEATHER_QUERY;
@@ -411,6 +417,27 @@ class IntentRouter
             if (str_contains($lower, $a)) {
                 return true;
             }
+        }
+
+        return false;
+    }
+
+    protected function hasDestinationsOverviewIntent(string $lower): bool
+    {
+        if (str_contains($lower, 'about sunnytrips') || str_contains($lower, 'what is sunnytrips') || str_contains($lower, 'tell me about sunny')) {
+            return true;
+        }
+
+        if (preg_match('/\bdestinations?\b/', $lower) && preg_match('/\b(you|your|sunnytrips|sunny|trips|we|our)\b/', $lower)) {
+            return true;
+        }
+
+        if (preg_match('/\bwhere\b.*\b(you operate|you cover|can i go|can we go|do you have)\b/', $lower)) {
+            return true;
+        }
+
+        if (preg_match('/\bwhat places\b|\bwhich places\b|\bplaces do you\b/', $lower)) {
+            return true;
         }
 
         return false;

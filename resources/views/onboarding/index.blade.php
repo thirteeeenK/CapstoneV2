@@ -55,7 +55,7 @@
             }
             this.isSubmitting = true;
         }
-    }" class="min-h-screen py-12 bg-slate-50 text-slate-900 relative overflow-hidden flex flex-col justify-center items-center">
+    }" class="min-h-screen py-12 bg-sand-50/70 text-slate-900 relative overflow-hidden flex flex-col justify-center items-center">
 
         {{-- Background Soft Ambient Mesh Glows --}}
         <div class="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-sky-200/50 blur-[120px] rounded-full pointer-events-none"></div>

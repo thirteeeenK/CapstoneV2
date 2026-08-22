@@ -283,6 +283,35 @@
                                         </div>
                                     </div>
                                 </template>
+
+                                {{-- Location request --}}
+                                <template x-if="msg.location_request">
+                                    <div class="mt-3 bg-ocean-50 rounded-xl p-3 border border-ocean-200/80 space-y-2">
+                                        <p class="text-xs font-bold text-ocean-800 font-headline flex items-center gap-1.5">
+                                            <span class="material-symbols-outlined text-[16px]">my_location</span>
+                                            Share your location?
+                                        </p>
+                                        <p class="text-[11px] text-ocean-700 leading-relaxed">Allow location access to see your distance to <span class="font-bold" x-text="msg.location_target"></span>.</p>
+                                        <button @click="shareLocation(msg.location_target)" :disabled="locatingLocation"
+                                            class="w-full text-xs bg-ocean-600 text-white font-bold px-3 py-2 rounded-xl hover:bg-ocean-700 transition-colors font-headline flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">
+                                            <span class="material-symbols-outlined text-[16px]" x-text="locatingLocation ? 'progress_activity' : 'near_me'"></span>
+                                            <span x-text="locatingLocation ? 'Locating…' : 'Share my current location'"></span>
+                                        </button>
+                                        <p x-show="geoError" x-text="geoError" class="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1.5"></p>
+                                        <p class="text-[10px] text-slate-500">Or tell me where you are, e.g. “How far is Manila from <span x-text="msg.location_target"></span>?”</p>
+                                    </div>
+                                </template>
+
+                                {{-- Distance result --}}
+                                <template x-if="msg.map && msg.map.distance_label">
+                                    <div class="mt-3 bg-emerald-50 rounded-xl p-2.5 border border-emerald-200/80 flex items-center justify-between">
+                                        <span class="text-xs font-bold text-emerald-800 font-headline flex items-center gap-1">
+                                            <span class="material-symbols-outlined text-[16px]">route</span>
+                                            <span x-text="msg.map.distance_label + ' away'"></span>
+                                        </span>
+                                        <span class="text-[10px] text-emerald-700 bg-white px-2 py-0.5 rounded-md border border-emerald-200" x-text="msg.map.from?.label === 'You' ? 'from you' : ''"></span>
+                                    </div>
+                                </template>
                             </div>
                         </div>
                     </template>
@@ -362,6 +391,8 @@
             handoffTicket: '',
             handoffPollTimer: null,
             handoffLastMessageId: 0,
+            locatingLocation: false,
+            geoError: null,
 
             init() {
                 this.sessionToken = localStorage.getItem('sunnytrips_chat_session');
@@ -404,6 +435,11 @@
                         if (ctx.retrieved_activities?.length) extras.activities = ctx.retrieved_activities;
                         if (ctx.retrieved_packages?.length) extras.packages = ctx.retrieved_packages;
                         if (ctx.itinerary) extras.itinerary = ctx.itinerary;
+                        if (ctx.map) extras.map = ctx.map;
+                        if (ctx.location_request) {
+                            extras.location_request = true;
+                            extras.location_target = ctx.location_target || ctx.map?.target?.name || '';
+                        }
                         return { id: msg.id, sender: msg.sender, text: msg.text, ...extras };
                     });
                     this.$nextTick(() => this.scrollDown());
@@ -582,6 +618,11 @@
                     if (data.retrieved_hotels) extras.hotels = data.retrieved_hotels;
                     if (data.retrieved_activities) extras.activities = data.retrieved_activities;
                     if (data.retrieved_packages) extras.packages = data.retrieved_packages;
+                    if (data.map) extras.map = data.map;
+                    if (data.location_request) {
+                        extras.location_request = true;
+                        extras.location_target = data.location_target || data.map?.target?.name || '';
+                    }
 
                     if (data.control === 'admin' || data.status === 'human_support_active') {
                         this.handoffStatus = 'active';
@@ -605,6 +646,97 @@
             addToBasket(type, id, opts) {
                 if (typeof window.addToCart === 'function') {
                     window.addToCart(type, id, opts);
+                }
+            },
+
+            getCachedCoords() {
+                try {
+                    const raw = sessionStorage.getItem('sunnytrip_chat_coords');
+                    if (!raw) return null;
+                    const data = JSON.parse(raw);
+                    if (!data || typeof data.lat !== 'number' || typeof data.lng !== 'number') return null;
+                    return { lat: data.lat, lng: data.lng };
+                } catch (_) {
+                    return null;
+                }
+            },
+
+            saveCoords(coords) {
+                try {
+                    sessionStorage.setItem('sunnytrip_chat_coords', JSON.stringify({ lat: coords.lat, lng: coords.lng, at: Date.now() }));
+                } catch (_) {}
+            },
+
+            async shareLocation(destName) {
+                const cached = this.getCachedCoords();
+                if (cached) {
+                    await this.sendWithLocation(cached.lat, cached.lng, destName);
+                    return;
+                }
+                if (!navigator.geolocation) {
+                    this.geoError = 'Your browser does not support location sharing.';
+                    return;
+                }
+                this.locatingLocation = true;
+                this.geoError = null;
+                try {
+                    const pos = await new Promise((resolve, reject) => {
+                        navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 });
+                    });
+                    const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                    this.saveCoords(coords);
+                    await this.sendWithLocation(coords.lat, coords.lng, destName);
+                } catch (err) {
+                    this.geoError = err && err.code === 1
+                        ? 'Location permission was blocked. Allow access in your browser settings or tell me where you are instead.'
+                        : 'Could not get your location. Please try again or tell me where you are (e.g., “Manila”).';
+                } finally {
+                    this.locatingLocation = false;
+                }
+            },
+
+            async sendWithLocation(lat, lng, destName) {
+                const msg = destName ? `How far am I from ${destName}?` : 'How far am I from there?';
+                this.addMessage('user', '📍 Shared my location');
+                this.sending = true;
+                try {
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+                    const res = await fetch('/chat', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken,
+                            'Accept': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            message: msg,
+                            session_token: this.sessionToken,
+                            user_lat: lat,
+                            user_lng: lng,
+                        }),
+                    });
+                    const data = await res.json();
+                    if (data.session_token) {
+                        this.sessionToken = data.session_token;
+                        localStorage.setItem('sunnytrips_chat_session', data.session_token);
+                    }
+                    const extras = {};
+                    if (data.map) extras.map = data.map;
+                    if (data.location_request) {
+                        extras.location_request = true;
+                        extras.location_target = data.location_target || '';
+                    }
+                    if (data.retrieved_rooms?.length) extras.rooms = data.retrieved_rooms;
+                    if (data.retrieved_hotels?.length) extras.hotels = data.retrieved_hotels;
+                    if (data.retrieved_activities?.length) extras.activities = data.retrieved_activities;
+                    if (data.retrieved_packages?.length) extras.packages = data.retrieved_packages;
+                    if (data.itinerary) extras.itinerary = data.itinerary;
+                    this.addMessage('bot', data.reply || 'I could not process that.', extras);
+                } catch (_) {
+                    this.addMessage('bot', 'Something went wrong. Please try again.');
+                } finally {
+                    this.sending = false;
+                    this.$nextTick(() => this.scrollDown());
                 }
             },
 

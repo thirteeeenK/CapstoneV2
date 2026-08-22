@@ -12,28 +12,33 @@
                     destDescription: '',
                     destImageUrl: '',
                     methodType: 'POST',
-                            searchQuery: '',
-                            sortBy: 'name',
-                            sortOrder: 'asc',
+                    searchQuery: '',
+                    sortBy: 'id',
+                    sortOrder: 'asc',
 
-                            get filteredDestinations() {
-                                let results = [...this.destinations];
+                    get filteredDestinations() {
+                        let results = [...this.destinations];
 
-                                if (this.searchQuery) {
-                                    const q = this.searchQuery.toLowerCase();
-                                    results = results.filter(d => d.name.toLowerCase().includes(q));
-                                                                                                }
+                        if (this.searchQuery) {
+                            const q = this.searchQuery.toLowerCase();
+                            results = results.filter(d => d.name.toLowerCase().includes(q) || String(d.id).includes(q));
+                        }
 
-                                                                                                results.sort((a, b) => {
-                                                                                                    const aVal = a[this.sortBy].toLowerCase();
-                                                                                                    const bVal = b[this.sortBy].toLowerCase();
-                                                                                                    return this.sortOrder === 'asc' 
-                                                                                                        ? aVal.localeCompare(bVal) 
-                                                                                                        : bVal.localeCompare(aVal);
-                                                                                                });
+                        results.sort((a, b) => {
+                            if (this.sortBy === 'id') {
+                                return this.sortOrder === 'asc'
+                                    ? Number(a.id) - Number(b.id)
+                                    : Number(b.id) - Number(a.id);
+                            }
+                            const aVal = (a[this.sortBy] || '').toString().toLowerCase();
+                            const bVal = (b[this.sortBy] || '').toString().toLowerCase();
+                            return this.sortOrder === 'asc' 
+                                ? aVal.localeCompare(bVal) 
+                                : bVal.localeCompare(aVal);
+                        });
 
-                                                                                                return results;
-                                                                                            },
+                        return results;
+                    },
 
                                                                                             destinations: {{ $destinations->toJson() }},
 
@@ -195,9 +200,8 @@
                                 </svg>
                             </div>
                             <div class="min-w-0">
-                                <h3 class="text-sm font-semibold text-slate-900 truncate" x-text="destination.name">
+                                <h3 class="text-sm font-semibold text-slate-900 truncate" x-text="destination.id + '. ' + destination.name">
                                 </h3>
-                                <p class="text-xs text-slate-400 mt-0.5">ID: <span x-text="destination.id"></span></p>
                             </div>
                         </div>
 

@@ -1,5 +1,5 @@
 <x-frontend.layout title="My Dashboard — SunnyTrips">
-    <div class="py-10 bg-slate-50 text-slate-900 min-h-screen relative overflow-hidden">
+    <div class="py-10 bg-sand-50/70 text-slate-900 min-h-screen relative overflow-hidden">
 
         {{-- Background Soft Ambient Mesh Glows --}}
         <div

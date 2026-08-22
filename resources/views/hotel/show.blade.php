@@ -96,7 +96,7 @@
             this.activeModalImgIndex = (this.activeModalImgIndex + 1) % this.galleryImages.length;
             this.activeModalImg = this.galleryImages[this.activeModalImgIndex];
         }
-    }" class="{{ Auth::check() ? 'pt-6 sm:pt-10' : 'pt-32 sm:pt-36' }} pb-24 bg-slate-50 min-h-screen">
+    }" class="{{ Auth::check() ? 'pt-6 sm:pt-10' : 'pt-32 sm:pt-36' }} pb-24 bg-sand-50/70 min-h-screen">
 
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
 

@@ -22,6 +22,8 @@ class ChatbotController extends Controller
         $validated = $request->validate([
             'message' => 'required|string|max:1000',
             'session_token' => 'nullable|string|max:255',
+            'user_lat' => 'nullable|numeric|between:-90,90',
+            'user_lng' => 'nullable|numeric|between:-180,180',
         ]);
 
         $user = $request->user();
@@ -30,7 +32,13 @@ class ChatbotController extends Controller
             $user
         );
 
-        $result = $this->chatbot->handle($session, $user, $validated['message']);
+        $result = $this->chatbot->handle(
+            $session,
+            $user,
+            $validated['message'],
+            isset($validated['user_lat']) ? (float) $validated['user_lat'] : null,
+            isset($validated['user_lng']) ? (float) $validated['user_lng'] : null
+        );
 
         if (! empty($result['blocked'])) {
             return response()->json([
@@ -52,10 +60,8 @@ class ChatbotController extends Controller
         $session = $this->conversation->resolveSession($token, $request->user());
 
         $messages = $session->messages()
-            ->latest('created_at')
-            ->limit(30)
+            ->oldest('created_at')
             ->get()
-            ->reverse()
             ->values()
             ->map(fn ($msg) => [
                 'id' => $msg->id,

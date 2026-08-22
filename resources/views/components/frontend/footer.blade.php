@@ -1,4 +1,4 @@
-<footer class="w-full pt-20 pb-10 px-8 bg-slate-50 border-t border-slate-200/80 font-body reveal-on-scroll">
+<footer class="w-full pt-20 pb-10 px-8 bg-sand-50/70 border-t border-slate-200/80 font-body reveal-on-scroll">
     <div class="max-w-7xl mx-auto">
         <div class="grid grid-cols-1 md:grid-cols-12 gap-12 lg:gap-16">
 

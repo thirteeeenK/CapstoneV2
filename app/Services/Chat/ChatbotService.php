@@ -29,7 +29,7 @@ class ChatbotService
         protected FaqService $faq,
     ) {}
 
-    public function handle(ChatSession $session, ?User $user, string $message): array
+    public function handle(ChatSession $session, ?User $user, string $message, ?float $userLat = null, ?float $userLng = null): array
     {
         $abuse = $this->checkAbuse($user, $message);
         if ($abuse) {
@@ -79,9 +79,9 @@ class ChatbotService
         }
 
         $intent = $this->intentRouter->classify($message);
-        $constraints = $intent !== IntentRouter::GENERAL_TALK
-            ? $this->intentRouter->extractConstraints($message)
-            : [];
+        $constraints = in_array($intent, [IntentRouter::GENERAL_TALK, IntentRouter::DESTINATIONS_OVERVIEW], true)
+            ? []
+            : $this->intentRouter->extractConstraints($message);
 
         $reply = match ($intent) {
             IntentRouter::ROOM_SEARCH => $this->handleRoomSearch($message, $constraints, $user, $session),
@@ -90,8 +90,9 @@ class ChatbotService
             IntentRouter::PACKAGE_SEARCH => $this->handlePackageSearch($message, $constraints, $user, $session),
             IntentRouter::ITINERARY_QUERY => $this->handleItineraryQuery($message, $constraints, $user, $session),
             IntentRouter::AVAILABILITY_QUERY => $this->handleAvailabilityQuery($message, $constraints, $user, $session),
-            IntentRouter::MAP_QUERY => $this->handleMapQuery($message, $constraints, $session),
+            IntentRouter::MAP_QUERY => $this->handleMapQuery($message, $constraints, $session, $userLat, $userLng),
             IntentRouter::WEATHER_QUERY => $this->handleWeatherQuery($message, $constraints, $session),
+            IntentRouter::DESTINATIONS_OVERVIEW => $this->handleDestinationsOverview($session),
             default => $this->handleGeneralChat($message, $session),
         };
 
@@ -612,7 +613,7 @@ class ChatbotService
         ];
     }
 
-    protected function handleMapQuery(string $query, array $constraints, ChatSession $session): array
+    protected function handleMapQuery(string $query, array $constraints, ChatSession $session, ?float $userLat = null, ?float $userLng = null): array
     {
         $places = $constraints['place_names'] ?? [];
 
@@ -644,6 +645,35 @@ class ChatbotService
             ['name' => $placeName] = $places[0];
             $dest = DestinationModel::where('name', 'ILIKE', $placeName)->first();
             if ($dest && $dest->latitude && $dest->longitude) {
+                $isUserDistance = preg_match('/\b(how far am i|from me|from my location|from here|am i from|distance from me)\b/i', $query)
+                    || (preg_match('/\bhow far\b/i', $query) && preg_match('/\b(i|me|my)\b/i', $query) && count($places) === 1);
+
+                if ($isUserDistance) {
+                    if ($userLat !== null && $userLng !== null) {
+                        $km = $this->distance->haversine($userLat, $userLng, (float) $dest->latitude, (float) $dest->longitude);
+                        $label = $this->distance->format($km);
+
+                        return [
+                            'reply' => "You are approximately {$label} from {$dest->name}.",
+                            'map' => [
+                                'from' => ['lat' => $userLat, 'lng' => $userLng, 'label' => 'You'],
+                                'to' => ['name' => $dest->name, 'lat' => $dest->latitude, 'lng' => $dest->longitude],
+                                'distance_km' => round($km, 2),
+                                'distance_label' => $label,
+                            ],
+                        ];
+                    }
+
+                    return [
+                        'reply' => "To calculate how far you are from {$dest->name}, I'll need your current location.",
+                        'location_request' => true,
+                        'location_target' => $dest->name,
+                        'map' => [
+                            'target' => ['name' => $dest->name, 'lat' => $dest->latitude, 'lng' => $dest->longitude],
+                        ],
+                    ];
+                }
+
                 return [
                     'reply' => "{$dest->name} is located at latitude {$dest->latitude}, longitude {$dest->longitude}.",
                     'map' => [
@@ -655,8 +685,10 @@ class ChatbotService
             }
         }
 
+        $examples = $this->exampleDestinations(2);
+
         return [
-            'reply' => 'I could not find the location you mentioned. Try naming a specific destination like "Boracay" or "Palawan".',
+            'reply' => 'I could not find the location you mentioned. Try naming a specific destination like "'.$examples.'".',
         ];
     }
 
@@ -665,7 +697,9 @@ class ChatbotService
         $destinationName = $constraints['destination_name'] ?? null;
 
         if (! $destinationName) {
-            return ['reply' => 'Which destination would you like the weather for? For example, "What\'s the weather in Boracay this weekend?"'];
+            $example = $this->exampleDestinations(1);
+
+            return ['reply' => 'Which destination would you like the weather for? For example, "What\'s the weather in '.$example.' this weekend?"'];
         }
 
         $dest = DestinationModel::where('name', 'ILIKE', $destinationName)->first();
@@ -688,9 +722,15 @@ class ChatbotService
         $advice = $this->weather->advice($this->weather->normalize($forecast));
 
         $adviceText = ! empty($advice) ? ' Travel tip: '.implode(' ', $advice) : '';
+        $outlook = $this->buildFiveDayOutlook($forecast);
+
+        $reply = "The current weather in {$dest->name} is {$desc} at {$temp}°C.{$adviceText}";
+        if ($outlook !== '') {
+            $reply .= "\n\n".$outlook;
+        }
 
         return [
-            'reply' => "The current weather in {$dest->name} is {$desc} at {$temp}°C.{$adviceText}",
+            'reply' => $reply,
             'weather' => [
                 'destination' => $dest->name,
                 'temp' => $temp,
@@ -702,10 +742,140 @@ class ChatbotService
         ];
     }
 
+    protected function buildFiveDayOutlook(array $forecast): string
+    {
+        $list = $forecast['list'] ?? [];
+        if (empty($list) || ! is_array($list)) {
+            return '';
+        }
+
+        $byDate = [];
+        foreach ($list as $entry) {
+            $dtTxt = $entry['dt_txt'] ?? null;
+            if (! $dtTxt) {
+                continue;
+            }
+            $date = substr($dtTxt, 0, 10);
+            $byDate[$date][] = $entry;
+        }
+
+        if (empty($byDate)) {
+            return '';
+        }
+
+        ksort($byDate);
+        $lines = [];
+        $taken = 0;
+
+        foreach ($byDate as $date => $entries) {
+            if ($taken >= 5) {
+                break;
+            }
+
+            $descs = [];
+            $temps = [];
+            $pops = [];
+            $middayEntry = $entries[intdiv(count($entries), 2)] ?? $entries[0];
+
+            foreach ($entries as $e) {
+                $d = strtolower(trim($e['weather'][0]['description'] ?? ''));
+                if ($d !== '') {
+                    $descs[] = $d;
+                }
+                $m = $e['main'] ?? [];
+                if (isset($m['temp'])) {
+                    $temps[] = (float) $m['temp'];
+                }
+                if (isset($m['temp_min'])) {
+                    $temps[] = (float) $m['temp_min'];
+                }
+                if (isset($m['temp_max'])) {
+                    $temps[] = (float) $m['temp_max'];
+                }
+                if (isset($e['pop'])) {
+                    $pops[] = (float) $e['pop'];
+                }
+            }
+
+            if (empty($temps)) {
+                continue;
+            }
+
+            $low = (int) round(min($temps));
+            $high = (int) round(max($temps));
+            $range = $low === $high ? "{$low}°C" : "{$low}–{$high}°C";
+
+            $counts = array_count_values($descs);
+            arsort($counts);
+            $desc = $descs ? (string) array_key_first($counts) : strtolower(trim($middayEntry['weather'][0]['description'] ?? 'unknown'));
+
+            $pop = $pops ? max($pops) : 0.0;
+            $rain = $pop > 0.05 ? ', '.(int) round($pop * 100).'% chance of rain' : '';
+
+            try {
+                $label = (new \DateTimeImmutable($date))->format('D M j');
+            } catch (\Throwable) {
+                $label = $date;
+            }
+
+            $lines[] = "- **{$label}**: ".ucfirst($desc).", {$range}{$rain}";
+            $taken++;
+        }
+
+        if (empty($lines)) {
+            return '';
+        }
+
+        return "**5-day outlook:**\n".implode("\n", $lines);
+    }
+
+    protected function handleDestinationsOverview(ChatSession $session): array
+    {
+        $names = DestinationModel::orderBy('name')->pluck('name')->all();
+
+        if (empty($names)) {
+            return ['reply' => "We don't have any destinations in our database yet. Please check back soon!"];
+        }
+
+        $formatted = count($names) === 1
+            ? '**'.$names[0].'**'
+            : implode(', ', array_map(fn ($n) => '**'.$n.'**', array_slice($names, 0, -1))).' and **'.end($names).'**';
+
+        $count = count($names);
+        $label = $count === 1 ? 'destination' : 'destinations';
+
+        return [
+            'reply' => "SunnyTrips focuses on Philippine destinations — currently **{$count} {$label}** powered by our AI recommendations: {$formatted}. Each destination page highlights curated stays and experiences. Ask me about a specific one like \"Tell me about {$names[0]}\" to see hotels, rooms, and things to do!",
+        ];
+    }
+
+    protected function exampleDestinations(int $count = 2): string
+    {
+        $names = DestinationModel::orderBy('name')->pluck('name')->take($count)->all();
+
+        if (empty($names)) {
+            return 'a destination';
+        }
+
+        if (count($names) === 1) {
+            return $names[0];
+        }
+
+        return implode(' or ', $names);
+    }
+
     protected function handleGeneralChat(string $query, ChatSession $session): array
     {
-        $prompt = $this->buildSystemPrompt('general', false);
-        $reply = $this->geminiChatResponse($query, $session);
+        $destNames = DestinationModel::orderBy('name')->pluck('name')->all();
+        $grounding = '';
+
+        if (! empty($destNames)) {
+            $list = implode(', ', $destNames);
+            $grounding = "KNOWN DESTINATIONS IN OUR DATABASE: {$list}. Only reference these destinations. If the user asks about a destination not in this list, say it is not in our database. Do not invent other destinations.\n\n";
+        }
+
+        $prompt = $grounding.'USER QUERY: '.$query;
+        $reply = $this->geminiChatResponse($prompt, $session);
 
         return ['reply' => $reply];
     }
@@ -777,7 +947,9 @@ class ChatbotService
 
     protected function noResultsReply(string $type): string
     {
-        return "I could not find any {$type} matching your request. Try broadening your search, or ask me about a specific destination like Boracay or Palawan!";
+        $examples = $this->exampleDestinations(2);
+
+        return "I could not find any {$type} matching your request. Try broadening your search, or ask me about a specific destination like {$examples}!";
     }
 
     protected function buildAvailabilityContext(array $available, int $pax, int $nights): string

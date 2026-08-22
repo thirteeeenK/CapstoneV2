@@ -1,5 +1,5 @@
 <x-frontend.layout title="My Profile — SunnyTrips">
-    <div class="py-8 sm:py-12 bg-slate-50 text-ink-900 min-h-screen">
+    <div class="py-8 sm:py-12 bg-sand-50/70 text-ink-900 min-h-screen">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
 
             {{-- Page header --}}

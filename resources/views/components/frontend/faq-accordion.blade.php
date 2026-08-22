@@ -7,7 +7,7 @@
 @endphp
 
 @if($groups->isNotEmpty())
-<section id="faq" class="py-24 bg-slate-50 border-y border-slate-200/50">
+<section id="faq" class="py-24 bg-sand-50/70 border-y border-slate-200/50">
     <div class="max-w-4xl mx-auto px-8">
         {{-- Header --}}
         <div class="text-center max-w-2xl mx-auto mb-10 reveal-on-scroll">

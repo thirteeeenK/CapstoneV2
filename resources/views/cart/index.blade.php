@@ -61,7 +61,7 @@
 @endphp
 
 <x-frontend.layout title="Trip Basket | SunnyTrips">
-    <div x-data="cartPageManager({{ json_encode($initialItems) }}, {{ json_encode($groups) }})" class="min-h-screen bg-sand-50 font-body">
+    <div x-data="cartPageManager({{ json_encode($initialItems) }}, {{ json_encode($groups) }})" class="min-h-screen bg-sand-50/70 font-body">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
 
             {{-- Breadcrumb & Title --}}

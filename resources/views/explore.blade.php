@@ -1,6 +1,6 @@
 <x-frontend.layout title="Explore Islands — SunnyTrips">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-    <div class="py-6 sm:py-10 bg-slate-50 text-slate-900 min-h-screen">
+    <div class="py-6 sm:py-10 bg-sand-50/70 text-slate-900 min-h-screen">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
             <div class="flex flex-wrap items-end justify-between gap-4">
                 <div>

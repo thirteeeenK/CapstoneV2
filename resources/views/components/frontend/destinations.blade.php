@@ -1,4 +1,4 @@
-<section class="py-24 bg-slate-50/50 border-t border-slate-200/60 overflow-hidden relative" id="destinations">
+<section class="py-24 bg-sand-50/50 border-t border-slate-200/60 overflow-hidden relative" id="destinations">
     
     {{-- Decorative Mesh Background Glow --}}
     <div class="absolute top-1/3 left-1/4 w-[600px] h-[350px] bg-sky-400/5 blur-3xl rounded-full pointer-events-none"></div>

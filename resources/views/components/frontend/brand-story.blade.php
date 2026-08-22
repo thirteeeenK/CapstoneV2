@@ -1,4 +1,4 @@
-<section id="brand-story" class="bg-slate-50 py-24 border-y border-slate-200/50">
+<section id="brand-story" class="bg-sand-50/70 py-24 border-y border-slate-200/50">
     <div class="max-w-7xl mx-auto px-8">
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
             

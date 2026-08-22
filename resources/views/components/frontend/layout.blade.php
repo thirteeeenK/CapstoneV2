@@ -53,7 +53,7 @@
         }
     </style>
 </head>
-<body class="bg-surface font-body text-on-surface antialiased">
+<body class="bg-sand-50/70 font-body text-on-surface antialiased">
     @unless($hideNavFooter ?? false)
         @auth
             @include('layouts.user-sidebar')

@@ -1,7 +1,7 @@
 <x-frontend.layout title="Transfers & Travel Add-ons — SunnyTrips">
 
     <div x-data="{ activeDestId: '{{ request('destination_id') ?: 'all' }}', previewAddon: null, modalPax: 1 }"
-        class="py-12 bg-slate-50 text-slate-900 min-h-screen relative overflow-hidden">
+        class="py-12 bg-sand-50/70 text-slate-900 min-h-screen relative overflow-hidden">
 
         {{-- Background Soft Ambient Mesh Glows --}}
         <div

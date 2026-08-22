@@ -1,6 +1,6 @@
 <x-frontend.layout title="I'm Feeling Lucky | SunnyTrips">
     <div x-data="luckyManager()"
-        class="min-h-screen bg-slate-50 text-slate-900 font-body py-10 sm:py-16 relative overflow-hidden">
+        class="min-h-screen bg-sand-50/70 text-slate-900 font-body py-10 sm:py-16 relative overflow-hidden">
 
         {{-- Background Soft Ambient Mesh Glows --}}
         <div
