@@ -105,7 +105,7 @@ class AdminOnboardingOptionController extends Controller
     {
         $option = OnboardingOption::findOrFail($id);
 
-        return view('admin.onboarding-options.edit', compact('option', 'types') + ['types' => self::TYPES]);
+        return view('admin.onboarding-options.edit', ['option' => $option, 'types' => self::TYPES]);
     }
 
     /**
