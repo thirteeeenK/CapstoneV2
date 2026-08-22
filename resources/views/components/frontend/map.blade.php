@@ -92,14 +92,65 @@
                     if (m.address) popup += `<small>${m.address}</small><br/>`;
                     if (m.rating) popup += `<small>★ ${Number(m.rating).toFixed(1)} (${m.review_count})</small>`;
                     popup += distance;
+                    @if($routeMode)
                     if (m.url) popup += `<br/><a href="${m.url}">View details →</a>`;
+                    @endif
                     return popup;
+                }
+
+                function buildTooltipHtml(m) {
+                    let html = `<b>${m.name}</b>`;
+                    if (m.subtitle) html += `<br/>${m.subtitle}`;
+                    if (m.type === 'destination' && (m.hotel_count !== undefined || m.activity_count !== undefined)) {
+                        const hc = m.hotel_count ?? 0;
+                        const ac = m.activity_count ?? 0;
+                        html += `<br/><small>${hc} stays · ${ac} experiences</small>`;
+                    }
+                    if (m.weather && m.weather.temp !== undefined) {
+                        html += `<br/><small>${Math.round(m.weather.temp)}°C ${m.weather.description ?? ''}</small>`;
+                    }
+                    return html;
                 }
 
                 function iconFor(m) {
                     return m.type === 'hotel' ? hotelIcon
                         : m.type === 'activity' ? activityIcon
                         : destinationIcon;
+                }
+
+                let selectedId = null;
+                function setSelected(marker){
+                    selectedId = marker ? `${marker.type}-${marker.id}` : null;
+                    markerLayers.forEach(l=>{
+                        const key = `${l.originalMarker.type}-${l.originalMarker.id}`;
+                        const active = key === selectedId;
+                        l.setZIndexOffset(active ? 1000 : 0);
+                        l.getElement()?.classList.toggle('map-pin-active', active);
+                    });
+                }
+                function highlight(id, on){
+                    if(routeMode) return;
+                    const layer = markerLayers.find(l=> `${l.originalMarker.type}-${l.originalMarker.id}`===id);
+                    if(layer){ layer.setZIndexOffset(on?900:0); layer.getElement()?.classList.toggle('map-pin-hover', on); }
+                }
+                function setFilter(type){
+                    if(routeMode) return;
+                    markerLayers.forEach((l,i)=>{
+                        const show = type==='all' || l.originalMarker.type===type;
+                        const el = l.getElement(); if(!el) return;
+                        el.style.transition = `opacity 240ms ease-out ${i*18}ms, transform 240ms ease-out ${i*18}ms`;
+                        el.style.opacity = show ? '1' : '0.14';
+                        el.style.transform = show ? 'scale(1)' : 'scale(0.82)';
+                        el.style.pointerEvents = show ? 'auto' : 'none';
+                    });
+                }
+                function select(marker){
+                    if(routeMode) return;
+                    setSelected(marker);
+                    if(marker && marker.lat && marker.lng){
+                        map.flyTo([marker.lat, marker.lng], Math.max(map.getZoom(), 12), {animate: !window.matchMedia('(prefers-reduced-motion: reduce)').matches});
+                    }
+                    window.dispatchEvent(new CustomEvent('sunnytrip:map-select',{detail: marker}));
                 }
 
                 const markerLayers = [];
@@ -112,7 +163,17 @@
                     }
                     const layer = L.marker([m.lat, m.lng], { icon: iconFor(m) });
                     layer.originalMarker = m;
-                    layer.bindPopup(buildPopupHtml(m));
+                    if (routeMode) {
+                        layer.bindPopup(buildPopupHtml(m));
+                    } else {
+                        layer.bindTooltip(buildTooltipHtml(m), {direction:'top'});
+                        layer.on('click', () => {
+                            setSelected(m);
+                            window.dispatchEvent(new CustomEvent('sunnytrip:map-select',{detail: m}));
+                        });
+                        layer.on('mouseover', () => window.dispatchEvent(new CustomEvent('sunnytrip:map-hover',{detail:{marker:m,on:true}})));
+                        layer.on('mouseout', () => window.dispatchEvent(new CustomEvent('sunnytrip:map-hover',{detail:{marker:m,on:false}})));
+                    }
                     layer.addTo(map);
                     markerLayers.push(layer);
                 });
@@ -206,7 +267,11 @@
                         const km = haversineKm(lat, lng, m.lat, m.lng);
                         m.distance_km = km;
                         m.distance_label = formatKm(km);
-                        layer.setPopupContent(buildPopupHtml(m));
+                        if (routeMode) {
+                            layer.setPopupContent(buildPopupHtml(m));
+                        } else {
+                            if (layer.getTooltip()) layer.setTooltipContent(buildTooltipHtml(m));
+                        }
                     });
                 }
 
@@ -271,7 +336,17 @@
 
                     const layer = L.marker([m.lat, m.lng], { icon: iconFor(m) });
                     layer.originalMarker = m;
-                    layer.bindPopup(buildPopupHtml(m));
+                    if (routeMode) {
+                        layer.bindPopup(buildPopupHtml(m));
+                    } else {
+                        layer.bindTooltip(buildTooltipHtml(m), {direction:'top'});
+                        layer.on('click', () => {
+                            setSelected(m);
+                            window.dispatchEvent(new CustomEvent('sunnytrip:map-select',{detail: m}));
+                        });
+                        layer.on('mouseover', () => window.dispatchEvent(new CustomEvent('sunnytrip:map-hover',{detail:{marker:m,on:true}})));
+                        layer.on('mouseout', () => window.dispatchEvent(new CustomEvent('sunnytrip:map-hover',{detail:{marker:m,on:false}})));
+                    }
                     layer.addTo(map);
                     markerLayers.push(layer);
                     deferredMarkers.splice(deferredMarkers.indexOf(entry), 1);
@@ -351,6 +426,9 @@
                         locateFromBrowser(applyLocation);
                     },
                     reveal: revealMarker,
+                    highlight,
+                    setFilter,
+                    select,
                 };
 
                 // Auto-apply the cached location on hotel pages so the
@@ -371,5 +449,8 @@
             0% { transform: scale(0.6); opacity: 1; }
             100% { transform: scale(2.2); opacity: 0; }
         }
+        .map-pin-active div{ box-shadow:0 0 0 4px rgba(14,165,233,0.35), 0 4px 14px rgba(0,0,0,0.25) !important; transform: rotate(-45deg) scale(1.12); }
+        .map-pin-hover div{ box-shadow:0 0 0 3px rgba(14,165,233,0.25) !important; }
+        @media (prefers-reduced-motion: reduce){ .map-pin-active div,.map-pin-hover div{ transition:none !important; } }
     </style>
 </div>
