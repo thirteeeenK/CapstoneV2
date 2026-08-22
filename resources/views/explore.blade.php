@@ -12,15 +12,15 @@
                     </p>
                 </div>
                 <div class="flex flex-wrap items-center gap-2" x-data="{ filter: 'all' }">
-                    <button @click="filter = 'all'" :class="filter === 'all' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'"
+                    <button @click="filter = 'all'; window['exploreMap']?.setFilter('all')" :class="filter === 'all' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'"
                         class="rounded-full px-4 py-1.5 text-xs font-semibold border border-slate-200 transition">
                         All
                     </button>
-                    <button @click="filter = 'hotel'" :class="filter === 'hotel' ? 'bg-sky-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'"
+                    <button @click="filter = 'hotel'; window['exploreMap']?.setFilter('hotel')" :class="filter === 'hotel' ? 'bg-sky-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'"
                         class="rounded-full px-4 py-1.5 text-xs font-semibold border border-slate-200 transition">
                         Hotels
                     </button>
-                    <button @click="filter = 'activity'" :class="filter === 'activity' ? 'bg-orange-500 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'"
+                    <button @click="filter = 'activity'; window['exploreMap']?.setFilter('activity')" :class="filter === 'activity' ? 'bg-orange-500 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'"
                         class="rounded-full px-4 py-1.5 text-xs font-semibold border border-slate-200 transition">
                         Activities
                     </button>
@@ -34,7 +34,7 @@
                     <div id="exploreMap" class="h-[70vh] rounded-3xl overflow-hidden border border-slate-200 shadow-sm" style="z-index: 1;"></div>
                 </div>
 
-                <aside class="space-y-3 max-h-[70vh] overflow-y-auto pr-1">
+                <aside class="space-y-3 max-h-[70vh] overflow-y-auto pr-1" @sunnytrip:map-hover.window="highlight($event.detail.marker, $event.detail.on)">
                     <button @click="locate()" :disabled="locating"
                         class="w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-ocean-600 px-5 py-3 text-sm font-bold text-white transition-all hover:bg-ocean-700 disabled:opacity-60 cursor-pointer">
                         <span class="material-symbols-outlined text-[18px]">my_location</span>
@@ -61,7 +61,7 @@
                             </div>
                             <div class="max-h-64 divide-y divide-slate-100 overflow-y-auto">
                                 <template x-for="m in sortedMarkers()" :key="(m.type || 'x') + '-' + m.id">
-                                    <button @click="select(m)" type="button"
+                                    <button @click="selectWithCard(m)" @mouseenter="highlight(m,true)" @mouseleave="highlight(m,false)" type="button"
                                         class="flex w-full items-center gap-2.5 px-4 py-2.5 text-left transition hover:bg-slate-50 cursor-pointer">
                                         <span class="h-2.5 w-2.5 shrink-0 rounded-full"
                                               :class="m.type === 'hotel' ? 'bg-sky-500' : m.type === 'activity' ? 'bg-orange-500' : 'bg-sky-900'"></span>
@@ -92,10 +92,25 @@
                                           x-text="'★ ' + Number(selected.rating).toFixed(1) + ' (' + selected.review_count + ')'"></span>
                                 </template>
                             </div>
-                            <a :href="selected.url" x-show="selected.url"
-                               class="inline-block text-sm font-semibold text-sky-600 hover:underline">
-                                View details →
-                            </a>
+                            <div class="flex flex-wrap gap-2">
+                                <a :href="selected.url" x-show="selected.url"
+                                   class="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-slate-900 px-3 py-2.5 text-xs font-bold text-white transition hover:bg-slate-800 cursor-pointer">
+                                    <span class="material-symbols-outlined text-[15px]">visibility</span>
+                                    <span>View Details</span>
+                                </a>
+                                <button type="button" x-show="selected.type === 'hotel' || selected.type === 'activity'"
+                                        @click="selected.type === 'hotel' ? $store.preview.openRoom(selected) : $store.preview.openActivity(selected)"
+                                        class="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-slate-100 px-3 py-2.5 text-xs font-bold text-slate-700 transition hover:bg-slate-200 cursor-pointer">
+                                    <span class="material-symbols-outlined text-[15px]">auto_awesome</span>
+                                    <span>Quick Preview</span>
+                                </button>
+                                <button type="button" x-show="selected.type === 'hotel' || selected.type === 'activity'"
+                                        @click="window.addToCart(selected.type, selected.id, {})"
+                                        class="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-ocean-600 px-3 py-2.5 text-xs font-bold text-white transition hover:bg-ocean-700 cursor-pointer">
+                                    <span class="material-symbols-outlined text-[15px]">shopping_cart</span>
+                                    <span>Add to Basket</span>
+                                </button>
+                            </div>
                         </div>
                     </template>
 
@@ -139,6 +154,12 @@
                             this.map.flyTo([val.lat, val.lng], 12);
                         }
                     });
+
+                    const focusParam = @json($focus ?? null);
+                    if (focusParam) {
+                        const match = this.markers.find((m) => `${m.type}:${m.id}` === focusParam);
+                        if (match) this.selectWithCard(match);
+                    }
                 },
 
                 locate() {
@@ -235,8 +256,7 @@
                         if (m.url) popupBits.push(`<a href="${m.url}">View details →</a>`);
 
                         const layer = L.marker([m.lat, m.lng], { icon: this.icons(m.type) })
-                            .on('click', () => { scope.selected = m; })
-                            .bindPopup(popupBits.join('<br/>'))
+                            .on('click', () => { scope.selectWithCard(m); })
                             .addTo(this.layer);
                         this.markerLayers.set(m, layer);
                     });
@@ -264,6 +284,21 @@
                     this.selected = m;
                     const layer = this.markerLayers.get(m);
                     if (layer) layer.openPopup();
+                },
+
+                selectWithCard(m) {
+                    this.selected = m;
+                    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                    if (this.map && m.lat && m.lng) {
+                        this.map.flyTo([m.lat, m.lng], 12, { animate: !reduced });
+                    }
+                    const api = window['exploreMap'];
+                    if (api) api.highlight(`${m.type}-${m.id}`, true);
+                },
+
+                highlight(m, on) {
+                    const api = window['exploreMap'];
+                    if (api) api.highlight(`${m.type}-${m.id}`, on);
                 },
             };
         }

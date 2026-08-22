@@ -86,11 +86,12 @@ class DssController extends Controller
     /**
      * Render the full-screen explorer map page.
      */
-    public function explore()
+    public function explore(Request $request)
     {
         $markers = $this->map->allMarkers();
         $center = $this->map->centerOf($markers);
+        $focus = $request->query('focus');
 
-        return view('explore', compact('markers', 'center'));
+        return view('explore', compact('markers', 'center', 'focus'));
     }
 }
