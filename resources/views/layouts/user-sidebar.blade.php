@@ -14,9 +14,7 @@
                 <span class="material-symbols-outlined text-2xl">shopping_basket</span>
             </button>
             <button @click="sidebarOpen = !sidebarOpen"
-                class="p-2 rounded-lg text-slate-700 hover:bg-slate-100 focus:outline-none">
                 <span class="material-symbols-outlined text-2xl">menu</span>
-            </button>
         </div>
     </div>
 

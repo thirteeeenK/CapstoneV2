@@ -1,10 +1,17 @@
 <aside onwheel="event.stopPropagation()"
-    class="h-screen w-64 fixed left-0 top-0 bg-slate-50 border-r border-slate-200/80 flex flex-col py-6 z-40 transition-all duration-200">
+    class="h-screen w-64 fixed left-0 top-0 bg-white border-r border-slate-200 flex flex-col py-6 z-40 transition-all duration-200 shadow-sm">
 
     <!-- Brand Header -->
     <div class="px-6 mb-6">
-        <h1 class="font-headline text-lg font-bold text-ocean-600 tracking-tight">{{ env('APP_NAME') }}</h1>
-        <p class="font-label text-[10px] uppercase tracking-[0.15em] text-slate-400 font-bold mt-0.5">Admin Portal</p>
+        <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-1.5">
+            <span class="font-headline font-black text-xl text-slate-900 tracking-tight">Sunny<span
+                    class="text-ocean-600">Trips</span></span>
+        </a>
+        <p
+            class="font-label text-[10.5px] uppercase tracking-[0.18em] text-ocean-700 font-extrabold mt-0.5 flex items-center gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-ocean-500"></span>
+            <span>Admin Portal</span>
+        </p>
     </div>
 
     @php
@@ -45,27 +52,24 @@
     <nav class="flex-1 overflow-y-auto overscroll-contain px-3 space-y-6">
         @foreach ($navGroups as $groupLabel => $items)
             <div>
-                <h2 class="font-label px-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
+                <h2 class="font-label px-3 text-[11px] font-extrabold text-slate-500 uppercase tracking-wider mb-2">
                     {{ $groupLabel }}
                 </h2>
-                <div class="space-y-0.5">
+                <div class="space-y-1">
                     @foreach ($items as $item)
-                            @php
-                                $isActive = request()->routeIs($item['route']);
-                            @endphp
-                            <a href="{{ $item['href'] }}" class="flex items-center gap-3 w-full h-9 px-3 rounded-md transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ocean-500 group
-                                                                                                                                        {{ $isActive
-                        ? 'bg-ocean-50 text-ocean-600 font-semibold'
-                        : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 font-medium' }}">
-                                <span
-                                    class="material-symbols-outlined text-[18px] shrink-0 {{ $isActive ? 'text-ocean-600' : 'text-slate-400 group-hover:text-slate-600' }}"
-                                    style="vertical-align: middle;">
-                                    {{ $item['icon'] }}
-                                </span>
-                                <span class="font-sans text-sm tracking-tight">
-                                    {{ $item['label'] }}
-                                </span>
-                            </a>
+                        @php
+                            $isActive = request()->routeIs($item['route']);
+                        @endphp
+                        <a href="{{ $item['href'] }}"
+                            class="flex items-center gap-3 w-full h-10 px-3 rounded-xl transition-all duration-200 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ocean-500 {{ $isActive ? 'bg-ocean-50 text-ocean-800 font-bold border border-ocean-200 shadow-xs' : 'text-slate-700 hover:bg-sand-50 hover:text-slate-950 font-bold' }}">
+                            <span
+                                class="material-symbols-outlined text-[20px] shrink-0 transition-colors {{ $isActive ? 'text-ocean-600 font-bold' : 'text-slate-500 group-hover:text-ocean-600' }}">
+                                {{ $item['icon'] }}
+                            </span>
+                            <span class="font-body text-[13px] tracking-tight flex-1">
+                                {{ $item['label'] }}
+                            </span>
+                        </a>
                     @endforeach
                 </div>
             </div>

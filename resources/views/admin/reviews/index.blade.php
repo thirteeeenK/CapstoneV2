@@ -130,7 +130,8 @@
                 destinations: @js($destinations->toArray()),
                 hotels: @js($hotels->toArray()),
                 rooms: @js($rooms->toArray()),
-            })">
+            })"
+            @click="handleNavClick($event)">
             <header class="px-6 py-4 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <h2 class="font-headline text-sm font-bold text-slate-900">All Reviews</h2>
                 <div class="flex items-center gap-3">
@@ -251,7 +252,16 @@
                 </div>
             </div>
 
-            <div id="reviews-table">
+            <div id="reviews-table" class="relative">
+                <div x-show="loading" class="absolute inset-0 bg-white/70 backdrop-blur-xs flex items-center justify-center z-10" style="display: none;">
+                    <div class="flex items-center gap-2 px-4 py-2 rounded-xl bg-white shadow-md border border-slate-200 text-xs font-bold text-slate-700">
+                        <svg class="animate-spin h-4 w-4 text-ocean-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span>Loading reviews...</span>
+                    </div>
+                </div>
                 @include('admin.reviews._table', ['reviews' => $reviews, 'sentimentMeta' => $sentimentMeta ?? []])
             </div>
         </section>
@@ -273,7 +283,6 @@
                 totalReviews: {{ $reviews->total() }},
                 loading: false,
                 navigating: false,
-                loading: false,
 
                 get filteredHotels() {
                     if (!this.destinationId) return this.allHotels;
@@ -323,15 +332,34 @@
                     return new URLSearchParams(params).toString();
                 },
 
-                async applyFilter() {
+                handleNavClick(e) {
+                    const a = e.target.closest('a');
+                    if (!a || !a.href || !a.href.includes('page=')) return;
+                    e.preventDefault();
+                    this.applyFilter(a.href);
+                },
+
+                async applyFilter(url = null) {
                     this.loading = true;
                     try {
-                        const qs = this.buildParams();
-                        const resp = await fetch(`{{ route('admin.reviews.index') }}?${qs}`, {
+                        let target = url;
+                        if (!target) {
+                            const qs = this.buildParams();
+                            target = `{{ route('admin.reviews.index') }}?${qs}`;
+                        } else {
+                            const u = new URL(target, window.location.origin);
+                            u.searchParams.set('partial', '1');
+                            target = u.toString();
+                        }
+
+                        const resp = await fetch(target, {
                             headers: { 'X-Requested-With': 'XMLHttpRequest' }
                         });
                         const html = await resp.text();
-                        document.getElementById('reviews-table').innerHTML = html;
+                        const container = document.getElementById('reviews-table');
+                        if (container) {
+                            container.innerHTML = html;
+                        }
 
                         // Update total count from data attribute
                         const tableDiv = document.querySelector('#reviews-table .overflow-x-auto');
@@ -341,11 +369,8 @@
 
                         // Update URL without reload
                         if (!this.navigating) {
-                            const cleanParams = this.buildParams().replace(/[&?]partial=1/, '').replace(/^&/, '');
-                            const url = cleanParams
-                                ? `{{ route('admin.reviews.index') }}?${cleanParams}`
-                                : `{{ route('admin.reviews.index') }}`;
-                            history.pushState(null, '', url);
+                            const cleanUrl = target.replace(/[&?]partial=1/, '').replace(/&$/, '');
+                            history.pushState(null, '', cleanUrl);
                         }
                     } catch (e) {
                         console.error('Filter fetch failed:', e);
@@ -365,7 +390,7 @@
                         this.hotelId = params.get('hotel_id') || '';
                         this.roomId = params.get('room_id') || '';
                         this.navigating = true;
-                        this.applyFilter().then(() => {
+                        this.applyFilter(window.location.href).then(() => {
                             this.navigating = false;
                         });
                     });

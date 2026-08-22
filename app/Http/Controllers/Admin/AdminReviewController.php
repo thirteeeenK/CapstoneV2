@@ -141,7 +141,7 @@ class AdminReviewController extends Controller
             'negative' => ['label' => 'Negative', 'icon' => 'sentiment_dissatisfied', 'bar' => 'bg-rose-500'],
         ];
 
-        if ($request->boolean('partial')) {
+        if ($request->boolean('partial') || $request->ajax()) {
             return view('admin.reviews._table', compact('reviews', 'sentimentMeta'));
         }
 
