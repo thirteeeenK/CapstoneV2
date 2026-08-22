@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\RoomType;
+use Illuminate\Database\Seeder;
 
 class RoomExtraPersonFeeSeeder extends Seeder
 {

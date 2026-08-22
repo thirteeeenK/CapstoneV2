@@ -1,4 +1,5 @@
 <?php
+
 use App\Http\Controllers\AdminAuth\AdminAuth;
 use App\Http\Controllers\AdminAuth\AdminNewPasswordController;
 use App\Http\Controllers\AdminAuth\AdminPasswordResetLinkController;

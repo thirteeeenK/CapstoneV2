@@ -1,4 +1,5 @@
 <?php
+
 use App\Http\Controllers\Admin\DestinationController;
 use App\Http\Controllers\DestinationShowController;
 use Illuminate\Support\Facades\Route;

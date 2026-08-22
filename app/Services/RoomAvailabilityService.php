@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Booking;
 use App\Models\BookingItem;
 use App\Models\RoomType;
+use Carbon\Carbon;
 
 class RoomAvailabilityService
 {
@@ -13,11 +14,11 @@ class RoomAvailabilityService
      *
      * @param  int|string|null  $excludeBookingId  booking whose own items should be ignored
      */
-    public function check(RoomType $room, \Carbon\Carbon $checkIn, \Carbon\Carbon $checkOut, int|string|null $excludeBookingId = null): array
+    public function check(RoomType $room, Carbon $checkIn, Carbon $checkOut, int|string|null $excludeBookingId = null): array
     {
         $bookedCount = BookingItem::where('item_type', 'room')
             ->where('item_id', $room->id)
-            ->when($excludeBookingId, fn($q) => $q->where('booking_id', '!=', $excludeBookingId))
+            ->when($excludeBookingId, fn ($q) => $q->where('booking_id', '!=', $excludeBookingId))
             ->whereHas('booking', function ($q) {
                 $q->whereIn('status', Booking::HOLD_STATUSES);
             })

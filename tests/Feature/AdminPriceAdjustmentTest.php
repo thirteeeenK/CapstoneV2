@@ -1,14 +1,15 @@
 <?php
 
+use App\Models\AdminModel;
 use App\Models\Booking;
 use App\Models\BookingItem;
 use App\Models\CartItem;
-use App\Models\DestinationModel;
-use App\Models\HotelModel;
 use App\Models\RoomType;
 use App\Models\User;
 use App\Notifications\BookingApproved;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Str;
+use Illuminate\Testing\TestResponse;
 
 beforeEach(function () {
     Notification::fake();
@@ -24,7 +25,7 @@ beforeEach(function () {
 
     $this->user = onboardedUser();
 
-    $this->admin = \App\Models\AdminModel::create([
+    $this->admin = AdminModel::create([
         'name' => 'Test Admin',
         'email' => 'admin@sunnytripstest.com',
         'password' => 'password',
@@ -54,7 +55,7 @@ function createPendingBooking(User $user, RoomType $room): Booking
     return Booking::first();
 }
 
-function approveBooking(\App\Models\AdminModel $admin, Booking $booking, array $adjustment = []): \Illuminate\Testing\TestResponse
+function approveBooking(AdminModel $admin, Booking $booking, array $adjustment = []): TestResponse
 {
     $payload = array_merge([
         'items' => [
@@ -182,7 +183,7 @@ it('renders the adjustment section in the BookingApproved email', function () {
 
 it('still emails guests without an account via the contact fallback path', function () {
     $booking = Booking::create([
-        'booking_code' => 'ST-' . date('Y') . '-' . strtoupper(\Illuminate\Support\Str::random(5)),
+        'booking_code' => 'ST-'.date('Y').'-'.strtoupper(Str::random(5)),
         'user_id' => null,
         'status' => Booking::STATUS_PENDING,
         'total_amount' => 3000.00,

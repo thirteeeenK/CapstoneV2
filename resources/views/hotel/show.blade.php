@@ -652,11 +652,6 @@
                     <x-reviews.list :reviews="$hotel->reviews->where('is_published', true)" :limit="4" />
         </div>
 
-        
-
-        <x-frontend.room-preview-modal />
-
-
         {{-- Hotel Photo Lightbox --}}
         <div x-show="activeModalImg" x-transition.opacity
             @keydown.escape.window="activeModalImg = null"
@@ -692,9 +687,6 @@
                 </div>
             </div>
         </div>
-
-
-        <x-frontend.activity-preview-modal />
 
     </div>
 

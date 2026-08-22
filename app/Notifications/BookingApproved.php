@@ -20,16 +20,16 @@ class BookingApproved extends BookingNotification
             ->subject("Booking Approved — {$booking->booking_code}")
             ->greeting("Hi {$booking->contact_name},")
             ->line("Good news! All requested items for booking **{$booking->booking_code}** are available and your booking has been **approved**.")
-            ->line("Please complete your payment of **₱" . number_format((float) $booking->net_amount, 2) . "** before **{$deadline}** to confirm your reservation.");
+            ->line('Please complete your payment of **₱'.number_format((float) $booking->net_amount, 2)."** before **{$deadline}** to confirm your reservation.");
 
         if ((float) $booking->admin_discount_amount > 0 || (float) $booking->admin_surcharge_amount > 0) {
             $reason = $booking->price_adjustment_reason;
 
             if ((float) $booking->admin_discount_amount > 0) {
-                $mail->line("We've applied a discount of **−₱" . number_format((float) $booking->admin_discount_amount, 2) . "** to your booking.");
+                $mail->line("We've applied a discount of **−₱".number_format((float) $booking->admin_discount_amount, 2).'** to your booking.');
             }
             if ((float) $booking->admin_surcharge_amount > 0) {
-                $mail->line("An additional amount of **+₱" . number_format((float) $booking->admin_surcharge_amount, 2) . "** has been added to your booking.");
+                $mail->line('An additional amount of **+₱'.number_format((float) $booking->admin_surcharge_amount, 2).'** has been added to your booking.');
             }
             if ($reason) {
                 $mail->line("Reason: {$reason}");

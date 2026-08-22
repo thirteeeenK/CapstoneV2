@@ -40,9 +40,10 @@ class DistanceService
     public function format(float $km): string
     {
         if ($km < 1) {
-            return round($km * 1000) . ' m';
+            return round($km * 1000).' m';
         }
-        return rtrim(rtrim(number_format($km, 1), '0'), '.') . ' km';
+
+        return rtrim(rtrim(number_format($km, 1), '0'), '.').' km';
     }
 
     /**
@@ -56,13 +57,15 @@ class DistanceService
             if ($lat === null || $lng === null) {
                 $item->distance_km = null;
                 $item->distance_label = null;
+
                 return $item;
             }
             $km = $this->haversine($userLat, $userLng, (float) $lat, (float) $lng);
             $item->distance_km = $km;
             $item->distance_label = $this->format($km);
+
             return $item;
-        })->filter(fn($item) => $item->distance_km !== null)
+        })->filter(fn ($item) => $item->distance_km !== null)
             ->sortBy('distance_km')
             ->values();
     }

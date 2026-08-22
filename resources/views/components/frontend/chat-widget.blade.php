@@ -343,10 +343,6 @@
             <p class="text-center text-slate-400 text-[10px] font-medium leading-tight">SunnyBot AI can make mistakes.
                 Be specific in inquiries for higher accuracy.</p>
         </div>
-
-        {{-- Shared Preview Modals --}}
-        <x-frontend.room-preview-modal />
-        <x-frontend.activity-preview-modal />
     </div>
 </div>
 

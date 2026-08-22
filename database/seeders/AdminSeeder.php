@@ -18,13 +18,14 @@ class AdminSeeder extends Seeder
     public function run(): void
     {
         $email = env('EMAIL');
-        if (!$email) {
+        if (! $email) {
             $this->command->warn('Skipped admin seed — EMAIL env var not set.');
+
             return;
         }
 
         $password = env('ADMIN_PASSWORD') ?: Str::random(16);
-        if (!env('ADMIN_PASSWORD')) {
+        if (! env('ADMIN_PASSWORD')) {
             $this->command->info("Admin created with random password: {$password}");
         }
 

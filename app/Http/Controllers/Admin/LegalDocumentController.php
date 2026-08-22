@@ -84,7 +84,7 @@ class LegalDocumentController extends Controller
             'sections.*.heading' => ['required', 'string', 'max:150'],
             'sections.*.body' => ['required', 'string'],
         ], [
-            'key.regex' => 'The key must only contain letters, numbers, and underscores.'
+            'key.regex' => 'The key must only contain letters, numbers, and underscores.',
         ]);
 
         $sections = collect($request->input('sections'))
@@ -114,7 +114,7 @@ class LegalDocumentController extends Controller
     public function destroy($key)
     {
         $document = LegalDocument::where('key', $key)->firstOrFail();
-        
+
         $title = $document->title;
         $document->delete();
 

@@ -15,8 +15,7 @@ class DssController extends Controller
         protected MapService $map,
         protected WeatherService $weather,
         protected DistanceService $distance,
-    ) {
-    }
+    ) {}
 
     /**
      * Weather forecast for a destination (by id) or by coordinates.
@@ -26,9 +25,10 @@ class DssController extends Controller
         $destinationId = $request->integer('destination_id');
         if ($destinationId) {
             $destination = DestinationModel::find($destinationId);
-            if (!$destination) {
+            if (! $destination) {
                 return response()->json(['error' => 'Destination not found.'], 404);
             }
+
             return response()->json(['data' => $this->weather->forecastForDestination($destination)]);
         }
 

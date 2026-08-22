@@ -1,6 +1,6 @@
 {{-- Shared Room Preview Modal — driven by the global Alpine `preview` store.
      Used on the hotel page, room catalog, and chat widget. --}}
-<div x-show="$store.preview.room" x-transition.opacity @keydown.escape.window="$store.preview.closeRoom()"
+<div x-data x-show="$store.preview.room" x-transition.opacity @keydown.escape.window="$store.preview.closeRoom()"
     class="fixed inset-0 z-[110] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
     x-cloak style="display: none;">
     <div @click.away="$store.preview.closeRoom()" @click.stop

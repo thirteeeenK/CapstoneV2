@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Booking;
 use App\Notifications\BookingExpired;
+use Illuminate\Support\Facades\Notification;
 
 class BookingExpiryService
 {
@@ -18,11 +19,11 @@ class BookingExpiryService
      */
     public function expireIfDue(Booking $booking): bool
     {
-        if (!$booking->isPaymentDeadlinePassed()) {
+        if (! $booking->isPaymentDeadlinePassed()) {
             return false;
         }
 
-        if (!$booking->transitionTo(
+        if (! $booking->transitionTo(
             Booking::STATUS_EXPIRED,
             [Booking::STATUS_APPROVED],
             ['expired_at' => now()],
@@ -35,9 +36,10 @@ class BookingExpiryService
         if ($user) {
             $user->notify(new BookingExpired($booking));
         } else {
-            \Illuminate\Support\Facades\Notification::route('mail', $booking->contact_email)
+            Notification::route('mail', $booking->contact_email)
                 ->notify(new BookingExpired($booking));
         }
+
         return true;
     }
 }

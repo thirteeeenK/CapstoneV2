@@ -7,6 +7,7 @@ use App\Models\BookingItem;
 use App\Models\CartItem;
 use App\Models\RoomType;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
 class CartService
@@ -18,14 +19,15 @@ class CartService
     {
         if ($request->hasSession()) {
             $token = $request->session()->get('cart_session_token');
-            if (!$token) {
+            if (! $token) {
                 $token = (string) Str::uuid();
                 $request->session()->put('cart_session_token', $token);
             }
+
             return $token;
         }
 
-        return 'guest_' . md5($request->ip() . ($request->header('User-Agent') ?? 'ua'));
+        return 'guest_'.md5($request->ip().($request->header('User-Agent') ?? 'ua'));
     }
 
     /**
@@ -75,15 +77,15 @@ class CartService
         if ($itemType === 'room' && $checkIn && $checkOut) {
             $room = RoomType::find($itemId);
             if ($room) {
-                $checkInDate = \Illuminate\Support\Carbon::parse($checkIn);
-                $checkOutDate = \Illuminate\Support\Carbon::parse($checkOut);
+                $checkInDate = Carbon::parse($checkIn);
+                $checkOutDate = Carbon::parse($checkOut);
 
                 $bookedCount = BookingItem::where('item_type', 'room')
                     ->where('item_id', $room->id)
-                    ->whereHas('booking', fn($q) => $q->whereIn('status', Booking::HOLD_STATUSES))
+                    ->whereHas('booking', fn ($q) => $q->whereIn('status', Booking::HOLD_STATUSES))
                     ->where(function ($q) use ($checkInDate, $checkOutDate) {
                         $q->whereBetween('check_in_date', [$checkInDate, $checkOutDate->copy()->subDay()])
-                          ->orWhereBetween('check_out_date', [$checkInDate->copy()->addDay(), $checkOutDate]);
+                            ->orWhereBetween('check_out_date', [$checkInDate->copy()->addDay(), $checkOutDate]);
                     })
                     ->sum('quantity');
 
@@ -125,6 +127,7 @@ class CartService
             // Packages are non-stackable — each package is a single booking entry.
             if ($existingItem->item_type === 'package') {
                 $existingItem->load('itemable');
+
                 return ['status' => 'already_in_cart', 'cart_item' => $existingItem];
             }
 

@@ -48,7 +48,7 @@ class AuthenticatedSessionController extends Controller
 
         $base = url('/');
 
-        return $url === $base || Str::startsWith($url, $base . '/');
+        return $url === $base || Str::startsWith($url, $base.'/');
     }
 
     /**

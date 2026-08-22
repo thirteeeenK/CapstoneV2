@@ -12,6 +12,7 @@ class DestinationController extends Controller
     public function index()
     {
         $destinations = DestinationModel::orderBy('name', 'asc')->get();
+
         return view('admin.destinations', compact('destinations'));
     }
 
@@ -21,7 +22,7 @@ class DestinationController extends Controller
             'name' => 'required|string|max:150|unique:destinations,name',
             'description' => 'nullable|string',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
-            'image_url' => 'nullable|url'
+            'image_url' => 'nullable|url',
         ]);
 
         $imagePath = null;
@@ -43,17 +44,17 @@ class DestinationController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'name' => 'required|string|max:255|unique:destinations,name,' . $id,
+            'name' => 'required|string|max:255|unique:destinations,name,'.$id,
             'description' => 'nullable|string',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:5120',
-            'image_url' => 'nullable|url'
+            'image_url' => 'nullable|url',
         ]);
 
         $destination = DestinationModel::findOrFail($id);
 
         $imagePath = $destination->image;
         if ($request->hasFile('image')) {
-            if ($imagePath && !str_starts_with($imagePath, 'http')) {
+            if ($imagePath && ! str_starts_with($imagePath, 'http')) {
                 Storage::disk('public')->delete($imagePath);
             }
             $imagePath = $request->file('image')->store('destinations', 'public');
@@ -73,10 +74,11 @@ class DestinationController extends Controller
     public function destroy($id)
     {
         $destination = DestinationModel::findOrFail($id);
-        if ($destination->image && !str_starts_with($destination->image, 'http')) {
+        if ($destination->image && ! str_starts_with($destination->image, 'http')) {
             Storage::disk('public')->delete($destination->image);
         }
         $destination->delete();
+
         return redirect()->route('admin.destinations')->with('success', 'Destination deleted successfully!');
     }
 }

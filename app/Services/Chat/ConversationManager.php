@@ -5,7 +5,6 @@ namespace App\Services\Chat;
 use App\Models\ChatMessage;
 use App\Models\ChatSession;
 use App\Models\User;
-use Illuminate\Support\Str;
 
 class ConversationManager
 {
@@ -18,11 +17,11 @@ class ConversationManager
         }
 
         if ($session && $session->user_id !== null
-            && (!$user || (int) $session->user_id !== (int) $user->id)) {
+            && (! $user || (int) $session->user_id !== (int) $user->id)) {
             $session = null;
         }
 
-        if (!$session) {
+        if (! $session) {
             $token = ChatSession::generateToken();
             $session = ChatSession::create([
                 'session_token' => $token,
@@ -59,7 +58,7 @@ class ConversationManager
             if ($msg->sender === 'admin') {
                 $contents[] = [
                     'role' => 'model',
-                    'parts' => [['text' => 'Support Agent (human): ' . $msg->message]],
+                    'parts' => [['text' => 'Support Agent (human): '.$msg->message]],
                 ];
             } else {
                 $role = $msg->sender === 'user' ? 'user' : 'model';
@@ -96,6 +95,6 @@ class ConversationManager
             ->limit(max(1, $count - 12))
             ->pluck('message');
 
-        return 'Earlier in the conversation, the user asked: ' . $oldMessages->implode('; ') . '.';
+        return 'Earlier in the conversation, the user asked: '.$oldMessages->implode('; ').'.';
     }
 }

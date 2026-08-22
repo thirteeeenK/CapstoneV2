@@ -12,7 +12,10 @@ use App\Models\ReviewSummary;
 use App\Models\RoomType;
 use App\Models\User;
 use App\Services\GeminiService;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 class ReviewSeeder extends Seeder
@@ -105,7 +108,7 @@ class ReviewSeeder extends Seeder
         foreach ($names as [$name, $email]) {
             $users[] = User::firstOrCreate(
                 ['email' => $email],
-                ['name' => $name, 'password' => \Illuminate\Support\Facades\Hash::make('12345678')]
+                ['name' => $name, 'password' => Hash::make('12345678')]
             );
         }
 
@@ -115,7 +118,7 @@ class ReviewSeeder extends Seeder
     /**
      * Build a flat pool of review targets with their direct FK columns.
      */
-    protected function buildTargetPool($hotels, $rooms, $activities, $packages): \Illuminate\Support\Collection
+    protected function buildTargetPool($hotels, $rooms, $activities, $packages): Collection
     {
         $pool = collect();
 
@@ -139,7 +142,7 @@ class ReviewSeeder extends Seeder
                 'room_id' => $room->id,
                 'activity_id' => null,
                 'package_id' => null,
-                'label' => $room->room_name . ' at ' . ($room->hotel?->hotel_name ?? 'Hotel'),
+                'label' => $room->room_name.' at '.($room->hotel?->hotel_name ?? 'Hotel'),
             ]);
         }
 
@@ -176,7 +179,7 @@ class ReviewSeeder extends Seeder
     protected function createCompletedBooking(User $user, array $target): Booking
     {
         $booking = Booking::create([
-            'booking_code' => 'RVT-' . strtoupper(Str::random(8)),
+            'booking_code' => 'RVT-'.strtoupper(Str::random(8)),
             'user_id' => $user->id,
             'status' => Booking::STATUS_COMPLETED,
             'total_amount' => 0,
@@ -242,7 +245,8 @@ class ReviewSeeder extends Seeder
         }
     }
 
-    protected function storeSummary(GeminiService $gemini, string $type, ?int $id, string $label, $reviews): void    {
+    protected function storeSummary(GeminiService $gemini, string $type, ?int $id, string $label, $reviews): void
+    {
         $total = $reviews->count();
 
         if ($total === 0) {
@@ -275,9 +279,9 @@ class ReviewSeeder extends Seeder
     {
         $class = class_exists($type)
             ? $type
-            : \Illuminate\Database\Eloquent\Relations\Relation::getMorphedModel($type);
+            : Relation::getMorphedModel($type);
 
-        if (!$class) {
+        if (! $class) {
             return "Listing #{$id}";
         }
 

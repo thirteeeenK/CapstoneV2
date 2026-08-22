@@ -20,12 +20,12 @@ class CheckUserOnboarding
             // Skip onboarding check for onboarding routes, logout, admin routes, the
             // account-suspended page, or API calls
             if (
-                !$request->routeIs('onboarding.*') &&
-                !$request->routeIs('logout') &&
-                !$request->routeIs('admin.*') &&
-                !$request->routeIs('account.suspended') &&
-                !$request->is('admin*') &&
-                !$request->expectsJson()
+                ! $request->routeIs('onboarding.*') &&
+                ! $request->routeIs('logout') &&
+                ! $request->routeIs('admin.*') &&
+                ! $request->routeIs('account.suspended') &&
+                ! $request->is('admin*') &&
+                ! $request->expectsJson()
             ) {
                 return redirect()->route('onboarding.index');
             }

@@ -24,7 +24,7 @@ beforeEach(function () {
 function createReportBooking(array $overrides = []): Booking
 {
     return Booking::create(array_merge([
-        'booking_code' => 'ST-' . date('Y') . '-' . strtoupper(Str::random(5)),
+        'booking_code' => 'ST-'.date('Y').'-'.strtoupper(Str::random(5)),
         'user_id' => null,
         'status' => Booking::STATUS_PENDING,
         'total_amount' => 1000.00,

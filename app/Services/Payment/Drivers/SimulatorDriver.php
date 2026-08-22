@@ -17,7 +17,7 @@ class SimulatorDriver implements PaymentDriver
     {
         return [
             'url' => route('booking.pay.simulator', $booking->booking_code),
-            'reference' => 'SIM-' . strtoupper(Str::random(8)),
+            'reference' => 'SIM-'.strtoupper(Str::random(8)),
         ];
     }
 

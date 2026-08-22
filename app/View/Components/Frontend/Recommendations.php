@@ -7,7 +7,9 @@ use Illuminate\View\Component;
 class Recommendations extends Component
 {
     public $isPersonalized;
+
     public $aiRecommendations;
+
     public $defaultRecommendations;
 
     public function __construct($isPersonalized = false, $aiRecommendations = [], $defaultRecommendations = [])

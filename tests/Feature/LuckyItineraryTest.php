@@ -2,12 +2,11 @@
 
 use App\Models\ActivityModel;
 use App\Models\Booking;
-use App\Models\BookingItem;
 use App\Models\CartItem;
 use App\Models\DestinationModel;
 use App\Models\HotelModel;
 use App\Models\RoomType;
-use App\Models\User;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Notification;
 
 beforeEach(function () {
@@ -25,7 +24,7 @@ function createLuckyDestination(string $name, int $activityCount = 2): array
     ]);
 
     $hotel = HotelModel::factory()->create([
-        'hotel_name' => $name . ' Beach Resort',
+        'hotel_name' => $name.' Beach Resort',
         'destination_id' => $destination->id,
         'specific_address' => 'Station 1',
     ]);
@@ -130,7 +129,7 @@ it('respects activity count, nights, and pax filters', function () {
         ->and($itinerary['nights'])->toBe(3)
         ->and($itinerary['pax'])->toBe(3)
         ->and((float) $itinerary['room']['nightly_rate'])->toBe(1500.0)
-        ->and((int) \Illuminate\Support\Carbon::parse($itinerary['check_in_date'])->diffInDays(\Illuminate\Support\Carbon::parse($itinerary['check_out_date'])))->toBe(3);
+        ->and((int) Carbon::parse($itinerary['check_in_date'])->diffInDays(Carbon::parse($itinerary['check_out_date'])))->toBe(3);
 });
 
 it('rejects invalid filter values with a 422', function () {

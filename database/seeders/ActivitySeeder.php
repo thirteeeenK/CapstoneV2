@@ -2,10 +2,10 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\ActivityModel;
 use App\Models\DestinationModel;
 use App\Services\GeminiService;
+use Illuminate\Database\Seeder;
 
 class ActivitySeeder extends Seeder
 {
@@ -269,7 +269,7 @@ class ActivitySeeder extends Seeder
             $activity = ActivityModel::updateOrCreate(
                 [
                     'destination_id' => $boracay->id,
-                    'activity_name' => $actData['activity_name']
+                    'activity_name' => $actData['activity_name'],
                 ],
                 [
                     'category' => $actData['category'],

@@ -2,21 +2,22 @@
 
 namespace App\Services;
 
-use App\Models\HotelModel;
-use App\Models\Package;
-use App\Models\RoomType;
 use App\Models\ActivityModel;
 use App\Models\AddOnModel;
+use App\Models\ChatbotAbuseReport;
 use App\Models\DestinationModel;
+use App\Models\Faq;
+use App\Models\HotelModel;
+use App\Models\Package;
 use App\Models\Review;
 use App\Models\ReviewSummary;
+use App\Models\RoomType;
 use App\Models\User;
-use App\Models\ChatbotAbuseReport;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Collection;
 
 class GeminiService
 {
@@ -25,7 +26,7 @@ class GeminiService
      */
     public function buildActivityEmbeddingText(ActivityModel $activity, ?string $destinationName = null): string
     {
-        if (!$destinationName && $activity->destination_id) {
+        if (! $destinationName && $activity->destination_id) {
             $destination = DestinationModel::find($activity->destination_id);
             $destinationName = $destination ? $destination->name : null;
         }
@@ -41,7 +42,7 @@ class GeminiService
         if (is_array($activity->itinerary)) {
             foreach ($activity->itinerary as $step) {
                 if (isset($step['title'])) {
-                    $itineraryList .= $step['title'] . (isset($step['duration']) ? ' (' . $step['duration'] . ')' : '') . '. ';
+                    $itineraryList .= $step['title'].(isset($step['duration']) ? ' ('.$step['duration'].')' : '').'. ';
                 }
             }
         }
@@ -70,7 +71,7 @@ class GeminiService
      */
     public function buildAddOnEmbeddingText(AddOnModel $addon, ?string $destinationName = null): string
     {
-        if (!$destinationName && $addon->destination_id) {
+        if (! $destinationName && $addon->destination_id) {
             $destination = DestinationModel::find($addon->destination_id);
             $destinationName = $destination ? $destination->name : null;
         }
@@ -94,7 +95,7 @@ class GeminiService
         if (is_array($addon->surcharges)) {
             foreach ($addon->surcharges as $sur) {
                 if (isset($sur['name'], $sur['amount'])) {
-                    $surchargeList .= "{$sur['name']} (₱{$sur['amount']}" . (isset($sur['type']) ? ' ' . $sur['type'] : '') . "). ";
+                    $surchargeList .= "{$sur['name']} (₱{$sur['amount']}".(isset($sur['type']) ? ' '.$sur['type'] : '').'). ';
                 }
             }
         }
@@ -120,19 +121,19 @@ class GeminiService
 
         return implode("\n", array_filter([
             "Tour Package Name: {$package->name}",
-            "Package Type: " . ($package->type ?: 'Standard Tour Promo'),
+            'Package Type: '.($package->type ?: 'Standard Tour Promo'),
             "Destination: {$destinationName}",
-            "Rate / Price: ₱" . number_format($package->price, 2),
-            "Duration: " . ($package->days ?: 3) . " Days / " . ($package->nights ?: 2) . " Nights",
-            "Minimum Guests Required: " . ($package->min_pax ?: 2) . " Pax",
-            $inclusions ? "Included Inclusions & Features: {$inclusions}" : "All-inclusive promo package",
+            'Rate / Price: ₱'.number_format($package->price, 2),
+            'Duration: '.($package->days ?: 3).' Days / '.($package->nights ?: 2).' Nights',
+            'Minimum Guests Required: '.($package->min_pax ?: 2).' Pax',
+            $inclusions ? "Included Inclusions & Features: {$inclusions}" : 'All-inclusive promo package',
         ]));
     }
 
     /**
      * Builds structured, semantically optimized text for FAQ embedding generation.
      */
-    public function buildFaqEmbeddingText(\App\Models\Faq $faq): string
+    public function buildFaqEmbeddingText(Faq $faq): string
     {
         return implode("\n", array_filter([
             "Question: {$faq->question}",
@@ -147,7 +148,7 @@ class GeminiService
      */
     public function buildHotelEmbeddingText(HotelModel $hotel, ?string $destinationName = null): string
     {
-        if (!$destinationName && $hotel->destination_id) {
+        if (! $destinationName && $hotel->destination_id) {
             $destination = DestinationModel::find($hotel->destination_id);
             $destinationName = $destination ? $destination->name : null;
         }
@@ -160,12 +161,12 @@ class GeminiService
         return implode("\n", array_filter([
             "Hotel Name: {$hotel->hotel_name}",
             "Destination: {$dest}",
-            $hotel->type ? "Hotel Category: " . ucwords(str_replace('-', ' ', $hotel->type)) : null,
+            $hotel->type ? 'Hotel Category: '.ucwords(str_replace('-', ' ', $hotel->type)) : null,
             $vibeList ? "Hotel Vibe & Atmosphere: {$vibeList}" : null,
             $amenitiesList ? "Featured Amenities & Facilities: {$amenitiesList}" : null,
             "Specific Address: {$hotel->specific_address}",
             ($hotel->latitude && $hotel->longitude) ? "Location Coordinates: Latitude {$hotel->latitude}, Longitude {$hotel->longitude}" : null,
-            "Detailed Overview: {$desc}"
+            "Detailed Overview: {$desc}",
         ]));
     }
 
@@ -174,7 +175,7 @@ class GeminiService
      */
     public function buildRoomEmbeddingText(RoomType $room, ?string $hotelName = null, ?string $destinationName = null): string
     {
-        if (!$hotelName && $room->hotel_id) {
+        if (! $hotelName && $room->hotel_id) {
             $hotel = $room->hotel ?? HotelModel::with('destination')->find($room->hotel_id);
             if ($hotel) {
                 $hotelName = $hotel->hotel_name;
@@ -195,7 +196,7 @@ class GeminiService
             $room->occupancy ? "Occupancy: {$room->occupancy} guests maximum" : null,
             $room->bed_configuration ? "Bed Layout: {$room->bed_configuration}" : null,
             $room->room_size ? "Room Dimensions: {$room->room_size}" : null,
-            "Base Price: ₱" . number_format($room->base_price, 2) . " per night",
+            'Base Price: ₱'.number_format($room->base_price, 2).' per night',
             $amenitiesList ? "Room Amenities: {$amenitiesList}" : null,
             $notes ? "Additional Notes & Policies: {$notes}" : null,
             $room->view_type ? "Room View: {$room->view_type}" : null,
@@ -227,7 +228,7 @@ class GeminiService
                         $items[] = $trimmed;
                     }
                 } elseif (is_array($item)) {
-                    $val = $item['name'] ?? $item['title'] ?? implode(', ', array_filter(array_map(fn($v) => is_string($v) ? trim($v) : null, $item)));
+                    $val = $item['name'] ?? $item['title'] ?? implode(', ', array_filter(array_map(fn ($v) => is_string($v) ? trim($v) : null, $item)));
                     if (is_string($val) && trim($val) !== '') {
                         $items[] = trim($val);
                     }
@@ -238,6 +239,7 @@ class GeminiService
                     }
                 }
             }
+
             return implode(', ', $items);
         }
 
@@ -251,8 +253,9 @@ class GeminiService
     public function generateEmbedding(string $text, string $taskType = 'RETRIEVAL_DOCUMENT', ?string $title = null): ?array
     {
         $apiKey = config('services.gemini.api_key');
-        if (!$apiKey) {
+        if (! $apiKey) {
             Log::warning('Gemini API key is not configured in services.gemini.api_key.');
+
             return null;
         }
 
@@ -263,10 +266,10 @@ class GeminiService
             'model' => $modelName,
             'content' => [
                 'parts' => [
-                    ['text' => $text]
-                ]
+                    ['text' => $text],
+                ],
             ],
-            'taskType' => $taskType
+            'taskType' => $taskType,
         ];
 
         if ($title) {
@@ -280,12 +283,13 @@ class GeminiService
 
             if ($response->successful() && isset($response->json()['embedding']['values'])) {
                 $rawVector = $response->json()['embedding']['values'];
+
                 return $this->normalizeVector($rawVector);
             }
 
             Log::error('Gemini Embedding Failed: ', ['response' => $response->body()]);
         } catch (\Exception $e) {
-            Log::error('Gemini Embedding Exception: ' . $e->getMessage());
+            Log::error('Gemini Embedding Exception: '.$e->getMessage());
         }
 
         return null;
@@ -307,7 +311,7 @@ class GeminiService
             return $vector;
         }
 
-        return array_map(fn($v) => $v / $magnitude, $vector);
+        return array_map(fn ($v) => $v / $magnitude, $vector);
     }
 
     /**
@@ -315,10 +319,11 @@ class GeminiService
      */
     public function formatVectorForDb(?array $vector): ?string
     {
-        if (empty($vector) || !is_array($vector)) {
+        if (empty($vector) || ! is_array($vector)) {
             return null;
         }
-        return '[' . implode(',', $vector) . ']';
+
+        return '['.implode(',', $vector).']';
     }
 
     /**
@@ -332,6 +337,7 @@ class GeminiService
                 $dotProduct += $value * $vecB[$key];
             }
         }
+
         return $dotProduct;
     }
 
@@ -349,7 +355,7 @@ class GeminiService
                 $itemVector = $item->embedding;
             } elseif (is_string($item->embedding)) {
                 $clean = trim($item->embedding, "[] \t\n\r");
-                if (!empty($clean)) {
+                if (! empty($clean)) {
                     $itemVector = array_map('floatval', explode(',', $clean));
                 }
             }
@@ -358,12 +364,12 @@ class GeminiService
                 $score = $this->cosineSimilarity($userPreferenceVector, $itemVector);
                 $scored[] = [
                     'item' => $item,
-                    'score' => $score
+                    'score' => $score,
                 ];
             }
         }
 
-        usort($scored, fn($a, $b) => $b['score'] <=> $a['score']);
+        usort($scored, fn ($a, $b) => $b['score'] <=> $a['score']);
 
         return array_slice($scored, 0, $limit);
     }
@@ -395,8 +401,9 @@ class GeminiService
         }
         $extractedPrices = array_unique($extractedPrices);
 
-        if (empty($extractedPrices))
+        if (empty($extractedPrices)) {
             return $contextText;
+        }
 
         $calcHint = "\n\n--- PRE-COMPUTED CALCULATIONS (use these in your answer) ---\n";
         $hasCalc = false;
@@ -406,27 +413,28 @@ class GeminiService
 
             if ($paxCount) {
                 $totalPax = $price * $paxCount;
-                $calcHint .= "• ₱{$formatted} × {$paxCount} pax = ₱" . number_format($totalPax) . "\n";
+                $calcHint .= "• ₱{$formatted} × {$paxCount} pax = ₱".number_format($totalPax)."\n";
                 $hasCalc = true;
             }
 
             if ($nightCount) {
                 $totalNight = $price * $nightCount;
-                $calcHint .= "• ₱{$formatted} × {$nightCount} nights = ₱" . number_format($totalNight) . "\n";
+                $calcHint .= "• ₱{$formatted} × {$nightCount} nights = ₱".number_format($totalNight)."\n";
                 $hasCalc = true;
             }
 
             if ($paxCount && $nightCount) {
                 $totalBoth = $price * $paxCount * $nightCount;
-                $calcHint .= "• ₱{$formatted} × {$paxCount} pax × {$nightCount} nights = ₱" . number_format($totalBoth) . "\n";
+                $calcHint .= "• ₱{$formatted} × {$paxCount} pax × {$nightCount} nights = ₱".number_format($totalBoth)."\n";
             }
         }
 
-        if (!$hasCalc)
+        if (! $hasCalc) {
             return $contextText;
+        }
         $calcHint .= "---\n";
 
-        return $contextText . $calcHint;
+        return $contextText.$calcHint;
     }
 
     // =========================================================================
@@ -437,16 +445,17 @@ class GeminiService
      * Semantic search: generates a RETRIEVAL_QUERY embedding from the user's natural-language
      * query, then ranks all embedded hotels by cosine similarity.
      *
-     * @param  string  $query   The user's search query (e.g. "luxury beachfront resort in Boracay")
-     * @param  int     $limit   Maximum results to return
-     * @return array   Scored results: [['item' => HotelModel, 'score' => float], ...]
+     * @param  string  $query  The user's search query (e.g. "luxury beachfront resort in Boracay")
+     * @param  int  $limit  Maximum results to return
+     * @return array Scored results: [['item' => HotelModel, 'score' => float], ...]
      */
     public function searchHotels(string $query, int $limit = 5, ?int $hotelId = null): array
     {
         $queryVector = $this->generateEmbedding($query, 'RETRIEVAL_QUERY');
 
-        if (!$queryVector) {
+        if (! $queryVector) {
             Log::warning('searchHotels: Failed to generate query embedding.', ['query' => $query]);
+
             return [];
         }
 
@@ -473,7 +482,7 @@ class GeminiService
      * relevant fields so the LLM can reason about them accurately.
      *
      * @param  array  $scoredHotels  Output from searchHotels() or rankRecommendations()
-     * @return string  Formatted context string ready for prompt injection
+     * @return string Formatted context string ready for prompt injection
      */
     public function getHotelContext(array $scoredHotels): string
     {
@@ -494,7 +503,7 @@ class GeminiService
 
             $cheapestRate = $hotel->rooms()->where('is_shown', true)->min('base_price');
             $rates = $cheapestRate !== null
-                ? "From ₱" . number_format((float) $cheapestRate, 2) . "/night"
+                ? 'From ₱'.number_format((float) $cheapestRate, 2).'/night'
                 : 'Rates: not available';
 
             $vibes = $this->formatListToString($hotel->vibe_tags);
@@ -520,7 +529,7 @@ class GeminiService
             $blocks[] = implode("\n", $lines);
         }
 
-        return "=== HOTEL DATABASE RESULTS ===\n\n" . implode("\n\n", $blocks) . "\n\n=== END HOTEL RESULTS ===";
+        return "=== HOTEL DATABASE RESULTS ===\n\n".implode("\n\n", $blocks)."\n\n=== END HOTEL RESULTS ===";
     }
 
     /**
@@ -528,8 +537,8 @@ class GeminiService
      * retrieves all embedded hotels and ranks them by cosine similarity.
      *
      * @param  array  $userPreferenceVector  L2-normalized preference vector (e.g. from user profile)
-     * @param  int    $limit                 Maximum results to return
-     * @return array  Scored results: [['item' => HotelModel, 'score' => float], ...]
+     * @param  int  $limit  Maximum results to return
+     * @return array Scored results: [['item' => HotelModel, 'score' => float], ...]
      */
     public function getHotelRecommendations(array $userPreferenceVector, int $limit = 5): array
     {
@@ -553,16 +562,17 @@ class GeminiService
      * Semantic search: generates a RETRIEVAL_QUERY embedding from the user's natural-language
      * query, then ranks all embedded rooms by cosine similarity.
      *
-     * @param  string  $query   The user's search query (e.g. "king bed ocean view room in Boracay")
-     * @param  int     $limit   Maximum results to return
-     * @return array   Scored results: [['item' => RoomType, 'score' => float], ...]
+     * @param  string  $query  The user's search query (e.g. "king bed ocean view room in Boracay")
+     * @param  int  $limit  Maximum results to return
+     * @return array Scored results: [['item' => RoomType, 'score' => float], ...]
      */
     public function searchRooms(string $query, int $limit = 5): array
     {
         $queryVector = $this->generateEmbedding($query, 'RETRIEVAL_QUERY');
 
-        if (!$queryVector) {
+        if (! $queryVector) {
             Log::warning('searchRooms: Failed to generate query embedding.', ['query' => $query]);
+
             return [];
         }
 
@@ -584,7 +594,7 @@ class GeminiService
      * relevant fields so the LLM can reason about them accurately.
      *
      * @param  array  $scoredRooms  Output from searchRooms() or rankRecommendations()
-     * @return string  Formatted context string ready for prompt injection
+     * @return string Formatted context string ready for prompt injection
      */
     public function getRoomContext(array $scoredRooms): string
     {
@@ -621,7 +631,7 @@ class GeminiService
                 "Occupancy: {$room->occupancy} guest(s)",
                 "Bed Configuration: {$room->bed_configuration}",
                 $room->room_size ? "Room Size: {$room->room_size}" : null,
-                "Base Price: ₱" . number_format($room->base_price, 2),
+                'Base Price: ₱'.number_format($room->base_price, 2),
                 $room->view_type ? "View Type: {$room->view_type}" : null,
                 "Available Rooms: {$room->total_rooms}",
                 $amenities ? "Amenities: {$amenities}" : null,
@@ -632,7 +642,7 @@ class GeminiService
             $blocks[] = implode("\n", $lines);
         }
 
-        return "=== ROOM DATABASE RESULTS ===\n\n" . implode("\n\n", $blocks) . "\n\n=== END ROOM RESULTS ===";
+        return "=== ROOM DATABASE RESULTS ===\n\n".implode("\n\n", $blocks)."\n\n=== END ROOM RESULTS ===";
     }
 
     /**
@@ -640,8 +650,8 @@ class GeminiService
      * retrieves all embedded rooms and ranks them by cosine similarity.
      *
      * @param  array  $userPreferenceVector  L2-normalized preference vector (e.g. from user profile)
-     * @param  int    $limit                 Maximum results to return
-     * @return array  Scored results: [['item' => RoomType, 'score' => float], ...]
+     * @param  int  $limit  Maximum results to return
+     * @return array Scored results: [['item' => RoomType, 'score' => float], ...]
      */
     public function getRoomRecommendations(array $userPreferenceVector, int $limit = 5): array
     {
@@ -665,16 +675,17 @@ class GeminiService
      * Semantic search: generates a RETRIEVAL_QUERY embedding from the user's query,
      * then ranks all embedded activities by cosine similarity.
      *
-     * @param  string  $query   User's search query (e.g. "sunset island hopping in Boracay")
-     * @param  int     $limit   Maximum results to return
-     * @return array   Scored results: [['item' => ActivityModel, 'score' => float], ...]
+     * @param  string  $query  User's search query (e.g. "sunset island hopping in Boracay")
+     * @param  int  $limit  Maximum results to return
+     * @return array Scored results: [['item' => ActivityModel, 'score' => float], ...]
      */
     public function searchActivities(string $query, int $limit = 5): array
     {
         $queryVector = $this->generateEmbedding($query, 'RETRIEVAL_QUERY');
 
-        if (!$queryVector) {
+        if (! $queryVector) {
             Log::warning('searchActivities: Failed to generate query embedding.', ['query' => $query]);
+
             return [];
         }
 
@@ -694,7 +705,7 @@ class GeminiService
      * Formats scored activity results into structured context text for RAG prompt injection.
      *
      * @param  array  $scoredActivities  Output from searchActivities() or rankRecommendations()
-     * @return string  Formatted context string ready for prompt injection
+     * @return string Formatted context string ready for prompt injection
      */
     public function getActivityContext(array $scoredActivities): string
     {
@@ -737,15 +748,15 @@ class GeminiService
             $blocks[] = implode("\n", $lines);
         }
 
-        return "=== ACTIVITY & TOUR DATABASE RESULTS ===\n\n" . implode("\n\n", $blocks) . "\n\n=== END ACTIVITY RESULTS ===";
+        return "=== ACTIVITY & TOUR DATABASE RESULTS ===\n\n".implode("\n\n", $blocks)."\n\n=== END ACTIVITY RESULTS ===";
     }
 
     /**
      * Recommendation engine entry point for Activities & Tours.
      *
      * @param  array  $userPreferenceVector  L2-normalized preference vector
-     * @param  int    $limit                 Maximum results to return
-     * @return array  Scored results: [['item' => ActivityModel, 'score' => float], ...]
+     * @param  int  $limit  Maximum results to return
+     * @return array Scored results: [['item' => ActivityModel, 'score' => float], ...]
      */
     public function getActivityRecommendations(array $userPreferenceVector, int $limit = 5): array
     {
@@ -772,14 +783,16 @@ class GeminiService
     {
         $queryVector = $this->generateEmbedding($query, 'RETRIEVAL_QUERY');
 
-        if (!$queryVector) {
+        if (! $queryVector) {
             Log::warning('searchPackages: Failed to generate query embedding.', ['query' => $query]);
+
             return [];
         }
 
         $vectorStr = $this->formatVectorForDb($queryVector);
-        if (!$vectorStr)
+        if (! $vectorStr) {
             return [];
+        }
 
         $packages = Package::with('destination')
             ->where('is_active', true)
@@ -805,16 +818,18 @@ class GeminiService
     {
         $queryVector = $this->generateEmbedding($query, 'RETRIEVAL_QUERY');
 
-        if (!$queryVector) {
+        if (! $queryVector) {
             Log::warning('searchFaqs: Failed to generate query embedding.', ['query' => $query]);
+
             return [];
         }
 
         $vectorStr = $this->formatVectorForDb($queryVector);
-        if (!$vectorStr)
+        if (! $vectorStr) {
             return [];
+        }
 
-        $faqs = \App\Models\Faq::where('is_active', true)
+        $faqs = Faq::where('is_active', true)
             ->whereNotNull('embedding')
             ->select('*')
             ->selectRaw('1.0 - (embedding <=> ?) AS similarity', [$vectorStr])
@@ -854,8 +869,8 @@ class GeminiService
                 "--- Package #{$rank} (relevance: {$score}) ---",
                 "Package Name: {$package->name}",
                 "Destination: {$destName}",
-                "Type: " . ($package->type ?: 'Standard Tour Promo'),
-                "Price: ₱" . number_format($package->price, 2),
+                'Type: '.($package->type ?: 'Standard Tour Promo'),
+                'Price: ₱'.number_format($package->price, 2),
                 "Duration: {$package->days}D/{$package->nights}N",
                 "Minimum Guests: {$package->min_pax} pax",
                 $inclusions ? "Inclusions: {$inclusions}" : null,
@@ -864,7 +879,7 @@ class GeminiService
             $blocks[] = implode("\n", $lines);
         }
 
-        return "=== PACKAGE DATABASE RESULTS ===\n\n" . implode("\n\n", $blocks) . "\n\n=== END PACKAGE RESULTS ===";
+        return "=== PACKAGE DATABASE RESULTS ===\n\n".implode("\n\n", $blocks)."\n\n=== END PACKAGE RESULTS ===";
     }
 
     // =========================================================================
@@ -897,7 +912,7 @@ class GeminiService
                 return self::$promptCache[$filename] = $cached['content'];
             }
         } catch (\Throwable $e) {
-            Log::warning('Gemini prompt cache read failed, falling back to disk: ' . $e->getMessage());
+            Log::warning('Gemini prompt cache read failed, falling back to disk: '.$e->getMessage());
         }
 
         $content = File::get($path);
@@ -905,7 +920,7 @@ class GeminiService
         try {
             Cache::put($cacheKey, ['content' => $content, 'mtime' => $mtime], now()->addDay());
         } catch (\Throwable $e) {
-            Log::warning('Gemini prompt cache write failed: ' . $e->getMessage());
+            Log::warning('Gemini prompt cache write failed: '.$e->getMessage());
         }
 
         return self::$promptCache[$filename] = $content;
@@ -919,8 +934,9 @@ class GeminiService
     public function generateContent(string $systemInstruction, string $prompt): ?string
     {
         $apiKey = config('services.gemini.api_key');
-        if (!$apiKey) {
+        if (! $apiKey) {
             Log::warning('Gemini API key is not configured in services.gemini.api_key.');
+
             return null;
         }
 
@@ -954,7 +970,7 @@ class GeminiService
 
             Log::error('Gemini GenerateContent Failed: ', ['response' => $response->body()]);
         } catch (\Exception $e) {
-            Log::error('Gemini GenerateContent Exception: ' . $e->getMessage());
+            Log::error('Gemini GenerateContent Exception: '.$e->getMessage());
         }
 
         return null;
@@ -964,9 +980,9 @@ class GeminiService
      * Runs Gemini sentiment analysis + keyword extraction on a single review comment.
      *
      * @param  string  $comment  The review comment text (supports Taglish).
-     * @return array  ['sentiment' => 'positive'|'neutral'|'negative',
-     *                'confidence_score' => float,
-     *                'extracted_keywords' => string[]]
+     * @return array ['sentiment' => 'positive'|'neutral'|'negative',
+     *               'confidence_score' => float,
+     *               'extracted_keywords' => string[]]
      */
     public function analyzeReviewSentiment(string $comment): array
     {
@@ -989,7 +1005,7 @@ class GeminiService
                 $score = max(0.0, min(1.0, $score));
 
                 $keywords = array_values(array_filter(array_map(
-                    fn($kw) => is_string($kw) ? mb_substr(trim($kw), 0, 40) : null,
+                    fn ($kw) => is_string($kw) ? mb_substr(trim($kw), 0, 40) : null,
                     $decoded['extracted_keywords'] ?? []
                 )));
 
@@ -1180,7 +1196,7 @@ class GeminiService
         $freq = [];
         foreach ($tokens as $token) {
             $token = trim($token);
-            if (mb_strlen($token) > 2 && !in_array($token, $stopwords, true)) {
+            if (mb_strlen($token) > 2 && ! in_array($token, $stopwords, true)) {
                 $freq[$token] = ($freq[$token] ?? 0) + 1;
             }
         }
@@ -1202,24 +1218,24 @@ class GeminiService
      * AI analysis of an admin booking report.
      *
      * @param  array  $stats  Compact report payload from AdminReportController.
-     * @return array  ['executive_summary' => string,
-     *                'insights' => string[],
-     *                'anomalies' => string[],
-     *                'recommendations' => string[]]
+     * @return array ['executive_summary' => string,
+     *               'insights' => string[],
+     *               'anomalies' => string[],
+     *               'recommendations' => string[]]
      */
     public function analyzeBookingReport(array $stats): array
     {
         $systemInstruction = $this->loadSystemPrompt('booking-report-analysis-prompt.md');
 
-        $prompt = "Booking Report Stats (JSON):\n" . json_encode($stats, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        $prompt = "Booking Report Stats (JSON):\n".json_encode($stats, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 
         $raw = $this->generateContent($systemInstruction, $prompt);
 
         if ($raw) {
             $decoded = json_decode($raw, true);
             if (is_array($decoded)) {
-                $stringList = fn($list) => array_values(array_filter(array_map(
-                    fn($item) => is_string($item) ? mb_substr(trim($item), 0, 300) : null,
+                $stringList = fn ($list) => array_values(array_filter(array_map(
+                    fn ($item) => is_string($item) ? mb_substr(trim($item), 0, 300) : null,
                     is_array($list) ? $list : []
                 )));
 
@@ -1259,20 +1275,20 @@ class GeminiService
         $statusLabel = $stats['status_filter'] ?? 'all statuses';
 
         $summary = "This report covers {$range} ({$statusLabel}). "
-            . ($total > 0
-                ? "It contains {$total} booking" . ($total > 1 ? 's' : '') . " worth ₱" . number_format($collected) . " collected (paid) plus ₱" . number_format($estimated) . " awaiting payment, averaging ₱" . number_format($avg, 2) . " per booking."
+            .($total > 0
+                ? "It contains {$total} booking".($total > 1 ? 's' : '').' worth ₱'.number_format($collected).' collected (paid) plus ₱'.number_format($estimated).' awaiting payment, averaging ₱'.number_format($avg, 2).' per booking.'
                 : 'It contains no bookings matching the current filters.');
 
         $insights = [];
         if ($total > 0) {
-            $insights[] = "Average booking value is ₱" . number_format($avg, 2) . " across the period.";
+            $insights[] = 'Average booking value is ₱'.number_format($avg, 2).' across the period.';
             if ($estimated > 0) {
-                $insights[] = "₱" . number_format($estimated) . " is awaiting payment from approved bookings not yet settled.";
+                $insights[] = '₱'.number_format($estimated).' is awaiting payment from approved bookings not yet settled.';
             }
             foreach (['pending', 'paid', 'completed', 'rejected', 'cancelled', 'expired'] as $key) {
                 if (isset($breakdown[$key]) && $breakdown[$key] > 0) {
                     $pct = round(($breakdown[$key] / $total) * 100);
-                    $insights[] = ucfirst($key) . " bookings account for {$pct}% of the period volume ({$breakdown[$key]} total).";
+                    $insights[] = ucfirst($key)." bookings account for {$pct}% of the period volume ({$breakdown[$key]} total).";
                 }
             }
             if ($peak) {
@@ -1316,12 +1332,12 @@ class GeminiService
     /**
      * Generates an AI consensus summary for an entity from its recent reviews.
      *
-     * @param  Collection|array  $reviews   Collection of Review models (or arrays) to summarize.
-     * @param  string $entityLabel  Human label of the entity (e.g. "Deluxe Ocean View Room at Villa Maria Resort").
-     * @return array  ['ai_summary_text' => string|null,
-     *                'top_positive_highlights' => string[],
-     *                'top_negative_highlights' => string[],
-     *                'most_frequent_keywords' => ['keyword' => count, ...]]
+     * @param  Collection|array  $reviews  Collection of Review models (or arrays) to summarize.
+     * @param  string  $entityLabel  Human label of the entity (e.g. "Deluxe Ocean View Room at Villa Maria Resort").
+     * @return array ['ai_summary_text' => string|null,
+     *               'top_positive_highlights' => string[],
+     *               'top_negative_highlights' => string[],
+     *               'most_frequent_keywords' => ['keyword' => count, ...]]
      */
     public function summarizeReviews(Collection|array $reviews, string $entityLabel): array
     {
@@ -1339,6 +1355,7 @@ class GeminiService
         $lines = $reviews->take(50)->map(function ($review) {
             $rating = $review->rating ?? 0;
             $comment = $review->comment ?? '';
+
             return "[{$rating}/5] {$comment}";
         })->implode("\n");
 
@@ -1363,8 +1380,8 @@ class GeminiService
      */
     protected function normalizeSummaryOutput(array $decoded, $reviews): array
     {
-        $stringList = fn($list) => array_values(array_filter(array_map(
-            fn($item) => is_string($item) ? mb_substr(trim($item), 0, 160) : null,
+        $stringList = fn ($list) => array_values(array_filter(array_map(
+            fn ($item) => is_string($item) ? mb_substr(trim($item), 0, 160) : null,
             is_array($list) ? $list : []
         )));
 
@@ -1423,14 +1440,14 @@ class GeminiService
         $topKeywords = array_slice(array_keys($keywordCounts), 0, 5);
 
         $lines = [];
-        $lines[] = "- Guests rate this experience {$avg}/5 across {$total} verified review" . ($total > 1 ? 's' : '') . ".";
+        $lines[] = "- Guests rate this experience {$avg}/5 across {$total} verified review".($total > 1 ? 's' : '').'.';
         if ($positive > 0) {
-            $lines[] = "- " . round(($positive / $total) * 100) . "% of guests shared positive feedback" . (count($topKeywords) ? ", often highlighting: " . implode(', ', array_slice($topKeywords, 0, 3)) . "." : ".");
+            $lines[] = '- '.round(($positive / $total) * 100).'% of guests shared positive feedback'.(count($topKeywords) ? ', often highlighting: '.implode(', ', array_slice($topKeywords, 0, 3)).'.' : '.');
         }
         if ($negative > 0) {
-            $lines[] = "- A minority (" . round(($negative / $total) * 100) . "%) noted concerns worth checking at check-in.";
+            $lines[] = '- A minority ('.round(($negative / $total) * 100).'%) noted concerns worth checking at check-in.';
         }
-        $lines[] = "- Newest guest comments are available below for first-hand detail.";
+        $lines[] = '- Newest guest comments are available below for first-hand detail.';
 
         $positiveHighlights = [];
         $negativeHighlights = [];
@@ -1491,7 +1508,7 @@ class GeminiService
             $lines[] = "Average Rating: {$summary->average_rating} / 5.0 ({$summary->total_reviews} reviews)";
             $lines[] = "Sentiment Split: {$summary->positive_percentage}% positive / {$summary->neutral_percentage}% neutral / {$summary->negative_percentage}% negative";
             if ($summary->ai_summary_text) {
-                $lines[] = "AI Consensus Summary:\n" . $summary->ai_summary_text;
+                $lines[] = "AI Consensus Summary:\n".$summary->ai_summary_text;
             }
         }
 
@@ -1499,7 +1516,7 @@ class GeminiService
             $lines[] = "Review snippet ({$review->rating}/5, {$review->sentiment}): \"{$review->comment}\"";
         }
 
-        return "=== REVIEW INSIGHTS ===\n\n" . implode("\n", $lines) . "\n\n=== END REVIEW INSIGHTS ===";
+        return "=== REVIEW INSIGHTS ===\n\n".implode("\n", $lines)."\n\n=== END REVIEW INSIGHTS ===";
     }
 
     // =========================================================================
@@ -1512,9 +1529,9 @@ class GeminiService
      * Analyzes user input queries for inappropriate/sexual terms, prompt injection hacks,
      * sensitive prohibited content, or off-topic system abuse.
      *
-     * @param  User    $user     Authenticated registered user
+     * @param  User  $user  Authenticated registered user
      * @param  string  $message  User's chat input query
-     * @return array|null        Returns violation response payload if flagged/blocked, or null if clean
+     * @return array|null Returns violation response payload if flagged/blocked, or null if clean
      */
     public function detectAbuseAndGuard(User $user, string $message): ?array
     {
@@ -1522,7 +1539,7 @@ class GeminiService
         if ($user->isBanned()) {
             return [
                 'blocked' => true,
-                'response' => 'Your account has been suspended from using the AI Chatbot due to terms of service violations. Reason: ' . ($user->ban_reason ?? 'Repeated community guideline violations.'),
+                'response' => 'Your account has been suspended from using the AI Chatbot due to terms of service violations. Reason: '.($user->ban_reason ?? 'Repeated community guideline violations.'),
             ];
         }
 
@@ -1541,7 +1558,7 @@ class GeminiService
                 'erotic',
                 'boobs',
                 'penis',
-                'vagina'
+                'vagina',
             ],
             'Sensitive/Prohibited' => [
                 'suicide',
@@ -1551,14 +1568,14 @@ class GeminiService
                 'credit card fraud',
                 'illegal drugs',
                 'kill',
-                'murder'
+                'murder',
             ],
             'Prompt Injection' => [
                 'ignore previous instructions',
                 'ignore all rules',
                 'system prompt',
                 'you are now DAN',
-                'bypass restriction'
+                'bypass restriction',
             ],
         ];
 
@@ -1567,7 +1584,7 @@ class GeminiService
 
         foreach ($categories as $category => $keywords) {
             foreach ($keywords as $kw) {
-                if (preg_match('/\b' . preg_quote($kw, '/') . '\b/i', $lowerMsg)) {
+                if (preg_match('/\b'.preg_quote($kw, '/').'\b/i', $lowerMsg)) {
                     $flaggedCategory = $category;
                     $flaggedReason = "Query contains prohibited phrase: '{$kw}'";
                     break 2;
@@ -1603,8 +1620,9 @@ class GeminiService
     public function searchRoomsHybrid(string $query, array $constraints, int $limit = 5): array
     {
         $queryVector = $this->generateEmbedding($query, 'RETRIEVAL_QUERY');
-        if (!$queryVector) {
+        if (! $queryVector) {
             Log::warning('searchRoomsHybrid: Failed to generate query embedding.', ['query' => $query]);
+
             return [];
         }
 
@@ -1612,16 +1630,16 @@ class GeminiService
             ->where('is_shown', true)
             ->whereNotNull('embedding');
 
-        if (!empty($constraints['destination_id'])) {
-            $roomsQuery->whereHas('hotel', fn($q) => $q->where('destination_id', $constraints['destination_id']));
+        if (! empty($constraints['destination_id'])) {
+            $roomsQuery->whereHas('hotel', fn ($q) => $q->where('destination_id', $constraints['destination_id']));
         }
-        if (!empty($constraints['hotel_id'])) {
+        if (! empty($constraints['hotel_id'])) {
             $roomsQuery->where('hotel_id', $constraints['hotel_id']);
         }
-        if (!empty($constraints['pax'])) {
+        if (! empty($constraints['pax'])) {
             $roomsQuery->where('max_occupancy', '>=', $constraints['pax']);
         }
-        if (!empty($constraints['max_price'])) {
+        if (! empty($constraints['max_price'])) {
             $roomsQuery->where('base_price', '<=', $constraints['max_price']);
         }
 
@@ -1675,7 +1693,7 @@ class GeminiService
 
             return is_string($name) ? $name : null;
         } catch (\Exception $e) {
-            Log::error('Gemini CachedContent Exception: ' . $e->getMessage());
+            Log::error('Gemini CachedContent Exception: '.$e->getMessage());
 
             return null;
         }
@@ -1694,7 +1712,7 @@ class GeminiService
             return null;
         }
 
-        $key = 'gemini:chat_cache:' . md5($modelName . '|' . $systemInstruction);
+        $key = 'gemini:chat_cache:'.md5($modelName.'|'.$systemInstruction);
 
         try {
             $cached = Cache::get($key);
@@ -1713,7 +1731,7 @@ class GeminiService
                 }
             }
         } catch (\Throwable $e) {
-            Log::warning('Gemini chat cache read failed, falling back to inline systemInstruction: ' . $e->getMessage());
+            Log::warning('Gemini chat cache read failed, falling back to inline systemInstruction: '.$e->getMessage());
 
             return null;
         }
@@ -1724,7 +1742,7 @@ class GeminiService
             try {
                 Cache::put($key, ['name' => null, 'expires_at' => now()->addMinutes(10)->timestamp, 'negative' => true], now()->addMinutes(10));
             } catch (\Throwable $e) {
-                Log::warning('Gemini chat cache negative marker write failed: ' . $e->getMessage());
+                Log::warning('Gemini chat cache negative marker write failed: '.$e->getMessage());
             }
 
             return null;
@@ -1733,7 +1751,7 @@ class GeminiService
         try {
             Cache::put($key, ['name' => $name, 'expires_at' => now()->addHours(23)->timestamp], now()->addDay());
         } catch (\Throwable $e) {
-            Log::warning('Gemini chat cache write failed: ' . $e->getMessage());
+            Log::warning('Gemini chat cache write failed: '.$e->getMessage());
         }
 
         return $name;
@@ -1745,8 +1763,9 @@ class GeminiService
     public function generateChatResponse(string $systemInstruction, array $history, string $userPrompt): ?string
     {
         $apiKey = config('services.gemini.api_key');
-        if (!$apiKey) {
+        if (! $apiKey) {
             Log::warning('Gemini API key is not configured.');
+
             return null;
         }
 
@@ -1764,7 +1783,7 @@ class GeminiService
 
         $cacheName = $this->resolveChatSystemPromptCache($systemInstruction, $modelName);
         $useCache = $cacheName !== null;
-        $cacheKey = 'gemini:chat_cache:' . md5($modelName . '|' . $systemInstruction);
+        $cacheKey = 'gemini:chat_cache:'.md5($modelName.'|'.$systemInstruction);
         $response = null;
 
         for ($attempt = 0; $attempt < 2; $attempt++) {
@@ -1799,7 +1818,7 @@ class GeminiService
 
                 $isCacheRelated = $useCache && in_array($response->status(), [400, 404], true);
             } catch (\Exception $e) {
-                Log::error('Gemini ChatResponse Exception: ' . $e->getMessage());
+                Log::error('Gemini ChatResponse Exception: '.$e->getMessage());
             }
 
             if (! $useCache || ! $isCacheRelated) {
@@ -1810,7 +1829,7 @@ class GeminiService
             try {
                 Cache::forget($cacheKey);
             } catch (\Throwable $e) {
-                Log::warning('Gemini chat cache invalidation failed: ' . $e->getMessage());
+                Log::warning('Gemini chat cache invalidation failed: '.$e->getMessage());
             }
             $useCache = false;
         }
@@ -1831,27 +1850,22 @@ class GeminiService
     /**
      * Build a deterministic itinerary context for Gemini narration.
      *
-     * @param  string  $query
-     * @param  array  $constraints
-     * @param  int  $pax
-     * @param  int  $nights
-     * @param  float  $maxBudget
      * @return array{success: bool, context?: string, data?: array, message?: string}
      */
     public function buildItineraryContext(string $query, array $constraints, int $pax, int $nights, float $maxBudget): array
     {
         $destinationId = $constraints['destination_id'] ?? null;
-        if (!$destinationId) {
+        if (! $destinationId) {
             return ['success' => false, 'message' => 'Which destination would you like an itinerary for?'];
         }
 
         $destination = DestinationModel::find($destinationId);
-        if (!$destination) {
+        if (! $destination) {
             return ['success' => false, 'message' => 'I could not find that destination.'];
         }
 
         $selection = $this->selectItineraryHotelAndRoom((int) $destinationId, $pax, $nights, $maxBudget);
-        if (!$selection) {
+        if (! $selection) {
             return ['success' => false, 'message' => "I could not find any available rooms in {$destination->name} for {$pax} guests."];
         }
 
@@ -1911,9 +1925,9 @@ class GeminiService
     {
         $hotels = HotelModel::where('destination_id', $destinationId)
             ->where('is_shown', true)
-            ->with(['rooms' => fn($q) => $q->where('is_shown', true)->where('max_occupancy', '>=', $pax)])
+            ->with(['rooms' => fn ($q) => $q->where('is_shown', true)->where('max_occupancy', '>=', $pax)])
             ->get()
-            ->filter(fn($h) => $h->rooms->isNotEmpty());
+            ->filter(fn ($h) => $h->rooms->isNotEmpty());
 
         foreach ($hotels as $hotel) {
             foreach ($hotel->rooms as $room) {
@@ -1927,7 +1941,7 @@ class GeminiService
         }
 
         foreach ($hotels as $hotel) {
-            $best = $hotel->rooms->sortBy(fn($r) => $r->calculateNightlyRate($pax))->first();
+            $best = $hotel->rooms->sortBy(fn ($r) => $r->calculateNightlyRate($pax))->first();
             if ($best) {
                 return ['hotel' => $hotel, 'room' => $best];
             }
@@ -1951,9 +1965,10 @@ class GeminiService
                     ? round($activity->calculateRateForPax($pax) * $pax, 2)
                     : round($activity->calculateRateForPax($pax), 2);
                 $activity->_computed_cost = $cost;
+
                 return $activity;
             })
-            ->filter(fn($a) => $a->_computed_cost <= $budgetForActivities * 0.8)
+            ->filter(fn ($a) => $a->_computed_cost <= $budgetForActivities * 0.8)
             ->sortBy('_computed_cost')
             ->take($activityCount)
             ->values();
@@ -1973,24 +1988,24 @@ class GeminiService
         float $grandTotal
     ): string {
         $context = "DESTINATION: {$destName}\n";
-        $context .= "PAX: {$pax} guest(s) | NIGHTS: {$nights} | BUDGET: ₱" . number_format($maxBudget, 2) . "\n\n";
+        $context .= "PAX: {$pax} guest(s) | NIGHTS: {$nights} | BUDGET: ₱".number_format($maxBudget, 2)."\n\n";
 
         $context .= "HOTEL & ROOM:\n";
         $context .= "- {$hotel->hotel_name}: {$room->room_name}\n";
         $context .= "- Bed: {$room->bed_configuration} | Occupancy: {$room->max_occupancy} pax\n";
-        $context .= "- Nightly rate: ₱" . number_format($roomRate, 2) . " | " . $nights . " nights = ₱" . number_format($roomTotal, 2) . "\n\n";
+        $context .= '- Nightly rate: ₱'.number_format($roomRate, 2).' | '.$nights.' nights = ₱'.number_format($roomTotal, 2)."\n\n";
 
-        $context .= "ACTIVITIES (₱" . number_format($activitiesTotal, 2) . " total):\n";
+        $context .= 'ACTIVITIES (₱'.number_format($activitiesTotal, 2)." total):\n";
         foreach ($activities as $i => $activity) {
             $day = min($nights + 1, intdiv($i, 2) + 1);
             $slot = $i % 2 === 0 ? 'main activity' : 'afternoon activity';
-            $context .= "- Day {$day} ({$slot}): {$activity->activity_name} | {$activity->category} | {$activity->duration} | ₱" . number_format($activity->_computed_cost, 2) . " for {$pax} pax\n";
+            $context .= "- Day {$day} ({$slot}): {$activity->activity_name} | {$activity->category} | {$activity->duration} | ₱".number_format($activity->_computed_cost, 2)." for {$pax} pax\n";
         }
 
-        $context .= "\nTOTAL: ₱" . number_format($grandTotal, 2);
+        $context .= "\nTOTAL: ₱".number_format($grandTotal, 2);
         $context .= $grandTotal > $maxBudget
-            ? " (OVER BUDGET by ₱" . number_format($grandTotal - $maxBudget, 2) . " — inform the user)"
-            : " (WITHIN BUDGET)";
+            ? ' (OVER BUDGET by ₱'.number_format($grandTotal - $maxBudget, 2).' — inform the user)'
+            : ' (WITHIN BUDGET)';
 
         return $context;
     }
@@ -2014,22 +2029,22 @@ class GeminiService
                 'id' => $room->id,
                 'room_name' => $room->room_name,
                 'nightly_rate' => $roomRate,
-                'formatted_nightly_rate' => '₱' . number_format($roomRate, 2),
+                'formatted_nightly_rate' => '₱'.number_format($roomRate, 2),
                 'total' => $roomTotal,
-                'formatted_total' => '₱' . number_format($roomTotal, 2),
+                'formatted_total' => '₱'.number_format($roomTotal, 2),
             ],
-            'activities' => $activities->map(fn($a) => [
+            'activities' => $activities->map(fn ($a) => [
                 'id' => $a->id,
                 'activity_name' => $a->activity_name,
                 'category' => $a->category,
                 'duration' => $a->duration,
                 'cost' => $a->_computed_cost,
-                'formatted_cost' => '₱' . number_format($a->_computed_cost, 2),
+                'formatted_cost' => '₱'.number_format($a->_computed_cost, 2),
             ])->values()->all(),
             'nights' => $nights,
             'pax' => $pax,
             'grand_total' => $grandTotal,
-            'formatted_grand_total' => '₱' . number_format($grandTotal, 2),
+            'formatted_grand_total' => '₱'.number_format($grandTotal, 2),
             'budget' => $maxBudget,
             'within_budget' => $grandTotal <= $maxBudget,
         ];

@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Package;
 use App\Models\DestinationModel;
+use App\Models\Package;
 use Illuminate\Http\Request;
 
 class PackageShowController extends Controller
@@ -17,7 +17,7 @@ class PackageShowController extends Controller
 
         $query = Package::where('is_active', true)->with(['destination', 'hotels', 'activities']);
 
-        if ($request->has('destination_id') && !empty($request->destination_id)) {
+        if ($request->has('destination_id') && ! empty($request->destination_id)) {
             $query->where('destination_id', $request->destination_id);
         }
 

@@ -34,7 +34,7 @@ class WeatherService
      */
     public function forecastForDestination(DestinationModel $destination): ?array
     {
-        if (!$destination->latitude || !$destination->longitude) {
+        if (! $destination->latitude || ! $destination->longitude) {
             return null;
         }
 
@@ -49,6 +49,7 @@ class WeatherService
 
         if ($data) {
             $this->store($key, $data);
+
             return $data;
         }
 
@@ -61,7 +62,7 @@ class WeatherService
      */
     public function forecast(float $lat, float $lng): ?array
     {
-        $key = 'coord:' . round($lat, 4) . ',' . round($lng, 4);
+        $key = 'coord:'.round($lat, 4).','.round($lng, 4);
 
         if ($cached = cache()->get($key)) {
             return $cached;
@@ -71,6 +72,7 @@ class WeatherService
 
         if ($data) {
             $this->store($key, $data);
+
             return $data;
         }
 
@@ -85,7 +87,7 @@ class WeatherService
     {
         $forecast = $this->forecastForDestination($destination);
 
-        if (!$forecast) {
+        if (! $forecast) {
             return null;
         }
 
@@ -99,13 +101,13 @@ class WeatherService
     {
         $apiKey = config('services.openweather.api_key');
 
-        if (!$apiKey) {
+        if (! $apiKey) {
             return null;
         }
 
         try {
             $response = Http::timeout(8)
-                ->get(config('services.openweather.base_url') . '/forecast', [
+                ->get(config('services.openweather.base_url').'/forecast', [
                     'lat' => $lat,
                     'lon' => $lng,
                     'appid' => $apiKey,
@@ -117,17 +119,18 @@ class WeatherService
                 return $response->json();
             }
         } catch (\Throwable $e) {
-            Log::warning('OpenWeather fetch failed: ' . $e->getMessage());
+            Log::warning('OpenWeather fetch failed: '.$e->getMessage());
         }
 
         // Cache the failure briefly to avoid hammering the API.
         $this->rememberFailure(md5("{$lat},{$lng}"));
+
         return null;
     }
 
     private function rememberFailure(string $suffix): void
     {
-        cache()->put('weather:fail:' . $suffix, 1, now()->addMinutes(30));
+        cache()->put('weather:fail:'.$suffix, 1, now()->addMinutes(30));
     }
 
     /**
@@ -156,13 +159,14 @@ class WeatherService
     {
         $row = WeatherCache::where('cache_key', $key)->first();
 
-        if (!$row) {
+        if (! $row) {
             return null;
         }
 
         // Serve stale data if within the stale TTL.
         if ($row->fetched_at && $row->fetched_at->gt(now()->subMinute($this->staleTtlMinutes))) {
             cache()->put($key, $row->weather_data, now()->addMinutes($this->freshCacheMinutes));
+
             return $row->weather_data;
         }
 
@@ -235,7 +239,7 @@ class WeatherService
     public function isOutdoorUnsafe(array $weather): bool
     {
         $current = $weather['current'] ?? null;
-        if (!$current) {
+        if (! $current) {
             return false;
         }
 
@@ -253,7 +257,7 @@ class WeatherService
     public function advice(array $weather): array
     {
         $current = $weather['current'] ?? null;
-        if (!$current) {
+        if (! $current) {
             return [];
         }
 

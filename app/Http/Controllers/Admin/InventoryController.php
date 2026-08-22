@@ -3,11 +3,12 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\HotelModel;
-use App\Models\RoomType;
 use App\Models\ActivityModel;
 use App\Models\AddOnModel;
 use App\Models\DestinationModel;
+use App\Models\HotelModel;
+use App\Models\Package;
+use App\Models\RoomType;
 use Illuminate\Http\Request;
 
 class InventoryController extends Controller
@@ -58,8 +59,8 @@ class InventoryController extends Controller
         }
         if ($search) {
             $hotelQuery->where(function ($q) use ($search) {
-                $q->where('hotel_name', 'ilike', '%' . $search . '%')
-                    ->orWhere('specific_address', 'ilike', '%' . $search . '%');
+                $q->where('hotel_name', 'ilike', '%'.$search.'%')
+                    ->orWhere('specific_address', 'ilike', '%'.$search.'%');
             });
         }
         $hotels = $hotelQuery->orderBy('id', 'asc')->get();
@@ -78,8 +79,8 @@ class InventoryController extends Controller
         }
         if ($search) {
             $roomQuery->where(function ($q) use ($search) {
-                $q->where('room_name', 'ilike', '%' . $search . '%')
-                    ->orWhere('description', 'ilike', '%' . $search . '%');
+                $q->where('room_name', 'ilike', '%'.$search.'%')
+                    ->orWhere('description', 'ilike', '%'.$search.'%');
             });
         }
         $rooms = $roomQuery->orderBy('id', 'asc')->get();
@@ -96,9 +97,9 @@ class InventoryController extends Controller
         }
         if ($search) {
             $activityQuery->where(function ($q) use ($search) {
-                $q->where('activity_name', 'ilike', '%' . $search . '%')
-                    ->orWhere('category', 'ilike', '%' . $search . '%')
-                    ->orWhere('notes', 'ilike', '%' . $search . '%');
+                $q->where('activity_name', 'ilike', '%'.$search.'%')
+                    ->orWhere('category', 'ilike', '%'.$search.'%')
+                    ->orWhere('notes', 'ilike', '%'.$search.'%');
             });
         }
         $activities = $activityQuery->orderBy('id', 'asc')->get();
@@ -115,9 +116,9 @@ class InventoryController extends Controller
         }
         if ($search) {
             $addonQuery->where(function ($q) use ($search) {
-                $q->where('name', 'ilike', '%' . $search . '%')
-                    ->orWhere('type', 'ilike', '%' . $search . '%')
-                    ->orWhere('description', 'ilike', '%' . $search . '%');
+                $q->where('name', 'ilike', '%'.$search.'%')
+                    ->orWhere('type', 'ilike', '%'.$search.'%')
+                    ->orWhere('description', 'ilike', '%'.$search.'%');
             });
         }
         $addons = $addonQuery->orderBy('id', 'asc')->get();
@@ -155,7 +156,7 @@ class InventoryController extends Controller
         $request->validate([
             'type' => 'required|in:hotel,room,activity,addon,add_on,package',
             'id' => 'required|integer',
-            'is_shown' => 'required|boolean'
+            'is_shown' => 'required|boolean',
         ]);
 
         $type = $request->type;
@@ -169,7 +170,7 @@ class InventoryController extends Controller
         } elseif ($type === 'addon' || $type === 'add_on') {
             $item = AddOnModel::findOrFail($id);
         } elseif ($type === 'package') {
-            $item = \App\Models\Package::findOrFail($id);
+            $item = Package::findOrFail($id);
         } else {
             $item = ActivityModel::findOrFail($id);
         }
@@ -180,11 +181,11 @@ class InventoryController extends Controller
         if ($request->wantsJson()) {
             return response()->json([
                 'success' => true,
-                'message' => ucfirst($type) . ' visibility updated successfully.',
+                'message' => ucfirst($type).' visibility updated successfully.',
                 'is_shown' => $item->is_shown,
             ]);
         }
 
-        return redirect()->back()->with('success', ucfirst($type) . ' visibility updated successfully.');
+        return redirect()->back()->with('success', ucfirst($type).' visibility updated successfully.');
     }
 }

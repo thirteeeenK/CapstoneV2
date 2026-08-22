@@ -33,7 +33,7 @@ class AdminAuth extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        $throttleKey = Str::transliterate(Str::lower($request->string('email')) . '|' . $request->ip());
+        $throttleKey = Str::transliterate(Str::lower($request->string('email')).'|'.$request->ip());
 
         if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
             $seconds = RateLimiter::availableIn($throttleKey);
@@ -46,7 +46,7 @@ class AdminAuth extends Controller
             ]);
         }
 
-        if (!Auth::guard('admin')->attempt($credentials, $request->boolean('remember'))) {
+        if (! Auth::guard('admin')->attempt($credentials, $request->boolean('remember'))) {
             RateLimiter::hit($throttleKey);
 
             throw ValidationException::withMessages([
@@ -77,7 +77,7 @@ class AdminAuth extends Controller
 
         $base = url('/');
 
-        return $url === $base || Str::startsWith($url, $base . '/');
+        return $url === $base || Str::startsWith($url, $base.'/');
     }
 
     /**

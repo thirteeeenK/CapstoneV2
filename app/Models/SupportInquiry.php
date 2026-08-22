@@ -23,9 +23,13 @@ class SupportInquiry extends Model
     use HasFactory;
 
     public const STATUS_AI_ACTIVE = 'AI_ACTIVE';
+
     public const STATUS_PENDING = 'PENDING_ASSIGNMENT';
+
     public const STATUS_HUMAN_ACTIVE = 'HUMAN_SUPPORT_ACTIVE';
+
     public const STATUS_RETURNED_AI = 'RETURNED_TO_AI';
+
     public const STATUS_RESOLVED = 'RESOLVED';
 
     protected $casts = [

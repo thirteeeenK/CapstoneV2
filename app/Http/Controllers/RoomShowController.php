@@ -18,7 +18,7 @@ class RoomShowController extends Controller
 
         $query = RoomType::where('is_shown', true)->with(['hotel.destination']);
 
-        if ($request->has('destination_id') && !empty($request->destination_id)) {
+        if ($request->has('destination_id') && ! empty($request->destination_id)) {
             $destId = $request->destination_id;
             $query->whereHas('hotel', function ($q) use ($destId) {
                 $q->where('destination_id', $destId);

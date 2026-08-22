@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\User;
 use Illuminate\Support\Facades\Route;
 
 it('renders the custom 404 page for missing routes', function () {
@@ -46,7 +47,7 @@ it('renders the custom 500 page when debug mode is off', function () {
 });
 
 it('keeps the signed-in dashboard link on error pages for authenticated users', function () {
-    $user = \App\Models\User::factory()->create();
+    $user = User::factory()->create();
 
     Route::get('/_err404', fn () => abort(404));
 
@@ -56,7 +57,7 @@ it('keeps the signed-in dashboard link on error pages for authenticated users', 
 });
 
 it('returns users to their intended destination after signing in again', function () {
-    $user = \App\Models\User::factory()->create();
+    $user = User::factory()->create();
 
     $this->post(route('login', ['redirect' => url('/destinations')]), [
         'email' => $user->email,
@@ -65,7 +66,7 @@ it('returns users to their intended destination after signing in again', functio
 });
 
 it('ignores redirect targets outside the application host', function () {
-    $user = \App\Models\User::factory()->create();
+    $user = User::factory()->create();
 
     $this->post(route('login', ['redirect' => 'https://evil.example.com']), [
         'email' => $user->email,

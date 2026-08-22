@@ -15,7 +15,7 @@ class DestinationModelFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => fake()->unique()->city() . ' Island',
+            'name' => fake()->unique()->city().' Island',
             'region' => fake()->randomElement(['Luzon', 'Visayas', 'Mindanao']),
             'description' => fake()->sentence(),
             'image' => null,

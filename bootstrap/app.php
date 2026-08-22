@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Middleware\CheckUserBan;
+use App\Http\Middleware\CheckUserOnboarding;
 use App\Http\Middleware\NoCacheHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -8,8 +10,8 @@ use Illuminate\Http\Request;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
-        web: __DIR__ . '/../routes/web.php',
-        commands: __DIR__ . '/../routes/console.php',
+        web: __DIR__.'/../routes/web.php',
+        commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
@@ -19,19 +21,20 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'no.cache' => NoCacheHeaders::class,
-            'check.onboarding' => \App\Http\Middleware\CheckUserOnboarding::class,
-            'check.ban' => \App\Http\Middleware\CheckUserBan::class,
+            'check.onboarding' => CheckUserOnboarding::class,
+            'check.ban' => CheckUserBan::class,
         ]);
 
         $middleware->web(append: [
-            \App\Http\Middleware\CheckUserBan::class,
-            \App\Http\Middleware\CheckUserOnboarding::class,
+            CheckUserBan::class,
+            CheckUserOnboarding::class,
         ]);
 
         $middleware->redirectGuestsTo(function (Request $request) {
             if ($request->is('admin') || $request->is('admin/*')) {
                 return route('admin.login');
             }
+
             return route('login');
         });
 
@@ -39,11 +42,12 @@ return Application::configure(basePath: dirname(__DIR__))
             if ($request->is('admin') || $request->is('admin/*')) {
                 return route('admin.dashboard');
             }
+
             return route('dashboard');
         });
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
-            fn(Request $request) => $request->is('api/*') || $request->expectsJson(),
+            fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
     })->create();

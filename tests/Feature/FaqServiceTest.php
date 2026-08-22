@@ -5,7 +5,7 @@ use App\Services\Chat\FaqService;
 use App\Services\GeminiService;
 
 beforeEach(function () {
-    $embedding = '[' . implode(',', array_fill(0, 3072, '0.01')) . ']';
+    $embedding = '['.implode(',', array_fill(0, 3072, '0.01')).']';
     Faq::create([
         'question' => 'Does SunnyTrips support airline ticket booking?',
         'answer' => 'No, SunnyTrips does not support airline ticket booking.',

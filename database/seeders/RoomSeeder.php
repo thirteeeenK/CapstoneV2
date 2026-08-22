@@ -2,10 +2,10 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\HotelModel;
 use App\Models\RoomType;
 use App\Services\GeminiService;
+use Illuminate\Database\Seeder;
 
 class RoomSeeder extends Seeder
 {
@@ -185,13 +185,14 @@ class RoomSeeder extends Seeder
         ];
 
         foreach ($rooms as $roomData) {
-            if (!$roomData['hotel_id'])
+            if (! $roomData['hotel_id']) {
                 continue;
+            }
 
             $room = RoomType::updateOrCreate(
                 [
                     'hotel_id' => $roomData['hotel_id'],
-                    'room_name' => $roomData['room_name']
+                    'room_name' => $roomData['room_name'],
                 ],
                 $roomData
             );

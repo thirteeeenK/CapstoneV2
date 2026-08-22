@@ -2,10 +2,10 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\AddOnModel;
 use App\Models\DestinationModel;
 use App\Services\GeminiService;
+use Illuminate\Database\Seeder;
 
 class AddOnSeeder extends Seeder
 {
@@ -16,8 +16,9 @@ class AddOnSeeder extends Seeder
     {
         $boracay = DestinationModel::where('name', 'Boracay')->first();
 
-        if (!$boracay) {
+        if (! $boracay) {
             $this->command->error('Boracay destination not found. Please run DestinationSeeder first.');
+
             return;
         }
 
@@ -52,7 +53,7 @@ class AddOnSeeder extends Seeder
                     ['name' => 'Station 1 or Station 0 Hotel Drop-off Charge', 'amount' => 200, 'type' => 'per_pax'],
                 ],
                 'is_shown' => true,
-            ]
+            ],
         ];
 
         foreach ($addons as $addonData) {

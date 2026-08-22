@@ -92,24 +92,27 @@
                                           x-text="'★ ' + Number(selected.rating).toFixed(1) + ' (' + selected.review_count + ')'"></span>
                                 </template>
                             </div>
-                            <div class="flex flex-wrap gap-2">
+                            <div class="flex flex-wrap gap-2" x-show="selected.type === 'activity'">
+                                <button type="button"
+                                        @click="$store.preview.openActivityById(selected.id)"
+                                        class="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-slate-100 px-3 py-2.5 text-xs font-bold text-slate-700 transition hover:bg-slate-200 cursor-pointer">
+                                    <span class="material-symbols-outlined text-[15px]">auto_awesome</span>
+                                    <span>Quick Preview</span>
+                                </button>
+                                <button type="button"
+                                        @click="window.addToCart('activity', selected.id, { selected_pax: 1 })"
+                                        class="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-ocean-600 px-3 py-2.5 text-xs font-bold text-white transition hover:bg-ocean-700 cursor-pointer">
+                                    <span class="material-symbols-outlined text-[15px]">shopping_cart</span>
+                                    <span>Add to Basket</span>
+                                </button>
+                            </div>
+
+                            <div class="flex flex-wrap gap-2" x-show="selected.type === 'hotel'">
                                 <a :href="selected.url" x-show="selected.url"
                                    class="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-slate-900 px-3 py-2.5 text-xs font-bold text-white transition hover:bg-slate-800 cursor-pointer">
                                     <span class="material-symbols-outlined text-[15px]">visibility</span>
                                     <span>View Details</span>
                                 </a>
-                                <button type="button" x-show="selected.type === 'hotel' || selected.type === 'activity'"
-                                        @click="selected.type === 'hotel' ? $store.preview.openRoom(selected) : $store.preview.openActivity(selected)"
-                                        class="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-slate-100 px-3 py-2.5 text-xs font-bold text-slate-700 transition hover:bg-slate-200 cursor-pointer">
-                                    <span class="material-symbols-outlined text-[15px]">auto_awesome</span>
-                                    <span>Quick Preview</span>
-                                </button>
-                                <button type="button" x-show="selected.type === 'hotel' || selected.type === 'activity'"
-                                        @click="window.addToCart(selected.type, selected.id, {})"
-                                        class="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-ocean-600 px-3 py-2.5 text-xs font-bold text-white transition hover:bg-ocean-700 cursor-pointer">
-                                    <span class="material-symbols-outlined text-[15px]">shopping_cart</span>
-                                    <span>Add to Basket</span>
-                                </button>
                             </div>
                         </div>
                     </template>
@@ -154,6 +157,12 @@
                             this.map.flyTo([val.lat, val.lng], 12);
                         }
                     });
+
+                    window['exploreMap'] = {
+                        setFilter: (type) => this.setFilter(type),
+                        highlight: (id, on) => this.highlight(id, on),
+                        select: (m) => this.selectWithCard(m),
+                    };
 
                     const focusParam = @json($focus ?? null);
                     if (focusParam) {
@@ -292,13 +301,32 @@
                     if (this.map && m.lat && m.lng) {
                         this.map.flyTo([m.lat, m.lng], 12, { animate: !reduced });
                     }
-                    const api = window['exploreMap'];
-                    if (api) api.highlight(`${m.type}-${m.id}`, true);
+                    this.highlight(`${m.type}-${m.id}`, true);
+                },
+
+                setFilter(type) {
+                    this.markerLayers.forEach((layer, m) => {
+                        const show = type === 'all' || m.type === type;
+                        const el = layer.getElement();
+                        if (!el) return;
+                        el.style.transition = 'opacity 240ms ease-out, transform 240ms ease-out';
+                        el.style.opacity = show ? '1' : '0.14';
+                        el.style.transform = show ? 'scale(1)' : 'scale(0.82)';
+                        el.style.pointerEvents = show ? 'auto' : 'none';
+                    });
                 },
 
                 highlight(m, on) {
-                    const api = window['exploreMap'];
-                    if (api) api.highlight(`${m.type}-${m.id}`, on);
+                    let layer;
+                    if (typeof m === 'string') {
+                        layer = [...this.markerLayers.entries()]
+                            .find(([mk]) => `${mk.type}-${mk.id}` === m)?.[1];
+                    } else {
+                        layer = this.markerLayers.get(m);
+                    }
+                    if (!layer) return;
+                    const el = layer.getElement();
+                    if (el) el.classList.toggle('map-pin-hover', on);
                 },
             };
         }
@@ -307,6 +335,11 @@
         @keyframes stping {
             0% { transform: scale(0.6); opacity: 1; }
             100% { transform: scale(2.2); opacity: 0; }
+        }
+        .map-pin-hover div { box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.25) !important; }
+        .map-pin-active div { box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.35), 0 4px 14px rgba(0, 0, 0, 0.25) !important; transform: rotate(-45deg) scale(1.12); }
+        @media (prefers-reduced-motion: reduce) {
+            .map-pin-hover div, .map-pin-active div { transition: none !important; }
         }
     </style>
 </x-frontend.layout>

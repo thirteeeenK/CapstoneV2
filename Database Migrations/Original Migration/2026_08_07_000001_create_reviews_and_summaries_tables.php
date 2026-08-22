@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
@@ -48,7 +49,7 @@ return new class extends Migration
         });
 
         if (Schema::getConnection()->getDriverName() === 'pgsql') {
-            \Illuminate\Support\Facades\DB::statement(
+            DB::statement(
                 'ALTER TABLE reviews ADD CONSTRAINT reviews_rating_check CHECK (rating BETWEEN 1 AND 5)'
             );
         }
@@ -77,7 +78,7 @@ return new class extends Migration
         });
 
         if (Schema::getConnection()->getDriverName() === 'pgsql') {
-            \Illuminate\Support\Facades\DB::statement(
+            DB::statement(
                 'CREATE UNIQUE INDEX idx_review_summaries_unique ON review_summaries (summarizable_type, COALESCE(summarizable_id, 0))'
             );
         }

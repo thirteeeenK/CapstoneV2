@@ -27,7 +27,7 @@ class MapService
                 $weather = $this->weather->summaryForDestination($destination);
 
                 $coverImage = ResolvesImages::resolveImg(
-                    collect($destination->hotels()->where('is_shown', true)->first()?->images ?? [])->first(),
+                    $destination->image ?: collect($destination->hotels()->where('is_shown', true)->first()?->images ?? [])->first(),
                     'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80'
                 );
 
@@ -44,6 +44,8 @@ class MapService
                     'distance_km' => $userLat ? round($this->distance->haversine($userLat, $userLng, (float) $destination->latitude, (float) $destination->longitude), 2) : null,
                     'distance_label' => $userLat && $destination->latitude ? $this->distance->format($this->distance->haversine($userLat, $userLng, (float) $destination->latitude, (float) $destination->longitude)) : null,
                     'cover_image' => $coverImage,
+                    'image' => $coverImage,
+                    'images' => [$coverImage],
                     'destination_slug' => Str::slug($destination->name),
                 ];
             })
@@ -135,6 +137,7 @@ class MapService
     {
         $km = $this->distance->haversine($userLat, $userLng, (float) $hotel->latitude, (float) $hotel->longitude);
         $cheapest = $hotel->rooms->where('is_shown', true)->min('base_price');
+        $cheapestRoom = $hotel->rooms->where('is_shown', true)->sortBy('base_price')->first();
 
         return [
             'type' => 'hotel',
@@ -152,6 +155,7 @@ class MapService
             'distance_label' => $userLat ? $this->distance->format($km) : null,
             'images' => collect($hotel->images ?? [])->map(fn ($i) => ResolvesImages::resolveImg($i))->values()->all(),
             'cheapest_price' => $cheapest !== null ? (float) $cheapest : null,
+            'cheapest_room_id' => $cheapestRoom?->id,
             'vibe_tags' => array_values(array_slice((array) ($hotel->vibe_tags ?? []), 0, 3)),
             'featured_amenities' => array_values(array_slice((array) ($hotel->featured_amenities ?? []), 0, 3)),
         ];

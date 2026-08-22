@@ -4,14 +4,15 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
 
 class Review extends Model
 {
     protected $table = 'reviews';
 
     public const SENTIMENT_POSITIVE = 'positive';
+
     public const SENTIMENT_NEUTRAL = 'neutral';
+
     public const SENTIMENT_NEGATIVE = 'negative';
 
     protected $fillable = [
@@ -99,16 +100,17 @@ class Review extends Model
         $parts = preg_split('/\s+/', trim($name));
         $first = $parts[0] ?? null;
 
-        if (!$first) {
+        if (! $first) {
             return 'Guest';
         }
 
         if (count($parts) > 1) {
             $lastInitial = mb_substr($parts[count($parts) - 1], 0, 1);
+
             return "{$first} {$lastInitial}.";
         }
 
-        return $first . ' D.';
+        return $first.' D.';
     }
 
     public function scopePublished(Builder $query): Builder

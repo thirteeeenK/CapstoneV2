@@ -21,11 +21,11 @@ class ActivityShowController extends Controller
 
         $query = ActivityModel::where('is_shown', true)->with('destination');
 
-        if ($request->has('destination_id') && !empty($request->destination_id)) {
+        if ($request->has('destination_id') && ! empty($request->destination_id)) {
             $query->where('destination_id', $request->destination_id);
         }
 
-        if ($request->has('level') && !empty($request->level)) {
+        if ($request->has('level') && ! empty($request->level)) {
             $query->where('activity_level', $request->level);
         }
 

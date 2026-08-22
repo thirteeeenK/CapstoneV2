@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Notifications\AdminResetPasswordNotification;
+use Database\Factories\AdminModelFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -12,7 +14,7 @@ use Illuminate\Notifications\Notifiable;
 #[Hidden(['password', 'remember_token'])]
 class AdminModel extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\AdminModelFactory> */
+    /** @use HasFactory<AdminModelFactory> */
     use HasFactory, Notifiable;
 
     /**
@@ -39,10 +41,9 @@ class AdminModel extends Authenticatable
      * Send the password reset notification.
      *
      * @param  string  $token
-     * @return void
      */
     public function sendPasswordResetNotification($token): void
     {
-        $this->notify(new \App\Notifications\AdminResetPasswordNotification($token));
+        $this->notify(new AdminResetPasswordNotification($token));
     }
 }

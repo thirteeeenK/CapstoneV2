@@ -4,20 +4,21 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     /**
      * Run the migrations.
      */
     public function up(): void
     {
         Schema::table('destinations', function (Blueprint $table) {
-            if (!Schema::hasColumn('destinations', 'region')) {
+            if (! Schema::hasColumn('destinations', 'region')) {
                 $table->string('region')->nullable()->after('name');
             }
-            if (!Schema::hasColumn('destinations', 'description')) {
+            if (! Schema::hasColumn('destinations', 'description')) {
                 $table->text('description')->nullable()->after('region');
             }
-            if (!Schema::hasColumn('destinations', 'image')) {
+            if (! Schema::hasColumn('destinations', 'image')) {
                 $table->string('image')->nullable()->after('description');
             }
         });

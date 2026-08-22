@@ -1,7 +1,7 @@
 <?php
 
-use App\Http\Controllers\Admin\ActivityController;
 use App\Http\Controllers\ActivityShowController;
+use App\Http\Controllers\Admin\ActivityController;
 use Illuminate\Support\Facades\Route;
 
 // Public Activities & Tours Catalog Listing

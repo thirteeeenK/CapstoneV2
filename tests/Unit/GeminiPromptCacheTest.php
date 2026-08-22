@@ -1,12 +1,16 @@
 <?php
 
+use App\Services\GeminiService;
 use Illuminate\Support\Facades\Cache;
-uses(Tests\TestCase::class);
+use Tests\TestCase;
+
+uses(TestCase::class);
 
 test('loadSystemPrompt returns file content and caches it', function () {
     Cache::flush();
 
-    $service = new class extends \App\Services\GeminiService {
+    $service = new class extends GeminiService
+    {
         public function loadPublic(string $f): string
         {
             return $this->loadSystemPrompt($f);
@@ -23,7 +27,8 @@ test('loadSystemPrompt falls back to disk when cache read fails', function () {
         ->with('gemini:system_prompt:sentiment-analysis-prompt.md')
         ->andThrow(new RuntimeException('cache down'));
 
-    $service = new class extends \App\Services\GeminiService {
+    $service = new class extends GeminiService
+    {
         public function loadPublic(string $f): string
         {
             return $this->loadSystemPrompt($f);
@@ -42,7 +47,8 @@ test('loadSystemPrompt returns content even when cache write fails', function ()
         ->once()
         ->andThrow(new RuntimeException('cache down'));
 
-    $service = new class extends \App\Services\GeminiService {
+    $service = new class extends GeminiService
+    {
         public function loadPublic(string $f): string
         {
             return $this->loadSystemPrompt($f);

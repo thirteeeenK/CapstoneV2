@@ -1,9 +1,10 @@
 <?php
 
+use App\Services\GeminiService;
+use Illuminate\Cache\Repository;
+use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Http\Client\Request;
-use App\Models\User;
 
 test('chat uses cachedContent and omits systemInstruction when caching enabled', function () {
     config(['services.gemini.chat_context_cache' => true]);
@@ -92,9 +93,9 @@ test('chat falls back to inline systemInstruction when cachedContent is rejected
     $this->actingAs($user);
     $this->postJson('/chat', ['message' => 'Hello there'])->assertOk();
 
-    $systemInstruction = app(\App\Services\GeminiService::class)->loadChatbotSystemPrompt();
+    $systemInstruction = app(GeminiService::class)->loadChatbotSystemPrompt();
     $modelName = config('services.gemini.chat_model') ?? 'models/gemini-2.5-flash-lite';
-    $cacheKey = 'gemini:chat_cache:' . md5($modelName . '|' . $systemInstruction);
+    $cacheKey = 'gemini:chat_cache:'.md5($modelName.'|'.$systemInstruction);
 
     expect($generatePayloads)->toHaveCount(2);
     expect($generatePayloads[0])->toHaveKey('cachedContent', 'cachedContents/test123');
@@ -162,10 +163,11 @@ test('chat falls back to inline systemInstruction when local cache read throws',
     ]);
 
     $defaultRepo = app('cache')->store();
-    $throwingRepo = new class($defaultRepo->getStore()) extends \Illuminate\Cache\Repository {
+    $throwingRepo = new class($defaultRepo->getStore()) extends Repository
+    {
         public function get($key, $default = null): mixed
         {
-            throw new \RuntimeException('Simulated cache read failure');
+            throw new RuntimeException('Simulated cache read failure');
         }
     };
     Cache::swap($throwingRepo);

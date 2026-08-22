@@ -1,8 +1,8 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Admin\AddOnController;
 use App\Http\Controllers\AddOnShowController;
+use App\Http\Controllers\Admin\AddOnController;
+use Illuminate\Support\Facades\Route;
 
 // Public Transfers & Add-ons Catalog Listing
 Route::get('/addons', [AddOnShowController::class, 'index'])->name('addons.index');

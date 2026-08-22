@@ -26,6 +26,6 @@ class BookingRejected extends BookingNotification
 
     protected function message(): string
     {
-        return "Booking {$this->booking->booking_code} was declined: " . ($this->booking->rejection_reason ?: 'unavailable for selected dates.');
+        return "Booking {$this->booking->booking_code} was declined: ".($this->booking->rejection_reason ?: 'unavailable for selected dates.');
     }
 }

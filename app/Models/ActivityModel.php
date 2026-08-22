@@ -59,6 +59,7 @@ class ActivityModel extends Model
         if ($this->latitude !== null) {
             return (float) $this->latitude;
         }
+
         return $this->destination ? (float) $this->destination->latitude : null;
     }
 
@@ -67,6 +68,7 @@ class ActivityModel extends Model
         if ($this->longitude !== null) {
             return (float) $this->longitude;
         }
+
         return $this->destination ? (float) $this->destination->longitude : null;
     }
 
@@ -91,7 +93,8 @@ class ActivityModel extends Model
     public function isPerPersonRate(): bool
     {
         $rateStr = mb_strtolower($this->rate ?? '');
-        return str_contains($rateStr, '/person') || str_contains($rateStr, 'per person') 
+
+        return str_contains($rateStr, '/person') || str_contains($rateStr, 'per person')
             || str_contains($rateStr, '/pax') || str_contains($rateStr, 'per pax')
             || str_contains($rateStr, '/head') || str_contains($rateStr, 'per head');
     }
@@ -102,10 +105,12 @@ class ActivityModel extends Model
     public function getMaxCapacityInt(): int
     {
         $capStr = $this->capacity ?? '';
-        if (preg_match_all('/\d+/', $capStr, $matches) && !empty($matches[0])) {
+        if (preg_match_all('/\d+/', $capStr, $matches) && ! empty($matches[0])) {
             $numbers = array_map('intval', $matches[0]);
+
             return max($numbers);
         }
+
         return 20;
     }
 
@@ -121,13 +126,13 @@ class ActivityModel extends Model
         if (preg_match('/(\d[\d,.]*)\s*[\-–—]\s*[^\d]*(\d[\d,.]*)/u', $rateStr, $m)) {
             $min = (float) str_replace(',', '', $m[1]);
             $max = (float) str_replace(',', '', $m[2]);
+
             return ($pax <= 1) ? $min : $max;
         }
 
         // Clean currency symbols and text
         $cleaned = preg_replace('/[^\d.]/', '', $rateStr);
+
         return (float) $cleaned;
     }
 }
-
-        

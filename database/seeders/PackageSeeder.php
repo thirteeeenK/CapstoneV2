@@ -2,11 +2,9 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
-use Illuminate\Database\Seeder;
-
-use App\Models\Package;
 use App\Models\DestinationModel;
+use App\Models\Package;
+use Illuminate\Database\Seeder;
 
 class PackageSeeder extends Seeder
 {
@@ -17,7 +15,7 @@ class PackageSeeder extends Seeder
     {
         $boracay = DestinationModel::where('name', 'Boracay')->first();
 
-        if (!$boracay) {
+        if (! $boracay) {
             return;
         }
 
@@ -41,7 +39,7 @@ class PackageSeeder extends Seeder
                     'Environmental Fee',
                     'Taxes and Permits',
                     'Travel Coordinator',
-                    'Travel Requirements Assistance'
+                    'Travel Requirements Assistance',
                 ],
                 'is_active' => true,
             ],
@@ -65,7 +63,7 @@ class PackageSeeder extends Seeder
                     'Environmental Fee',
                     'Taxes and Permits',
                     'Travel Coordinator',
-                    'Travel Requirements Assistance'
+                    'Travel Requirements Assistance',
                 ],
                 'is_active' => true,
             ],
@@ -89,10 +87,10 @@ class PackageSeeder extends Seeder
                     'Environmental Fee',
                     'Taxes and Permits',
                     'Travel Coordinator',
-                    'Travel Requirements Assistance'
+                    'Travel Requirements Assistance',
                 ],
                 'is_active' => true,
-            ]
+            ],
         ];
 
         foreach ($packages as $pkg) {

@@ -24,5 +24,4 @@ class NoCacheHeaders
 
         return $response;
     }
-
 }

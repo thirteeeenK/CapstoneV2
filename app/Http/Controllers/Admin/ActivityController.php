@@ -35,12 +35,12 @@ class ActivityController extends Controller
 
         if ($search) {
             $query->where(function ($q) use ($search) {
-                $q->where('activity_name', 'ilike', '%' . $search . '%')
-                    ->orWhere('category', 'ilike', '%' . $search . '%')
-                    ->orWhere('activity_level', 'ilike', '%' . $search . '%')
-                    ->orWhere('description', 'ilike', '%' . $search . '%')
-                    ->orWhere('vibe_tags', 'ilike', '%' . $search . '%')
-                    ->orWhere('notes', 'ilike', '%' . $search . '%');
+                $q->where('activity_name', 'ilike', '%'.$search.'%')
+                    ->orWhere('category', 'ilike', '%'.$search.'%')
+                    ->orWhere('activity_level', 'ilike', '%'.$search.'%')
+                    ->orWhere('description', 'ilike', '%'.$search.'%')
+                    ->orWhere('vibe_tags', 'ilike', '%'.$search.'%')
+                    ->orWhere('notes', 'ilike', '%'.$search.'%');
             });
         }
 
@@ -70,6 +70,7 @@ class ActivityController extends Controller
     public function create()
     {
         $destinations = DestinationModel::orderBy('name', 'asc')->get();
+
         return view('admin.activities.create', compact('destinations'));
     }
 
@@ -176,7 +177,7 @@ class ActivityController extends Controller
             'longitude' => 'nullable|numeric|between:-180,180',
             'images' => 'nullable|array',
             'images.*' => 'image|mimes:jpeg,png,jpg,webp|max:5120',
-            'removed_images' => 'nullable|array'
+            'removed_images' => 'nullable|array',
         ]);
 
         $activity = ActivityModel::findOrFail($id);
@@ -205,7 +206,7 @@ class ActivityController extends Controller
         $activity->is_shown = $request->has('is_shown') ? $request->boolean('is_shown') : false;
 
         $currentImages = $activity->images;
-        if (!is_array($currentImages)) {
+        if (! is_array($currentImages)) {
             $currentImages = json_decode($currentImages, true) ?? [];
         }
 
@@ -213,7 +214,7 @@ class ActivityController extends Controller
             $normalize = fn ($p) => str_replace('storage/', '', ltrim((string) $p, '/'));
             $owned = array_map($normalize, $currentImages);
             foreach ($request->removed_images as $removedPath) {
-                if (!in_array($normalize($removedPath), $owned, true)) {
+                if (! in_array($normalize($removedPath), $owned, true)) {
                     continue;
                 }
                 Storage::disk('public')->delete($removedPath);
@@ -254,7 +255,7 @@ class ActivityController extends Controller
         $activity = ActivityModel::findOrFail($id);
 
         $images = $activity->images;
-        if (is_array($images) && !empty($images)) {
+        if (is_array($images) && ! empty($images)) {
             foreach ($images as $img) {
                 Storage::disk('public')->delete($img);
             }

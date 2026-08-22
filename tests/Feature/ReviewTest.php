@@ -1,16 +1,19 @@
 <?php
 
+use App\Jobs\UpdateEntityReviewSummaryJob;
 use App\Models\ActivityModel;
+use App\Models\AdminModel;
 use App\Models\Booking;
 use App\Models\BookingItem;
-use App\Models\DestinationModel;
 use App\Models\HotelModel;
 use App\Models\Package;
 use App\Models\Review;
 use App\Models\ReviewSummary;
 use App\Models\RoomType;
 use App\Models\User;
+use App\Services\GeminiService;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 
 beforeEach(function () {
     Http::fake([
@@ -29,7 +32,7 @@ beforeEach(function () {
         ], 200),
     ]);
 
-$this->room = RoomType::factory()->create([
+    $this->room = RoomType::factory()->create([
         'room_name' => 'Deluxe Ocean View',
         'base_price' => 2000.00,
         'base_occupancy' => 2,
@@ -60,7 +63,7 @@ $this->room = RoomType::factory()->create([
 
     $this->user = onboardedUser(['name' => 'Juan Dela Cruz']);
 
-    $this->admin = \App\Models\AdminModel::create([
+    $this->admin = AdminModel::create([
         'name' => 'Test Admin',
         'email' => 'admin@sunnytripstest.com',
         'password' => 'password',
@@ -70,7 +73,7 @@ $this->room = RoomType::factory()->create([
 function makeCompletedBooking(User $user, RoomType $room, string $status = 'completed'): Booking
 {
     $booking = Booking::factory()->create([
-        'booking_code' => 'RVT-' . strtoupper(\Illuminate\Support\Str::random(8)),
+        'booking_code' => 'RVT-'.strtoupper(Str::random(8)),
         'user_id' => $user->id,
         'status' => $status,
         'total_amount' => 6000,
@@ -232,7 +235,7 @@ it('lists reviewable bookings for the authenticated user', function () {
 
 it('supports reviewing activities and packages', function () {
     $activityBooking = Booking::create([
-        'booking_code' => 'RVT-ACT' . strtoupper(\Illuminate\Support\Str::random(6)),
+        'booking_code' => 'RVT-ACT'.strtoupper(Str::random(6)),
         'user_id' => $this->user->id,
         'status' => 'completed',
         'total_amount' => 3000,
@@ -329,8 +332,8 @@ it('skips summary regeneration below the configurable threshold', function () {
 
     config(['services.gemini.review_summary_threshold' => 3]);
 
-    (new \App\Jobs\UpdateEntityReviewSummaryJob($morph, $this->room->id, 'Deluxe Ocean View'))
-        ->handle(app(\App\Services\GeminiService::class));
+    (new UpdateEntityReviewSummaryJob($morph, $this->room->id, 'Deluxe Ocean View'))
+        ->handle(app(GeminiService::class));
 
     $summary->refresh();
 
@@ -366,8 +369,8 @@ it('regenerates the summary once the threshold of new reviews is reached', funct
 
     config(['services.gemini.review_summary_threshold' => 3]);
 
-    (new \App\Jobs\UpdateEntityReviewSummaryJob($morph, $this->room->id, 'Deluxe Ocean View'))
-        ->handle(app(\App\Services\GeminiService::class));
+    (new UpdateEntityReviewSummaryJob($morph, $this->room->id, 'Deluxe Ocean View'))
+        ->handle(app(GeminiService::class));
 
     $summary->refresh();
 
@@ -593,7 +596,7 @@ it('shows entity collections on the admin create form for manual mode', function
 
 it('allows multiple reviews on the same booking for different items', function () {
     $booking = Booking::create([
-        'booking_code' => 'RVT-MULTI' . strtoupper(\Illuminate\Support\Str::random(6)),
+        'booking_code' => 'RVT-MULTI'.strtoupper(Str::random(6)),
         'user_id' => $this->user->id,
         'status' => 'completed',
         'total_amount' => 9000,
@@ -655,7 +658,7 @@ it('allows multiple reviews on the same booking for different items', function (
 
 it('returns per-item review status in eligible bookings', function () {
     $booking = Booking::create([
-        'booking_code' => 'RVT-ELIG' . strtoupper(\Illuminate\Support\Str::random(6)),
+        'booking_code' => 'RVT-ELIG'.strtoupper(Str::random(6)),
         'user_id' => $this->user->id,
         'status' => 'completed',
         'total_amount' => 9000,

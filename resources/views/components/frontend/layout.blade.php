@@ -140,5 +140,7 @@
     <x-frontend.cart-drawer />
     <x-frontend.cart-success-modal />
     <x-frontend.chat-widget />
+    <x-frontend.room-preview-modal />
+    <x-frontend.activity-preview-modal />
 </body>
 </html>

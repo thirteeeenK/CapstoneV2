@@ -8,12 +8,12 @@ use App\Services\ReviewService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class ReviewController extends Controller
 {
-    public function __construct(protected ReviewService $reviewService)
-    {
-    }
+    public function __construct(protected ReviewService $reviewService) {}
 
     /**
      * Dedicated public discovery hub: browse, filter & sort verified reviews.
@@ -21,19 +21,19 @@ class ReviewController extends Controller
     public function index(Request $request)
     {
         $tab = $request->query('tab', 'all');
-        if (!in_array($tab, ['all', 'hotels', 'rooms', 'activities', 'packages'], true)) {
+        if (! in_array($tab, ['all', 'hotels', 'rooms', 'activities', 'packages'], true)) {
             $tab = 'all';
         }
 
         $sentiment = $request->query('sentiment');
-        if (!in_array($sentiment, ['positive', 'neutral', 'negative'], true)) {
+        if (! in_array($sentiment, ['positive', 'neutral', 'negative'], true)) {
             $sentiment = null;
         }
 
         $minRating = (int) $request->query('rating', 0);
 
         $sort = $request->query('sort', 'recent');
-        if (!in_array($sort, ['recent', 'highest', 'lowest', 'helpful'], true)) {
+        if (! in_array($sort, ['recent', 'highest', 'lowest', 'helpful'], true)) {
             $sort = 'recent';
         }
 
@@ -76,9 +76,9 @@ class ReviewController extends Controller
                 trim($validated['comment']),
                 $validated['booking_item_id'],
             );
-        } catch (\Symfony\Component\HttpKernel\Exception\HttpException $e) {
+        } catch (HttpException $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], $e->getStatusCode());
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             return response()->json(['success' => false, 'message' => 'Invalid booking.', 'errors' => $e->errors()], 422);
         }
 

@@ -77,17 +77,11 @@
                             <div class="lg:col-span-2">
                                 <x-frontend.map id="dashboard-map" :markers="$mapMarkers" :center="null" :zoom="6" height="h-80 sm:h-96" />
                             </div>
-                            <div class="hidden lg:block border-l border-slate-200 bg-slate-50/60 p-4">
-                                <template x-if="selected">
-                                    <div x-transition.opacity.duration.300ms>
-                                        <x-frontend.map-preview-card :marker="null" />
-                                    </div>
-                                </template>
-                                <template x-if="!selected">
-                                    <div class="flex h-full min-h-[16rem] items-center justify-center rounded-2xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-400">
-                                        Tap a destination pin on the map to preview its sanctuary stays and local experiences.
-                                    </div>
-                                </template>
+                            <div class="hidden lg:flex lg:flex-col justify-center border-l border-slate-200 bg-slate-50/60 p-4">
+                                <div x-show="selected" x-transition.opacity.duration.300ms x-html="cardHtml" class="w-full"></div>
+                                <div x-show="!selected" class="flex h-full min-h-[16rem] items-center justify-center rounded-2xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-400 font-body">
+                                    Tap a destination pin on the map to preview its sanctuary stays and local experiences.
+                                </div>
                             </div>
                         </div>
 
@@ -96,7 +90,7 @@
                              x-transition:enter-start="translate-y-full" x-transition:enter-end="translate-y-0"
                              x-transition:leave="transition ease-in duration-200"
                              x-transition:leave-start="translate-y-0" x-transition:leave-end="translate-y-full"
-                             class="fixed inset-x-0 bottom-0 z-[60] rounded-t-3xl border border-slate-200 bg-white p-4 shadow-2xl"
+                             class="lg:hidden fixed inset-x-0 bottom-0 z-[60] rounded-t-3xl border border-slate-200 bg-white p-4 shadow-2xl"
                              style="display:none">
                             <button type="button" @click="close()"
                                     class="absolute right-3 top-3 rounded-full bg-slate-100 p-1.5 text-slate-500 hover:bg-slate-200 cursor-pointer">
@@ -110,36 +104,91 @@
 
             <script>
                 function dashboardMap() {
+                    const fallbackImg = 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80';
+
+                    function resolveImage(m) {
+                        if (!m) return fallbackImg;
+                        let raw = m.cover_image || (Array.isArray(m.images) && m.images.length > 0 ? m.images[0] : null) || m.image;
+                        if (!raw || typeof raw !== 'string') return fallbackImg;
+                        raw = raw.trim();
+                        if (raw.startsWith('http://') || raw.startsWith('https://') || raw.startsWith('data:')) {
+                            return raw;
+                        }
+                        if (raw.startsWith('/storage/')) {
+                            return raw;
+                        }
+                        if (raw.startsWith('storage/')) {
+                            return '/' + raw;
+                        }
+                        return '/storage/' + raw.replace(/^\/+/, '');
+                    }
+
                     return {
                         selected: null,
                         open: false,
                         cardHtml: '',
                         onSelect(m) {
+                            if (!m) return;
                             this.selected = m;
-                            const image = m.cover_image || (m.images ? m.images[0] : null) || (m.image ? '/storage/' + m.image : null);
+                            const imgUrl = resolveImage(m);
                             const price = m.cheapest_price
                                 ? 'from ₱' + Number(m.cheapest_price).toLocaleString('en-US')
-                                : (m.rate ? '{{ App\\Concerns\\ResolvesImages::formatRate(m.rate ?? 0) }}' : '');
-                            const weather = (m.weather && m.weather.icon)
-                                ? `<div class="mt-1 flex items-center gap-1 text-xs text-slate-600"><img src="https://openweathermap.org/img/wn/${m.weather.icon}.png" class="h-5 w-5" alt=""> ${Math.round(m.weather.temp || 0)}°C</div>`
+                                : (m.rate ? '₱' + Number(m.rate).toLocaleString('en-US') : '');
+
+                            const weatherBadge = (m.weather && m.weather.icon)
+                                ? `<span class="inline-flex items-center gap-1 rounded-full bg-white/90 backdrop-blur-xs px-2.5 py-1 text-[11px] font-bold text-slate-700 shadow-xs">
+                                     <img src="https://openweathermap.org/img/wn/${m.weather.icon}.png" class="h-4 w-4" alt="">
+                                     <span>${Math.round(m.weather.temp || 0)}°C</span>
+                                   </span>`
                                 : '';
+
+                            const typeLabel = m.type === 'destination' ? 'Destination' : (m.type === 'hotel' ? 'Sanctuary Stay' : 'Experience');
+                            const staysCount = m.hotel_count || 0;
+                            const expCount = m.activity_count || 0;
+                            const exploreUrl = m.url || `{{ url('/hotels') }}?destination=${m.id}`;
+                            const explorerMapUrl = `{{ route('explore') }}?focus=destination:${m.id}`;
+
                             this.cardHtml = `
-                                <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                                    <div class="relative h-36 overflow-hidden bg-slate-100">
-                                        <img src="${image}" alt="${m.name}" class="h-full w-full object-cover">
-                                        <div class="absolute inset-0 bg-gradient-to-t from-slate-900/60 to-transparent"></div>
-                                        ${m.cheapest_price || m.rate ? `<span class="absolute bottom-2 right-2 rounded-lg bg-slate-900/85 px-2 py-1 text-xs font-extrabold text-emerald-300">${price}</span>` : ''}
-                                    </div>
-                                    <div class="space-y-2 p-4">
-                                        <p class="text-[11px] font-extrabold uppercase tracking-widest text-sky-600">Destination</p>
-                                        <h3 class="font-headline text-base font-black text-slate-900">${m.name}</h3>
-                                        ${weather}
-                                        <div class="flex flex-wrap gap-1.5">
-                                            <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-700">${m.hotel_count || 0} stays · ${m.activity_count || 0} experiences</span>
+                                <div class="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm hover:shadow-md transition-all duration-300">
+                                    <div class="relative h-44 w-full overflow-hidden bg-slate-100 group">
+                                        <img src="${imgUrl}" 
+                                             alt="${m.name || 'Destination'}" 
+                                             onerror="this.onerror=null;this.src='${fallbackImg}';" 
+                                             class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                                        <div class="absolute inset-0 bg-gradient-to-t from-slate-950/75 via-slate-950/20 to-transparent"></div>
+                                        
+                                        ${weatherBadge ? `<div class="absolute top-2.5 right-2.5 flex items-center gap-1.5">${weatherBadge}</div>` : ''}
+
+                                        ${price ? `<span class="absolute bottom-2.5 right-2.5 rounded-lg bg-slate-900/90 backdrop-blur-xs px-2.5 py-1 text-xs font-black text-emerald-400 border border-emerald-500/20">${price}</span>` : ''}
+
+                                        <div class="absolute bottom-2.5 left-3 right-16">
+                                            <span class="inline-block rounded-md bg-sky-500/90 backdrop-blur-xs px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-widest text-white mb-0.5">${typeLabel}</span>
+                                            <h3 class="font-headline text-base font-black text-white line-clamp-1 drop-shadow-sm">${m.name || ''}</h3>
                                         </div>
-                                        <div class="flex gap-2 pt-1">
-                                            <a href="${m.url || '#'}" class="flex-1 rounded-xl bg-sky-600 px-3 py-2 text-center text-xs font-bold text-white hover:bg-sky-700">Explore Hotels</a>
-                                            <a href="{{ route('explore') }}?focus=destination:${m.id}" class="flex-1 rounded-xl bg-slate-100 px-3 py-2 text-center text-xs font-bold text-slate-700 hover:bg-slate-200">Open in Explorer</a>
+                                    </div>
+                                    
+                                    <div class="space-y-3 p-4">
+                                        <div class="flex flex-wrap items-center gap-1.5">
+                                            <span class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-700 font-label">
+                                                <span class="material-symbols-outlined text-[13px] text-ocean-600">hotel</span>
+                                                <span>${staysCount} stays</span>
+                                            </span>
+                                            <span class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-700 font-label">
+                                                <span class="material-symbols-outlined text-[13px] text-coral-500">kayaking</span>
+                                                <span>${expCount} experiences</span>
+                                            </span>
+                                            ${m.distance_label ? `<span class="inline-flex items-center gap-1 rounded-full bg-ocean-50 text-ocean-700 px-2.5 py-1 text-[11px] font-bold font-label"><span>${m.distance_label} away</span></span>` : ''}
+                                        </div>
+
+                                        <div class="flex items-center gap-2 pt-1 border-t border-slate-100">
+                                            <a href="${exploreUrl}" class="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-ocean-600 hover:bg-ocean-700 px-3 py-2.5 text-center text-xs font-bold text-white transition shadow-xs cursor-pointer">
+                                                <span class="material-symbols-outlined text-[14px]">bed</span>
+                                                <span>Explore Hotels</span>
+                                            </a>
+                                            <a href="${explorerMapUrl}" class="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 px-3 py-2.5 text-center text-xs font-bold text-slate-700 transition cursor-pointer">
+                                                <span class="material-symbols-outlined text-[14px]">explore</span>
+                                                <span>Open in Explorer</span>
+                                            </a>
                                         </div>
                                     </div>
                                 </div>`;

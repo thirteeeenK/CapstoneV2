@@ -65,15 +65,18 @@ class CartItem extends Model
     public function getHotelNameAttribute()
     {
         $item = $this->itemable;
-        if (!$item) return null;
+        if (! $item) {
+            return null;
+        }
 
         if ($this->item_type === 'room') {
             return $item->hotel ? ($item->hotel->hotel_name ?? $item->hotel->name ?? null) : null;
         }
 
         if ($this->item_type === 'package' && method_exists($item, 'hotels') && $item->relationLoaded('hotels')) {
-            $names = $item->hotels->map(fn($h) => $h->hotel_name ?? $h->name)->filter()->toArray();
-            return !empty($names) ? implode(', ', $names) : null;
+            $names = $item->hotels->map(fn ($h) => $h->hotel_name ?? $h->name)->filter()->toArray();
+
+            return ! empty($names) ? implode(', ', $names) : null;
         }
 
         return null;
@@ -85,7 +88,9 @@ class CartItem extends Model
     public function getLocationNameAttribute()
     {
         $item = $this->itemable;
-        if (!$item) return null;
+        if (! $item) {
+            return null;
+        }
 
         if ($this->item_type === 'room' && $item->hotel) {
             return $item->hotel->destination ? ($item->hotel->destination->destination_name ?? $item->hotel->destination->name ?? null) : null;
@@ -107,8 +112,10 @@ class CartItem extends Model
             $checkIn = Carbon::parse($this->check_in_date);
             $checkOut = Carbon::parse($this->check_out_date);
             $nights = max(1, $checkIn->diffInDays($checkOut));
-            return $checkIn->format('M d') . ' - ' . $checkOut->format('M d, Y') . " ({$nights} night" . ($nights > 1 ? 's' : '') . ')';
+
+            return $checkIn->format('M d').' - '.$checkOut->format('M d, Y')." ({$nights} night".($nights > 1 ? 's' : '').')';
         }
+
         return null;
     }
 
@@ -117,8 +124,12 @@ class CartItem extends Model
      */
     protected function parseCurrency($value, int $pax = 1): float
     {
-        if (is_null($value)) return 0;
-        if (is_numeric($value)) return (float) $value;
+        if (is_null($value)) {
+            return 0;
+        }
+        if (is_numeric($value)) {
+            return (float) $value;
+        }
 
         $valStr = (string) $value;
 
@@ -126,11 +137,13 @@ class CartItem extends Model
         if (preg_match('/(\d[\d,.]*)\s*[\-–—]\s*[^\d]*(\d[\d,.]*)/u', $valStr, $m)) {
             $min = (float) str_replace(',', '', $m[1]);
             $max = (float) str_replace(',', '', $m[2]);
+
             return ($pax <= 1) ? $min : $max;
         }
 
         // Strip ₱, PHP, commas, spaces, and other non-numeric chars except dots
         $cleaned = preg_replace('/[^\d.]/', '', $valStr);
+
         return (float) $cleaned;
     }
 
@@ -140,7 +153,7 @@ class CartItem extends Model
     public function getUnitRateAttribute()
     {
         $item = $this->itemable;
-        if (!$item) {
+        if (! $item) {
             return 0;
         }
 
@@ -155,14 +168,16 @@ class CartItem extends Model
         switch ($this->item_type) {
             case 'room':
                 if (method_exists($item, 'calculateNightlyRate')) {
-                    return $item->calculateNightlyRate(max(1, (int)($this->selected_pax ?: 2)));
+                    return $item->calculateNightlyRate(max(1, (int) ($this->selected_pax ?: 2)));
                 }
+
                 return $this->parseCurrency($item->base_price ?? $item->rate_per_night ?? 0, $pax);
 
             case 'activity':
                 if (method_exists($item, 'calculateRateForPax')) {
                     return $item->calculateRateForPax($pax);
                 }
+
                 return $this->parseCurrency($item->rate ?? 0, $pax);
 
             case 'package':
@@ -177,7 +192,7 @@ class CartItem extends Model
                 }
 
                 // Check if add-on has pax pricing tiers
-                if (!empty($item->pricing_tiers) && is_array($item->pricing_tiers)) {
+                if (! empty($item->pricing_tiers) && is_array($item->pricing_tiers)) {
                     // Match pricing tier or find closest tier
                     $matchingTier = null;
                     foreach ($item->pricing_tiers as $tier) {
@@ -188,7 +203,7 @@ class CartItem extends Model
                             break;
                         }
                     }
-                    if (!$matchingTier && !empty($item->pricing_tiers)) {
+                    if (! $matchingTier && ! empty($item->pricing_tiers)) {
                         $matchingTier = end($item->pricing_tiers);
                     }
 
@@ -204,6 +219,7 @@ class CartItem extends Model
                         }
                     }
                 }
+
                 return $this->parseCurrency($item->base_price ?? $item->rate ?? 0, $pax);
 
             default:
@@ -222,12 +238,14 @@ class CartItem extends Model
             $checkIn = Carbon::parse($this->check_in_date);
             $checkOut = Carbon::parse($this->check_out_date);
             $nights = max(1, $checkIn->diffInDays($checkOut));
+
             return $unitRate * $nights * max(1, $this->quantity);
         }
 
         if ($this->item_type === 'addon') {
             // Transfers/Add-ons: effective pax * unit rate
             $effectivePax = max(1, (int) ($this->selected_pax ?: 1), (int) ($this->quantity ?: 1));
+
             return $unitRate * $effectivePax;
         }
 
@@ -235,7 +253,7 @@ class CartItem extends Model
             $item = $this->itemable;
             $effectivePax = max(1, (int) ($this->selected_pax ?: 1), (int) ($this->quantity ?: 1));
 
-            if ($item && method_exists($item, 'isPerPersonRate') && !$item->isPerPersonRate()) {
+            if ($item && method_exists($item, 'isPerPersonRate') && ! $item->isPerPersonRate()) {
                 // Flat group rate (e.g. ₱2,000 for E-Trike 1-6 persons)
                 return $unitRate * max(1, $this->quantity);
             }
@@ -247,6 +265,7 @@ class CartItem extends Model
         if ($this->item_type === 'package') {
             // min_pax only gates booking eligibility at checkout, never inflates pax
             $effectivePax = max(1, (int) ($this->selected_pax ?: 1), (int) ($this->quantity ?: 1));
+
             return $unitRate * $effectivePax;
         }
 
@@ -259,10 +278,13 @@ class CartItem extends Model
     public function getItemTitleAttribute()
     {
         $item = $this->itemable;
-        if (!$item) return 'Unavailable Item';
+        if (! $item) {
+            return 'Unavailable Item';
+        }
 
         if ($this->item_type === 'room') {
             $hotel = $this->hotel_name;
+
             return $hotel ? "{$hotel} — {$item->room_name}" : $item->room_name;
         }
 
@@ -275,48 +297,64 @@ class CartItem extends Model
     public function getItemSubtitleAttribute()
     {
         $item = $this->itemable;
-        if (!$item) return '';
+        if (! $item) {
+            return '';
+        }
 
         if ($this->item_type === 'room') {
             $parts = [];
             if ($this->hotel_name) {
                 $parts[] = $this->hotel_name;
             }
-            if (!empty($item->occupancy)) {
+            if (! empty($item->occupancy)) {
                 $parts[] = "Max {$item->occupancy} Guests";
             }
-            if (!empty($item->bed_configuration)) {
+            if (! empty($item->bed_configuration)) {
                 $parts[] = $item->bed_configuration;
             }
             if ($this->date_details) {
                 $parts[] = $this->date_details;
             }
-            return !empty($parts) ? implode(' • ', $parts) : 'Room Stay';
+
+            return ! empty($parts) ? implode(' • ', $parts) : 'Room Stay';
         }
 
         if ($this->item_type === 'activity') {
             $parts = [];
-            if ($this->location_name) $parts[] = $this->location_name;
-            if (!empty($item->duration)) $parts[] = $item->duration;
+            if ($this->location_name) {
+                $parts[] = $this->location_name;
+            }
+            if (! empty($item->duration)) {
+                $parts[] = $item->duration;
+            }
             $effPax = max(1, (int) ($this->selected_pax ?: 1), (int) ($this->quantity ?: 1));
-            $parts[] = $effPax . ' pax';
+            $parts[] = $effPax.' pax';
+
             return implode(' • ', $parts);
         }
 
         if ($this->item_type === 'package') {
             $parts = [];
-            if ($this->location_name) $parts[] = $this->location_name;
-            $duration = ($item->days ? $item->days . 'D' : '') . ($item->nights ? $item->nights . 'N' : '');
-            if ($duration) $parts[] = $duration . ' Package';
+            if ($this->location_name) {
+                $parts[] = $this->location_name;
+            }
+            $duration = ($item->days ? $item->days.'D' : '').($item->nights ? $item->nights.'N' : '');
+            if ($duration) {
+                $parts[] = $duration.' Package';
+            }
+
             return implode(' • ', $parts);
         }
 
         if ($this->item_type === 'addon') {
             $parts = [];
-            if ($this->location_name) $parts[] = $this->location_name;
+            if ($this->location_name) {
+                $parts[] = $this->location_name;
+            }
             $parts[] = 'Transfer & Add-on';
             $effPax = max(1, (int) ($this->selected_pax ?: 1), (int) ($this->quantity ?: 1));
-            $parts[] = $effPax . ' pax';
+            $parts[] = $effPax.' pax';
+
             return implode(' • ', $parts);
         }
 
@@ -329,7 +367,9 @@ class CartItem extends Model
     public function getItemImageAttribute()
     {
         $item = $this->itemable;
-        if (!$item) return asset('images/placeholder.jpg');
+        if (! $item) {
+            return asset('images/placeholder.jpg');
+        }
 
         $images = $item->images;
         if (is_string($images)) {
@@ -341,7 +381,8 @@ class CartItem extends Model
             if (str_starts_with($img, 'http://') || str_starts_with($img, 'https://')) {
                 return $img;
             }
-            return asset('storage/' . $img);
+
+            return asset('storage/'.$img);
         }
 
         return asset('images/placeholder.jpg');

@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Models\Review;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -13,7 +12,9 @@ class BookingItem extends Model
     protected $table = 'booking_items';
 
     public const AVAIL_PENDING = 'pending';
+
     public const AVAIL_AVAILABLE = 'available';
+
     public const AVAIL_UNAVAILABLE = 'unavailable';
 
     protected $fillable = [

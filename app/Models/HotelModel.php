@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\RoomType;
 
 class HotelModel extends Model
 {
@@ -24,7 +23,7 @@ class HotelModel extends Model
         'longitude',
         'images',
         'embedding',
-        'is_shown'
+        'is_shown',
     ];
 
     // I-cast natin ang embedding para maging array sa PHP side
@@ -34,7 +33,7 @@ class HotelModel extends Model
         'vibe_tags' => 'array',
         'featured_amenities' => 'array',
         'images' => 'array',
-        'is_shown' => 'boolean'
+        'is_shown' => 'boolean',
     ];
 
     public function rooms()

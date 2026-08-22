@@ -39,11 +39,11 @@ class LuckyItineraryService
         $checkOutDate = $startDate->copy()->addDays($nights);
 
         $destinations = DestinationModel::query()
-            ->when(!empty($filters['destination_id']), fn($q) => $q->where('id', $filters['destination_id']))
+            ->when(! empty($filters['destination_id']), fn ($q) => $q->where('id', $filters['destination_id']))
             ->get();
 
         $candidateDestinations = $destinations->filter(
-            fn(DestinationModel $destination) => $this->destinationHasEnoughInventory($destination, $activityCount, $category)
+            fn (DestinationModel $destination) => $this->destinationHasEnoughInventory($destination, $activityCount, $category)
         );
 
         if ($candidateDestinations->isEmpty()) {
@@ -60,13 +60,13 @@ class LuckyItineraryService
 
             $room = $this->pickRoom($destination, $category, $pax);
             $activities = $this->pickActivities($destination, $filters, $activityCount);
-            if (!$room || $activities->count() < $activityCount) {
+            if (! $room || $activities->count() < $activityCount) {
                 continue;
             }
 
             $hotel = $room->hotel;
             $roomTotal = $room->calculateNightlyRate($pax) * $nights;
-            $activitiesTotal = $activities->sum(fn($activity) => $this->activityCost($activity, $pax));
+            $activitiesTotal = $activities->sum(fn ($activity) => $this->activityCost($activity, $pax));
             $total = round($roomTotal + $activitiesTotal, 2);
 
             $itinerary = $this->buildItinerary(
@@ -112,7 +112,7 @@ class LuckyItineraryService
         $pax = (int) $filters['pax'];
 
         $room = RoomType::with('hotel.destination')->where('is_shown', true)->find($filters['room_id']);
-        if (!$room || !$room->hotel || !$room->hotel->destination) {
+        if (! $room || ! $room->hotel || ! $room->hotel->destination) {
             throw new \RuntimeException('The selected room is no longer available. Please shuffle for a new itinerary.');
         }
         if ((int) $room->hotel->destination_id !== $destinationId) {
@@ -131,11 +131,11 @@ class LuckyItineraryService
         }
 
         $roomTotal = $room->calculateNightlyRate($pax) * $nights;
-        $activitiesTotal = $activities->sum(fn($activity) => $this->activityCost($activity, $pax));
+        $activitiesTotal = $activities->sum(fn ($activity) => $this->activityCost($activity, $pax));
         $total = round($roomTotal + $activitiesTotal, 2);
 
-        $budgetExceeded = !empty($filters['budget_exceeded']);
-        if ($total > (float) $filters['max_budget'] && !$budgetExceeded) {
+        $budgetExceeded = ! empty($filters['budget_exceeded']);
+        if ($total > (float) $filters['max_budget'] && ! $budgetExceeded) {
             throw new \RuntimeException('This itinerary no longer fits your budget. Shuffle for a new one or raise your budget.');
         }
 
@@ -154,6 +154,7 @@ class LuckyItineraryService
     private function activityCost(ActivityModel $activity, int $pax): float
     {
         $rate = $activity->calculateRateForPax($pax);
+
         return $activity->isPerPersonRate() ? round($rate * $pax, 2) : round($rate, 2);
     }
 
@@ -167,7 +168,7 @@ class LuckyItineraryService
                     $bands = self::CATEGORY_BANDS[$category] ?? null;
                     if ($bands) {
                         $q->where('base_price', '>=', $bands['min'] ?? 0)
-                          ->where('base_price', '<', $bands['max'] ?? PHP_FLOAT_MAX);
+                            ->where('base_price', '<', $bands['max'] ?? PHP_FLOAT_MAX);
                     }
                 }
             })
@@ -184,7 +185,7 @@ class LuckyItineraryService
     {
         $hotels = HotelModel::where('destination_id', $destination->id)
             ->where('is_shown', true)
-            ->with(['rooms' => fn($q) => $q->where('is_shown', true)])
+            ->with(['rooms' => fn ($q) => $q->where('is_shown', true)])
             ->get();
 
         $roomPools = [];
@@ -193,7 +194,7 @@ class LuckyItineraryService
                 if ((int) $room->max_occupancy < $pax) {
                     continue;
                 }
-                if ($category && !$this->roomMatchesCategory($room, $category, $pax)) {
+                if ($category && ! $this->roomMatchesCategory($room, $category, $pax)) {
                     continue;
                 }
                 $roomPools[] = $room;
@@ -210,6 +211,7 @@ class LuckyItineraryService
     private function roomMatchesCategory(RoomType $room, string $category, int $pax): bool
     {
         $rate = $room->calculateNightlyRate($pax);
+
         return match ($category) {
             'budget' => $rate <= 2500,
             'mid' => $rate > 2500 && $rate < 6000,
@@ -221,10 +223,10 @@ class LuckyItineraryService
     private function pickActivities(DestinationModel $destination, array $filters, int $activityCount): Collection
     {
         $query = ActivityModel::where('destination_id', $destination->id)->where('is_shown', true);
-        if (!empty($filters['activity_level'])) {
+        if (! empty($filters['activity_level'])) {
             $query->where('activity_level', $filters['activity_level']);
         }
-        if (!empty($filters['activity_category'])) {
+        if (! empty($filters['activity_category'])) {
             $query->where('category', $filters['activity_category']);
         }
 
@@ -274,12 +276,12 @@ class LuckyItineraryService
                 'id' => $room->id,
                 'room_name' => $room->room_name,
                 'nightly_rate' => $room->calculateNightlyRate($pax),
-                'formatted_nightly_rate' => '₱' . number_format($room->calculateNightlyRate($pax), 2),
+                'formatted_nightly_rate' => '₱'.number_format($room->calculateNightlyRate($pax), 2),
                 'max_occupancy' => $room->max_occupancy,
                 'bed_configuration' => $room->bed_configuration,
                 'image' => is_array($roomImages) && count($roomImages) > 0 ? $roomImages[0] : null,
             ],
-            'activities' => $activities->map(fn(ActivityModel $activity) => [
+            'activities' => $activities->map(fn (ActivityModel $activity) => [
                 'id' => $activity->id,
                 'activity_name' => $activity->activity_name,
                 'category' => $activity->category,
@@ -287,16 +289,16 @@ class LuckyItineraryService
                 'duration' => $activity->duration,
                 'rate' => $activity->rate,
                 'rate_for_pax' => $activity->calculateRateForPax($pax),
-                'formatted_rate' => '₱' . number_format($this->activityCost($activity, $pax), 2),
+                'formatted_rate' => '₱'.number_format($this->activityCost($activity, $pax), 2),
             ])->values()->all(),
             'nights' => $nights,
             'pax' => $pax,
             'check_in_date' => $checkIn->format('Y-m-d'),
             'check_out_date' => $checkOut->format('Y-m-d'),
             'total' => $total,
-            'formatted_total' => '₱' . number_format($total, 2),
+            'formatted_total' => '₱'.number_format($total, 2),
             'budget' => $maxBudget,
-            'formatted_budget' => '₱' . number_format($maxBudget, 2),
+            'formatted_budget' => '₱'.number_format($maxBudget, 2),
             'budget_exceeded' => false,
         ];
     }

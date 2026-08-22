@@ -1,4 +1,4 @@
-﻿<x-frontend.layout :title="$destination->name . ' — SunnyTrips'">
+<x-frontend.layout :title="$destination->name . ' — SunnyTrips'">
 
     @php
         $heroImage = App\Concerns\ResolvesImages::resolveImg(
@@ -358,8 +358,6 @@
 
         </div>
 
-
-        <x-frontend.activity-preview-modal />
     </div>
 
 </x-frontend.layout>

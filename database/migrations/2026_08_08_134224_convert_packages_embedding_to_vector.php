@@ -2,7 +2,6 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -13,6 +12,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        DB::statement("ALTER TABLE packages ALTER COLUMN embedding TYPE text");
+        DB::statement('ALTER TABLE packages ALTER COLUMN embedding TYPE text');
     }
 };

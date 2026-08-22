@@ -2,11 +2,12 @@
 
 namespace App\Console\Commands;
 
-use Illuminate\Console\Command;
-use App\Models\HotelModel;
-use App\Models\RoomType;
 use App\Models\ActivityModel;
+use App\Models\HotelModel;
+use App\Models\Package;
+use App\Models\RoomType;
 use App\Services\GeminiService;
+use Illuminate\Console\Command;
 
 class GenerateEmbeddingsCommand extends Command
 {
@@ -21,7 +22,7 @@ class GenerateEmbeddingsCommand extends Command
 
         // 1. Process Hotels
         $queryHotels = HotelModel::with('destination');
-        if (!$force) {
+        if (! $force) {
             $queryHotels->whereNull('embedding');
         }
         $hotels = $queryHotels->get();
@@ -43,7 +44,7 @@ class GenerateEmbeddingsCommand extends Command
 
         // 2. Process Rooms
         $queryRooms = RoomType::with('hotel.destination');
-        if (!$force) {
+        if (! $force) {
             $queryRooms->whereNull('embedding');
         }
         $rooms = $queryRooms->get();
@@ -66,7 +67,7 @@ class GenerateEmbeddingsCommand extends Command
 
         // 3. Process Activities
         $queryActivities = ActivityModel::with('destination');
-        if (!$force) {
+        if (! $force) {
             $queryActivities->whereNull('embedding');
         }
         $activities = $queryActivities->get();
@@ -87,8 +88,8 @@ class GenerateEmbeddingsCommand extends Command
         }
 
         // 4. Process Tour Packages
-        $queryPackages = \App\Models\Package::with('destination');
-        if (!$force) {
+        $queryPackages = Package::with('destination');
+        if (! $force) {
             $queryPackages->whereNull('embedding');
         }
         $packages = $queryPackages->get();
@@ -108,6 +109,7 @@ class GenerateEmbeddingsCommand extends Command
         }
 
         $this->info('AI Embedding process completed successfully!');
+
         return self::SUCCESS;
     }
 }

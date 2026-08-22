@@ -11,15 +11,13 @@ class ProcessReviewSentimentJob implements ShouldQueue
 {
     use Queueable;
 
-    public function __construct(public int $reviewId)
-    {
-    }
+    public function __construct(public int $reviewId) {}
 
     public function handle(GeminiService $gemini): void
     {
         $review = Review::find($this->reviewId);
 
-        if (!$review) {
+        if (! $review) {
             return;
         }
 

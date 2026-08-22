@@ -2,7 +2,6 @@
 
 namespace App\Services\Chat;
 
-use App\Models\ActivityModel;
 use App\Models\ChatMessage;
 use App\Models\ChatSession;
 use App\Models\DestinationModel;
@@ -221,8 +220,8 @@ class ChatbotService
             'Keep responses friendly, concise, and helpful.',
         ];
 
-        $prompt = "{$header}\n\nRULES:\n- " . implode("\n- ", $rules)
-            . "\n\n=== PREVIOUS RECOMMENDATIONS ===\n{$context}\n=== END PREVIOUS RECOMMENDATIONS ===\n\nFOLLOW-UP QUESTION: {$query}";
+        $prompt = "{$header}\n\nRULES:\n- ".implode("\n- ", $rules)
+            ."\n\n=== PREVIOUS RECOMMENDATIONS ===\n{$context}\n=== END PREVIOUS RECOMMENDATIONS ===\n\nFOLLOW-UP QUESTION: {$query}";
 
         $reply = $this->geminiChatResponse($prompt, $session);
 
@@ -245,7 +244,7 @@ class ChatbotService
                         if (! empty($carry[$key])) {
                             $carry[$key] = array_values(array_filter(
                                 $carry[$key],
-                                fn($item) => (int) ($item[$idKey] ?? 0) === (int) $hotelId
+                                fn ($item) => (int) ($item[$idKey] ?? 0) === (int) $hotelId
                             ));
                         }
                     }
@@ -263,14 +262,14 @@ class ChatbotService
 
         if (! empty($data['retrieved_rooms'])) {
             foreach ($data['retrieved_rooms'] as $r) {
-                $price = isset($r['base_price']) ? '₱' . number_format((float) $r['base_price'], 2) : 'n/a';
+                $price = isset($r['base_price']) ? '₱'.number_format((float) $r['base_price'], 2) : 'n/a';
                 $blocks[] = "- Room: {$r['room_name']} at {$r['hotel_name']} — {$price}/night";
             }
         }
 
         if (! empty($data['retrieved_hotels'])) {
             foreach ($data['retrieved_hotels'] as $h) {
-                $price = isset($h['price_from']) ? '₱' . number_format((float) $h['price_from'], 2) : 'n/a';
+                $price = isset($h['price_from']) ? '₱'.number_format((float) $h['price_from'], 2) : 'n/a';
                 $blocks[] = "- Hotel: {$h['hotel_name']} ({$h['destination']}) — from {$price}/night";
 
                 if (! empty($h['id'])) {
@@ -280,7 +279,7 @@ class ChatbotService
                         ->get(['room_name', 'base_price']);
 
                     foreach ($rooms as $room) {
-                        $blocks[] = "  - {$room->room_name}: ₱" . number_format((float) $room->base_price, 2) . "/night";
+                        $blocks[] = "  - {$room->room_name}: ₱".number_format((float) $room->base_price, 2).'/night';
                     }
                 }
             }
@@ -288,14 +287,14 @@ class ChatbotService
 
         if (! empty($data['retrieved_activities'])) {
             foreach ($data['retrieved_activities'] as $a) {
-                $rate = isset($a['rate']) ? '₱' . number_format((float) $a['rate'], 2) : 'n/a';
+                $rate = isset($a['rate']) ? '₱'.number_format((float) $a['rate'], 2) : 'n/a';
                 $blocks[] = "- Activity: {$a['activity_name']} — {$rate}";
             }
         }
 
         if (! empty($data['retrieved_packages'])) {
             foreach ($data['retrieved_packages'] as $p) {
-                $blocks[] = "- Package: {$p['name']} — ₱" . number_format((float) $p['price'], 2) . " ({$p['days']}D/{$p['nights']}N)";
+                $blocks[] = "- Package: {$p['name']} — ₱".number_format((float) $p['price'], 2)." ({$p['days']}D/{$p['nights']}N)";
             }
         }
 
@@ -306,7 +305,7 @@ class ChatbotService
         $text = $lastBot->message ? trim($lastBot->message) : '';
         $prefix = $text !== '' ? "Previous reply: \"{$text}\"\n\n" : '';
 
-        return $prefix . implode("\n", $blocks);
+        return $prefix.implode("\n", $blocks);
     }
 
     protected function checkAbuse(?User $user, string $message): ?array
@@ -326,6 +325,7 @@ class ChatbotService
         foreach ($bannedPatterns as $kw) {
             if (str_contains($lower, $kw)) {
                 Log::info('Chatbot guest abuse blocked', ['message' => $message, 'keyword' => $kw]);
+
                 return [
                     'blocked' => true,
                     'response' => 'Your message contains content that violates our community guidelines. Please log in to continue chatting.',
@@ -498,8 +498,13 @@ class ChatbotService
             $pkg = $entry['item'];
             $validFrom = $pkg->valid_from ? Carbon::parse($pkg->valid_from)->startOfDay() : null;
             $validTo = $pkg->valid_to ? Carbon::parse($pkg->valid_to)->startOfDay() : null;
-            if ($validFrom && $today->lt($validFrom)) return false;
-            if ($validTo && $today->gt($validTo)) return false;
+            if ($validFrom && $today->lt($validFrom)) {
+                return false;
+            }
+            if ($validTo && $today->gt($validTo)) {
+                return false;
+            }
+
             return true;
         });
         $scored = array_values($scored);
@@ -533,7 +538,7 @@ class ChatbotService
 
         $itinerary = $this->gemini->buildItineraryContext($query, $constraints, $pax, $nights, $maxBudget);
 
-        if (!$itinerary['success']) {
+        if (! $itinerary['success']) {
             return ['reply' => $itinerary['message'] ?? $this->noResultsReply('itinerary items')];
         }
 
@@ -562,6 +567,7 @@ class ChatbotService
 
         if (empty($rooms)) {
             $destName = $constraints['destination_name'] ?? 'your request';
+
             return [
                 'reply' => "I could not find any rooms matching \"{$destName}\" for {$nights} night(s) from {$checkIn->format('M d')} to {$checkOut->format('M d')}. Try a different destination or date range.",
             ];
@@ -576,7 +582,7 @@ class ChatbotService
             $total = round($unitRate * $nights, 2);
             $entry['availability'] = $avail;
             $entry['total_stay'] = $total;
-            $entry['formatted_total'] = '₱' . number_format($total, 2);
+            $entry['formatted_total'] = '₱'.number_format($total, 2);
             if ($avail['available']) {
                 $available[] = $entry;
             }
@@ -584,12 +590,13 @@ class ChatbotService
 
         if (empty($available)) {
             $destName2 = $constraints['destination_name'] ?? 'your request';
+
             return [
                 'reply' => "All rooms matching \"{$destName2}\" are fully booked from {$checkIn->format('M d')} to {$checkOut->format('M d')}. Would you like me to check different dates?",
             ];
         }
 
-        usort($available, fn($a, $b) => $a['total_stay'] <=> $b['total_stay']);
+        usort($available, fn ($a, $b) => $a['total_stay'] <=> $b['total_stay']);
 
         $context = $this->gemini->extractPricingContext(
             $this->buildAvailabilityContext($available, $pax, $nights),
@@ -620,6 +627,7 @@ class ChatbotService
                     (float) $db->latitude, (float) $db->longitude
                 );
                 $label = $this->distance->format($km);
+
                 return [
                     'reply' => "{$da->name} is approximately {$label} from {$db->name}.",
                     'map' => [
@@ -632,7 +640,7 @@ class ChatbotService
             }
         }
 
-        if (!empty($places)) {
+        if (! empty($places)) {
             ['name' => $placeName] = $places[0];
             $dest = DestinationModel::where('name', 'ILIKE', $placeName)->first();
             if ($dest && $dest->latitude && $dest->longitude) {
@@ -648,7 +656,7 @@ class ChatbotService
         }
 
         return [
-            'reply' => "I could not find the location you mentioned. Try naming a specific destination like \"Boracay\" or \"Palawan\".",
+            'reply' => 'I could not find the location you mentioned. Try naming a specific destination like "Boracay" or "Palawan".',
         ];
     }
 
@@ -656,19 +664,19 @@ class ChatbotService
     {
         $destinationName = $constraints['destination_name'] ?? null;
 
-        if (!$destinationName) {
+        if (! $destinationName) {
             return ['reply' => 'Which destination would you like the weather for? For example, "What\'s the weather in Boracay this weekend?"'];
         }
 
         $dest = DestinationModel::where('name', 'ILIKE', $destinationName)->first();
 
-        if (!$dest) {
+        if (! $dest) {
             return ['reply' => "I could not find \"{$destinationName}\" in our destinations. Could you check the spelling?"];
         }
 
         $forecast = $this->weather->forecastForDestination($dest);
 
-        if (!$forecast) {
+        if (! $forecast) {
             return ['reply' => "I'm sorry, weather data for {$dest->name} is currently unavailable. Please try again later."];
         }
 
@@ -679,7 +687,7 @@ class ChatbotService
         $desc = $weatherMain['description'] ?? 'unknown';
         $advice = $this->weather->advice($this->weather->normalize($forecast));
 
-        $adviceText = !empty($advice) ? ' Travel tip: ' . implode(' ', $advice) : '';
+        $adviceText = ! empty($advice) ? ' Travel tip: '.implode(' ', $advice) : '';
 
         return [
             'reply' => "The current weather in {$dest->name} is {$desc} at {$temp}°C.{$adviceText}",
@@ -709,12 +717,12 @@ class ChatbotService
     protected function buildPrompt(string $stage, string $context, string $query, ?User $user): string
     {
         $header = match ($stage) {
-            'room-search' => "TASK: Recommend rooms based on the database results below.",
-            'hotel-search' => "TASK: Recommend hotels based on the database results below.",
-            'activity-search' => "TASK: Recommend activities and tours based on the database results below.",
-            'package-search' => "TASK: Recommend travel packages and promos based on the database results below.",
-            'availability' => "TASK: Report real-time room availability, prices, and remaining inventory.",
-            'itinerary' => "TASK: Present a day-by-day itinerary plan using the provided items.",
+            'room-search' => 'TASK: Recommend rooms based on the database results below.',
+            'hotel-search' => 'TASK: Recommend hotels based on the database results below.',
+            'activity-search' => 'TASK: Recommend activities and tours based on the database results below.',
+            'package-search' => 'TASK: Recommend travel packages and promos based on the database results below.',
+            'availability' => 'TASK: Report real-time room availability, prices, and remaining inventory.',
+            'itinerary' => 'TASK: Present a day-by-day itinerary plan using the provided items.',
             default => "TASK: Answer the user's travel question.",
         };
 
@@ -737,7 +745,7 @@ class ChatbotService
             $rules[] = 'If a part of the trip is not covered by the provided results, say that it is not included in the database results.';
         }
 
-        $header .= "\n\nRULES:\n- " . implode("\n- ", $rules);
+        $header .= "\n\nRULES:\n- ".implode("\n- ", $rules);
 
         if ($user) {
             $header .= "\n- The user is logged in as {$user->name}.";
@@ -782,19 +790,20 @@ class ChatbotService
             $hotel = $room->hotel;
             $blocks[] = implode("\n", [
                 "Room: {$room->room_name} at {$hotel->hotel_name}",
-                "Price per night: ₱" . number_format($room->calculateNightlyRate($pax), 2),
+                'Price per night: ₱'.number_format($room->calculateNightlyRate($pax), 2),
                 "Total for {$nights} nights: {$entry['formatted_total']}",
                 "Remaining: {$avail['remaining']} of {$avail['total_rooms']} rooms",
                 "Occupancy: {$room->max_occupancy} pax max",
                 "Bed: {$room->bed_configuration}",
             ]);
         }
-        return "=== AVAILABLE ROOMS ({$pax} pax, {$nights} nights) ===\n\n" . implode("\n\n", $blocks);
+
+        return "=== AVAILABLE ROOMS ({$pax} pax, {$nights} nights) ===\n\n".implode("\n\n", $blocks);
     }
 
     protected function formatRoomResults(array $scored): array
     {
-        return array_map(fn($e) => [
+        return array_map(fn ($e) => [
             'id' => $e['item']->id,
             'room_name' => $e['item']->room_name,
             'hotel_name' => $e['item']->hotel?->hotel_name ?? 'Unknown Hotel',
@@ -813,7 +822,7 @@ class ChatbotService
 
     protected function formatHotelResults(array $scored): array
     {
-        return array_map(fn($e) => [
+        return array_map(fn ($e) => [
             'id' => $e['item']->id,
             'hotel_name' => $e['item']->hotel_name,
             'destination' => $e['item']->destination?->name ?? null,
@@ -826,7 +835,7 @@ class ChatbotService
 
     protected function formatActivityResults(array $scored): array
     {
-        return array_map(fn($e) => [
+        return array_map(fn ($e) => [
             'id' => $e['item']->id,
             'activity_name' => $e['item']->activity_name,
             'destination' => $e['item']->destination?->name ?? null,
@@ -840,7 +849,7 @@ class ChatbotService
 
     protected function formatPackageResults(array $scored): array
     {
-        return array_map(fn($e) => [
+        return array_map(fn ($e) => [
             'id' => $e['item']->id,
             'name' => $e['item']->name,
             'destination' => $e['item']->destination?->name ?? null,
@@ -858,7 +867,9 @@ class ChatbotService
 
     protected function firstImage($images): ?string
     {
-        if (empty($images)) return null;
+        if (empty($images)) {
+            return null;
+        }
         if (is_string($images)) {
             $decoded = json_decode($images, true);
             $images = is_array($decoded) ? $decoded : [];
@@ -866,6 +877,7 @@ class ChatbotService
         if (is_array($images) && count($images) > 0) {
             return $images[0];
         }
+
         return null;
     }
 }

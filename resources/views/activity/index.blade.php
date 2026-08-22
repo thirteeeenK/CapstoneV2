@@ -1,4 +1,4 @@
-﻿<x-frontend.layout title="Activities, Tours & Adventures — SunnyTrips">
+<x-frontend.layout title="Activities, Tours & Adventures — SunnyTrips">
     @php
         $selectedDestId = request('destination_id');
         $selectedLevel = request('level');
@@ -254,7 +254,5 @@
 
         </div>
 
-
-        <x-frontend.activity-preview-modal />
     </div>
 </x-frontend.layout>

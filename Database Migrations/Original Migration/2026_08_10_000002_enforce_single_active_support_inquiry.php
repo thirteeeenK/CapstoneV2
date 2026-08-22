@@ -18,8 +18,8 @@ return new class extends Migration
         }
 
         DB::statement(
-            'CREATE UNIQUE INDEX support_inquiries_single_active_per_session ' .
-            'ON support_inquiries (chat_session_id) ' .
+            'CREATE UNIQUE INDEX support_inquiries_single_active_per_session '.
+            'ON support_inquiries (chat_session_id) '.
             "WHERE status IN ('PENDING_ASSIGNMENT', 'ASSIGNED')"
         );
     }

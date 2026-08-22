@@ -4,6 +4,7 @@ namespace App\Services\Chat;
 
 use App\Models\Faq;
 use App\Services\GeminiService;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
 
 class FaqService
@@ -55,7 +56,7 @@ class FaqService
 
         $best = null;
         foreach ($faqs as $faq) {
-            $haystack = $this->normalize($faq->question . ' ' . ($faq->keywords ?? ''));
+            $haystack = $this->normalize($faq->question.' '.($faq->keywords ?? ''));
             $haystackTokens = $this->tokenize($haystack);
             if ($haystackTokens->isEmpty()) {
                 continue;
@@ -99,7 +100,7 @@ class FaqService
             }
 
             $faq = $top['item'];
-            $haystackTokens = $this->tokenize($faq->question . ' ' . ($faq->keywords ?? ''));
+            $haystackTokens = $this->tokenize($faq->question.' '.($faq->keywords ?? ''));
             if ($haystackTokens->intersect($queryTokens)->isEmpty()) {
                 return null;
             }
@@ -109,7 +110,8 @@ class FaqService
                 'score' => $top['score'],
             ];
         } catch (\Exception $e) {
-            Log::warning('FAQ semantic match failed: ' . $e->getMessage());
+            Log::warning('FAQ semantic match failed: '.$e->getMessage());
+
             return null;
         }
     }
@@ -118,10 +120,11 @@ class FaqService
     {
         $text = mb_strtolower($text);
         $text = preg_replace('/[^\p{L}\p{N}\s]/u', ' ', $text);
+
         return trim(preg_replace('/\s+/', ' ', $text));
     }
 
-    protected function tokenize(string $text): \Illuminate\Support\Collection
+    protected function tokenize(string $text): Collection
     {
         $stopwords = ['a', 'an', 'the', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might', 'must', 'can', 'need', 'dare', 'ought', 'used', 'to', 'of', 'in', 'for', 'on', 'with', 'at', 'by', 'from', 'as', 'into', 'through', 'during', 'before', 'after', 'above', 'below', 'between', 'under', 'again', 'further', 'then', 'once', 'here', 'there', 'when', 'where', 'why', 'how', 'all', 'each', 'few', 'more', 'most', 'other', 'some', 'such', 'no', 'nor', 'not', 'only', 'own', 'same', 'so', 'than', 'too', 'very', 'just', 'and', 'but', 'if', 'or', 'because', 'until', 'while', 'sunnytrips', 'sunny', 'trips', 'does', 'it', 'they', 'we', 'you', 'he', 'she', 'this', 'that', 'these', 'those', 'i', 'me', 'my', 'myself'];
 

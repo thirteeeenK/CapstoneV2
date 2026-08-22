@@ -4,7 +4,6 @@ use App\Models\ActivityModel;
 use App\Models\DestinationModel;
 use App\Models\HotelModel;
 use App\Models\RoomType;
-
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);

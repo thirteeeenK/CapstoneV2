@@ -17,7 +17,7 @@ class SupportInquiryFactory extends Factory
     public function definition(): array
     {
         return [
-            'ticket_number' => 'TKT-' . now()->format('Ymd') . '-' . strtoupper(fake()->unique()->bothify('####')),
+            'ticket_number' => 'TKT-'.now()->format('Ymd').'-'.strtoupper(fake()->unique()->bothify('####')),
             'chat_session_id' => ChatSession::factory(),
             'user_id' => null,
             'assigned_admin_id' => null,

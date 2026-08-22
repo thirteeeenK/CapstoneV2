@@ -33,14 +33,14 @@ class PaymentWebhookController extends Controller
     {
         $event = $this->paymentService->handleWebhook($gateway, $request);
 
-        if (!$event) {
+        if (! $event) {
             return response('ignored', Response::HTTP_OK);
         }
 
         $eventId = $event['event_id'] ?? null;
         $bookingCode = $event['booking_code'] ?? $event['reference'] ?? null;
 
-        if (!$bookingCode) {
+        if (! $bookingCode) {
             return response('not actionable', Response::HTTP_OK);
         }
 
@@ -59,11 +59,11 @@ class PaymentWebhookController extends Controller
 
         $booking = Booking::where('booking_code', $bookingCode)->first();
 
-        if (!$booking) {
+        if (! $booking) {
             return response('not actionable', Response::HTTP_OK);
         }
 
-        if ($booking->markPaid('Payment confirmed via ' . $gateway . ' webhook.')) {
+        if ($booking->markPaid('Payment confirmed via '.$gateway.' webhook.')) {
             BookingNotification::send($booking, new BookingPaid($booking));
         }
 

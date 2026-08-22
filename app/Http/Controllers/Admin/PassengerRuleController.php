@@ -14,6 +14,7 @@ class PassengerRuleController extends Controller
     public function index()
     {
         $rules = PassengerCategoryRule::orderBy('id')->get();
+
         return view('admin.passenger-rules.index', compact('rules'));
     }
 

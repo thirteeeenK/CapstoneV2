@@ -2,7 +2,13 @@
 
 namespace App\Providers;
 
+use App\Models\ActivityModel;
+use App\Models\AddOnModel;
+use App\Models\HotelModel;
+use App\Models\Package;
+use App\Models\RoomType;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\RateLimiter;
@@ -26,12 +32,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        \Illuminate\Database\Eloquent\Relations\Relation::morphMap([
-            'hotel' => \App\Models\HotelModel::class,
-            'room' => \App\Models\RoomType::class,
-            'activity' => \App\Models\ActivityModel::class,
-            'addon' => \App\Models\AddOnModel::class,
-            'package' => \App\Models\Package::class,
+        Relation::morphMap([
+            'hotel' => HotelModel::class,
+            'room' => RoomType::class,
+            'activity' => ActivityModel::class,
+            'addon' => AddOnModel::class,
+            'package' => Package::class,
         ]);
 
         Blade::anonymousComponentPath(resource_path('views/adminComponents'), 'admin-components');
@@ -45,14 +51,14 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('users', function (Request $request) {
             $key = $request->user()?->getAuthIdentifier() ?: $request->ip();
 
-            return Limit::perMinute(30)->by('users:' . $key);
+            return Limit::perMinute(30)->by('users:'.$key);
         });
 
         // -- ADMIN AREA ACTIONS (CRUD, bookings, user management, uploads) --
         RateLimiter::for('admin', function (Request $request) {
             $key = $request->user('admin')?->getAuthIdentifier() ?: $request->ip();
 
-            return Limit::perMinute(120)->by('admin:' . $key);
+            return Limit::perMinute(120)->by('admin:'.$key);
         });
 
         // -- CART OPERATIONS (guest + logged-in, session or user keyed) --
@@ -61,14 +67,14 @@ class AppServiceProvider extends ServiceProvider
                 ?? $request->session()->getId()
                 ?? $request->ip();
 
-            return Limit::perMinute(30)->by('cart:' . $key);
+            return Limit::perMinute(30)->by('cart:'.$key);
         });
 
         // -- AI RECOMMENDATION / CHATBOT (expensive model calls) --
         RateLimiter::for('ai', function (Request $request) {
             $key = $request->user()?->getAuthIdentifier() ?: $request->ip();
 
-            return Limit::perMinute(10)->by('ai:' . $key);
+            return Limit::perMinute(10)->by('ai:'.$key);
         });
 
         // -- CHAT WIDGET POLLING / HISTORY (DB reads only; keeps the 10/min 'ai'
@@ -76,7 +82,7 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('chat-poll', function (Request $request) {
             $key = $request->user()?->getAuthIdentifier() ?: $request->ip();
 
-            return Limit::perMinute(60)->by('chat-poll:' . $key);
+            return Limit::perMinute(60)->by('chat-poll:'.$key);
         });
 
         // -- DSS PAGES / EXPLORER MAP APIs (DB reads + cached weather; guards
@@ -84,19 +90,19 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('dss', function (Request $request) {
             $key = $request->user()?->getAuthIdentifier() ?: $request->ip();
 
-            return Limit::perMinute(60)->by('dss:' . $key);
+            return Limit::perMinute(60)->by('dss:'.$key);
         });
 
         // -- CHATBOT GUEST LIMITER (IP-keyed burst; daily cap enforced in middleware) --
         RateLimiter::for('chat-guest', function (Request $request) {
             $key = $request->user()?->getAuthIdentifier() ?: $request->ip();
 
-            return Limit::perMinute(5)->by('chat-guest:' . $key);
+            return Limit::perMinute(5)->by('chat-guest:'.$key);
         });
 
         // -- PAYMENT WEBHOOK (IP based; forged requests fail signature check) --
         RateLimiter::for('webhook', function (Request $request) {
-            return Limit::perMinute(10)->by('webhook:' . $request->ip());
+            return Limit::perMinute(10)->by('webhook:'.$request->ip());
         });
     }
 }

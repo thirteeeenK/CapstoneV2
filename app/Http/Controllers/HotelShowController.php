@@ -23,7 +23,7 @@ class HotelShowController extends Controller
 
         $query = HotelModel::where('is_shown', true)->with(['destination', 'rooms']);
 
-        if ($request->has('destination_id') && !empty($request->destination_id)) {
+        if ($request->has('destination_id') && ! empty($request->destination_id)) {
             $query->where('destination_id', $request->destination_id);
         }
 
@@ -42,7 +42,7 @@ class HotelShowController extends Controller
         $hotel = HotelModel::with([
             'destination',
             'rooms' => function ($query) use ($isAdmin) {
-                if (!$isAdmin) {
+                if (! $isAdmin) {
                     $query->where('is_shown', true);
                 }
                 $query->orderBy('id', 'asc')->with('reviews.user');
@@ -52,13 +52,13 @@ class HotelShowController extends Controller
         ])->findOrFail($id);
 
         // If hotel is hidden and visitor is not an admin, return 404
-        if (!$hotel->is_shown && !$isAdmin) {
+        if (! $hotel->is_shown && ! $isAdmin) {
             abort(404, 'Hotel not found or currently unavailable.');
         }
 
         // Show Admin Preview Banner ONLY if explicitly requested or hidden
         $hasPreviewQuery = $request->has('preview') || $request->has('preview_room');
-        $isAdminPreview = $isAdmin && ($hasPreviewQuery || !$hotel->is_shown);
+        $isAdminPreview = $isAdmin && ($hasPreviewQuery || ! $hotel->is_shown);
 
         // DSS context: nearby map markers + local weather via destination
         $mapContext = $map->hotelContextMarkers($hotel);

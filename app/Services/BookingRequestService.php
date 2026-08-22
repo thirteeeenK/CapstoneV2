@@ -18,12 +18,12 @@ class BookingRequestService
     public function getCartQuery(Request $request)
     {
         $sessionToken = $request->hasSession() ? $request->session()->get('cart_session_token') : null;
-        if (!$sessionToken && $request->hasSession()) {
+        if (! $sessionToken && $request->hasSession()) {
             $sessionToken = (string) Str::uuid();
             $request->session()->put('cart_session_token', $sessionToken);
         }
-        if (!$sessionToken) {
-            $sessionToken = 'guest_' . md5($request->ip() . ($request->header('User-Agent') ?? 'ua'));
+        if (! $sessionToken) {
+            $sessionToken = 'guest_'.md5($request->ip().($request->header('User-Agent') ?? 'ua'));
         }
 
         if (auth()->check()) {
@@ -60,11 +60,11 @@ class BookingRequestService
         $discountAmount = 0.00;
         $surchargeAmount = 0.00;
 
-        if (!empty($validated['guest_manifest'])) {
+        if (! empty($validated['guest_manifest'])) {
             $decoded = json_decode($validated['guest_manifest'], true);
             if (is_array($decoded)) {
                 foreach ($decoded as $g) {
-                    if (!empty($g['full_name'])) {
+                    if (! empty($g['full_name'])) {
                         $guestManifest[] = $g;
                         $cat = $g['category'] ?? 'Adult';
 
@@ -84,11 +84,11 @@ class BookingRequestService
         // Process any itemized manifests (room, package, activity, addon)
         foreach ($request->all() as $reqKey => $reqVal) {
             if (str_starts_with($reqKey, 'package_manifest_') || str_starts_with($reqKey, 'room_manifest_')) {
-                if (is_string($reqVal) && !empty($reqVal)) {
+                if (is_string($reqVal) && ! empty($reqVal)) {
                     $decoded = json_decode($reqVal, true);
                     if (is_array($decoded)) {
                         foreach ($decoded as $g) {
-                            if (!empty($g['full_name'])) {
+                            if (! empty($g['full_name'])) {
                                 $guestManifest[] = $g;
                                 $cat = $g['category'] ?? 'Adult';
 
@@ -154,7 +154,7 @@ class BookingRequestService
 
         $netAmount = max(0.00, $totalAmount - $discountAmount + $surchargeAmount - (float) ($validated['admin_discount_amount'] ?? 0) + (float) ($validated['admin_surcharge_amount'] ?? 0));
 
-        return DB::transaction(function () use ($request, $validated, $cartItems, $calculatedItemSubtotals, $bookingCode, $guestManifest, $totalAmount, $discountAmount, $surchargeAmount, $netAmount) {
+        return DB::transaction(function () use ($validated, $cartItems, $calculatedItemSubtotals, $bookingCode, $guestManifest, $totalAmount, $discountAmount, $surchargeAmount, $netAmount) {
             $booking = Booking::create([
                 'booking_code' => $bookingCode,
                 'user_id' => auth()->id(),
@@ -214,11 +214,11 @@ class BookingRequestService
     private function countManifestPax(string $raw): int
     {
         $decoded = json_decode($raw, true);
-        if (!is_array($decoded)) {
+        if (! is_array($decoded)) {
             return 0;
         }
 
-        return count(array_filter($decoded, fn ($g) => !empty($g['full_name'])));
+        return count(array_filter($decoded, fn ($g) => ! empty($g['full_name'])));
     }
 
     /**
@@ -236,7 +236,7 @@ class BookingRequestService
         foreach ($booking->items as $item) {
             $adj = $adjustments[$item->id] ?? null;
 
-            if ($adj && !empty($adj['include'])) {
+            if ($adj && ! empty($adj['include'])) {
                 $quantity = max(1, (int) ($adj['quantity'] ?? $item->quantity));
                 $item->quantity = $quantity;
                 $item->subtotal = round((float) $item->unit_price * $quantity, 2);
@@ -281,9 +281,9 @@ class BookingRequestService
         $user = $request->user();
         $sessionToken = null;
 
-        if (!$user) {
+        if (! $user) {
             $sessionToken = $request->session()->get('cart_session_token')
-                ?: ('guest_' . md5($request->ip() . ($request->header('User-Agent') ?? 'ua')));
+                ?: ('guest_'.md5($request->ip().($request->header('User-Agent') ?? 'ua')));
         }
 
         $count = 0;
@@ -294,8 +294,7 @@ class BookingRequestService
                 ->where('item_type', $item->item_type)
                 ->where('item_id', $item->item_id)
                 ->get()
-                ->first(fn (CartItem $cart) =>
-                    (string) $cart->check_in_date === (string) $item->check_in_date &&
+                ->first(fn (CartItem $cart) => (string) $cart->check_in_date === (string) $item->check_in_date &&
                     (string) $cart->check_out_date === (string) $item->check_out_date &&
                     (int) $cart->selected_pax === (int) $item->selected_pax
                 );
@@ -304,6 +303,7 @@ class BookingRequestService
                 $matching->quantity = ($matching->quantity ?? 1) + $item->quantity;
                 $matching->save();
                 $count++;
+
                 continue;
             }
 
@@ -331,7 +331,7 @@ class BookingRequestService
     public function generateBookingCode(): string
     {
         do {
-            $code = 'ST-' . date('Y') . '-' . strtoupper(Str::random(5));
+            $code = 'ST-'.date('Y').'-'.strtoupper(Str::random(5));
         } while (Booking::where('booking_code', $code)->exists());
 
         return $code;

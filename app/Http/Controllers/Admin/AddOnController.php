@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\AddOnModel;
 use App\Models\DestinationModel;
 use App\Services\GeminiService;
+use Illuminate\Http\Request;
 
 class AddOnController extends Controller
 {
@@ -25,8 +25,8 @@ class AddOnController extends Controller
         if ($search) {
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'ilike', "%{$search}%")
-                  ->orWhere('type', 'ilike', "%{$search}%")
-                  ->orWhere('description', 'ilike', "%{$search}%");
+                    ->orWhere('type', 'ilike', "%{$search}%")
+                    ->orWhere('description', 'ilike', "%{$search}%");
             });
         }
 
@@ -42,6 +42,7 @@ class AddOnController extends Controller
     public function create()
     {
         $destinations = DestinationModel::all();
+
         return view('admin.addons.create', compact('destinations'));
     }
 
@@ -76,6 +77,7 @@ class AddOnController extends Controller
     public function edit(AddOnModel $addon)
     {
         $destinations = DestinationModel::all();
+
         return view('admin.addons.edit', compact('addon', 'destinations'));
     }
 
@@ -110,6 +112,7 @@ class AddOnController extends Controller
     public function destroy(AddOnModel $addon)
     {
         $addon->delete();
+
         return redirect()->route('admin.addons.index')->with('success', 'Add-on deleted successfully.');
     }
 }

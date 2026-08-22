@@ -5,8 +5,9 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\DestinationModel;
 use App\Models\Package;
+use App\Services\GeminiService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 
 class AdminPackageController extends Controller
 {
@@ -25,7 +26,7 @@ class AdminPackageController extends Controller
 
         if ($search) {
             $query->where('name', 'ilike', "%{$search}%")
-                  ->orWhere('type', 'ilike', "%{$search}%");
+                ->orWhere('type', 'ilike', "%{$search}%");
         }
 
         if ($destinationId) {
@@ -59,6 +60,7 @@ class AdminPackageController extends Controller
     public function create()
     {
         $destinations = DestinationModel::orderBy('name', 'asc')->get();
+
         return view('admin.packages.create', compact('destinations'));
     }
 
@@ -85,7 +87,7 @@ class AdminPackageController extends Controller
 
         // Process Inclusions into JSON array
         $inclusions = [];
-        if (!empty($validated['inclusions_text'])) {
+        if (! empty($validated['inclusions_text'])) {
             $inclusions = array_values(array_filter(array_map('trim', explode("\n", $validated['inclusions_text']))));
         }
 
@@ -93,8 +95,8 @@ class AdminPackageController extends Controller
         $images = [];
         if ($request->hasFile('image')) {
             $path = $request->file('image')->store('packages', 'public');
-            $images[] = '/storage/' . $path;
-        } elseif (!empty($validated['image_url'])) {
+            $images[] = '/storage/'.$path;
+        } elseif (! empty($validated['image_url'])) {
             $images[] = $validated['image_url'];
         } else {
             $images[] = '/images/placeholder.jpg';
@@ -112,12 +114,12 @@ class AdminPackageController extends Controller
             'valid_to' => $validated['valid_to'] ?? null,
             'generic_inclusions' => $inclusions,
             'images' => $images,
-            'is_active' => (bool)$validated['is_active'],
+            'is_active' => (bool) $validated['is_active'],
         ]);
 
         // Auto-generate AI Vector Embedding for Chatbot & Recommendation Engine
         try {
-            $geminiService = app(\App\Services\GeminiService::class);
+            $geminiService = app(GeminiService::class);
             $text = $geminiService->buildPackageEmbeddingText($package->fresh('destination'));
             $vector = $geminiService->generateEmbedding($text, 'RETRIEVAL_DOCUMENT', $package->name);
             if ($vector) {
@@ -125,7 +127,7 @@ class AdminPackageController extends Controller
                 $package->save();
             }
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::warning('Package embedding generation skipped: ' . $e->getMessage());
+            Log::warning('Package embedding generation skipped: '.$e->getMessage());
         }
 
         return redirect()->route('admin.packages.index')->with('success', "Tour package '{$validated['name']}' created successfully with AI vector embedding!");
@@ -138,6 +140,7 @@ class AdminPackageController extends Controller
     {
         $package = Package::findOrFail($id);
         $destinations = DestinationModel::orderBy('name', 'asc')->get();
+
         return view('admin.packages.edit', compact('package', 'destinations'));
     }
 
@@ -166,7 +169,7 @@ class AdminPackageController extends Controller
 
         // Process Inclusions
         $inclusions = [];
-        if (!empty($validated['inclusions_text'])) {
+        if (! empty($validated['inclusions_text'])) {
             $inclusions = array_values(array_filter(array_map('trim', explode("\n", $validated['inclusions_text']))));
         }
 
@@ -174,8 +177,8 @@ class AdminPackageController extends Controller
         $images = $package->images ?: [];
         if ($request->hasFile('image')) {
             $path = $request->file('image')->store('packages', 'public');
-            $images = ['/storage/' . $path];
-        } elseif (!empty($validated['image_url'])) {
+            $images = ['/storage/'.$path];
+        } elseif (! empty($validated['image_url'])) {
             $images = [$validated['image_url']];
         }
 
@@ -191,12 +194,12 @@ class AdminPackageController extends Controller
             'valid_to' => $validated['valid_to'],
             'generic_inclusions' => $inclusions,
             'images' => $images,
-            'is_active' => (bool)$validated['is_active'],
+            'is_active' => (bool) $validated['is_active'],
         ]);
 
         // Auto-re-generate AI Vector Embedding
         try {
-            $geminiService = app(\App\Services\GeminiService::class);
+            $geminiService = app(GeminiService::class);
             $text = $geminiService->buildPackageEmbeddingText($package->fresh('destination'));
             $vector = $geminiService->generateEmbedding($text, 'RETRIEVAL_DOCUMENT', $package->name);
             if ($vector) {
@@ -204,7 +207,7 @@ class AdminPackageController extends Controller
                 $package->save();
             }
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::warning('Package embedding re-generation skipped: ' . $e->getMessage());
+            Log::warning('Package embedding re-generation skipped: '.$e->getMessage());
         }
 
         return redirect()->route('admin.packages.index')->with('success', "Tour package '{$package->name}' updated successfully with fresh AI vector embedding!");
@@ -216,14 +219,14 @@ class AdminPackageController extends Controller
     public function toggleVisibility(Request $request, $id)
     {
         $package = Package::findOrFail($id);
-        $package->is_active = !$package->is_active;
+        $package->is_active = ! $package->is_active;
         $package->save();
 
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
                 'success' => true,
                 'is_active' => $package->is_active,
-                'message' => "Package '{$package->name}' is now " . ($package->is_active ? 'Visible' : 'Hidden') . '.',
+                'message' => "Package '{$package->name}' is now ".($package->is_active ? 'Visible' : 'Hidden').'.',
             ]);
         }
 

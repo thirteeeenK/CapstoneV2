@@ -54,12 +54,12 @@ class RoomAvailabilityController extends Controller
                 'rate_per_night' => $unitRate,
                 'base_occupancy' => $room->base_occupancy,
                 'max_occupancy' => $room->max_occupancy,
-                'extra_person_fee' => (float)($room->extra_person_fee ?: 0),
-                'formatted_rate_per_night' => '₱' . number_format($unitRate, 2),
+                'extra_person_fee' => (float) ($room->extra_person_fee ?: 0),
+                'formatted_rate_per_night' => '₱'.number_format($unitRate, 2),
                 'subtotal' => $subtotal,
-                'formatted_subtotal' => '₱' . number_format($subtotal, 2),
+                'formatted_subtotal' => '₱'.number_format($subtotal, 2),
                 'message' => $availability['available']
-                    ? "Available! {$availability['remaining']} room" . ($availability['remaining'] > 1 ? 's' : '') . " left for {$nights} night" . ($nights > 1 ? 's' : '') . '.'
+                    ? "Available! {$availability['remaining']} room".($availability['remaining'] > 1 ? 's' : '')." left for {$nights} night".($nights > 1 ? 's' : '').'.'
                     : 'Sold out for the selected dates. Please choose alternative dates.',
             ]);
         } catch (\Exception $e) {

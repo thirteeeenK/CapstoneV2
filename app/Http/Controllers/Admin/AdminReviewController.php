@@ -4,12 +4,15 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\ActivityModel;
+use App\Models\Booking;
 use App\Models\DestinationModel;
 use App\Models\HotelModel;
 use App\Models\Package;
 use App\Models\Review;
 use App\Models\ReviewSummary;
 use App\Models\RoomType;
+use App\Services\ReviewService;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -50,7 +53,7 @@ class AdminReviewController extends Controller
 
                 if (class_exists($summary->summarizable_type)) {
                     $instance = $summary->summarizable_type::find($summary->summarizable_id);
-                } elseif ($morphed = \Illuminate\Database\Eloquent\Relations\Relation::getMorphedModel($summary->summarizable_type)) {
+                } elseif ($morphed = Relation::getMorphedModel($summary->summarizable_type)) {
                     $instance = $morphed::find($summary->summarizable_id);
                 }
 
@@ -97,8 +100,8 @@ class AdminReviewController extends Controller
             $destId = $request->query('destination_id');
             $reviewsQuery->where(function ($q) use ($destId) {
                 $q->whereIn('hotel_id', HotelModel::where('destination_id', $destId)->pluck('id'))
-                  ->orWhereIn('activity_id', ActivityModel::where('destination_id', $destId)->pluck('id'))
-                  ->orWhereIn('package_id', Package::where('destination_id', $destId)->pluck('id'));
+                    ->orWhereIn('activity_id', ActivityModel::where('destination_id', $destId)->pluck('id'))
+                    ->orWhereIn('package_id', Package::where('destination_id', $destId)->pluck('id'));
             });
         }
 
@@ -121,7 +124,7 @@ class AdminReviewController extends Controller
             ->groupBy('rating')
             ->orderBy('rating')
             ->pluck('c', 'rating')
-            ->map(fn($count) => (int) $count)
+            ->map(fn ($count) => (int) $count)
             ->all();
 
         $chartData = [
@@ -204,12 +207,12 @@ class AdminReviewController extends Controller
     public function togglePublish($id)
     {
         $review = Review::findOrFail($id);
-        $review->is_published = !$review->is_published;
+        $review->is_published = ! $review->is_published;
         $review->save();
 
         return back()->with(
             'success',
-            "Review #{$review->id} " . ($review->is_published ? 'published.' : 'hidden from public.')
+            "Review #{$review->id} ".($review->is_published ? 'published.' : 'hidden from public.')
         );
     }
 
@@ -219,12 +222,12 @@ class AdminReviewController extends Controller
     public function toggleFeatured($id)
     {
         $review = Review::findOrFail($id);
-        $review->is_featured = !$review->is_featured;
+        $review->is_featured = ! $review->is_featured;
         $review->save();
 
         return back()->with(
             'success',
-            "Review #{$review->id} " . ($review->is_featured ? 'featured on the landing page.' : 'removed from the landing page.')
+            "Review #{$review->id} ".($review->is_featured ? 'featured on the landing page.' : 'removed from the landing page.')
         );
     }
 
@@ -233,28 +236,28 @@ class AdminReviewController extends Controller
      */
     public function create()
     {
-        $bookings = \App\Models\Booking::with(['user', 'items'])
+        $bookings = Booking::with(['user', 'items'])
             ->withCount('items')
-            ->where('status', \App\Models\Booking::STATUS_COMPLETED)
+            ->where('status', Booking::STATUS_COMPLETED)
             ->latest()
             ->limit(100)
             ->get()
-            ->filter(function (\App\Models\Booking $booking) {
+            ->filter(function (Booking $booking) {
                 return $booking->items->contains(function ($item) {
-                    return array_key_exists($item->item_type, \App\Services\ReviewService::REVIEWABLE_ITEM_TYPES)
-                        && !$item->reviews()->exists();
+                    return array_key_exists($item->item_type, ReviewService::REVIEWABLE_ITEM_TYPES)
+                        && ! $item->reviews()->exists();
                 });
             })
             ->values()
-            ->map(function (\App\Models\Booking $booking) {
+            ->map(function (Booking $booking) {
                 return [
                     'id' => $booking->id,
                     'booking_code' => $booking->booking_code,
                     'contact_name' => $booking->contact_name,
                     'guest_name' => $booking->user?->name ?? '—',
                     'items' => $booking->items
-                        ->filter(fn($item) => array_key_exists($item->item_type, \App\Services\ReviewService::REVIEWABLE_ITEM_TYPES))
-                        ->map(fn($item) => [
+                        ->filter(fn ($item) => array_key_exists($item->item_type, ReviewService::REVIEWABLE_ITEM_TYPES))
+                        ->map(fn ($item) => [
                             'id' => $item->id,
                             'item_type' => $item->item_type,
                             'item_title' => $item->item_title,
@@ -291,7 +294,7 @@ class AdminReviewController extends Controller
                 'comment' => ['required', 'string', 'min:10', 'max:2000'],
             ]);
 
-            $review = app(\App\Services\ReviewService::class)->manualAdminStore(
+            $review = app(ReviewService::class)->manualAdminStore(
                 $validated['reviewer_name'],
                 $validated['manual_entity_type'],
                 (int) $validated['manual_entity_id'],
@@ -311,13 +314,13 @@ class AdminReviewController extends Controller
             'comment' => ['required', 'string', 'min:10', 'max:2000'],
         ]);
 
-        $booking = \App\Models\Booking::findOrFail($validated['booking_id']);
+        $booking = Booking::findOrFail($validated['booking_id']);
 
-        $review = app(\App\Services\ReviewService::class)->adminStore(
+        $review = app(ReviewService::class)->adminStore(
             $booking,
             (int) $validated['rating'],
             $validated['comment'],
-            !empty($validated['booking_item_id']) ? (int) $validated['booking_item_id'] : null
+            ! empty($validated['booking_item_id']) ? (int) $validated['booking_item_id'] : null
         );
 
         return redirect()

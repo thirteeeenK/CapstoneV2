@@ -21,6 +21,7 @@ class LuckyItineraryController extends Controller
     public function index()
     {
         $destinations = DestinationModel::orderBy('name')->get(['id', 'name', 'region']);
+
         return view('lucky.index', compact('destinations'));
     }
 

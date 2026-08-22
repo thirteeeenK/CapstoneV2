@@ -2,9 +2,9 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\ActivityModel;
 use App\Models\DestinationModel;
+use Illuminate\Database\Seeder;
 
 class ActivityCoordinatesSeeder extends Seeder
 {
@@ -86,8 +86,9 @@ class ActivityCoordinatesSeeder extends Seeder
 
         foreach ($coords as $destinationName => $activities) {
             $destination = DestinationModel::where('name', $destinationName)->first();
-            if (!$destination) {
+            if (! $destination) {
                 $missing[] = "[Destination] {$destinationName}";
+
                 continue;
             }
 
@@ -109,8 +110,8 @@ class ActivityCoordinatesSeeder extends Seeder
 
         $this->command->info("ActivityCoordinatesSeeder: set coordinates for {$updated} activity record(s).");
 
-        if (!empty($missing)) {
-            $this->command->warn('Not found (skipped): ' . implode(', ', $missing));
+        if (! empty($missing)) {
+            $this->command->warn('Not found (skipped): '.implode(', ', $missing));
         }
     }
 }

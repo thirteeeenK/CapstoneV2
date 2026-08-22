@@ -12,6 +12,7 @@ class Experiences extends Component
     use ResolvesImages;
 
     public $activities;
+
     public $destinations;
 
     public function __construct()
@@ -29,6 +30,7 @@ class Experiences extends Component
     public function resolveActivityImage($images): string
     {
         $firstImg = is_array($images) && count($images) > 0 ? $images[0] : null;
+
         return static::resolveImg(
             $firstImg,
             'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=800&q=80'

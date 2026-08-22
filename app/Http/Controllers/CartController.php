@@ -2,17 +2,23 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityModel;
+use App\Models\AddOnModel;
+use App\Models\Booking;
+use App\Models\BookingItem;
 use App\Models\CartItem;
+use App\Models\Package;
+use App\Models\RoomType;
 use App\Services\CartService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 class CartController extends Controller
 {
-    public function __construct(protected CartService $cartService)
-    {
-    }
+    public function __construct(protected CartService $cartService) {}
+
     /**
      * Get or generate cart identifier for session/user.
      */
@@ -32,12 +38,12 @@ class CartController extends Controller
             ->with([
                 'itemable' => function ($morphTo) {
                     $morphTo->morphWith([
-                        \App\Models\RoomType::class => ['hotel', 'hotel.destination'],
-                        \App\Models\ActivityModel::class => ['destination'],
-                        \App\Models\AddOnModel::class => ['destination'],
-                        \App\Models\Package::class => ['destination', 'hotels'],
+                        RoomType::class => ['hotel', 'hotel.destination'],
+                        ActivityModel::class => ['destination'],
+                        AddOnModel::class => ['destination'],
+                        Package::class => ['destination', 'hotels'],
                     ]);
-                }
+                },
             ])
             ->get();
     }
@@ -48,14 +54,15 @@ class CartController extends Controller
     public function index(Request $request)
     {
         $cartItems = $this->getItemsWithRelations($request);
-        $validItems = $cartItems->filter(fn($item) => $item->itemable !== null);
+        $validItems = $cartItems->filter(fn ($item) => $item->itemable !== null);
         $groups = $this->buildGroups($validItems);
+
         return view('cart.index', compact('cartItems', 'groups'));
     }
 
     public function getAvailableRoomInventory(CartItem $item): array
     {
-        if ($item->item_type !== 'room' || !$item->itemable) {
+        if ($item->item_type !== 'room' || ! $item->itemable) {
             return [
                 'total_rooms' => 10,
                 'booked_count' => 0,
@@ -66,18 +73,18 @@ class CartController extends Controller
 
         $room = $item->itemable;
         $totalRooms = (int) ($room->total_rooms ?: ($room->total_number_of_rooms ?: 2));
-        
+
         $checkIn = $item->check_in_date ? \Carbon\Carbon::parse($item->check_in_date) : null;
         $checkOut = $item->check_out_date ? \Carbon\Carbon::parse($item->check_out_date) : null;
 
         $bookedCount = 0;
         if ($checkIn && $checkOut) {
-            $bookedCount = (int) \App\Models\BookingItem::where('item_type', 'room')
+            $bookedCount = (int) BookingItem::where('item_type', 'room')
                 ->where('item_id', $room->id)
-                ->whereHas('booking', fn($q) => $q->whereIn('status', \App\Models\Booking::HOLD_STATUSES))
+                ->whereHas('booking', fn ($q) => $q->whereIn('status', Booking::HOLD_STATUSES))
                 ->where(function ($q) use ($checkIn, $checkOut) {
                     $q->whereBetween('check_in_date', [$checkIn, $checkOut->copy()->subDay()])
-                      ->orWhereBetween('check_out_date', [$checkIn->copy()->addDay(), $checkOut]);
+                        ->orWhereBetween('check_out_date', [$checkIn->copy()->addDay(), $checkOut]);
                 })
                 ->sum('quantity');
         }
@@ -85,7 +92,7 @@ class CartController extends Controller
         $available = max(0, $totalRooms - $bookedCount);
 
         if ($bookedCount > 0) {
-            $notice = "{$available} of {$totalRooms} rooms available ({$bookedCount} " . ($bookedCount === 1 ? 'room is' : 'rooms are') . " currently pending admin approval)";
+            $notice = "{$available} of {$totalRooms} rooms available ({$bookedCount} ".($bookedCount === 1 ? 'room is' : 'rooms are').' currently pending admin approval)';
         } else {
             $notice = "{$totalRooms} of {$totalRooms} rooms available in resort";
         }
@@ -104,11 +111,11 @@ class CartController extends Controller
     protected function buildGroups($items): array
     {
         $groups = [];
-        $grouped = $items->filter(fn($item) => !empty($item->lucky_group_id))
+        $grouped = $items->filter(fn ($item) => ! empty($item->lucky_group_id))
             ->groupBy('lucky_group_id');
 
         foreach ($grouped as $groupId => $groupItems) {
-            $roomItem = $groupItems->first(fn($i) => $i->item_type === 'room');
+            $roomItem = $groupItems->first(fn ($i) => $i->item_type === 'room');
             $destinationName = $groupItems->first()?->location_name;
             $nights = null;
 
@@ -117,20 +124,20 @@ class CartController extends Controller
                     ->diffInDays(Carbon::parse($roomItem->check_out_date)));
             }
 
-            $titleParts = array_filter([$destinationName, $nights ? $nights . 'N' : null]);
+            $titleParts = array_filter([$destinationName, $nights ? $nights.'N' : null]);
             $selectedItems = $groupItems->where('is_selected', true);
-            $subtotal = $selectedItems->sum(fn($item) => $item->subtotal);
+            $subtotal = $selectedItems->sum(fn ($item) => $item->subtotal);
 
             $groups[] = [
                 'id' => $groupId,
-                'title' => implode(' — ', $titleParts) . ' Surprise Itinerary',
+                'title' => implode(' — ', $titleParts).' Surprise Itinerary',
                 'destination_name' => $destinationName,
                 'nights' => $nights,
                 'item_count' => $groupItems->count(),
                 'selected_count' => $selectedItems->count(),
                 'is_selected' => $groupItems->count() > 0 && $selectedItems->count() === $groupItems->count(),
                 'subtotal' => $subtotal,
-                'formatted_subtotal' => '₱' . number_format($subtotal, 2),
+                'formatted_subtotal' => '₱'.number_format($subtotal, 2),
             ];
         }
 
@@ -145,15 +152,16 @@ class CartController extends Controller
         $items = $this->getItemsWithRelations($request);
 
         // Filter out items whose target entity was deleted
-        $validItems = $items->filter(fn($item) => $item->itemable !== null);
+        $validItems = $items->filter(fn ($item) => $item->itemable !== null);
 
         $selectedItems = $validItems->where('is_selected', true);
-        $subtotal = $selectedItems->sum(fn($item) => $item->subtotal);
+        $subtotal = $selectedItems->sum(fn ($item) => $item->subtotal);
 
         return response()->json([
             'success' => true,
             'items' => $validItems->values()->map(function ($item) {
                 $inv = $this->getAvailableRoomInventory($item);
+
                 return [
                     'id' => $item->id,
                     'item_type' => $item->item_type,
@@ -174,8 +182,8 @@ class CartController extends Controller
                     'image' => $item->item_image,
                     'unit_rate' => $item->unit_rate,
                     'subtotal' => $item->subtotal,
-                    'formatted_unit_rate' => '₱' . number_format($item->unit_rate, 2),
-                    'formatted_subtotal' => '₱' . number_format($item->subtotal, 2),
+                    'formatted_unit_rate' => '₱'.number_format($item->unit_rate, 2),
+                    'formatted_subtotal' => '₱'.number_format($item->subtotal, 2),
                     'max_qty' => $inv['available_count'],
                     'total_rooms' => $inv['total_rooms'],
                     'booked_count' => $inv['booked_count'],
@@ -186,7 +194,7 @@ class CartController extends Controller
             'total_count' => $validItems->sum('quantity'),
             'selected_count' => $selectedItems->count(),
             'subtotal' => $subtotal,
-            'formatted_subtotal' => '₱' . number_format($subtotal, 2),
+            'formatted_subtotal' => '₱'.number_format($subtotal, 2),
         ]);
     }
 
@@ -224,14 +232,14 @@ class CartController extends Controller
                 return response()->json([
                     'success' => true,
                     'already_in_cart' => true,
-                    'message' => '"' . $cartItem->item_title . '" is already in your Trip Basket. Adjust the traveler count from your cart.',
+                    'message' => '"'.$cartItem->item_title.'" is already in your Trip Basket. Adjust the traveler count from your cart.',
                     'cart_item' => [
                         'id' => $cartItem->id,
                         'title' => $cartItem->item_title,
                         'subtitle' => $cartItem->item_subtitle,
                         'image' => $cartItem->item_image,
                         'quantity' => $cartItem->quantity,
-                        'formatted_subtotal' => '₱' . number_format($cartItem->subtotal, 2),
+                        'formatted_subtotal' => '₱'.number_format($cartItem->subtotal, 2),
                     ],
                 ]);
             }
@@ -248,22 +256,23 @@ class CartController extends Controller
                         'location_name' => $cartItem->location_name,
                         'image' => $cartItem->item_image,
                         'quantity' => $cartItem->quantity,
-                        'formatted_subtotal' => '₱' . number_format($cartItem->subtotal, 2),
+                        'formatted_subtotal' => '₱'.number_format($cartItem->subtotal, 2),
                     ],
                 ]);
             }
 
             return redirect()->back()->with('success', 'Item added to your Trip Basket!');
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (ValidationException $e) {
             throw $e;
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Cart store error: ' . $e->getMessage());
+            Log::error('Cart store error: '.$e->getMessage());
             if ($request->wantsJson() || $request->ajax() || $request->header('Accept') === 'application/json') {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Failed to add item: ' . $e->getMessage(),
+                    'message' => 'Failed to add item: '.$e->getMessage(),
                 ], 422);
             }
+
             return redirect()->back()->with('error', 'Could not add item to cart.');
         }
     }
@@ -310,11 +319,11 @@ class CartController extends Controller
             })
             ->first();
 
-        if (!$item) {
+        if (! $item) {
             $item = CartItem::find($id);
         }
 
-        if ($item && $userId && !$item->user_id) {
+        if ($item && $userId && ! $item->user_id) {
             $item->user_id = $userId;
             $item->save();
         }
@@ -329,7 +338,7 @@ class CartController extends Controller
     {
         try {
             $cartItem = $this->findCartItem($request, $id);
-            if (!$cartItem) {
+            if (! $cartItem) {
                 return response()->json(['success' => false, 'message' => 'Cart item not found.'], 404);
             }
 
@@ -347,18 +356,18 @@ class CartController extends Controller
                 if ($cartItem->item_type === 'room' && $cartItem->itemable) {
                     $room = $cartItem->itemable;
                     $totalRooms = (int) ($room->total_rooms ?: ($room->total_number_of_rooms ?: 2));
-                    
+
                     $checkIn = $cartItem->check_in_date ? \Carbon\Carbon::parse($cartItem->check_in_date) : null;
                     $checkOut = $cartItem->check_out_date ? \Carbon\Carbon::parse($cartItem->check_out_date) : null;
 
                     $bookedCount = 0;
                     if ($checkIn && $checkOut) {
-                        $bookedCount = \App\Models\BookingItem::where('item_type', 'room')
+                        $bookedCount = BookingItem::where('item_type', 'room')
                             ->where('item_id', $room->id)
-                            ->whereHas('booking', fn($q) => $q->whereIn('status', \App\Models\Booking::HOLD_STATUSES))
+                            ->whereHas('booking', fn ($q) => $q->whereIn('status', Booking::HOLD_STATUSES))
                             ->where(function ($q) use ($checkIn, $checkOut) {
                                 $q->whereBetween('check_in_date', [$checkIn, $checkOut->copy()->subDay()])
-                                  ->orWhereBetween('check_out_date', [$checkIn->copy()->addDay(), $checkOut]);
+                                    ->orWhereBetween('check_out_date', [$checkIn->copy()->addDay(), $checkOut]);
                             })
                             ->sum('quantity');
                     }
@@ -405,10 +414,11 @@ class CartController extends Controller
 
             return redirect()->back()->with('success', 'Cart updated.');
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Cart update error: ' . $e->getMessage());
+            Log::error('Cart update error: '.$e->getMessage());
             if ($request->wantsJson() || $request->ajax() || $request->header('Accept') === 'application/json' || $request->expectsJson()) {
                 return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
             }
+
             return redirect()->back()->with('error', 'Could not update cart.');
         }
     }
@@ -420,7 +430,7 @@ class CartController extends Controller
     {
         $cartItem = $this->findCartItem($request, $id);
         if ($cartItem) {
-            $cartItem->is_selected = !$cartItem->is_selected;
+            $cartItem->is_selected = ! $cartItem->is_selected;
             $cartItem->save();
         }
 

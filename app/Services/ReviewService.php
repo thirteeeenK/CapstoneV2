@@ -37,13 +37,13 @@ class ReviewService
     {
         $class = self::REVIEWABLE_ITEM_TYPES[$item->item_type] ?? null;
 
-        if (!$class) {
+        if (! $class) {
             return null;
         }
 
         $target = $item->itemable;
 
-        if (!$target) {
+        if (! $target) {
             return null;
         }
 
@@ -101,7 +101,7 @@ class ReviewService
             $item = $booking->items()->whereKey($bookingItemId)->first();
         }
 
-        if (!$item) {
+        if (! $item) {
             $item = $booking->items()
                 ->whereIn('item_type', array_keys(self::REVIEWABLE_ITEM_TYPES))
                 ->first();
@@ -169,7 +169,7 @@ class ReviewService
             $item = $booking->items()->whereKey($bookingItemId)->first();
         }
 
-        if (!$item) {
+        if (! $item) {
             $item = $booking->items()
                 ->whereIn('item_type', array_keys(self::REVIEWABLE_ITEM_TYPES))
                 ->whereNotIn('id', $reviewedItemIds)
@@ -286,7 +286,7 @@ class ReviewService
             ->get()
             ->map(function (Booking $booking) {
                 $items = $booking->items
-                    ->filter(fn($item) => array_key_exists($item->item_type, self::REVIEWABLE_ITEM_TYPES))
+                    ->filter(fn ($item) => array_key_exists($item->item_type, self::REVIEWABLE_ITEM_TYPES))
                     ->map(function (BookingItem $item) {
                         $review = Review::where('booking_id', $item->booking_id)
                             ->where('booking_item_id', $item->id)
@@ -319,7 +319,7 @@ class ReviewService
                     'has_unreviewed_items' => $hasUnreviewed,
                 ];
             })
-            ->filter(fn($b) => $b['has_unreviewed_items'])
+            ->filter(fn ($b) => $b['has_unreviewed_items'])
             ->values();
     }
 
@@ -369,10 +369,10 @@ class ReviewService
         $reviews = $query->limit($limit)->get();
 
         if ($sort === 'helpful') {
-            $reviews = $reviews->sortByDesc(fn(Review $review) => count($review->extracted_keywords ?? []))->values();
+            $reviews = $reviews->sortByDesc(fn (Review $review) => count($review->extracted_keywords ?? []))->values();
         }
 
-        return $reviews->map(fn(Review $review) => $this->presentForFeed($review));
+        return $reviews->map(fn (Review $review) => $this->presentForFeed($review));
     }
 
     /**
@@ -427,7 +427,7 @@ class ReviewService
             ->latest()
             ->limit($limit)
             ->get()
-            ->map(fn(Review $review) => $this->presentForFeed($review));
+            ->map(fn (Review $review) => $this->presentForFeed($review));
     }
 
     /**

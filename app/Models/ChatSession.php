@@ -20,7 +20,7 @@ class ChatSession extends Model
 
     public static function generateToken(): string
     {
-        return 'sess_' . Str::random(40);
+        return 'sess_'.Str::random(40);
     }
 
     public function messages(): HasMany

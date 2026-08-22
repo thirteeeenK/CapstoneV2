@@ -1,9 +1,8 @@
 <?php
 
 use App\Http\Controllers\Admin\RoomController;
-use App\Http\Controllers\RoomShowController;
-
 use App\Http\Controllers\RoomAvailabilityController;
+use App\Http\Controllers\RoomShowController;
 
 Route::get('/rooms', [RoomShowController::class, 'index'])->name('rooms.index');
 Route::get('/rooms/{id}/availability', [RoomAvailabilityController::class, 'check'])->name('rooms.availability');

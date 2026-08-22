@@ -54,7 +54,7 @@ class AddOnModel extends Model
                 }
             }
 
-            if (!$matchingTier) {
+            if (! $matchingTier) {
                 // If pax exceeds highest tier min_pax, use last tier
                 $matchingTier = end($tiers);
             }
@@ -82,11 +82,12 @@ class AddOnModel extends Model
     {
         $tiers = $this->pricing_tiers;
         if (is_array($tiers) && count($tiers) > 0) {
-            $maxPaxList = array_map(fn($t) => (int) ($t['max_pax'] ?? 999), $tiers);
-            $valid = array_filter($maxPaxList, fn($val) => $val < 999);
-            return !empty($valid) ? max($valid) : 20;
+            $maxPaxList = array_map(fn ($t) => (int) ($t['max_pax'] ?? 999), $tiers);
+            $valid = array_filter($maxPaxList, fn ($val) => $val < 999);
+
+            return ! empty($valid) ? max($valid) : 20;
         }
+
         return 20;
     }
 }
-

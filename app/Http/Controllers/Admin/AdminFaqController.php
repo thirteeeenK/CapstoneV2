@@ -98,6 +98,7 @@ class AdminFaqController extends Controller
     public function edit($id)
     {
         $faq = Faq::findOrFail($id);
+
         return view('admin.faqs.edit', compact('faq'));
     }
 
@@ -137,14 +138,14 @@ class AdminFaqController extends Controller
     public function toggleVisibility(Request $request, $id)
     {
         $faq = Faq::findOrFail($id);
-        $faq->is_active = !$faq->is_active;
+        $faq->is_active = ! $faq->is_active;
         $faq->save();
 
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
                 'success' => true,
                 'is_active' => $faq->is_active,
-                'message' => "FAQ '{$faq->question}' is now " . ($faq->is_active ? 'Visible' : 'Hidden') . '.',
+                'message' => "FAQ '{$faq->question}' is now ".($faq->is_active ? 'Visible' : 'Hidden').'.',
             ]);
         }
 
@@ -177,7 +178,7 @@ class AdminFaqController extends Controller
                 $faq->save();
             }
         } catch (\Exception $e) {
-            Log::warning('FAQ embedding generation skipped: ' . $e->getMessage());
+            Log::warning('FAQ embedding generation skipped: '.$e->getMessage());
         }
     }
 }

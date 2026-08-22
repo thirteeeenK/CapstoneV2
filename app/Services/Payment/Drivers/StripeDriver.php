@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Log;
 class StripeDriver implements PaymentDriver
 {
     protected string $secretKey;
+
     protected ?string $webhookSecret;
 
     public function __construct()
@@ -36,7 +37,7 @@ class StripeDriver implements PaymentDriver
                 'line_items[0][quantity]' => 1,
                 'line_items[0][price_data][currency]' => 'php',
                 'line_items[0][price_data][unit_amount]' => (int) round((float) $booking->net_amount * 100),
-                'line_items[0][price_data][product_data][name]' => 'SunnyTrips Booking ' . $booking->booking_code,
+                'line_items[0][price_data][product_data][name]' => 'SunnyTrips Booking '.$booking->booking_code,
                 'metadata[booking_code]' => $booking->booking_code,
             ]);
 
@@ -45,31 +46,32 @@ class StripeDriver implements PaymentDriver
                 'booking' => $booking->booking_code,
                 'response' => $response->body(),
             ]);
-            throw new \RuntimeException('Could not create Stripe checkout session: ' . $response->json('error.message', 'unknown error'));
+            throw new \RuntimeException('Could not create Stripe checkout session: '.$response->json('error.message', 'unknown error'));
         }
 
         $session = $response->json();
 
         return [
             'url' => $session['url'] ?? throw new \RuntimeException('Stripe returned no checkout URL.'),
-            'reference' => $session['id'] ?? 'cs_' . uniqid(),
+            'reference' => $session['id'] ?? 'cs_'.uniqid(),
         ];
     }
 
     public function verifyWebhook(string $rawPayload, Request $request, array &$eventData): bool
     {
-        if (!$this->webhookSecret) {
+        if (! $this->webhookSecret) {
             return false;
         }
 
         $header = $request->header('Stripe-Signature', '');
-        if (!$this->verifySignature($rawPayload, $header)) {
+        if (! $this->verifySignature($rawPayload, $header)) {
             Log::warning('Stripe webhook signature verification failed.');
+
             return false;
         }
 
         $event = json_decode($rawPayload, true);
-        if (!is_array($event) || ($event['type'] ?? null) !== 'checkout.session.completed') {
+        if (! is_array($event) || ($event['type'] ?? null) !== 'checkout.session.completed') {
             return false;
         }
 
@@ -91,10 +93,11 @@ class StripeDriver implements PaymentDriver
     {
         $response = Http::withBasicAuth($this->secretKey, '')
             ->timeout(6)
-            ->get('https://api.stripe.com/v1/checkout/sessions/' . $reference);
+            ->get('https://api.stripe.com/v1/checkout/sessions/'.$reference);
 
         if ($response->failed()) {
             Log::warning('Stripe session retrieval failed', ['reference' => $reference, 'response' => $response->body()]);
+
             return false;
         }
 
@@ -106,7 +109,7 @@ class StripeDriver implements PaymentDriver
      */
     protected function verifySignature(string $rawPayload, string $header): bool
     {
-        if (!$header) {
+        if (! $header) {
             return false;
         }
 
@@ -121,7 +124,7 @@ class StripeDriver implements PaymentDriver
         $timestamp = $parts['t'] ?? null;
         $signature = $parts['v1'] ?? null;
 
-        if (!$timestamp || !$signature) {
+        if (! $timestamp || ! $signature) {
             return false;
         }
 
@@ -129,7 +132,7 @@ class StripeDriver implements PaymentDriver
             return false;
         }
 
-        $signedPayload = $timestamp . '.' . $rawPayload;
+        $signedPayload = $timestamp.'.'.$rawPayload;
         $expected = hash_hmac('sha256', $signedPayload, $this->webhookSecret);
 
         return hash_equals($expected, $signature);

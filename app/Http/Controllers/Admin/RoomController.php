@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\RoomType;
 use App\Models\HotelModel;
-use Illuminate\Http\Request;
+use App\Models\RoomType;
 use App\Services\GeminiService;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
 class RoomController extends Controller
@@ -23,6 +23,7 @@ class RoomController extends Controller
     public function showHotelInformation($hotelId)
     {
         $hotel = HotelModel::findOrFail($hotelId);
+
         return view('admin.room.create-room', compact('hotel'));
     }
 
@@ -113,6 +114,7 @@ class RoomController extends Controller
     {
         $room = RoomType::findOrFail($id);
         $hotel = $room->hotel;
+
         return view('admin.room.edit-room', compact('room', 'hotel'));
     }
 
@@ -139,7 +141,7 @@ class RoomController extends Controller
             'room_amenities' => 'nullable|string',
             'images' => 'nullable|array',
             'images.*' => 'image|mimes:jpeg,png,jpg,webp|max:5120',
-            'removed_images' => 'nullable|array'
+            'removed_images' => 'nullable|array',
         ]);
 
         $room->room_name = $request->room_name;
@@ -166,7 +168,7 @@ class RoomController extends Controller
         $room->room_amenities = $amenities;
 
         $currentImages = $room->images;
-        if (!is_array($currentImages)) {
+        if (! is_array($currentImages)) {
             $currentImages = json_decode($currentImages, true) ?? [];
         }
 
@@ -174,7 +176,7 @@ class RoomController extends Controller
             $normalize = fn ($p) => str_replace('storage/', '', ltrim((string) $p, '/'));
             $owned = array_map($normalize, $currentImages);
             foreach ($request->removed_images as $removedPath) {
-                if (!in_array($normalize($removedPath), $owned, true)) {
+                if (! in_array($normalize($removedPath), $owned, true)) {
                     continue;
                 }
                 Storage::disk('public')->delete($removedPath);
@@ -223,7 +225,7 @@ class RoomController extends Controller
         $hotelId = $room->hotel_id;
 
         $images = $room->images;
-        if (is_array($images) && !empty($images)) {
+        if (is_array($images) && ! empty($images)) {
             foreach ($images as $img) {
                 Storage::disk('public')->delete($img);
             }

@@ -5,20 +5,22 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\DestinationModel;
 use App\Models\HotelModel;
+use App\Services\GeminiService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use App\Services\GeminiService;
+
 class HotelController extends Controller
 {
     public function create()
     {
         $destinations = DestinationModel::orderBy('name', 'asc')->get();
+
         return view('admin.hotel.add_hotel', compact('destinations'));
     }
 
     public function store(Request $request, GeminiService $geminiService)
     {
-        // Standard Blade Validation 
+        // Standard Blade Validation
         $request->validate([
             'hotel_name' => 'required|string|max:255',
             'type' => 'required',
@@ -91,8 +93,8 @@ class HotelController extends Controller
 
         if ($search) {
             $query->where(function ($q) use ($search) {
-                $q->where('hotel_name', 'ilike', '%' . $search . '%')
-                    ->orWhere('specific_address', 'ilike', '%' . $search . '%');
+                $q->where('hotel_name', 'ilike', '%'.$search.'%')
+                    ->orWhere('specific_address', 'ilike', '%'.$search.'%');
             });
         }
 
@@ -127,7 +129,7 @@ class HotelController extends Controller
             'longitude' => 'required|numeric',
             'images' => 'nullable|array',
             'images.*' => 'image|mimes:jpeg,png,jpg,webp|max:5120',
-            'removed_images' => 'nullable|array'
+            'removed_images' => 'nullable|array',
         ]);
 
         $hotel = HotelModel::findOrFail($id);
@@ -151,7 +153,7 @@ class HotelController extends Controller
         $hotel->is_shown = $request->has('is_shown') ? $request->boolean('is_shown') : false;
 
         $currentImages = $hotel->images;
-        if (!is_array($currentImages)) {
+        if (! is_array($currentImages)) {
             $currentImages = json_decode($currentImages, true) ?? [];
         }
 
@@ -159,7 +161,7 @@ class HotelController extends Controller
             $normalize = fn ($p) => str_replace('storage/', '', ltrim((string) $p, '/'));
             $owned = array_map($normalize, $currentImages);
             foreach ($request->removed_images as $removedPath) {
-                if (!in_array($normalize($removedPath), $owned, true)) {
+                if (! in_array($normalize($removedPath), $owned, true)) {
                     continue;
                 }
                 Storage::disk('public')->delete($removedPath);
@@ -200,7 +202,7 @@ class HotelController extends Controller
 
         // no need to json decode since naka cast na as array yung images sa model.
         $images = $hotel->images;
-        if (is_array($images) && !empty($images)) {
+        if (is_array($images) && ! empty($images)) {
             foreach ($images as $img) {
                 Storage::disk('public')->delete($img);
             }

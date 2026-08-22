@@ -16,8 +16,7 @@ class UpdateEntityReviewSummaryJob implements ShouldQueue
         public string $entityType,
         public ?int $entityId,
         public string $entityLabel
-    ) {
-    }
+    ) {}
 
     public function handle(GeminiService $gemini): void
     {
@@ -95,7 +94,7 @@ class UpdateEntityReviewSummaryJob implements ShouldQueue
             return 'SunnyTrips Overall Platform';
         }
 
-        if (!class_exists($entityType)) {
+        if (! class_exists($entityType)) {
             return "{$entityType} #{$entityId}";
         }
 

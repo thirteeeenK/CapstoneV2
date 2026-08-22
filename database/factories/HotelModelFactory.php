@@ -16,7 +16,7 @@ class HotelModelFactory extends Factory
     public function definition(): array
     {
         return [
-            'hotel_name' => fake()->unique()->company() . ' Resort',
+            'hotel_name' => fake()->unique()->company().' Resort',
             'destination_id' => DestinationModel::factory(),
             'type' => fake()->randomElement(['Resort', 'Inn', 'Hostel', 'Hotel']),
             'hotel_description' => fake()->sentence(),

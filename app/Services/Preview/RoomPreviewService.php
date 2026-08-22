@@ -17,7 +17,7 @@ class RoomPreviewService
     {
         $roomImagesRaw = is_array($room->images) ? $room->images : (is_string($room->images) ? (json_decode($room->images, true) ?: []) : []);
         $resolvedRoomImages = array_map(
-            fn($img) => self::resolveImg($img, $fallbackImage),
+            fn ($img) => self::resolveImg($img, $fallbackImage),
             $roomImagesRaw
         );
         if (empty($resolvedRoomImages)) {
@@ -34,7 +34,7 @@ class RoomPreviewService
             ->take(3)
             ->values();
 
-        $roomReviewPayload = $roomPublishedReviews->map(fn($rv) => [
+        $roomReviewPayload = $roomPublishedReviews->map(fn ($rv) => [
             'reviewer_alias' => $rv->reviewer_alias,
             'rating' => (int) $rv->rating,
             'sentiment' => $rv->sentiment,

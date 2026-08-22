@@ -15,7 +15,7 @@ class FaqFactory extends Factory
     public function definition(): array
     {
         return [
-            'question' => fake()->unique()->sentence() . '?',
+            'question' => fake()->unique()->sentence().'?',
             'answer' => fake()->paragraph(),
             'keywords' => implode(', ', fake()->words(4)),
             'category' => fake()->randomElement(['Services', 'Booking', 'Policies']),

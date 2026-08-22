@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 
 class Package extends Model
 {
@@ -35,12 +35,12 @@ class Package extends Model
 
     public function getIsShownAttribute(): bool
     {
-        return (bool)$this->is_active;
+        return (bool) $this->is_active;
     }
 
     public function setIsShownAttribute($value): void
     {
-        $this->attributes['is_active'] = (bool)$value;
+        $this->attributes['is_active'] = (bool) $value;
     }
 
     public function destination()

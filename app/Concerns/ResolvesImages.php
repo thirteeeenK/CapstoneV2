@@ -4,7 +4,7 @@ namespace App\Concerns;
 
 trait ResolvesImages
 {
-    public static function resolveImg(string $imgPath = null, string $fallback = null): string
+    public static function resolveImg(?string $imgPath = null, ?string $fallback = null): string
     {
         if (empty($imgPath)) {
             return $fallback ?? 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80';
@@ -14,16 +14,16 @@ trait ResolvesImages
             return $imgPath;
         }
 
-        return asset('storage/' . $imgPath);
+        return asset('storage/'.$imgPath);
     }
 
     public static function resolveActivityImage(?string $imgPath, ?string $activityName = null, ?string $category = null): string
     {
-        if (!empty($imgPath)) {
+        if (! empty($imgPath)) {
             return static::resolveImg($imgPath);
         }
 
-        $haystack = strtolower(($activityName ?? '') . ' ' . ($category ?? ''));
+        $haystack = strtolower(($activityName ?? '').' '.($category ?? ''));
 
         if (str_contains($haystack, 'parasail')) {
             return 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80';
@@ -63,15 +63,16 @@ trait ResolvesImages
     {
         $rateText = (string) $rate;
         if (is_numeric($rateText)) {
-            return '₱' . number_format((float) $rateText, 2);
+            return '₱'.number_format((float) $rateText, 2);
         }
         if (str_starts_with($rateText, '₱')) {
             return $rateText;
         }
-        return '₱' . $rateText;
+
+        return '₱'.$rateText;
     }
 
-    public static function getCategoryIcon(string $category = null): string
+    public static function getCategoryIcon(?string $category = null): string
     {
         $c = strtolower($category ?? '');
 
@@ -96,7 +97,7 @@ trait ResolvesImages
         return 'explore';
     }
 
-    public static function getAmenityIcon(string $amenity = null): string
+    public static function getAmenityIcon(?string $amenity = null): string
     {
         $a = strtolower($amenity ?? '');
 
@@ -131,4 +132,3 @@ trait ResolvesImages
         return 'star';
     }
 }
-

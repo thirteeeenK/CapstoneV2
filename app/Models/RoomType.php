@@ -2,9 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use App\Models\HotelModel;
+use Illuminate\Database\Eloquent\Model;
 
 class RoomType extends Model
 {
@@ -32,7 +31,7 @@ class RoomType extends Model
         'additional_notes',
         'images',
         'embedding',
-        'is_shown'
+        'is_shown',
     ];
 
     protected $casts = [
@@ -45,12 +44,12 @@ class RoomType extends Model
 
     public function getBaseOccupancyAttribute($value)
     {
-        return (int)($value ?: 2);
+        return (int) ($value ?: 2);
     }
 
     public function getMaxOccupancyAttribute($value)
     {
-        return (int)($value ?: ($this->attributes['occupancy'] ?? 2));
+        return (int) ($value ?: ($this->attributes['occupancy'] ?? 2));
     }
 
     public function getIdealGuestAttribute($value)
@@ -79,6 +78,7 @@ class RoomType extends Model
 
         if ($selectedPax > $basePax) {
             $extraGuests = $selectedPax - $basePax;
+
             return $basePrice + ($extraGuests * $extraFee);
         }
 

@@ -69,11 +69,11 @@ class RegisteredUserController extends Controller
 
         // return redirect(route('dashboard', absolute: false));
 
-        return redirect(route('login', absolute:false))->with('success', 'Account created Successfully. Please login to Continue.');
+        return redirect(route('login', absolute: false))->with('success', 'Account created Successfully. Please login to Continue.');
 
         // return redirect(route('dashboard', absolute: false));
         // instead of redirection to the dashboard after creating account, force the user to login their newly created credentials
-        
+
         // return redirect(route('login', absolute: false))->with('success', 'Account created successfully. Please login to continue.');
     }
 }

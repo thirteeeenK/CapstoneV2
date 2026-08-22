@@ -2,6 +2,7 @@
 
 use App\Models\DestinationModel;
 use App\Services\Chat\IntentRouter;
+use Carbon\Carbon;
 
 beforeEach(function () {
     DestinationModel::create(['name' => 'Boracay', 'description' => 'White beach', 'image' => null]);
@@ -95,6 +96,6 @@ test('extracts weekend date range', function () {
     $c = $this->router->extractConstraints('Room this weekend in Boracay');
     expect($c['check_in_date'])->not->toBeNull();
     expect($c['check_out_date'])->not->toBeNull();
-    $in = \Carbon\Carbon::parse($c['check_in_date']);
+    $in = Carbon::parse($c['check_in_date']);
     expect($in->isSaturday())->toBeTrue();
 });

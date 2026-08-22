@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\AdminModel;
 use Illuminate\Support\Facades\Blade;
 
 it('renders the thinking orb component with defaults', function () {
@@ -35,7 +36,7 @@ it('supports paused and custom label attributes', function () {
 it('renders the orb inside the booking report analyze button', function () {
     $this->withoutVite();
 
-    $admin = App\Models\AdminModel::create([
+    $admin = AdminModel::create([
         'name' => 'Test Admin',
         'email' => 'orb-admin@sunnytripstest.com',
         'password' => 'password',
