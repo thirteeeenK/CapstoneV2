@@ -582,7 +582,7 @@ class GeminiService
      * @param  int  $limit  Maximum results to return
      * @return array Scored results: [['item' => HotelModel, 'score' => float], ...]
      */
-    public function searchHotels(string $query, int $limit = 5, ?int $hotelId = null): array
+    public function searchHotels(string $query, int $limit = 5, ?int $hotelId = null, ?int $destinationId = null): array
     {
         $queryVector = $this->generateEmbedding($query, 'RETRIEVAL_QUERY');
 
@@ -598,6 +598,10 @@ class GeminiService
 
         if ($hotelId) {
             $hotels->where('id', $hotelId);
+        }
+
+        if ($destinationId) {
+            $hotels->where('destination_id', $destinationId);
         }
 
         $hotels = $hotels->get();
@@ -638,8 +642,8 @@ class GeminiService
             }
             $typeLabel = ucwords(str_replace('-', ' ', $hotel->type ?? 'N/A'));
 
-            $minPrice = $hotel->rooms()->where('is_shown', true)->min('base_price');
-            $maxPrice = $hotel->rooms()->where('is_shown', true)->max('base_price');
+            $minPrice = $hotel->rooms()->where('is_shown', true)->where('base_price', '>', 100)->min('base_price');
+            $maxPrice = $hotel->rooms()->where('is_shown', true)->where('base_price', '>', 100)->max('base_price');
             $count = $hotel->rooms()->where('is_shown', true)->count();
             $rates = $minPrice !== null
                 ? 'Price Range: From ₱'.number_format((float) $minPrice, 2).' to ₱'.number_format((float) $maxPrice, 2)."/night ({$count} room types)"
@@ -663,8 +667,9 @@ class GeminiService
                 // ignore
             }
 
+            $rankLabel = $rank === 1 ? "Rank #{$rank} — BEST MATCH (relevance: {$score})" : "Rank #{$rank} — Alternative (relevance: {$score})";
             $lines = array_filter([
-                "--- Hotel #{$rank} (relevance: {$score}) ---",
+                "--- Hotel {$rankLabel} ---",
                 "Name: {$hotel->hotel_name}",
                 "Destination: {$destName}",
                 "Category: {$typeLabel}",
@@ -682,7 +687,9 @@ class GeminiService
             $blocks[] = implode("\n", $lines);
         }
 
-        return "=== HOTEL DATABASE RESULTS ===\n\n".implode("\n\n", $blocks)."\n\n=== END HOTEL RESULTS ===";
+        $header = "Ranked by AI semantic relevance: Rank #1 = best match for the query, Rank #2+ = close alternatives. Tell the user this.\n\n";
+
+        return "=== HOTEL DATABASE RESULTS ===\n\n".$header.implode("\n\n", $blocks)."\n\n=== END HOTEL RESULTS ===";
     }
 
     /**
@@ -796,8 +803,9 @@ class GeminiService
                 $rateExample = "Rate Example: {$baseOcc} pax = ₱".number_format($room->base_price, 2)."/night; {$examplePax} pax = ₱".number_format($exampleTotal, 2).'/night';
             }
 
+            $rankLabel = $rank === 1 ? "Rank #{$rank} — BEST MATCH (relevance: {$score})" : "Rank #{$rank} — Alternative (relevance: {$score})";
             $lines = array_filter([
-                "--- Room #{$rank} (relevance: {$score}) ---",
+                "--- Room {$rankLabel} ---",
                 "Room Name: {$room->room_name}",
                 "Hotel: {$hotelName}",
                 "Destination: {$destName}",
@@ -810,7 +818,7 @@ class GeminiService
                 $room->room_size ? "Room Size: {$room->room_size}" : null,
                 'Base Price: ₱'.number_format($room->base_price, 2).' per night',
                 $room->view_type ? "View Type: {$room->view_type}" : null,
-                "Available Rooms: {$room->total_rooms}",
+                "Total Physical Rooms: {$room->total_rooms} (not live availability — ask me to check for your dates, e.g., 'check Aug 30-31 for 2 pax')",
                 $amenities ? "Amenities: {$amenities}" : null,
                 $notes ? "Additional Notes & Policies: {$notes}" : null,
                 $desc ? "Description: {$desc}" : null,
@@ -819,7 +827,9 @@ class GeminiService
             $blocks[] = implode("\n", $lines);
         }
 
-        return "=== ROOM DATABASE RESULTS ===\n\n".implode("\n\n", $blocks)."\n\n=== END ROOM RESULTS ===";
+        $header = "Ranked by AI semantic relevance: Rank #1 = best match for the query, Rank #2+ = close alternatives. Tell the user this.\n\n";
+
+        return "=== ROOM DATABASE RESULTS ===\n\n".$header.implode("\n\n", $blocks)."\n\n=== END ROOM RESULTS ===";
     }
 
     /**
@@ -923,8 +933,9 @@ class GeminiService
                 $coords = "Near Coordinates: {$dest->latitude}, {$dest->longitude} (destination center)";
             }
 
+            $rankLabel = $rank === 1 ? "Rank #{$rank} — BEST MATCH (relevance: {$score})" : "Rank #{$rank} — Alternative (relevance: {$score})";
             $lines = array_filter([
-                "--- Activity #{$rank} (relevance: {$score}) ---",
+                "--- Activity {$rankLabel} ---",
                 "Activity Name: {$activity->activity_name}",
                 "Destination: {$destName}",
                 $coords,
@@ -943,7 +954,9 @@ class GeminiService
             $blocks[] = implode("\n", $lines);
         }
 
-        return "=== ACTIVITY & TOUR DATABASE RESULTS ===\n\n".implode("\n\n", $blocks)."\n\n=== END ACTIVITY RESULTS ===";
+        $header = "Ranked by AI semantic relevance: Rank #1 = best match for the query, Rank #2+ = close alternatives. Tell the user this.\n\n";
+
+        return "=== ACTIVITY & TOUR DATABASE RESULTS ===\n\n".$header.implode("\n\n", $blocks)."\n\n=== END ACTIVITY RESULTS ===";
     }
 
     /**
@@ -1089,8 +1102,9 @@ class GeminiService
                 // ignore
             }
 
+            $rankLabel = $rank === 1 ? "Rank #{$rank} — BEST MATCH (relevance: {$score})" : "Rank #{$rank} — Alternative (relevance: {$score})";
             $lines = array_filter([
-                "--- Package #{$rank} (relevance: {$score}) ---",
+                "--- Package {$rankLabel} ---",
                 "Package Name: {$package->name}",
                 "Destination: {$destName}",
                 'Type: '.($package->type ?: 'Standard Tour Promo'),
@@ -1107,7 +1121,9 @@ class GeminiService
             $blocks[] = implode("\n", $lines);
         }
 
-        return "=== PACKAGE DATABASE RESULTS ===\n\n".implode("\n\n", $blocks)."\n\n=== END PACKAGE RESULTS ===";
+        $header = "Ranked by AI semantic relevance: Rank #1 = best match for the query, Rank #2+ = close alternatives. Tell the user this.\n\n";
+
+        return "=== PACKAGE DATABASE RESULTS ===\n\n".$header.implode("\n\n", $blocks)."\n\n=== END PACKAGE RESULTS ===";
     }
 
     /**
@@ -1177,8 +1193,9 @@ class GeminiService
                 }
             }
 
+            $rankLabel = $rank === 1 ? "Rank #{$rank} — BEST MATCH (relevance: {$score})" : "Rank #{$rank} — Alternative (relevance: {$score})";
             $lines = array_filter([
-                "--- AddOn #{$rank} (relevance: {$score}) ---",
+                "--- AddOn {$rankLabel} ---",
                 "AddOn Name: {$addon->name}",
                 "Type: {$addon->type}",
                 "Destination: {$destName}",
@@ -1191,7 +1208,9 @@ class GeminiService
             $blocks[] = implode("\n", $lines);
         }
 
-        return "=== ADDON DATABASE RESULTS ===\n\n".implode("\n\n", $blocks)."\n\n=== END ADDON RESULTS ===";
+        $header = "Ranked by AI semantic relevance: Rank #1 = best match for the query, Rank #2+ = close alternatives. Tell the user this.\n\n";
+
+        return "=== ADDON DATABASE RESULTS ===\n\n".$header.implode("\n\n", $blocks)."\n\n=== END ADDON RESULTS ===";
     }
 
     // =========================================================================

@@ -247,13 +247,28 @@ class ChatbotService
             if ($hotelName) {
                 $hotelId = HotelModel::where('hotel_name', 'ILIKE', $hotelName)->value('id');
                 if ($hotelId) {
+                    $filtered = [];
                     foreach (['retrieved_rooms' => 'hotel_id', 'retrieved_hotels' => 'id'] as $key => $idKey) {
                         if (! empty($carry[$key])) {
-                            $carry[$key] = array_values(array_filter(
+                            $filtered[$key] = array_values(array_filter(
                                 $carry[$key],
                                 fn ($item) => (int) ($item[$idKey] ?? 0) === (int) $hotelId
                             ));
                         }
+                    }
+                    // If filtering by new hotel empties all cards but user clearly switched hotel (e.g., "how about for happiness?"),
+                    // fall back to fresh search instead of empty follow-up.
+                    $hasFiltered = ! empty($filtered['retrieved_rooms']) || ! empty($filtered['retrieved_hotels']);
+                    $hadCards = ! empty($carry['retrieved_rooms']) || ! empty($carry['retrieved_hotels']);
+                    if ($hadCards && ! $hasFiltered) {
+                        $constraints = $this->intentRouter->extractConstraints($query);
+                        $fresh = $this->handleRoomSearch($query, $constraints, $session->user ? User::find($session->user_id) : null, $session);
+                        if (! empty($fresh['retrieved_rooms'])) {
+                            return $fresh;
+                        }
+                    }
+                    foreach ($filtered as $k => $v) {
+                        $carry[$k] = $v;
                     }
                 }
             }
@@ -276,7 +291,7 @@ class ChatbotService
                 $occupancyText = $fee > 0 && $maxOcc > $baseOcc
                     ? "Base {$baseOcc}/Max {$maxOcc}, Extra ₱".number_format((float) $fee, 2).'/head/night'
                     : "No extra guests allowed — maximum {$maxOcc} guests";
-                $blocks[] = "- Room: {$r['room_name']} at {$r['hotel_name']} — {$price}/night — {$occupancyText}";
+                $blocks[] = "- Room: {$r['room_name']} at {$r['hotel_name']} — {$price}/night — {$occupancyText} (Total physical rooms not live — check dates for real availability)";
             }
         }
 
@@ -440,7 +455,14 @@ class ChatbotService
 
     protected function handleHotelSearch(string $query, array $constraints, ?User $user, ChatSession $session): array
     {
-        $scored = $this->gemini->searchHotels($query, 3, $constraints['hotel_id'] ?? null);
+        $limit = (int) ($constraints['limit'] ?? 0);
+        if ($limit < 3 || $limit > 10) {
+            $limit = 5;
+            if (preg_match('/\btop\s*(\d+)\b/i', $query, $m)) {
+                $limit = max(3, min(10, (int) $m[1]));
+            }
+        }
+        $scored = $this->gemini->searchHotels($query, $limit, $constraints['hotel_id'] ?? null, $constraints['destination_id'] ?? null);
 
         $priceIntent = $this->detectPriceIntent($query);
         if ($priceIntent) {
@@ -621,6 +643,33 @@ class ChatbotService
 
     protected function handleAvailabilityQuery(string $query, array $constraints, ?User $user, ChatSession $session): array
     {
+        // Merge previous hotel/destination when follow-up has no explicit hotel (e.g., "yes check availabilith" after Lazy Dog)
+        if (empty($constraints['hotel_id']) && empty($constraints['room_id'])) {
+            $lastBot = $session->messages()->where('sender', 'bot')->latest()->first();
+            $data = $lastBot?->context_data ?: [];
+            $prevHotelId = $data['retrieved_hotels'][0]['id'] ?? $data['retrieved_rooms'][0]['hotel_id'] ?? null;
+            if ($prevHotelId) {
+                $constraints['hotel_id'] = (int) $prevHotelId;
+                $hotel = HotelModel::find($prevHotelId);
+                if ($hotel) {
+                    $constraints['hotel_name'] = $hotel->hotel_name;
+                    if (empty($constraints['destination_id'])) {
+                        $constraints['destination_id'] = $hotel->destination_id;
+                        $constraints['destination_name'] = $hotel->destination?->name ?? $constraints['destination_name'] ?? null;
+                    }
+                }
+            } elseif (empty($constraints['destination_id'])) {
+                $prevDest = $data['retrieved_hotels'][0]['destination'] ?? $data['retrieved_rooms'][0]['destination'] ?? null;
+                if ($prevDest) {
+                    $destId = DestinationModel::where('name', 'ILIKE', $prevDest)->value('id');
+                    if ($destId) {
+                        $constraints['destination_id'] = $destId;
+                        $constraints['destination_name'] = $prevDest;
+                    }
+                }
+            }
+        }
+
         $pax = $constraints['pax'] ?? 2;
         $checkIn = $constraints['check_in_date']
             ? Carbon::parse($constraints['check_in_date'])->startOfDay()
@@ -640,7 +689,7 @@ class ChatbotService
             ];
         }
 
-        $available = [];
+        $exactAvailable = [];
         foreach ($rooms as $entry) {
             /** @var RoomType $room */
             $room = $entry['item'];
@@ -651,11 +700,11 @@ class ChatbotService
             $entry['total_stay'] = $total;
             $entry['formatted_total'] = '₱'.number_format($total, 2);
             if ($avail['available']) {
-                $available[] = $entry;
+                $exactAvailable[] = $entry;
             }
         }
 
-        if (empty($available)) {
+        if (empty($exactAvailable)) {
             $destName2 = $constraints['destination_name'] ?? 'your request';
 
             return [
@@ -663,7 +712,87 @@ class ChatbotService
             ];
         }
 
-        usort($available, fn ($a, $b) => $a['total_stay'] <=> $b['total_stay']);
+        // Two-phase: if exact room was requested but <3 available, supplement with close alternatives (same hotel/destination)
+        $available = $exactAvailable;
+        $hasExactRoom = ! empty($constraints['room_name']) || ! empty($constraints['room_id']);
+        if ($hasExactRoom && count($available) < 3) {
+            $altConstraints = $constraints;
+            unset($altConstraints['room_name'], $altConstraints['room_id']);
+            // Keep hotel_id/destination_id/pax, drop room-specific filter
+            $altRooms = $this->gemini->searchRoomsHybrid($query, $altConstraints, 8);
+            $exactIds = array_map(fn ($e) => $e['item']->id, $available);
+            $altAvailable = [];
+            foreach ($altRooms as $entry) {
+                /** @var RoomType $room */
+                $room = $entry['item'];
+                if (in_array($room->id, $exactIds, true)) {
+                    continue;
+                }
+                $avail = $this->availability->check($room, $checkIn, $checkOut);
+                $unitRate = $room->calculateNightlyRate($pax);
+                $total = round($unitRate * $nights, 2);
+                $entry['availability'] = $avail;
+                $entry['total_stay'] = $total;
+                $entry['formatted_total'] = '₱'.number_format($total, 2);
+                if ($avail['available']) {
+                    $altAvailable[] = $entry;
+                }
+                if (count($available) + count($altAvailable) >= 5) {
+                    break;
+                }
+            }
+            if (! empty($altAvailable)) {
+                usort($altAvailable, fn ($a, $b) => $a['total_stay'] <=> $b['total_stay']);
+                $available = array_merge($available, array_slice($altAvailable, 0, 5 - count($available)));
+            }
+            // Second fallback: destination-wide alternatives (same destination, other hotels) when hotel has only one room type
+            if (count($available) < 3) {
+                $destId = $constraints['destination_id'] ?? null;
+                if (! $destId && ! empty($constraints['hotel_id'])) {
+                    $destId = HotelModel::where('id', $constraints['hotel_id'])->value('destination_id');
+                }
+                if ($destId) {
+                    $destAltConstraints = [
+                        'destination_id' => $destId,
+                        'pax' => $constraints['pax'] ?? $pax,
+                    ];
+                    // Keep max_price if present, drop hotel/room specifics
+                    if (! empty($constraints['max_price'])) {
+                        $destAltConstraints['max_price'] = $constraints['max_price'];
+                    }
+                    $destAltRooms = $this->gemini->searchRoomsHybrid($query, $destAltConstraints, 8);
+                    $existingIds = array_map(fn ($e) => $e['item']->id, $available);
+                    $destAltAvailable = [];
+                    foreach ($destAltRooms as $entry) {
+                        /** @var RoomType $room */
+                        $room = $entry['item'];
+                        if (in_array($room->id, $existingIds, true)) {
+                            continue;
+                        }
+                        $avail = $this->availability->check($room, $checkIn, $checkOut);
+                        $unitRate = $room->calculateNightlyRate($pax);
+                        $total = round($unitRate * $nights, 2);
+                        $entry['availability'] = $avail;
+                        $entry['total_stay'] = $total;
+                        $entry['formatted_total'] = '₱'.number_format($total, 2);
+                        if ($avail['available']) {
+                            $destAltAvailable[] = $entry;
+                        }
+                        if (count($available) + count($destAltAvailable) >= 5) {
+                            break;
+                        }
+                    }
+                    if (! empty($destAltAvailable)) {
+                        usort($destAltAvailable, fn ($a, $b) => $a['total_stay'] <=> $b['total_stay']);
+                        $available = array_merge($available, array_slice($destAltAvailable, 0, 5 - count($available)));
+                    }
+                }
+            }
+        }
+
+        if (! $hasExactRoom) {
+            usort($available, fn ($a, $b) => $a['total_stay'] <=> $b['total_stay']);
+        }
 
         $context = $this->gemini->extractPricingContext(
             $this->buildAvailabilityContext($available, $pax, $nights),
@@ -673,9 +802,36 @@ class ChatbotService
         $prompt = $this->buildPrompt('availability', $context, $query, $user);
         $reply = $this->geminiChatResponse($prompt, $session);
 
+        // Formatted rooms for widget cards (so alternatives also render as cards with Best Match badge)
+        $formattedRooms = array_map(function ($e) use ($checkIn, $checkOut, $pax) {
+            /** @var RoomType $room */
+            $room = $e['item'];
+
+            return [
+                'id' => $room->id,
+                'room_name' => $room->room_name,
+                'hotel_name' => $room->hotel?->hotel_name ?? 'Unknown Hotel',
+                'hotel_id' => $room->hotel_id ?? $room->hotel?->id ?? null,
+                'destination' => $room->hotel?->destination?->name ?? null,
+                'base_price' => (float) $room->base_price,
+                'occupancy' => $room->occupancy,
+                'base_occupancy' => (int) ($room->base_occupancy ?: 2),
+                'max_occupancy' => (int) ($room->max_occupancy ?: ($room->occupancy ?: 2)),
+                'extra_person_fee' => (float) ($room->extra_person_fee ?: 0),
+                'image' => $this->firstImage($room->images),
+                'similarity_score' => round((float) ($e['score'] ?? 0), 4),
+                'check_in_date' => $checkIn->format('Y-m-d'),
+                'check_out_date' => $checkOut->format('Y-m-d'),
+                'pax' => $pax,
+                'remaining' => $e['availability']['remaining'] ?? null,
+                'total_rooms' => $e['availability']['total_rooms'] ?? null,
+            ];
+        }, array_slice($available, 0, 5));
+
         return [
             'reply' => $reply,
             'availability' => array_values(array_slice($available, 0, 5)),
+            'retrieved_rooms' => $formattedRooms,
         ];
     }
 
@@ -967,6 +1123,8 @@ class ChatbotService
             'Answer ONLY using the provided database results and explicitly supplied live data.',
             'Treat the current DATABASE RESULTS section as the source of truth. Do not carry unsupported facts from earlier conversation turns into the answer.',
             'Never invent prices, availability, names, durations, or other factual details.',
+            'Never present "Total Physical Rooms" as live availability. If the context says "not live availability", tell the user to provide check-in/check-out dates for a live check (e.g., "check Aug 30-31 for 2 pax").',
+            'In DATABASE RESULTS, Rank #1 is the system\'s best AI match (highest relevance score) for the query; Rank #2+ are next-best alternatives. You must list every Rank provided (up to 5 hotels/rooms/activities/packages where provided, e.g., top 5) — Rank #1 under ### Best Match with one sentence why #1 is top (use Vibe/Category/Featured Amenities/Price Range/Guest Rating from that block), and Rank #2+ under ### Other Options each one bullet (name — Price Range — one key amenity). Do not omit alternatives to stay concise; this ranked-list rule overrides the concise 3-paragraph limit. Then add one short line "Ranked by system: #1 is best match, #2+ are close alternatives." Do not show raw relevance numbers unless helpful.',
             'Never add airports, ferry terminals, boats, vans, transfers, beaches, landmarks, restaurants, shops, fees, or food and drink estimates unless the exact fact appears in the database results.',
             'If information is unavailable, say it is not in our database instead of filling the gap with general travel knowledge.',
             'Use **bold** for short labels, ### for section headings, and - for bullet lists. Do not output HTML.',
@@ -1022,7 +1180,7 @@ class ChatbotService
     protected function buildAvailabilityContext(array $available, int $pax, int $nights): string
     {
         $blocks = [];
-        foreach ($available as $entry) {
+        foreach ($available as $index => $entry) {
             /** @var RoomType $room */
             $room = $entry['item'];
             $avail = $entry['availability'];
@@ -1033,7 +1191,13 @@ class ChatbotService
             $extraLine = $fee > 0 && $maxOcc > $baseOcc
                 ? 'Extra Person Fee: ₱'.number_format($fee, 2)." per extra head per night beyond {$baseOcc} pax"
                 : "No extra guests allowed — maximum {$maxOcc} guests";
+            $rank = $index + 1;
+            $score = isset($entry['score']) ? round((float) $entry['score'], 4) : null;
+            $rankLabel = $rank === 1
+                ? '--- Available Room Rank #1 — BEST MATCH'.($score !== null ? " (relevance: {$score})" : '').' ---'
+                : "--- Available Room Rank #{$rank} — Alternative".($score !== null ? " (relevance: {$score})" : '').' ---';
             $blocks[] = implode("\n", [
+                $rankLabel,
                 "Room: {$room->room_name} at {$hotel->hotel_name}",
                 'Price per night: ₱'.number_format($room->calculateNightlyRate($pax), 2),
                 "Total for {$nights} nights: {$entry['formatted_total']}",
@@ -1044,7 +1208,11 @@ class ChatbotService
             ]);
         }
 
-        return "=== AVAILABLE ROOMS ({$pax} pax, {$nights} nights) ===\n\n".implode("\n\n", $blocks);
+        $header = count($available) > 1
+            ? "Ranked by AI semantic relevance + availability: Rank #1 = requested room/best match, Rank #2+ = close alternatives. Tell the user this.\n\n=== AVAILABLE ROOMS ({$pax} pax, {$nights} nights) ==="
+            : "=== AVAILABLE ROOMS ({$pax} pax, {$nights} nights) ===";
+
+        return $header."\n\n".implode("\n\n", $blocks);
     }
 
     protected function formatRoomResults(array $scored): array
@@ -1075,6 +1243,7 @@ class ChatbotService
             'id' => $e['item']->id,
             'hotel_name' => $e['item']->hotel_name,
             'destination' => $e['item']->destination?->name ?? null,
+            'destination_id' => $e['item']->destination_id ?? $e['item']->destination?->id ?? null,
             'type' => $e['item']->type,
             'price_from' => $this->hotelPriceFrom($e['item']),
             'image' => $this->firstImage($e['item']->images),

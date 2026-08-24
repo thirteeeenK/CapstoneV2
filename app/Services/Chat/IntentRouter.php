@@ -110,6 +110,15 @@ class IntentRouter
             return self::ACTIVITY_SEARCH;
         }
 
+        // Bare hotel/room name without explicit keyword (e.g., "how about for happiness?") — treat as room/hotel search
+        if ($this->extractHotelName($query) || $this->extractRoomName($query)) {
+            if (preg_match('/\b(max|occupancy|occupants|pax|guests|extra|per head|base|price|how many)\b/i', $lower)) {
+                return self::ROOM_SEARCH;
+            }
+
+            return self::HOTEL_SEARCH;
+        }
+
         if ($this->isTravelQuery($lower)) {
             return self::ROOM_SEARCH;
         }
@@ -135,6 +144,7 @@ class IntentRouter
             'check_out_date' => null,
             'nights' => null,
             'days' => null,
+            'limit' => null,
             'place_names' => [],
         ];
 
@@ -207,6 +217,12 @@ class IntentRouter
             $constraints['addon_id'] = AddOnModel::where('name', 'ILIKE', $constraints['addon_name'])->value('id');
         }
 
+        // Dynamic top N (e.g., "top 5 hotel")
+        if (preg_match('/\btop\s*(\d+)\b/i', $query, $m)) {
+            $n = (int) $m[1];
+            $constraints['limit'] = max(3, min(10, $n));
+        }
+
         $constraints['place_names'] = $this->extractPlaceNames($query);
 
         return $constraints;
@@ -243,18 +259,26 @@ class IntentRouter
         }
 
         $genericWords = [
-            'resort', 'hotel', 'hostel', 'inn', 'lodge', 'suites', 'suite', 'beach', 'island', 'bay', 'villa',
-            'residences', 'vacation', 'holiday', 'guest', 'house', 'home', 'the', 'and', 'de', 'del', 'la', 'of',
+            'resort', 'resorts', 'hotel', 'hotels', 'hostel', 'hostels', 'inn', 'inns', 'lodge', 'lodges',
+            'suites', 'suite', 'beach', 'beaches', 'island', 'islands', 'bay', 'bays', 'villa', 'villas',
+            'residences', 'vacation', 'holiday', 'guest', 'house', 'homes', 'home', 'the', 'and', 'de', 'del', 'la', 'of',
         ];
-        $destinationNames = array_map(
-            fn ($name) => mb_strtolower((string) $name),
-            DestinationModel::pluck('name')->all()
-        );
+        $destinationTokens = [];
+        foreach (DestinationModel::pluck('name')->all() as $destName) {
+            foreach (preg_split('/\s+/', mb_strtolower((string) $destName)) as $t) {
+                $t = trim($t, " \t\n\r\0\x0B-");
+                if ($t !== '') {
+                    $destinationTokens[] = $t;
+                }
+            }
+        }
+        $destinationTokens = array_unique($destinationTokens);
 
         foreach ($hotels as $name) {
             $tokens = preg_split('/\s+/', mb_strtolower((string) $name));
             foreach ($tokens as $token) {
-                if (strlen($token) < 3 || in_array($token, $genericWords, true) || in_array($token, $destinationNames, true)) {
+                $token = trim($token, " \t\n\r\0\x0B-");
+                if (strlen($token) < 3 || in_array($token, $genericWords, true) || in_array($token, $destinationTokens, true)) {
                     continue;
                 }
                 if (preg_match('/\b'.preg_quote($token, '/').'\b/', $lower)) {
@@ -407,6 +431,20 @@ class IntentRouter
             '/(\d{1,2}\s*(?:to|-|–)\s*\d{1,2}|'.$months.'\s*\d{1,2}\s*(?:to|-|–)\s*(?:'.$months.'\s*)?\d{1,2}|check\s*(?:in|out)|check-in|check-out|stay\s*dates)/i',
             $lower
         );
+
+        // Typo-tolerant avail (availabilith, availab, availble) + "check avail..." works without date (covers "yes check availabilith" follow-up)
+        $hasAvailTypo = preg_match('/\bavaila\w*\b/i', $lower) || str_contains($lower, 'bakante');
+        if ($hasAvailTypo) {
+            // Require date OR explicit "check" to avoid catching "what tours are available" as availability (should be ACTIVITY_SEARCH)
+            if ($hasDate || str_contains($lower, 'check')) {
+                return true;
+            }
+            // If avail phrase appears with tour/activity words but no check/hotel/date, don't treat as availability
+            if (preg_match('/\b(tour|tours|activity|activities)\b/i', $lower)) {
+                return false;
+            }
+        }
+
         if (! $hasDate) {
             return false;
         }

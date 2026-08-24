@@ -129,7 +129,8 @@
                                     <div class="mt-3 space-y-2">
                                         <template x-for="room in msg.rooms">
                                             <div
-                                                class="bg-slate-50 rounded-xl p-2.5 border border-slate-200/80 space-y-1.5">
+                                                class="bg-slate-50 rounded-xl p-2.5 border border-slate-200/80 space-y-1.5 relative">
+                                                <span x-show="msg.rooms[0] && msg.rooms[0].id === room.id" class="absolute -top-1.5 -right-1.5 text-[10px] font-black bg-coral-500 text-white px-2 py-0.5 rounded-full shadow-xs border border-white">Best Match</span>
                                                 <img x-show="room.image" :src="imgSrc(room.image)"
                                                     class="w-full h-24 object-cover rounded-lg mb-1 border border-slate-200"
                                                     alt="" onerror="this.style.display='none'">
@@ -175,7 +176,8 @@
                                     <div class="mt-3 space-y-2">
                                         <template x-for="act in msg.activities">
                                             <div
-                                                class="bg-slate-50 rounded-xl p-2.5 border border-slate-200/80 space-y-1.5">
+                                                class="bg-slate-50 rounded-xl p-2.5 border border-slate-200/80 space-y-1.5 relative">
+                                                <span x-show="msg.activities[0] && msg.activities[0].id === act.id" class="absolute -top-1.5 -right-1.5 text-[10px] font-black bg-coral-500 text-white px-2 py-0.5 rounded-full shadow-xs border border-white">Best Match</span>
                                                 <img x-show="act.image" :src="imgSrc(act.image)"
                                                     class="w-full h-24 object-cover rounded-lg mb-1 border border-slate-200"
                                                     alt="" onerror="this.style.display='none'">
@@ -207,7 +209,8 @@
                                     <div class="mt-3 space-y-2">
                                         <template x-for="hotel in msg.hotels">
                                             <div
-                                                class="bg-slate-50 rounded-xl p-2.5 border border-slate-200/80 space-y-1.5">
+                                                class="bg-slate-50 rounded-xl p-2.5 border border-slate-200/80 space-y-1.5 relative">
+                                                <span x-show="msg.hotels[0] && msg.hotels[0].id === hotel.id" class="absolute -top-1.5 -right-1.5 text-[10px] font-black bg-coral-500 text-white px-2 py-0.5 rounded-full shadow-xs border border-white">Best Match</span>
                                                 <img x-show="hotel.image" :src="imgSrc(hotel.image)"
                                                     class="w-full h-24 object-cover rounded-lg mb-1 border border-slate-200"
                                                     alt="" onerror="this.style.display='none'">
@@ -232,7 +235,8 @@
                                     <div class="mt-3 space-y-2">
                                         <template x-for="pkg in msg.packages">
                                             <div
-                                                class="bg-slate-50 rounded-xl p-2.5 border border-slate-200/80 space-y-1.5">
+                                                class="bg-slate-50 rounded-xl p-2.5 border border-slate-200/80 space-y-1.5 relative">
+                                                <span x-show="msg.packages[0] && msg.packages[0].id === pkg.id" class="absolute -top-1.5 -right-1.5 text-[10px] font-black bg-coral-500 text-white px-2 py-0.5 rounded-full shadow-xs border border-white">Best Match</span>
                                                 <img x-show="pkg.image" :src="imgSrc(pkg.image)"
                                                     class="w-full h-24 object-cover rounded-lg mb-1 border border-slate-200"
                                                     alt="" onerror="this.style.display='none'">
@@ -611,6 +615,24 @@
                     const extras = {};
                     if (data.retrieved_rooms && data.retrieved_rooms.length > 0) {
                         extras.rooms = data.retrieved_rooms;
+                    } else if (data.availability && data.availability.length > 0) {
+                        // Map raw availability entries (item + availability) to room cards when retrieved_rooms missing
+                        extras.rooms = data.availability.map(entry => {
+                            const r = entry.item || entry;
+                            return {
+                                id: r.id,
+                                room_name: r.room_name,
+                                hotel_name: r.hotel?.hotel_name || r.hotel_name || 'Unknown Hotel',
+                                hotel_id: r.hotel_id || r.hotel?.id || null,
+                                destination: r.hotel?.destination?.name || r.destination || null,
+                                base_price: r.base_price,
+                                occupancy: r.occupancy,
+                                image: r.images ? (Array.isArray(r.images) ? r.images[0] : r.images) : r.image,
+                                check_in_date: entry.check_in_date || null,
+                                check_out_date: entry.check_out_date || null,
+                                pax: entry.pax || null,
+                            };
+                        });
                     }
                     if (data.itinerary) {
                         extras.itinerary = data.itinerary;
