@@ -14,7 +14,7 @@
             <span class="font-label text-primary font-bold tracking-[0.2em] text-xs uppercase mb-3 block">HELP CENTER</span>
             <h2 class="font-headline text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900 leading-tight">Frequently Asked Questions</h2>
             <p class="mt-4 text-slate-500 text-xs md:text-sm leading-relaxed">
-                Quick answers to common questions. Managed by our team — if you don't find what you need, chat with SunnyBot.
+                Quick answers to common questions. Managed by our team — if you don't find what you need, chat with SunnyBot or chat with our Admin.
             </p>
         </div>
 

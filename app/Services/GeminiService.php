@@ -26,14 +26,27 @@ class GeminiService
      */
     public function buildActivityEmbeddingText(ActivityModel $activity, ?string $destinationName = null): string
     {
+        $destination = null;
         if (! $destinationName && $activity->destination_id) {
             $destination = DestinationModel::find($activity->destination_id);
             $destinationName = $destination ? $destination->name : null;
+        } elseif ($activity->destination) {
+            $destination = $activity->destination;
         }
 
         $dest = $destinationName ?? 'Unknown Destination';
-        $desc = trim(preg_replace('/\s+/', ' ', strip_tags($activity->description ?? '')));
+        if ($destination && $destination->region) {
+            $dest .= " ({$destination->region})";
+        }
+        $descRaw = $activity->description ?? '';
+        $desc = trim(preg_replace('/\s+/', ' ', strip_tags($descRaw)));
+        if (mb_strlen($desc) > 500) {
+            $desc = mb_substr($desc, 0, 500).'…';
+        }
         $notes = trim(preg_replace('/\s+/', ' ', strip_tags($activity->notes ?? '')));
+        if (mb_strlen($notes) > 300) {
+            $notes = mb_substr($notes, 0, 300).'…';
+        }
         $reqs = trim(preg_replace('/\s+/', ' ', strip_tags($activity->requirements ?? '')));
         $vibeList = $this->formatListToString($activity->vibe_tags);
         $inclusionsList = $this->formatListToString($activity->inclusions);
@@ -45,6 +58,17 @@ class GeminiService
                     $itineraryList .= $step['title'].(isset($step['duration']) ? ' ('.$step['duration'].')' : '').'. ';
                 }
             }
+            if (mb_strlen($itineraryList) > 300) {
+                $itineraryList = mb_substr($itineraryList, 0, 300).'…';
+            }
+        }
+
+        $rateType = $activity->isPerPersonRate() ? 'per person/head/pax' : 'per group/unit';
+        $coords = null;
+        if ($activity->latitude && $activity->longitude) {
+            $coords = "Coordinates: Latitude {$activity->latitude}, Longitude {$activity->longitude}";
+        } elseif ($destination && $destination->latitude && $destination->longitude) {
+            $coords = "Near Coordinates: Latitude {$destination->latitude}, Longitude {$destination->longitude} (destination center)";
         }
 
         return implode("\n", array_filter([
@@ -52,10 +76,11 @@ class GeminiService
             "Category: {$activity->category}",
             "Activity Level: {$activity->activity_level}",
             "Destination: {$dest}",
+            $coords,
             $activity->duration ? "Duration: {$activity->duration}" : null,
             $activity->capacity ? "Group Capacity: {$activity->capacity}" : null,
             $activity->ideal_for ? "Ideal Participants: {$activity->ideal_for}" : null,
-            "Rate / Pricing: {$activity->rate}",
+            "Rate / Pricing: {$activity->rate} ({$rateType})",
             $reqs ? "Requirements & Restrictions: {$reqs}" : null,
             $vibeList ? "Experience Vibes & Tags: {$vibeList}" : null,
             $inclusionsList ? "Inclusions: {$inclusionsList}" : null,
@@ -116,16 +141,53 @@ class GeminiService
      */
     public function buildPackageEmbeddingText(Package $package): string
     {
-        $destinationName = $package->destination ? $package->destination->name : 'Philippines';
+        $destination = $package->destination;
+        $destinationName = $destination ? $destination->name : 'Philippines';
+        $region = $destination?->region ? " ({$destination->region})" : '';
         $inclusions = is_array($package->generic_inclusions) ? implode(', ', $package->generic_inclusions) : '';
+
+        // Validity window — critical for "is this package available in August?" queries
+        $validity = null;
+        if ($package->valid_from || $package->valid_to) {
+            $from = $package->valid_from ? $package->valid_from->format('M d, Y') : 'open';
+            $to = $package->valid_to ? $package->valid_to->format('M d, Y') : 'open';
+            $validity = "Validity Period: {$from} to {$to}";
+        } else {
+            $validity = 'Validity Period: Year-round / No expiry';
+        }
+        $status = $package->is_active ? 'Status: Active — bookable now' : 'Status: Inactive';
+
+        // Embed ALL linked hotel/activity names (per requirement)
+        $hotelNames = '';
+        try {
+            $hotels = $package->hotels()->pluck('hotel_name')->all();
+            if (! empty($hotels)) {
+                $hotelNames = 'Hotels Included: '.implode(', ', array_slice($hotels, 0, 10));
+            }
+        } catch (\Throwable $e) {
+            // ignore
+        }
+        $activityNames = '';
+        try {
+            $activities = $package->activities()->pluck('activity_name')->all();
+            if (! empty($activities)) {
+                $activityNames = 'Activities Included: '.implode(', ', array_slice($activities, 0, 10));
+            }
+        } catch (\Throwable $e) {
+            // ignore
+        }
 
         return implode("\n", array_filter([
             "Tour Package Name: {$package->name}",
             'Package Type: '.($package->type ?: 'Standard Tour Promo'),
-            "Destination: {$destinationName}",
+            "Destination: {$destinationName}{$region}",
             'Rate / Price: ₱'.number_format($package->price, 2),
             'Duration: '.($package->days ?: 3).' Days / '.($package->nights ?: 2).' Nights',
             'Minimum Guests Required: '.($package->min_pax ?: 2).' Pax',
+            $validity,
+            $status,
+            $hotelNames ?: null,
+            $activityNames ?: null,
             $inclusions ? "Included Inclusions & Features: {$inclusions}" : 'All-inclusive promo package',
         ]));
     }
@@ -148,25 +210,68 @@ class GeminiService
      */
     public function buildHotelEmbeddingText(HotelModel $hotel, ?string $destinationName = null): string
     {
+        $destination = null;
         if (! $destinationName && $hotel->destination_id) {
             $destination = DestinationModel::find($hotel->destination_id);
             $destinationName = $destination ? $destination->name : null;
+        } elseif ($hotel->destination) {
+            $destination = $hotel->destination;
         }
 
         $dest = $destinationName ?? 'Unknown Destination';
-        $desc = trim(preg_replace('/\s+/', ' ', strip_tags($hotel->hotel_description ?? '')));
+        if ($destination && $destination->region) {
+            $dest .= " ({$destination->region})";
+        }
+        $descRaw = $hotel->hotel_description ?? '';
+        $desc = trim(preg_replace('/\s+/', ' ', strip_tags($descRaw)));
+        if (mb_strlen($desc) > 500) {
+            $desc = mb_substr($desc, 0, 500).'…';
+        }
         $vibeList = $this->formatListToString($hotel->vibe_tags);
         $amenitiesList = $this->formatListToString($hotel->featured_amenities);
+
+        // Price range — critical for "cheapest/most expensive hotel" ranking
+        $priceRange = null;
+        try {
+            $minPrice = $hotel->rooms()->where('is_shown', true)->min('base_price');
+            $maxPrice = $hotel->rooms()->where('is_shown', true)->max('base_price');
+            $count = $hotel->rooms()->where('is_shown', true)->count();
+            if ($minPrice !== null) {
+                $priceRange = 'Price Range: From ₱'.number_format((float) $minPrice, 2).' to ₱'.number_format((float) $maxPrice, 2)."/night ({$count} room types)";
+            }
+        } catch (\Throwable $e) {
+            // ignore
+        }
+
+        // Guest rating when review summary exists
+        $ratingLine = null;
+        try {
+            $summary = $hotel->reviewSummary;
+            if ($summary) {
+                $ratingLine = "Guest Rating: {$summary->average_rating}/5 ({$summary->total_reviews} reviews)";
+                if (! empty($summary->ai_summary_text)) {
+                    $snippet = trim(preg_replace('/\s+/', ' ', strip_tags($summary->ai_summary_text)));
+                    if (mb_strlen($snippet) > 120) {
+                        $snippet = mb_substr($snippet, 0, 120).'…';
+                    }
+                    $ratingLine .= " — {$snippet}";
+                }
+            }
+        } catch (\Throwable $e) {
+            // ignore
+        }
 
         return implode("\n", array_filter([
             "Hotel Name: {$hotel->hotel_name}",
             "Destination: {$dest}",
             $hotel->type ? 'Hotel Category: '.ucwords(str_replace('-', ' ', $hotel->type)) : null,
+            $priceRange,
+            $ratingLine,
             $vibeList ? "Hotel Vibe & Atmosphere: {$vibeList}" : null,
             $amenitiesList ? "Featured Amenities & Facilities: {$amenitiesList}" : null,
             "Specific Address: {$hotel->specific_address}",
             ($hotel->latitude && $hotel->longitude) ? "Location Coordinates: Latitude {$hotel->latitude}, Longitude {$hotel->longitude}" : null,
-            "Detailed Overview: {$desc}",
+            $desc ? "Detailed Overview: {$desc}" : null,
         ]));
     }
 
@@ -184,23 +289,51 @@ class GeminiService
         }
 
         $idealGuest = $room->ideal_guest ?? $room->ideal_for;
-        $desc = trim(preg_replace('/\s+/', ' ', strip_tags($room->description ?? '')));
-        $notes = trim(preg_replace('/\s+/', ' ', strip_tags($room->additional_notes ?? '')));
+        $descRaw = $room->description ?? '';
+        $desc = trim(preg_replace('/\s+/', ' ', strip_tags($descRaw)));
+        if (mb_strlen($desc) > 500) {
+            $desc = mb_substr($desc, 0, 500).'…';
+        }
+        $notesRaw = $room->additional_notes ?? '';
+        $notes = trim(preg_replace('/\s+/', ' ', strip_tags($notesRaw)));
+        if (mb_strlen($notes) > 300) {
+            $notes = mb_substr($notes, 0, 300).'…';
+        }
         $amenitiesList = $this->formatListToString($room->room_amenities);
+
+        $baseOcc = (int) ($room->base_occupancy ?: 2);
+        $maxOcc = (int) ($room->max_occupancy ?: ($room->occupancy ?: $baseOcc));
+        $fee = (float) ($room->extra_person_fee ?: 0);
+
+        $occupancyLine = "Base Occupancy: {$baseOcc} pax included in base price";
+        $maxLine = "Maximum Occupancy: {$maxOcc} pax";
+        $feeLine = $fee > 0 && $maxOcc > $baseOcc
+            ? 'Extra Person Fee: ₱'.number_format($fee, 2).' per extra head per night beyond '.$baseOcc.' pax'
+            : "No extra guests allowed — maximum {$maxOcc} guests";
+
+        $rateExample = null;
+        if ($maxOcc > $baseOcc && $fee > 0) {
+            $examplePax = min($maxOcc, $baseOcc + 1);
+            $exampleTotal = $room->calculateNightlyRate($examplePax);
+            $rateExample = "Rate Example: {$baseOcc} pax = ₱".number_format($room->base_price, 2)."/night; {$examplePax} pax = ₱".number_format($exampleTotal, 2).'/night';
+        }
 
         return implode("\n", array_filter([
             $hotelName ? "Hotel Name: {$hotelName}" : null,
             "Room Name: {$room->room_name}",
             $destinationName ? "Destination: {$destinationName}" : null,
             $idealGuest ? "Ideal Guest: {$idealGuest}" : null,
-            $room->occupancy ? "Occupancy: {$room->occupancy} guests maximum" : null,
+            $occupancyLine,
+            $maxLine,
+            $feeLine,
+            $rateExample,
             $room->bed_configuration ? "Bed Layout: {$room->bed_configuration}" : null,
             $room->room_size ? "Room Dimensions: {$room->room_size}" : null,
             'Base Price: ₱'.number_format($room->base_price, 2).' per night',
             $amenitiesList ? "Room Amenities: {$amenitiesList}" : null,
             $notes ? "Additional Notes & Policies: {$notes}" : null,
             $room->view_type ? "Room View: {$room->view_type}" : null,
-            "Inventory Capacity: {$room->total_rooms} total rooms available",
+            "Inventory: {$room->total_rooms} rooms available",
             $desc ? "Detailed Room Description: {$desc}" : null,
         ]));
     }
@@ -498,18 +631,37 @@ class GeminiService
             $score = round($entry['score'], 4);
             $rank = $index + 1;
 
-            $destName = $hotel->destination->name ?? 'Unknown Destination';
+            $dest = $hotel->destination;
+            $destName = $dest->name ?? 'Unknown Destination';
+            if ($dest && $dest->region) {
+                $destName .= " ({$dest->region})";
+            }
             $typeLabel = ucwords(str_replace('-', ' ', $hotel->type ?? 'N/A'));
 
-            $cheapestRate = $hotel->rooms()->where('is_shown', true)->min('base_price');
-            $rates = $cheapestRate !== null
-                ? 'From ₱'.number_format((float) $cheapestRate, 2).'/night'
+            $minPrice = $hotel->rooms()->where('is_shown', true)->min('base_price');
+            $maxPrice = $hotel->rooms()->where('is_shown', true)->max('base_price');
+            $count = $hotel->rooms()->where('is_shown', true)->count();
+            $rates = $minPrice !== null
+                ? 'Price Range: From ₱'.number_format((float) $minPrice, 2).' to ₱'.number_format((float) $maxPrice, 2)."/night ({$count} room types)"
                 : 'Rates: not available';
 
             $vibes = $this->formatListToString($hotel->vibe_tags);
             $amenities = $this->formatListToString($hotel->featured_amenities);
 
             $desc = trim(preg_replace('/\s+/', ' ', strip_tags($hotel->hotel_description ?? '')));
+            if (mb_strlen($desc) > 500) {
+                $desc = mb_substr($desc, 0, 500).'…';
+            }
+
+            $ratingLine = null;
+            try {
+                $summary = $hotel->reviewSummary;
+                if ($summary) {
+                    $ratingLine = "Guest Rating: {$summary->average_rating}/5 ({$summary->total_reviews} reviews)";
+                }
+            } catch (\Throwable $e) {
+                // ignore
+            }
 
             $lines = array_filter([
                 "--- Hotel #{$rank} (relevance: {$score}) ---",
@@ -517,6 +669,7 @@ class GeminiService
                 "Destination: {$destName}",
                 "Category: {$typeLabel}",
                 "Rates: {$rates}",
+                $ratingLine,
                 $vibes ? "Vibes & Atmosphere: {$vibes}" : null,
                 $amenities ? "Featured Amenities: {$amenities}" : null,
                 "Address: {$hotel->specific_address}",
@@ -613,14 +766,35 @@ class GeminiService
             $hotel = $room->hotel;
             $hotelName = $hotel->hotel_name ?? 'Unknown Hotel';
             $destName = $hotel->destination->name ?? 'Unknown Destination';
+            if ($hotel->destination && $hotel->destination->region) {
+                $destName .= " ({$hotel->destination->region})";
+            }
 
             $amenities = $this->formatListToString($room->room_amenities);
-
-            $desc = trim(preg_replace('/\s+/', ' ', strip_tags($room->description ?? '')));
-
+            $descRaw = $room->description ?? '';
+            $desc = trim(preg_replace('/\s+/', ' ', strip_tags($descRaw)));
+            if (mb_strlen($desc) > 500) {
+                $desc = mb_substr($desc, 0, 500).'…';
+            }
             $idealGuest = $room->ideal_guest ?? $room->ideal_for;
-            $notes = trim(preg_replace('/\s+/', ' ', strip_tags($room->additional_notes ?? '')));
-            $desc = trim(preg_replace('/\s+/', ' ', strip_tags($room->description ?? '')));
+            $notesRaw = $room->additional_notes ?? '';
+            $notes = trim(preg_replace('/\s+/', ' ', strip_tags($notesRaw)));
+            if (mb_strlen($notes) > 300) {
+                $notes = mb_substr($notes, 0, 300).'…';
+            }
+
+            $baseOcc = (int) ($room->base_occupancy ?: 2);
+            $maxOcc = (int) ($room->max_occupancy ?: ($room->occupancy ?: $baseOcc));
+            $fee = (float) ($room->extra_person_fee ?: 0);
+            $feeLine = $fee > 0 && $maxOcc > $baseOcc
+                ? 'Extra Person Fee: ₱'.number_format($fee, 2).' per extra head per night beyond '.$baseOcc.' pax'
+                : "No extra guests allowed — maximum {$maxOcc} guests";
+            $rateExample = null;
+            if ($maxOcc > $baseOcc && $fee > 0) {
+                $examplePax = min($maxOcc, $baseOcc + 1);
+                $exampleTotal = $room->calculateNightlyRate($examplePax);
+                $rateExample = "Rate Example: {$baseOcc} pax = ₱".number_format($room->base_price, 2)."/night; {$examplePax} pax = ₱".number_format($exampleTotal, 2).'/night';
+            }
 
             $lines = array_filter([
                 "--- Room #{$rank} (relevance: {$score}) ---",
@@ -628,14 +802,17 @@ class GeminiService
                 "Hotel: {$hotelName}",
                 "Destination: {$destName}",
                 $idealGuest ? "Ideal Guest: {$idealGuest}" : null,
-                "Occupancy: {$room->occupancy} guest(s)",
+                "Base Occupancy: {$baseOcc} pax included in base price",
+                "Maximum Occupancy: {$maxOcc} pax",
+                $feeLine,
+                $rateExample,
                 "Bed Configuration: {$room->bed_configuration}",
                 $room->room_size ? "Room Size: {$room->room_size}" : null,
-                'Base Price: ₱'.number_format($room->base_price, 2),
+                'Base Price: ₱'.number_format($room->base_price, 2).' per night',
                 $room->view_type ? "View Type: {$room->view_type}" : null,
                 "Available Rooms: {$room->total_rooms}",
                 $amenities ? "Amenities: {$amenities}" : null,
-                $notes ? "Additional Notes & Fees: {$notes}" : null,
+                $notes ? "Additional Notes & Policies: {$notes}" : null,
                 $desc ? "Description: {$desc}" : null,
             ]);
 
@@ -721,23 +898,41 @@ class GeminiService
             $score = round($entry['score'], 4);
             $rank = $index + 1;
 
-            $destName = $activity->destination->name ?? 'Unknown Destination';
+            $dest = $activity->destination;
+            $destName = $dest->name ?? 'Unknown Destination';
+            if ($dest && $dest->region) {
+                $destName .= " ({$dest->region})";
+            }
 
             $vibes = $this->formatListToString($activity->vibe_tags);
-
-            $desc = trim(preg_replace('/\s+/', ' ', strip_tags($activity->description ?? '')));
+            $descRaw = $activity->description ?? '';
+            $desc = trim(preg_replace('/\s+/', ' ', strip_tags($descRaw)));
+            if (mb_strlen($desc) > 500) {
+                $desc = mb_substr($desc, 0, 500).'…';
+            }
             $notes = trim(preg_replace('/\s+/', ' ', strip_tags($activity->notes ?? '')));
+            if (mb_strlen($notes) > 300) {
+                $notes = mb_substr($notes, 0, 300).'…';
+            }
             $reqs = trim(preg_replace('/\s+/', ' ', strip_tags($activity->requirements ?? '')));
+            $rateType = $activity->isPerPersonRate() ? 'per person/head/pax' : 'per group/unit';
+            $coords = null;
+            if ($activity->latitude && $activity->longitude) {
+                $coords = "Coordinates: {$activity->latitude}, {$activity->longitude}";
+            } elseif ($dest && $dest->latitude && $dest->longitude) {
+                $coords = "Near Coordinates: {$dest->latitude}, {$dest->longitude} (destination center)";
+            }
 
             $lines = array_filter([
                 "--- Activity #{$rank} (relevance: {$score}) ---",
                 "Activity Name: {$activity->activity_name}",
                 "Destination: {$destName}",
+                $coords,
                 "Category: {$activity->category}",
                 "Activity Level: {$activity->activity_level}",
                 $activity->duration ? "Duration: {$activity->duration}" : null,
                 $activity->capacity ? "Group Capacity: {$activity->capacity}" : null,
-                "Rate / Pricing: {$activity->rate}",
+                "Rate / Pricing: {$activity->rate} ({$rateType})",
                 $activity->ideal_for ? "Ideal Participants: {$activity->ideal_for}" : null,
                 $vibes ? "Vibes & Tags: {$vibes}" : null,
                 $reqs ? "Requirements & Restrictions: {$reqs}" : null,
@@ -862,8 +1057,37 @@ class GeminiService
             $score = round($entry['score'], 4);
             $rank = $index + 1;
 
-            $destName = $package->destination->name ?? 'Philippines';
+            $dest = $package->destination;
+            $destName = $dest->name ?? 'Philippines';
+            if ($dest && $dest->region) {
+                $destName .= " ({$dest->region})";
+            }
             $inclusions = is_array($package->generic_inclusions) ? implode(', ', $package->generic_inclusions) : '';
+
+            $validity = null;
+            if ($package->valid_from || $package->valid_to) {
+                $from = $package->valid_from ? $package->valid_from->format('M d, Y') : 'open';
+                $to = $package->valid_to ? $package->valid_to->format('M d, Y') : 'open';
+                $validity = "Validity: {$from} to {$to}";
+            } else {
+                $validity = 'Validity: Year-round / No expiry';
+            }
+            $status = $package->is_active ? 'Status: Active' : 'Status: Inactive';
+
+            $hotelNames = null;
+            $activityNames = null;
+            try {
+                $hotels = $package->hotels()->pluck('hotel_name')->all();
+                if (! empty($hotels)) {
+                    $hotelNames = 'Hotels Included: '.implode(', ', array_slice($hotels, 0, 10));
+                }
+                $activities = $package->activities()->pluck('activity_name')->all();
+                if (! empty($activities)) {
+                    $activityNames = 'Activities Included: '.implode(', ', array_slice($activities, 0, 10));
+                }
+            } catch (\Throwable $e) {
+                // ignore
+            }
 
             $lines = array_filter([
                 "--- Package #{$rank} (relevance: {$score}) ---",
@@ -873,6 +1097,10 @@ class GeminiService
                 'Price: ₱'.number_format($package->price, 2),
                 "Duration: {$package->days}D/{$package->nights}N",
                 "Minimum Guests: {$package->min_pax} pax",
+                $validity,
+                $status,
+                $hotelNames,
+                $activityNames,
                 $inclusions ? "Inclusions: {$inclusions}" : null,
             ]);
 
@@ -880,6 +1108,90 @@ class GeminiService
         }
 
         return "=== PACKAGE DATABASE RESULTS ===\n\n".implode("\n\n", $blocks)."\n\n=== END PACKAGE RESULTS ===";
+    }
+
+    /**
+     * Semantic search over AddOns using pgvector / PHP ranking.
+     */
+    public function searchAddOns(string $query, int $limit = 5): array
+    {
+        $queryVector = $this->generateEmbedding($query, 'RETRIEVAL_QUERY');
+        if (! $queryVector) {
+            Log::warning('searchAddOns: Failed to generate query embedding.', ['query' => $query]);
+
+            return [];
+        }
+
+        $addons = AddOnModel::with('destination')
+            ->where('is_shown', true)
+            ->whereNotNull('embedding')
+            ->get();
+
+        if ($addons->isEmpty()) {
+            return [];
+        }
+
+        return $this->rankRecommendations($queryVector, $addons, $limit);
+    }
+
+    /**
+     * Formats scored addon results into structured context text for RAG prompt injection.
+     */
+    public function getAddOnContext(array $scoredAddOns): string
+    {
+        if (empty($scoredAddOns)) {
+            return '';
+        }
+
+        $blocks = [];
+
+        foreach ($scoredAddOns as $index => $entry) {
+            /** @var AddOnModel $addon */
+            $addon = $entry['item'];
+            $score = round($entry['score'], 4);
+            $rank = $index + 1;
+
+            $destName = $addon->destination->name ?? 'Unknown Destination';
+            $desc = trim(preg_replace('/\s+/', ' ', strip_tags($addon->description ?? '')));
+            if (mb_strlen($desc) > 500) {
+                $desc = mb_substr($desc, 0, 500).'…';
+            }
+            $inclusions = $this->formatListToString($addon->inclusions);
+
+            $pricingList = '';
+            if (is_array($addon->pricing_tiers)) {
+                foreach ($addon->pricing_tiers as $tier) {
+                    if (isset($tier['rate'])) {
+                        $min = $tier['min_pax'] ?? 1;
+                        $max = $tier['max_pax'] ?? $min;
+                        $pricingList .= "{$min}-{$max} pax: ₱{$tier['rate']}/person. ";
+                    }
+                }
+            }
+            $surchargeList = '';
+            if (is_array($addon->surcharges)) {
+                foreach ($addon->surcharges as $sur) {
+                    if (isset($sur['name'], $sur['amount'])) {
+                        $surchargeList .= "{$sur['name']} (₱{$sur['amount']}".(isset($sur['type']) ? ' '.$sur['type'] : '').'). ';
+                    }
+                }
+            }
+
+            $lines = array_filter([
+                "--- AddOn #{$rank} (relevance: {$score}) ---",
+                "AddOn Name: {$addon->name}",
+                "Type: {$addon->type}",
+                "Destination: {$destName}",
+                $inclusions ? "Inclusions: {$inclusions}" : null,
+                $pricingList ? "Tiered Pricing: {$pricingList}" : null,
+                $surchargeList ? "Surcharges: {$surchargeList}" : null,
+                $desc ? "Description: {$desc}" : null,
+            ]);
+
+            $blocks[] = implode("\n", $lines);
+        }
+
+        return "=== ADDON DATABASE RESULTS ===\n\n".implode("\n\n", $blocks)."\n\n=== END ADDON RESULTS ===";
     }
 
     // =========================================================================
@@ -1642,10 +1954,24 @@ class GeminiService
         if (! empty($constraints['max_price'])) {
             $roomsQuery->where('base_price', '<=', $constraints['max_price']);
         }
+        if (! empty($constraints['room_id'])) {
+            $roomsQuery->where('id', $constraints['room_id']);
+        } elseif (! empty($constraints['room_name'])) {
+            $roomsQuery->where('room_name', 'ILIKE', $constraints['room_name']);
+        }
 
         $rooms = $roomsQuery->get();
 
-        if ($rooms->isEmpty() && empty($constraints['hotel_id'])) {
+        // If room-specific filter yielded nothing and hotel scope was present, try global room-name-only fallback (per answer 5 both)
+        if ($rooms->isEmpty() && ! empty($constraints['room_name']) && ! empty($constraints['hotel_id'])) {
+            $rooms = RoomType::with('hotel.destination')
+                ->where('is_shown', true)
+                ->whereNotNull('embedding')
+                ->where('room_name', 'ILIKE', $constraints['room_name'])
+                ->get();
+        }
+
+        if ($rooms->isEmpty() && empty($constraints['hotel_id']) && empty($constraints['room_id']) && empty($constraints['room_name'])) {
             $rooms = RoomType::with('hotel.destination')
                 ->where('is_shown', true)
                 ->whereNotNull('embedding')

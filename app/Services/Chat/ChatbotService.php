@@ -88,6 +88,7 @@ class ChatbotService
             IntentRouter::HOTEL_SEARCH => $this->handleHotelSearch($message, $constraints, $user, $session),
             IntentRouter::ACTIVITY_SEARCH => $this->handleActivitySearch($message, $constraints, $user, $session),
             IntentRouter::PACKAGE_SEARCH => $this->handlePackageSearch($message, $constraints, $user, $session),
+            IntentRouter::ADDON_SEARCH => $this->handleAddOnSearch($message, $constraints, $user, $session),
             IntentRouter::ITINERARY_QUERY => $this->handleItineraryQuery($message, $constraints, $user, $session),
             IntentRouter::AVAILABILITY_QUERY => $this->handleAvailabilityQuery($message, $constraints, $user, $session),
             IntentRouter::MAP_QUERY => $this->handleMapQuery($message, $constraints, $session, $userLat, $userLng),
@@ -134,7 +135,7 @@ class ChatbotService
         }
 
         $referential = '/\b(it|its|they|them|their|his|her|those|these|this one|that one|the one|which one|the first|the second|the other)\b/';
-        $continuation = '/^(how much|how about|what about|what is|what are|what\'s|and what|what else|and how|tell me more|more info|more details|more options|why|is it|are they|does it|do they|can you|give me the|whose|price of|prices of|cost of)/';
+        $continuation = '/^(how much|how many|how about|what about|what is|what are|what\'s|and what|what else|and how|tell me more|more info|more details|more options|why|is it|are they|does it|do they|can you|give me the|whose|price of|prices of|cost of)/';
 
         return (bool) (preg_match($referential, $lower) || preg_match($continuation, $lower));
     }
@@ -201,6 +202,11 @@ class ChatbotService
             }
         }
 
+        // If query names a specific room or add-on, treat as fresh search regardless of follow-up heuristic
+        if ($this->intentRouter->extractRoomName($lower) || $this->intentRouter->extractAddOnName($lower)) {
+            return true;
+        }
+
         return (bool) preg_match('/\b(hotel|hotels|room|rooms|resort|resorts|activity|activities|tour|tours|package|packages|itinerary|availability|weather|where is|how far)\b.*\b(in|near|at|for)\b/', $lower)
             || (bool) preg_match('/\b(book|reserve|booking)\b/', $lower);
     }
@@ -264,7 +270,13 @@ class ChatbotService
         if (! empty($data['retrieved_rooms'])) {
             foreach ($data['retrieved_rooms'] as $r) {
                 $price = isset($r['base_price']) ? '₱'.number_format((float) $r['base_price'], 2) : 'n/a';
-                $blocks[] = "- Room: {$r['room_name']} at {$r['hotel_name']} — {$price}/night";
+                $baseOcc = $r['base_occupancy'] ?? 2;
+                $maxOcc = $r['max_occupancy'] ?? $r['occupancy'] ?? 2;
+                $fee = $r['extra_person_fee'] ?? 0;
+                $occupancyText = $fee > 0 && $maxOcc > $baseOcc
+                    ? "Base {$baseOcc}/Max {$maxOcc}, Extra ₱".number_format((float) $fee, 2).'/head/night'
+                    : "No extra guests allowed — maximum {$maxOcc} guests";
+                $blocks[] = "- Room: {$r['room_name']} at {$r['hotel_name']} — {$price}/night — {$occupancyText}";
             }
         }
 
@@ -277,10 +289,16 @@ class ChatbotService
                     $rooms = RoomType::where('hotel_id', $h['id'])
                         ->where('is_shown', true)
                         ->orderBy('base_price')
-                        ->get(['room_name', 'base_price']);
+                        ->get(['room_name', 'base_price', 'base_occupancy', 'max_occupancy', 'extra_person_fee']);
 
                     foreach ($rooms as $room) {
-                        $blocks[] = "  - {$room->room_name}: ₱".number_format((float) $room->base_price, 2).'/night';
+                        $baseOcc = (int) ($room->base_occupancy ?: 2);
+                        $maxOcc = (int) ($room->max_occupancy ?: 2);
+                        $fee = (float) ($room->extra_person_fee ?: 0);
+                        $extra = $fee > 0 && $maxOcc > $baseOcc
+                            ? ', Extra ₱'.number_format($fee, 2).'/head'
+                            : ', No extra guests';
+                        $blocks[] = "  - {$room->room_name}: ₱".number_format((float) $room->base_price, 2)."/night (Base {$baseOcc}/Max {$maxOcc}{$extra})";
                     }
                 }
             }
@@ -362,6 +380,29 @@ class ChatbotService
             return ['reply' => $this->noResultsReply('rooms')];
         }
 
+        // Pax-aware extra-person hint for queries like "for 3 pax" or "additional per head"
+        $pax = $constraints['pax'] ?? null;
+        if ($pax) {
+            $hint = '';
+            foreach ($scored as $entry) {
+                /** @var RoomType $room */
+                $room = $entry['item'];
+                $baseOcc = (int) ($room->base_occupancy ?: 2);
+                $maxOcc = (int) ($room->max_occupancy ?: 2);
+                $fee = (float) ($room->extra_person_fee ?: 0);
+                if ($pax > $baseOcc && $maxOcc > $baseOcc && $fee > 0) {
+                    $extraCount = min($pax, $maxOcc) - $baseOcc;
+                    $totalNightly = $room->calculateNightlyRate($pax);
+                    $hint .= "• {$room->room_name} at {$room->hotel->hotel_name}: base ₱".number_format($room->base_price, 2)." for {$baseOcc} pax + ₱".number_format($fee, 2)."/head × {$extraCount} extra = ₱".number_format($totalNightly, 2)."/night (max {$maxOcc} pax)\n";
+                } elseif ($pax > $maxOcc) {
+                    $hint .= "• {$room->room_name} at {$room->hotel->hotel_name}: No extra guests allowed — maximum {$maxOcc} guests (requested {$pax} pax)\n";
+                }
+            }
+            if ($hint !== '') {
+                $context .= "\n\n--- PAX-AWARE PRICING (trust these totals) ---\n".$hint."---\n";
+            }
+        }
+
         $context = $this->gemini->extractPricingContext($context, $query);
         $prompt = $this->buildPrompt('room-search', $context, $query, $user);
         $reply = $this->geminiChatResponse($prompt, $session);
@@ -369,6 +410,31 @@ class ChatbotService
         return [
             'reply' => $reply,
             'retrieved_rooms' => $this->formatRoomResults($scored),
+        ];
+    }
+
+    protected function handleAddOnSearch(string $query, array $constraints, ?User $user, ChatSession $session): array
+    {
+        $scored = $this->gemini->searchAddOns($query, 5);
+        $context = $this->gemini->getAddOnContext($scored);
+
+        if (empty(trim($context))) {
+            return ['reply' => $this->noResultsReply('add-ons')];
+        }
+
+        $context = $this->gemini->extractPricingContext($context, $query);
+        $prompt = $this->buildPrompt('addon-search', $context, $query, $user);
+        $reply = $this->geminiChatResponse($prompt, $session);
+
+        return [
+            'reply' => $reply,
+            'retrieved_addons' => array_map(fn ($e) => [
+                'id' => $e['item']->id,
+                'name' => $e['item']->name,
+                'type' => $e['item']->type,
+                'destination' => $e['item']->destination?->name ?? null,
+                'similarity_score' => round($e['score'], 4),
+            ], $scored),
         ];
     }
 
@@ -891,6 +957,7 @@ class ChatbotService
             'hotel-search' => 'TASK: Recommend hotels based on the database results below.',
             'activity-search' => 'TASK: Recommend activities and tours based on the database results below.',
             'package-search' => 'TASK: Recommend travel packages and promos based on the database results below.',
+            'addon-search' => 'TASK: Recommend add-ons and transfer services based on the database results below.',
             'availability' => 'TASK: Report real-time room availability, prices, and remaining inventory.',
             'itinerary' => 'TASK: Present a day-by-day itinerary plan using the provided items.',
             default => "TASK: Answer the user's travel question.",
@@ -960,12 +1027,19 @@ class ChatbotService
             $room = $entry['item'];
             $avail = $entry['availability'];
             $hotel = $room->hotel;
+            $baseOcc = (int) ($room->base_occupancy ?: 2);
+            $maxOcc = (int) ($room->max_occupancy ?: 2);
+            $fee = (float) ($room->extra_person_fee ?: 0);
+            $extraLine = $fee > 0 && $maxOcc > $baseOcc
+                ? 'Extra Person Fee: ₱'.number_format($fee, 2)." per extra head per night beyond {$baseOcc} pax"
+                : "No extra guests allowed — maximum {$maxOcc} guests";
             $blocks[] = implode("\n", [
                 "Room: {$room->room_name} at {$hotel->hotel_name}",
                 'Price per night: ₱'.number_format($room->calculateNightlyRate($pax), 2),
                 "Total for {$nights} nights: {$entry['formatted_total']}",
                 "Remaining: {$avail['remaining']} of {$avail['total_rooms']} rooms",
-                "Occupancy: {$room->max_occupancy} pax max",
+                "Base Occupancy: {$baseOcc} pax | Max Occupancy: {$maxOcc} pax",
+                $extraLine,
                 "Bed: {$room->bed_configuration}",
             ]);
         }
@@ -983,6 +1057,9 @@ class ChatbotService
             'destination' => $e['item']->hotel?->destination?->name ?? null,
             'base_price' => (float) $e['item']->base_price,
             'occupancy' => $e['item']->occupancy,
+            'base_occupancy' => (int) ($e['item']->base_occupancy ?: 2),
+            'max_occupancy' => (int) ($e['item']->max_occupancy ?: ($e['item']->occupancy ?: 2)),
+            'extra_person_fee' => (float) ($e['item']->extra_person_fee ?: 0),
             'ideal_guest' => $e['item']->ideal_guest ?? $e['item']->ideal_for,
             'image' => $this->firstImage($e['item']->images),
             'similarity_score' => round($e['score'], 4),

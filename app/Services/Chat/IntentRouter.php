@@ -2,8 +2,10 @@
 
 namespace App\Services\Chat;
 
+use App\Models\AddOnModel;
 use App\Models\DestinationModel;
 use App\Models\HotelModel;
+use App\Models\RoomType;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
 
@@ -29,6 +31,8 @@ class IntentRouter
 
     public const DESTINATIONS_OVERVIEW = 'DESTINATIONS_OVERVIEW';
 
+    public const ADDON_SEARCH = 'ADDON_SEARCH';
+
     protected array $travelKeywords = [
         'hotel', 'hotels', 'room', 'rooms', 'resort', 'resorts', 'stay', 'accommodation',
         'book', 'booking', 'check in', 'check-in', 'check out', 'check-out',
@@ -45,6 +49,9 @@ class IntentRouter
         'pax', 'guests', 'persons', 'people', 'couple', 'family', 'group', 'solo',
         'night', 'nights', 'days', 'day', 'weekend', 'week',
         'package', 'packages', 'promo', 'deal', 'deals', 'bundle', 'tipid', 'all-in', 'all inclusive',
+        'addon', 'add-on', 'add ons', 'transfer', 'pickup', 'surcharge', 'pricing tier',
+        'extra person', 'extra pax', 'additional pax', 'per head', 'per person', 'per night',
+        'max guests', 'max occupants', 'base occupancy', 'additional charge', 'valid until', 'valid from', 'promo period',
     ];
 
     public function isTravelQuery(string $query): bool
@@ -87,6 +94,10 @@ class IntentRouter
             return self::PACKAGE_SEARCH;
         }
 
+        if ($this->hasAddOnIntent($lower)) {
+            return self::ADDON_SEARCH;
+        }
+
         if ($this->hasRoomIntent($lower)) {
             return self::ROOM_SEARCH;
         }
@@ -116,6 +127,10 @@ class IntentRouter
             'destination_name' => null,
             'hotel_id' => null,
             'hotel_name' => null,
+            'room_name' => null,
+            'room_id' => null,
+            'addon_name' => null,
+            'addon_id' => null,
             'check_in_date' => null,
             'check_out_date' => null,
             'nights' => null,
@@ -165,6 +180,31 @@ class IntentRouter
         $constraints['hotel_name'] = $this->extractHotelName($query);
         if ($constraints['hotel_name']) {
             $constraints['hotel_id'] = HotelModel::where('hotel_name', 'ILIKE', $constraints['hotel_name'])->value('id');
+        }
+
+        // Room name — supports both hotel-scoped and global search (per answer 5)
+        $constraints['room_name'] = $this->extractRoomName($query);
+        if ($constraints['room_name']) {
+            $roomQuery = RoomType::where('room_name', 'ILIKE', $constraints['room_name']);
+            if ($constraints['hotel_id']) {
+                $roomQuery->where('hotel_id', $constraints['hotel_id']);
+            }
+            $room = $roomQuery->first();
+            if ($room) {
+                $constraints['room_id'] = $room->id;
+                // Co-set hotel if not already set (global room-name-only query)
+                if (! $constraints['hotel_id']) {
+                    $constraints['hotel_id'] = $room->hotel_id;
+                    if (! $constraints['hotel_name']) {
+                        $constraints['hotel_name'] = HotelModel::where('id', $room->hotel_id)->value('hotel_name');
+                    }
+                }
+            }
+        }
+
+        $constraints['addon_name'] = $this->extractAddOnName($query);
+        if ($constraints['addon_name']) {
+            $constraints['addon_id'] = AddOnModel::where('name', 'ILIKE', $constraints['addon_name'])->value('id');
         }
 
         $constraints['place_names'] = $this->extractPlaceNames($query);
@@ -221,6 +261,37 @@ class IntentRouter
                     return (string) $name;
                 }
             }
+        }
+
+        return null;
+    }
+
+    public function extractRoomName(string $query): ?string
+    {
+        $rooms = RoomType::pluck('room_name')->sortByDesc(fn ($n) => mb_strlen($n));
+        $lower = mb_strtolower($query);
+
+        foreach ($rooms as $name) {
+            if (str_contains($lower, mb_strtolower($name))) {
+                return (string) $name;
+            }
+        }
+
+        return null;
+    }
+
+    public function extractAddOnName(string $query): ?string
+    {
+        try {
+            $addons = AddOnModel::pluck('name')->sortByDesc(fn ($n) => mb_strlen($n));
+            $lower = mb_strtolower($query);
+            foreach ($addons as $name) {
+                if (str_contains($lower, mb_strtolower($name))) {
+                    return (string) $name;
+                }
+            }
+        } catch (\Throwable $e) {
+            // table may not exist in tests
         }
 
         return null;
@@ -380,9 +451,24 @@ class IntentRouter
         return false;
     }
 
+    protected function hasAddOnIntent(string $lower): bool
+    {
+        $keywords = ['add-on', 'addon', 'add ons', 'transfer', 'pickup', 'surcharge', 'pricing tier', 'per pax', 'per head pricing'];
+        foreach ($keywords as $kw) {
+            if (str_contains($lower, $kw)) {
+                return true;
+            }
+        }
+        if (preg_match('/\b(airport\s*transfer|roundtrip\s*transfer|van\s*transfer|boat\s*transfer)\b/i', $lower)) {
+            return true;
+        }
+
+        return false;
+    }
+
     protected function hasRoomIntent(string $lower): bool
     {
-        $room = ['room', 'rooms', 'suite', 'villa', 'bed', 'beds', 'occupancy', 'bedroom', 'accommodation', 'stay in', 'matulog', 'tulugan', 'kuwarto', 'kwarto'];
+        $room = ['room', 'rooms', 'suite', 'villa', 'bed', 'beds', 'occupancy', 'bedroom', 'accommodation', 'stay in', 'matulog', 'tulugan', 'kuwarto', 'kwarto', 'extra person', 'extra pax', 'additional pax', 'per head', 'per person', 'max guests', 'max occupants', 'base occupancy', 'additional charge'];
         foreach ($room as $r) {
             if (preg_match('/\b'.preg_quote($r, '/').'\b/i', $lower)) {
                 return true;

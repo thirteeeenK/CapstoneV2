@@ -1,0 +1,528 @@
+- generic [ref=f1e2]:
+  - banner [ref=f1e4]:
+    - generic [ref=f1e6]:
+      - generic [ref=f1e7]:
+        - button "Guide" [active] [pressed] [ref=f1e9] [cursor=pointer]
+        - generic [ref=f1e13]:
+          - link "YouTube Home" [ref=f1e14] [cursor=pointer]:
+            - /url: /
+          - generic [ref=f1e20]: PH
+        - button "Skip navigation" [ref=f1e24] [cursor=pointer]
+      - generic [ref=f1e28]:
+        - search [ref=f1e29]:
+          - generic [ref=f1e31]:
+            - generic [ref=f1e32]:
+              - combobox "Search" [expanded] [ref=f1e34]: rick roll
+              - button "Clear search query" [ref=f1e36] [cursor=pointer]
+            - button "Search" [ref=f1e43] [cursor=pointer]
+        - generic [ref=f1e48]:
+          - button "Search with your voice" [ref=f1e50] [cursor=pointer]
+          - tooltip "tooltip"
+      - generic [ref=f1e55]:
+        - button "Settings" [ref=f1e60] [cursor=pointer]
+        - link "Sign in" [ref=f1e66] [cursor=pointer]:
+          - /url: https://accounts.google.com/ServiceLogin?service=youtube&uilel=3&passive=true&continue=https%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue%26app%3Ddesktop%26hl%3Den%26next%3Dhttps%253A%252F%252Fwww.youtube.com%252Fresults%253Fsearch_query%253Drick%252Broll&hl=en&ec=65620
+  - navigation [ref=f1e70]:
+    - generic [ref=f1e76]:
+      - generic [ref=f1e77]:
+        - generic [ref=f1e79]:
+          - link [ref=f1e81] [cursor=pointer]:
+            - /url: /
+            - link "Home" [ref=f1e82]
+          - link [ref=f1e86] [cursor=pointer]:
+            - link "Shorts" [ref=f1e87]
+          - link [ref=f1e91] [cursor=pointer]:
+            - /url: /feed/subscriptions
+            - link "Subscriptions" [ref=f1e92]
+          - link [ref=f1e96] [cursor=pointer]:
+            - /url: /feed/you
+            - link "You" [ref=f1e97]
+          - link [ref=f1e101] [cursor=pointer]:
+            - /url: /feed/history
+            - link "History" [ref=f1e102]
+        - generic [ref=f1e105]:
+          - generic [ref=f1e106]: Sign in to like videos, comment, and subscribe.
+          - link "Sign in" [ref=f1e109] [cursor=pointer]:
+            - /url: https://accounts.google.com/ServiceLogin?service=youtube&uilel=3&passive=true&continue=https%3A%2F%2Fwww.youtube.com%2Fsignin%3Faction_handle_signin%3Dtrue%26app%3Ddesktop%26hl%3Den%26next%3Dhttps%253A%252F%252Fwww.youtube.com%252Fresults%253Fsearch_query%253Drick%252Broll&hl=en
+        - generic [ref=f1e113]:
+          - heading "Explore" [level=3] [ref=f1e114]
+          - generic [ref=f1e116]:
+            - link [ref=f1e118] [cursor=pointer]:
+              - /url: /channel/UC-9-kyTW8ZkZNDHQJ6FgpwQ
+              - link "Music" [ref=f1e119]
+            - link [ref=f1e125] [cursor=pointer]:
+              - /url: /feed/storefront?bp=ogUCKAU%3D
+              - link "Movies" [ref=f1e126]
+            - link [ref=f1e130] [cursor=pointer]:
+              - /url: /gaming
+              - link "Gaming" [ref=f1e131]
+            - button [ref=f1e135]:
+              - link [ref=f1e136] [cursor=pointer]:
+                - link "Show more" [ref=f1e137]
+        - generic [ref=f1e142]:
+          - heading "More from YouTube" [level=3] [ref=f1e143]
+          - generic [ref=f1e145]:
+            - link [ref=f1e147] [cursor=pointer]:
+              - /url: /premium
+              - link "YouTube Premium" [ref=f1e148]
+            - link [ref=f1e152] [cursor=pointer]:
+              - /url: https://music.youtube.com/
+              - link "YouTube Music" [ref=f1e153]
+            - link [ref=f1e157] [cursor=pointer]:
+              - /url: https://www.youtubekids.com/?source=youtube_web
+              - link "YouTube Kids" [ref=f1e158]
+        - link [ref=f1e164] [cursor=pointer]:
+          - /url: /reporthistory
+          - link "Report history" [ref=f1e165]
+      - generic [ref=f1e168]:
+        - generic [ref=f1e169]:
+          - link "About" [ref=f1e170] [cursor=pointer]:
+            - /url: https://www.youtube.com/about/
+          - link "Press" [ref=f1e171] [cursor=pointer]:
+            - /url: https://www.youtube.com/about/press/
+          - link "Copyright" [ref=f1e172] [cursor=pointer]:
+            - /url: https://www.youtube.com/about/copyright/
+          - link "Contact us" [ref=f1e173] [cursor=pointer]:
+            - /url: /t/contact_us/
+          - link "Creators" [ref=f1e174] [cursor=pointer]:
+            - /url: https://www.youtube.com/creators/
+          - link "Advertise" [ref=f1e175] [cursor=pointer]:
+            - /url: https://www.youtube.com/ads/
+          - link "Developers" [ref=f1e176] [cursor=pointer]:
+            - /url: https://developers.google.com/youtube
+        - generic [ref=f1e177]:
+          - link "Terms" [ref=f1e178] [cursor=pointer]:
+            - /url: /t/terms
+          - link "Privacy" [ref=f1e179] [cursor=pointer]:
+            - /url: /t/privacy
+          - link "Policy & Safety" [ref=f1e180] [cursor=pointer]:
+            - /url: https://www.youtube.com/about/policies/
+          - link "How YouTube works" [ref=f1e181] [cursor=pointer]:
+            - /url: https://www.youtube.com/howyoutubeworks?utm_campaign=ytgen&utm_source=ythp&utm_medium=LeftNav&utm_content=txt&u=https%3A%2F%2Fwww.youtube.com%2Fhowyoutubeworks%3Futm_source%3Dythp%26utm_medium%3DLeftNav%26utm_campaign%3Dytgen
+          - link "Test new features" [ref=f1e182] [cursor=pointer]:
+            - /url: /new
+        - generic [ref=f1e183]: © 2026 Google LLC
+  - generic [ref=f1e184]:
+    - main [ref=f1e185]:
+      - generic [ref=f1e186]:
+        - generic [ref=f1e188]:
+          - tablist [ref=f1e193]:
+            - tab "All" [selected] [ref=f1e197] [cursor=pointer]
+            - tab "Shorts" [ref=f1e206] [cursor=pointer]
+            - tab "Unwatched" [ref=f1e215] [cursor=pointer]
+            - tab "Watched" [ref=f1e224] [cursor=pointer]
+            - tab "Videos" [ref=f1e233] [cursor=pointer]
+            - tab "Recently uploaded" [ref=f1e242] [cursor=pointer]
+            - tab "Live" [ref=f1e251] [cursor=pointer]
+          - generic [ref=f1e258]:
+            - button "Search filters" [ref=f1e260] [cursor=pointer]:
+              - generic: Filters
+            - tooltip "tooltip"
+        - generic [ref=f1e269]:
+          - generic [ref=f1e271]:
+            - link [ref=f1e273] [cursor=pointer]:
+              - /url: /watch?v=dQw4w9WgXcQ&list=RDdQw4w9WgXcQ&start_radio=1&pp=ygUJcmljayByb2xsoAcB
+              - img [ref=f1e278]:
+                - generic [ref=f1e280]: 3:34
+              - generic: Now playing
+            - generic [ref=f1e281] [cursor=pointer]:
+              - generic [ref=f1e282]:
+                - generic [ref=f1e283]:
+                  - heading [level=3] [ref=f1e284]:
+                    - link "Rick Astley - Never Gonna Give You Up (Official Video) (4K Remaster) 3 minutes, 34 seconds" [ref=f1e285]:
+                      - /url: /watch?v=dQw4w9WgXcQ&list=RDdQw4w9WgXcQ&start_radio=1&pp=ygUJcmljayByb2xsoAcB
+                      - text: Rick Astley - Never Gonna Give You Up (Official Video) (4K Remaster)
+                  - button "Action menu" [ref=f1e289]
+                - generic [ref=f1e295]:
+                  - generic [ref=f1e296]: 1.8B views
+                  - generic [ref=f1e297]: •16 years ago
+              - generic [ref=f1e298]:
+                - link "Go to channel Rick Astley" [ref=f1e299]:
+                  - /url: /channel/UCuAXFkgsw1L7xaCfnd5JJOw
+                - generic [ref=f1e301]:
+                  - link "Rick Astley" [ref=f1e305]:
+                    - /url: /channel/UCuAXFkgsw1L7xaCfnd5JJOw
+                  - img "Official Artist Channel" [ref=f1e310]
+              - generic [ref=f1e312]:
+                - generic [ref=f1e313]: "The official video for “Never Gonna Give You Up” by Rick Astley. Never: The Autobiography OUT NOW! Follow this link to get ..."
+                - tooltip "tooltip"
+              - img "Closed captions" [ref=f1e318]:
+                - generic [ref=f1e319]: CC
+          - generic [ref=f1e321]:
+            - link [ref=f1e323] [cursor=pointer]:
+              - /url: /watch?v=Aq5WXmQQooo&pp=ygUJcmljayByb2xs
+              - img [ref=f1e328]:
+                - generic [ref=f1e329]: 0:15
+              - generic: Now playing
+            - generic [ref=f1e330] [cursor=pointer]:
+              - generic [ref=f1e331]:
+                - generic [ref=f1e332]:
+                  - heading [level=3] [ref=f1e333]:
+                    - link "Rick Roll Link 15 seconds" [ref=f1e334]:
+                      - /url: /watch?v=Aq5WXmQQooo&pp=ygUJcmljayByb2xs
+                      - text: Rick Roll Link
+                  - button "Action menu" [ref=f1e338]
+                - generic [ref=f1e344]:
+                  - generic [ref=f1e345]: 3.2M views
+                  - generic [ref=f1e346]: •4 years ago
+              - generic [ref=f1e347]:
+                - link "Go to channel Rick Roll Links" [ref=f1e348]:
+                  - /url: /@rickrolllinks3625
+                - link "Rick Roll Links" [ref=f1e354]:
+                  - /url: /@rickrolllinks3625
+              - generic [ref=f1e355]:
+                - generic [ref=f1e356]: "Git Rick Rolled I do not own these videos or images, the all belong to Rick Astley. Rick Astley's Youtube channel: ..."
+                - tooltip "tooltip"
+          - generic [ref=f1e357]:
+            - heading "Shorts" [level=2] [ref=f1e365]
+            - generic [ref=f1e367]:
+              - generic [ref=f1e370]:
+                - link [ref=f1e371] [cursor=pointer]:
+                  - /url: /shorts/9c8N_sQHbrA
+                - generic [ref=f1e375] [cursor=pointer]:
+                  - link "Make a song with THESE Emoji?? (Rick Roll)" [ref=f1e376]:
+                    - /url: /shorts/9c8N_sQHbrA
+                  - generic [ref=f1e377]: 4.2M views
+                - button "More actions" [ref=f1e379] [cursor=pointer]
+              - generic [ref=f1e385]:
+                - link [ref=f1e386] [cursor=pointer]:
+                  - /url: /shorts/m0joiI4gw_M
+                - generic [ref=f1e390] [cursor=pointer]:
+                  - link "HE RICKROLLED EVERY SCHOOL!" [ref=f1e391]:
+                    - /url: /shorts/m0joiI4gw_M
+                  - generic [ref=f1e392]: 1.4M views
+                - button "More actions" [ref=f1e394] [cursor=pointer]
+              - generic [ref=f1e400]:
+                - link [ref=f1e401] [cursor=pointer]:
+                  - /url: /shorts/WXSLN5ZF9cs
+                - generic [ref=f1e405] [cursor=pointer]:
+                  - 'link "Old Rick Astley vs New Rick Astley (RickRoll) #memes #shorts" [ref=f1e406]':
+                    - /url: /shorts/WXSLN5ZF9cs
+                  - generic [ref=f1e407]: 10M views
+                - button "More actions" [ref=f1e409] [cursor=pointer]
+              - generic [ref=f1e415]:
+                - link [ref=f1e416] [cursor=pointer]:
+                  - /url: /shorts/oRRMOgMD9BE
+                - generic [ref=f1e420] [cursor=pointer]:
+                  - link "Rick Roll can’t die…" [ref=f1e421]:
+                    - /url: /shorts/oRRMOgMD9BE
+                  - generic [ref=f1e422]: 8.5M views
+                - button "More actions" [ref=f1e424] [cursor=pointer]
+              - generic [ref=f1e430]:
+                - link [ref=f1e431] [cursor=pointer]:
+                  - /url: /shorts/xHEgHjJvR94
+                - generic [ref=f1e435] [cursor=pointer]:
+                  - link "the deadliest self defence move" [ref=f1e436]:
+                    - /url: /shorts/xHEgHjJvR94
+                  - generic [ref=f1e437]: 5.4M views
+                - button "More actions" [ref=f1e439] [cursor=pointer]
+          - generic [ref=f1e444]:
+            - link [ref=f1e446] [cursor=pointer]:
+              - /url: /watch?v=QDia3e12czc&pp=ygUJcmljayByb2xs
+            - generic [ref=f1e448] [cursor=pointer]:
+              - generic [ref=f1e449]:
+                - generic [ref=f1e450]:
+                  - heading [level=3] [ref=f1e451]:
+                    - 'link "Rickroll {HD + No ads} 10 seconds" [ref=f1e452]':
+                      - /url: /watch?v=QDia3e12czc&pp=ygUJcmljayByb2xs
+                      - text: "Rickroll {HD + No ads}"
+                  - button "Action menu" [ref=f1e456]
+                - generic [ref=f1e462]:
+                  - generic [ref=f1e463]: 2.8M views
+                  - generic [ref=f1e464]: •5 years ago
+              - generic [ref=f1e465]:
+                - link "Go to channel Everything is troll" [ref=f1e466]:
+                  - /url: /@everythingistroll9607
+                - link "Everything is troll" [ref=f1e471]:
+                  - /url: /@everythingistroll9607
+              - generic [ref=f1e472]:
+                - generic [ref=f1e473]: a rickroll without ads in hd.
+                - tooltip "tooltip"
+          - generic [ref=f1e475]:
+            - link [ref=f1e477] [cursor=pointer]:
+              - /url: /watch?v=H8ZH_mkfPUY&list=RDH8ZH_mkfPUY&start_radio=1&pp=ygUJcmljayByb2xsoAcB0gcJCRMMAYcqIYzv
+            - generic [ref=f1e479] [cursor=pointer]:
+              - generic [ref=f1e480]:
+                - generic [ref=f1e481]:
+                  - heading [level=3] [ref=f1e482]:
+                    - link "Rick Roll The Remakeboot 1 minute, 11 seconds" [ref=f1e483]:
+                      - /url: /watch?v=H8ZH_mkfPUY&list=RDH8ZH_mkfPUY&start_radio=1&pp=ygUJcmljayByb2xsoAcB0gcJCRMMAYcqIYzv
+                      - text: Rick Roll The Remakeboot
+                  - button "Action menu" [ref=f1e487]
+                - generic [ref=f1e493]:
+                  - generic [ref=f1e494]: 6.5M views
+                  - generic [ref=f1e495]: •4 years ago
+              - generic [ref=f1e496]:
+                - link "Go to channel Eder KFCard" [ref=f1e497]:
+                  - /url: /@EderKFCard
+                - generic [ref=f1e498]:
+                  - link "Eder KFCard" [ref=f1e502]:
+                    - /url: /@EderKFCard
+                  - img "Verified" [ref=f1e507]
+              - generic [ref=f1e509]:
+                - generic [ref=f1e510]: "I'm never gonna give you up, Rick! #animation #rickroll #rickastley."
+                - tooltip "tooltip"
+          - generic [ref=f1e512]:
+            - link [ref=f1e514] [cursor=pointer]:
+              - /url: /watch?v=bQ-JnLQL80M&pp=ygUJcmljayByb2xs0gcJCRMMAYcqIYzv
+            - generic [ref=f1e516] [cursor=pointer]:
+              - generic [ref=f1e517]:
+                - generic [ref=f1e518]:
+                  - heading [level=3] [ref=f1e519]:
+                    - link "Smartest way to avoid any RickRoll... 3 minutes, 31 seconds" [ref=f1e520]:
+                      - /url: /watch?v=bQ-JnLQL80M&pp=ygUJcmljayByb2xs0gcJCRMMAYcqIYzv
+                      - text: Smartest way to avoid any RickRoll...
+                  - button "Action menu" [ref=f1e524]
+                - generic [ref=f1e530]:
+                  - generic [ref=f1e531]: 11M views
+                  - generic [ref=f1e532]: •4 years ago
+              - generic [ref=f1e533]:
+                - link "Go to channel Beluga" [ref=f1e534]:
+                  - /url: /@Beluga1
+                - generic [ref=f1e535]:
+                  - link "Beluga" [ref=f1e539]:
+                    - /url: /@Beluga1
+                  - img "Verified" [ref=f1e544]
+              - generic [ref=f1e546]:
+                - text: This will make you invincible.
+                - tooltip "tooltip"
+          - generic [ref=f1e547]:
+            - heading "Shorts" [level=2] [ref=f1e555]
+            - generic [ref=f1e556]:
+              - generic [ref=f1e557]:
+                - generic [ref=f1e560]:
+                  - link [ref=f1e561] [cursor=pointer]:
+                    - /url: /shorts/rfzqW-wglOQ
+                  - generic [ref=f1e565] [cursor=pointer]:
+                    - 'link "Ranking YouTubers Getting Rickrolled😂 #rickroll #relatablememes" [ref=f1e566]':
+                      - /url: /shorts/rfzqW-wglOQ
+                    - generic [ref=f1e567]: 53K views
+                  - button "More actions" [ref=f1e569] [cursor=pointer]
+                - generic [ref=f1e575]:
+                  - link [ref=f1e576] [cursor=pointer]:
+                    - /url: /shorts/5qRpAYe7j2k
+                  - generic [ref=f1e580] [cursor=pointer]:
+                    - link "I Rick Rolled an Entire City" [ref=f1e581]:
+                      - /url: /shorts/5qRpAYe7j2k
+                    - generic [ref=f1e582]: 565K views
+                  - button "More actions" [ref=f1e584] [cursor=pointer]
+                - generic [ref=f1e590]:
+                  - link [ref=f1e591] [cursor=pointer]:
+                    - /url: /shorts/d557qoD4Uos
+                  - generic [ref=f1e595] [cursor=pointer]:
+                    - 'link "Rick Astley say good bye (my version) #rickroll #rickastley #oggway" [ref=f1e596]':
+                      - /url: /shorts/d557qoD4Uos
+                    - generic [ref=f1e597]: 1.1M views
+                  - button "More actions" [ref=f1e599] [cursor=pointer]
+                - generic [ref=f1e605]:
+                  - link [ref=f1e606] [cursor=pointer]:
+                    - /url: /shorts/q2s1LNj0_HE
+                  - generic [ref=f1e610] [cursor=pointer]:
+                    - link "the first rick roll" [ref=f1e611]:
+                      - /url: /shorts/q2s1LNj0_HE
+                    - generic [ref=f1e612]: 11M views
+                  - button "More actions" [ref=f1e614] [cursor=pointer]
+                - generic [ref=f1e620]:
+                  - link [ref=f1e621] [cursor=pointer]:
+                    - /url: /shorts/_6HzLIJPH2A
+                  - generic [ref=f1e625] [cursor=pointer]:
+                    - 'link "You just got RickRolled🤣😂 #shorts #rickroll" [ref=f1e626]':
+                      - /url: /shorts/_6HzLIJPH2A
+                    - generic [ref=f1e627]: 2.2M views
+                  - button "More actions" [ref=f1e629] [cursor=pointer]
+              - generic [ref=f1e633]:
+                - generic [ref=f1e636]:
+                  - link [ref=f1e637] [cursor=pointer]:
+                    - /url: /shorts/q244bCWxG-s
+                  - generic [ref=f1e641] [cursor=pointer]:
+                    - link "Sussy boy get rick rolled!" [ref=f1e642]:
+                      - /url: /shorts/q244bCWxG-s
+                    - generic [ref=f1e643]: 5M views
+                  - button "More actions" [ref=f1e645] [cursor=pointer]
+                - generic [ref=f1e651]:
+                  - link [ref=f1e652] [cursor=pointer]:
+                    - /url: /shorts/Kj-D6tth9O0
+                  - generic [ref=f1e656] [cursor=pointer]:
+                    - link "Bro got rick rolled 💀" [ref=f1e657]:
+                      - /url: /shorts/Kj-D6tth9O0
+                    - generic [ref=f1e658]: 591K views
+                  - button "More actions" [ref=f1e660] [cursor=pointer]
+                - generic [ref=f1e666]:
+                  - link [ref=f1e667] [cursor=pointer]:
+                    - /url: /shorts/JlvJNLx7WgU
+                  - generic [ref=f1e671] [cursor=pointer]:
+                    - link "send this to somebody to rickroll them😂" [ref=f1e672]:
+                      - /url: /shorts/JlvJNLx7WgU
+                    - generic [ref=f1e673]: 334K views
+                  - button "More actions" [ref=f1e675] [cursor=pointer]
+                - generic [ref=f1e681]:
+                  - link [ref=f1e682] [cursor=pointer]:
+                    - /url: /shorts/4SmqXl9Kgf0
+                  - generic [ref=f1e686] [cursor=pointer]:
+                    - link "How to RICK ROLL your entire wedding" [ref=f1e687]:
+                      - /url: /shorts/4SmqXl9Kgf0
+                    - generic [ref=f1e688]: 4M views
+                  - button "More actions" [ref=f1e690] [cursor=pointer]
+                - generic [ref=f1e696]:
+                  - link [ref=f1e697] [cursor=pointer]:
+                    - /url: /shorts/JWGMpJPDnGI
+                  - generic [ref=f1e701] [cursor=pointer]:
+                    - 'link "How real hackers Rickroll 🗿 #shorts" [ref=f1e702]':
+                      - /url: /shorts/JWGMpJPDnGI
+                    - generic [ref=f1e703]: 1.5M views
+                  - button "More actions" [ref=f1e705] [cursor=pointer]
+            - button "Show more" [ref=f1e712] [cursor=pointer]
+          - generic [ref=f1e717]:
+            - link [ref=f1e719] [cursor=pointer]:
+              - /url: /watch?v=7FwDP17XPlk&list=RD7FwDP17XPlk&start_radio=1&pp=ygUJcmljayByb2xsoAcB
+            - generic [ref=f1e721] [cursor=pointer]:
+              - generic [ref=f1e722]:
+                - generic [ref=f1e723]:
+                  - heading [level=3] [ref=f1e724]:
+                    - link "Rick Astley - Never Gonna Give You Up 3 minutes, 34 seconds" [ref=f1e725]:
+                      - /url: /watch?v=7FwDP17XPlk&list=RD7FwDP17XPlk&start_radio=1&pp=ygUJcmljayByb2xsoAcB
+                      - text: Rick Astley - Never Gonna Give You Up
+                  - button "Action menu" [ref=f1e729]
+                - generic [ref=f1e735]:
+                  - generic [ref=f1e736]: 815K views
+                  - generic [ref=f1e737]: •1 year ago
+              - generic [ref=f1e738]:
+                - link "Go to channel Amazing Lyrics" [ref=f1e739]:
+                  - /url: /@amazinglyrics5566
+                - generic [ref=f1e740]:
+                  - link "Amazing Lyrics" [ref=f1e744]:
+                    - /url: /@amazinglyrics5566
+                  - img "Verified" [ref=f1e749]
+              - generic [ref=f1e751]:
+                - generic [ref=f1e752]: "Rick Astley - Never Gonna Give You Up Get: Lyrics: [Intro] Desert you Ooh-ooh-ooh-ooh Hurt you [Verse 1] We're no strangers to ..."
+                - tooltip "tooltip"
+          - generic [ref=f1e754]:
+            - link [ref=f1e756] [cursor=pointer]:
+              - /url: /watch?v=AuKR2fQbMBk&pp=ygUJcmljayByb2xs
+            - generic [ref=f1e758] [cursor=pointer]:
+              - generic [ref=f1e759]:
+                - generic [ref=f1e760]:
+                  - heading [level=3] [ref=f1e761]:
+                    - link "10 rickrolls 1 video 35 seconds" [ref=f1e762]:
+                      - /url: /watch?v=AuKR2fQbMBk&pp=ygUJcmljayByb2xs
+                      - text: 10 rickrolls 1 video
+                  - button "Action menu" [ref=f1e766]
+                - generic [ref=f1e772]:
+                  - generic [ref=f1e773]: 2.4M views
+                  - generic [ref=f1e774]: •2 years ago
+              - generic [ref=f1e775]:
+                - link "Go to channel Jacob Ramielle" [ref=f1e776]:
+                  - /url: /@YTJacobRamielle
+                - link "Jacob Ramielle" [ref=f1e781]:
+                  - /url: /@YTJacobRamielle
+              - generic [ref=f1e782]:
+                - text: "Prequel: https://youtu.be/u9Bh7N2LrVs?si=hL8ND8U-l2p5vs4R."
+                - tooltip "tooltip"
+          - generic [ref=f1e784]:
+            - link [ref=f1e786] [cursor=pointer]:
+              - /url: /watch?v=QHO5_swrD_M&pp=ygUJcmljayByb2xs
+            - generic [ref=f1e788] [cursor=pointer]:
+              - generic [ref=f1e789]:
+                - generic [ref=f1e790]:
+                  - heading [level=3] [ref=f1e791]:
+                    - link "Ishowspeed getting rickrolled 6-7 times in a row 6 minutes, 35 seconds" [ref=f1e792]:
+                      - /url: /watch?v=QHO5_swrD_M&pp=ygUJcmljayByb2xs
+                      - text: Ishowspeed getting rickrolled 6-7 times in a row
+                  - button "Action menu" [ref=f1e796]
+                - generic [ref=f1e802]:
+                  - generic [ref=f1e803]: 2.6M views
+                  - generic [ref=f1e804]: •3 years ago
+              - generic [ref=f1e805]:
+                - link "Go to channel Goos" [ref=f1e806]:
+                  - /url: /@Goosboi
+                - link "Goos" [ref=f1e811]:
+                  - /url: /@Goosboi
+              - generic [ref=f1e812]:
+                - text: "pls like + Sub and hope you liked my video (: Donation: https://streamelements.com/goosboi/tip discord: ..."
+                - tooltip "tooltip"
+          - generic [ref=f1e814]:
+            - link [ref=f1e816] [cursor=pointer]:
+              - /url: /watch?v=6PLatPMoxGw&list=RD6PLatPMoxGw&start_radio=1&pp=ygUJcmljayByb2xsoAcB
+            - generic [ref=f1e818] [cursor=pointer]:
+              - generic [ref=f1e819]:
+                - heading [level=3] [ref=f1e821]:
+                  - link "Rick Astley - Never Gonna Give You Up (Lyrics) 3 minutes, 48 seconds" [ref=f1e822]:
+                    - /url: /watch?v=6PLatPMoxGw&list=RD6PLatPMoxGw&start_radio=1&pp=ygUJcmljayByb2xsoAcB
+                    - text: Rick Astley - Never Gonna Give You Up (Lyrics)
+                - generic [ref=f1e825]:
+                  - generic [ref=f1e826]: 1M views
+                  - generic [ref=f1e827]: •3 years ago
+              - generic [ref=f1e828]:
+                - link "Go to channel Young Pilgrim Music" [ref=f1e829]:
+                  - /url: /@YoungPilgrimMusic
+                - link "Young Pilgrim Music" [ref=f1e834]:
+                  - /url: /@YoungPilgrimMusic
+              - generic [ref=f1e835]:
+                - text: Support The Channel - https://www.buymeacoffee.com/YoungPilgrim.
+                - tooltip "tooltip"
+          - generic [ref=f1e837]:
+            - link [ref=f1e839] [cursor=pointer]:
+              - /url: /watch?v=7_pRiUfp938&pp=ygUJcmljayByb2xs
+            - generic [ref=f1e841] [cursor=pointer]:
+              - generic [ref=f1e842]:
+                - heading [level=3] [ref=f1e844]:
+                  - link "Rickroll'd 44 seconds" [ref=f1e845]:
+                    - /url: /watch?v=7_pRiUfp938&pp=ygUJcmljayByb2xs
+                    - text: Rickroll'd
+                - generic [ref=f1e848]:
+                  - generic [ref=f1e849]: 14M views
+                  - generic [ref=f1e850]: •18 years ago
+              - generic [ref=f1e851]:
+                - link "Go to channel Josh Byrd" [ref=f1e852]:
+                  - /url: /@jlb3846
+                - link "Josh Byrd" [ref=f1e857]:
+                  - /url: /@jlb3846
+              - generic [ref=f1e858]:
+                - generic [ref=f1e859]: Marketing class gets rickroll'd at graduate school.
+                - tooltip "tooltip"
+          - generic [ref=f1e861] [cursor=pointer]:
+            - link [ref=f1e862]:
+              - /url: /watch?v=ZzUsKizhb8o&list=PL_vkVwrwck3NJ9ajMQv7Y-DfX9gVAk5in
+              - generic [ref=f1e863]: 92 videos
+            - generic [ref=f1e877]:
+              - heading "Rick Roll's in disguise (to trick people)" [level=3] [ref=f1e878]:
+                - link "Rick Roll's in disguise (to trick people)" [ref=f1e879]:
+                  - /url: /watch?v=ZzUsKizhb8o&list=PL_vkVwrwck3NJ9ajMQv7Y-DfX9gVAk5in
+              - generic [ref=f1e881]:
+                - group [ref=f1e882]:
+                  - link "S2I2" [ref=f1e885]:
+                    - /url: /@S2I2
+                  - generic [ref=f1e886]: •
+                  - link "Playlist" [ref=f1e889]:
+                    - /url: /@S2I2
+                - group [ref=f1e890]
+                - group [ref=f1e891]:
+                  - link "Colourblind Test - Can you see every colour? · 1:39" [ref=f1e893]:
+                    - /url: /watch?v=ZzUsKizhb8o&list=PL_vkVwrwck3NJ9ajMQv7Y-DfX9gVAk5in
+                - group [ref=f1e894]:
+                  - link "*FREE ROBUX GLITCH* | (diving board Robux addition) | Roblox · 1:36" [ref=f1e896]:
+                    - /url: /watch?v=SO4c1NlGCpY&list=PL_vkVwrwck3NJ9ajMQv7Y-DfX9gVAk5in
+                - group [ref=f1e897]
+                - group [ref=f1e898]:
+                  - link "View full playlist" [ref=f1e901]:
+                    - /url: /playlist?list=PL_vkVwrwck3NJ9ajMQv7Y-DfX9gVAk5in
+          - generic [ref=f1e903] [cursor=pointer]:
+            - link [ref=f1e904]:
+              - /url: /watch?v=dQw4w9WgXcQ&list=RDdQw4w9WgXcQ&start_radio=1
+              - generic [ref=f1e905]: Mix
+            - generic [ref=f1e919]:
+              - heading "Mix - Rick Astley - Never Gonna Give You Up (Official Video) (4K Remaster)" [level=3] [ref=f1e920]:
+                - link "Mix - Rick Astley - Never Gonna Give You Up (Official Video) (4K Remaster)" [ref=f1e921]:
+                  - /url: /watch?v=dQw4w9WgXcQ&list=RDdQw4w9WgXcQ&start_radio=1
+              - generic [ref=f1e923]:
+                - group [ref=f1e924]:
+                  - generic [ref=f1e925]: Cyndi Lauper, Rick Astley, a-ha, and more
+                - group [ref=f1e926]
+                - group [ref=f1e927]:
+                  - link "Rick Astley - Never Gonna Give You Up (Official Video) (4K Remaster) · 3:34" [ref=f1e929]:
+                    - /url: /watch?v=dQw4w9WgXcQ&list=RDdQw4w9WgXcQ&start_radio=1
+                - group [ref=f1e930]:
+                  - link "a-ha - Take On Me (Official Video) [4K] · 4:04" [ref=f1e932]:
+                    - /url: /watch?v=djV11Xbc914&list=RDdQw4w9WgXcQ&start_radio=1
+                - group [ref=f1e933]
+    - text: •

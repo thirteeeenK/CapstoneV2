@@ -3,6 +3,8 @@
 namespace App\Console\Commands;
 
 use App\Models\ActivityModel;
+use App\Models\AddOnModel;
+use App\Models\Faq;
 use App\Models\HotelModel;
 use App\Models\Package;
 use App\Models\RoomType;
@@ -13,7 +15,7 @@ class GenerateEmbeddingsCommand extends Command
 {
     protected $signature = 'embed:all {--force : Re-generate embeddings even for items that already have them}';
 
-    protected $description = 'Generate and update AI embeddings for all hotels, room types, and activities';
+    protected $description = 'Generate and update AI embeddings for all hotels, room types, activities, packages, add-ons and FAQs';
 
     public function handle(GeminiService $geminiService)
     {
@@ -105,6 +107,49 @@ class GenerateEmbeddingsCommand extends Command
                 $this->line("  ✓ Embedded Package: {$package->name}");
             } else {
                 $this->error("  ✗ Failed Package: {$package->name}");
+            }
+        }
+
+        // 5. Process AddOns
+        $queryAddOns = AddOnModel::with('destination');
+        if (! $force) {
+            $queryAddOns->whereNull('embedding');
+        }
+        $addons = $queryAddOns->get();
+
+        $this->info("Processing {$addons->count()} add-ons...");
+        foreach ($addons as $addon) {
+            $destName = $addon->destination?->name;
+            $text = $geminiService->buildAddOnEmbeddingText($addon, $destName);
+            $vector = $geminiService->generateEmbedding($text, 'RETRIEVAL_DOCUMENT', $addon->name);
+
+            if ($vector) {
+                $addon->embedding = $geminiService->formatVectorForDb($vector);
+                $addon->save();
+                $this->line("  ✓ Embedded AddOn: {$addon->name} ({$destName})");
+            } else {
+                $this->error("  ✗ Failed AddOn: {$addon->name}");
+            }
+        }
+
+        // 6. Process FAQs
+        $queryFaqs = Faq::query();
+        if (! $force) {
+            $queryFaqs->whereNull('embedding');
+        }
+        $faqs = $queryFaqs->get();
+
+        $this->info("Processing {$faqs->count()} FAQs...");
+        foreach ($faqs as $faq) {
+            $text = $geminiService->buildFaqEmbeddingText($faq);
+            $vector = $geminiService->generateEmbedding($text, 'RETRIEVAL_DOCUMENT', $faq->question);
+
+            if ($vector) {
+                $faq->embedding = $geminiService->formatVectorForDb($vector);
+                $faq->save();
+                $this->line("  ✓ Embedded FAQ: {$faq->question}");
+            } else {
+                $this->error("  ✗ Failed FAQ: {$faq->question}");
             }
         }
 
