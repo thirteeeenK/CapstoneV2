@@ -142,7 +142,7 @@
                                                         x-text="'₱' + new Intl.NumberFormat().format(room.base_price)"></span>
                                                     <span
                                                         class="text-[10px] font-bold text-slate-500 bg-white px-2 py-0.5 rounded-md border border-slate-200"
-                                                        x-text="room.occupancy + ' pax max'"></span>
+                                                        x-text="(room.max_occupancy || room.occupancy) + ' pax max'"></span>
                                                 </div>
                                                 <template x-if="room.check_in_date && room.check_out_date">
                                                     <div class="text-[11px] text-slate-500 font-medium">
@@ -627,6 +627,8 @@
                                 destination: r.hotel?.destination?.name || r.destination || null,
                                 base_price: r.base_price,
                                 occupancy: r.occupancy,
+                                max_occupancy: r.max_occupancy || r.occupancy,
+                                base_occupancy: r.base_occupancy || 2,
                                 image: r.images ? (Array.isArray(r.images) ? r.images[0] : r.images) : r.image,
                                 check_in_date: entry.check_in_date || null,
                                 check_out_date: entry.check_out_date || null,

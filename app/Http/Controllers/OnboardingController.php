@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Concerns\ResolvesImages;
 use App\Models\DestinationModel;
 use App\Models\OnboardingOption;
 use App\Models\UserPreference;
@@ -34,17 +35,36 @@ class OnboardingController extends Controller
             'name' => $option->name,
             'icon' => $option->icon,
             'desc' => $option->description,
+            'image' => $option->resolved_image_url,
         ])->values();
 
         $groupTypes = $options->where('type', 'traveler_type')->map(fn ($option) => [
             'name' => $option->name,
             'icon' => $option->icon,
             'desc' => $option->description,
+            'image' => $option->resolved_image_url,
         ])->values();
 
-        $amenityPills = $options->where('type', 'amenity')->pluck('name')->values();
+        $amenityOptions = $options->where('type', 'amenity')->map(fn ($option) => [
+            'name' => $option->name,
+            'icon' => $option->icon ?? ResolvesImages::getAmenityIcon($option->name),
+            'desc' => $option->description,
+        ])->values();
 
-        return view('onboarding.index', compact('destinations', 'canSkip', 'isPersonalized', 'vibeOptions', 'groupTypes', 'amenityPills'));
+        $activityOptions = $options->where('type', 'activity')->map(fn ($option) => [
+            'name' => $option->name,
+            'icon' => $option->icon,
+            'desc' => $option->description,
+            'image' => $option->resolved_image_url,
+        ])->values();
+
+        $destinationCards = $destinations->map(fn ($dest) => [
+            'name' => $dest->name,
+            'desc' => $dest->description,
+            'image' => ResolvesImages::resolveImg($dest->image),
+        ])->values();
+
+        return view('onboarding.index', compact('destinationCards', 'canSkip', 'isPersonalized', 'vibeOptions', 'groupTypes', 'activityOptions', 'amenityOptions'));
     }
 
     public function store(Request $request, GeminiService $geminiService, RecommendationExplainer $explainer)
@@ -53,11 +73,13 @@ class OnboardingController extends Controller
             'vibes' => 'nullable|array',
             'destination' => 'nullable|string',
             'traveler_type' => 'nullable|string',
+            'activities' => 'nullable|array',
             'amenities' => 'nullable|array',
             'notes' => 'nullable|string|max:500',
         ]);
 
         $vibesList = ! empty($request->vibes) ? implode(', ', $request->vibes) : 'Beachfront, Island Energy';
+        $activitiesList = ! empty($request->activities) ? implode(', ', $request->activities) : 'Open to Any Experience';
         $amenitiesList = ! empty($request->amenities) ? implode(', ', $request->amenities) : 'Standard Luxuries';
         $destName = $request->destination ?: 'Any Island Sanctuary';
         $travelerType = $request->traveler_type ?: 'Vacationer';
@@ -68,7 +90,8 @@ class OnboardingController extends Controller
             "Preferred Destination: {$destName}",
             "Travel Atmosphere & Vibe Preferences: {$vibesList}",
             "Traveler Group Type: {$travelerType}",
-            "Desired Amenities & Activities: {$amenitiesList}",
+            "Desired Activities & Experiences: {$activitiesList}",
+            "Desired Amenities & Facilities: {$amenitiesList}",
             $notesText ? "Custom Requests: {$notesText}" : null,
         ]));
 
@@ -91,6 +114,7 @@ class OnboardingController extends Controller
                     'destination' => $request->destination,
                     'traveler_type' => $request->traveler_type,
                     'vibes' => $request->vibes ?? [],
+                    'activities' => $request->activities ?? [],
                     'amenities' => $request->amenities ?? [],
                     'notes' => $request->input('notes'),
                 ]

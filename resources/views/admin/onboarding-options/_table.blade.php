@@ -16,7 +16,7 @@
                             <th class="py-3 px-6 font-bold">#</th>
                             <th class="py-3 px-6 font-bold">Name</th>
                             <th class="py-3 px-6 font-bold">Type</th>
-                            <th class="py-3 px-6 font-bold">Icon</th>
+                            <th class="py-3 px-6 font-bold">Image</th>
                             <th class="py-3 px-6 font-bold">Order</th>
                             <th class="py-3 px-6 font-bold">Status</th>
                             <th class="py-3 px-6 font-bold text-right">Actions</th>
@@ -30,6 +30,7 @@
                                     'traveler_type' => 'bg-amber-50 text-amber-700 border-amber-200',
                                     default => 'bg-emerald-50 text-emerald-700 border-emerald-200',
                                 };
+                                $thumb = $option->resolved_image_url;
                             @endphp
                             <tr class="border-b border-slate-50 hover:bg-slate-50/50 transition">
                                 <td class="py-4 px-6 text-slate-400 font-black">{{ $options->firstItem() + $index }}</td>
@@ -45,7 +46,9 @@
                                     </span>
                                 </td>
                                 <td class="py-4 px-6">
-                                    @if($option->icon)
+                                    @if($thumb)
+                                        <img src="{{ $thumb }}" alt="{{ $option->name }}" class="w-12 h-12 object-cover rounded-lg border border-slate-200">
+                                    @elseif($option->icon)
                                         <span class="inline-flex items-center gap-1.5 text-xs text-slate-600 bg-slate-100 px-2 py-1 rounded-lg border border-slate-200">
                                             <span class="material-symbols-outlined text-[16px]">{{ $option->icon }}</span>
                                             <span>{{ $option->icon }}</span>

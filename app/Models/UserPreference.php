@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Model;
     'traveler_type',
     'vibes',
     'amenities',
+    'activities',
     'notes',
 ])]
 class UserPreference extends Model
@@ -18,6 +19,7 @@ class UserPreference extends Model
     protected $casts = [
         'vibes' => 'array',
         'amenities' => 'array',
+        'activities' => 'array',
         'recommendation_explanations' => 'array',
     ];
 }

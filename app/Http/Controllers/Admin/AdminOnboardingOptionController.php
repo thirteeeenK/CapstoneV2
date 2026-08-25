@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\OnboardingOption;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class AdminOnboardingOptionController extends Controller
@@ -12,7 +13,8 @@ class AdminOnboardingOptionController extends Controller
     public const TYPES = [
         'vibe' => 'Atmosphere Vibe',
         'traveler_type' => 'Traveler Type',
-        'amenity' => 'Amenity / Activity',
+        'activity' => 'Activity / Experience',
+        'amenity' => 'Amenity',
     ];
 
     /**
@@ -83,13 +85,26 @@ class AdminOnboardingOptionController extends Controller
             'description' => 'nullable|string|max:255',
             'sort_order' => 'nullable|integer|min:0',
             'is_active' => 'required|boolean',
+            'image_file' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'image_url' => ['nullable', 'url', 'max:2048'],
         ]);
+
+        if ($request->hasFile('image_file')) {
+            $path = $request->file('image_file')->store('onboarding/'.$validated['type'], 'public');
+            $validated['image_path'] = $path;
+        }
+
+        if ($request->filled('image_url')) {
+            $validated['image_url'] = trim($request->input('image_url'));
+        }
 
         $option = OnboardingOption::create([
             'type' => $validated['type'],
             'name' => $validated['name'],
             'icon' => $validated['icon'] ?? null,
             'description' => $validated['description'] ?? null,
+            'image_path' => $validated['image_path'] ?? null,
+            'image_url' => $validated['image_url'] ?? null,
             'sort_order' => $validated['sort_order'] ?? 0,
             'is_active' => (bool) $validated['is_active'],
         ]);
@@ -122,13 +137,38 @@ class AdminOnboardingOptionController extends Controller
             'description' => 'nullable|string|max:255',
             'sort_order' => 'nullable|integer|min:0',
             'is_active' => 'required|boolean',
+            'image_file' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'image_url' => ['nullable', 'url', 'max:2048'],
+            'remove_image' => ['nullable', 'boolean'],
         ]);
+
+        if ($request->hasFile('image_file')) {
+            if ($option->image_path && Storage::disk('public')->exists($option->image_path)) {
+                Storage::disk('public')->delete($option->image_path);
+            }
+            $path = $request->file('image_file')->store('onboarding/'.$validated['type'], 'public');
+            $validated['image_path'] = $path;
+        }
+
+        if ($request->boolean('remove_image')) {
+            if ($option->image_path && Storage::disk('public')->exists($option->image_path)) {
+                Storage::disk('public')->delete($option->image_path);
+            }
+            $validated['image_path'] = null;
+            $validated['image_url'] = null;
+        } elseif ($request->filled('image_url')) {
+            $validated['image_url'] = trim($request->input('image_url'));
+        } elseif ($request->has('image_url') && $request->input('image_url') === '') {
+            $validated['image_url'] = null;
+        }
 
         $option->update([
             'type' => $validated['type'],
             'name' => $validated['name'],
             'icon' => $validated['icon'] ?? null,
             'description' => $validated['description'] ?? null,
+            'image_path' => $validated['image_path'] ?? $option->image_path,
+            'image_url' => $validated['image_url'] ?? $option->image_url,
             'sort_order' => $validated['sort_order'] ?? $option->sort_order,
             'is_active' => (bool) $validated['is_active'],
         ]);
@@ -164,6 +204,11 @@ class AdminOnboardingOptionController extends Controller
     {
         $option = OnboardingOption::findOrFail($id);
         $name = $option->name;
+
+        if ($option->image_path && Storage::disk('public')->exists($option->image_path)) {
+            Storage::disk('public')->delete($option->image_path);
+        }
+
         $option->delete();
 
         return redirect()->route('admin.onboarding-options.index')
