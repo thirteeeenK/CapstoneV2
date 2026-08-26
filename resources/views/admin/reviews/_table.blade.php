@@ -3,6 +3,7 @@
         'positive' => ['label' => 'Positive', 'icon' => 'sentiment_satisfied', 'bar' => 'bg-emerald-500'],
         'neutral' => ['label' => 'Neutral', 'icon' => 'sentiment_neutral', 'bar' => 'bg-amber-400'],
         'negative' => ['label' => 'Negative', 'icon' => 'sentiment_dissatisfied', 'bar' => 'bg-rose-500'],
+        'pending' => ['label' => 'Pending', 'icon' => 'hourglass_top', 'bar' => 'bg-slate-300'],
     ];
 @endphp
 
@@ -49,9 +50,9 @@
                     </td>
                     <td class="px-4 py-3.5">
                         @php
-                            $m = $sentimentMeta[$review->sentiment] ?? $sentimentMeta['neutral'];
+                            $m = $sentimentMeta[$review->sentiment] ?? $sentimentMeta['pending'];
                         @endphp
-                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold border {{ $review->sentiment === 'positive' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : ($review->sentiment === 'negative' ? 'bg-rose-50 text-rose-700 border-rose-100' : 'bg-amber-50 text-amber-700 border-amber-100') }}">
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold border {{ $review->sentiment === 'positive' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : ($review->sentiment === 'negative' ? 'bg-rose-50 text-rose-700 border-rose-100' : ($review->sentiment === 'pending' ? 'bg-slate-100 text-slate-500 border-slate-200' : 'bg-amber-50 text-amber-700 border-amber-100')) }}">
                             <span class="material-symbols-outlined text-[12px]">{{ $m['icon'] }}</span>
                             {{ $m['label'] }}
                             <span class="ml-0.5">{{ number_format((float)($review->sentiment_score ?? 0), 2) }}</span>

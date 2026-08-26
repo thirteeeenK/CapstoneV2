@@ -12,8 +12,13 @@ use App\Models\Review;
 use App\Models\ReviewSummary;
 use App\Models\RoomType;
 use App\Services\ReviewService;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class AdminReviewController extends Controller
@@ -21,28 +26,85 @@ class AdminReviewController extends Controller
     /**
      * Operational DSS review analytics dashboard.
      */
-    public function index(Request $request)
+    public function index(Request $request): View|Response
+    {
+        $stats = $this->getSummaryStats();
+        $leaderboards = [
+            'hotels' => $this->topListings(HotelModel::class),
+            'rooms' => $this->topListings(RoomType::class),
+            'activities' => $this->topListings(ActivityModel::class),
+        ];
+        $needsImprovement = $this->getNeedsImprovement();
+        $keywordCloud = $this->getKeywordCloud();
+        $reviews = $this->buildReviewsQuery($request);
+        $ratingDist = $this->getRatingDistribution();
+
+        $chartData = [
+            'sentiment' => $stats['sentimentCounts'],
+            'ratingDist' => $ratingDist,
+            'leaderboards' => $leaderboards,
+            'needsImprovement' => $needsImprovement,
+            'keywords' => $keywordCloud,
+        ];
+
+        $sentimentMeta = [
+            'positive' => ['label' => 'Positive', 'icon' => 'sentiment_satisfied', 'bar' => 'bg-emerald-500'],
+            'neutral' => ['label' => 'Neutral', 'icon' => 'sentiment_neutral', 'bar' => 'bg-amber-400'],
+            'negative' => ['label' => 'Negative', 'icon' => 'sentiment_dissatisfied', 'bar' => 'bg-rose-500'],
+        ];
+
+        if ($request->boolean('partial') || $request->ajax()) {
+            return response()->view('admin.reviews._table', compact('reviews', 'sentimentMeta'));
+        }
+
+        $options = $this->getFilterOptions();
+
+        return view('admin.reviews.index', [
+            'totalReviews' => $stats['totalReviews'],
+            'avgRating' => $stats['avgRating'],
+            'sentimentCounts' => $stats['sentimentCounts'],
+            'sentimentTotal' => $stats['sentimentTotal'],
+            'leaderboards' => $leaderboards,
+            'needsImprovement' => $needsImprovement,
+            'keywordCloud' => $keywordCloud,
+            'reviews' => $reviews,
+            'destinations' => $options['destinations'],
+            'hotels' => $options['hotels'],
+            'rooms' => $options['rooms'],
+            'chartData' => $chartData,
+        ]);
+    }
+
+    /**
+     * Aggregate review totals, average ratings, and sentiment breakdown.
+     *
+     * @return array{totalReviews: int, avgRating: float, sentimentCounts: array<string, int>, sentimentTotal: int}
+     */
+    protected function getSummaryStats(): array
     {
         $totalReviews = Review::count();
         $avgRating = Review::published()->avg('rating') ?? 0;
-        $avgRating = round((float) $avgRating, 2);
 
         $sentimentCounts = [
             'positive' => Review::where('sentiment', Review::SENTIMENT_POSITIVE)->count(),
             'neutral' => Review::where('sentiment', Review::SENTIMENT_NEUTRAL)->count(),
             'negative' => Review::where('sentiment', Review::SENTIMENT_NEGATIVE)->count(),
         ];
-        $sentimentTotal = max(1, array_sum($sentimentCounts));
 
-        // Top rated leaderboards (listings with at least 1 review)
-        $leaderboards = [
-            'hotels' => $this->topListings(HotelModel::class),
-            'rooms' => $this->topListings(RoomType::class),
-            'activities' => $this->topListings(ActivityModel::class),
+        return [
+            'totalReviews' => $totalReviews,
+            'avgRating' => round((float) $avgRating, 2),
+            'sentimentCounts' => $sentimentCounts,
+            'sentimentTotal' => max(1, array_sum($sentimentCounts)),
         ];
+    }
 
-        // Needs-improvement alerts: negative sentiment spikes > 15%
-        $needsImprovement = ReviewSummary::where('summarizable_type', '!=', ReviewSummary::PLATFORM_OVERALL_TYPE)
+    /**
+     * Listings with negative sentiment spikes > 15%.
+     */
+    protected function getNeedsImprovement(): Collection
+    {
+        return ReviewSummary::where('summarizable_type', '!=', ReviewSummary::PLATFORM_OVERALL_TYPE)
             ->where('total_reviews', '>', 0)
             ->where('negative_percentage', '>', 15)
             ->orderByDesc('negative_percentage')
@@ -68,21 +130,36 @@ class AdminReviewController extends Controller
                     'average_rating' => (float) $summary->average_rating,
                 ];
             });
+    }
 
-        // Keyword cloud across all entity summaries
+    /**
+     * Top keyword frequencies across all entity summaries.
+     *
+     * @return array<string, int>
+     */
+    protected function getKeywordCloud(): array
+    {
         $keywordCounts = [];
-        ReviewSummary::where('most_frequent_keywords', '!=', '[]')->get(['most_frequent_keywords'])
+
+        ReviewSummary::where('most_frequent_keywords', '!=', '[]')
+            ->get(['most_frequent_keywords'])
             ->each(function (ReviewSummary $summary) use (&$keywordCounts) {
                 foreach (($summary->most_frequent_keywords ?? []) as $keyword => $count) {
                     $keywordCounts[(string) $keyword] = ($keywordCounts[(string) $keyword] ?? 0) + (int) $count;
                 }
             });
-        arsort($keywordCounts);
-        $keywordCloud = array_slice($keywordCounts, 0, 30, true);
 
-        // Recent reviews table with filters
-        $reviewsQuery = Review::with(['user', 'reviewable', 'booking'])
-            ->latest();
+        arsort($keywordCounts);
+
+        return array_slice($keywordCounts, 0, 30, true);
+    }
+
+    /**
+     * Paginated reviews query with applied filters.
+     */
+    protected function buildReviewsQuery(Request $request): LengthAwarePaginator
+    {
+        $reviewsQuery = Review::with(['user', 'reviewable', 'booking'])->latest();
 
         if ($request->filled('star')) {
             $reviewsQuery->where('rating', (int) $request->query('star'));
@@ -117,52 +194,36 @@ class AdminReviewController extends Controller
             $reviewsQuery->where('is_featured', $request->query('featured') === '1');
         }
 
-        $reviews = $reviewsQuery->paginate(15)->withQueryString();
+        return $reviewsQuery->paginate(15)->withQueryString();
+    }
 
-        // Chart data for the ApexCharts analytics dashboard
-        $ratingDist = Review::selectRaw('rating, COUNT(*) as c')
+    /**
+     * Star rating frequency distribution.
+     *
+     * @return array<int, int>
+     */
+    protected function getRatingDistribution(): array
+    {
+        return Review::selectRaw('rating, COUNT(*) as c')
             ->groupBy('rating')
             ->orderBy('rating')
             ->pluck('c', 'rating')
             ->map(fn ($count) => (int) $count)
             ->all();
+    }
 
-        $chartData = [
-            'sentiment' => $sentimentCounts,
-            'ratingDist' => $ratingDist,
-            'leaderboards' => $leaderboards,
-            'needsImprovement' => $needsImprovement,
-            'keywords' => $keywordCloud,
+    /**
+     * Select options for destinations, hotels, and rooms.
+     *
+     * @return array{destinations: \Illuminate\Database\Eloquent\Collection, hotels: \Illuminate\Database\Eloquent\Collection, rooms: \Illuminate\Database\Eloquent\Collection}
+     */
+    protected function getFilterOptions(): array
+    {
+        return [
+            'destinations' => DestinationModel::orderBy('name')->get(['id', 'name']),
+            'hotels' => HotelModel::orderBy('hotel_name')->get(['id', 'hotel_name', 'destination_id']),
+            'rooms' => RoomType::orderBy('room_name')->get(['id', 'hotel_id', 'room_name']),
         ];
-
-        $sentimentMeta = [
-            'positive' => ['label' => 'Positive', 'icon' => 'sentiment_satisfied', 'bar' => 'bg-emerald-500'],
-            'neutral' => ['label' => 'Neutral', 'icon' => 'sentiment_neutral', 'bar' => 'bg-amber-400'],
-            'negative' => ['label' => 'Negative', 'icon' => 'sentiment_dissatisfied', 'bar' => 'bg-rose-500'],
-        ];
-
-        if ($request->boolean('partial') || $request->ajax()) {
-            return view('admin.reviews._table', compact('reviews', 'sentimentMeta'));
-        }
-
-        $destinations = DestinationModel::orderBy('name')->get(['id', 'name']);
-        $hotels = HotelModel::orderBy('hotel_name')->get(['id', 'hotel_name', 'destination_id']);
-        $rooms = RoomType::orderBy('room_name')->get(['id', 'hotel_id', 'room_name']);
-
-        return view('admin.reviews.index', compact(
-            'totalReviews',
-            'avgRating',
-            'sentimentCounts',
-            'sentimentTotal',
-            'leaderboards',
-            'needsImprovement',
-            'keywordCloud',
-            'reviews',
-            'destinations',
-            'hotels',
-            'rooms',
-            'chartData',
-        ));
     }
 
     /**
@@ -204,7 +265,7 @@ class AdminReviewController extends Controller
     /**
      * Toggle a review's public visibility.
      */
-    public function togglePublish($id)
+    public function togglePublish(int $id): RedirectResponse
     {
         $review = Review::findOrFail($id);
         $review->is_published = ! $review->is_published;
@@ -219,7 +280,7 @@ class AdminReviewController extends Controller
     /**
      * Toggle whether a review is featured on the landing page.
      */
-    public function toggleFeatured($id)
+    public function toggleFeatured(int $id): RedirectResponse
     {
         $review = Review::findOrFail($id);
         $review->is_featured = ! $review->is_featured;
@@ -234,7 +295,7 @@ class AdminReviewController extends Controller
     /**
      * Form for creating reviews — booking backfill or manual entry.
      */
-    public function create()
+    public function create(): View
     {
         $bookings = Booking::with(['user', 'items'])
             ->withCount('items')
@@ -281,7 +342,7 @@ class AdminReviewController extends Controller
     /**
      * Persist an admin-authored review — booking backfill or manual entry.
      */
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
         $isManual = $request->input('review_mode') === 'manual';
 
@@ -331,7 +392,7 @@ class AdminReviewController extends Controller
     /**
      * Remove a review permanently.
      */
-    public function destroy($id)
+    public function destroy(int $id): RedirectResponse
     {
         $review = Review::findOrFail($id);
         $review->delete();

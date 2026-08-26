@@ -107,6 +107,12 @@
                     <p class="text-slate-800 text-xs font-bold font-headline">Welcome to SunnyBot AI!</p>
                     <p class="text-slate-500 text-[11px] font-body leading-relaxed">Ask me about sanctuary hotels,
                         island activities, room rates, or custom itineraries in the Philippines.</p>
+                    <div class="flex flex-wrap gap-2 justify-center pt-2">
+                        <button @click='input = "Where to stay in Boracay?"; send()'
+                            class="px-3 py-1.5 rounded-full bg-ocean-50 hover:bg-ocean-100 text-ocean-700 text-[11px] font-bold border border-ocean-200 transition-colors cursor-pointer">Where to stay in Boracay?</button>
+                        <button @click='input = "What is weather in Palawan?"; send()'
+                            class="px-3 py-1.5 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-700 text-[11px] font-bold border border-amber-200 transition-colors cursor-pointer">What is weather in Palawan?</button>
+                    </div>
                 </div>
             </template>
 

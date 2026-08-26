@@ -70,11 +70,11 @@ class OnboardingController extends Controller
     public function store(Request $request, GeminiService $geminiService, RecommendationExplainer $explainer)
     {
         $request->validate([
-            'vibes' => 'nullable|array',
+            'vibes' => 'nullable|array|max:5',
             'destination' => 'nullable|string',
             'traveler_type' => 'nullable|string',
-            'activities' => 'nullable|array',
-            'amenities' => 'nullable|array',
+            'activities' => 'nullable|array|max:5',
+            'amenities' => 'nullable|array|max:5',
             'notes' => 'nullable|string|max:500',
         ]);
 

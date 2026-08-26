@@ -14,6 +14,10 @@
             if (this.vibes.includes(vibe)) {
                 this.vibes = this.vibes.filter(v => v !== vibe);
             } else {
+                if (this.vibes.length >= 5) {
+                    this.errorMessage = 'You can select up to 5 vibes only.';
+                    return;
+                }
                 this.vibes.push(vibe);
             }
         },
@@ -22,6 +26,10 @@
             if (this.activities.includes(activity)) {
                 this.activities = this.activities.filter(a => a !== activity);
             } else {
+                if (this.activities.length >= 5) {
+                    this.errorMessage = 'You can select up to 5 activities only.';
+                    return;
+                }
                 this.activities.push(activity);
             }
         },
@@ -30,6 +38,10 @@
             if (this.amenities.includes(amenity)) {
                 this.amenities = this.amenities.filter(a => a !== amenity);
             } else {
+                if (this.amenities.length >= 5) {
+                    this.errorMessage = 'You can select up to 5 amenities only.';
+                    return;
+                }
                 this.amenities.push(amenity);
             }
         },
@@ -147,6 +159,9 @@
                                 <span>Step 1: What atmosphere do you crave?</span>
                             </h2>
                             <p class="text-xs text-slate-500">Select all vibes that match your ideal getaway mood.</p>
+                            <div class="flex justify-end pt-1">
+                                <span class="text-xs font-bold transition-colors" :class="vibes.length >= 5 ? 'text-amber-600' : (vibes.length > 0 ? 'text-sky-600' : 'text-slate-400')" x-text="vibes.length + '/5 selected'"></span>
+                            </div>
                         </div>
 
                         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -365,6 +380,9 @@
                                 <span>Step 4: What experiences excite you?</span>
                             </h2>
                             <p class="text-xs text-slate-500">Pick the activities you want — images help you visualize each one.</p>
+                            <div class="flex justify-end pt-1">
+                                <span class="text-xs font-bold transition-colors" :class="activities.length >= 5 ? 'text-amber-600' : (activities.length > 0 ? 'text-sky-600' : 'text-slate-400')" x-text="activities.length + '/5 selected'"></span>
+                            </div>
                         </div>
 
                         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -431,6 +449,9 @@
                                 <span>Step 5: Must-Have Amenities</span>
                             </h2>
                             <p class="text-xs text-slate-500">Select the hotel amenities and facilities you want.</p>
+                            <div class="flex justify-end pt-1">
+                                <span class="text-xs font-bold transition-colors" :class="amenities.length >= 5 ? 'text-amber-600' : (amenities.length > 0 ? 'text-sky-600' : 'text-slate-400')" x-text="amenities.length + '/5 selected'"></span>
+                            </div>
                         </div>
 
                         <div class="flex flex-wrap gap-2">

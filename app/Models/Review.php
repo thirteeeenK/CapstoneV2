@@ -29,6 +29,7 @@ class Review extends Model
         'comment',
         'sentiment',
         'sentiment_score',
+        'ground_truth_sentiment',
         'extracted_keywords',
         'reviewer_name',
         'is_verified_booking',

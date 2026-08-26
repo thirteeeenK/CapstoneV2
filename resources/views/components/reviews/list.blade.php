@@ -10,11 +10,13 @@
         'positive' => 'sentiment_satisfied',
         'neutral' => 'sentiment_neutral',
         'negative' => 'sentiment_dissatisfied',
+        'pending' => 'hourglass_top',
     ];
     $sentimentTint = [
         'positive' => 'bg-emerald-50 text-emerald-700 border-emerald-100',
         'neutral' => 'bg-amber-50 text-amber-700 border-amber-100',
         'negative' => 'bg-rose-50 text-rose-700 border-rose-100',
+        'pending' => 'bg-slate-100 text-slate-500 border-slate-200',
     ];
 @endphp
 

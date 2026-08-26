@@ -78,11 +78,31 @@ class RecommendationController extends Controller
                 $rankedActivities = collect($geminiService->rankRecommendations($userVector, $allAiActivities, 5));
                 $aiActivities = $rankedActivities->map(fn ($entry) => $entry['item']);
 
-                $aiPackages = Package::where('is_active', true)
+                $allAiPackages = Package::where('is_active', true)
                     ->where('destination_id', $destination->id)
+                    ->whereNotNull('embedding')
                     ->with('destination')
-                    ->take(4)
                     ->get();
+
+                if ($allAiPackages->isNotEmpty()) {
+                    $rankedPackages = collect($geminiService->rankRecommendations($userVector, $allAiPackages, 4));
+                    $aiPackages = $rankedPackages->map(fn ($entry) => $entry['item']);
+                    if ($aiPackages->count() < 4) {
+                        $remaining = Package::where('is_active', true)
+                            ->where('destination_id', $destination->id)
+                            ->whereNotIn('id', $aiPackages->pluck('id'))
+                            ->with('destination')
+                            ->take(4 - $aiPackages->count())
+                            ->get();
+                        $aiPackages = $aiPackages->concat($remaining);
+                    }
+                } else {
+                    $aiPackages = Package::where('is_active', true)
+                        ->where('destination_id', $destination->id)
+                        ->with('destination')
+                        ->take(4)
+                        ->get();
+                }
 
                 $reasons = $userPreference
                     ? $explainer->forDestination($userPreference, $destination, $aiHotels, $aiActivities)

@@ -687,7 +687,7 @@ class GeminiService
             $blocks[] = implode("\n", $lines);
         }
 
-        $header = "Ranked by AI semantic relevance: Rank #1 = best match for the query, Rank #2+ = close alternatives. Tell the user this.\n\n";
+        $header = count($scoredHotels) > 1 ? "Ranked by AI semantic relevance: Rank #1 = best match for the query, Rank #2+ = close alternatives. Tell the user this.\n\n" : '';
 
         return "=== HOTEL DATABASE RESULTS ===\n\n".$header.implode("\n\n", $blocks)."\n\n=== END HOTEL RESULTS ===";
     }
@@ -827,7 +827,7 @@ class GeminiService
             $blocks[] = implode("\n", $lines);
         }
 
-        $header = "Ranked by AI semantic relevance: Rank #1 = best match for the query, Rank #2+ = close alternatives. Tell the user this.\n\n";
+        $header = count($scoredRooms) > 1 ? "Ranked by AI semantic relevance: Rank #1 = best match for the query, Rank #2+ = close alternatives. Tell the user this.\n\n" : '';
 
         return "=== ROOM DATABASE RESULTS ===\n\n".$header.implode("\n\n", $blocks)."\n\n=== END ROOM RESULTS ===";
     }
@@ -954,7 +954,7 @@ class GeminiService
             $blocks[] = implode("\n", $lines);
         }
 
-        $header = "Ranked by AI semantic relevance: Rank #1 = best match for the query, Rank #2+ = close alternatives. Tell the user this.\n\n";
+        $header = count($scoredActivities) > 1 ? "Ranked by AI semantic relevance: Rank #1 = best match for the query, Rank #2+ = close alternatives. Tell the user this.\n\n" : '';
 
         return "=== ACTIVITY & TOUR DATABASE RESULTS ===\n\n".$header.implode("\n\n", $blocks)."\n\n=== END ACTIVITY RESULTS ===";
     }
@@ -987,7 +987,7 @@ class GeminiService
     /**
      * Semantic search over packages using pgvector cosine distance (<=>).
      */
-    public function searchPackages(string $query, int $limit = 5): array
+    public function searchPackages(string $query, int $limit = 5, ?int $destinationId = null): array
     {
         $queryVector = $this->generateEmbedding($query, 'RETRIEVAL_QUERY');
 
@@ -1005,6 +1005,7 @@ class GeminiService
         $packages = Package::with('destination')
             ->where('is_active', true)
             ->whereNotNull('embedding')
+            ->when($destinationId, fn ($q) => $q->where('destination_id', $destinationId))
             ->select('*')
             ->selectRaw('1.0 - (embedding <=> ?) AS similarity', [$vectorStr])
             ->orderByRaw('embedding <=> ? ASC', [$vectorStr])
@@ -1121,7 +1122,7 @@ class GeminiService
             $blocks[] = implode("\n", $lines);
         }
 
-        $header = "Ranked by AI semantic relevance: Rank #1 = best match for the query, Rank #2+ = close alternatives. Tell the user this.\n\n";
+        $header = count($scoredPackages) > 1 ? "Ranked by AI semantic relevance: Rank #1 = best match for the query, Rank #2+ = close alternatives. Tell the user this.\n\n" : '';
 
         return "=== PACKAGE DATABASE RESULTS ===\n\n".$header.implode("\n\n", $blocks)."\n\n=== END PACKAGE RESULTS ===";
     }
@@ -1208,7 +1209,7 @@ class GeminiService
             $blocks[] = implode("\n", $lines);
         }
 
-        $header = "Ranked by AI semantic relevance: Rank #1 = best match for the query, Rank #2+ = close alternatives. Tell the user this.\n\n";
+        $header = count($scoredAddOns) > 1 ? "Ranked by AI semantic relevance: Rank #1 = best match for the query, Rank #2+ = close alternatives. Tell the user this.\n\n" : '';
 
         return "=== ADDON DATABASE RESULTS ===\n\n".$header.implode("\n\n", $blocks)."\n\n=== END ADDON RESULTS ===";
     }
@@ -1952,9 +1953,35 @@ class GeminiService
     {
         $queryVector = $this->generateEmbedding($query, 'RETRIEVAL_QUERY');
         if (! $queryVector) {
-            Log::warning('searchRoomsHybrid: Failed to generate query embedding.', ['query' => $query]);
+            Log::warning('searchRoomsHybrid: query embedding failed, fallback to price-only', ['query' => $query, 'constraints' => $constraints]);
 
-            return [];
+            $fallback = RoomType::with('hotel.destination')
+                ->where('is_shown', true)
+                ->whereNotNull('embedding')
+                ->when(! empty($constraints['destination_id']), fn ($q) => $q->whereHas('hotel', fn ($qq) => $qq->where('destination_id', $constraints['destination_id'])))
+                ->when(! empty($constraints['pax']), fn ($q) => $q->where('max_occupancy', '>=', $constraints['pax']))
+                ->when(! empty($constraints['hotel_id']), fn ($q) => $q->where('hotel_id', $constraints['hotel_id']))
+                ->when(! empty($constraints['max_price']), fn ($q) => $q->where('base_price', '<=', $constraints['max_price']))
+                ->when(! empty($constraints['room_id']), fn ($q) => $q->where('id', $constraints['room_id']))
+                ->when(empty($constraints['room_id']) && ! empty($constraints['room_name']), fn ($q) => $q->where('room_name', 'ILIKE', $constraints['room_name']))
+                ->orderBy('base_price', 'asc')
+                ->limit($limit)
+                ->get();
+
+            if ($fallback->isEmpty() && empty($constraints['hotel_id']) && empty($constraints['room_id']) && empty($constraints['room_name'])) {
+                $fallback = RoomType::with('hotel.destination')
+                    ->where('is_shown', true)
+                    ->whereNotNull('embedding')
+                    ->orderBy('base_price', 'asc')
+                    ->limit($limit)
+                    ->get();
+            }
+
+            if ($fallback->isEmpty()) {
+                return [];
+            }
+
+            return $fallback->map(fn ($r) => ['item' => $r, 'score' => 0.0])->all();
         }
 
         $roomsQuery = RoomType::with('hotel.destination')

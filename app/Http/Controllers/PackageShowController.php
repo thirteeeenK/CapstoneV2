@@ -21,6 +21,13 @@ class PackageShowController extends Controller
             $query->where('destination_id', $request->destination_id);
         }
 
+        if ($search = $request->query('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'ilike', "%{$search}%")
+                    ->orWhere('type', 'ilike', "%{$search}%");
+            });
+        }
+
         $packages = $query->orderBy('price', 'asc')->get();
 
         return view('package.index', compact('packages', 'destinations'));

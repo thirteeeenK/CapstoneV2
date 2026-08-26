@@ -239,8 +239,12 @@ class ChatbotService
         if ($lastBot) {
             $data = $lastBot->context_data ?: [];
             $carry = array_intersect_key($data, array_flip([
-                'retrieved_rooms', 'retrieved_hotels', 'retrieved_activities',
-                'retrieved_packages', 'itinerary', 'availability',
+                'retrieved_rooms',
+                'retrieved_hotels',
+                'retrieved_activities',
+                'retrieved_packages',
+                'itinerary',
+                'availability',
             ]));
 
             $hotelName = $this->intentRouter->extractHotelName($query);
@@ -350,11 +354,98 @@ class ChatbotService
 
         $lower = mb_strtolower($message);
         $bannedPatterns = [
-            'nsfw', 'porn', 'naked', 'nude', 'sexual', 'sex', 'strip', 'erotic',
-            'suicide', 'bomb', 'terrorist', 'hack bank', 'credit card fraud',
-            'illegal drugs', 'kill', 'murder',
-            'ignore previous instructions', 'ignore all rules', 'system prompt',
-            'you are now DAN', 'bypass restriction',
+            // --- 1. EXISTING PATTERNS ---
+            'nsfw',
+            'porn',
+            'naked',
+            'nude',
+            'sexual',
+            'sex',
+            'strip',
+            'erotic',
+            'suicide',
+            'bomb',
+            'terrorist',
+            'hack bank',
+            'credit card fraud',
+            'illegal drugs',
+            'kill',
+            'murder',
+            'ignore previous instructions',
+            'ignore all rules',
+            'system prompt',
+            'you are now DAN',
+            'bypass restriction',
+
+            // --- 2. HATE SPEECH & PROFANITY (Tagalog & English) ---
+            'putangina',
+            'gago',
+            'bobo',
+            'tanga',
+            'ulol',
+            'inamo',
+            'hayop ka',
+            'tarantado',
+            'fuck',
+            'shit',
+            'bitch',
+            'asshole',
+            'cunt',
+            'retard',
+            'bastard',
+
+            // --- 3. NSFW & EXPLICIT CONTENT (Tagalog & Extra English) ---
+            'bold',
+            'hubad',
+            'bastos',
+            'kantot',
+            'iyot',
+            'pepe',
+            'titi',
+            'pokpok',
+            'escort',
+            'prostitute',
+            'onlyfans',
+            'sugar daddy',
+            'sugar baby',
+
+            // --- 4. HARM, VIOLENCE & ILLEGAL ACTS (Tagalog & Extra English) ---
+            'magpakamatay',
+            'patayin',
+            'saksak',
+            'baril',
+            'droga',
+            'shabu',
+            'adik',
+            'weapon',
+            'shoot',
+            'self-harm',
+            'cut myself',
+            'rape',
+
+            // --- 5. ADVANCED PROMPT INJECTION & AI MANIPULATION ---
+            'developer mode',
+            'forget everything',
+            'act as a developer',
+            'print prompt',
+            'output your instructions',
+            'jailbreak',
+            'do anything now',
+            'system message',
+            'admin mode',
+            'override commands',
+
+            // --- 6. TRAVEL-SPECIFIC ABUSE & SCAMS ---
+            'human trafficking',
+            'smuggle',
+            'fake passport',
+            'fake visa',
+            'bypass immigration',
+            'tnt',
+            'tago ng tago',
+            'peke na ticket',
+            'scam',
+            'money laundering',
         ];
         foreach ($bannedPatterns as $kw) {
             if (str_contains($lower, $kw)) {
@@ -380,7 +471,7 @@ class ChatbotService
 
         $priceIntent = $this->detectPriceIntent($query);
         if ($priceIntent) {
-            $scored = $this->sortRoomsByPrice($scored, $priceIntent);
+            $scored = $this->sortRoomsByPrice($scored, $priceIntent, $constraints['pax'] ?? 2);
         }
 
         foreach ($scored as &$entry) {
@@ -530,14 +621,15 @@ class ChatbotService
     }
 
     /**
-     * Sort scored rooms by base price so the cheapest/most expensive rooms
-     * surface first for budget/luxury queries. Ties fall back to similarity.
+     * Sort scored rooms by total nightly rate for the requested pax so
+     * cheapest/most expensive rooms surface first for budget/luxury queries.
+     * Ties fall back to similarity.
      */
-    protected function sortRoomsByPrice(array $scored, string $direction): array
+    protected function sortRoomsByPrice(array $scored, string $direction, int $pax = 2): array
     {
-        usort($scored, function ($a, $b) use ($direction) {
-            $pa = (float) $a['item']->base_price;
-            $pb = (float) $b['item']->base_price;
+        usort($scored, function ($a, $b) use ($direction, $pax) {
+            $pa = (float) $a['item']->calculateNightlyRate($pax);
+            $pb = (float) $b['item']->calculateNightlyRate($pax);
 
             if ($pa === $pb) {
                 return $b['score'] <=> $a['score'];
@@ -579,7 +671,8 @@ class ChatbotService
 
     protected function handlePackageSearch(string $query, array $constraints, ?User $user, ChatSession $session): array
     {
-        $scored = $this->gemini->searchPackages($query, 5);
+        $destinationId = $constraints['destination_id'] ?? null;
+        $scored = $this->gemini->searchPackages($query, 5, $destinationId);
 
         $today = Carbon::now()->startOfDay();
         $scored = array_filter($scored, function ($entry) use ($today) {
@@ -846,8 +939,10 @@ class ChatbotService
 
             if ($da && $db && $da->latitude && $da->longitude && $db->latitude && $db->longitude) {
                 $km = $this->distance->haversine(
-                    (float) $da->latitude, (float) $da->longitude,
-                    (float) $db->latitude, (float) $db->longitude
+                    (float) $da->latitude,
+                    (float) $da->longitude,
+                    (float) $db->latitude,
+                    (float) $db->longitude
                 );
                 $label = $this->distance->format($km);
 
@@ -1124,7 +1219,7 @@ class ChatbotService
             'Treat the current DATABASE RESULTS section as the source of truth. Do not carry unsupported facts from earlier conversation turns into the answer.',
             'Never invent prices, availability, names, durations, or other factual details.',
             'Never present "Total Physical Rooms" as live availability. If the context says "not live availability", tell the user to provide check-in/check-out dates for a live check (e.g., "check Aug 30-31 for 2 pax").',
-            'In DATABASE RESULTS, Rank #1 is the system\'s best AI match (highest relevance score) for the query; Rank #2+ are next-best alternatives. You must list every Rank provided (up to 5 hotels/rooms/activities/packages where provided, e.g., top 5) — Rank #1 under ### Best Match with one sentence why #1 is top (use Vibe/Category/Featured Amenities/Price Range/Guest Rating from that block), and Rank #2+ under ### Other Options each one bullet (name — Price Range — one key amenity). Do not omit alternatives to stay concise; this ranked-list rule overrides the concise 3-paragraph limit. Then add one short line "Ranked by system: #1 is best match, #2+ are close alternatives." Do not show raw relevance numbers unless helpful.',
+            'In DATABASE RESULTS, Rank #1 is the system\'s best AI match (highest relevance score) for the query; Rank #2+ are next-best alternatives. You must list every Rank provided (up to 5 hotels/rooms/activities/packages where provided, e.g., top 5) — Rank #1 under ### Best Match with one sentence why #1 is top (use Vibe/Category/Featured Amenities/Price Range/Guest Rating from that block), and Rank #2+ under ### Other Options each one bullet (name — Price Range — one key amenity). Do not omit alternatives to stay concise; this ranked-list rule overrides the concise 3-paragraph limit. If 2 or more Ranks were provided, then add one short line "Ranked by system: #1 is best match, #2+ are close alternatives." If only Rank #1 was provided, do NOT add any ranked/“best match” line and do not mention alternatives. Do not show raw relevance numbers unless helpful.',
             'Never add airports, ferry terminals, boats, vans, transfers, beaches, landmarks, restaurants, shops, fees, or food and drink estimates unless the exact fact appears in the database results.',
             'If information is unavailable, say it is not in our database instead of filling the gap with general travel knowledge.',
             'Use **bold** for short labels, ### for section headings, and - for bullet lists. Do not output HTML.',

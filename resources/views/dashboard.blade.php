@@ -20,7 +20,7 @@
                             <span
                                 class="px-3 py-1 rounded-full bg-sky-50 text-sky-700 text-[11px] font-extrabold uppercase tracking-widest border border-sky-200 flex items-center gap-1.5 shadow-xs">
                                 <span class="material-symbols-outlined text-[15px] text-sky-600">auto_awesome</span>
-                                <span>AI Personalization Active</span>
+                                <span>Recommendation Active</span>
                             </span>
                         @else
                             <span

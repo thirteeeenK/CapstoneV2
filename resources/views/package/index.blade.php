@@ -1,15 +1,22 @@
 <x-frontend.layout title="Tour Packages & Vacation Deals — SunnyTrips">
     @php
         $selectedDestId = request('destination_id');
+        $searchQuery = request('search');
     @endphp
 
     <div x-data="{
         activeDestId: '{{ $selectedDestId ?: 'all' }}',
+        searchQuery: @js($searchQuery ?? ''),
         previewPackage: null,
         activeImgIdx: 0,
-        matchesPackage(destId) {
+        matchesPackage(destId, pkgName = '', pkgType = '') {
             if (this.activeDestId !== 'all' && String(this.activeDestId) !== String(destId)) {
                 return false;
+            }
+            if (this.searchQuery && this.searchQuery.trim() !== '') {
+                const q = this.searchQuery.toLowerCase();
+                const hay = (pkgName + ' ' + pkgType).toLowerCase();
+                if (!hay.includes(q)) return false;
             }
             return true;
         }
@@ -75,6 +82,24 @@
                 </div>
             </div>
 
+            {{-- Keyword Search --}}
+            <div class="flex flex-col sm:flex-row gap-3 items-center justify-between bg-white border border-slate-200 rounded-2xl p-4 shadow-xs">
+                <div class="relative flex-1 w-full">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 text-[18px]">search</span>
+                    <input type="search" x-model="searchQuery" placeholder="Search by package name, type, or keyword..." aria-label="Search packages"
+                        class="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-sky-500 focus:bg-white transition-colors"
+                        @keydown.enter="window.location.href = '{{ route('packages.index') }}?search=' + encodeURIComponent(searchQuery) + (activeDestId !== 'all' ? '&destination_id=' + activeDestId : '')">
+                    <button type="button" x-show="searchQuery" @click="searchQuery = ''" class="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-slate-100 text-slate-400 transition-colors" aria-label="Clear search">
+                        <span class="material-symbols-outlined text-[16px]">close</span>
+                    </button>
+                </div>
+                <div class="flex gap-2 shrink-0 w-full sm:w-auto">
+                    <a :href="'{{ route('packages.index') }}?search=' + encodeURIComponent(searchQuery) + (activeDestId !== 'all' ? '&destination_id=' + activeDestId : '')"
+                        class="flex-1 sm:flex-none px-5 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs text-center transition-colors cursor-pointer">Search</a>
+                    <a href="{{ route('packages.index') }}" x-show="searchQuery || activeDestId !== 'all'" class="flex-1 sm:flex-none px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 font-bold text-xs text-center transition-colors">Clear</a>
+                </div>
+            </div>
+
             {{-- Packages Grid --}}
             @if($packages->isEmpty())
                 <div class="bg-white p-12 rounded-3xl border border-slate-200 text-center text-slate-400 text-sm shadow-xs">
@@ -111,10 +136,12 @@
                                 'generic_inclusions' => array_values($inclusionsRaw),
                                 'hotels' => $pkg->hotels->map(fn($h) => ['id' => $h->id, 'name' => $h->hotel_name])->toArray(),
                                 'activities' => $pkg->activities->map(fn($a) => ['id' => $a->id, 'name' => $a->activity_name])->toArray(),
+                                'valid_from' => $pkg->valid_from ? $pkg->valid_from->format('M d, Y') : null,
+                                'valid_to' => $pkg->valid_to ? $pkg->valid_to->format('M d, Y') : null,
                             ];
                         @endphp
 
-                        <div x-show="matchesPackage('{{ $pkg->destination_id }}')"
+                        <div x-show="matchesPackage('{{ $pkg->destination_id }}', @js($pkg->name), @js($pkg->type ?? ''))"
                             class="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-xs hover:shadow-md hover:border-amber-400 transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between group">
 
                             <div>
@@ -259,6 +286,9 @@
                             <p class="text-xs text-slate-500 mt-0.5"
                                 x-text="previewPackage?.days + ' Days / ' + previewPackage?.nights + ' Nights • Minimum ' + previewPackage?.min_pax + ' Passengers'">
                             </p>
+                            <template x-if="previewPackage?.valid_from">
+                                <p class="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 inline-flex items-center gap-1 px-2 py-0.5 rounded-full mt-1.5" x-text="'Valid: ' + previewPackage.valid_from + (previewPackage.valid_to ? ' → ' + previewPackage.valid_to : ' onwards')"></p>
+                            </template>
                         </div>
                         <span
                             class="text-2xl font-black text-emerald-600 font-mono bg-emerald-50 px-3 py-1 rounded-xl border border-emerald-200/80 inline-block w-fit"
