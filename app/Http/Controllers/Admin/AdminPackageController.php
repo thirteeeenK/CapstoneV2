@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\DestinationModel;
 use App\Models\Package;
+use App\Services\AdminAuditService;
 use App\Services\GeminiService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -117,6 +118,8 @@ class AdminPackageController extends Controller
             'is_active' => (bool) $validated['is_active'],
         ]);
 
+        AdminAuditService::log($package);
+
         // Auto-generate AI Vector Embedding for Chatbot & Recommendation Engine
         try {
             $geminiService = app(GeminiService::class);
@@ -150,6 +153,7 @@ class AdminPackageController extends Controller
     public function update(Request $request, $id)
     {
         $package = Package::findOrFail($id);
+        $oldValues = $package->getOriginal();
 
         $validated = $request->validate([
             'destination_id' => 'required|exists:destinations,id',
@@ -187,15 +191,17 @@ class AdminPackageController extends Controller
             'name' => $validated['name'],
             'type' => $validated['type'] ?? $package->type,
             'price' => $validated['price'],
-            'days' => $validated['days'],
-            'nights' => $validated['nights'],
+            'days' => $validated['days'] ?? $package->days,
+            'nights' => $validated['nights'] ?? $package->nights,
             'min_pax' => $validated['min_pax'],
-            'valid_from' => $validated['valid_from'],
-            'valid_to' => $validated['valid_to'],
+            'valid_from' => $validated['valid_from'] ?? $package->valid_from,
+            'valid_to' => $validated['valid_to'] ?? $package->valid_to,
             'generic_inclusions' => $inclusions,
             'images' => $images,
             'is_active' => (bool) $validated['is_active'],
         ]);
+
+        AdminAuditService::log($package, $oldValues);
 
         // Auto-re-generate AI Vector Embedding
         try {
@@ -219,8 +225,11 @@ class AdminPackageController extends Controller
     public function toggleVisibility(Request $request, $id)
     {
         $package = Package::findOrFail($id);
+        $oldValues = ['is_active' => $package->is_active];
         $package->is_active = ! $package->is_active;
         $package->save();
+
+        AdminAuditService::log($package, $oldValues);
 
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
@@ -240,6 +249,9 @@ class AdminPackageController extends Controller
     {
         $package = Package::findOrFail($id);
         $name = $package->name;
+
+        AdminAuditService::log($package, $package->getOriginal());
+
         $package->delete();
 
         return redirect()->route('admin.packages.index')->with('success', "Tour Package '{$name}' deleted successfully.");

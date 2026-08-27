@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Concerns\ResolvesImages;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
@@ -40,7 +41,7 @@ class OnboardingOption extends Model
         }
 
         if (! empty($this->image_path) && Storage::disk('public')->exists($this->image_path)) {
-            return asset('storage/'.$this->image_path);
+            return ResolvesImages::resolveImg($this->image_path);
         }
 
         return null;

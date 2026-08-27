@@ -2,10 +2,12 @@
 
 namespace App\Http\Requests\Auth;
 
+use App\Models\FailedLoginAttempt;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -44,6 +46,20 @@ class LoginRequest extends FormRequest
 
         if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
             RateLimiter::hit($this->throttleKey());
+
+            Log::warning('auth.failed', [
+                'email' => $this->input('email'),
+                'ip' => $this->ip(),
+                'guard' => 'web',
+                'time' => now()->toIso8601String(),
+            ]);
+
+            FailedLoginAttempt::create([
+                'email' => $this->input('email'),
+                'ip_address' => $this->ip(),
+                'guard' => 'web',
+                'attempted_at' => now(),
+            ]);
 
             throw ValidationException::withMessages([
                 'email' => trans('auth.failed'),

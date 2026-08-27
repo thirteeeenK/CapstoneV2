@@ -27,7 +27,7 @@ class HotelSeeder extends Seeder
             'specific_address' => 'Station 2, White Beach',
             'latitude' => 11.95644170,
             'longitude' => 121.92574660,
-            'images' => ['hotels/hennan-palm-beach-resort/hen.jpg', 'hotels/hennan-palm-beach-resort/hen out.jpg'],
+            'images' => ['hotels/hennan-palm-beach-resort/hen.jpg', 'hotels/hennan-palm-beach-resort/hen-out.jpg'],
         ]);
 
         // 2
@@ -55,7 +55,7 @@ class HotelSeeder extends Seeder
             'specific_address' => 'Station 3, White Beach',
             'latitude' => 11.9509299,
             'longitude' => 121.9257116,
-            'images' => ['hotels/Boracay-Ocean-Club-Beach-Resort/ocean_outside.webp', 'hotels/Boracay-Ocean-Club-Beach-Resort/ocean pool_.jpg', 'hotels/Boracay-Ocean-Club-Beach-Resort/ocean_hall.webp'],
+            'images' => ['hotels/Boracay-Ocean-Club-Beach-Resort/ocean_outside.webp', 'hotels/Boracay-Ocean-Club-Beach-Resort/ocean-pool.jpg', 'hotels/Boracay-Ocean-Club-Beach-Resort/ocean_hall.webp'],
         ]);
 
         // 4
@@ -69,7 +69,7 @@ class HotelSeeder extends Seeder
             'specific_address' => 'Station 2, White Beach',
             'latitude' => 11.9591852,
             'longitude' => 121.9252052,
-            'images' => ['hotels/Henann-Garden-Resort/hennann.jpg', 'hotels/Henann-Garden-Resort/outside hen.jpg'],
+            'images' => ['hotels/Henann-Garden-Resort/hennann.jpg', 'hotels/Henann-Garden-Resort/outside-hen.jpg'],
         ]);
 
         // 5
@@ -83,7 +83,7 @@ class HotelSeeder extends Seeder
             'specific_address' => 'Station 1',
             'latitude' => 11.9653679,
             'longitude' => 121.9200853,
-            'images' => ['hotels/My-Station-Hotel/station out.jpg', 'hotels/My-Station-Hotel/station beach.webp'],
+            'images' => ['hotels/My-Station-Hotel/station-out.jpg', 'hotels/My-Station-Hotel/station-beach.webp'],
         ]);
 
         // 6
@@ -97,7 +97,7 @@ class HotelSeeder extends Seeder
             'specific_address' => 'Station 1',
             'latitude' => 11.9641647,
             'longitude' => 121.9223174,
-            'images' => ['hotels/Frendz-Hostel-Boracay/frendz pool.jpg', 'hotels/Frendz-Hostel-Boracay/frends.jpg'],
+            'images' => ['hotels/Frendz-Hostel-Boracay/frendz-pool.jpg', 'hotels/Frendz-Hostel-Boracay/frends.jpg'],
         ]);
 
         // 7
@@ -111,7 +111,7 @@ class HotelSeeder extends Seeder
             'specific_address' => 'Bulabog Beach',
             'latitude' => 11.9646558,
             'longitude' => 121.9261436,
-            'images' => ['hotels/Lazy-Dog/lazy dog.jpg', 'hotels/Lazy-Dog/outside.jpg'],
+            'images' => ['hotels/Lazy-Dog/lazy-dog.jpg', 'hotels/Lazy-Dog/outside.jpg'],
         ]);
 
         // 8
@@ -139,7 +139,7 @@ class HotelSeeder extends Seeder
             'specific_address' => 'Station 1',
             'latitude' => 11.9450172,
             'longitude' => 121.8335292,
-            'images' => ['hotels/muse-hotel/muse.webp', 'hotels/muse-hotel/muse lounge.webp'],
+            'images' => ['hotels/muse-hotel/muse.webp', 'hotels/muse-hotel/muse-lounge.webp'],
         ]);
 
         $elNido = DestinationModel::where('name', 'El Nido')->first();
@@ -156,7 +156,7 @@ class HotelSeeder extends Seeder
             'specific_address' => 'Pangulasian Island, Bacuit Bay, El Nido, Palawan',
             'latitude' => 11.1167,
             'longitude' => 119.3361,
-            'images' => ['https://images.unsplash.com/photo-1540555700478-4be289fbecef'],
+            'images' => ['el-nido-hotels/pangulasian.jpg', 'el-nido-hotels/pangulasian-1.jpg'],
             'embedding' => null,
             'is_shown' => true,
         ]);
@@ -172,7 +172,7 @@ class HotelSeeder extends Seeder
             'specific_address' => 'Lio Tourism Estate, Barangay Villa Libertad, El Nido, Palawan',
             'latitude' => 11.2031,
             'longitude' => 119.4218,
-            'images' => ['https://images.unsplash.com/photo-1520250497591-112f2f40a3f4'],
+            'images' => ['el-nido-hotels/seda-lio-1.jpg', 'el-nido-hotels/seda-lio-2.jpg'],
             'embedding' => null,
             'is_shown' => true,
         ]);
@@ -188,7 +188,7 @@ class HotelSeeder extends Seeder
             'specific_address' => 'Cauayan Island, Bacuit Bay, El Nido, Palawan',
             'latitude' => 11.2828,
             'longitude' => 119.3486,
-            'images' => ['https://images.unsplash.com/photo-1544551763-46a013bb70d5'],
+            'images' => ['el-nido-hotels/cauayan-1.jpg', 'el-nido-hotels/cauayan-2.jpg'],
             'embedding' => null,
             'is_shown' => true,
         ]);
@@ -204,7 +204,7 @@ class HotelSeeder extends Seeder
             'specific_address' => 'Miniloc Island, Bacuit Bay, El Nido, Palawan',
             'latitude' => 11.1528,
             'longitude' => 119.3172,
-            'images' => ['https://images.unsplash.com/photo-1499793983690-e29da59ef1c2'],
+            'images' => ['el-nido-hotels/miniloc-1.jpg', 'el-nido-hotels/miniloc-2.jpg', 'el-nido-hotels/miniloc-3.jpg'],
             'embedding' => null,
             'is_shown' => true,
         ]);
@@ -220,7 +220,7 @@ class HotelSeeder extends Seeder
             'specific_address' => 'Balinsasayaw Road, Maligaya, El Nido, Palawan',
             'latitude' => 11.1786,
             'longitude' => 119.3905,
-            'images' => ['https://images.unsplash.com/photo-1555854877-bab0e564b8d5'],
+            'images' => ['el-nido-hotels/spin-designer-1.jpg', 'el-nido-hotels/spin-designer-2.jpg'],
             'embedding' => null,
             'is_shown' => true,
         ]);
@@ -236,7 +236,7 @@ class HotelSeeder extends Seeder
             'specific_address' => 'National Highway, Barangay Villa Libertad, El Nido, Palawan',
             'latitude' => 11.1925,
             'longitude' => 119.4147,
-            'images' => ['https://images.unsplash.com/photo-1566073771259-6a8506099945'],
+            'images' => ['el-nido-hotels/charlies-el-nido-1.jpg', 'el-nido-hotels/charlies-el-nido-2.jpg'],
             'embedding' => null,
             'is_shown' => true,
         ]);
@@ -252,7 +252,7 @@ class HotelSeeder extends Seeder
             'specific_address' => 'Corong-Corong Beach, El Nido, Palawan',
             'latitude' => 11.1661,
             'longitude' => 119.3942,
-            'images' => ['https://images.unsplash.com/photo-1498654896293-37aacf113fd9'],
+            'images' => ['el-nido-hotels/panorama-1.jpg', 'el-nido-hotels/panorama-2.jpg'],
             'embedding' => null,
             'is_shown' => true,
         ]);
@@ -268,7 +268,7 @@ class HotelSeeder extends Seeder
             'specific_address' => 'Sitio Lugadia, Barangay Corong-Corong, El Nido, Palawan',
             'latitude' => 11.1633,
             'longitude' => 119.3951,
-            'images' => ['https://images.unsplash.com/photo-1510414842594-a61c69b5ae57'],
+            'images' => ['el-nido-hotels/buko-beach-resort-1.jpg', 'el-nido-hotels/buko-beach-resort-2.jpg'],
             'embedding' => null,
             'is_shown' => true,
         ]);
@@ -284,7 +284,7 @@ class HotelSeeder extends Seeder
             'specific_address' => 'Matinloc Island, El Nido, Palawan',
             'latitude' => 11.2001,
             'longitude' => 119.2933,
-            'images' => ['https://images.unsplash.com/photo-1582719478250-c89cae4dc85b'],
+            'images' => ['el-nido-hotels/matinloc-1.jpg', 'el-nido-hotels/matinloc-2.jpg'],
             'embedding' => null,
             'is_shown' => true,
         ]);
@@ -300,7 +300,7 @@ class HotelSeeder extends Seeder
             'specific_address' => 'Sitio Caalan, Barangay Masagana, El Nido, Palawan',
             'latitude' => 11.1895,
             'longitude' => 119.3921,
-            'images' => ['https://images.unsplash.com/photo-1571896349842-33c89424de2d'],
+            'images' => ['el-nido-hotels/lihim-1.jpg', 'el-nido-hotels/lihim-2.jpg', 'el-nido-hotels/lihim-3.jpg'],
             'embedding' => null,
             'is_shown' => true,
         ]);

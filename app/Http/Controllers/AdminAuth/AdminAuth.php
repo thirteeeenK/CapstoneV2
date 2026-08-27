@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\AdminAuth;
 
 use App\Http\Controllers\Controller;
+use App\Models\FailedLoginAttempt;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -48,6 +50,20 @@ class AdminAuth extends Controller
 
         if (! Auth::guard('admin')->attempt($credentials, $request->boolean('remember'))) {
             RateLimiter::hit($throttleKey);
+
+            Log::warning('auth.failed', [
+                'email' => $request->input('email'),
+                'ip' => $request->ip(),
+                'guard' => 'admin',
+                'time' => now()->toIso8601String(),
+            ]);
+
+            FailedLoginAttempt::create([
+                'email' => $request->input('email'),
+                'ip_address' => $request->ip(),
+                'guard' => 'admin',
+                'attempted_at' => now(),
+            ]);
 
             throw ValidationException::withMessages([
                 'email' => trans('auth.failed'),

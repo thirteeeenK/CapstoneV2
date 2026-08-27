@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Concerns\ResolvesImages;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
@@ -382,7 +383,7 @@ class CartItem extends Model
                 return $img;
             }
 
-            return asset('storage/'.$img);
+            return ResolvesImages::resolveImg($img, asset('images/placeholder.jpg'));
         }
 
         return asset('images/placeholder.jpg');

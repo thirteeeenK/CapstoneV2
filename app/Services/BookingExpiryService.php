@@ -27,7 +27,8 @@ class BookingExpiryService
             Booking::STATUS_EXPIRED,
             [Booking::STATUS_APPROVED],
             ['expired_at' => now()],
-            'Payment window expired 48 hours after approval.'
+            'Payment window expired 48 hours after approval.',
+            'system'
         )) {
             return false;
         }

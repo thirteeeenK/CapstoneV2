@@ -110,8 +110,12 @@
                     <div class="flex flex-wrap gap-2 justify-center pt-2">
                         <button @click='input = "Where to stay in Boracay?"; send()'
                             class="px-3 py-1.5 rounded-full bg-ocean-50 hover:bg-ocean-100 text-ocean-700 text-[11px] font-bold border border-ocean-200 transition-colors cursor-pointer">Where to stay in Boracay?</button>
-                        <button @click='input = "What is weather in Palawan?"; send()'
-                            class="px-3 py-1.5 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-700 text-[11px] font-bold border border-amber-200 transition-colors cursor-pointer">What is weather in Palawan?</button>
+                        <button @click='input = "Budget-friendly hotels in Boracay?"; send()'
+                            class="px-3 py-1.5 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[11px] font-bold border border-emerald-200 transition-colors cursor-pointer">Budget-friendly hotels in Boracay?</button>
+                        <button @click='input = "Where to stay in El Nido?"; send()'
+                            class="px-3 py-1.5 rounded-full bg-ocean-50 hover:bg-ocean-100 text-ocean-700 text-[11px] font-bold border border-ocean-200 transition-colors cursor-pointer">Where to stay in El Nido?</button>
+                        <button @click='input = "Best activities in El Nido?"; send()'
+                            class="px-3 py-1.5 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-700 text-[11px] font-bold border border-amber-200 transition-colors cursor-pointer">Best activities in El Nido?</button>
                     </div>
                 </div>
             </template>

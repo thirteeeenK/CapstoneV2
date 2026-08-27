@@ -12,6 +12,7 @@ use App\Notifications\BookingCancelled;
 use App\Notifications\BookingNotification;
 use App\Notifications\BookingPaid;
 use App\Notifications\BookingRejected;
+use App\Services\AdminAuditService;
 use App\Services\BookingRequestService;
 use App\Services\RoomAvailabilityService;
 use Illuminate\Http\Request;
@@ -108,6 +109,7 @@ class AdminBookingController extends Controller
     public function approve(Request $request, $id)
     {
         $booking = Booking::with('items')->findOrFail($id);
+        $oldValues = $booking->getOriginal();
 
         if ($booking->status !== Booking::STATUS_PENDING) {
             return back()->with('error', 'Only pending bookings can be approved.');
@@ -190,6 +192,7 @@ class AdminBookingController extends Controller
         );
 
         if ($updated) {
+            AdminAuditService::log($booking, $oldValues);
             BookingNotification::send($booking, new BookingApproved($booking));
         }
 
@@ -206,6 +209,7 @@ class AdminBookingController extends Controller
     public function reject(Request $request, $id)
     {
         $booking = Booking::findOrFail($id);
+        $oldValues = $booking->getOriginal();
 
         $validated = $request->validate([
             'rejection_reason' => 'required|string|max:2000',
@@ -226,6 +230,7 @@ class AdminBookingController extends Controller
             return back()->with('error', 'Only pending bookings can be rejected.');
         }
 
+        AdminAuditService::log($booking->fresh() ?? $booking, $oldValues);
         BookingNotification::send($booking, new BookingRejected($booking));
 
         return redirect()->route('admin.bookings.show', $booking->id)
@@ -238,6 +243,7 @@ class AdminBookingController extends Controller
     public function cancel(Request $request, $id)
     {
         $booking = Booking::findOrFail($id);
+        $oldValues = $booking->getOriginal();
 
         $cancellationReason = $request->input('cancellation_reason') ?: 'Cancelled by SunnyTrips admin.';
 
@@ -252,6 +258,7 @@ class AdminBookingController extends Controller
             return back()->with('error', 'This booking cannot be cancelled in its current state.');
         }
 
+        AdminAuditService::log($booking->fresh() ?? $booking, $oldValues);
         BookingNotification::send($booking, new BookingCancelled($booking));
 
         return redirect()->route('admin.bookings.show', $booking->id)
@@ -264,6 +271,7 @@ class AdminBookingController extends Controller
     public function approveCancellation(Request $request, $id)
     {
         $booking = Booking::findOrFail($id);
+        $oldValues = $booking->getOriginal();
 
         $validated = $request->validate([
             'admin_message' => 'nullable|string|max:2000',
@@ -287,6 +295,7 @@ class AdminBookingController extends Controller
             return back()->with('error', 'Only bookings with a pending cancellation request can be approved.');
         }
 
+        AdminAuditService::log($booking, $oldValues);
         $booking->refresh();
         BookingNotification::send($booking, new BookingCancellationApproved($booking));
 
@@ -301,6 +310,7 @@ class AdminBookingController extends Controller
     public function denyCancellation(Request $request, $id)
     {
         $booking = Booking::findOrFail($id);
+        $oldValues = $booking->getOriginal();
 
         $validated = $request->validate([
             'admin_message' => 'required|string|min:10|max:2000',
@@ -322,6 +332,7 @@ class AdminBookingController extends Controller
             return back()->with('error', 'Only bookings with a pending cancellation request can be denied.');
         }
 
+        AdminAuditService::log($booking, $oldValues);
         $booking->refresh();
         BookingNotification::send($booking, new BookingCancellationDenied($booking));
 
@@ -335,6 +346,7 @@ class AdminBookingController extends Controller
     public function markPaid(Request $request, $id)
     {
         $booking = Booking::findOrFail($id);
+        $oldValues = $booking->getOriginal();
 
         $validated = $request->validate([
             'payment_reference' => 'nullable|string|max:100',
@@ -351,6 +363,7 @@ class AdminBookingController extends Controller
             return back()->with('error', 'Only approved bookings awaiting payment can be marked paid.');
         }
 
+        AdminAuditService::log($booking->fresh() ?? $booking, $oldValues);
         BookingNotification::send($booking, new BookingPaid($booking));
 
         return redirect()->route('admin.bookings.show', $booking->id)
@@ -363,12 +376,15 @@ class AdminBookingController extends Controller
     public function markCompleted($id)
     {
         $booking = Booking::findOrFail($id);
+        $oldValues = $booking->getOriginal();
 
         $updated = $booking->transitionTo(Booking::STATUS_COMPLETED, [Booking::STATUS_PAID], [], 'Marked completed by admin.');
 
         if (! $updated) {
             return back()->with('error', 'Only paid bookings can be marked completed.');
         }
+
+        AdminAuditService::log($booking->fresh() ?? $booking, $oldValues);
 
         return redirect()->route('admin.bookings.show', $booking->id)
             ->with('success', "Booking {$booking->booking_code} marked as completed.");
@@ -380,6 +396,7 @@ class AdminBookingController extends Controller
     public function markRefunded(Request $request, $id)
     {
         $booking = Booking::findOrFail($id);
+        $oldValues = $booking->getOriginal();
 
         if ($booking->payment_status !== Booking::PAYMENT_PAID) {
             return back()->with('error', 'Only paid bookings can be refunded.');
@@ -389,6 +406,8 @@ class AdminBookingController extends Controller
 
         $booking->payment_status = Booking::PAYMENT_REFUNDED;
         $booking->save();
+
+        AdminAuditService::log($booking, $oldValues);
 
         BookingStatusHistory::create([
             'booking_id' => $booking->id,

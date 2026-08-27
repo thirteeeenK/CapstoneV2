@@ -2,6 +2,7 @@
 
 namespace App\Services\Chat;
 
+use App\Models\ActivityModel;
 use App\Models\ChatMessage;
 use App\Models\ChatSession;
 use App\Models\DestinationModel;
@@ -10,6 +11,7 @@ use App\Models\Package;
 use App\Models\RoomType;
 use App\Models\SupportInquiry;
 use App\Models\User;
+use App\Models\UserPreference;
 use App\Services\DistanceService;
 use App\Services\GeminiService;
 use App\Services\RoomAvailabilityService;
@@ -82,6 +84,7 @@ class ChatbotService
         $constraints = in_array($intent, [IntentRouter::GENERAL_TALK, IntentRouter::DESTINATIONS_OVERVIEW], true)
             ? []
             : $this->intentRouter->extractConstraints($message);
+        $constraints = $this->resolveDefaultDestination($constraints, $user);
 
         $reply = match ($intent) {
             IntentRouter::ROOM_SEARCH => $this->handleRoomSearch($message, $constraints, $user, $session),
@@ -467,7 +470,53 @@ class ChatbotService
 
     protected function handleRoomSearch(string $query, array $constraints, ?User $user, ChatSession $session): array
     {
-        $scored = $this->gemini->searchRoomsHybrid($query, $constraints, 5);
+        $constraints = $this->resolveDefaultDestination($constraints, $user);
+        $scored = null;
+        if ($this->isPersonalized($user)) {
+            $blended = $this->blendedVector($user, $query);
+            if ($blended) {
+                $roomsQuery = RoomType::with('hotel.destination')
+                    ->where('is_shown', true)
+                    ->whereNotNull('embedding');
+                if (! empty($constraints['destination_id'])) {
+                    $roomsQuery->whereHas('hotel', fn ($q) => $q->where('destination_id', $constraints['destination_id']));
+                }
+                if (! empty($constraints['hotel_id'])) {
+                    $roomsQuery->where('hotel_id', $constraints['hotel_id']);
+                }
+                if (! empty($constraints['pax'])) {
+                    $roomsQuery->where('max_occupancy', '>=', $constraints['pax']);
+                }
+                if (! empty($constraints['max_price'])) {
+                    $roomsQuery->where('base_price', '<=', $constraints['max_price']);
+                }
+                if (! empty($constraints['room_id'])) {
+                    $roomsQuery->where('id', $constraints['room_id']);
+                } elseif (! empty($constraints['room_name'])) {
+                    $roomsQuery->where('room_name', 'ILIKE', $constraints['room_name']);
+                }
+                $rooms = $roomsQuery->get();
+                if ($rooms->isEmpty() && ! empty($constraints['room_name']) && ! empty($constraints['hotel_id'])) {
+                    $rooms = RoomType::with('hotel.destination')
+                        ->where('is_shown', true)
+                        ->whereNotNull('embedding')
+                        ->where('room_name', 'ILIKE', $constraints['room_name'])
+                        ->get();
+                }
+                if ($rooms->isEmpty() && empty($constraints['hotel_id']) && empty($constraints['room_id']) && empty($constraints['room_name'])) {
+                    $rooms = RoomType::with('hotel.destination')
+                        ->where('is_shown', true)
+                        ->whereNotNull('embedding')
+                        ->get();
+                }
+                if ($rooms->isNotEmpty()) {
+                    $scored = $this->gemini->rankRecommendations($blended, $rooms, 5);
+                }
+            }
+        }
+        if ($scored === null) {
+            $scored = $this->gemini->searchRoomsHybrid($query, $constraints, 5);
+        }
 
         $priceIntent = $this->detectPriceIntent($query);
         if ($priceIntent) {
@@ -546,6 +595,7 @@ class ChatbotService
 
     protected function handleHotelSearch(string $query, array $constraints, ?User $user, ChatSession $session): array
     {
+        $constraints = $this->resolveDefaultDestination($constraints, $user);
         $limit = (int) ($constraints['limit'] ?? 0);
         if ($limit < 3 || $limit > 10) {
             $limit = 5;
@@ -553,7 +603,24 @@ class ChatbotService
                 $limit = max(3, min(10, (int) $m[1]));
             }
         }
-        $scored = $this->gemini->searchHotels($query, $limit, $constraints['hotel_id'] ?? null, $constraints['destination_id'] ?? null);
+        $scored = null;
+        if ($this->isPersonalized($user)) {
+            $blended = $this->blendedVector($user, $query);
+            if ($blended) {
+                $candidates = HotelModel::with('destination')
+                    ->where('is_shown', true)
+                    ->whereNotNull('embedding')
+                    ->when(! empty($constraints['hotel_id']), fn ($q) => $q->where('id', $constraints['hotel_id']))
+                    ->when(! empty($constraints['destination_id']), fn ($q) => $q->where('destination_id', $constraints['destination_id']))
+                    ->get();
+                if ($candidates->isNotEmpty()) {
+                    $scored = $this->gemini->rankRecommendations($blended, $candidates, $limit);
+                }
+            }
+        }
+        if ($scored === null) {
+            $scored = $this->gemini->searchHotels($query, $limit, $constraints['hotel_id'] ?? null, $constraints['destination_id'] ?? null);
+        }
 
         $priceIntent = $this->detectPriceIntent($query);
         if ($priceIntent) {
@@ -651,9 +718,166 @@ class ChatbotService
         return $min !== null ? (float) $min : null;
     }
 
+    // ────────────────────────────────────────────────
+    //  Personalization helpers (always-on when logged-in)
+    // ────────────────────────────────────────────────
+
+    protected function parseUserVector(?User $user): ?array
+    {
+        if (! $user || empty($user->preferences_embedding)) {
+            return null;
+        }
+        $raw = $user->preferences_embedding;
+        if (is_array($raw)) {
+            return $raw;
+        }
+        if (is_string($raw)) {
+            $decoded = json_decode($raw, true);
+            if (is_array($decoded)) {
+                return $decoded;
+            }
+            $clean = trim($raw, "[] \t\n\r");
+            if ($clean === '') {
+                return null;
+            }
+
+            return array_map('floatval', explode(',', $clean));
+        }
+
+        return null;
+    }
+
+    protected function isPersonalized(?User $user): bool
+    {
+        $vec = $this->parseUserVector($user);
+        if (empty($vec)) {
+            return false;
+        }
+        if ($user->preferences_embedding === '[0]') {
+            return false;
+        }
+        $sumAbs = array_sum(array_map('abs', $vec));
+
+        return $sumAbs > 0.0001;
+    }
+
+    protected function blendedVector(?User $user, string $query): ?array
+    {
+        $userVector = $this->parseUserVector($user);
+        if (empty($userVector)) {
+            return null;
+        }
+        $queryVector = $this->gemini->generateEmbedding($query, 'RETRIEVAL_QUERY');
+        if (! $queryVector) {
+            return $userVector;
+        }
+        $len = max(count($userVector), count($queryVector));
+        $blended = [];
+        for ($i = 0; $i < $len; $i++) {
+            $uv = $userVector[$i] ?? 0.0;
+            $qv = $queryVector[$i] ?? 0.0;
+            $blended[$i] = 0.65 * $uv + 0.35 * $qv;
+        }
+
+        return $this->gemini->normalizeVector($blended);
+    }
+
+    protected function resolveDefaultDestination(array $constraints, ?User $user): array
+    {
+        if (! empty($constraints['destination_id']) || ! $this->isPersonalized($user)) {
+            return $constraints;
+        }
+        try {
+            $pref = UserPreference::where('user_id', $user->id)->first();
+            $destName = $pref?->destination;
+            if (! $destName) {
+                return $constraints;
+            }
+            $destId = DestinationModel::where('name', 'ILIKE', $destName)->value('id');
+            if ($destId) {
+                $constraints['destination_id'] = (int) $destId;
+                $constraints['destination_name'] = $destName;
+            }
+        } catch (\Throwable $e) {
+            Log::debug('resolveDefaultDestination failed: '.$e->getMessage());
+        }
+
+        return $constraints;
+    }
+
+    protected function buildUserProfileText(?User $user): ?string
+    {
+        if (! $this->isPersonalized($user)) {
+            return null;
+        }
+        try {
+            $pref = UserPreference::where('user_id', $user->id)->first();
+            if (! $pref) {
+                return null;
+            }
+            $lines = ['Traveler Profile (from onboarding):'];
+            if ($pref->destination) {
+                $lines[] = "Preferred destination: {$pref->destination}";
+            }
+            if ($pref->traveler_type) {
+                $lines[] = "Traveler type: {$pref->traveler_type}";
+            }
+            if (! empty($pref->vibes)) {
+                $v = is_array($pref->vibes) ? implode(', ', $pref->vibes) : (string) $pref->vibes;
+                $lines[] = "Vibes: {$v}";
+            }
+            if (! empty($pref->amenities)) {
+                $a = is_array($pref->amenities) ? implode(', ', $pref->amenities) : (string) $pref->amenities;
+                $lines[] = "Amenities: {$a}";
+            }
+            if (! empty($pref->activities)) {
+                $ac = is_array($pref->activities) ? implode(', ', $pref->activities) : (string) $pref->activities;
+                $lines[] = "Activities: {$ac}";
+            }
+            if ($pref->notes) {
+                $lines[] = "Notes: {$pref->notes}";
+            }
+
+            return implode("\n", $lines);
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
     protected function handleActivitySearch(string $query, array $constraints, ?User $user, ChatSession $session): array
     {
-        $scored = $this->gemini->searchActivities($query, 3);
+        $constraints = $this->resolveDefaultDestination($constraints, $user);
+        $scored = null;
+        if ($this->isPersonalized($user)) {
+            $blended = $this->blendedVector($user, $query);
+            if ($blended) {
+                $candidates = ActivityModel::with('destination')
+                    ->where('is_shown', true)
+                    ->whereNotNull('embedding')
+                    ->when(! empty($constraints['destination_id']), fn ($q) => $q->where('destination_id', $constraints['destination_id']))
+                    ->get();
+                if ($candidates->isNotEmpty()) {
+                    $scored = $this->gemini->rankRecommendations($blended, $candidates, 3);
+                }
+            }
+        }
+        if ($scored === null) {
+            $scored = $this->gemini->searchActivities($query, 3);
+            // If personalized default added destination but global search returned broader set, re-rank with blended for that destination
+            if ($this->isPersonalized($user) && ! empty($constraints['destination_id']) && ! empty($scored)) {
+                $blended = $this->blendedVector($user, $query);
+                if ($blended) {
+                    $destCandidates = ActivityModel::with('destination')
+                        ->where('is_shown', true)
+                        ->whereNotNull('embedding')
+                        ->where('destination_id', $constraints['destination_id'])
+                        ->get();
+                    if ($destCandidates->isNotEmpty()) {
+                        $scored = $this->gemini->rankRecommendations($blended, $destCandidates, 3);
+                    }
+                }
+            }
+        }
         $context = $this->gemini->getActivityContext($scored);
 
         if (empty(trim($context))) {
@@ -671,8 +895,25 @@ class ChatbotService
 
     protected function handlePackageSearch(string $query, array $constraints, ?User $user, ChatSession $session): array
     {
+        $constraints = $this->resolveDefaultDestination($constraints, $user);
         $destinationId = $constraints['destination_id'] ?? null;
-        $scored = $this->gemini->searchPackages($query, 5, $destinationId);
+        $scored = null;
+        if ($this->isPersonalized($user)) {
+            $blended = $this->blendedVector($user, $query);
+            if ($blended) {
+                $candidates = Package::with('destination')
+                    ->where('is_active', true)
+                    ->whereNotNull('embedding')
+                    ->when($destinationId, fn ($q) => $q->where('destination_id', $destinationId))
+                    ->get();
+                if ($candidates->isNotEmpty()) {
+                    $scored = $this->gemini->rankRecommendations($blended, $candidates, 5);
+                }
+            }
+        }
+        if ($scored === null) {
+            $scored = $this->gemini->searchPackages($query, 5, $destinationId);
+        }
 
         $today = Carbon::now()->startOfDay();
         $scored = array_filter($scored, function ($entry) use ($today) {
@@ -709,6 +950,7 @@ class ChatbotService
 
     protected function handleItineraryQuery(string $query, array $constraints, ?User $user, ChatSession $session): array
     {
+        $constraints = $this->resolveDefaultDestination($constraints, $user);
         $destinationId = $constraints['destination_id'] ?? null;
         $pax = $constraints['pax'] ?? 2;
         $nights = $constraints['nights'] ?? 2;
@@ -1239,6 +1481,12 @@ class ChatbotService
 
         if ($user) {
             $header .= "\n- The user is logged in as {$user->name}.";
+            if ($this->isPersonalized($user)) {
+                $profile = $this->buildUserProfileText($user);
+                if ($profile) {
+                    $header .= "\n- Personalized for this user (from onboarding quiz). Use it to tailor why #1 is best:\n".$profile;
+                }
+            }
         }
 
         return "{$header}\n\n=== DATABASE RESULTS ===\n{$context}\n=== END DATABASE RESULTS ===\n\nUSER QUERY: {$query}";

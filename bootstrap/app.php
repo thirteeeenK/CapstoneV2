@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\CheckIpBanned;
 use App\Http\Middleware\CheckUserBan;
 use App\Http\Middleware\CheckUserOnboarding;
 use App\Http\Middleware\NoCacheHeaders;
@@ -23,9 +24,11 @@ return Application::configure(basePath: dirname(__DIR__))
             'no.cache' => NoCacheHeaders::class,
             'check.onboarding' => CheckUserOnboarding::class,
             'check.ban' => CheckUserBan::class,
+            'check.ip_ban' => CheckIpBanned::class,
         ]);
 
         $middleware->web(append: [
+            CheckIpBanned::class,
             CheckUserBan::class,
             CheckUserOnboarding::class,
         ]);

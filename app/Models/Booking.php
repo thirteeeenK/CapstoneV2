@@ -202,8 +202,8 @@ class Booking extends Model
             'from_status' => $from,
             'to_status' => $to,
             'note' => $note,
-            'actor_type' => $actor ? get_class($actor) : null,
-            'actor_id' => $actor?->getKey(),
+            'actor_type' => is_string($actor) ? $actor : ($actor ? get_class($actor) : null),
+            'actor_id' => is_string($actor) ? null : $actor?->getKey(),
         ]);
 
         return true;

@@ -90,7 +90,7 @@
                                     @if($u->ban_level)
                                         <form action="{{ route('admin.users.unban', $u->id) }}" method="POST" class="inline">
                                             @csrf
-                                            <button type="submit" onclick="return confirm('Restore normal access for {{ $u->name }}?')"
+                                            <button type="submit" onclick="return confirm('Restore normal access for {{ $u->name }}? This will also clear any IP ban for their last known IP.')"
                                                     class="inline-flex items-center gap-1 h-8 px-3 rounded bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 text-emerald-700 font-medium transition-colors cursor-pointer">
                                                 <span class="material-symbols-outlined text-[16px]">lock_open</span>
                                                 Restore
@@ -163,6 +163,15 @@
                                                                       placeholder="e.g. Repeated inappropriate queries and rule abuse."
                                                                       class="w-full text-xs bg-slate-50 border border-slate-300 rounded p-2 text-slate-900 focus:ring-2 focus:ring-rose-500/20 focus:border-rose-600"></textarea>
                                                         </div>
+
+                                                        <label class="flex items-start gap-2 py-2 px-2 border border-slate-200 rounded-md bg-slate-50/50 cursor-pointer">
+                                                            <input type="checkbox" name="also_ban_ip" value="1" class="mt-0.5 accent-rose-600">
+                                                            <span class="text-xs">
+                                                                <span class="font-semibold text-slate-800">Also ban IP address</span>
+                                                                <span class="text-slate-500"> — {{ $u->consent_ip_address ?? 'auto-detect from sessions' }}</span>
+                                                                <span class="block text-[11px] text-slate-500">Same level/duration as account. Warning = notice only; Temporary/Permanent = IP blocked site-wide.</span>
+                                                            </span>
+                                                        </label>
 
                                                         <div class="flex gap-3 pt-2">
                                                             <button @click="openBanModal = false" type="button" class="flex-1 h-8 px-3 bg-white border border-slate-300 text-slate-700 text-xs font-medium rounded hover:bg-slate-50 transition-colors">

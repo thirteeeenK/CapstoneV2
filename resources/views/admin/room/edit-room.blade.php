@@ -251,7 +251,7 @@
                 foreach ($rawImages as $img) {
                     $existingImagesData[] = [
                         'path' => $img,
-                        'url' => asset('storage/' . $img),
+                        'url' => App\Concerns\ResolvesImages::resolveImg($img),
                     ];
                 }
             }

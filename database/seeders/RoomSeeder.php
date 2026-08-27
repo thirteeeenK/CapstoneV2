@@ -41,7 +41,7 @@ class RoomSeeder extends Seeder
                 'room_size' => '40 sq.m',
                 'room_amenities' => ['Balcony', 'Ocean View', 'Air Conditioning', 'Free Wi-Fi', 'Marble Bathroom', 'Rainfall Shower', 'Minibar', 'Smart TV'],
                 'base_price' => 9500.00,
-                'images' => ['hotels/hennan-palm-beach-resort/hen bed.jpg'],
+                'images' => ['hotels/hennan-palm-beach-resort/hen-bed.jpg'],
             ],
             [
                 'hotel_id' => $henannPalm?->id,
@@ -58,7 +58,7 @@ class RoomSeeder extends Seeder
                 'room_size' => '45 sq.m',
                 'room_amenities' => ['Direct Pool Access', 'Private Terrace', 'Air Conditioning', 'Free Wi-Fi', 'Bathtub', 'Minibar', 'Smart TV'],
                 'base_price' => 11200.00,
-                'images' => ['rooms/sample2.jpg'],
+                'images' => ['hotels/hennan-palm-beach-resort/henann.jpg', 'hotels/hennan-palm-beach-resort/hennan-palm.jpg'],
             ],
 
             // Canyon Hotels
@@ -77,7 +77,7 @@ class RoomSeeder extends Seeder
                 'room_size' => '32 sq.m',
                 'room_amenities' => ['Air Conditioning', 'Free Wi-Fi', 'Coffee Maker', 'Safe', 'Desk'],
                 'base_price' => 5200.00,
-                'images' => ['rooms/sample3.jpg'],
+                'images' => ['hotels/canyon-hotel/bed-canyon.jpg', 'hotels/canyon-hotel/bed.jpg', 'hotels/canyon-hotel/double.jpg'],
             ],
 
             // Boracay Ocean Club
@@ -96,7 +96,7 @@ class RoomSeeder extends Seeder
                 'room_size' => '38 sq.m',
                 'room_amenities' => ['Ocean View', 'Balcony', 'Air Conditioning', 'Dive Locker', 'Free Wi-Fi'],
                 'base_price' => 6800.00,
-                'images' => ['rooms/sample4.jpg'],
+                'images' => ['hotels/Boracay-Ocean-Club-Beach-Resort/ocean.webp', 'hotels/Boracay-Ocean-Club-Beach-Resort/ocean_balcony.jpg', 'hotels/Boracay-Ocean-Club-Beach-Resort/ocean_club.jpg'],
             ],
 
             // Henann Garden
@@ -115,7 +115,7 @@ class RoomSeeder extends Seeder
                 'room_size' => '52 sq.m',
                 'room_amenities' => ['Lagoon View', 'Balcony', 'Air Conditioning', 'Free Wi-Fi', 'Refrigerator', 'Bathtub'],
                 'base_price' => 8400.00,
-                'images' => ['rooms/sample5.jpg'],
+                'images' => ['hotels/Henann-Garden-Resort/hen-garden-bed.jpg', 'hotels/Henann-Garden-Resort/hennan-bed.jpg', 'hotels/Henann-Garden-Resort/hennan-garden-pool.jpg'],
             ],
 
             // My Station Hotel
@@ -134,7 +134,7 @@ class RoomSeeder extends Seeder
                 'room_size' => '22 sq.m',
                 'room_amenities' => ['Air Conditioning', 'Free Wi-Fi', 'En-suite Bathroom', 'Flat Screen TV'],
                 'base_price' => 2200.00,
-                'images' => ['rooms/sample6.jpg'],
+                'images' => ['hotels/My-Station-Hotel/station-bed.jpg', 'hotels/My-Station-Hotel/station-camp.jpg', 'hotels/My-Station-Hotel/station-double.jpg'],
             ],
 
             // Frendz Hostel
@@ -153,7 +153,7 @@ class RoomSeeder extends Seeder
                 'room_size' => 'Shared 8-Bed Dorm',
                 'room_amenities' => ['Privacy Curtain', 'Reading Lamp', 'Personal Locker', 'Shared Bathroom', 'Air Conditioning', 'Free Wi-Fi'],
                 'base_price' => 850.00,
-                'images' => ['rooms/sample7.jpg'],
+                'images' => ['hotels/Frendz-Hostel-Boracay/frendz-bed.jpg', 'hotels/Frendz-Hostel-Boracay/frendz-double-bed.jpg', 'hotels/Frendz-Hostel-Boracay/frendzzz.jpg'],
             ],
 
             // Lazy Dog
@@ -172,7 +172,7 @@ class RoomSeeder extends Seeder
                 'room_size' => '28 sq.m',
                 'room_amenities' => ['Pet Friendly', 'Garden Patio', 'Air Conditioning', 'Free Wi-Fi', 'Hot Shower'],
                 'base_price' => 2800.00,
-                'images' => ['rooms/sample8.jpg'],
+                'images' => ['hotels/Lazy-Dog/lazy-bed.jpg', 'hotels/Lazy-Dog/lazy-room.jpg', 'hotels/Lazy-Dog/lazy.jpg'],
             ],
 
             // Happiness Hostel
@@ -191,7 +191,7 @@ class RoomSeeder extends Seeder
                 'room_size' => '26 sq.m',
                 'room_amenities' => ['En-suite Bathroom', 'Air Conditioning', 'Free Wi-Fi', 'Workspace Desk'],
                 'base_price' => 3200.00,
-                'images' => ['rooms/sample9.jpg'],
+                'images' => ['hotels/happiness-hotel/bed-happy.jpg', 'hotels/happiness-hotel/happy.jpg', 'hotels/happiness-hotel/happinesss.jpg'],
             ],
 
             // The Muse Hotel
@@ -210,7 +210,7 @@ class RoomSeeder extends Seeder
                 'room_size' => '36 sq.m',
                 'room_amenities' => ['Balcony', 'Air Conditioning', 'Free Wi-Fi', 'Indoor Pool Access', 'Espresso Machine'],
                 'base_price' => 4900.00,
-                'images' => ['rooms/sample10.jpg'],
+                'images' => ['hotels/muse-hotel/muse-bed.webp', 'hotels/muse-hotel/muse-pool.webp', 'hotels/muse-hotel/muse-viewdeck.webp'],
             ],
         ];
 

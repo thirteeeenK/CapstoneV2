@@ -291,7 +291,7 @@
                 foreach ($rawImages as $img) {
                     $existingImagesData[] = [
                         'path' => $img, // Eto ipapasa natin sa controller pang-delete (e.g., 'hotels/img1.jpg')
-                        'url' => asset('storage/' . $img), // Eto yung URL para ma-display sa UI
+                        'url' => App\Concerns\ResolvesImages::resolveImg($img), // Eto yung URL para ma-display sa UI
                     ];
                 }
             }

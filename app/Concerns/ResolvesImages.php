@@ -14,7 +14,14 @@ trait ResolvesImages
             return $imgPath;
         }
 
-        return asset('storage/'.$imgPath);
+        // Normalize: strip leading storage/ or / and encode per-segment (spaces → %20 via rawurlencode)
+        $clean = ltrim(str_replace('\\', '/', $imgPath), '/');
+        if (str_starts_with($clean, 'storage/')) {
+            $clean = substr($clean, 8);
+        }
+        $encoded = implode('/', array_map('rawurlencode', explode('/', $clean)));
+
+        return asset('storage/'.$encoded);
     }
 
     public static function resolveActivityImage(?string $imgPath, ?string $activityName = null, ?string $category = null): string

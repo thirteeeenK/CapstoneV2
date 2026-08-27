@@ -42,7 +42,7 @@ class ElNidoRoomSeeder extends Seeder
                 'room_size' => '89 sq.m',
                 'room_amenities' => ['Private Balcony', 'Air Conditioning', 'Free Wi-Fi', 'Bathtub', 'Espresso Machine', 'Minibar', 'Daybed'],
                 'base_price' => 45000.00,
-                'images' => ['rooms/pangulasian_canopy.jpg'],
+                'images' => ['el-nido-hotels/pangulasian.jpg'],
                 'is_shown' => true,
             ],
             [
@@ -60,7 +60,7 @@ class ElNidoRoomSeeder extends Seeder
                 'room_size' => '89 sq.m',
                 'room_amenities' => ['Direct Beach Access', 'Private Veranda', 'Air Conditioning', 'Free Wi-Fi', 'Outdoor Shower', 'Sun Loungers'],
                 'base_price' => 52000.00,
-                'images' => ['rooms/pangulasian_beach.jpg'],
+                'images' => ['el-nido-hotels/pangulasian-1.jpg'],
                 'is_shown' => true,
             ],
 
@@ -80,7 +80,7 @@ class ElNidoRoomSeeder extends Seeder
                 'room_size' => '45 sq.m',
                 'room_amenities' => ['Balcony', 'Air Conditioning', '48-inch LED TV', 'Free Wi-Fi', 'Coffee/Tea Maker', 'Work Desk'],
                 'base_price' => 12500.00,
-                'images' => ['rooms/sedalio_deluxe.jpg'],
+                'images' => ['el-nido-hotels/seda-lio-1.jpg'],
                 'is_shown' => true,
             ],
 
@@ -100,7 +100,7 @@ class ElNidoRoomSeeder extends Seeder
                 'room_size' => '60 sq.m',
                 'room_amenities' => ['Overwater Deck', 'Direct Lagoon Access', 'Air Conditioning', 'Free Wi-Fi', 'Luxury Toiletries', 'Bluetooth Speaker'],
                 'base_price' => 38000.00,
-                'images' => ['rooms/cauayan_watervilla.jpg'],
+                'images' => ['el-nido-hotels/cauayan-1.jpg'],
                 'is_shown' => true,
             ],
 
@@ -120,7 +120,7 @@ class ElNidoRoomSeeder extends Seeder
                 'room_size' => '25 sq.m',
                 'room_amenities' => ['Private Veranda', 'Air Conditioning', 'En-suite Bathroom', 'Eco Toiletries'],
                 'base_price' => 28000.00,
-                'images' => ['rooms/miniloc_watercottage.jpg'],
+                'images' => ['el-nido-hotels/miniloc-1.jpg'],
                 'is_shown' => true,
             ],
 
@@ -140,7 +140,7 @@ class ElNidoRoomSeeder extends Seeder
                 'room_size' => 'Shared Dorm',
                 'room_amenities' => ['Privacy Curtain', 'Reading Lamp', 'Personal Locker', 'Shared Bathroom', 'Air Conditioning', 'Free Wi-Fi'],
                 'base_price' => 1100.00,
-                'images' => ['rooms/spin_dorm.jpg'],
+                'images' => ['el-nido-hotels/spin-designer-1.jpg'],
                 'is_shown' => true,
             ],
 
@@ -160,7 +160,7 @@ class ElNidoRoomSeeder extends Seeder
                 'room_size' => '43 sq.m',
                 'room_amenities' => ['Direct Pool Access', 'Air Conditioning', 'Smart TV', 'Free Wi-Fi', 'Rain Shower'],
                 'base_price' => 7500.00,
-                'images' => ['rooms/charlies_poolaccess.jpg'],
+                'images' => ['el-nido-hotels/charlies-el-nido-1.jpg'],
                 'is_shown' => true,
             ],
 
@@ -180,7 +180,7 @@ class ElNidoRoomSeeder extends Seeder
                 'room_size' => '45 sq.m',
                 'room_amenities' => ['Air Conditioning', 'Outdoor Lounge Area', 'Mini Fridge', 'Safe', 'Free Wi-Fi'],
                 'base_price' => 18000.00,
-                'images' => ['rooms/panorama_villa.jpg'],
+                'images' => ['el-nido-hotels/panorama-1.jpg'],
                 'is_shown' => true,
             ],
 
@@ -200,7 +200,7 @@ class ElNidoRoomSeeder extends Seeder
                 'room_size' => '120 sq.m',
                 'room_amenities' => ['Butler Service', 'Private Plunge Pool', 'Smart Home Features', 'Walk-in Closet', 'Gourmet Minibar'],
                 'base_price' => 60000.00,
-                'images' => ['rooms/lihim_luxuryvilla.jpg'],
+                'images' => ['el-nido-hotels/lihim-1.jpg'],
                 'is_shown' => true,
             ],
         ];

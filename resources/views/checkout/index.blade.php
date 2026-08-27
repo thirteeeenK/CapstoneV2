@@ -372,6 +372,7 @@
                                             class="material-symbols-outlined text-[14px] sm:text-[15px] {{ $isTransfer ? 'text-violet-600' : 'text-teal-600' }}">group</span>
                                         <span>Booked for {{ $pax }} Pax</span>
                                     </span>
+                                    <span class="text-[10px] font-medium text-slate-500">{{ $badgeSummary }}</span>
                                 </div>
                             </div>
                         @endforeach

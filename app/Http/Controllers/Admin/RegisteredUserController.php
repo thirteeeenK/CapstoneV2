@@ -4,10 +4,13 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\ChatbotAbuseReport;
+use App\Models\IpBan;
 use App\Models\User;
+use App\Services\AdminAuditService;
 use App\Services\Support\SupportQueueService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class RegisteredUserController extends Controller
 {
@@ -90,9 +93,11 @@ class RegisteredUserController extends Controller
             'ban_level' => ['required', 'in:warning,temporary,permanent'],
             'ban_reason' => ['required_unless:ban_level,warning', 'nullable', 'string', 'max:500'],
             'ban_duration_days' => ['nullable', 'required_if:ban_level,temporary', 'integer', 'min:1', 'max:365'],
+            'also_ban_ip' => ['nullable', 'boolean'],
         ]);
 
         $user = User::findOrFail($id);
+        $oldValues = $user->getOriginal();
         $user->ban_level = $request->ban_level;
         $user->banned_at = now();
         $user->ban_reason = $request->ban_reason ?: null;
@@ -104,6 +109,24 @@ class RegisteredUserController extends Controller
         }
 
         $user->save();
+        AdminAuditService::log($user, $oldValues);
+
+        if ($request->boolean('also_ban_ip')) {
+            $targetIp = $user->consent_ip_address
+                ?: DB::table('sessions')->where('user_id', $user->id)->orderByDesc('last_activity')->value('ip_address');
+
+            if ($targetIp && filter_var($targetIp, FILTER_VALIDATE_IP) && ! IpBan::active()->where('ip_address', $targetIp)->exists()) {
+                $ipBan = IpBan::create([
+                    'ip_address' => $targetIp,
+                    'ban_level' => $request->ban_level,
+                    'reason' => $request->ban_reason ?: 'Banned via user account action.',
+                    'banned_at' => now(),
+                    'expires_at' => $request->ban_level === 'temporary' ? now()->addDays((int) $request->ban_duration_days) : null,
+                    'banned_by' => Auth::guard('admin')->id(),
+                ]);
+                AdminAuditService::log($ipBan);
+            }
+        }
 
         // Resolve any pending abuse reports (best effort; chatbot flow is a future feature).
         $reportStatus = $request->ban_level === 'warning' ? 'reviewed_dismissed' : 'banned';
@@ -129,11 +152,24 @@ class RegisteredUserController extends Controller
     public function unban($id)
     {
         $user = User::findOrFail($id);
+        $oldValues = $user->getOriginal();
+        $targetIp = $user->consent_ip_address
+            ?: DB::table('sessions')->where('user_id', $user->id)->orderByDesc('last_activity')->value('ip_address');
         $user->ban_level = null;
         $user->banned_at = null;
         $user->ban_expires_at = null;
         $user->ban_reason = null;
         $user->save();
+        AdminAuditService::log($user, $oldValues);
+
+        if ($targetIp) {
+            $ipBans = IpBan::active()->where('ip_address', $targetIp)->get();
+            foreach ($ipBans as $ipBan) {
+                $oldIp = $ipBan->getOriginal();
+                $ipBan->delete();
+                AdminAuditService::log($ipBan, $oldIp);
+            }
+        }
 
         return redirect()->back()->with('success', "User account {$user->name} has been restored to normal access.");
     }
@@ -144,9 +180,11 @@ class RegisteredUserController extends Controller
     public function dismissReport($reportId)
     {
         $report = ChatbotAbuseReport::findOrFail($reportId);
+        $oldValues = $report->getOriginal();
         $report->status = 'reviewed_dismissed';
         $report->reviewed_by = Auth::guard('admin')->id();
         $report->save();
+        AdminAuditService::log($report, $oldValues);
 
         // Decrement flag count on user if greater than 0
         if ($report->user && $report->user->chatbot_flag_count > 0) {
