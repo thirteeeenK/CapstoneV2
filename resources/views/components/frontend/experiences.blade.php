@@ -32,13 +32,13 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 relative z-10">
 
         {{-- Header Section --}}
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 reveal-on-scroll">
-            <div class="max-w-2xl space-y-3">
+        <div class="flex flex-col md:flex-row justify-between items-center md:items-end text-center md:text-left gap-6 reveal-on-scroll">
+            <div class="max-w-2xl space-y-3 mx-auto md:mx-0">
                 <h2
                     class="font-headline text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900 leading-tight">
                     Unforgettable Island Adventures
                 </h2>
-                <p class="text-slate-600 text-xs md:text-sm leading-relaxed max-w-xl font-body">
+                <p class="text-slate-600 text-xs md:text-sm leading-relaxed max-w-xl font-body mx-auto md:mx-0">
                     Immerse yourself in authentic local activities across our island sanctuaries—from scuba diving in
                     crystal reefs to sunset sailing and mountain treks.
                 </p>
@@ -47,10 +47,10 @@
             {{-- Location Filter Tabs --}}
             @if($destinations->isNotEmpty())
                 <div
-                    class="flex items-center gap-2 overflow-x-auto pb-2 md:pb-0 max-w-full shrink-0 p-1.5 bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200/80 shadow-xs">
+                    class="flex flex-wrap items-center justify-center md:justify-start gap-1.5 sm:gap-2 max-w-full p-1.5 bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200/80 shadow-xs">
                     <button @click="activeTab = 'all'"
                         :class="activeTab === 'all' ? 'bg-gradient-to-r from-sky-600 to-sky-700 text-white font-bold shadow-md shadow-sky-500/25' : 'text-slate-600 hover:bg-slate-100 font-medium'"
-                        class="px-4 py-2 rounded-xl text-xs transition-all duration-200 shrink-0 flex items-center gap-1.5 cursor-pointer">
+                        class="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs transition-all duration-200 flex items-center gap-1.5 cursor-pointer">
                         <span class="material-symbols-outlined text-[15px]">explore</span>
                         <span>All Locations</span>
                         <span class="px-1.5 py-0.5 rounded-full text-[10px]"
@@ -62,7 +62,7 @@
                     @foreach($destinations as $dest)
                         <button @click="activeTab = '{{ $dest->id }}'"
                             :class="activeTab === '{{ $dest->id }}' ? 'bg-gradient-to-r from-sky-600 to-sky-700 text-white font-bold shadow-md shadow-sky-500/25' : 'text-slate-600 hover:bg-slate-100 font-medium'"
-                            class="px-4 py-2 rounded-xl text-xs transition-all duration-200 shrink-0 flex items-center gap-1.5 cursor-pointer">
+                            class="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs transition-all duration-200 flex items-center gap-1.5 cursor-pointer">
                             <span class="material-symbols-outlined text-[15px]">location_on</span>
                             <span>{{ $dest->name }}</span>
                             <span class="px-1.5 py-0.5 rounded-full text-[10px]"

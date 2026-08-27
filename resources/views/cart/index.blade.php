@@ -62,29 +62,29 @@
 
 <x-frontend.layout title="Trip Basket | SunnyTrips">
     <div x-data="cartPageManager({{ json_encode($initialItems) }}, {{ json_encode($groups) }})" class="min-h-screen bg-sand-50/70 font-body">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 sm:pt-28 pb-10 sm:pb-16">
 
             {{-- Breadcrumb & Title --}}
-            <div class="mb-10 flex flex-wrap items-end justify-between gap-4">
+            <div class="mb-5 sm:mb-8 flex flex-wrap items-end justify-between gap-3 sm:gap-4">
                 <div>
-                    <nav class="flex items-center gap-1.5 text-sm text-ink-400 mb-3" aria-label="Breadcrumb">
+                    <nav class="flex items-center gap-1.5 text-xs sm:text-sm text-ink-400 mb-1.5 sm:mb-2" aria-label="Breadcrumb">
                         <a href="/" class="hover:text-ocean-600 transition">Home</a>
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                         </svg>
                         <span class="text-ink-600 font-medium">Trip Basket</span>
                     </nav>
-                    <h1 class="font-display text-3xl sm:text-4xl font-bold tracking-tight text-ink-900">
+                    <h1 class="font-display text-2xl sm:text-4xl font-bold tracking-tight text-ink-900">
                         Your Trip Basket
                     </h1>
-                    <p class="text-sm text-ink-500 mt-2">
+                    <p class="text-xs sm:text-sm text-ink-500 mt-1 sm:mt-1.5">
                         <span x-text="totalCount + ' ' + (totalCount === 1 ? 'item' : 'items')"></span>
                         in your basket — <span x-text="selectedCount"></span> selected for booking.
                     </p>
                 </div>
 
                 <a href="{{ route('destinations.index') }}"
-                   class="inline-flex items-center gap-2 text-sm font-semibold text-ocean-700 hover:text-ocean-900 transition group">
+                   class="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-ocean-700 hover:text-ocean-900 transition group">
                     <svg class="w-4 h-4 transition-transform group-hover:-translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
                     </svg>
@@ -122,7 +122,27 @@
             <div x-show="items.length > 0" class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
 
                 {{-- Left 2 Columns: Item Cards --}}
-                <div class="lg:col-span-2 space-y-6">
+                <div class="lg:col-span-2 space-y-4 sm:space-y-5">
+
+                    {{-- Select All / Bulk Action Toolbar --}}
+                    <div class="bg-white rounded-2xl p-3.5 sm:p-4 border border-sand-200 shadow-xs flex flex-wrap items-center justify-between gap-3 select-none">
+                        <label class="flex items-center gap-2.5 cursor-pointer">
+                            <input type="checkbox"
+                                   :checked="isAllSelected"
+                                   @change="toggleSelectAll()"
+                                   class="w-4 h-4 sm:w-5 sm:h-5 rounded text-ocean-600 accent-ocean-600 border-sand-300 focus:ring-ocean-500 cursor-pointer">
+                            <span class="font-headline font-bold text-xs sm:text-sm text-ink-900" x-text="isAllSelected ? 'Deselect All (' + totalCount + ' items)' : 'Select All (' + totalCount + ' items)'"></span>
+                        </label>
+                        <div class="flex items-center gap-3">
+                            <span class="text-xs font-semibold text-ink-500">
+                                <span class="text-ocean-700 font-bold" x-text="selectedCount"></span> of <span x-text="totalCount"></span> selected
+                            </span>
+                            <span class="text-sand-300">•</span>
+                            <button type="button" @click="clearCart()" class="text-xs font-bold text-rose-600 hover:text-rose-700 hover:underline cursor-pointer">
+                                Clear basket
+                            </button>
+                        </div>
+                    </div>
 
                     {{-- "I'm Feeling Lucky" Itinerary Groups --}}
                     <template x-for="group in displayGroups" :key="group.id">
@@ -243,6 +263,10 @@
 
             get selectedItems() {
                 return this.items.filter(i => i.is_selected);
+            },
+
+            get isAllSelected() {
+                return this.items.length > 0 && this.items.every(i => i.is_selected);
             },
 
             get selectedCount() {
@@ -406,6 +430,54 @@
                     }
                 } catch (err) {
                     console.error('Error toggling itinerary group:', err);
+                }
+            },
+
+            async toggleSelectAll() {
+                const target = !this.isAllSelected;
+                this.items.forEach(i => i.is_selected = target);
+                try {
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+                    const res = await fetch('{{ route("cart.toggle-all") }}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken,
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: JSON.stringify({ is_selected: target })
+                    });
+                    const data = await res.json();
+                    if (data.success && data.items) {
+                        this.syncWithBackend(data);
+                        window.dispatchEvent(new CustomEvent('cart-updated'));
+                    }
+                } catch (err) {
+                    console.error('Error toggling all:', err);
+                }
+            },
+
+            async clearCart() {
+                if (!confirm('Are you sure you want to clear your entire basket?')) return;
+                try {
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+                    const res = await fetch('/cart/clear', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': csrfToken,
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        this.items = [];
+                        this.groups = [];
+                        window.dispatchEvent(new CustomEvent('cart-updated'));
+                    }
+                } catch (err) {
+                    console.error('Error clearing cart:', err);
                 }
             },
 

@@ -304,6 +304,31 @@ class CartController extends Controller
         return $this->data($request);
     }
 
+    /**
+     * Toggle or set selection state for all items in the cart at once.
+     */
+    public function toggleAll(Request $request)
+    {
+        $query = $this->getCartQuery($request);
+        $total = $query->count();
+        if ($total > 0) {
+            if ($request->has('is_selected')) {
+                $target = filter_var($request->input('is_selected'), FILTER_VALIDATE_BOOLEAN);
+            } else {
+                $selected = $this->getCartQuery($request)->where('is_selected', true)->count();
+                $target = $selected !== $total;
+            }
+
+            $this->getCartQuery($request)->update(['is_selected' => $target]);
+        }
+
+        if ($request->wantsJson() || $request->ajax() || $request->header('Accept') === 'application/json' || $request->expectsJson()) {
+            return $this->data($request);
+        }
+
+        return redirect()->back();
+    }
+
     protected function findCartItem(Request $request, $id): ?CartItem
     {
         $userId = auth()->id();

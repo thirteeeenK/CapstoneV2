@@ -1,5 +1,5 @@
 <x-frontend.layout title="My Dashboard — SunnyTrips">
-    <div class="py-10 bg-sand-50/70 text-slate-900 min-h-screen relative overflow-hidden">
+    <div class="py-5 sm:py-8 lg:py-10 bg-sand-50/70 text-slate-900 min-h-screen relative overflow-hidden">
 
         {{-- Background Soft Ambient Mesh Glows --}}
         <div
@@ -9,7 +9,7 @@
             class="absolute bottom-10 right-1/3 w-[400px] h-[300px] bg-indigo-200/30 blur-3xl rounded-full pointer-events-none">
         </div>
 
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 relative z-10">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6 sm:space-y-8 relative z-10">
 
             {{-- Dashboard User Header Banner (Light Mode Theme) --}}
             <div

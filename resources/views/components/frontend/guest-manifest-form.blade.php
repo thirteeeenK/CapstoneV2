@@ -39,73 +39,73 @@
      class="space-y-6 font-body">
 
     {{-- SECTION 1: Lead Guest Contact Information --}}
-    <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-5">
-        <div class="flex items-center justify-between gap-3 border-b border-slate-100 pb-4">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-2xl bg-sky-50 text-sky-600 border border-sky-200 flex items-center justify-center font-bold">
-                    <span class="material-symbols-outlined text-xl">contact_mail</span>
+    <div class="bg-white rounded-2xl sm:rounded-3xl p-4.5 sm:p-7 border border-slate-200/80 shadow-xs space-y-4 sm:space-y-5">
+        <div class="flex items-center justify-between gap-2.5 sm:gap-3 border-b border-slate-100 pb-3.5">
+            <div class="flex items-center gap-2.5 sm:gap-3">
+                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-sky-50 text-sky-600 border border-sky-200 flex items-center justify-center font-bold shrink-0">
+                    <span class="material-symbols-outlined text-lg sm:text-xl">contact_mail</span>
                 </div>
                 <div>
-                    <h3 class="text-base sm:text-lg font-bold text-slate-900 font-headline">Lead Guest Contact Details</h3>
-                    <p class="text-xs text-slate-500">We will send your voucher, payment updates, and itinerary here.</p>
+                    <h3 class="text-sm sm:text-base font-bold text-slate-900 font-headline">Lead Guest Contact Details</h3>
+                    <p class="text-[11px] sm:text-xs text-slate-500">We will send your voucher, payment updates, and itinerary here.</p>
                 </div>
             </div>
-            <span class="text-xs font-semibold text-sky-700 bg-sky-50 px-3 py-1 rounded-full border border-sky-100">Primary Contact</span>
+            <span class="text-[11px] font-bold text-sky-700 bg-sky-50 px-2.5 py-0.5 rounded-full border border-sky-100 shrink-0">Primary</span>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div class="sm:col-span-2">
-                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Lead Traveler Full Name *</label>
+                <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Lead Traveler Full Name *</label>
                 <input type="text" 
                        name="contact_name" 
                        x-model="leadName" 
                        required 
                        placeholder="e.g. Juan Dela Cruz" 
-                       class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 bg-slate-50/50">
+                       class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm font-semibold text-slate-900 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 bg-slate-50/50">
             </div>
 
             <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Email Address *</label>
+                <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Email Address *</label>
                 <input type="email" 
                        name="contact_email" 
                        x-model="leadEmail" 
                        required 
                        placeholder="e.g. juan@example.com" 
-                       class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 bg-slate-50/50">
+                       class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm font-semibold text-slate-900 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 bg-slate-50/50">
             </div>
 
             <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">Mobile Phone Number *</label>
+                <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Mobile Phone Number *</label>
                 <input type="tel" 
                        name="contact_phone" 
                        x-model="leadPhone" 
                        required 
                        placeholder="e.g. 0917 123 4567" 
-                       class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 bg-slate-50/50">
+                       class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm font-semibold text-slate-900 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 bg-slate-50/50">
             </div>
         </div>
     </div>
 
     {{-- SECTION 2: Dynamic Accompanying Guests Array Builder --}}
-    <div class="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xs space-y-5">
+    <div class="bg-white rounded-2xl sm:rounded-3xl p-4.5 sm:p-7 border border-slate-200/80 shadow-xs space-y-4 sm:space-y-5">
         
         {{-- Header --}}
-        <div class="flex items-center justify-between gap-3 border-b border-slate-100 pb-4">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-2xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center font-bold">
-                    <span class="material-symbols-outlined text-xl">badge</span>
+        <div class="flex items-center justify-between gap-2.5 sm:gap-3 border-b border-slate-100 pb-3.5">
+            <div class="flex items-center gap-2.5 sm:gap-3">
+                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center font-bold shrink-0">
+                    <span class="material-symbols-outlined text-lg sm:text-xl">badge</span>
                 </div>
                 <div>
-                    <h3 class="text-base sm:text-lg font-bold text-slate-900 font-headline">Hotel Guest Manifest</h3>
-                    <p class="text-xs text-slate-500">Provide full names and categories for all guests staying in this Hotel and Room.</p>
+                    <h3 class="text-sm sm:text-base font-bold text-slate-900 font-headline">Hotel Guest Manifest</h3>
+                    <p class="text-[11px] sm:text-xs text-slate-500">Provide full names and categories for all guests staying in this Hotel and Room.</p>
                 </div>
             </div>
         </div>
 
         {{-- Dynamic Guest List Array --}}
-        <div class="space-y-4">
+        <div class="space-y-3 sm:space-y-4">
             <template x-for="(guest, index) in guests" :key="index">
-                <div class="bg-slate-50/80 p-4 sm:p-5 rounded-2xl border border-slate-200/70 relative transition duration-200 hover:border-slate-300">
+                <div class="bg-slate-50/80 p-3.5 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-200/70 relative transition duration-200 hover:border-slate-300">
                     
                     {{-- Row Header & Actions --}}
                     <div class="flex items-center justify-between mb-3">

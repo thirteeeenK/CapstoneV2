@@ -7,13 +7,13 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12 relative z-10">
 
         {{-- Header Section --}}
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 reveal-on-scroll">
-            <div class="max-w-2xl space-y-3">
+        <div class="flex flex-col md:flex-row justify-between items-center md:items-end text-center md:text-left gap-6 reveal-on-scroll">
+            <div class="max-w-2xl space-y-3 mx-auto md:mx-0">
                 <h2
                     class="font-headline text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900 leading-tight">
                     The Essence of the Archipelago
                 </h2>
-                <p class="text-slate-600 text-xs md:text-sm leading-relaxed max-w-xl font-body">
+                <p class="text-slate-600 text-xs md:text-sm leading-relaxed max-w-xl font-body mx-auto md:mx-0">
                     Each sanctuary is handpicked for its breathtaking natural beauty, pristine beaches, and promise of
                     luxury island living.
                 </p>

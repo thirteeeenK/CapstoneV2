@@ -11,6 +11,7 @@ Route::prefix('cart')->name('cart.')->group(function () {
     Route::post('/add', [CartController::class, 'store'])->name('add');
     Route::patch('/update/{id}', [CartController::class, 'update'])->name('update');
     Route::post('/toggle/{id}', [CartController::class, 'toggleSelect'])->name('toggle');
+    Route::post('/toggle-all', [CartController::class, 'toggleAll'])->name('toggle-all');
     Route::post('/toggle-group/{groupId}', [CartController::class, 'toggleGroup'])->name('toggle-group');
     Route::delete('/remove/{id}', [CartController::class, 'destroy'])->name('remove');
     Route::post('/clear', [CartController::class, 'clear'])->name('clear');

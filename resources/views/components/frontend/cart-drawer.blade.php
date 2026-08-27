@@ -29,34 +29,49 @@
          role="dialog"
          aria-modal="true"
          aria-label="Trip basket"
-         class="fixed inset-y-0 right-0 max-w-full flex pl-10">
+         class="fixed inset-y-0 right-0 max-w-full flex justify-end z-50">
 
-        <div class="w-screen max-w-md bg-white flex flex-col font-body shadow-2xl shadow-ocean-900/10">
+        <div class="w-[88vw] sm:w-[420px] max-w-md bg-white flex flex-col font-body shadow-2xl shadow-ocean-900/30 h-full">
 
             {{-- Header --}}
-            <div class="flex items-center justify-between px-5 sm:px-6 py-5 bg-sand-50 border-b border-sand-200">
-                <div class="flex items-center gap-3.5">
-                    <div class="w-10 h-10 rounded-full bg-ocean-50 border border-ocean-100 flex items-center justify-center">
-                        <svg class="w-5 h-5 text-ocean-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
-                        </svg>
-                    </div>
-                    <div>
-                        <h2 class="font-display text-base font-bold tracking-tight text-ink-900 leading-tight">Trip Basket</h2>
-                        <p class="text-xs text-ink-500 font-medium mt-0.5" x-text="totalCount + ' item' + (totalCount === 1 ? '' : 's')"></p>
+            <div class="flex items-center justify-between px-4 sm:px-6 py-4 sm:py-5 bg-sand-50/90 border-b border-sand-200/80 shrink-0">
+                <div class="flex items-center gap-2 sm:gap-3">
+                    <button @click="closeDrawer()"
+                            aria-label="Back to page"
+                            class="w-9 h-9 rounded-full flex items-center justify-center text-ink-600 hover:text-ink-900 hover:bg-sand-200/80 transition cursor-pointer shrink-0">
+                        <span class="material-symbols-outlined text-[22px]">arrow_back</span>
+                    </button>
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-full bg-ocean-50 border border-ocean-100 flex items-center justify-center text-ocean-600 shrink-0">
+                            <span class="material-symbols-outlined text-[18px]">shopping_bag</span>
+                        </div>
+                        <div>
+                            <h2 class="font-headline text-base font-bold tracking-tight text-ink-900 leading-tight">Trip Basket</h2>
+                            <p class="text-xs text-ink-500 font-medium" x-text="totalCount + ' item' + (totalCount === 1 ? '' : 's')"></p>
+                        </div>
                     </div>
                 </div>
                 <button @click="closeDrawer()"
                         aria-label="Close basket"
-                        class="w-9 h-9 rounded-full flex items-center justify-center text-ink-400 hover:text-ink-700 hover:bg-white transition cursor-pointer">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                    </svg>
+                        class="w-8 h-8 rounded-full flex items-center justify-center text-ink-400 hover:text-ink-700 hover:bg-sand-200/70 transition cursor-pointer">
+                    <span class="material-symbols-outlined text-[20px]">close</span>
                 </button>
             </div>
 
+            {{-- Select All Toolbar --}}
+            <div x-show="items.length > 0" class="flex items-center justify-between px-4 sm:px-6 py-2.5 bg-sand-100/70 border-b border-sand-200 text-xs font-bold text-ink-700 shrink-0 select-none">
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox"
+                           :checked="isAllSelected"
+                           @change="toggleSelectAll()"
+                           class="w-4 h-4 rounded text-ocean-600 accent-ocean-600 border-sand-300 focus:ring-ocean-500 cursor-pointer">
+                    <span x-text="isAllSelected ? 'Deselect All' : 'Select All'"></span>
+                </label>
+                <span class="text-[11px] text-ink-400 font-semibold" x-text="selectedCount + ' of ' + items.length + ' selected'"></span>
+            </div>
+
             {{-- Cart Items List --}}
-            <div class="flex-1 overflow-y-auto bg-sand-50 divide-y divide-sand-200/80">
+            <div class="flex-1 overflow-y-auto bg-sand-50/50 divide-y divide-sand-200/80">
                 <template x-if="loading">
                     <div class="py-16 text-center">
                         <div class="mx-auto mb-4 w-8 h-8 rounded-full border-2 border-ocean-200 border-t-ocean-600 animate-spin"></div>
@@ -65,8 +80,8 @@
                 </template>
 
                 <template x-if="!loading && items.length === 0">
-                    <div class="py-16 text-center px-8">
-                        <svg viewBox="0 0 96 96" fill="none" aria-hidden="true" class="w-24 h-24 mx-auto mb-5">
+                    <div class="py-16 text-center px-6 sm:px-8">
+                        <svg viewBox="0 0 96 96" fill="none" aria-hidden="true" class="w-20 h-20 mx-auto mb-4">
                             <circle cx="48" cy="48" r="45" class="stroke-sand-200" stroke-width="1.5"/>
                             <circle cx="48" cy="41" r="8" class="fill-ocean-200"/>
                             <path d="M48 26v-3M48 56v-3M31 41h-3M68 41h-3M36 29l-2-2M62 53l-2-2M60 29l2-2M34 53l2-2"
@@ -74,21 +89,19 @@
                             <path d="M23 68c7-5.5 14-5.5 21 0s14 5.5 21 0" class="stroke-ocean-400" stroke-width="2.5" stroke-linecap="round"/>
                             <path d="M30 76c5.5-4.3 11-4.3 16.5 0s11 4.3 16.5 0" class="stroke-ocean-200" stroke-width="2.5" stroke-linecap="round"/>
                         </svg>
-                        <h3 class="font-display text-base font-bold text-ink-900">Your basket is empty</h3>
-                        <p class="text-sm text-ink-500 mt-1.5 leading-relaxed max-w-[240px] mx-auto">Rooms, experiences and packages you pick here will gather, ready for booking.</p>
+                        <h3 class="font-headline text-base font-bold text-ink-900">Your basket is empty</h3>
+                        <p class="text-xs text-ink-500 mt-1.5 leading-relaxed max-w-[240px] mx-auto">Rooms, experiences and packages you pick will gather here, ready for booking.</p>
                         <a href="{{ route('destinations.index') }}"
-                           class="mt-5 inline-flex items-center gap-1.5 rounded-full bg-ocean-600 hover:bg-ocean-500 text-white text-sm font-semibold py-2.5 px-5 shadow-sm shadow-ocean-600/25 transition cursor-pointer">
+                           class="mt-5 inline-flex items-center gap-1.5 rounded-2xl bg-ocean-600 hover:bg-ocean-500 text-white text-xs font-bold py-2.5 px-5 shadow-xs transition cursor-pointer">
                             <span>Start exploring</span>
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
-                            </svg>
+                            <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
                         </a>
                     </div>
                 </template>
 
                 <template x-for="group in displayGroups" :key="group.id">
                     <div class="bg-gradient-to-r from-ocean-700 to-sky-500">
-                        <div class="px-5 sm:px-6 py-3.5 flex items-center gap-3">
+                        <div class="px-4 sm:px-6 py-3.5 flex items-center gap-3">
                             <input type="checkbox"
                                    :checked="group.is_selected"
                                    @change="toggleGroup(group.id)"
@@ -120,39 +133,34 @@
             </div>
 
             {{-- Footer Summary --}}
-            <div x-show="items.length > 0" class="px-5 sm:px-6 py-5 bg-sand-50 border-t border-sand-200 space-y-4">
-                <div class="space-y-2">
-                    <div class="flex justify-between text-sm text-ink-500">
+            <div x-show="items.length > 0" class="px-4 sm:px-6 py-4 sm:py-5 bg-white border-t border-sand-200 space-y-3.5 shrink-0 shadow-lg">
+                <div class="space-y-1.5">
+                    <div class="flex justify-between text-xs text-ink-500">
                         <span>Selected items</span>
-                        <span class="font-semibold text-ink-700" x-text="selectedCount + ' of ' + items.length"></span>
+                        <span class="font-bold text-ink-700" x-text="selectedCount + ' of ' + items.length"></span>
                     </div>
                     <div class="flex justify-between items-baseline pt-0.5">
-                        <span class="font-display text-sm font-bold text-ink-900">Trip total</span>
-                        <span class="font-display text-xl font-bold text-ocean-700" x-text="formattedSubtotal"></span>
+                        <span class="font-headline text-sm font-bold text-ink-900">Trip total</span>
+                        <span class="font-headline text-xl font-black text-ocean-700" x-text="formattedSubtotal"></span>
                     </div>
                 </div>
 
                 <a href="{{ route('checkout.index') }}" @click.prevent="proceedToCheckout()"
-                   class="w-full py-3.5 rounded-full bg-ocean-600 hover:bg-ocean-500 text-white text-sm font-semibold shadow-sm shadow-ocean-600/25 transition flex items-center justify-center gap-2 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ocean-500 focus-visible:ring-offset-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
-                    </svg>
+                   class="w-full py-3 rounded-2xl bg-gradient-to-r from-ocean-600 to-ocean-700 hover:from-ocean-500 hover:to-ocean-600 text-white text-xs sm:text-sm font-bold shadow-md hover:shadow-lg transition flex items-center justify-center gap-2 cursor-pointer">
+                    <span class="material-symbols-outlined text-[18px]">verified_user</span>
                     <span>Proceed to Checkout</span>
                 </a>
 
-                <div class="grid grid-cols-2 gap-2.5">
+                <div class="grid grid-cols-2 gap-2">
                     <a href="{{ route('cart.index') }}"
-                       class="px-3 py-2.5 rounded-full border border-sand-300 bg-white text-ink-700 hover:bg-sand-100 font-semibold text-xs transition text-center flex items-center justify-center gap-1.5 cursor-pointer">
-                        <span>Full basket view</span>
-                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
-                        </svg>
+                       class="px-3 py-2.5 rounded-xl border border-sand-300 bg-sand-50 hover:bg-sand-100 text-ink-700 font-bold text-xs transition text-center flex items-center justify-center gap-1 cursor-pointer">
+                        <span>Full basket</span>
+                        <span class="material-symbols-outlined text-[15px]">arrow_forward</span>
                     </a>
                     <button @click="clearCart()"
-                            class="px-3 py-2.5 rounded-full border border-transparent text-rose-600 hover:text-rose-700 hover:bg-rose-50 font-semibold text-xs transition text-center cursor-pointer">
+                            class="px-3 py-2.5 rounded-xl border border-rose-200 text-rose-600 hover:text-rose-700 hover:bg-rose-50 font-bold text-xs transition text-center cursor-pointer">
                         Clear basket
                     </button>
-                </div>
             </div>
 
         </div>
@@ -169,7 +177,9 @@ function cartDrawer() {
         totalCount: 0,
         selectedCount: 0,
         subtotal: 0,
-        formattedSubtotal: '₱0.00',
+        get isAllSelected() {
+            return this.items.length > 0 && this.items.every(i => i.is_selected);
+        },
 
         get displayGroups() {
             return this.groups.map(g => {
@@ -260,6 +270,33 @@ function cartDrawer() {
                 }
             } catch (err) {
                 console.error('Error toggling cart item:', err);
+            }
+        },
+
+        async toggleSelectAll() {
+            const target = !this.isAllSelected;
+            // Optimistic update
+            this.items.forEach(i => i.is_selected = target);
+            try {
+                const res = await fetch('{{ route("cart.toggle-all") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ is_selected: target })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    this.items = data.items;
+                    this.groups = data.groups || [];
+                    this.selectedCount = data.selected_count;
+                    this.subtotal = data.subtotal;
+                    this.formattedSubtotal = data.formatted_subtotal;
+                }
+            } catch (err) {
+                console.error('Error toggling all cart items:', err);
             }
         },
 

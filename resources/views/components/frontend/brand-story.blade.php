@@ -4,7 +4,7 @@
             
             {{-- Left Column: Brand Philosophy & Image --}}
             <div class="lg:col-span-5 space-y-8 reveal-on-scroll">
-                <div>
+                <div class="text-center lg:text-left">
                     <span class="font-label text-primary font-bold tracking-[0.2em] text-xs uppercase mb-3 block">OUR PHILOSOPHY</span>
                     <h2 class="font-headline text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900 leading-tight">
                         We don't just book trips; we architect memories.
