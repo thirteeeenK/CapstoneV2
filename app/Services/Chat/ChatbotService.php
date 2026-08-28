@@ -6,6 +6,7 @@ use App\Models\ActivityModel;
 use App\Models\ChatMessage;
 use App\Models\ChatSession;
 use App\Models\DestinationModel;
+use App\Models\Faq;
 use App\Models\HotelModel;
 use App\Models\Package;
 use App\Models\RoomType;
@@ -64,7 +65,10 @@ class ChatbotService
         }
 
         $lastBot = $session->messages()->where('sender', 'bot')->latest()->first();
-        if ($this->isFollowUpQuery($message, $lastBot)) {
+        // Filter refinements like "luxury quiet pool" should re-search with inherited destination, not Q&A over old cards
+        if ($lastBot && $this->isFilterRefinementQuery($message, $lastBot) && ! $this->startsNewSearch(mb_strtolower(trim($message)))) {
+            // fall through to fresh search with conversational destination inheritance
+        } elseif ($this->isFollowUpQuery($message, $lastBot)) {
             $reply = $this->handleFollowUp($message, $session);
             $text = $reply['reply'] ?? 'Sorry, I could not process that request. Please try again.';
             $this->conversation->persist($session, 'bot', $text, $reply);
@@ -72,8 +76,33 @@ class ChatbotService
             return array_merge(['status' => 'success', 'control' => 'ai', 'session_token' => $session->session_token, 'reply' => $text], $reply);
         }
 
+        // Affirmative like "yes search" after bot offered to search → treat as Boracay hotel/room search
+        if ($lastBot && $this->isAffirmativeSearchQuery($message, $lastBot)) {
+            $intent = IntentRouter::ROOM_SEARCH;
+            $constraints = $this->intentRouter->extractConstraints($message);
+            $constraints = $this->resolveConversationalDestination($constraints, $session);
+            $constraints = $this->resolveDefaultDestination($constraints, $user);
+            // If still no destination but last turn had one, force it
+            $reply = $this->handleRoomSearch($message, $constraints, $user, $session);
+            // Fallback to hotel search if room search yields nothing but hotels exist
+            if (empty($reply['retrieved_rooms']) && ! empty($constraints['destination_id'])) {
+                $hotelReply = $this->handleHotelSearch($message, $constraints, $user, $session);
+                if (! empty($hotelReply['retrieved_hotels'])) {
+                    $reply = $hotelReply;
+                }
+            }
+            $text = $reply['reply'] ?? 'Sorry, I could not process that request. Please try again.';
+            $this->conversation->persist($session, 'bot', $text, $reply);
+
+            return array_merge(['status' => 'success', 'control' => 'ai', 'session_token' => $session->session_token, 'reply' => $text], $reply);
+        }
+
         $faq = $this->faq->findBestMatch($message);
-        if ($faq) {
+        // Don't hijack amenity refinements or explicit Boracay hotel/room queries with FAQ
+        $lowerForFaq = mb_strtolower(trim($message));
+        $isBareFilter = $lastBot && $this->isFilterRefinementQuery($message, $lastBot);
+        $hasExplicitDest = (bool) $this->intentRouter->extractDestinationName($message);
+        if ($faq && ! $isBareFilter && ! $hasExplicitDest) {
             $reply = ['reply' => $faq->answer, 'faq' => ['id' => $faq->id, 'question' => $faq->question, 'answer' => $faq->answer]];
             $this->conversation->persist($session, 'bot', $reply['reply'], $reply);
 
@@ -84,6 +113,7 @@ class ChatbotService
         $constraints = in_array($intent, [IntentRouter::GENERAL_TALK, IntentRouter::DESTINATIONS_OVERVIEW], true)
             ? []
             : $this->intentRouter->extractConstraints($message);
+        $constraints = $this->resolveConversationalDestination($constraints, $session);
         $constraints = $this->resolveDefaultDestination($constraints, $user);
 
         $reply = match ($intent) {
@@ -97,6 +127,7 @@ class ChatbotService
             IntentRouter::MAP_QUERY => $this->handleMapQuery($message, $constraints, $session, $userLat, $userLng),
             IntentRouter::WEATHER_QUERY => $this->handleWeatherQuery($message, $constraints, $session),
             IntentRouter::DESTINATIONS_OVERVIEW => $this->handleDestinationsOverview($session),
+            IntentRouter::DISCOUNT_QUERY => $this->handleDiscountQuery($message, $session),
             default => $this->handleGeneralChat($message, $session),
         };
 
@@ -160,9 +191,25 @@ class ChatbotService
             return false;
         }
 
+        // Destination switch like "actually ... in El Nido" when previous was Boracay should be fresh search, not refinement
+        $normalizedLower = preg_replace('/[^\p{L}\p{N}\s]/u', ' ', $lower);
+        $normalizedLower = trim(preg_replace('/\s+/', ' ', $normalizedLower));
         foreach (DestinationModel::pluck('name') as $name) {
-            $name = mb_strtolower((string) $name);
-            if ($name !== '' && str_contains($lower, $name)) {
+            $nameLower = mb_strtolower((string) $name);
+            if ($nameLower !== '' && str_contains($normalizedLower, $nameLower)) {
+                // If this destination is NOT in previous context, it's a switch → not a refinement
+                $data = $lastBot->context_data ?: [];
+                $prevDests = [];
+                foreach (['retrieved_hotels', 'retrieved_rooms', 'retrieved_activities'] as $k) {
+                    foreach ($data[$k] ?? [] as $it) {
+                        $prevDests[] = mb_strtolower(trim((string) ($it['destination'] ?? '')));
+                    }
+                }
+                // also check recent user dests? keep simple: if prev had any dest and new dest differs, treat as switch
+                if (! empty($prevDests) && ! in_array($nameLower, $prevDests, true)) {
+                    return false;
+                }
+
                 return true;
             }
         }
@@ -198,9 +245,13 @@ class ChatbotService
      */
     protected function startsNewSearch(string $lower): bool
     {
+        // normalize punctuation so "boracay)" or "boracay?" still matches, and "pertaining to boracay" counts
+        $normalized = preg_replace('/[^\p{L}\p{N}\s]/u', ' ', $lower);
+        $normalized = preg_replace('/\s+/', ' ', $normalized);
+        $normalized = trim($normalized);
         foreach (DestinationModel::pluck('name') as $name) {
             $name = mb_strtolower((string) $name);
-            if ($name !== '' && str_contains($lower, $name)) {
+            if ($name !== '' && str_contains($normalized, $name)) {
                 return true;
             }
         }
@@ -210,7 +261,12 @@ class ChatbotService
             return true;
         }
 
-        return (bool) preg_match('/\b(hotel|hotels|room|rooms|resort|resorts|activity|activities|tour|tours|package|packages|itinerary|availability|weather|where is|how far)\b.*\b(in|near|at|for)\b/', $lower)
+        // Also treat "pertaining to", "something in <destination>" as fresh search triggers
+        if (preg_match('/\b(pertaining to|something in|find me.*in|hotels and rooms)\b/i', $lower)) {
+            return true;
+        }
+
+        return (bool) preg_match('/\b(hotel|hotels|room|rooms|resort|resorts|activity|activities|tour|tours|package|packages|itinerary|availability|weather|where is|how far)\b.*\b(in|near|at|for|with|pertaining)\b/i', $lower)
             || (bool) preg_match('/\b(book|reserve|booking)\b/', $lower);
     }
 
@@ -470,6 +526,7 @@ class ChatbotService
 
     protected function handleRoomSearch(string $query, array $constraints, ?User $user, ChatSession $session): array
     {
+        $constraints = $this->resolveConversationalDestination($constraints, $session);
         $constraints = $this->resolveDefaultDestination($constraints, $user);
         $scored = null;
         if ($this->isPersonalized($user)) {
@@ -561,6 +618,14 @@ class ChatbotService
         $context = $this->gemini->extractPricingContext($context, $query);
         $prompt = $this->buildPrompt('room-search', $context, $query, $user);
         $reply = $this->geminiChatResponse($prompt, $session);
+        // Visible filter badge when destination was inherited for a bare amenity refinement
+        $hadExplicitDest = (bool) $this->intentRouter->extractDestinationName($query);
+        if (! $hadExplicitDest && ! empty($constraints['destination_name'])) {
+            $lastBotBadge = $session->messages()->where('sender', 'bot')->latest()->first();
+            if ($lastBotBadge && $this->isFilterRefinementQuery($query, $lastBotBadge)) {
+                $reply = "Filtered for **{$constraints['destination_name']}**: {$query}\n\n".$reply;
+            }
+        }
 
         return [
             'reply' => $reply,
@@ -593,8 +658,30 @@ class ChatbotService
         ];
     }
 
+    protected function handleDiscountQuery(string $query, ChatSession $session): array
+    {
+        // FAQ path gives verbatim bullets (zero LLM cost) and is idempotent; live context ensures ₱50/₱150 stays correct if DB changes
+        $faq = Faq::where('question', 'Does SunnyTrips offer discounts?')->where('is_active', true)->first();
+        if ($faq) {
+            return [
+                'reply' => $faq->answer,
+                'faq' => ['id' => $faq->id, 'question' => $faq->question, 'answer' => $faq->answer],
+                'discount_rules' => $this->gemini->getPassengerDiscountContext(),
+            ];
+        }
+        $context = $this->gemini->getPassengerDiscountContext();
+        if (empty(trim($context))) {
+            return ['reply' => $this->noResultsReply('discounts')];
+        }
+        $prompt = $this->buildPrompt('discount', $context, $query, null);
+        $reply = $this->geminiChatResponse($prompt, $session);
+
+        return ['reply' => $reply, 'discount_rules' => $context];
+    }
+
     protected function handleHotelSearch(string $query, array $constraints, ?User $user, ChatSession $session): array
     {
+        $constraints = $this->resolveConversationalDestination($constraints, $session);
         $constraints = $this->resolveDefaultDestination($constraints, $user);
         $limit = (int) ($constraints['limit'] ?? 0);
         if ($limit < 3 || $limit > 10) {
@@ -635,6 +722,13 @@ class ChatbotService
 
         $prompt = $this->buildPrompt('hotel-search', $context, $query, $user);
         $reply = $this->geminiChatResponse($prompt, $session);
+        $hadExplicitDest = (bool) $this->intentRouter->extractDestinationName($query);
+        if (! $hadExplicitDest && ! empty($constraints['destination_name'])) {
+            $lastBotBadge = $session->messages()->where('sender', 'bot')->latest()->first();
+            if ($lastBotBadge && $this->isFilterRefinementQuery($query, $lastBotBadge)) {
+                $reply = "Filtered for **{$constraints['destination_name']}**: {$query}\n\n".$reply;
+            }
+        }
 
         return [
             'reply' => $reply,
@@ -782,9 +876,70 @@ class ChatbotService
         return $this->gemini->normalizeVector($blended);
     }
 
+    protected function resolveConversationalDestination(array $constraints, ChatSession $session): array
+    {
+        if (! empty($constraints['destination_id'])) {
+            return $constraints;
+        }
+        try {
+            // Last explicit destination from prior bot cards or user messages (last 6 turns)
+            $lastBot = $session->messages()->where('sender', 'bot')->latest()->first();
+            $data = $lastBot?->context_data ?: [];
+
+            $candidates = [];
+            if (! empty($data['retrieved_hotels'][0]['destination'])) {
+                $candidates[] = $data['retrieved_hotels'][0]['destination'];
+            }
+            if (! empty($data['retrieved_rooms'][0]['destination'])) {
+                $candidates[] = $data['retrieved_rooms'][0]['destination'];
+            }
+            if (! empty($data['retrieved_activities'][0]['destination'])) {
+                $candidates[] = $data['retrieved_activities'][0]['destination'];
+            }
+            if (! empty($data['itinerary']['destination']['name'])) {
+                $candidates[] = $data['itinerary']['destination']['name'];
+            }
+            // Scan recent user messages for explicit destination mention
+            $recentUsers = $session->messages()->where('sender', 'user')->latest('created_at')->limit(6)->pluck('message');
+            foreach ($recentUsers as $msg) {
+                $dest = $this->intentRouter->extractDestinationName($msg);
+                if ($dest) {
+                    $candidates[] = $dest;
+                }
+            }
+            // Also check recent bot text for destination name (fallback)
+            if ($lastBot && $lastBot->message) {
+                $dest = $this->intentRouter->extractDestinationName($lastBot->message);
+                if ($dest) {
+                    $candidates[] = $dest;
+                }
+            }
+            foreach ($candidates as $destName) {
+                $destName = trim((string) $destName);
+                if ($destName === '') {
+                    continue;
+                }
+                $destId = DestinationModel::where('name', 'ILIKE', $destName)->value('id');
+                if ($destId) {
+                    $constraints['destination_id'] = (int) $destId;
+                    $constraints['destination_name'] = $destName;
+                    break;
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::debug('resolveConversationalDestination failed: '.$e->getMessage());
+        }
+
+        return $constraints;
+    }
+
     protected function resolveDefaultDestination(array $constraints, ?User $user): array
     {
-        if (! empty($constraints['destination_id']) || ! $this->isPersonalized($user)) {
+        // Conversational destination already resolved in handle(); keep it if present
+        if (! empty($constraints['destination_id'])) {
+            return $constraints;
+        }
+        if (! $this->isPersonalized($user)) {
             return $constraints;
         }
         try {
@@ -803,6 +958,59 @@ class ChatbotService
         }
 
         return $constraints;
+    }
+
+    /**
+     * Bare amenity/vibe filter after a hotel/room turn (e.g., "luxury quiet pool", "family-friendly")
+     * should re-search with inherited destination, not Q&A over old cards.
+     */
+    protected function isFilterRefinementQuery(string $query, ChatMessage $lastBot): bool
+    {
+        $lower = mb_strtolower(trim($query));
+        if ($lower === '' || count(preg_split('/\s+/', $lower)) > 10) {
+            return false;
+        }
+        // Must be short and contain amenity/vibe or price signal, and no explicit new destination/hotel intent that would be fresh search
+        if (! preg_match('/\b(pool|luxury|luxurious|premium|quiet|family-friendly|family|budget-friendly|secluded|private|cheap|cheapest|expensive|budget|under|less than|price)\b/i', $lower)) {
+            return false;
+        }
+        $data = $lastBot->context_data ?: [];
+        $hadHotelOrRoom = ! empty($data['retrieved_hotels']) || ! empty($data['retrieved_rooms']);
+        $hadActivity = ! empty($data['retrieved_activities']);
+        // Only treat as filter refinement if previous turn was hotel/room (or activity for activity filters)
+        if (! $hadHotelOrRoom && ! $hadActivity) {
+            return false;
+        }
+        // If query itself names a new destination, let startsNewSearch handle it as fresh
+        if ($this->intentRouter->extractDestinationName($query)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    protected function isAffirmativeSearchQuery(string $query, ChatMessage $lastBot): bool
+    {
+        $lower = trim(mb_strtolower($query));
+        // short affirmations that mean "yes, do the search you offered"
+        if (! preg_match('/^(yes|yep|yeah|yup|ok|okay|sure|go ahead|please do|search|find it|show me|yes search|yes please)(\.?|!)?$/i', $lower)) {
+            // also allow "yes search." with optional punctuation
+            if (! preg_match('/^(yes|yep|ok|okay)\b.*\b(search|find|show)\b/i', $lower)) {
+                return false;
+            }
+        }
+        $text = mb_strtolower($lastBot->message ?? '');
+        // Last bot offered to search / asked for preferences
+        if (str_contains($text, 'would you like me to search') || str_contains($text, 'to give you the best recommendations') || str_contains($text, 'let me search')) {
+            return true;
+        }
+        $data = $lastBot->context_data ?: [];
+        // If last turn was activities and user said yes, they likely want hotels/rooms in same destination
+        if (! empty($data['retrieved_activities']) && preg_match('/\b(yes|yep|ok|search)\b/i', $lower)) {
+            return true;
+        }
+
+        return false;
     }
 
     protected function buildUserProfileText(?User $user): ?string
@@ -846,6 +1054,7 @@ class ChatbotService
 
     protected function handleActivitySearch(string $query, array $constraints, ?User $user, ChatSession $session): array
     {
+        $constraints = $this->resolveConversationalDestination($constraints, $session);
         $constraints = $this->resolveDefaultDestination($constraints, $user);
         $scored = null;
         if ($this->isPersonalized($user)) {
@@ -895,6 +1104,7 @@ class ChatbotService
 
     protected function handlePackageSearch(string $query, array $constraints, ?User $user, ChatSession $session): array
     {
+        $constraints = $this->resolveConversationalDestination($constraints, $session);
         $constraints = $this->resolveDefaultDestination($constraints, $user);
         $destinationId = $constraints['destination_id'] ?? null;
         $scored = null;
@@ -950,6 +1160,7 @@ class ChatbotService
 
     protected function handleItineraryQuery(string $query, array $constraints, ?User $user, ChatSession $session): array
     {
+        $constraints = $this->resolveConversationalDestination($constraints, $session);
         $constraints = $this->resolveDefaultDestination($constraints, $user);
         $destinationId = $constraints['destination_id'] ?? null;
         $pax = $constraints['pax'] ?? 2;
@@ -1453,6 +1664,7 @@ class ChatbotService
             'addon-search' => 'TASK: Recommend add-ons and transfer services based on the database results below.',
             'availability' => 'TASK: Report real-time room availability, prices, and remaining inventory.',
             'itinerary' => 'TASK: Present a day-by-day itinerary plan using the provided items.',
+            'discount' => 'TASK: Explain SunnyTrips passenger pricing rules and discounts based on the database results below.',
             default => "TASK: Answer the user's travel question.",
         };
 

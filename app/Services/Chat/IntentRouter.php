@@ -33,6 +33,8 @@ class IntentRouter
 
     public const ADDON_SEARCH = 'ADDON_SEARCH';
 
+    public const DISCOUNT_QUERY = 'DISCOUNT_QUERY';
+
     protected array $travelKeywords = [
         'hotel', 'hotels', 'room', 'rooms', 'resort', 'resorts', 'stay', 'accommodation',
         'book', 'booking', 'check in', 'check-in', 'check out', 'check-out',
@@ -46,12 +48,18 @@ class IntentRouter
         'destinasyon', 'bakasyon', 'pasyalan', 'pasyal', 'byahe',
         'price', 'prices', 'cost', 'budget', 'pesos', 'php', '₱',
         'rate', 'rates', 'how much', 'magkano', 'presyo',
-        'pax', 'guests', 'persons', 'people', 'couple', 'family', 'group', 'solo',
+        'pax', 'guests', 'persons', 'people', 'couple', 'family', 'family-friendly', 'group', 'solo',
         'night', 'nights', 'days', 'day', 'weekend', 'week',
         'package', 'packages', 'promo', 'deal', 'deals', 'bundle', 'tipid', 'all-in', 'all inclusive',
         'addon', 'add-on', 'add ons', 'transfer', 'pickup', 'surcharge', 'pricing tier',
         'extra person', 'extra pax', 'additional pax', 'per head', 'per person', 'per night',
         'max guests', 'max occupants', 'base occupancy', 'additional charge', 'valid until', 'valid from', 'promo period',
+        // amenity/vibe refinements — bare filters like "luxury quiet pool" must route to room/hotel, not GENERAL_TALK
+        'luxury', 'luxurious', 'premium', 'quiet', 'pool', 'pools', 'pool access', 'private pool',
+        'beachfront', 'secluded', 'relaxing', 'lively', 'find me', 'something in',
+        // safe broad travel signals (added, DB-verified)
+        'honeymoon', 'ocean view', 'sea view', 'mountain view', 'garden view',
+        'sunset cruise', 'island tour', 'guided tour', 'sunnytrips',
     ];
 
     public function isTravelQuery(string $query): bool
@@ -88,6 +96,10 @@ class IntentRouter
 
         if ($this->hasItineraryIntent($lower)) {
             return self::ITINERARY_QUERY;
+        }
+
+        if ($this->hasDiscountIntent($lower)) {
+            return self::DISCOUNT_QUERY;
         }
 
         if ($this->hasPackageIntent($lower)) {
@@ -228,7 +240,7 @@ class IntentRouter
         return $constraints;
     }
 
-    protected function extractDestinationName(string $query): ?string
+    public function extractDestinationName(string $query): ?string
     {
         $destinations = DestinationModel::pluck('name')->sortByDesc(fn ($n) => mb_strlen($n));
         $lower = mb_strtolower($query);
@@ -399,7 +411,11 @@ class IntentRouter
 
     protected function hasWeatherIntent(string $lower): bool
     {
-        $weather = ['weather', 'forecast', 'rain', 'rainy', 'sunny', 'temperature', 'climate', 'hot', 'cold', 'humid', 'storm', 'typhoon', 'bagyo', 'ulan', 'araw', 'init', 'lamig', 'panahon'];
+        $weather = [
+            'weather', 'forecast', 'rain', 'rainy', 'sunny', 'temperature', 'climate', 'hot', 'cold', 'humid', 'storm', 'typhoon', 'bagyo', 'ulan', 'araw', 'init', 'lamig', 'panahon',
+            // safe broad weather signals (excluded travel advisory)
+            'cloudy', 'overcast', 'windy', 'monsoon', 'habagat', 'amihan', 'thunderstorm', 'flood', 'baha', 'clear skies', 'sea condition', 'swell', 'good weather', 'bad weather',
+        ];
         foreach ($weather as $w) {
             if (preg_match('/\b'.preg_quote($w, '/').'\b/i', $lower)) {
                 return true;
@@ -411,9 +427,19 @@ class IntentRouter
 
     protected function hasMapIntent(string $lower): bool
     {
-        $map = ['where is', 'how far', 'nearby', 'distance', 'map', 'location', 'locate', 'direction', 'directions', 'navigate', 'nasaan', 'saan', 'gaano kalayo', 'malapit', 'kalapit'];
+        $map = [
+            'where is', 'how far', 'nearby', 'distance', 'map', 'location', 'locate', 'direction', 'directions', 'navigate', 'nasaan', 'saan', 'gaano kalayo', 'malapit', 'kalapit',
+            // safe broad map signals
+            'how to get to', 'papaano pumunta', 'paano pumunta', 'ilang minuto', 'ilang oras', 'walking distance', 'driving distance',
+        ];
         foreach ($map as $m) {
             if (str_contains($lower, $m)) {
+                return true;
+            }
+        }
+        // address/coordinates/landmark need word boundaries to avoid false positives
+        foreach (['address', 'coordinates', 'landmark'] as $w) {
+            if (preg_match('/\b'.preg_quote($w, '/').'\b/i', $lower)) {
                 return true;
             }
         }
@@ -461,7 +487,11 @@ class IntentRouter
 
     protected function hasItineraryIntent(string $lower): bool
     {
-        $itin = ['itinerary', 'itenerary', 'plan my trip', 'trip plan', 'travel plan', 'plan a trip', 'plan for', 'day itinerary', 'day trip', 'sample itinerary', 'itiniraryo'];
+        $itin = [
+            'itinerary', 'itenerary', 'plan my trip', 'trip plan', 'travel plan', 'plan a trip', 'plan for', 'day itinerary', 'day trip', 'sample itinerary', 'itiniraryo',
+            // safe broad itinerary signals (excluded first day/last day/what to do first)
+            'suggest an itinerary', 'build an itinerary', 'travel schedule', 'daily schedule', 'plano ng byahe', 'balak',
+        ];
         foreach ($itin as $i) {
             if (str_contains($lower, $i)) {
                 return true;
@@ -474,9 +504,33 @@ class IntentRouter
         return preg_match('/plan\s+(?:a|my|our|an?)\s+(?:trip|vacation|holiday|bakasyon)/i', $lower);
     }
 
+    protected function hasDiscountIntent(string $lower): bool
+    {
+        // Direct discount queries — must be before PACKAGE fallback to avoid ROOM_SEARCH via travelKeywords
+        // Covers bare "discount", Taglish "meron bang discount", "magkano discount", foreigner surcharge
+        if (preg_match('/\b(discount|discounts|discounted)\b/i', $lower)) {
+            return true;
+        }
+        if (preg_match('/\b(foreigner.*surcharge|surcharge.*foreigner)\b/i', $lower)) {
+            return true;
+        }
+        if (preg_match('/\b(meron|may|magkano|how much).*discount\b/i', $lower)) {
+            return true;
+        }
+        if (preg_match('/\b(senior|student|pwd|child|infant).*\bdiscount\b/i', $lower)) {
+            return true;
+        }
+
+        return false;
+    }
+
     protected function hasPackageIntent(string $lower): bool
     {
-        $pkg = ['package', 'packages', 'promo', 'deal', 'deals', 'bundle', 'tipid', 'all-in', 'all inclusive'];
+        $pkg = [
+            'package', 'packages', 'promo', 'deal', 'deals', 'bundle', 'tipid', 'all-in', 'all inclusive',
+            // safe broad package signals (excluded voucher/gift certificate)
+            'promo code', 'discount code', 'group package', 'honeymoon package', 'early bird', 'flash sale', 'limited offer', 'seasonal promo',
+        ];
         foreach ($pkg as $p) {
             if (str_contains($lower, $p)) {
                 return true;
@@ -515,6 +569,14 @@ class IntentRouter
         if (preg_match('/(?:ocean\s*view|beachfront|pool\s*view|garden\s*view|balcony|terrace)/i', $lower)) {
             return true;
         }
+        // bare amenity/vibe filters after a hotel/room context (e.g., "luxury quiet pool", "family-friendly")
+        if (preg_match('/\b(pool|luxury|luxurious|premium|quiet|family-friendly|family|budget-friendly|secluded|private)\b/i', $lower)) {
+            return true;
+        }
+        // "find me something in <destination>" without explicit hotel/room word should still be searchable
+        if (preg_match('/\bfind\s+me\b.*\b(in|near|at)\b/i', $lower)) {
+            return true;
+        }
 
         return false;
     }
@@ -530,13 +592,21 @@ class IntentRouter
         if (preg_match('/best\s+(?:hotel|resort|place\s*to\s*stay)/i', $lower)) {
             return true;
         }
+        // amenity-only queries also imply hotel search when no room keyword but amenity present
+        if (preg_match('/\b(pool|luxury|quiet|family-friendly)\b/i', $lower) && preg_match('/\b(in|near|at|for)\b/i', $lower)) {
+            return true;
+        }
 
         return false;
     }
 
     protected function hasActivityIntent(string $lower): bool
     {
-        $act = ['activity', 'activities', 'tour', 'tours', 'island hopping', 'diving', 'snorkeling', 'hiking', 'trek', 'surfing', 'kayak', 'zipline', 'thing to do', 'things to do', 'attraction', 'attractions', 'adventure', 'gawain', 'pasyalan', 'libangan'];
+        $act = [
+            'activity', 'activities', 'tour', 'tours', 'island hopping', 'diving', 'snorkeling', 'hiking', 'trek', 'surfing', 'kayak', 'zipline', 'thing to do', 'things to do', 'attraction', 'attractions', 'adventure', 'gawain', 'pasyalan', 'libangan',
+            // safe broad activity signals (excluded sup/zoo/waterfall etc. — DB-missing, sup substring risky)
+            'paddleboarding', 'cliff jumping', 'cave exploring', 'spelunking', 'cultural tour', 'sunset cruise',
+        ];
         foreach ($act as $a) {
             if (str_contains($lower, $a)) {
                 return true;

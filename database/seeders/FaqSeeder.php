@@ -70,6 +70,13 @@ class FaqSeeder extends Seeder
                 'category' => 'Account & Privacy',
                 'sort_order' => 9,
             ],
+            [
+                'question' => 'Does SunnyTrips offer discounts?',
+                'answer' => "Yes — SunnyTrips applies **Passenger Pricing Rules** at checkout:\n\n- **Student** — ₱50 off per pax\n- **Senior Citizen** — ₱50 off per pax\n- **PWD (Person with Disability)** — ₱50 off per pax\n- **Child (3-17)** — ₱50 off per pax\n- **Infant (0-2)** — ₱50 off per pax\n- **Foreign Tourist** — ₱150 surcharge per pax\n- **Regular Adult** — No adjustment\n\nSelect the passenger category for each traveler in the **Trip Basket / Checkout** to see the discount or surcharge applied automatically.",
+                'keywords' => 'discount discounts senior student pwd child infant foreigner surcharge offer',
+                'category' => 'Pricing & Discounts',
+                'sort_order' => 10,
+            ],
         ];
 
         foreach ($faqs as $row) {

@@ -9,6 +9,7 @@ use App\Models\DestinationModel;
 use App\Models\Faq;
 use App\Models\HotelModel;
 use App\Models\Package;
+use App\Models\PassengerCategoryRule;
 use App\Models\Review;
 use App\Models\ReviewSummary;
 use App\Models\RoomType;
@@ -203,6 +204,33 @@ class GeminiService
             $faq->keywords ? "Related Keywords: {$faq->keywords}" : null,
             "Answer: {$faq->answer}",
         ]));
+    }
+
+    /**
+     * Builds deterministic discount context from passenger_category_rules (no embedding needed).
+     */
+    public function getPassengerDiscountContext(): string
+    {
+        try {
+            $rules = PassengerCategoryRule::where('is_active', true)->orderBy('id')->get();
+            if ($rules->isEmpty()) {
+                return '';
+            }
+            $lines = ['=== PASSENGER PRICING RULES (live DB) ==='];
+            foreach ($rules as $rule) {
+                $type = $rule->adjustment_type === 'discount' ? 'discount' : ($rule->adjustment_type === 'surcharge' ? 'surcharge' : 'no adjustment');
+                $amount = $rule->amount > 0 ? '₱'.number_format((float) $rule->amount, 2).' '.$type.' per pax' : 'no adjustment';
+                $lines[] = "- {$rule->display_label} ({$rule->category_name}): {$amount}";
+            }
+            $lines[] = 'Select passenger category in Trip Basket / Checkout to apply automatically.';
+            $lines[] = '=== END PASSENGER PRICING RULES ===';
+
+            return implode("\n", $lines);
+        } catch (\Throwable $e) {
+            Log::warning('getPassengerDiscountContext failed: '.$e->getMessage());
+
+            return '';
+        }
     }
 
     /**

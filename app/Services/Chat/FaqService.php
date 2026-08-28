@@ -24,6 +24,15 @@ class FaqService
 
         $queryTokens = $this->tokenize($query);
         if ($queryTokens->count() < 2) {
+            // Allowlist bare "discount" (single token) to hit discount FAQ — otherwise "discount" would be GENERAL_TALK and ask destination
+            $lowerCheck = mb_strtolower($query);
+            if (str_contains($lowerCheck, 'discount')) {
+                $discountFaq = Faq::where('question', 'Does SunnyTrips offer discounts?')->where('is_active', true)->first();
+                if ($discountFaq) {
+                    return $discountFaq;
+                }
+            }
+
             return null;
         }
 
