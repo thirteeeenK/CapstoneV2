@@ -1,3 +1,5 @@
+@props(['isPersonalized' => false, 'aiRecommendations' => [], 'defaultRecommendations' => [], 'preferredDestId' => null])
+
 @php
     $hasAi = !empty($aiRecommendations);
     $hasDefault = !empty($defaultRecommendations);
@@ -7,12 +9,13 @@
     $firstDefaultDestId = $hasDefault ? ($defaultRecommendations[0]['destination']->id ?? null) : null;
 
     // Prefer the user's chosen island; wildcard/empty → Boracay hard-coded (agency favourite), fallback to first available.
-    $preferredDestId = $preferredDestId ?? null;
-    $aiIds = $hasAi ? collect($aiRecommendations)->pluck('destination.id')->all() : [];
-    $defaultIds = $hasDefault ? collect($defaultRecommendations)->pluck('destination.id')->all() : [];
+    // Fallback to Boracay as default — when El Nido (or future island) is chosen but has no AI rows this render, we fall back to Boracay.
+    $preferredDestId = isset($preferredDestId) && $preferredDestId !== '' ? (int) $preferredDestId : null;
+    $aiIds = $hasAi ? collect($aiRecommendations)->map(fn ($i) => (int) ($i['destination']->id ?? 0))->all() : [];
+    $defaultIds = $hasDefault ? collect($defaultRecommendations)->map(fn ($i) => (int) ($i['destination']->id ?? 0))->all() : [];
 
-    $defaultAiId = $preferredDestId && in_array($preferredDestId, $aiIds, true) ? $preferredDestId : $firstAiDestId;
-    $defaultDefaultId = $preferredDestId && in_array($preferredDestId, $defaultIds, true) ? $preferredDestId : $firstDefaultDestId;
+    $defaultAiId = ($preferredDestId !== null && in_array($preferredDestId, $aiIds, true)) ? $preferredDestId : ($firstAiDestId ? (int) $firstAiDestId : null);
+    $defaultDefaultId = ($preferredDestId !== null && in_array($preferredDestId, $defaultIds, true)) ? $preferredDestId : ($firstDefaultDestId ? (int) $firstDefaultDestId : null);
     $defaultPackageId = $defaultDefaultId;
 @endphp
 
