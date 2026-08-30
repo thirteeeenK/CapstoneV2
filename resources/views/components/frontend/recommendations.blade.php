@@ -5,13 +5,22 @@
 
     $firstAiDestId = $hasAi ? ($aiRecommendations[0]['destination']->id ?? null) : null;
     $firstDefaultDestId = $hasDefault ? ($defaultRecommendations[0]['destination']->id ?? null) : null;
+
+    // Prefer the user's chosen island; wildcard/empty → Boracay hard-coded (agency favourite), fallback to first available.
+    $preferredDestId = $preferredDestId ?? null;
+    $aiIds = $hasAi ? collect($aiRecommendations)->pluck('destination.id')->all() : [];
+    $defaultIds = $hasDefault ? collect($defaultRecommendations)->pluck('destination.id')->all() : [];
+
+    $defaultAiId = $preferredDestId && in_array($preferredDestId, $aiIds, true) ? $preferredDestId : $firstAiDestId;
+    $defaultDefaultId = $preferredDestId && in_array($preferredDestId, $defaultIds, true) ? $preferredDestId : $firstDefaultDestId;
+    $defaultPackageId = $defaultDefaultId;
 @endphp
 
 <section x-data="{ 
     mode: '{{ $defaultMode }}',
-    activeAiDestId: {{ $firstAiDestId ? (int) $firstAiDestId : 'null' }},
-    activeDefaultDestId: {{ $firstDefaultDestId ? (int) $firstDefaultDestId : 'null' }},
-    activePackageDestId: {{ $firstDefaultDestId ? (int) $firstDefaultDestId : 'null' }}
+    activeAiDestId: {{ $defaultAiId ? (int) $defaultAiId : 'null' }},
+    activeDefaultDestId: {{ $defaultDefaultId ? (int) $defaultDefaultId : 'null' }},
+    activePackageDestId: {{ $defaultPackageId ? (int) $defaultPackageId : 'null' }}
 }"
     class="bg-white text-slate-900 rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-8 relative overflow-hidden">
 

@@ -30,7 +30,7 @@ class RecommendationExplainer
             return $saved[$key];
         }
 
-        $generated = $this->generateAndMerge($preference, $hotels, $activities);
+        $generated = $this->generateAndMerge($preference, $destination, $hotels, $activities);
         $saved[$key] = $generated;
         $preference->recommendation_explanations = $saved;
         $preference->save();
@@ -49,14 +49,15 @@ class RecommendationExplainer
 
     /**
      * Call Gemini (batched per destination) and fill any missing section with the fallback.
+     * Grounded to the displayed island so Boracay copy never says "in El Nido".
      *
      * @return array{hotels: string, activities: string}
      */
-    private function generateAndMerge(UserPreference $preference, Collection $hotels, Collection $activities, ?string $profileText = null): array
+    private function generateAndMerge(UserPreference $preference, $destination, Collection $hotels, Collection $activities, ?string $profileText = null): array
     {
         $profileText ??= $this->buildProfileText($preference);
-        $fallback = $this->fallbackExplanations($preference, $hotels, $activities);
-        $generated = $this->generateWithGemini($profileText, $hotels, $activities);
+        $fallback = $this->fallbackExplanations($preference, $destination, $hotels, $activities);
+        $generated = $this->generateWithGemini($profileText, $destination, $hotels, $activities);
 
         if (! $generated) {
             return $fallback;
@@ -103,7 +104,7 @@ class RecommendationExplainer
      *
      * @return array{hotels: string, activities: string}|null
      */
-    private function generateWithGemini(string $profileText, Collection $hotels, Collection $activities): ?array
+    private function generateWithGemini(string $profileText, $destination, Collection $hotels, Collection $activities): ?array
     {
         $systemPath = app_path('Services/SystemPrompts/recommendation-explainer-prompt.md');
         if (! file_exists($systemPath)) {
@@ -113,7 +114,7 @@ class RecommendationExplainer
         }
 
         $system = file_get_contents($systemPath);
-        $prompt = $this->buildPrompt($profileText, $hotels, $activities);
+        $prompt = $this->buildPrompt($profileText, $destination, $hotels, $activities);
 
         $raw = $this->geminiService->generateContent($system, $prompt);
 
@@ -135,11 +136,12 @@ class RecommendationExplainer
     }
 
     /**
-     * Format the prompt payload for Gemini.
+     * Format the prompt payload for Gemini — always names the displayed island.
      */
-    private function buildPrompt(string $profileText, Collection $hotels, Collection $activities): string
+    private function buildPrompt(string $profileText, $destination, Collection $hotels, Collection $activities): string
     {
-        $lines = [$profileText, '', 'Ranked Recommendations:', ''];
+        $displayName = is_object($destination) ? ($destination->name ?? '') : (string) $destination;
+        $lines = [$profileText, '', "Currently showing recommendations for: {$displayName}", '', 'Ranked Recommendations:', ''];
 
         if ($hotels->isNotEmpty()) {
             $lines[] = 'HOTELS:';
@@ -173,27 +175,29 @@ class RecommendationExplainer
 
     /**
      * Deterministic fallback when Gemini is unavailable: build a 2-3 sentence overview per section.
+     * Grounded to displayed island, not preference.
      *
      * @return array{hotels: string, activities: string}
      */
-    private function fallbackExplanations(UserPreference $preference, Collection $hotels, Collection $activities): array
+    private function fallbackExplanations(UserPreference $preference, $destination, Collection $hotels, Collection $activities): array
     {
         return [
-            'hotels' => $this->fallbackSectionText($preference, $hotels, 'hotel', 'stays'),
-            'activities' => $this->fallbackSectionText($preference, $activities, 'activity', 'experiences'),
+            'hotels' => $this->fallbackSectionText($preference, $destination, $hotels, 'hotel', 'stays'),
+            'activities' => $this->fallbackSectionText($preference, $destination, $activities, 'activity', 'experiences'),
         ];
     }
 
     /**
-     * Build the fallback overview paragraph for a single section.
+     * Build the fallback overview paragraph for a single section — grounded to displayed island.
      */
-    private function fallbackSectionText(UserPreference $preference, Collection $items, string $kind, string $noun): string
+    private function fallbackSectionText(UserPreference $preference, $destination, Collection $items, string $kind, string $noun): string
     {
         if ($items->isEmpty()) {
             return '';
         }
 
-        $dest = $preference->destination ? " in {$preference->destination}" : '';
+        $displayName = is_object($destination) ? ($destination->name ?? '') : (string) $destination;
+        $dest = $displayName ? " in {$displayName}" : '';
         $traveler = $preference->traveler_type;
         $matches = $this->matchedTags($preference, $items, $kind);
 

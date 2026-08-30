@@ -44,7 +44,7 @@
 
             {{-- AI Recommendations & Default Listings Tabs Section (First Priority) --}}
             <x-frontend.recommendations :is-personalized="$isPersonalized" :ai-recommendations="$aiRecommendations"
-                :default-recommendations="$defaultRecommendations" />
+                :default-recommendations="$defaultRecommendations" :preferred-dest-id="$preferredDestId ?? null" />
 
             {{-- DSS Destination Overview Map Section (Below Recommendations) --}}
             @if(!empty($mapMarkers))

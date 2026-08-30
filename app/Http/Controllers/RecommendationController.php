@@ -26,6 +26,16 @@ class RecommendationController extends Controller
 
         $destinations = DestinationModel::orderBy('name', 'asc')->get();
 
+        $preferredName = trim((string) $userPreference?->destination);
+        $isWildcard = $preferredName === '' || $preferredName === 'Open to Any Destination';
+        $preferredDest = $isWildcard
+            ? $destinations->firstWhere('name', 'Boracay')
+            : $destinations->firstWhere('name', $preferredName);
+        // Fallback: Boracay hard-coded for wildcard, or first available if stale name.
+        $preferredDestId = $preferredDest?->id
+            ?? $destinations->firstWhere('name', 'Boracay')?->id
+            ?? $destinations->first()?->id;
+
         $aiRecommendations = [];
         $defaultRecommendations = [];
 
@@ -131,7 +141,7 @@ class RecommendationController extends Controller
             }
         }
 
-        return view('dashboard', compact('user', 'isPersonalized', 'aiRecommendations', 'defaultRecommendations', 'mapMarkers', 'weatherCards'));
+        return view('dashboard', compact('user', 'isPersonalized', 'aiRecommendations', 'defaultRecommendations', 'mapMarkers', 'weatherCards', 'preferredDestId'));
     }
 
     /**

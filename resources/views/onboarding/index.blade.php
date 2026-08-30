@@ -48,20 +48,20 @@
         nextStep(currentStep) {
             this.errorMessage = '';
             if (currentStep === 1) {
-                if (this.vibes.length === 0) {
-                    this.errorMessage = 'Please select at least one atmosphere vibe to continue.';
+                if (!this.destination) {
+                    this.errorMessage = 'Please select a destination to continue.';
                     return;
                 }
                 this.step = 2;
             } else if (currentStep === 2) {
-                if (!this.destination) {
-                    this.errorMessage = 'Please select a destination or \'Open to Anywhere\' to continue.';
+                if (!this.travelerType) {
+                    this.errorMessage = 'Please select who you are traveling with to continue.';
                     return;
                 }
                 this.step = 3;
             } else if (currentStep === 3) {
-                if (!this.travelerType) {
-                    this.errorMessage = 'Please select who you are traveling with to continue.';
+                if (this.vibes.length === 0) {
+                    this.errorMessage = 'Please select at least one atmosphere vibe to continue.';
                     return;
                 }
                 this.step = 4;
@@ -150,83 +150,13 @@
                     <input type="hidden" name="notes" :value="notes">
 
                     {{-- ══════════════════════════════════════════
-                    STEP 1: ATMOSPHERE & VIBE PREFERENCES
+                    STEP 1: PREFERRED DESTINATION
                     ══════════════════════════════════════════ --}}
                     <div x-show="step === 1" x-transition:enter="transition ease-out duration-300 transform" x-transition:enter-start="opacity-0 translate-x-4" class="space-y-6">
                         <div class="space-y-1">
                             <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
-                                <span class="material-symbols-outlined text-sky-600">palette</span>
-                                <span>Step 1: What atmosphere do you crave?</span>
-                            </h2>
-                            <p class="text-xs text-slate-500">Select all vibes that match your ideal getaway mood.</p>
-                            <div class="flex justify-end pt-1">
-                                <span class="text-xs font-bold transition-colors" :class="vibes.length >= 5 ? 'text-amber-600' : (vibes.length > 0 ? 'text-sky-600' : 'text-slate-400')" x-text="vibes.length + '/5 selected'"></span>
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-
-                            @foreach($vibeOptions as $vibe)
-                                <button type="button" @click="toggleVibe(@js($vibe['name']))"
-                                    :class="vibes.includes(@js($vibe['name'])) ? 'ring-2 ring-sky-500 ring-offset-2' : ''"
-                                    class="relative overflow-hidden rounded-2xl border border-slate-200 transition-all duration-300 group cursor-pointer bg-white h-36 flex flex-col">
-                                    {{-- Image --}}
-                                    <div class="relative flex-1 overflow-hidden">
-                                        <img :src="@js($vibe['image'] ?? '')" :alt="@js($vibe['name'])"
-                                             class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
-                                             loading="lazy">
-                                        <div class="hidden absolute inset-0 flex items-center justify-center bg-sky-50">
-                                            <span class="material-symbols-outlined text-3xl text-sky-400">{{ $vibe['icon'] }}</span>
-                                        </div>
-                                        {{-- Gradient overlay --}}
-                                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent"></div>
-                                        {{-- Check indicator --}}
-                                        <div x-show="vibes.includes(@js($vibe['name']))" class="absolute top-2 right-2 z-10">
-                                            <span class="material-symbols-outlined text-white text-[22px] bg-sky-600/90 backdrop-blur-sm rounded-full p-1">check_circle</span>
-                                        </div>
-                                    </div>
-                                    {{-- Content overlay --}}
-                                    <div class="absolute bottom-0 left-0 right-0 p-3 text-white">
-                                        <div class="font-bold text-xs font-headline">{{ $vibe['name'] }}</div>
-                                        <div class="text-[10px] text-slate-200 leading-tight mt-0.5">{{ $vibe['desc'] }}</div>
-                                    </div>
-                                </button>
-                            @endforeach
-                        </div>
-
-                        {{-- Step 1 Controls --}}
-                        <div class="flex items-center justify-between pt-4">
-                            @if($canSkip)
-                                <a href="{{ route('onboarding.skip') }}"
-                                    class="px-4 py-3 rounded-xl border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-bold text-xs transition-colors flex items-center gap-1.5 cursor-pointer">
-                                    <span class="material-symbols-outlined text-[16px] text-slate-500">fast_forward</span>
-                                    <span>Skip for now</span>
-                                </a>
-                            @else
-                                <a href="{{ route('dashboard') }}"
-                                    class="px-4 py-3 rounded-xl border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-bold text-xs transition-colors flex items-center gap-1.5 cursor-pointer">
-                                    <span class="material-symbols-outlined text-[16px]">close</span>
-                                    <span>Cancel</span>
-                                </a>
-                            @endif
-
-                            <button type="button" @click="nextStep(1)"
-                                class="px-6 py-3 rounded-xl bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 text-white font-bold text-xs shadow-sm transition-all flex items-center gap-1.5 cursor-pointer">
-                                <span>Next: Destination</span>
-                                <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    {{-- ══════════════════════════════════════════
-                    STEP 2: PREFERRED DESTINATION
-                    ══════════════════════════════════════════ --}}
-                    <div x-show="step === 2" x-transition:enter="transition ease-out duration-300 transform" x-transition:enter-start="opacity-0 translate-x-4" class="space-y-6" style="display: none;">
-                        <div class="space-y-1">
-                            <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
                                 <span class="material-symbols-outlined text-sky-600">location_on</span>
-                                <span>Step 2: Preferred Sanctuary Location</span>
+                                <span>Step 1: Preferred Sanctuary Location</span>
                             </h2>
                             <p class="text-xs text-slate-500">Where would you love to spend your next vacation?</p>
                         </div>
@@ -275,28 +205,24 @@
                             @endforeach
                         </div>
 
-                        {{-- Step 2 Controls --}}
+                        {{-- Step 1 Controls --}}
                         <div class="flex items-center justify-between pt-4">
-                            <div class="flex items-center gap-2">
-                                <button type="button" @click="step = 1; errorMessage = '';" class="px-4 py-3 rounded-xl border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-bold text-xs transition-colors flex items-center gap-1 cursor-pointer">
-                                    <span class="material-symbols-outlined text-[16px]">arrow_back</span>
-                                    <span>Back</span>
-                                </button>
-                                @if($canSkip)
-                                    <a href="{{ route('onboarding.skip') }}"
-                                        class="px-4 py-3 rounded-xl border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-bold text-xs transition-colors flex items-center gap-1.5 cursor-pointer">
-                                        <span class="material-symbols-outlined text-[16px] text-slate-500">fast_forward</span>
-                                        <span>Skip for now</span>
-                                    </a>
-                                @else
-                                    <a href="{{ route('dashboard') }}"
-                                        class="px-4 py-3 rounded-xl border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-bold text-xs transition-colors flex items-center gap-1.5 cursor-pointer">
-                                        <span class="material-symbols-outlined text-[16px]">close</span>
-                                        <span>Cancel</span>
-                                    </a>
-                                @endif
-                            </div>
-                            <button type="button" @click="nextStep(2)" class="px-6 py-3 rounded-xl bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 text-white font-bold text-xs shadow-sm transition-all flex items-center gap-1.5 cursor-pointer">
+                            @if($canSkip)
+                                <a href="{{ route('onboarding.skip') }}"
+                                    class="px-4 py-3 rounded-xl border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-bold text-xs transition-colors flex items-center gap-1.5 cursor-pointer">
+                                    <span class="material-symbols-outlined text-[16px] text-slate-500">fast_forward</span>
+                                    <span>Skip for now</span>
+                                </a>
+                            @else
+                                <a href="{{ route('dashboard') }}"
+                                    class="px-4 py-3 rounded-xl border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-bold text-xs transition-colors flex items-center gap-1.5 cursor-pointer">
+                                    <span class="material-symbols-outlined text-[16px]">close</span>
+                                    <span>Cancel</span>
+                                </a>
+                            @endif
+
+                            <button type="button" @click="nextStep(1)"
+                                class="px-6 py-3 rounded-xl bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 text-white font-bold text-xs shadow-sm transition-all flex items-center gap-1.5 cursor-pointer">
                                 <span>Next: Traveler Style</span>
                                 <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
                             </button>
@@ -304,13 +230,13 @@
                     </div>
 
                     {{-- ══════════════════════════════════════════
-                    STEP 3: TRAVEL COMPANION / GROUP TYPE
+                    STEP 2: TRAVEL COMPANION / GROUP TYPE
                     ══════════════════════════════════════════ --}}
-                    <div x-show="step === 3" x-transition:enter="transition ease-out duration-300 transform" x-transition:enter-start="opacity-0 translate-x-4" class="space-y-6" style="display: none;">
+                    <div x-show="step === 2" x-transition:enter="transition ease-out duration-300 transform" x-transition:enter-start="opacity-0 translate-x-4" class="space-y-6" style="display: none;">
                         <div class="space-y-1">
                             <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
                                 <span class="material-symbols-outlined text-sky-600">group</span>
-                                <span>Step 3: Who are you traveling with?</span>
+                                <span>Step 2: Who are you traveling with?</span>
                             </h2>
                             <p class="text-xs text-slate-500">Helps us recommend appropriate room sizes & activities.</p>
                         </div>
@@ -342,6 +268,80 @@
                             @endforeach
                         </div>
 
+                        {{-- Step 2 Controls --}}
+                        <div class="flex items-center justify-between pt-4">
+                            <div class="flex items-center gap-2">
+                                <button type="button" @click="step = 1; errorMessage = '';" class="px-4 py-3 rounded-xl border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-bold text-xs transition-colors flex items-center gap-1 cursor-pointer">
+                                    <span class="material-symbols-outlined text-[16px]">arrow_back</span>
+                                    <span>Back</span>
+                                </button>
+                                @if($canSkip)
+                                    <a href="{{ route('onboarding.skip') }}"
+                                        class="px-4 py-3 rounded-xl border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-bold text-xs transition-colors flex items-center gap-1.5 cursor-pointer">
+                                        <span class="material-symbols-outlined text-[16px] text-slate-500">fast_forward</span>
+                                        <span>Skip for now</span>
+                                    </a>
+                                @else
+                                    <a href="{{ route('dashboard') }}"
+                                        class="px-4 py-3 rounded-xl border border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-bold text-xs transition-colors flex items-center gap-1.5 cursor-pointer">
+                                        <span class="material-symbols-outlined text-[16px]">close</span>
+                                        <span>Cancel</span>
+                                    </a>
+                                @endif
+                            </div>
+                            <button type="button" @click="nextStep(2)" class="px-6 py-3 rounded-xl bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 text-white font-bold text-xs shadow-sm transition-all flex items-center gap-1.5 cursor-pointer">
+                                <span>Next: Atmosphere</span>
+                                <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    {{-- ══════════════════════════════════════════
+                    STEP 3: ATMOSPHERE & VIBE PREFERENCES
+                    ══════════════════════════════════════════ --}}
+                    <div x-show="step === 3" x-transition:enter="transition ease-out duration-300 transform" x-transition:enter-start="opacity-0 translate-x-4" class="space-y-6" style="display: none;">
+                        <div class="space-y-1">
+                            <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                                <span class="material-symbols-outlined text-sky-600">palette</span>
+                                <span>Step 3: What atmosphere do you crave?</span>
+                            </h2>
+                            <p class="text-xs text-slate-500">Select all vibes that match your ideal getaway mood.</p>
+                            <div class="flex justify-end pt-1">
+                                <span class="text-xs font-bold transition-colors" :class="vibes.length >= 5 ? 'text-amber-600' : (vibes.length > 0 ? 'text-sky-600' : 'text-slate-400')" x-text="vibes.length + '/5 selected'"></span>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+
+                            @foreach($vibeOptions as $vibe)
+                                <button type="button" @click="toggleVibe(@js($vibe['name']))"
+                                    :class="vibes.includes(@js($vibe['name'])) ? 'ring-2 ring-sky-500 ring-offset-2' : ''"
+                                    class="relative overflow-hidden rounded-2xl border border-slate-200 transition-all duration-300 group cursor-pointer bg-white h-36 flex flex-col">
+                                    {{-- Image --}}
+                                    <div class="relative flex-1 overflow-hidden">
+                                        <img :src="@js($vibe['image'] ?? '')" :alt="@js($vibe['name'])"
+                                             class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                                             loading="lazy">
+                                        <div class="hidden absolute inset-0 flex items-center justify-center bg-sky-50">
+                                            <span class="material-symbols-outlined text-3xl text-sky-400">{{ $vibe['icon'] }}</span>
+                                        </div>
+                                        {{-- Gradient overlay --}}
+                                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent"></div>
+                                        {{-- Check indicator --}}
+                                        <div x-show="vibes.includes(@js($vibe['name']))" class="absolute top-2 right-2 z-10">
+                                            <span class="material-symbols-outlined text-white text-[22px] bg-sky-600/90 backdrop-blur-sm rounded-full p-1">check_circle</span>
+                                        </div>
+                                    </div>
+                                    {{-- Content overlay --}}
+                                    <div class="absolute bottom-0 left-0 right-0 p-3 text-white">
+                                        <div class="font-bold text-xs font-headline">{{ $vibe['name'] }}</div>
+                                        <div class="text-[10px] text-slate-200 leading-tight mt-0.5">{{ $vibe['desc'] }}</div>
+                                    </div>
+                                </button>
+                            @endforeach
+                        </div>
+
                         {{-- Step 3 Controls --}}
                         <div class="flex items-center justify-between pt-4">
                             <div class="flex items-center gap-2">
@@ -363,7 +363,9 @@
                                     </a>
                                 @endif
                             </div>
-                            <button type="button" @click="nextStep(3)" class="px-6 py-3 rounded-xl bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 text-white font-bold text-xs shadow-sm transition-all flex items-center gap-1.5 cursor-pointer">
+
+                            <button type="button" @click="nextStep(3)"
+                                class="px-6 py-3 rounded-xl bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 text-white font-bold text-xs shadow-sm transition-all flex items-center gap-1.5 cursor-pointer">
                                 <span>Next: Activities</span>
                                 <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
                             </button>
