@@ -73,6 +73,13 @@ class CartService
         $checkIn = $payload['check_in_date'] ?? null;
         $checkOut = $payload['check_out_date'] ?? null;
 
+        // Past-date guard (Option A: check_in < today is expired)
+        if ($itemType === 'room' && $checkIn) {
+            if (Carbon::parse($checkIn)->lt(Carbon::today())) {
+                throw new \RuntimeException('The selected check-in date has already passed. Please choose a future date.');
+            }
+        }
+
         // Room Availability Check before adding to cart
         if ($itemType === 'room' && $checkIn && $checkOut) {
             $room = RoomType::find($itemId);

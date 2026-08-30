@@ -172,6 +172,7 @@ class CartController extends Controller
                     'check_in_date' => $item->check_in_date ? Carbon::parse($item->check_in_date)->format('Y-m-d') : null,
                     'check_out_date' => $item->check_out_date ? Carbon::parse($item->check_out_date)->format('Y-m-d') : null,
                     'is_selected' => $item->is_selected,
+                    'is_expired' => $item->isExpired(),
                     'notes' => $item->notes,
                     'lucky_group_id' => $item->lucky_group_id,
                     'title' => $item->item_title,
@@ -209,8 +210,8 @@ class CartController extends Controller
                 'item_id' => 'required|integer',
                 'quantity' => 'nullable|integer|min:1',
                 'selected_pax' => 'nullable|integer|min:1',
-                'check_in_date' => 'nullable|date',
-                'check_out_date' => 'nullable|date|after_or_equal:check_in_date',
+                'check_in_date' => 'nullable|date|after_or_equal:today',
+                'check_out_date' => 'nullable|date|after:check_in_date',
                 'notes' => 'nullable|string',
             ]);
 
@@ -370,8 +371,8 @@ class CartController extends Controller
             $validated = $request->validate([
                 'quantity' => 'nullable|integer|min:1',
                 'selected_pax' => 'nullable|integer|min:1',
-                'check_in_date' => 'nullable|date',
-                'check_out_date' => 'nullable|date',
+                'check_in_date' => 'nullable|date|after_or_equal:today',
+                'check_out_date' => 'nullable|date|after:check_in_date',
                 'is_selected' => 'nullable|boolean',
                 'notes' => 'nullable|string',
             ]);

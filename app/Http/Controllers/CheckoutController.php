@@ -52,6 +52,15 @@ class CheckoutController extends Controller
             return redirect()->route('cart.index');
         }
 
+        // Past-date guard: block checkout if any *selected* room has expired check-in (< today)
+        $expiredSelected = $cartItems->filter(fn ($item) => $item->isExpired());
+        if ($expiredSelected->isNotEmpty()) {
+            $names = $expiredSelected->map(fn ($i) => $i->item_title.' ('.$i->date_details.')')->join(', ');
+
+            return redirect()->route('cart.index')
+                ->with('error', 'Your Trip Basket contains stays with dates that have already passed. Please update the dates or remove the items before checkout.'.($names ? ' Expired: '.$names : ''));
+        }
+
         // Auto-heal/sync existing cart items in DB if quantity or pax was out of sync from older session
         foreach ($cartItems as $cItem) {
             if (in_array($cItem->item_type, ['activity', 'addon'])) {
@@ -120,6 +129,17 @@ class CheckoutController extends Controller
                     ], 422);
                 }
             }
+        }
+
+        // Past-date guard for selected items (deselect to bypass)
+        $expiredProcess = $cartItems->filter(fn ($item) => $item->isExpired());
+        if ($expiredProcess->isNotEmpty()) {
+            $names = $expiredProcess->map(fn ($i) => $i->item_title.' ('.($i->date_details ?: $i->check_in_date?->format('Y-m-d')).')')->join(', ');
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Your Trip Basket contains stays with dates that have already passed. Please update the dates or remove the items before checkout.'.($names ? ' Expired: '.$names : '').' You may also deselect the expired items to proceed with the remaining valid items.',
+            ], 422);
         }
 
         try {

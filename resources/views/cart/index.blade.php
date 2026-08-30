@@ -37,6 +37,9 @@
             'selected_pax' => (int) ($item->selected_pax ?: 1),
             'min_pax' => ($item->item_type === 'package' && $item->itemable) ? (int) $item->itemable->min_pax : null,
             'is_selected' => (bool) $item->is_selected,
+            'is_expired' => $item->isExpired(),
+            'check_in_date' => $item->check_in_date ? \Illuminate\Support\Carbon::parse($item->check_in_date)->format('Y-m-d') : null,
+            'check_out_date' => $item->check_out_date ? \Illuminate\Support\Carbon::parse($item->check_out_date)->format('Y-m-d') : null,
             'lucky_group_id' => $item->lucky_group_id,
             'title' => $item->item_title,
             'subtitle' => $item->item_subtitle,
@@ -63,6 +66,18 @@
 <x-frontend.layout title="Trip Basket | SunnyTrips">
     <div x-data="cartPageManager({{ json_encode($initialItems) }}, {{ json_encode($groups) }})" class="min-h-screen bg-sand-50/70 font-body">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 sm:pt-28 pb-10 sm:pb-16">
+            @if(session('error'))
+                <div class="mb-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3.5 flex items-start gap-3 text-sm text-rose-800 shadow-2xs">
+                    <span class="material-symbols-outlined text-rose-600 text-xl shrink-0 mt-0.5">error</span>
+                    <span class="font-semibold leading-relaxed">{{ session('error') }}</span>
+                </div>
+            @endif
+            @if(session('success'))
+                <div class="mb-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3.5 flex items-start gap-3 text-sm text-emerald-800 shadow-2xs">
+                    <span class="material-symbols-outlined text-emerald-600 text-xl shrink-0 mt-0.5">check_circle</span>
+                    <span class="font-semibold leading-relaxed">{{ session('success') }}</span>
+                </div>
+            @endif
 
             {{-- Breadcrumb & Title --}}
             <div class="mb-5 sm:mb-8 flex flex-wrap items-end justify-between gap-3 sm:gap-4">
@@ -296,6 +311,11 @@
                     ).join('\n\n'));
                     return;
                 }
+                const expiredSelected = this.items.filter(i => i.is_selected && i.is_expired);
+                if (expiredSelected.length) {
+                    alert('Your Trip Basket contains stays with dates that have already passed. Please update the dates or remove the items before checkout.\n\n' + expiredSelected.map(e => `"${e.title}" — ${e.date_details || e.check_in_date + ' to ' + e.check_out_date} is past. Please update or deselect it.`).join('\n'));
+                    return;
+                }
                 window.location.href = '{{ route('checkout.index') }}';
             },
 
@@ -514,6 +534,10 @@
                         local.formatted_unit_rate = bItem.formatted_unit_rate;
                         local.formatted_subtotal = bItem.formatted_subtotal;
                         local.is_selected = bItem.is_selected;
+                        local.is_expired = bItem.is_expired;
+                        local.check_in_date = bItem.check_in_date;
+                        local.check_out_date = bItem.check_out_date;
+                        local.date_details = bItem.date_details;
                     }
                 });
                 if (data.groups) {

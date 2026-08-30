@@ -1,5 +1,5 @@
-<div class="bg-white rounded-2xl border border-sand-200/90 p-3.5 sm:p-5 flex gap-3 sm:gap-4 items-start transition-all duration-200 hover:border-ocean-300 hover:shadow-md hover:shadow-ocean-900/5"
-     :class="item.is_selected ? '' : 'opacity-60'">
+<div class="bg-white rounded-2xl border p-3.5 sm:p-5 flex gap-3 sm:gap-4 items-start transition-all duration-200 hover:shadow-md hover:shadow-ocean-900/5"
+     :class="[item.is_selected ? '' : 'opacity-60', item.is_expired ? 'border-rose-300 bg-rose-50/40 hover:border-rose-400' : 'border-sand-200/90 hover:border-ocean-300']">
 
     {{-- Checkbox --}}
     <div class="pt-1 shrink-0">
@@ -70,12 +70,25 @@
                 </template>
 
                 <template x-if="item.date_details">
-                    <span class="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-medium text-ocean-800 bg-ocean-50 px-2 py-0.5 rounded-md border border-ocean-100">
-                        <span class="material-symbols-outlined text-[12px] text-ocean-600">calendar_month</span>
+                    <span class="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-medium px-2 py-0.5 rounded-md border"
+                          :class="item.is_expired ? 'text-rose-800 bg-rose-50 border-rose-200' : 'text-ocean-800 bg-ocean-50 border-ocean-100'">
+                        <span class="material-symbols-outlined text-[12px]" :class="item.is_expired ? 'text-rose-600' : 'text-ocean-600'">calendar_month</span>
                         <span x-text="item.date_details"></span>
                     </span>
                 </template>
+                <template x-if="item.is_expired">
+                    <span class="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200">
+                        <span class="material-symbols-outlined text-[12px] text-rose-600">warning</span>
+                        <span>Expired — update dates or deselect</span>
+                    </span>
+                </template>
             </div>
+            <template x-if="item.is_expired">
+                <div class="mt-2 flex items-center gap-2 text-[11px] font-semibold text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-2.5 py-2">
+                    <span class="material-symbols-outlined text-[14px] text-rose-600">error</span>
+                    <span>Dates have already passed. Please update the dates, remove this item, or deselect it to proceed to checkout.</span>
+                </div>
+            </template>
         </div>
 
         {{-- Controls and Price Bar --}}

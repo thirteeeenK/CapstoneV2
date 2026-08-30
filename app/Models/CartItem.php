@@ -363,6 +363,24 @@ class CartItem extends Model
     }
 
     /**
+     * Whether this cart item's check-in date is in the past (Option A: check_in < today).
+     * Only room items with dates can expire; other types return false.
+     */
+    public function isExpired(): bool
+    {
+        if ($this->item_type !== 'room' || ! $this->check_in_date) {
+            return false;
+        }
+
+        return Carbon::parse($this->check_in_date)->lt(Carbon::today());
+    }
+
+    public function getIsExpiredAttribute(): bool
+    {
+        return $this->isExpired();
+    }
+
+    /**
      * Get primary image URL.
      */
     public function getItemImageAttribute()

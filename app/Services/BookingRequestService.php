@@ -9,6 +9,7 @@ use App\Models\PassengerCategoryRule;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class BookingRequestService
 {
@@ -52,6 +53,15 @@ class BookingRequestService
 
         if ($cartItems->isEmpty()) {
             throw new \RuntimeException('Your Trip Basket is empty. Cannot process booking.');
+        }
+
+        // Past-date guard (Option A: check_in < today). Only selected items reach here via getCartQuery().
+        $expired = $cartItems->filter(fn (CartItem $item) => $item->isExpired());
+        if ($expired->isNotEmpty()) {
+            $names = $expired->map(fn (CartItem $i) => $i->item_title.' ('.($i->date_details ?: $i->check_in_date?->format('Y-m-d').' to '.$i->check_out_date?->format('Y-m-d')).')')->join(', ');
+            throw ValidationException::withMessages([
+                'check_in_date' => ['Your Trip Basket contains stays with dates that have already passed. Please update the dates or remove the items before checkout.'.($names ? ' Expired: '.$names : '').' You may also deselect the expired items to proceed with the remaining valid items.'],
+            ]);
         }
 
         $rulesMap = PassengerCategoryRule::getActiveRulesMap();
