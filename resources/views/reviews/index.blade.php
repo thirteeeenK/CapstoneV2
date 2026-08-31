@@ -61,11 +61,123 @@
 
             {{-- Controls + feed --}}
             <div x-data="reviewHub({{ Js::from($reviews) }})" x-init="$watch('lightbox', v => document.body.classList.toggle('overflow-hidden', !!v))" class="mt-8 animate-fade-up">
-                {{-- Lightbox --}}
-                <div x-show="lightbox" x-cloak @click="lightbox=null" @keydown.escape.window="lightbox=null" x-transition.opacity class="fixed inset-0 z-[80] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-                    <img :src="lightbox" class="max-w-full max-h-[85vh] rounded-2xl shadow-2xl border border-white/20">
-                    <button type="button" @click="lightbox=null" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/90 text-slate-700 flex items-center justify-center cursor-pointer"><span class="material-symbols-outlined text-[18px]">close</span></button>
-                </div>
+                {{-- Lightbox Modal -- Teleported to body to avoid ancestor transform/animation containing-block traps --}}
+                <template x-teleport="body">
+                    <div x-show="lightbox" x-cloak
+                        x-transition:enter="transition ease-out duration-200"
+                        x-transition:enter-start="opacity-0"
+                        x-transition:enter-end="opacity-100"
+                        x-transition:leave="transition ease-in duration-150"
+                        x-transition:leave-start="opacity-100"
+                        x-transition:leave-end="opacity-0"
+                        @click.self="closeLightbox()"
+                        @keydown.escape.window="if (lightbox) closeLightbox()"
+                        @keydown.left.window="if (lightbox) prevLightboxImage()"
+                        @keydown.right.window="if (lightbox) nextLightboxImage()"
+                        class="fixed inset-0 z-[120] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
+                        <div class="relative bg-white rounded-3xl shadow-2xl border border-sand-200 w-full max-w-[min(94vw,680px)] overflow-hidden flex flex-col my-auto"
+                            x-transition:enter="transition ease-out duration-200"
+                            x-transition:enter-start="opacity-0 scale-95"
+                            x-transition:enter-end="opacity-100 scale-100"
+                            x-transition:leave="transition ease-in duration-150"
+                            x-transition:leave-start="opacity-100 scale-100"
+                            x-transition:leave-end="opacity-0 scale-95"
+                            @click.stop>
+
+                            {{-- Header --}}
+                            <div class="px-5 py-4 border-b border-sand-100 flex items-center justify-between gap-3 bg-white">
+                                <div class="flex items-center gap-3 min-w-0">
+                                    <div class="w-9 h-9 rounded-xl bg-ocean-50 border border-ocean-100 text-ocean-700 flex items-center justify-center shrink-0">
+                                        <span class="material-symbols-outlined text-[18px]" x-text="lightboxReview ? iconFor(lightboxReview.entity_type) : 'photo'"></span>
+                                    </div>
+                                    <div class="min-w-0">
+                                        <h4 class="text-xs sm:text-sm font-bold text-slate-900 font-headline truncate"
+                                            x-text="lightboxReview?.entity_label || 'Guest Review Photo'"></h4>
+                                        <p class="text-[11px] text-slate-400 truncate">
+                                            <span x-text="lightboxReview?.entity_location ? lightboxReview.entity_location + ' · ' : ''"></span>
+                                            <span x-text="lightboxReview?.reviewer_alias || 'Guest'"></span>
+                                            <span x-text="lightboxReview?.created_at_label ? ' · ' + lightboxReview.created_at_label : ''"></span>
+                                        </p>
+                                    </div>
+                                </div>
+                                <button type="button" @click="closeLightbox()"
+                                    class="w-8 h-8 rounded-xl bg-sand-100 hover:bg-sand-200 text-slate-500 hover:text-slate-900 flex items-center justify-center transition cursor-pointer shrink-0">
+                                    <span class="material-symbols-outlined text-[18px]">close</span>
+                                </button>
+                            </div>
+
+                            {{-- Image Container with Navigation --}}
+                            <div class="relative bg-slate-950 flex items-center justify-center p-2 min-h-[220px] max-h-[60vh] sm:max-h-[66vh] overflow-hidden">
+                                <img :src="lightboxImg" :alt="(lightboxReview?.entity_label || 'Review') + ' photo'"
+                                    class="max-w-full max-h-[58vh] sm:max-h-[64vh] w-auto h-auto object-contain rounded-xl block mx-auto">
+
+                                {{-- Previous Image button --}}
+                                <template x-if="lightboxReview && lightboxReview.images && lightboxReview.images.length > 1">
+                                    <button type="button" @click.stop="prevLightboxImage()"
+                                        class="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-slate-900/70 hover:bg-slate-900 text-white flex items-center justify-center transition cursor-pointer shadow-lg backdrop-blur-xs">
+                                        <span class="material-symbols-outlined text-[20px]">chevron_left</span>
+                                    </button>
+                                </template>
+
+                                {{-- Next Image button --}}
+                                <template x-if="lightboxReview && lightboxReview.images && lightboxReview.images.length > 1">
+                                    <button type="button" @click.stop="nextLightboxImage()"
+                                        class="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-slate-900/70 hover:bg-slate-900 text-white flex items-center justify-center transition cursor-pointer shadow-lg backdrop-blur-xs">
+                                        <span class="material-symbols-outlined text-[20px]">chevron_right</span>
+                                    </button>
+                                </template>
+
+                                {{-- Photo counter indicator --}}
+                                <template x-if="lightboxReview && lightboxReview.images && lightboxReview.images.length > 1">
+                                    <div class="absolute bottom-3 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-full bg-slate-950/70 backdrop-blur-sm text-[10px] font-bold text-white tracking-wide border border-white/10">
+                                        <span x-text="(lightboxImgIdx + 1)"></span> / <span x-text="lightboxReview.images.length"></span>
+                                    </div>
+                                </template>
+                            </div>
+
+                            {{-- Review Details Footer --}}
+                            <template x-if="lightboxReview">
+                                <div class="p-4 sm:p-5 bg-white border-t border-sand-100">
+                                    <div class="flex items-center justify-between gap-2 flex-wrap mb-2">
+                                        <div class="flex items-center gap-1.5">
+                                            <span class="flex items-center gap-0.5 text-amber-400">
+                                                <template x-for="i in 5" :key="i">
+                                                    <span class="material-symbols-outlined text-[15px]"
+                                                        :style="'font-variation-settings: \'FILL\' ' + (i <= lightboxReview.rating ? 1 : 0)">star</span>
+                                                </template>
+                                            </span>
+                                            <span class="text-xs font-bold text-slate-700 font-headline" x-text="lightboxReview.rating + '/5'"></span>
+                                        </div>
+                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border"
+                                            :class="{
+                                                'bg-emerald-50 text-emerald-700 border-emerald-100': lightboxReview.sentiment === 'positive',
+                                                'bg-amber-50 text-amber-700 border-amber-100': lightboxReview.sentiment === 'neutral',
+                                                'bg-rose-50 text-rose-700 border-rose-100': lightboxReview.sentiment === 'negative'
+                                            }">
+                                            <span class="material-symbols-outlined text-[12px]"
+                                                x-text="lightboxReview.sentiment === 'positive' ? 'sentiment_satisfied' : (lightboxReview.sentiment === 'negative' ? 'sentiment_dissatisfied' : 'sentiment_neutral')"></span>
+                                            <span x-text="lightboxReview.sentiment ? (lightboxReview.sentiment.charAt(0).toUpperCase() + lightboxReview.sentiment.slice(1)) : ''"></span>
+                                        </span>
+                                    </div>
+                                    <p class="text-xs sm:text-sm text-slate-600 leading-relaxed" x-text="lightboxReview.comment"></p>
+
+                                    {{-- Thumbnails strip if multiple photos --}}
+                                    <template x-if="lightboxReview.images && lightboxReview.images.length > 1">
+                                        <div class="flex items-center gap-2 mt-3 pt-3 border-t border-sand-100">
+                                            <template x-for="(tImg, tIdx) in lightboxReview.images" :key="tIdx">
+                                                <button type="button" @click="lightboxImg = tImg; lightboxImgIdx = tIdx"
+                                                    :class="lightboxImgIdx === tIdx ? 'ring-2 ring-ocean-500 border-transparent' : 'opacity-60 hover:opacity-100 border-sand-200'"
+                                                    class="w-12 h-12 rounded-lg overflow-hidden border bg-sand-50 transition cursor-pointer shrink-0">
+                                                    <img :src="tImg" class="w-full h-full object-cover">
+                                                </button>
+                                            </template>
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </template>
 
                 {{-- Tab bar --}}
                 <div class="flex items-center gap-2 flex-wrap mb-4">
@@ -192,10 +304,21 @@
                             <p class="text-sm text-slate-600 leading-relaxed mt-4" x-text="review.comment"></p>
 
                             <template x-if="review.images && review.images.length">
-                                <div class="mt-3 grid grid-cols-3 gap-2">
+                                <div class="mt-3.5 grid grid-cols-3 sm:grid-cols-4 gap-2.5">
                                     <template x-for="(img, idx) in review.images.slice(0,3)" :key="idx">
-                                        <button type="button" @click="lightbox = img" class="group relative overflow-hidden rounded-xl border border-sand-200 cursor-zoom-in">
-                                            <img :src="img" :alt="review.entity_label + ' photo ' + (idx+1)" class="w-full h-24 sm:h-28 object-cover group-hover:scale-105 transition">
+                                        <button type="button" @click="openLightbox(review, img)"
+                                            class="group relative aspect-[4/3] w-full overflow-hidden rounded-xl border border-sand-200 bg-sand-100/50 flex items-center justify-center hover:border-ocean-300 hover:shadow-md transition-all cursor-zoom-in">
+                                            <img :src="img" :alt="review.entity_label + ' photo ' + (idx+1)"
+                                                class="w-full h-full object-cover rounded-xl group-hover:scale-105 transition-transform duration-300"
+                                                loading="lazy"
+                                                x-on:error="$el.style.display='none'; $el.nextElementSibling.style.display='flex'">
+                                            <div style="display:none" class="w-full h-full items-center justify-center flex flex-col gap-1 text-[10px] font-bold text-slate-400 bg-sand-100 rounded-xl">
+                                                <span class="material-symbols-outlined text-[16px]">broken_image</span>
+                                                <span>No image</span>
+                                            </div>
+                                            <div class="absolute inset-0 bg-slate-950/0 group-hover:bg-slate-950/20 transition-colors rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100">
+                                                <span class="material-symbols-outlined text-white text-[20px] drop-shadow-md">zoom_in</span>
+                                            </div>
                                         </button>
                                     </template>
                                 </div>
@@ -231,13 +354,39 @@
                 return {
                     all: initialReviews,
                     filtered: initialReviews,
-                    lightbox: null,
+                    lightbox: false,
+                    lightboxReview: null,
+                    lightboxImg: null,
+                    lightboxImgIdx: 0,
                     tab: 'all',
                     minRating: 0,
                     sentiment: '',
                     search: '',
                     sort: 'recent',
 
+                    openLightbox(review, img) {
+                        this.lightboxReview = review;
+                        this.lightboxImg = img;
+                        this.lightboxImgIdx = (review.images || []).indexOf(img);
+                        if (this.lightboxImgIdx < 0) this.lightboxImgIdx = 0;
+                        this.lightbox = true;
+                    },
+                    closeLightbox() {
+                        this.lightbox = false;
+                        this.lightboxReview = null;
+                        this.lightboxImg = null;
+                        this.lightboxImgIdx = 0;
+                    },
+                    nextLightboxImage() {
+                        if (!this.lightboxReview || !this.lightboxReview.images || this.lightboxReview.images.length <= 1) return;
+                        this.lightboxImgIdx = (this.lightboxImgIdx + 1) % this.lightboxReview.images.length;
+                        this.lightboxImg = this.lightboxReview.images[this.lightboxImgIdx];
+                    },
+                    prevLightboxImage() {
+                        if (!this.lightboxReview || !this.lightboxReview.images || this.lightboxReview.images.length <= 1) return;
+                        this.lightboxImgIdx = (this.lightboxImgIdx - 1 + this.lightboxReview.images.length) % this.lightboxReview.images.length;
+                        this.lightboxImg = this.lightboxReview.images[this.lightboxImgIdx];
+                    },
                     iconFor(type) {
                         const map = {
                             'App\\Models\\HotelModel': 'hotel',

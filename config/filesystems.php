@@ -15,8 +15,8 @@ return [
 
     'default' => env('FILESYSTEM_DISK', 'local'),
 
-    // ponytail: local public default, R2 when REVIEWS_DISK=r2 — flip via env only
-    'reviews_disk' => env('REVIEWS_DISK', env('FILESYSTEM_DISK', 'public')),
+    // ponytail: public default for review photos, R2 when REVIEWS_DISK=r2 — never inherit local (private)
+    'reviews_disk' => env('REVIEWS_DISK', 'public'),
 
     /*
     |--------------------------------------------------------------------------

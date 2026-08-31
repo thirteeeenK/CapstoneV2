@@ -21,6 +21,8 @@ use Illuminate\Support\Facades\Storage;
 
 class ReviewService
 {
+    use ResolvesImages;
+
     /**
      * Map of BookingItem item_type => reviewable class.
      * Add-ons/transfers are intentionally not reviewable per the spec.
@@ -426,7 +428,7 @@ class ReviewService
             'entity_location' => $location,
             'rating' => (int) $review->rating,
             'comment' => $review->comment,
-            'images' => array_map(fn (?string $p) => $p ? ResolvesImages::resolveImg($p) : null, $images),
+            'images' => array_map(fn (?string $p) => $p ? self::resolveImg($p) : null, $images),
             'images_raw' => $images,
             'sentiment' => $review->sentiment,
             'sentiment_score' => (float) $review->sentiment_score,

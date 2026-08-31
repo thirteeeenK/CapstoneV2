@@ -64,8 +64,9 @@
                             <div class="flex gap-1.5 mt-2">
                                 @foreach(array_slice($review->images,0,3) as $img)
                                     @php $url = \App\Concerns\ResolvesImages::resolveImg($img); @endphp
-                                    <a href="{{ $url }}" target="_blank" class="block w-10 h-10 rounded-md overflow-hidden border border-slate-200 hover:opacity-80 transition">
-                                        <img src="{{ $url }}" alt="review photo" class="w-full h-full object-cover">
+                                    <a href="{{ $url }}" target="_blank" class="aspect-[4/3] w-14 rounded-lg overflow-hidden border border-slate-200 bg-white flex items-center justify-center p-0.5 hover:border-ocean-200 hover:shadow-sm transition">
+                                        <img src="{{ $url }}" alt="review photo" class="w-full h-full object-contain rounded-md bg-sand-50/60" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">
+                                        <span style="display:none" class="w-full h-full items-center justify-center text-[8px] font-bold text-slate-400 text-center leading-tight">No image</span>
                                     </a>
                                 @endforeach
                             </div>
