@@ -48,3 +48,17 @@ SEEDER_SYNC_IMPLEMENTATION_PLAN.md
 /.agents/skills/tailwindcss-development/
 
 graphify-out
+
+rag_pipeline_export.html 
+rag_pipeline_simple_A.html 
+rag_pipeline_simple_B.html 
+rag_pipeline_simple_A.md 
+rag_pipeline_simple_B.md 
+rag_pipeline.md
+rag_pipeline_styled.html 
+mermaid.min.js 
+rag_pipeline.png 
+rag_pipeline_simple_A.png 
+rag_pipeline_simple_B.png
+
+.gitignore

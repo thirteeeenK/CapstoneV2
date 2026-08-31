@@ -282,4 +282,151 @@ class WeatherService
 
         return $advice;
     }
+
+    /**
+     * DSS scored booking suitability from a 5-day forecast.
+     * Returns score 0-100 + level + reasons + driest date + per-day breakdown.
+     *
+     * @return array{score:int, level:string, label:string, reasons:string[], driestDate:?string, dailyScores:array}
+     */
+    public function bookingSuitability(array $forecast): array
+    {
+        $list = $forecast['list'] ?? [];
+        if (empty($list)) {
+            $norm = $this->normalize($forecast);
+            if (empty($norm['current'])) {
+                return ['score' => 50, 'level' => 'unknown', 'label' => 'Unknown — weather data limited', 'reasons' => ['Weather data incomplete for this destination.'], 'driestDate' => null, 'dailyScores' => []];
+            }
+            $list = [['main' => ['temp' => $norm['current']['temp']], 'weather' => [['description' => $norm['current']['description'] ?? '']], 'wind' => ['speed' => $norm['current']['wind_speed'] ?? 0], 'rain' => ['1h' => $norm['current']['rain_1h'] ?? 0], 'pop' => $norm['current']['pop'] ?? 0, 'dt_txt' => $norm['current']['time']]];
+        }
+
+        $byDate = [];
+        foreach ($list as $entry) {
+            $dtTxt = $entry['dt_txt'] ?? null;
+            if (! $dtTxt) {
+                continue;
+            }
+            $date = substr($dtTxt, 0, 10);
+            $byDate[$date][] = $entry;
+        }
+
+        if (empty($byDate)) {
+            return ['score' => 50, 'level' => 'unknown', 'label' => 'Unknown — weather data limited', 'reasons' => ['Could not parse forecast dates.'], 'driestDate' => null, 'dailyScores' => []];
+        }
+
+        ksort($byDate);
+        $dailyScores = [];
+        $allPops = [];
+        $maxRain = 0;
+        $maxWind = 0;
+        $temps = [];
+
+        foreach ($byDate as $date => $entries) {
+            $pops = [];
+            $rains = [];
+            $winds = [];
+            $dayTemps = [];
+            foreach ($entries as $e) {
+                $pops[] = (float) ($e['pop'] ?? 0);
+                $rains[] = (float) ($e['rain']['1h'] ?? $e['rain']['3h'] ?? 0);
+                $winds[] = (float) ($e['wind']['speed'] ?? 0);
+                if (isset($e['main']['temp'])) {
+                    $dayTemps[] = (float) $e['main']['temp'];
+                }
+            }
+            $maxPop = $pops ? max($pops) : 0;
+            $dayMaxRain = $rains ? max($rains) : 0;
+            $dayMaxWind = $winds ? max($winds) : 0;
+            $avgTemp = $dayTemps ? array_sum($dayTemps) / count($dayTemps) : 28;
+
+            // Per-day score: POP dominant, rain/wind penalize, temp comfortable 24-32
+            $popScore = 100 - ($maxPop * 100);
+            $rainScore = max(0, 100 - ($dayMaxRain * 12)); // rain 5mm → 40, 8mm → 4
+            $windScore = max(0, 100 - max(0, $dayMaxWind - 10) * 6); // wind 20 → 40
+            $tempScore = $avgTemp >= 24 && $avgTemp <= 32 ? 100 : max(0, 100 - abs($avgTemp - 28) * 5);
+            $dayScore = (int) round(0.5 * $popScore + 0.3 * $rainScore + 0.12 * $windScore + 0.08 * $tempScore);
+
+            $dailyScores[$date] = [
+                'score' => $dayScore,
+                'pop' => $maxPop,
+                'rain' => $dayMaxRain,
+                'wind' => $dayMaxWind,
+                'temp' => round($avgTemp),
+            ];
+            $allPops[] = $maxPop;
+            $maxRain = max($maxRain, $dayMaxRain);
+            $maxWind = max($maxWind, $dayMaxWind);
+            $temps[] = $avgTemp;
+        }
+
+        $avgPop = $allPops ? array_sum($allPops) / count($allPops) : 0;
+        $avgTemp = $temps ? array_sum($temps) / count($temps) : 28;
+
+        $popScore = 100 - ($avgPop * 100);
+        $rainScore = max(0, 100 - ($maxRain * 12));
+        $windScore = max(0, 100 - max(0, $maxWind - 10) * 6);
+        $tempScore = $avgTemp >= 24 && $avgTemp <= 32 ? 100 : max(0, 100 - abs($avgTemp - 28) * 5);
+        $composite = (int) round(0.5 * $popScore + 0.3 * $rainScore + 0.12 * $windScore + 0.08 * $tempScore);
+
+        if ($composite >= 70) {
+            $level = 'good';
+            $label = 'Good to book';
+        } elseif ($composite >= 40) {
+            $level = 'okay';
+            $label = 'Okay with indoor backup';
+        } else {
+            $level = 'poor';
+            $label = 'Consider postponing';
+        }
+
+        $reasons = [];
+        if ($avgPop >= 0.8) {
+            $reasons[] = 'Persistent rain expected ('.(int) round($avgPop * 100).'% avg POP across 5 days)';
+        } elseif ($avgPop >= 0.5) {
+            $reasons[] = 'Frequent showers ('.(int) round($avgPop * 100).'% avg POP)';
+        } elseif ($avgPop > 0.2) {
+            $reasons[] = 'Occasional showers ('.(int) round($avgPop * 100).'% POP)';
+        } else {
+            $reasons[] = 'Mostly dry ('.(int) round($avgPop * 100).'% POP)';
+        }
+
+        if ($maxRain > 5) {
+            $reasons[] = "Heavy rain peaks at {$maxRain}mm/h — outdoor tours may be rescheduled";
+        } elseif ($maxRain > 0.5) {
+            $reasons[] = "Light rain up to {$maxRain}mm/h — bring a rain jacket";
+        }
+
+        if ($maxWind > 20) {
+            $reasons[] = "Strong winds up to {$maxWind}m/s — water activities may be suspended";
+        } elseif ($maxWind > 12) {
+            $reasons[] = "Breezy conditions ({$maxWind}m/s)";
+        }
+
+        if ($avgTemp > 33) {
+            $reasons[] = 'Hot ('.round($avgTemp).'°C) — stay hydrated';
+        } elseif ($avgTemp < 24) {
+            $reasons[] = 'Cooler ('.round($avgTemp).'°C) — light layer advised';
+        }
+
+        // Driest date = min maxPop, tie-breaker higher score
+        $driestDate = null;
+        $bestPop = 2;
+        $bestScore = -1;
+        foreach ($dailyScores as $date => $d) {
+            if ($d['pop'] < $bestPop || ($d['pop'] === $bestPop && $d['score'] > $bestScore)) {
+                $bestPop = $d['pop'];
+                $bestScore = $d['score'];
+                $driestDate = $date;
+            }
+        }
+
+        return [
+            'score' => $composite,
+            'level' => $level,
+            'label' => $label,
+            'reasons' => $reasons,
+            'driestDate' => $driestDate,
+            'dailyScores' => $dailyScores,
+        ];
+    }
 }
