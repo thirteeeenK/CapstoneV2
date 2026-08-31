@@ -35,6 +35,8 @@ class IntentRouter
 
     public const DISCOUNT_QUERY = 'DISCOUNT_QUERY';
 
+    public const BOOKING_STATUS = 'BOOKING_STATUS';
+
     protected array $travelKeywords = [
         'hotel', 'hotels', 'room', 'rooms', 'resort', 'resorts', 'stay', 'accommodation',
         'book', 'booking', 'check in', 'check-in', 'check out', 'check-out',
@@ -77,6 +79,10 @@ class IntentRouter
     public function classify(string $query): string
     {
         $lower = mb_strtolower($query);
+
+        if ($this->hasBookingStatusIntent($lower)) {
+            return self::BOOKING_STATUS;
+        }
 
         if ($this->hasDestinationsOverviewIntent($lower)) {
             return self::DESTINATIONS_OVERVIEW;
@@ -635,5 +641,43 @@ class IntentRouter
         }
 
         return false;
+    }
+
+    /**
+     * User-scoped booking lookup ("status of my booking"), not a catalog
+     * search ("book a room"). Possessive adjacency or status words required.
+     */
+    protected function hasBookingStatusIntent(string $lower): bool
+    {
+        if (preg_match('/\b(my|our)\s+(booking|reservation)\b/', $lower)) {
+            return true;
+        }
+
+        if (preg_match('/\b(booking|reservation)\s+(status|code|reference|details?|number|approved|confirmed|rejected|cancelled|paid)\b/', $lower)) {
+            return true;
+        }
+
+        if (preg_match("/\bstatus\s+of\s+(my|the|this)\s+(booking|reservation)\b/", $lower)) {
+            return true;
+        }
+
+        return (bool) preg_match("/\bwhere(?:'s|\s+is)\s+my\s+(booking|reservation)\b/", $lower);
+    }
+
+    /**
+     * Extract a booking code mentioned in the query (e.g., "ST-2026-ABCDE").
+     * The handler validates the extracted token against the user's bookings.
+     */
+    public function extractBookingCode(string $query): ?string
+    {
+        if (preg_match('/\b(?:booking|reservation|confirmation)\s*(?:code|number|no\.?|#|id|ref(?:erence)?)?\s*(?:is\s+|:|=)?\s*([A-Za-z0-9][A-Za-z0-9\-]{3,24})/i', $query, $m)) {
+            $token = strtoupper(trim($m[1]));
+            // Real booking codes always contain a digit or hyphen — rejects bare words like "status"
+            if (str_contains($token, '-') || preg_match('/\d/', $token)) {
+                return $token;
+            }
+        }
+
+        return null;
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Services\Chat;
 
 use App\Models\ActivityModel;
+use App\Models\Booking;
 use App\Models\ChatMessage;
 use App\Models\ChatSession;
 use App\Models\DestinationModel;
@@ -110,7 +111,7 @@ class ChatbotService
         }
 
         $intent = $this->intentRouter->classify($message);
-        $constraints = in_array($intent, [IntentRouter::GENERAL_TALK, IntentRouter::DESTINATIONS_OVERVIEW], true)
+        $constraints = in_array($intent, [IntentRouter::GENERAL_TALK, IntentRouter::DESTINATIONS_OVERVIEW, IntentRouter::BOOKING_STATUS], true)
             ? []
             : $this->intentRouter->extractConstraints($message);
         $constraints = $this->resolveConversationalDestination($constraints, $session);
@@ -128,6 +129,7 @@ class ChatbotService
             IntentRouter::WEATHER_QUERY => $this->handleWeatherQuery($message, $constraints, $session),
             IntentRouter::DESTINATIONS_OVERVIEW => $this->handleDestinationsOverview($session),
             IntentRouter::DISCOUNT_QUERY => $this->handleDiscountQuery($message, $session),
+            IntentRouter::BOOKING_STATUS => $this->handleBookingStatus($message, $user, $session),
             default => $this->handleGeneralChat($message, $session),
         };
 
@@ -677,6 +679,75 @@ class ChatbotService
         $reply = $this->geminiChatResponse($prompt, $session);
 
         return ['reply' => $reply, 'discount_rules' => $context];
+    }
+
+    protected function handleBookingStatus(string $query, ?User $user, ChatSession $session): array
+    {
+        // Booking data is identity-scoped: guests must log in, no code-based lookup
+        if (! $user) {
+            return [
+                'reply' => 'Please log in to your SunnyTrips account and ask again — I\'ll pull up your bookings and their latest status.',
+            ];
+        }
+
+        $code = $this->intentRouter->extractBookingCode($query);
+        $bookingsQuery = Booking::where('user_id', $user->id)->with('items')->latest('created_at');
+        if ($code) {
+            $bookingsQuery->where('booking_code', $code);
+        }
+        $bookings = $bookingsQuery->limit(5)->get();
+
+        if ($bookings->isEmpty()) {
+            if ($code) {
+                return [
+                    'reply' => "I couldn't find a booking with code **{$code}** in your account. Double-check the code, or just ask me for \"my bookings\" to see all of them.",
+                ];
+            }
+
+            return [
+                'reply' => "You don't have any bookings yet. Ask me to find a room, hotel, or package and I'll help you plan your trip — once you book, I can track the status here.",
+            ];
+        }
+
+        $context = $this->buildBookingContext($bookings);
+        $prompt = $this->buildPrompt('booking-status', $context, $query, $user);
+        $reply = $this->geminiChatResponse($prompt, $session);
+
+        return ['reply' => $reply];
+    }
+
+    protected function buildBookingContext($bookings): string
+    {
+        $blocks = [];
+        foreach ($bookings as $booking) {
+            /** @var Booking $booking */
+            $lines = [
+                "Booking Code: {$booking->booking_code}",
+                'Status: '.str_replace('_', ' ', (string) $booking->status),
+                'Payment Status: '.str_replace('_', ' ', (string) $booking->payment_status),
+                'Total: ₱'.number_format((float) $booking->net_amount, 2),
+            ];
+            if ($booking->status === Booking::STATUS_APPROVED && $booking->payment_deadline) {
+                $lines[] = 'Payment Deadline: '.$booking->payment_deadline->format('M j, Y g:i A').' (48-hour window)';
+            }
+            foreach ($booking->items as $item) {
+                $dates = $item->check_in_date
+                    ? " ({$item->check_in_date} to {$item->check_out_date}, {$item->nights} night(s))"
+                    : '';
+                $lines[] = "- {$item->item_title}{$dates}";
+            }
+            if ($booking->status === Booking::STATUS_REJECTED && $booking->rejection_reason) {
+                $lines[] = 'Rejection Reason: '.$booking->rejection_reason;
+            }
+            if ($booking->status === Booking::STATUS_CANCELLED && $booking->cancellation_reason) {
+                $lines[] = 'Cancellation Reason: '.$booking->cancellation_reason;
+            }
+            $lines[] = 'View full details: '.route('booking.show', $booking->booking_code);
+
+            $blocks[] = implode("\n", $lines);
+        }
+
+        return "=== USER BOOKINGS (live records for the logged-in user) ===\n\n".implode("\n\n", $blocks);
     }
 
     protected function handleHotelSearch(string $query, array $constraints, ?User $user, ChatSession $session): array
@@ -1665,6 +1736,7 @@ class ChatbotService
             'availability' => 'TASK: Report real-time room availability, prices, and remaining inventory.',
             'itinerary' => 'TASK: Present a day-by-day itinerary plan using the provided items.',
             'discount' => 'TASK: Explain SunnyTrips passenger pricing rules and discounts based on the database results below.',
+            'booking-status' => 'TASK: Report the status of the user\'s bookings using the booking records below.',
             default => "TASK: Answer the user's travel question.",
         };
 
@@ -1687,6 +1759,12 @@ class ChatbotService
             $rules[] = 'Do not introduce any other locations, attractions, activities, venues, services, logistics, fees, or expenses.';
             $rules[] = 'Do not create airport arrival or departure plans, transfer details, meal plans, or extra budget estimates. Only use the listed room and activity prices and the pre-computed total.';
             $rules[] = 'If a part of the trip is not covered by the provided results, say that it is not included in the database results.';
+        }
+
+        if ($stage === 'booking-status') {
+            $rules[] = 'Report ONLY the booking records provided below; never invent or guess a status, amount, or date.';
+            $rules[] = 'Do not mention admin notes, internal price adjustments, payment links, or gateway references.';
+            $rules[] = 'Suggest opening the full-details link for actions like payment or cancellation requests.';
         }
 
         $header .= "\n\nRULES:\n- ".implode("\n- ", $rules);

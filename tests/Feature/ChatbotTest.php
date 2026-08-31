@@ -2,6 +2,8 @@
 
 use App\Http\Middleware\EnforceGuestChatLimits;
 use App\Models\AdminModel;
+use App\Models\Booking;
+use App\Models\BookingItem;
 use App\Models\ChatbotAbuseReport;
 use App\Models\ChatMessage;
 use App\Models\ChatSession;
@@ -1051,4 +1053,64 @@ test('dismissing an abuse report resolves open handoff tickets and restores norm
         ]);
 
     $chat->assertOk()->assertJson(['status' => 'success', 'control' => 'ai']);
+});
+
+test('authed user asking about booking status gets live status grounded in their booking', function () {
+    $booking = Booking::factory()->approved()->create([
+        'user_id' => $this->user->id,
+        'net_amount' => 6000.00,
+    ]);
+    BookingItem::factory()->create([
+        'booking_id' => $booking->id,
+        'item_title' => 'Deluxe Ocean View',
+        'check_in_date' => '2026-09-10',
+        'check_out_date' => '2026-09-13',
+        'nights' => 3,
+    ]);
+
+    $this->actingAs($this->user)
+        ->postJson('/chat', ['message' => "What is the status of booking code {$booking->booking_code}?"])
+        ->assertOk()
+        ->assertJson(['status' => 'success']);
+
+    // The Gemini prompt must contain the live booking record for the authed user
+    Http::assertSent(function (Request $request) use ($booking) {
+        return str_contains($request->url(), 'generateContent')
+            && str_contains((string) $request->body(), $booking->booking_code)
+            && str_contains((string) $request->body(), 'Deluxe Ocean View')
+            && str_contains((string) $request->body(), 'Status: approved');
+    });
+});
+
+test('authed user with no bookings gets a deterministic nudge without a Gemini call', function () {
+    $this->actingAs($this->user)
+        ->postJson('/chat', ['message' => 'What is the status of my booking?'])
+        ->assertOk()
+        ->assertJson(['status' => 'success'])
+        ->assertJsonPath('reply', fn ($reply) => str_contains($reply, "don't have any bookings"));
+
+    Http::assertNothingSent();
+});
+
+test('another users booking never leaks into booking status answers', function () {
+    $other = onboardedUser(['email' => 'other-owner@example.com']);
+    $booking = Booking::factory()->create(['user_id' => $other->id]);
+
+    $this->actingAs($this->user)
+        ->postJson('/chat', ['message' => "What is the status of booking code {$booking->booking_code}?"])
+        ->assertOk()
+        ->assertJson(['status' => 'success'])
+        ->assertJsonPath('reply', fn ($reply) => str_contains($reply, "couldn't find a booking"));
+
+    // Unknown code must never reach Gemini as grounding data
+    Http::assertNotSent(fn (Request $request) => str_contains((string) $request->body(), $booking->booking_code));
+});
+
+test('guest asking about booking status is told to log in', function () {
+    $this->postJson('/chat', ['message' => 'What is the status of my booking?'])
+        ->assertOk()
+        ->assertJson(['status' => 'success'])
+        ->assertJsonPath('reply', fn ($reply) => str_contains($reply, 'log in'));
+
+    Http::assertNothingSent();
 });

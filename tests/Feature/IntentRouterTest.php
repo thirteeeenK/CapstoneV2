@@ -99,3 +99,24 @@ test('extracts weekend date range', function () {
     $in = Carbon::parse($c['check_in_date']);
     expect($in->isSaturday())->toBeTrue();
 });
+
+test('classifies booking status query', function () {
+    expect($this->router->classify('What is the status of my booking?'))->toBe(IntentRouter::BOOKING_STATUS);
+    expect($this->router->classify('Where is my booking?'))->toBe(IntentRouter::BOOKING_STATUS);
+    expect($this->router->classify('Is my booking approved?'))->toBe(IntentRouter::BOOKING_STATUS);
+    expect($this->router->classify('my reservation status'))->toBe(IntentRouter::BOOKING_STATUS);
+    expect($this->router->classify('booking code ST-2026-ABCDE status'))->toBe(IntentRouter::BOOKING_STATUS);
+    expect($this->router->classify('check my booking details'))->toBe(IntentRouter::BOOKING_STATUS);
+});
+
+test('booking searches are not mistaken for booking status', function () {
+    expect($this->router->classify('Book a room in Boracay'))->toBe(IntentRouter::ROOM_SEARCH);
+    expect($this->router->classify('I want to make a booking for 2 pax in Palawan'))->toBe(IntentRouter::ROOM_SEARCH);
+    expect($this->router->classify('best resorts for honeymoon'))->toBe(IntentRouter::HOTEL_SEARCH);
+});
+
+test('extracts booking code from query', function () {
+    expect($this->router->extractBookingCode('What is the status of booking code ST-2026-ABCDE?'))->toBe('ST-2026-ABCDE');
+    expect($this->router->extractBookingCode('booking reference ABC123 status'))->toBe('ABC123');
+    expect($this->router->extractBookingCode('what is the status of my booking'))->toBeNull();
+});
