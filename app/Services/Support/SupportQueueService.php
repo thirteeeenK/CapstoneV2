@@ -5,12 +5,88 @@ namespace App\Services\Support;
 use App\Models\ChatMessage;
 use App\Models\ChatSession;
 use App\Models\SupportInquiry;
+use App\Models\User;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
 
 class SupportQueueService
 {
+    public function initiateDirectMessage(int $userId, int $adminId, string $message): array
+    {
+        return DB::transaction(function () use ($userId, $adminId, $message) {
+            $user = User::findOrFail($userId);
+
+            if ($user->isBanned()) {
+                throw new RuntimeException('Cannot message a banned user.');
+            }
+
+            // If user already has an active inquiry, reuse it — prevents duplicate active per user.
+            $active = SupportInquiry::where('user_id', $userId)
+                ->whereIn('status', [SupportInquiry::STATUS_PENDING, SupportInquiry::STATUS_HUMAN_ACTIVE])
+                ->latest('created_at')
+                ->lockForUpdate()
+                ->first();
+
+            if ($active) {
+                if ($active->status === SupportInquiry::STATUS_HUMAN_ACTIVE && (int) $active->assigned_admin_id !== $adminId) {
+                    throw new RuntimeException('This user already has an active conversation with another administrator.');
+                }
+
+                // Reuse existing inquiry — just append admin message.
+                if ($active->status === SupportInquiry::STATUS_PENDING) {
+                    $active->update([
+                        'status' => SupportInquiry::STATUS_HUMAN_ACTIVE,
+                        'assigned_admin_id' => $adminId,
+                        'assigned_at' => now(),
+                    ]);
+                }
+
+                $chatMessage = $this->sendAdminMessage($active, $message);
+
+                return ['inquiry' => $active->fresh(), 'message' => $chatMessage];
+            }
+
+            // Find or create a ChatSession for this user (reuse latest if exists).
+            $session = ChatSession::where('user_id', $userId)->latest('updated_at')->first();
+            if (! $session) {
+                $session = ChatSession::create([
+                    'session_token' => ChatSession::generateToken(),
+                    'user_id' => $userId,
+                ]);
+            }
+
+            $ticket = 'TKT-'.now()->format('Ymd').'-'.strtoupper(substr(bin2hex(random_bytes(3)), 0, 4));
+            while (SupportInquiry::where('ticket_number', $ticket)->exists()) {
+                $ticket = 'TKT-'.now()->format('Ymd').'-'.strtoupper(substr(bin2hex(random_bytes(3)), 0, 4));
+            }
+
+            try {
+                $inquiry = SupportInquiry::create([
+                    'ticket_number' => $ticket,
+                    'chat_session_id' => $session->id,
+                    'user_id' => $userId,
+                    'assigned_admin_id' => $adminId,
+                    'status' => SupportInquiry::STATUS_HUMAN_ACTIVE,
+                    'initiated_by' => SupportInquiry::INITIATED_BY_ADMIN,
+                    'requested_at' => now(),
+                    'assigned_at' => now(),
+                ]);
+            } catch (UniqueConstraintViolationException) {
+                $inquiry = SupportInquiry::where('chat_session_id', $session->id)
+                    ->whereIn('status', [SupportInquiry::STATUS_PENDING, SupportInquiry::STATUS_HUMAN_ACTIVE])
+                    ->firstOrFail();
+                $chatMessage = $this->sendAdminMessage($inquiry, $message);
+
+                return ['inquiry' => $inquiry, 'message' => $chatMessage];
+            }
+
+            $chatMessage = $this->sendAdminMessage($inquiry, $message);
+
+            return ['inquiry' => $inquiry, 'message' => $chatMessage];
+        });
+    }
+
     public function requestHandoff(ChatSession $session): SupportInquiry
     {
         $existing = SupportInquiry::where('chat_session_id', $session->id)
@@ -33,6 +109,7 @@ class SupportQueueService
                 'chat_session_id' => $session->id,
                 'user_id' => $session->user_id,
                 'status' => SupportInquiry::STATUS_PENDING,
+                'initiated_by' => SupportInquiry::INITIATED_BY_USER,
                 'requested_at' => now(),
             ]);
         } catch (UniqueConstraintViolationException) {

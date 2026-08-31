@@ -50,14 +50,64 @@ class ChatbotController extends Controller
         return response()->json($result);
     }
 
+    public function active(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        if (! $user) {
+            return response()->json(['has_active' => false]);
+        }
+
+        $session = $this->conversation->latestForUser($user);
+        if (! $session) {
+            return response()->json(['has_active' => false]);
+        }
+
+        $inquiry = SupportInquiry::where('chat_session_id', $session->id)
+            ->whereIn('status', [SupportInquiry::STATUS_PENDING, SupportInquiry::STATUS_HUMAN_ACTIVE])
+            ->orderBy('created_at', 'desc')
+            ->first();
+
+        if (! $inquiry) {
+            // No active handoff but still return latest session so widget can re-sync token after logout rotation.
+            return response()->json([
+                'has_active' => false,
+                'session_token' => $session->session_token,
+                'handoff_status' => null,
+            ]);
+        }
+
+        return response()->json([
+            'has_active' => true,
+            'session_token' => $session->session_token,
+            'handoff_status' => $inquiry->status,
+            'ticket_number' => $inquiry->ticket_number,
+        ]);
+    }
+
     public function history(Request $request): JsonResponse
     {
         $token = $request->query('session_token');
+        $user = $request->user();
+
+        // Authenticated users without a token (lost localStorage) recover via latestForUser instead of empty.
         if (! $token) {
-            return response()->json(['messages' => []]);
+            if ($user) {
+                $latest = $this->conversation->latestForUser($user);
+                if ($latest) {
+                    $token = $latest->session_token;
+                } else {
+                    return response()->json(['messages' => [], 'session_token' => null, 'handoff_status' => null]);
+                }
+            } else {
+                return response()->json(['messages' => [], 'session_token' => null, 'handoff_status' => null]);
+            }
         }
 
-        $session = $this->conversation->resolveSession($token, $request->user());
+        $session = $this->conversation->resolveSession($token, $user);
+
+        // If guest just probed an authed token, resolveSession created a fresh guest session.
+        // Signal isolation so the widget keeps the owner's original token instead of overwriting it.
+        $isolatedGuest = ! $user && $token !== $session->session_token;
 
         $messages = $session->messages()
             ->oldest('created_at')
@@ -78,6 +128,7 @@ class ChatbotController extends Controller
             'session_token' => $session->session_token,
             'handoff_status' => $inquiry?->status ?? null,
             'messages' => $messages,
+            'isolated' => $isolatedGuest,
         ]);
     }
 
@@ -148,12 +199,23 @@ class ChatbotController extends Controller
     {
         $token = $request->query('session_token');
         $afterId = (int) ($request->query('after_id', 0));
+        $user = $request->user();
 
         if (! $token) {
-            return response()->json(['status' => 'error'], 400);
+            if ($user) {
+                $latest = $this->conversation->latestForUser($user);
+                if ($latest) {
+                    $token = $latest->session_token;
+                } else {
+                    return response()->json(['status' => 'error', 'message' => 'No session token.'], 400);
+                }
+            } else {
+                return response()->json(['status' => 'error'], 400);
+            }
         }
 
-        $session = $this->conversation->resolveSession($token, $request->user());
+        $session = $this->conversation->resolveSession($token, $user);
+        $isolatedGuest = ! $user && $token !== $session->session_token;
 
         $inquiry = SupportInquiry::where('chat_session_id', $session->id)
             ->orderBy('created_at', 'desc')
@@ -178,6 +240,7 @@ class ChatbotController extends Controller
             'session_token' => $session->session_token,
             'handoff_status' => $inquiry?->status ?? null,
             'messages' => $messages,
+            'isolated' => $isolatedGuest,
         ]);
     }
 }

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\SupportInquiry;
+use App\Models\User;
 use App\Services\Support\SupportQueueService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -19,6 +20,66 @@ class SupportQueueController extends Controller
     public function index(): View
     {
         return view('admin.support.index');
+    }
+
+    public function searchUsers(Request $request): JsonResponse
+    {
+        $q = trim((string) $request->query('q', ''));
+        if (mb_strlen($q) < 2) {
+            return response()->json(['users' => []]);
+        }
+
+        $users = User::where(function ($query) use ($q) {
+            $query->where('name', 'ILIKE', "%{$q}%")
+                ->orWhere('email', 'ILIKE', "%{$q}%");
+        })
+            ->orderBy('name')
+            ->limit(8)
+            ->get(['id', 'name', 'email'])
+            ->map(fn ($u) => ['id' => $u->id, 'name' => $u->name, 'email' => $u->email]);
+
+        return response()->json(['users' => $users]);
+    }
+
+    public function initiate(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'user_id' => 'required|integer|exists:users,id',
+            'message' => 'required|string|max:2000',
+        ]);
+
+        $admin = $request->user('admin');
+
+        try {
+            $result = $this->supportQueue->initiateDirectMessage(
+                (int) $validated['user_id'],
+                (int) $admin->id,
+                $validated['message']
+            );
+        } catch (RuntimeException $e) {
+            return response()->json(['status' => 'error', 'message' => $e->getMessage()], 409);
+        }
+
+        $inquiry = $result['inquiry'];
+        $msg = $result['message'];
+
+        return response()->json([
+            'status' => 'success',
+            'inquiry' => [
+                'id' => $inquiry->id,
+                'ticket_number' => $inquiry->ticket_number,
+                'status' => $inquiry->status,
+                'initiated_by' => $inquiry->initiated_by,
+                'user_name' => $inquiry->user?->name ?? 'Guest',
+                'user_id' => $inquiry->user_id,
+            ],
+            'message' => [
+                'id' => $msg->id,
+                'sender' => $msg->sender,
+                'text' => $msg->message,
+                'created_at' => $msg->created_at?->toIso8601String(),
+            ],
+        ]);
     }
 
     public function poll(Request $request): JsonResponse
@@ -42,6 +103,7 @@ class SupportQueueController extends Controller
                     'last_message_at' => $lastMsg?->created_at?->diffForHumans() ?? '',
                     'requested_at' => $inquiry->requested_at?->diffForHumans() ?? '',
                     'status' => $inquiry->status,
+                    'initiated_by' => $inquiry->initiated_by,
                 ];
             });
 
@@ -63,6 +125,7 @@ class SupportQueueController extends Controller
                     'last_message_at' => $lastMsg?->created_at?->diffForHumans() ?? '',
                     'requested_at' => $inquiry->requested_at?->diffForHumans() ?? '',
                     'status' => $inquiry->status,
+                    'initiated_by' => $inquiry->initiated_by,
                 ];
             });
 

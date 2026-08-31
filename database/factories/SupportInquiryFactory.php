@@ -22,6 +22,7 @@ class SupportInquiryFactory extends Factory
             'user_id' => null,
             'assigned_admin_id' => null,
             'status' => SupportInquiry::STATUS_PENDING,
+            'initiated_by' => SupportInquiry::INITIATED_BY_USER,
             'requested_at' => now(),
             'assigned_at' => null,
             'returned_to_ai_at' => null,

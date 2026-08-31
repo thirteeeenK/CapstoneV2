@@ -2,7 +2,7 @@
     x-trap="open">
     {{-- Floating bubble button --}}
     <button @click="toggle()"
-        class="w-14 h-14 rounded-full bg-gradient-to-r from-ocean-600 to-ocean-700 text-white shadow-xl shadow-ocean-600/30 flex items-center justify-center transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ocean-400 focus:ring-offset-2 hover:scale-105 active:scale-95 cursor-pointer"
+        class="relative w-14 h-14 rounded-full bg-gradient-to-r from-ocean-600 to-ocean-700 text-white shadow-xl shadow-ocean-600/30 flex items-center justify-center transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ocean-400 focus:ring-offset-2 hover:scale-105 active:scale-95 cursor-pointer"
         :class="open ? 'rotate-90 scale-95 bg-slate-900 shadow-slate-900/30' : ''" aria-label="Chat with SunnyTrips AI">
         <svg x-show="!open" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -11,6 +11,9 @@
         <svg x-show="open" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
         </svg>
+        <span x-show="!open && hasUnreadAdmin" class="absolute -top-1 -right-1 w-4 h-4 bg-coral-500 border-2 border-white rounded-full flex items-center justify-center">
+            <span class="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>
+        </span>
     </button>
 
     {{-- Chat panel --}}
@@ -407,25 +410,100 @@
             handoffLastMessageId: 0,
             locatingLocation: false,
             geoError: null,
+            hasUnreadAdmin: false,
+            isAuthed: @json(auth()->check()),
 
-            init() {
+            async init() {
                 this.sessionToken = localStorage.getItem('sunnytrips_chat_session');
-                this.loadConversation();
+                // Authed users with lost token (logout rotation) recover via /chat/active instead of empty.
+                if (!this.sessionToken && this.isAuthed) {
+                    await this.syncActiveSession();
+                }
+                await this.loadConversation();
+                // After initial load, sync again to catch admin-initiated while offline (token mismatch).
+                if (this.isAuthed) {
+                    await this.syncActiveSession();
+                    // Background check for admin-initiated messages while widget closed (badge).
+                    setInterval(() => {
+                        if (!this.open) this.syncActiveSession();
+                    }, 30000);
+                }
+            },
+
+            async syncActiveSession() {
+                try {
+                    const res = await fetch('/chat/active', {
+                        headers: { 'Accept': 'application/json' }
+                    });
+                    if (!res.ok) return false;
+                    const data = await res.json();
+                    if (data.session_token && data.session_token !== this.sessionToken) {
+                        this.sessionToken = data.session_token;
+                        localStorage.setItem('sunnytrips_chat_session', data.session_token);
+                        if (data.handoff_status === 'PENDING_ASSIGNMENT') {
+                            this.handoffStatus = 'pending';
+                            this.handoffTicket = data.ticket_number || '';
+                        } else if (data.handoff_status === 'HUMAN_SUPPORT_ACTIVE') {
+                            this.handoffStatus = 'active';
+                        }
+                        // Reload conversation with the recovered token so history reappears.
+                        await this.loadConversation();
+                        return true;
+                    }
+                    if (data.has_active) {
+                        if (data.handoff_status === 'PENDING_ASSIGNMENT') {
+                            this.handoffStatus = 'pending';
+                            this.handoffTicket = data.ticket_number || '';
+                        } else if (data.handoff_status === 'HUMAN_SUPPORT_ACTIVE') {
+                            this.handoffStatus = 'active';
+                        }
+                        if (!this.open) this.hasUnreadAdmin = true;
+                        this.startHandoffPolling();
+                    }
+                    return false;
+                } catch (e) {
+                    return false;
+                }
             },
 
             async loadConversation() {
-                if (!this.sessionToken) return;
+                if (!this.sessionToken) {
+                    // Try one more recovery for authed users before giving up (covers first load with empty storage).
+                    if (this.isAuthed) {
+                        const recovered = await this.syncActiveSession();
+                        if (!recovered) return;
+                    } else {
+                        return;
+                    }
+                }
                 try {
                     const res = await fetch(`/chat/history?session_token=${encodeURIComponent(this.sessionToken)}`, {
                         headers: { 'Accept': 'application/json' }
                     });
                     if (!res.ok) return;
                     const data = await res.json();
-                    if (data.session_token) {
+                    // Guest probing an authed token — server returns a fresh guest token with isolated=true.
+                    // Keep the owner's original token instead of overwriting it, otherwise logout→login loses history.
+                    if (data.isolated) {
+                        return;
+                    }
+                    if (data.session_token && data.session_token !== this.sessionToken) {
                         this.sessionToken = data.session_token;
                         localStorage.setItem('sunnytrips_chat_session', data.session_token);
                     }
-                    if (!data.messages || !data.messages.length) return;
+                    if (!data.messages || !data.messages.length) {
+                        // Even with no messages, honour handoff status (e.g., fresh admin-initiated).
+                        if (data.handoff_status === 'PENDING_ASSIGNMENT') {
+                            this.handoffStatus = 'pending';
+                        } else if (data.handoff_status === 'HUMAN_SUPPORT_ACTIVE') {
+                            this.handoffStatus = 'active';
+                            if (!this.open) this.hasUnreadAdmin = true;
+                        }
+                        if (this.handoffStatus === 'pending' || this.handoffStatus === 'active') {
+                            this.startHandoffPolling();
+                        }
+                        return;
+                    }
 
                     const handoffStatus = data.handoff_status;
                     if (handoffStatus === 'PENDING_ASSIGNMENT') {
@@ -464,7 +542,8 @@
             toggle() {
                 this.open = !this.open;
                 if (this.open) {
-                    this.loadConversation();
+                    this.hasUnreadAdmin = false;
+                    this.syncActiveSession().then(() => this.loadConversation());
                     this.$nextTick(() => {
                         this.$refs.input?.focus();
                         this.scrollDown();
@@ -877,7 +956,8 @@
 
             async pollHandoffMessages() {
                 if (!this.sessionToken || !this.handoffStatus) return;
-                if (!this.open) return;
+                // Keep polling even when closed to catch admin-initiated while off-screen (badge), but throttle via hasUnread.
+                const wasClosed = !this.open;
                 try {
                     const params = new URLSearchParams({ session_token: this.sessionToken });
                     if (this.handoffLastMessageId > 0) params.set('after_id', this.handoffLastMessageId);
@@ -908,6 +988,7 @@
                     for (const msg of msgs) {
                         if (msg.id > this.handoffLastMessageId) this.handoffLastMessageId = msg.id;
                         if ((msg.sender === 'admin' || msg.sender === 'bot') && !this.messages.some(m => m.id === msg.id)) {
+                            if (wasClosed) this.hasUnreadAdmin = true;
                             this.addMessage(msg.sender, msg.text, { id: msg.id });
                         }
                     }
