@@ -46,7 +46,7 @@
             </button>
         </div>
 
-        <form action="{{ route('admin.reviews.store') }}" method="POST"
+        <form action="{{ route('admin.reviews.store') }}" method="POST" enctype="multipart/form-data"
             class="grid grid-cols-12 gap-8 items-start">
             @csrf
 
@@ -236,6 +236,15 @@
                             placeholder="Write the guest's feedback..."
                             class="w-full bg-slate-50 border border-slate-300 rounded-md px-3 py-2 text-xs text-slate-900 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all">{{ old('comment') }}</textarea>
                         <p class="text-[11px] text-slate-400">10–2000 characters. This text is sent to the Gemini sentiment analyzer.</p>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <label for="images" class="block text-xs font-semibold text-slate-700">
+                            Photos <span class="text-slate-400 font-normal">(optional, up to 3 · 3MB each · JPG/PNG/WebP)</span>
+                        </label>
+                        <input type="file" id="images" name="images[]" accept="image/jpeg,image/png,image/webp" multiple
+                            class="block w-full text-xs text-slate-600 file:mr-3 file:py-2 file:px-3 file:rounded-md file:border-0 file:bg-ocean-50 file:text-ocean-700 file:font-bold file:text-xs hover:file:bg-ocean-100 file:cursor-pointer border border-slate-200 rounded-md bg-white cursor-pointer">
+                        <p class="text-[11px] text-slate-400">Images apply to hotel/activity/room/package reviews alike. Leave empty to skip.</p>
                     </div>
                 </section>
             </div>

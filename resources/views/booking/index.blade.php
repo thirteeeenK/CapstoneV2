@@ -17,7 +17,7 @@
             ['key' => 'active', 'label' => 'In Progress'],
             ['key' => 'paid', 'label' => 'Confirmed'],
             ['key' => 'completed', 'label' => 'Completed'],
-            ['key' => 'reviewable', 'label' => 'Pending For Review'],
+            ['key' => 'reviewable', 'label' => 'To Review'],
             ['key' => 'reviewed', 'label' => 'Reviewed'],
             ['key' => 'closed', 'label' => 'Closed'],
         ];
@@ -97,17 +97,19 @@
                                     : ($bookingList->status === 'paid' ? 'paid'
                                     : ($bookingList->status === 'completed' ? 'completed' : 'closed'));
 
+                                $reviewBucket = null;
                                 if ($bookingList->status === 'completed') {
                                     $reviewableTypes = ['room', 'activity', 'package'];
-                                    $reviewableItems = $bookingList->items->filter(fn($it) => in_array($it->item_type, $reviewableTypes));
+                                    $reviewableItems = $bookingList->items->filter(fn($it) => in_array($it->item_type, $reviewableTypes, true));
                                     $hasAnyUnreviewed = $reviewableItems->count() > 0
                                         && $reviewableItems->some(fn($it) => !$bookingList->reviews->contains('booking_item_id', $it->id));
-                                    $bucket = $hasAnyUnreviewed ? 'reviewable' : 'reviewed';
+                                    $reviewBucket = $hasAnyUnreviewed ? 'reviewable' : 'reviewed';
+                                    $bucket = 'completed';
                                 }
                             @endphp
 
                             <a href="{{ route('booking.show', $bookingList->booking_code) }}"
-                               x-show="filter === 'all' || filter === '{{ $bucket }}'"
+                               x-show="filter === 'all' || filter === '{{ $bucket }}' || filter === '{{ $reviewBucket }}'"
                                x-transition:enter="transition ease-out duration-200"
                                x-transition:enter-start="opacity-0 translate-y-2"
                                x-transition:enter-end="opacity-100 translate-y-0"

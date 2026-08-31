@@ -192,6 +192,31 @@
                         </div>
                     </div>
 
+                    {{-- Optional photos (3x3MB) --}}
+                    <div class="mb-5">
+                        <p class="font-label text-[10px] uppercase font-bold tracking-[0.2em] text-slate-400 mb-2">Photos <span class="font-normal normal-case tracking-normal text-slate-400">(optional, up to 3 · 3MB each · JPG/PNG/WebP)</span></p>
+                        <input x-ref="fileInput" type="file" accept="image/jpeg,image/png,image/webp" multiple class="hidden" @change="onFiles($event)">
+                        <div @click="$refs.fileInput.click()"
+                             @dragover.prevent="dragOver = true" @dragleave="dragOver = false" @drop.prevent="onDrop($event)"
+                             :class="dragOver ? 'border-ocean-400 bg-ocean-50' : 'border-sand-200 bg-white hover:border-ocean-200'"
+                             class="w-full rounded-2xl border-2 border-dashed px-4 py-4 flex flex-col items-center justify-center gap-1.5 cursor-pointer transition text-center">
+                            <span class="material-symbols-outlined text-[20px] text-slate-400">add_a_photo</span>
+                            <p class="text-[11px] font-bold text-slate-600">Click or drag photos here</p>
+                            <p class="text-[10px] text-slate-400" x-text="selectedFiles.length ? selectedFiles.length + '/3 selected' : 'No photos selected — reviews work without them'"></p>
+                        </div>
+                        <p x-show="imageError" x-cloak class="mt-2 text-[11px] font-semibold text-rose-600 bg-rose-50 border border-rose-100 rounded-xl px-3 py-2" x-text="imageError"></p>
+                        <div x-show="previews.length" class="mt-3 grid grid-cols-3 gap-2">
+                            <template x-for="(src, idx) in previews" :key="idx">
+                                <div class="relative group">
+                                    <img :src="src" class="w-full h-24 object-cover rounded-xl border border-sand-200">
+                                    <button type="button" @click="removeAt(idx)" class="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-slate-900 text-white flex items-center justify-center shadow cursor-pointer hover:bg-rose-600 transition">
+                                        <span class="material-symbols-outlined text-[14px]">close</span>
+                                    </button>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
                     <button type="button" @click="submit()" :disabled="submitting || rating === 0 || comment.length < 10"
                         :class="rating === 0 || comment.length < 10 ? 'bg-sand-300 cursor-not-allowed' : 'bg-slate-900 hover:bg-slate-800 cursor-pointer'"
                         class="w-full px-6 py-3 rounded-2xl text-white font-bold text-xs transition flex items-center justify-center gap-2 shadow-lg shadow-slate-900/15">
@@ -270,6 +295,7 @@
                 submitting: false,
                 success: false,
                 errorMessage: null,
+                imageError: null,
                 bookings: [],
                 selectedBooking: null,
                 selectedItem: null,
@@ -277,18 +303,58 @@
                 rating: 0,
                 hoverStar: 0,
                 comment: '',
+                selectedFiles: [],
+                previews: [],
+                dragOver: false,
                 presetBookingId: bookingId,
 
+                clearImages() {
+                    this.previews.forEach(u => URL.revokeObjectURL(u));
+                    this.selectedFiles = [];
+                    this.previews = [];
+                    this.imageError = null;
+                    this.dragOver = false;
+                    if (this.$refs.fileInput) this.$refs.fileInput.value = '';
+                },
+                onFiles(event) {
+                    const files = Array.from(event.target.files || []);
+                    this.addFiles(files);
+                    if (this.$refs.fileInput) this.$refs.fileInput.value = '';
+                },
+                onDrop(event) {
+                    this.dragOver = false;
+                    const files = Array.from(event.dataTransfer?.files || []);
+                    this.addFiles(files);
+                },
+                addFiles(files) {
+                    this.imageError = null;
+                    const allowed = ['image/jpeg','image/png','image/webp','image/jpg'];
+                    for (const f of files) {
+                        if (this.selectedFiles.length >= 3) { this.imageError = 'Up to 3 photos only.'; break; }
+                        if (!allowed.includes(f.type)) { this.imageError = f.name + ': only JPG, PNG, WebP allowed.'; continue; }
+                        if (f.size > 3*1024*1024) { this.imageError = f.name + ' exceeds 3MB.'; continue; }
+                        this.selectedFiles.push(f);
+                        this.previews.push(URL.createObjectURL(f));
+                    }
+                },
+                removeAt(idx) {
+                    if (this.previews[idx]) URL.revokeObjectURL(this.previews[idx]);
+                    this.selectedFiles.splice(idx,1);
+                    this.previews.splice(idx,1);
+                    this.imageError = null;
+                },
                 async open() {
                     this.show = true;
                     this.loading = true;
                     this.success = false;
                     this.errorMessage = null;
+                    this.imageError = null;
                     this.rating = 0;
                     this.comment = '';
                     this.selectedBooking = null;
                     this.selectedItem = null;
                     this.showingReviewedItem = null;
+                    this.clearImages();
                     try {
                         const res = await fetch('/reviews/eligible', {
                             headers: { 'Accept': 'application/json' }
@@ -327,6 +393,7 @@
                     }
                     this.show = false;
                     document.body.classList.remove('overflow-y-hidden');
+                    this.clearImages();
                 },
 
                 selectBooking(booking) {
@@ -344,6 +411,7 @@
                     this.rating = 0;
                     this.comment = '';
                     this.errorMessage = null;
+                    this.clearImages();
                 },
 
                 viewReviewedItem(item) {
@@ -372,6 +440,7 @@
                     this.rating = 0;
                     this.comment = '';
                     this.errorMessage = null;
+                    this.clearImages();
 
                     const hasMore = this.hasMoreUnreviewed();
                     if (!hasMore) {
@@ -389,23 +458,43 @@
                     this.submitting = true;
                     this.errorMessage = null;
                     try {
-                        const res = await fetch('/reviews', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Accept': 'application/json',
-                                'X-CSRF-TOKEN': csrfToken
-                            },
-                            body: JSON.stringify({
-                                booking_id: this.selectedBooking.booking_id,
-                                booking_item_id: this.selectedItem.id,
-                                rating: this.rating,
-                                comment: this.comment
-                            })
-                        });
+                        let res;
+                        if (this.selectedFiles.length) {
+                            const fd = new FormData();
+                            fd.append('booking_id', this.selectedBooking.booking_id);
+                            fd.append('booking_item_id', this.selectedItem.id);
+                            fd.append('rating', this.rating);
+                            fd.append('comment', this.comment);
+                            this.selectedFiles.forEach(f => fd.append('images[]', f));
+                            res = await fetch('/reviews', {
+                                method: 'POST',
+                                headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+                                body: fd
+                            });
+                        } else {
+                            res = await fetch('/reviews', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Accept': 'application/json',
+                                    'X-CSRF-TOKEN': csrfToken
+                                },
+                                body: JSON.stringify({
+                                    booking_id: this.selectedBooking.booking_id,
+                                    booking_item_id: this.selectedItem.id,
+                                    rating: this.rating,
+                                    comment: this.comment
+                                })
+                            });
+                        }
                         const data = await res.json();
                         if (!res.ok) {
-                            this.errorMessage = data.message || 'Something went wrong. Please try again.';
+                            if (data.errors) {
+                                const first = Object.values(data.errors).flat()[0];
+                                this.errorMessage = first || data.message || 'Please check your photos (max 3, 3MB each, JPG/PNG/WebP).';
+                            } else {
+                                this.errorMessage = data.message || 'Something went wrong. Please try again.';
+                            }
                             return;
                         }
                         if (this.selectedBooking && this.selectedItem) {

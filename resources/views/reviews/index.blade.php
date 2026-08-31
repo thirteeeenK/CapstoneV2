@@ -60,7 +60,12 @@
             @endif
 
             {{-- Controls + feed --}}
-            <div x-data="reviewHub({{ Js::from($reviews) }})" class="mt-8 animate-fade-up">
+            <div x-data="reviewHub({{ Js::from($reviews) }})" x-init="$watch('lightbox', v => document.body.classList.toggle('overflow-hidden', !!v))" class="mt-8 animate-fade-up">
+                {{-- Lightbox --}}
+                <div x-show="lightbox" x-cloak @click="lightbox=null" @keydown.escape.window="lightbox=null" x-transition.opacity class="fixed inset-0 z-[80] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+                    <img :src="lightbox" class="max-w-full max-h-[85vh] rounded-2xl shadow-2xl border border-white/20">
+                    <button type="button" @click="lightbox=null" class="absolute top-4 right-4 w-9 h-9 rounded-full bg-white/90 text-slate-700 flex items-center justify-center cursor-pointer"><span class="material-symbols-outlined text-[18px]">close</span></button>
+                </div>
 
                 {{-- Tab bar --}}
                 <div class="flex items-center gap-2 flex-wrap mb-4">
@@ -186,6 +191,16 @@
 
                             <p class="text-sm text-slate-600 leading-relaxed mt-4" x-text="review.comment"></p>
 
+                            <template x-if="review.images && review.images.length">
+                                <div class="mt-3 grid grid-cols-3 gap-2">
+                                    <template x-for="(img, idx) in review.images.slice(0,3)" :key="idx">
+                                        <button type="button" @click="lightbox = img" class="group relative overflow-hidden rounded-xl border border-sand-200 cursor-zoom-in">
+                                            <img :src="img" :alt="review.entity_label + ' photo ' + (idx+1)" class="w-full h-24 sm:h-28 object-cover group-hover:scale-105 transition">
+                                        </button>
+                                    </template>
+                                </div>
+                            </template>
+
                             <div class="mt-4 flex items-center gap-1.5 flex-wrap">
                                 <template x-for="(tag, ti) in review.keywords.slice(0, 5)" :key="ti">
                                     <span
@@ -216,6 +231,7 @@
                 return {
                     all: initialReviews,
                     filtered: initialReviews,
+                    lightbox: null,
                     tab: 'all',
                     minRating: 0,
                     sentiment: '',

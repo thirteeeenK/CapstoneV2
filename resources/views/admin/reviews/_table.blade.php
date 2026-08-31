@@ -60,6 +60,16 @@
                     </td>
                     <td class="px-4 py-3.5">
                         <p class="text-[11px] text-slate-600 line-clamp-2 group-hover:line-clamp-none max-w-[260px]">{{ $review->comment }}</p>
+                        @if(!empty($review->images) && is_array($review->images))
+                            <div class="flex gap-1.5 mt-2">
+                                @foreach(array_slice($review->images,0,3) as $img)
+                                    @php $url = \App\Concerns\ResolvesImages::resolveImg($img); @endphp
+                                    <a href="{{ $url }}" target="_blank" class="block w-10 h-10 rounded-md overflow-hidden border border-slate-200 hover:opacity-80 transition">
+                                        <img src="{{ $url }}" alt="review photo" class="w-full h-full object-cover">
+                                    </a>
+                                @endforeach
+                            </div>
+                        @endif
                     </td>
                     <td class="px-4 py-3.5">
                         <span class="inline-flex px-2 py-0.5 rounded-lg text-[10px] font-bold {{ $review->is_published ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-slate-100 text-slate-500 border border-slate-200' }}">

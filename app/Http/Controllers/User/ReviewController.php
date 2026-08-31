@@ -64,9 +64,14 @@ class ReviewController extends Controller
             'booking_item_id' => ['required', 'integer', Rule::exists('booking_items', 'id')],
             'rating' => ['required', 'integer', 'min:1', 'max:5'],
             'comment' => ['required', 'string', 'min:10', 'max:1000'],
+            'images' => ['nullable', 'array', 'max:3'],
+            'images.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:3072'],
         ]);
 
         $booking = Booking::findOrFail($validated['booking_id']);
+
+        // ponytail: optional 3×3MB, local public disk default, R2 when REVIEWS_DISK=r2
+        $imageFiles = $request->hasFile('images') ? array_slice((array) $request->file('images'), 0, 3) : null;
 
         try {
             $review = $this->reviewService->store(
@@ -75,6 +80,7 @@ class ReviewController extends Controller
                 $validated['rating'],
                 trim($validated['comment']),
                 $validated['booking_item_id'],
+                $imageFiles,
             );
         } catch (HttpException $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], $e->getStatusCode());

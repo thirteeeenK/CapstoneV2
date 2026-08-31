@@ -353,14 +353,19 @@ class AdminReviewController extends Controller
                 'manual_entity_id' => ['required', 'integer'],
                 'rating' => ['required', 'integer', 'between:1,5'],
                 'comment' => ['required', 'string', 'min:10', 'max:2000'],
+                'images' => ['nullable', 'array', 'max:3'],
+                'images.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:3072'],
             ]);
+
+            $manualImages = $request->hasFile('images') ? array_slice((array) $request->file('images'), 0, 3) : null;
 
             $review = app(ReviewService::class)->manualAdminStore(
                 $validated['reviewer_name'],
                 $validated['manual_entity_type'],
                 (int) $validated['manual_entity_id'],
                 (int) $validated['rating'],
-                $validated['comment']
+                $validated['comment'],
+                $manualImages
             );
 
             return redirect()
@@ -373,15 +378,20 @@ class AdminReviewController extends Controller
             'booking_item_id' => ['nullable', 'integer'],
             'rating' => ['required', 'integer', 'between:1,5'],
             'comment' => ['required', 'string', 'min:10', 'max:2000'],
+            'images' => ['nullable', 'array', 'max:3'],
+            'images.*' => ['image', 'mimes:jpg,jpeg,png,webp', 'max:3072'],
         ]);
 
         $booking = Booking::findOrFail($validated['booking_id']);
+        $adminImages = $request->hasFile('images') ? array_slice((array) $request->file('images'), 0, 3) : null;
 
         $review = app(ReviewService::class)->adminStore(
             $booking,
             (int) $validated['rating'],
             $validated['comment'],
-            ! empty($validated['booking_item_id']) ? (int) $validated['booking_item_id'] : null
+            ! empty($validated['booking_item_id']) ? (int) $validated['booking_item_id'] : null,
+            null,
+            $adminImages
         );
 
         return redirect()
@@ -395,6 +405,7 @@ class AdminReviewController extends Controller
     public function destroy(int $id): RedirectResponse
     {
         $review = Review::findOrFail($id);
+        app(ReviewService::class)->deleteReviewImages($review->images ?? []);
         $review->delete();
 
         return back()->with('success', "Review #{$review->id} deleted.");

@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Concerns\ResolvesImages;
 use App\Jobs\ProcessReviewSentimentJob;
 use App\Jobs\UpdateEntityReviewSummaryJob;
 use App\Models\ActivityModel;
@@ -14,7 +15,9 @@ use App\Models\ReviewSummary;
 use App\Models\RoomType;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Relations\Relation;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Storage;
 
 class ReviewService
 {
@@ -90,8 +93,10 @@ class ReviewService
 
     /**
      * Store a verified review, then kick off async AI sentiment + summary jobs.
+     *
+     * @param  array<int, UploadedFile>|null  $imageFiles
      */
-    public function store(User $user, Booking $booking, int $rating, string $comment, ?int $bookingItemId = null): Review
+    public function store(User $user, Booking $booking, int $rating, string $comment, ?int $bookingItemId = null, ?array $imageFiles = null): Review
     {
         $this->assertEligible($user, $booking, $bookingItemId);
 
@@ -113,6 +118,8 @@ class ReviewService
 
         abort_unless($target, 422, 'This booking has no reviewable items.');
 
+        $imagePaths = $this->storeReviewImages($imageFiles);
+
         $review = Review::create([
             'booking_id' => $booking->id,
             'booking_item_id' => $item->id,
@@ -125,6 +132,7 @@ class ReviewService
             'package_id' => $target['package_id'],
             'rating' => $rating,
             'comment' => $comment,
+            'images' => $imagePaths,
             'sentiment' => Review::SENTIMENT_NEUTRAL,
             'sentiment_score' => 0.5000,
             'extracted_keywords' => [],
@@ -144,8 +152,10 @@ class ReviewService
      * Admin-authored backfill review for a past booking that was never
      * reviewed. Bypasses user ownership checks but still requires a
      * completed booking with no existing review.
+     *
+     * @param  array<int, UploadedFile>|null  $imageFiles
      */
-    public function adminStore(Booking $booking, int $rating, string $comment, ?int $bookingItemId = null, ?User $user = null): Review
+    public function adminStore(Booking $booking, int $rating, string $comment, ?int $bookingItemId = null, ?User $user = null, ?array $imageFiles = null): Review
     {
         abort_unless($booking->status === Booking::STATUS_COMPLETED, 422, 'Only completed bookings can be reviewed.');
 
@@ -182,6 +192,8 @@ class ReviewService
 
         abort_unless($target, 422, 'This booking has no reviewable items.');
 
+        $imagePaths = $this->storeReviewImages($imageFiles);
+
         $review = Review::create([
             'booking_id' => $booking->id,
             'booking_item_id' => $item->id,
@@ -194,6 +206,7 @@ class ReviewService
             'package_id' => $target['package_id'],
             'rating' => $rating,
             'comment' => $comment,
+            'images' => $imagePaths,
             'sentiment' => Review::SENTIMENT_NEUTRAL,
             'sentiment_score' => 0.5000,
             'extracted_keywords' => [],
@@ -212,8 +225,10 @@ class ReviewService
     /**
      * Manually authored review by an admin for pre-system bookings
      * or external feedback. No booking or user record required.
+     *
+     * @param  array<int, UploadedFile>|null  $imageFiles
      */
-    public function manualAdminStore(string $reviewerName, string $entityType, int $entityId, int $rating, string $comment): Review
+    public function manualAdminStore(string $reviewerName, string $entityType, int $entityId, int $rating, string $comment, ?array $imageFiles = null): Review
     {
         $class = Relation::getMorphedModel($entityType) ?? $entityType;
 
@@ -246,6 +261,8 @@ class ReviewService
             $payload['hotel_id'] = $entity->getKey();
         }
 
+        $imagePaths = $this->storeReviewImages($imageFiles);
+
         $review = Review::create([
             'booking_id' => null,
             'user_id' => null,
@@ -258,6 +275,7 @@ class ReviewService
             'package_id' => $payload['package_id'],
             'rating' => $rating,
             'comment' => $comment,
+            'images' => $imagePaths,
             'sentiment' => Review::SENTIMENT_NEUTRAL,
             'sentiment_score' => 0.5000,
             'extracted_keywords' => [],
@@ -399,6 +417,8 @@ class ReviewService
             $location = $target->destination?->name;
         }
 
+        $images = $review->images ?? [];
+
         return [
             'id' => $review->id,
             'entity_type' => $review->reviewable_type,
@@ -406,6 +426,8 @@ class ReviewService
             'entity_location' => $location,
             'rating' => (int) $review->rating,
             'comment' => $review->comment,
+            'images' => array_map(fn (?string $p) => $p ? ResolvesImages::resolveImg($p) : null, $images),
+            'images_raw' => $images,
             'sentiment' => $review->sentiment,
             'sentiment_score' => (float) $review->sentiment_score,
             'keywords' => $review->extracted_keywords ?? [],
@@ -428,6 +450,49 @@ class ReviewService
             ->limit($limit)
             ->get()
             ->map(fn (Review $review) => $this->presentForFeed($review));
+    }
+
+    /**
+     * Persist up to 3 review images to the configured disk.
+     *
+     * @param  array<int, UploadedFile>|null  $files
+     * @return array<int, string>
+     */
+    protected function storeReviewImages(?array $files): array
+    {
+        if (empty($files)) {
+            return [];
+        }
+
+        $disk = config('filesystems.reviews_disk', config('filesystems.default', 'public'));
+        $paths = [];
+
+        foreach (array_slice($files, 0, 3) as $file) {
+            if (! $file instanceof UploadedFile || ! $file->isValid()) {
+                continue;
+            }
+            $paths[] = $file->store('reviews', $disk);
+        }
+
+        return $paths;
+    }
+
+    /**
+     * Delete review image files from storage.
+     *
+     * @param  array<int, string>|null  $paths
+     */
+    public function deleteReviewImages(?array $paths): void
+    {
+        if (empty($paths)) {
+            return;
+        }
+
+        $disk = config('filesystems.reviews_disk', config('filesystems.default', 'public'));
+
+        foreach ($paths as $path) {
+            Storage::disk($disk)->delete($path);
+        }
     }
 
     /**
