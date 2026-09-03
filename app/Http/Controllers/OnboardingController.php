@@ -123,7 +123,27 @@ class OnboardingController extends Controller
             $explainer->invalidateForUser($preference);
         }
 
-        return redirect()->route('dashboard')->with('success', 'Your AI Travel Profile has been saved! Welcome to your Dashboard.');
+        return redirect()->route('onboarding.processing')->with('success', 'Your AI Travel Profile has been saved! Generating your personalized recommendations...');
+    }
+
+    /**
+     * Show the post-onboarding generating/processing interstitial.
+     * ponytail: fixed 5s timer perception only, real explainer is lazy on dashboard; add polling/status endpoint if latency >8s.
+     */
+    public function processing()
+    {
+        $user = Auth::user();
+        $vector = $user ? $this->parseVector($user->preferences_embedding) : null;
+        $isPersonalized = ! empty($vector) && $user->preferences_embedding !== '[0]' && array_sum(array_map('abs', $vector)) > 0.0001;
+
+        if (! $isPersonalized) {
+            return redirect()->route('dashboard');
+        }
+
+        $preference = $user->userPreference;
+        $destinationName = $preference?->destination ?: 'your islands';
+
+        return view('onboarding.processing', compact('user', 'preference', 'destinationName', 'isPersonalized'));
     }
 
     /**

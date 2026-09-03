@@ -1,5 +1,15 @@
-<div x-data="chatWidget()" x-init="init()" class="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3"
-    x-trap="open">
+<div x-data="chatWidget()" x-init="init()"
+     @cart-drawer-toggle.window="cartOpen = $event.detail.open; if (cartOpen && open) open = false"
+     x-show="!cartOpen"
+     x-cloak
+     x-transition:enter="transition ease-out duration-200"
+     x-transition:enter-start="opacity-0 scale-90 translate-y-2"
+     x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+     x-transition:leave="transition ease-in duration-150"
+     x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+     x-transition:leave-end="opacity-0 scale-90 translate-y-2"
+     class="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-3"
+     x-trap="open">
     {{-- Floating bubble button --}}
     <button @click="toggle()"
         class="relative w-14 h-14 rounded-full bg-gradient-to-r from-ocean-600 to-ocean-700 text-white shadow-xl shadow-ocean-600/30 flex items-center justify-center transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ocean-400 focus:ring-offset-2 hover:scale-105 active:scale-95 cursor-pointer"
@@ -396,6 +406,7 @@
     function chatWidget() {
         return {
             open: false,
+            cartOpen: false,
             input: '',
             messages: [],
             sending: false,

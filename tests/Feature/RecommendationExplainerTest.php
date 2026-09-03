@@ -23,7 +23,7 @@ it('persists structured preferences when onboarding is completed', function () {
             'amenities' => ['Spa Services', 'Infinity Pool'],
             'notes' => 'Quiet villa with sunset views',
         ])
-        ->assertRedirect(route('dashboard'));
+        ->assertRedirect(route('onboarding.processing'));
 
     $this->assertDatabaseHas('user_preferences', [
         'user_id' => $user->id,
@@ -276,7 +276,7 @@ it('regenerates explanations after preferences are updated', function () {
             'traveler_type' => 'Solo Traveler',
             'amenities' => ['Scuba Diving'],
         ])
-        ->assertRedirect(route('dashboard'));
+        ->assertRedirect(route('onboarding.processing'));
 
     $user->refresh();
     $user->preferences_embedding = embeddingVector();

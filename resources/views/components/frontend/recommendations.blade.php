@@ -80,8 +80,8 @@
                 {{-- AI Mode Filters --}}
                 @if($hasAi)
                     <div x-show="mode === 'ai'" x-cloak
-                        class="flex items-center gap-2 overflow-x-auto pb-1 lg:pb-0 max-w-full p-1.5 bg-slate-100/90 rounded-2xl border border-slate-200">
-                        <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-2 shrink-0 flex items-center gap-1">
+                        class="flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden max-w-full p-1.5 bg-slate-100/80 rounded-2xl border border-slate-200">
+                        <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider pl-2.5 pr-1 shrink-0 flex items-center gap-1.5 select-none">
                             <span class="material-symbols-outlined text-[15px] text-slate-400">filter_alt</span>
                             <span>Sanctuary:</span>
                         </span>
@@ -100,8 +100,8 @@
                 {{-- Default Mode Filters --}}
                 @if($hasDefault)
                     <div x-show="mode === 'default'" x-cloak
-                        class="flex items-center gap-2 overflow-x-auto pb-1 lg:pb-0 max-w-full p-1.5 bg-slate-100/90 rounded-2xl border border-slate-200">
-                        <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-2 shrink-0 flex items-center gap-1">
+                        class="flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden max-w-full p-1.5 bg-slate-100/80 rounded-2xl border border-slate-200">
+                        <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider pl-2.5 pr-1 shrink-0 flex items-center gap-1.5 select-none">
                             <span class="material-symbols-outlined text-[15px] text-slate-400">filter_alt</span>
                             <span>Sanctuary:</span>
                         </span>
@@ -120,8 +120,8 @@
                 {{-- Packages Mode Filters --}}
                 @if($hasDefault)
                     <div x-show="mode === 'packages'" x-cloak
-                        class="flex items-center gap-2 overflow-x-auto pb-1 lg:pb-0 max-w-full p-1.5 bg-slate-100/90 rounded-2xl border border-slate-200">
-                        <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-2 shrink-0 flex items-center gap-1">
+                        class="flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden max-w-full p-1.5 bg-slate-100/80 rounded-2xl border border-slate-200">
+                        <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider pl-2.5 pr-1 shrink-0 flex items-center gap-1.5 select-none">
                             <span class="material-symbols-outlined text-[15px] text-slate-400">filter_alt</span>
                             <span>Sanctuary:</span>
                         </span>

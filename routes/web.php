@@ -28,6 +28,7 @@ use App\Http\Controllers\OnboardingController;
 Route::middleware(['auth', 'throttle:users'])->group(function () {
     Route::get('/onboarding', [OnboardingController::class, 'index'])->name('onboarding.index');
     Route::post('/onboarding', [OnboardingController::class, 'store'])->name('onboarding.store');
+    Route::get('/onboarding/processing', [OnboardingController::class, 'processing'])->name('onboarding.processing');
     Route::match(['get', 'post'], '/onboarding/reset', [OnboardingController::class, 'reset'])->name('onboarding.reset');
     Route::match(['get', 'post'], '/onboarding/skip', [OnboardingController::class, 'skip'])->name('onboarding.skip');
 

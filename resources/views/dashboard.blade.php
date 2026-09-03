@@ -42,9 +42,39 @@
                 </div>
             </div>
 
+            {{-- Reinforcing CTA: one-time nudge after onboarding processing --}}
+            @if(session('success') && $isPersonalized)
+                <div x-data="{ show: true }" x-show="show" x-transition.opacity.duration.300ms
+                     class="bg-sky-50 border border-sky-200 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
+                    <div class="flex gap-3">
+                        <span class="material-symbols-outlined text-sky-600 text-[22px] shrink-0 mt-0.5">auto_awesome</span>
+                        <div class="space-y-1">
+                            <p class="text-sm font-black text-sky-900 font-headline">Your AI matches are ready!</p>
+                            <p class="text-xs text-sky-800 leading-relaxed max-w-2xl">
+                                Open the <span class="font-bold">AI Recommendations</span> tab below to see your Top 5 stays &amp; Top 5 experiences ranked for your vibe. Travelers who start there find a great match faster.
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+                        <a href="#recommendations"
+                           onclick="event.preventDefault(); document.querySelector('section[x-data]')?.scrollIntoView({behavior:'smooth', block:'start'});"
+                           class="flex-1 sm:flex-none inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-extrabold text-xs shadow-sm transition-colors">
+                            <span>View AI Recommendations</span>
+                            <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+                        </a>
+                        <button type="button" @click="show = false"
+                                class="p-2 rounded-full hover:bg-sky-100 text-sky-700 transition-colors shrink-0" aria-label="Dismiss">
+                            <span class="material-symbols-outlined text-[18px]">close</span>
+                        </button>
+                    </div>
+                </div>
+            @endif
+
             {{-- AI Recommendations & Default Listings Tabs Section (First Priority) --}}
-            <x-frontend.recommendations :is-personalized="$isPersonalized" :ai-recommendations="$aiRecommendations"
-                :default-recommendations="$defaultRecommendations" :preferred-dest-id="$preferredDestId ?? null" />
+            <div id="recommendations">
+                <x-frontend.recommendations :is-personalized="$isPersonalized" :ai-recommendations="$aiRecommendations"
+                    :default-recommendations="$defaultRecommendations" :preferred-dest-id="$preferredDestId ?? null" />
+            </div>
 
             {{-- DSS Destination Overview Map Section (Below Recommendations) --}}
             @if(!empty($mapMarkers))

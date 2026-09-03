@@ -13,6 +13,7 @@
     
     <!-- Vite for Tailwind/Local CSS -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @stack('head')
 
     <!-- Flatpickr Date Picker CDN -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"/>
