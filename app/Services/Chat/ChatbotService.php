@@ -87,16 +87,25 @@ class ChatbotService
             return array_merge(['status' => 'success', 'control' => 'ai', 'session_token' => $session->session_token, 'reply' => $text], $reply);
         }
 
-        // Affirmative like "yes search" after bot offered to search → treat as Boracay hotel/room search
+        // Affirmative like "yes search" after bot offered to search → repeat the
+        // OFFERED search (activity/package/hotel/room), not hardcoded rooms
         if ($lastBot && $this->isAffirmativeSearchQuery($message, $lastBot)) {
-            $intent = IntentRouter::ROOM_SEARCH;
+            // The current user message is already persisted, so the latest
+            // *previous* user message is the second-latest user row.
+            $previousUser = $session->messages()->where('sender', 'user')->latest()->skip(1)->first();
+            $intent = $this->resolveAffirmativeIntent($lastBot, $previousUser?->message);
             $constraints = $this->intentRouter->extractConstraints($message);
             $constraints = $this->resolveConversationalDestination($constraints, $session);
             $constraints = $this->resolveDefaultDestination($constraints, $user);
-            // If still no destination but last turn had one, force it
-            $reply = $this->handleRoomSearch($message, $constraints, $user, $session);
+            $reply = match ($intent) {
+                IntentRouter::ACTIVITY_SEARCH => $this->handleActivitySearch($message, $constraints, $user, $session),
+                IntentRouter::HOTEL_SEARCH => $this->handleHotelSearch($message, $constraints, $user, $session),
+                IntentRouter::PACKAGE_SEARCH => $this->handlePackageSearch($message, $constraints, $user, $session),
+                IntentRouter::ADDON_SEARCH => $this->handleAddOnSearch($message, $constraints, $user, $session),
+                default => $this->handleRoomSearch($message, $constraints, $user, $session),
+            };
             // Fallback to hotel search if room search yields nothing but hotels exist
-            if (empty($reply['retrieved_rooms']) && ! empty($constraints['destination_id'])) {
+            if ($intent === IntentRouter::ROOM_SEARCH && empty($reply['retrieved_rooms']) && ! empty($constraints['destination_id'])) {
                 $hotelReply = $this->handleHotelSearch($message, $constraints, $user, $session);
                 if (! empty($hotelReply['retrieved_hotels'])) {
                     $reply = $hotelReply;
@@ -126,6 +135,25 @@ class ChatbotService
             : $this->intentRouter->extractConstraints($message);
         $constraints = $this->resolveConversationalDestination($constraints, $session);
         $constraints = $this->resolveDefaultDestination($constraints, $user);
+
+        // Semantic catalog routing: keyword misses (e.g. a new offering with no
+        // keyword yet) fall back to embeddings instead of defaulting to rooms.
+        // Keyword hits and named hotels/rooms always keep their intent.
+        if (
+            $intent === IntentRouter::ROOM_SEARCH
+            && ! $this->intentRouter->hasExplicitCatalogIntent($message)
+            && empty($constraints['hotel_id']) && empty($constraints['hotel_name'])
+            && empty($constraints['room_id']) && empty($constraints['room_name'])
+        ) {
+            $catalog = $this->gemini->resolveSemanticCatalog($message, $constraints['destination_id'] ?? null);
+            $intent = match ($catalog) {
+                'activities' => IntentRouter::ACTIVITY_SEARCH,
+                'hotels' => IntentRouter::HOTEL_SEARCH,
+                'packages' => IntentRouter::PACKAGE_SEARCH,
+                'addons' => IntentRouter::ADDON_SEARCH,
+                default => $intent,
+            };
+        }
 
         $reply = match ($intent) {
             IntentRouter::ROOM_SEARCH => $this->handleRoomSearch($message, $constraints, $user, $session),
@@ -655,7 +683,7 @@ class ChatbotService
 
         $context = $this->gemini->extractPricingContext($context, $query);
         $prompt = $this->buildPrompt('room-search', $context, $query, $user);
-        $reply = $this->geminiChatResponse($prompt, $session);
+        $reply = $this->stripRankLineIfSingle($this->geminiChatResponse($prompt, $session), $scored);
         // Visible filter badge when destination was inherited for a bare amenity refinement
         $hadExplicitDest = (bool) $this->intentRouter->extractDestinationName($query);
         if (! $hadExplicitDest && ! empty($constraints['destination_name'])) {
@@ -682,7 +710,7 @@ class ChatbotService
 
         $context = $this->gemini->extractPricingContext($context, $query);
         $prompt = $this->buildPrompt('addon-search', $context, $query, $user);
-        $reply = $this->geminiChatResponse($prompt, $session);
+        $reply = $this->stripRankLineIfSingle($this->geminiChatResponse($prompt, $session), $scored);
 
         return [
             'reply' => $reply,
@@ -722,7 +750,7 @@ class ChatbotService
         // Booking data is identity-scoped: guests must log in, no code-based lookup
         if (! $user) {
             return [
-                'reply' => 'Please log in to your SunnyTrips account and ask again — I\'ll pull up your bookings and their latest status.',
+                'reply' => 'Please [log in]('.route('login').') to your SunnyTrips account and ask again — I\'ll pull up your bookings and their latest status.',
             ];
         }
 
@@ -749,7 +777,27 @@ class ChatbotService
         $prompt = $this->buildPrompt('booking-status', $context, $query, $user);
         $reply = $this->geminiChatResponse($prompt, $session);
 
-        return ['reply' => $reply];
+        return ['reply' => $this->linkifyBookingReferences($reply, $bookings)];
+    }
+
+    /**
+     * Deterministically repair booking links Gemini flattened to plain text.
+     * The model often drops the (url) half of [label](url); reattach it here
+     * so every "View full details for CODE" always renders clickable.
+     */
+    protected function linkifyBookingReferences(string $reply, $bookings): string
+    {
+        foreach ($bookings as $booking) {
+            $url = route('booking.show', $booking->booking_code);
+            $label = 'View full details for '.$booking->booking_code;
+            $markdown = "[{$label}]({$url})";
+            if (str_contains($reply, $markdown)) {
+                continue;
+            }
+            $reply = str_replace($label, $markdown, $reply);
+        }
+
+        return $reply;
     }
 
     protected function buildBookingContext($bookings): string
@@ -778,7 +826,7 @@ class ChatbotService
             if ($booking->status === Booking::STATUS_CANCELLED && $booking->cancellation_reason) {
                 $lines[] = 'Cancellation Reason: '.$booking->cancellation_reason;
             }
-            $lines[] = 'View full details: '.route('booking.show', $booking->booking_code);
+            $lines[] = 'View full details: [View full details for '.$booking->booking_code.']('.route('booking.show', $booking->booking_code).')';
 
             $blocks[] = implode("\n", $lines);
         }
@@ -798,22 +846,35 @@ class ChatbotService
             }
         }
         $scored = null;
-        if ($this->isPersonalized($user)) {
-            $blended = $this->blendedVector($user, $query);
-            if ($blended) {
-                $candidates = HotelModel::with('destination')
-                    ->where('is_shown', true)
-                    ->whereNotNull('embedding')
-                    ->when(! empty($constraints['hotel_id']), fn ($q) => $q->where('id', $constraints['hotel_id']))
-                    ->when(! empty($constraints['destination_id']), fn ($q) => $q->where('destination_id', $constraints['destination_id']))
-                    ->get();
-                if ($candidates->isNotEmpty()) {
-                    $scored = $this->gemini->rankRecommendations($blended, $candidates, $limit);
-                }
+
+        // Exact-match shortcut: if a specific hotel name is extracted, return just that hotel.
+        if (! empty($constraints['hotel_name'])) {
+            $hotel = HotelModel::with('destination')
+                ->where('hotel_name', 'ILIKE', $constraints['hotel_name'])
+                ->first();
+            if ($hotel) {
+                $scored = [['item' => $hotel, 'score' => 1.0]];
             }
         }
+
         if ($scored === null) {
-            $scored = $this->gemini->searchHotels($query, $limit, $constraints['hotel_id'] ?? null, $constraints['destination_id'] ?? null);
+            if ($this->isPersonalized($user)) {
+                $blended = $this->blendedVector($user, $query);
+                if ($blended) {
+                    $candidates = HotelModel::with('destination')
+                        ->where('is_shown', true)
+                        ->whereNotNull('embedding')
+                        ->when(! empty($constraints['hotel_id']), fn ($q) => $q->where('id', $constraints['hotel_id']))
+                        ->when(! empty($constraints['destination_id']), fn ($q) => $q->where('destination_id', $constraints['destination_id']))
+                        ->get();
+                    if ($candidates->isNotEmpty()) {
+                        $scored = $this->gemini->rankRecommendations($blended, $candidates, $limit);
+                    }
+                }
+            }
+            if ($scored === null) {
+                $scored = $this->gemini->searchHotels($query, $limit, $constraints['hotel_id'] ?? null, $constraints['destination_id'] ?? null);
+            }
         }
 
         $priceIntent = $this->detectPriceIntent($query);
@@ -828,7 +889,7 @@ class ChatbotService
         }
 
         $prompt = $this->buildPrompt('hotel-search', $context, $query, $user);
-        $reply = $this->geminiChatResponse($prompt, $session);
+        $reply = $this->stripRankLineIfSingle($this->geminiChatResponse($prompt, $session), $scored);
         $hadExplicitDest = (bool) $this->intentRouter->extractDestinationName($query);
         if (! $hadExplicitDest && ! empty($constraints['destination_name'])) {
             $lastBotBadge = $session->messages()->where('sender', 'bot')->latest()->first();
@@ -1112,12 +1173,59 @@ class ChatbotService
             return true;
         }
         $data = $lastBot->context_data ?: [];
-        // If last turn was activities and user said yes, they likely want hotels/rooms in same destination
+        // If last turn returned activities and user said yes, they likely want
+        // to proceed with that activity offer (resolved by resolveAffirmativeIntent)
         if (! empty($data['retrieved_activities']) && preg_match('/\b(yes|yep|ok|search)\b/i', $lower)) {
             return true;
         }
 
         return false;
+    }
+
+    /**
+     * Inherit the search intent the bot actually offered. Precedence: explicit
+     * offer in the bot text first, then the catalog the user was discussing
+     * (their previous message — immune to cards carried over by follow-ups),
+     * then stored cards, defaulting to ROOM_SEARCH.
+     */
+    protected function resolveAffirmativeIntent(ChatMessage $lastBot, ?string $previousUserMessage = null): string
+    {
+        $text = mb_strtolower($lastBot->message ?? '');
+        if (str_contains($text, 'activit')) {
+            return IntentRouter::ACTIVITY_SEARCH;
+        }
+        if (str_contains($text, 'package')) {
+            return IntentRouter::PACKAGE_SEARCH;
+        }
+        if (str_contains($text, 'hotel')) {
+            return IntentRouter::HOTEL_SEARCH;
+        }
+        if (str_contains($text, 'add-on') || str_contains($text, 'addon')) {
+            return IntentRouter::ADDON_SEARCH;
+        }
+        if (str_contains($text, 'room')) {
+            return IntentRouter::ROOM_SEARCH;
+        }
+
+        if ($previousUserMessage && ($catalog = $this->intentRouter->explicitCatalogIntent($previousUserMessage))) {
+            return $catalog;
+        }
+
+        $data = $lastBot->context_data ?: [];
+        if (! empty($data['retrieved_activities'])) {
+            return IntentRouter::ACTIVITY_SEARCH;
+        }
+        if (! empty($data['retrieved_packages'])) {
+            return IntentRouter::PACKAGE_SEARCH;
+        }
+        if (! empty($data['retrieved_hotels'])) {
+            return IntentRouter::HOTEL_SEARCH;
+        }
+        if (! empty($data['retrieved_addons'])) {
+            return IntentRouter::ADDON_SEARCH;
+        }
+
+        return IntentRouter::ROOM_SEARCH;
     }
 
     protected function buildUserProfileText(?User $user): ?string
@@ -1164,36 +1272,50 @@ class ChatbotService
         $constraints = $this->resolveConversationalDestination($constraints, $session);
         $constraints = $this->resolveDefaultDestination($constraints, $user);
         $scored = null;
-        if ($this->isPersonalized($user)) {
-            $blended = $this->blendedVector($user, $query);
-            if ($blended) {
-                $candidates = ActivityModel::with('destination')
-                    ->where('is_shown', true)
-                    ->whereNotNull('embedding')
-                    ->when(! empty($constraints['destination_id']), fn ($q) => $q->where('destination_id', $constraints['destination_id']))
-                    ->get();
-                if ($candidates->isNotEmpty()) {
-                    $scored = $this->gemini->rankRecommendations($blended, $candidates, 3);
-                }
+
+        // Exact-match shortcut: if a specific activity name is extracted, return just that activity.
+        if (! empty($constraints['activity_name'])) {
+            $activity = ActivityModel::with('destination')
+                ->where('activity_name', 'ILIKE', $constraints['activity_name'])
+                ->first();
+            if ($activity) {
+                $scored = [['item' => $activity, 'score' => 1.0]];
             }
         }
+
         if ($scored === null) {
-            $scored = $this->gemini->searchActivities($query, 3);
-            // If personalized default added destination but global search returned broader set, re-rank with blended for that destination
-            if ($this->isPersonalized($user) && ! empty($constraints['destination_id']) && ! empty($scored)) {
+            if ($this->isPersonalized($user)) {
                 $blended = $this->blendedVector($user, $query);
                 if ($blended) {
-                    $destCandidates = ActivityModel::with('destination')
+                    $candidates = ActivityModel::with('destination')
                         ->where('is_shown', true)
                         ->whereNotNull('embedding')
-                        ->where('destination_id', $constraints['destination_id'])
+                        ->when(! empty($constraints['destination_id']), fn ($q) => $q->where('destination_id', $constraints['destination_id']))
                         ->get();
-                    if ($destCandidates->isNotEmpty()) {
-                        $scored = $this->gemini->rankRecommendations($blended, $destCandidates, 3);
+                    if ($candidates->isNotEmpty()) {
+                        $scored = $this->gemini->rankRecommendations($blended, $candidates, 3);
+                    }
+                }
+            }
+            if ($scored === null) {
+                $scored = $this->gemini->searchActivities($query, 3, $constraints['destination_id'] ?? null);
+                // If personalized default added destination but global search returned broader set, re-rank with blended for that destination
+                if ($this->isPersonalized($user) && ! empty($constraints['destination_id']) && ! empty($scored)) {
+                    $blended = $this->blendedVector($user, $query);
+                    if ($blended) {
+                        $destCandidates = ActivityModel::with('destination')
+                            ->where('is_shown', true)
+                            ->whereNotNull('embedding')
+                            ->where('destination_id', $constraints['destination_id'])
+                            ->get();
+                        if ($destCandidates->isNotEmpty()) {
+                            $scored = $this->gemini->rankRecommendations($blended, $destCandidates, 3);
+                        }
                     }
                 }
             }
         }
+
         $context = $this->gemini->getActivityContext($scored);
 
         if (empty(trim($context))) {
@@ -1201,7 +1323,7 @@ class ChatbotService
         }
 
         $prompt = $this->buildPrompt('activity-search', $context, $query, $user);
-        $reply = $this->geminiChatResponse($prompt, $session);
+        $reply = $this->stripRankLineIfSingle($this->geminiChatResponse($prompt, $session), $scored);
 
         return [
             'reply' => $reply,
@@ -1215,21 +1337,34 @@ class ChatbotService
         $constraints = $this->resolveDefaultDestination($constraints, $user);
         $destinationId = $constraints['destination_id'] ?? null;
         $scored = null;
-        if ($this->isPersonalized($user)) {
-            $blended = $this->blendedVector($user, $query);
-            if ($blended) {
-                $candidates = Package::with('destination')
-                    ->where('is_active', true)
-                    ->whereNotNull('embedding')
-                    ->when($destinationId, fn ($q) => $q->where('destination_id', $destinationId))
-                    ->get();
-                if ($candidates->isNotEmpty()) {
-                    $scored = $this->gemini->rankRecommendations($blended, $candidates, 5);
-                }
+
+        // Exact-match shortcut: if a specific package name is extracted, return just that package.
+        if (! empty($constraints['package_name'])) {
+            $pkg = Package::with('destination')
+                ->where('name', 'ILIKE', $constraints['package_name'])
+                ->first();
+            if ($pkg) {
+                $scored = [['item' => $pkg, 'score' => 1.0]];
             }
         }
+
         if ($scored === null) {
-            $scored = $this->gemini->searchPackages($query, 5, $destinationId);
+            if ($this->isPersonalized($user)) {
+                $blended = $this->blendedVector($user, $query);
+                if ($blended) {
+                    $candidates = Package::with('destination')
+                        ->where('is_active', true)
+                        ->whereNotNull('embedding')
+                        ->when($destinationId, fn ($q) => $q->where('destination_id', $destinationId))
+                        ->get();
+                    if ($candidates->isNotEmpty()) {
+                        $scored = $this->gemini->rankRecommendations($blended, $candidates, 5);
+                    }
+                }
+            }
+            if ($scored === null) {
+                $scored = $this->gemini->searchPackages($query, 5, $destinationId);
+            }
         }
 
         $today = Carbon::now()->startOfDay();
@@ -1257,7 +1392,7 @@ class ChatbotService
 
         $context = $this->gemini->extractPricingContext($context, $query);
         $prompt = $this->buildPrompt('package-search', $context, $query, $user);
-        $reply = $this->geminiChatResponse($prompt, $session);
+        $reply = $this->stripRankLineIfSingle($this->geminiChatResponse($prompt, $session), $scored);
 
         return [
             'reply' => $reply,
@@ -1493,24 +1628,21 @@ class ChatbotService
         $places = $constraints['place_names'] ?? [];
 
         if (count($places) >= 2) {
-            [['name' => $a], ['name' => $b]] = [$places[0], $places[1]];
-            $da = DestinationModel::where('name', 'ILIKE', $a)->first();
-            $db = DestinationModel::where('name', 'ILIKE', $b)->first();
-
-            if ($da && $db && $da->latitude && $da->longitude && $db->latitude && $db->longitude) {
-                $km = $this->distance->haversine(
-                    (float) $da->latitude,
-                    (float) $da->longitude,
-                    (float) $db->latitude,
-                    (float) $db->longitude
-                );
+            $p1 = $places[0];
+            $p2 = $places[1];
+            $coords1 = $this->getPlaceCoords($p1);
+            $coords2 = $this->getPlaceCoords($p2);
+            if ($coords1 && $coords2) {
+                $km = $this->distance->haversine($coords1['lat'], $coords1['lng'], $coords2['lat'], $coords2['lng']);
                 $label = $this->distance->format($km);
+                $name1 = $p1['name'];
+                $name2 = $p2['name'];
 
                 return [
-                    'reply' => "{$da->name} is approximately {$label} from {$db->name}.",
+                    'reply' => "{$name1} is approximately {$label} from {$name2}.",
                     'map' => [
-                        'from' => ['name' => $da->name, 'lat' => $da->latitude, 'lng' => $da->longitude],
-                        'to' => ['name' => $db->name, 'lat' => $db->latitude, 'lng' => $db->longitude],
+                        'from' => ['name' => $name1, 'lat' => $coords1['lat'], 'lng' => $coords1['lng']],
+                        'to' => ['name' => $name2, 'lat' => $coords2['lat'], 'lng' => $coords2['lng']],
                         'distance_km' => round($km, 2),
                         'distance_label' => $label,
                     ],
@@ -1519,22 +1651,24 @@ class ChatbotService
         }
 
         if (! empty($places)) {
-            ['name' => $placeName] = $places[0];
-            $dest = DestinationModel::where('name', 'ILIKE', $placeName)->first();
-            if ($dest && $dest->latitude && $dest->longitude) {
-                $isUserDistance = preg_match('/\b(how far am i|from me|from my location|from here|am i from|distance from me)\b/i', $query)
-                    || (preg_match('/\bhow far\b/i', $query) && preg_match('/\b(i|me|my)\b/i', $query) && count($places) === 1);
+            $place = $places[0];
+            $coords = $this->getPlaceCoords($place);
+            if ($coords) {
+                $isUserDistance = preg_match('/\b(how far am i|from me|from my location|from here|am i from|distance from me|gaano.*kalayo|layo ko|nasaan ako|kinalalagyan|ako|ko|akin)\b/i', $query)
+                    || (preg_match('/\bhow far\b/i', $query) && preg_match('/\b(i|me|my)\b/i', $query) && count($places) === 1)
+                    || (preg_match('/\b(gaano|kalayo|layo)\b/i', $query) && preg_match('/\b(ako|ko|akin|kinalalagyan)\b/i', $query))
+                    || (preg_match('/\bdistance between\b.*\bmy current location\b/i', $query) && count($places) === 1);
 
                 if ($isUserDistance) {
                     if ($userLat !== null && $userLng !== null) {
-                        $km = $this->distance->haversine($userLat, $userLng, (float) $dest->latitude, (float) $dest->longitude);
+                        $km = $this->distance->haversine($userLat, $userLng, $coords['lat'], $coords['lng']);
                         $label = $this->distance->format($km);
 
                         return [
-                            'reply' => "You are approximately {$label} from {$dest->name}.",
+                            'reply' => "You are approximately {$label} from {$place['name']}.",
                             'map' => [
                                 'from' => ['lat' => $userLat, 'lng' => $userLng, 'label' => 'You'],
-                                'to' => ['name' => $dest->name, 'lat' => $dest->latitude, 'lng' => $dest->longitude],
+                                'to' => ['name' => $place['name'], 'lat' => $coords['lat'], 'lng' => $coords['lng']],
                                 'distance_km' => round($km, 2),
                                 'distance_label' => $label,
                             ],
@@ -1542,31 +1676,65 @@ class ChatbotService
                     }
 
                     return [
-                        'reply' => "To calculate how far you are from {$dest->name}, I'll need your current location.",
+                        'reply' => "To calculate how far you are from {$place['name']}, I'll need your current location.",
                         'location_request' => true,
-                        'location_target' => $dest->name,
+                        'location_target' => $place['name'],
                         'map' => [
-                            'target' => ['name' => $dest->name, 'lat' => $dest->latitude, 'lng' => $dest->longitude],
+                            'target' => ['name' => $place['name'], 'lat' => $coords['lat'], 'lng' => $coords['lng']],
                         ],
                     ];
                 }
 
                 return [
-                    'reply' => "{$dest->name} is located at latitude {$dest->latitude}, longitude {$dest->longitude}.",
+                    'reply' => "{$place['name']} is located at latitude {$coords['lat']}, longitude {$coords['lng']}.",
                     'map' => [
-                        'name' => $dest->name,
-                        'lat' => $dest->latitude,
-                        'lng' => $dest->longitude,
+                        'name' => $place['name'],
+                        'lat' => $coords['lat'],
+                        'lng' => $coords['lng'],
                     ],
                 ];
             }
         }
 
-        $examples = $this->exampleDestinations(2);
+        // Build helpful fallback listing known places
+        $knownDestinations = DestinationModel::orderBy('name')->pluck('name')->implode(', ');
+        $knownHotels = HotelModel::whereNotNull('latitude')->whereNotNull('longitude')->orderBy('hotel_name')->limit(5)->pluck('hotel_name')->implode(', ');
+        $suggestions = [];
+        if ($knownDestinations) {
+            $suggestions[] = "destinations like {$knownDestinations}";
+        }
+        if ($knownHotels) {
+            $suggestions[] = "hotels like {$knownHotels}";
+        }
+        $example = ! empty($suggestions) ? 'Try asking about '.implode(' or ', $suggestions).'.' : 'Try "How far is El Nido from Boracay?"';
 
         return [
-            'reply' => 'I could not find the location you mentioned. Try naming a specific destination like "'.$examples.'".',
+            'reply' => 'I could not find the location you mentioned. '.$example,
         ];
+    }
+
+    /**
+     * Get coordinates for a place array (type destination or hotel).
+     */
+    protected function getPlaceCoords(array $place): ?array
+    {
+        if ($place['type'] === 'destination') {
+            $dest = DestinationModel::where('name', 'ILIKE', $place['name'])->first();
+            if ($dest && $dest->latitude && $dest->longitude) {
+                return ['lat' => (float) $dest->latitude, 'lng' => (float) $dest->longitude];
+            }
+        } elseif ($place['type'] === 'hotel') {
+            if (isset($place['model']) && $place['model'] instanceof HotelModel) {
+                $hotel = $place['model'];
+            } else {
+                $hotel = HotelModel::where('hotel_name', 'ILIKE', $place['name'])->first();
+            }
+            if ($hotel && $hotel->latitude && $hotel->longitude) {
+                return ['lat' => (float) $hotel->latitude, 'lng' => (float) $hotel->longitude];
+            }
+        }
+
+        return null;
     }
 
     protected function handleWeatherQuery(string $query, array $constraints, ChatSession $session): array
@@ -1829,25 +1997,6 @@ class ChatbotService
             $suitability = $this->weather->bookingSuitability($forecast);
         }
 
-        // Indoor-friendly activities (infer, no DB column)
-        $allActivities = ActivityModel::where('destination_id', $destinationId)->where('is_shown', true)->get();
-        $indoor = [];
-        $outdoor = [];
-        foreach ($allActivities as $act) {
-            if ($act->isIndoor()) {
-                $indoor[] = $act;
-            } else {
-                $outdoor[] = $act;
-            }
-        }
-
-        // Indoor / alternative destination removed per user spec (Option A trimmed)
-        $indoorSample = [];
-        $indoorContext = '';
-        $altContext = '';
-        $altDestName = null;
-        $altSuitability = null;
-
         // Driest date for current dest
         $driestDate = $suitability['driestDate'] ?? null;
         $driestLabel = 'the driest day in the 5-day';
@@ -1908,7 +2057,7 @@ class ChatbotService
                 'driestDate' => $driestDate,
                 'driestLabel' => $driestLabel,
                 'dailyScores' => $suitability['dailyScores'] ?? [],
-                'alternative' => $altDestName ? ['name' => $altDestName, 'score' => $altSuitability['score'] ?? null, 'label' => $altSuitability['label'] ?? null] : null,
+                'alternative' => null,
             ],
             'weather' => [
                 'destination' => $dest->name,
@@ -2019,6 +2168,7 @@ class ChatbotService
             $rules[] = 'Report ONLY the booking records provided below; never invent or guess a status, amount, or date.';
             $rules[] = 'Do not mention admin notes, internal price adjustments, payment links, or gateway references.';
             $rules[] = 'Suggest opening the full-details link for actions like payment or cancellation requests.';
+            $rules[] = 'Render each booking link EXACTLY in markdown-link format: [View full details for CODE](url) using the URL from that booking record — never output a bare URL.';
         }
 
         if ($stage === 'weather-advisory') {
@@ -2071,6 +2221,22 @@ class ChatbotService
         $examples = $this->exampleDestinations(2);
 
         return "I could not find any {$type} matching your request. Try broadening your search, or ask me about a specific destination like {$examples}!";
+    }
+
+    /**
+     * Gemini sometimes emits the "Ranked by system: #1 is best match, #2+ are
+     * close alternatives" line even when only one result was retrieved.
+     * Strip it deterministically when there are no alternatives to mention.
+     */
+    protected function stripRankLineIfSingle(string $reply, array $scored): string
+    {
+        if (count($scored) >= 2) {
+            return $reply;
+        }
+
+        $cleaned = (string) preg_replace('/^[^\n]*Ranked by (system|AI semantic relevance)[^\n]*\n?/mi', '', $reply);
+
+        return trim((string) preg_replace("/\n{3,}/", "\n\n", $cleaned));
     }
 
     protected function buildAvailabilityContext(array $available, int $pax, int $nights): string

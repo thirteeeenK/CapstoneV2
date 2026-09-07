@@ -2,11 +2,14 @@
 
 namespace App\Services\Chat;
 
+use App\Models\ActivityModel;
 use App\Models\AddOnModel;
 use App\Models\DestinationModel;
 use App\Models\HotelModel;
+use App\Models\Package;
 use App\Models\RoomType;
 use Carbon\Carbon;
+use Carbon\Constants\UnitValue;
 use Illuminate\Support\Facades\Log;
 
 class IntentRouter
@@ -38,30 +41,146 @@ class IntentRouter
     public const BOOKING_STATUS = 'BOOKING_STATUS';
 
     protected array $travelKeywords = [
-        'hotel', 'hotels', 'room', 'rooms', 'resort', 'resorts', 'stay', 'accommodation',
-        'book', 'booking', 'check in', 'check-in', 'check out', 'check-out',
-        'activity', 'activities', 'tour', 'tours', 'island hopping', 'diving', 'snorkeling',
-        'beach', 'beaches', 'trip', 'travel', 'vacation', 'holiday',
-        'itinerary', 'plan', 'planning', 'trip plan', 'travel plan',
-        'available', 'availability', 'open dates',
-        'weather', 'forecast', 'rain', 'sunny', 'temperature', 'climate',
-        'where is', 'how far', 'nearby', 'distance', 'map', 'location', 'locate',
-        'recommend', 'recommendation', 'suggest', 'suggestion', 'best', 'top',
-        'destinasyon', 'bakasyon', 'pasyalan', 'pasyal', 'byahe',
-        'price', 'prices', 'cost', 'budget', 'pesos', 'php', '₱',
-        'rate', 'rates', 'how much', 'magkano', 'presyo',
-        'pax', 'guests', 'persons', 'people', 'couple', 'family', 'family-friendly', 'group', 'solo',
-        'night', 'nights', 'days', 'day', 'weekend', 'week',
-        'package', 'packages', 'promo', 'deal', 'deals', 'bundle', 'tipid', 'all-in', 'all inclusive',
-        'addon', 'add-on', 'add ons', 'transfer', 'pickup', 'surcharge', 'pricing tier',
-        'extra person', 'extra pax', 'additional pax', 'per head', 'per person', 'per night',
-        'max guests', 'max occupants', 'base occupancy', 'additional charge', 'valid until', 'valid from', 'promo period',
+        'hotel',
+        'hotels',
+        'room',
+        'rooms',
+        'resort',
+        'resorts',
+        'stay',
+        'accommodation',
+        'book',
+        'booking',
+        'check in',
+        'check-in',
+        'check out',
+        'check-out',
+        'activity',
+        'activities',
+        'tour',
+        'tours',
+        'island hopping',
+        'diving',
+        'snorkeling',
+        'beach',
+        'beaches',
+        'trip',
+        'travel',
+        'vacation',
+        'holiday',
+        'itinerary',
+        'plan',
+        'planning',
+        'trip plan',
+        'travel plan',
+        'available',
+        'availability',
+        'open dates',
+        'weather',
+        'forecast',
+        'rain',
+        'sunny',
+        'temperature',
+        'climate',
+        'where is',
+        'how far',
+        'nearby',
+        'distance',
+        'map',
+        'location',
+        'locate',
+        'recommend',
+        'recommendation',
+        'suggest',
+        'suggestion',
+        'best',
+        'top',
+        'destinasyon',
+        'bakasyon',
+        'pasyalan',
+        'pasyal',
+        'byahe',
+        'price',
+        'prices',
+        'cost',
+        'budget',
+        'pesos',
+        'php',
+        '₱',
+        'rate',
+        'rates',
+        'how much',
+        'magkano',
+        'presyo',
+        'pax',
+        'guests',
+        'persons',
+        'people',
+        'couple',
+        'family',
+        'family-friendly',
+        'group',
+        'solo',
+        'night',
+        'nights',
+        'days',
+        'day',
+        'weekend',
+        'week',
+        'package',
+        'packages',
+        'promo',
+        'deal',
+        'deals',
+        'bundle',
+        'tipid',
+        'all-in',
+        'all inclusive',
+        'addon',
+        'add-on',
+        'add ons',
+        'transfer',
+        'pickup',
+        'surcharge',
+        'pricing tier',
+        'extra person',
+        'extra pax',
+        'additional pax',
+        'per head',
+        'per person',
+        'per night',
+        'max guests',
+        'max occupants',
+        'base occupancy',
+        'additional charge',
+        'valid until',
+        'valid from',
+        'promo period',
         // amenity/vibe refinements — bare filters like "luxury quiet pool" must route to room/hotel, not GENERAL_TALK
-        'luxury', 'luxurious', 'premium', 'quiet', 'pool', 'pools', 'pool access', 'private pool',
-        'beachfront', 'secluded', 'relaxing', 'lively', 'find me', 'something in',
+        'luxury',
+        'luxurious',
+        'premium',
+        'quiet',
+        'pool',
+        'pools',
+        'pool access',
+        'private pool',
+        'beachfront',
+        'secluded',
+        'relaxing',
+        'lively',
+        'find me',
+        'something in',
         // safe broad travel signals (added, DB-verified)
-        'honeymoon', 'ocean view', 'sea view', 'mountain view', 'garden view',
-        'sunset cruise', 'island tour', 'guided tour', 'sunnytrips',
+        'honeymoon',
+        'ocean view',
+        'sea view',
+        'mountain view',
+        'garden view',
+        'sunset cruise',
+        'island tour',
+        'guided tour',
+        'sunnytrips',
     ];
 
     public function isTravelQuery(string $query): bool
@@ -158,6 +277,8 @@ class IntentRouter
             'room_id' => null,
             'addon_name' => null,
             'addon_id' => null,
+            'package_name' => null,
+            'activity_name' => null,
             'check_in_date' => null,
             'check_out_date' => null,
             'nights' => null,
@@ -235,6 +356,9 @@ class IntentRouter
             $constraints['addon_id'] = AddOnModel::where('name', 'ILIKE', $constraints['addon_name'])->value('id');
         }
 
+        $constraints['package_name'] = $this->extractPackageName($query);
+        $constraints['activity_name'] = $this->extractActivityName($query);
+
         // Dynamic top N (e.g., "top 5 hotel")
         if (preg_match('/\btop\s*(\d+)\b/i', $query, $m)) {
             $n = (int) $m[1];
@@ -277,9 +401,39 @@ class IntentRouter
         }
 
         $genericWords = [
-            'resort', 'resorts', 'hotel', 'hotels', 'hostel', 'hostels', 'inn', 'inns', 'lodge', 'lodges',
-            'suites', 'suite', 'beach', 'beaches', 'island', 'islands', 'bay', 'bays', 'villa', 'villas',
-            'residences', 'vacation', 'holiday', 'guest', 'house', 'homes', 'home', 'the', 'and', 'de', 'del', 'la', 'of',
+            'resort',
+            'resorts',
+            'hotel',
+            'hotels',
+            'hostel',
+            'hostels',
+            'inn',
+            'inns',
+            'lodge',
+            'lodges',
+            'suites',
+            'suite',
+            'beach',
+            'beaches',
+            'island',
+            'islands',
+            'bay',
+            'bays',
+            'villa',
+            'villas',
+            'residences',
+            'vacation',
+            'holiday',
+            'guest',
+            'house',
+            'homes',
+            'home',
+            'the',
+            'and',
+            'de',
+            'del',
+            'la',
+            'of',
         ];
         $destinationTokens = [];
         foreach (DestinationModel::pluck('name')->all() as $destName) {
@@ -339,6 +493,32 @@ class IntentRouter
         return null;
     }
 
+    public function extractPackageName(string $query): ?string
+    {
+        $packages = Package::pluck('name')->sortByDesc(fn ($n) => mb_strlen($n));
+        $lower = mb_strtolower($query);
+        foreach ($packages as $name) {
+            if (str_contains($lower, mb_strtolower($name))) {
+                return (string) $name;
+            }
+        }
+
+        return null;
+    }
+
+    public function extractActivityName(string $query): ?string
+    {
+        $activities = ActivityModel::pluck('activity_name')->sortByDesc(fn ($n) => mb_strlen($n));
+        $lower = mb_strtolower($query);
+        foreach ($activities as $name) {
+            if (str_contains($lower, mb_strtolower($name))) {
+                return (string) $name;
+            }
+        }
+
+        return null;
+    }
+
     protected function extractPlaceNames(string $query): array
     {
         $places = [];
@@ -350,6 +530,14 @@ class IntentRouter
             }
         }
 
+        $hotelName = $this->extractHotelName($query);
+        if ($hotelName) {
+            $hotel = HotelModel::where('hotel_name', 'ILIKE', $hotelName)->first();
+            if ($hotel && $hotel->latitude && $hotel->longitude) {
+                $places[] = ['type' => 'hotel', 'name' => $hotelName, 'model' => $hotel];
+            }
+        }
+
         return $places;
     }
 
@@ -358,13 +546,13 @@ class IntentRouter
         $lower = mb_strtolower($query);
 
         if (preg_match('/this\s*weekend/i', $lower)) {
-            $sat = Carbon::now()->next(Carbon::SATURDAY);
+            $sat = Carbon::now()->next(UnitValue::SATURDAY);
 
             return [$sat->format('Y-m-d'), $sat->copy()->addDays(2)->format('Y-m-d')];
         }
 
         if (preg_match('/next\s*week/i', $lower)) {
-            $mon = Carbon::now()->next(Carbon::MONDAY);
+            $mon = Carbon::now()->next(UnitValue::MONDAY);
 
             return [$mon->format('Y-m-d'), $mon->copy()->addDays(7)->format('Y-m-d')];
         }
@@ -374,10 +562,30 @@ class IntentRouter
         }
 
         $months = implode('|', [
-            'january', 'february', 'march', 'april', 'may', 'june',
-            'july', 'august', 'september', 'october', 'november', 'december',
-            'jan', 'feb', 'mar', 'apr', 'may', 'jun',
-            'jul', 'aug', 'sep', 'oct', 'nov', 'dec',
+            'january',
+            'february',
+            'march',
+            'april',
+            'may',
+            'june',
+            'july',
+            'august',
+            'september',
+            'october',
+            'november',
+            'december',
+            'jan',
+            'feb',
+            'mar',
+            'apr',
+            'may',
+            'jun',
+            'jul',
+            'aug',
+            'sep',
+            'oct',
+            'nov',
+            'dec',
         ]);
 
         $datePattern = "/(($months)\s*\d{1,2})\s*(?:to|-|–)\s*(($months)?\s*\d{1,2})/i";
@@ -418,9 +626,39 @@ class IntentRouter
     protected function hasWeatherIntent(string $lower): bool
     {
         $weather = [
-            'weather', 'forecast', 'rain', 'rainy', 'sunny', 'temperature', 'climate', 'hot', 'cold', 'humid', 'storm', 'typhoon', 'bagyo', 'ulan', 'araw', 'init', 'lamig', 'panahon',
+            'weather',
+            'forecast',
+            'rain',
+            'rainy',
+            'sunny',
+            'temperature',
+            'climate',
+            'hot',
+            'cold',
+            'humid',
+            'storm',
+            'typhoon',
+            'bagyo',
+            'ulan',
+            'araw',
+            'init',
+            'lamig',
+            'panahon',
             // safe broad weather signals (excluded travel advisory)
-            'cloudy', 'overcast', 'windy', 'monsoon', 'habagat', 'amihan', 'thunderstorm', 'flood', 'baha', 'clear skies', 'sea condition', 'swell', 'good weather', 'bad weather',
+            'cloudy',
+            'overcast',
+            'windy',
+            'monsoon',
+            'habagat',
+            'amihan',
+            'thunderstorm',
+            'flood',
+            'baha',
+            'clear skies',
+            'sea condition',
+            'swell',
+            'good weather',
+            'bad weather',
         ];
         foreach ($weather as $w) {
             if (preg_match('/\b'.preg_quote($w, '/').'\b/i', $lower)) {
@@ -434,14 +672,38 @@ class IntentRouter
     protected function hasMapIntent(string $lower): bool
     {
         $map = [
-            'where is', 'how far', 'nearby', 'distance', 'map', 'location', 'locate', 'direction', 'directions', 'navigate', 'nasaan', 'saan', 'gaano kalayo', 'malapit', 'kalapit',
+            'where is',
+            'how far',
+            'nearby',
+            'distance',
+            'map',
+            'location',
+            'locate',
+            'direction',
+            'directions',
+            'navigate',
+            'nasaan',
+            'saan',
+            'gaano kalayo',
+            'malapit',
+            'kalapit',
             // safe broad map signals
-            'how to get to', 'papaano pumunta', 'paano pumunta', 'ilang minuto', 'ilang oras', 'walking distance', 'driving distance',
+            'how to get to',
+            'papaano pumunta',
+            'paano pumunta',
+            'ilang minuto',
+            'ilang oras',
+            'walking distance',
+            'driving distance',
         ];
         foreach ($map as $m) {
             if (str_contains($lower, $m)) {
                 return true;
             }
+        }
+        // Tagalog variants with flexible spacing
+        if (preg_match('/\b(gaano\s*(?:ako|ka|ko|mo)?\s*kalayo|kalayo\s*(?:ko|mo|niya)?|layo\s*(?:ko|mo|niya)?|distansya\s*(?:ko|mo)?|nasaan\s*ako|kinalalagyan\s*(?:ko|mo)?)\b/i', $lower)) {
+            return true;
         }
         // address/coordinates/landmark need word boundaries to avoid false positives
         foreach (['address', 'coordinates', 'landmark'] as $w) {
@@ -494,9 +756,24 @@ class IntentRouter
     protected function hasItineraryIntent(string $lower): bool
     {
         $itin = [
-            'itinerary', 'itenerary', 'plan my trip', 'trip plan', 'travel plan', 'plan a trip', 'plan for', 'day itinerary', 'day trip', 'sample itinerary', 'itiniraryo',
+            'itinerary',
+            'itenerary',
+            'plan my trip',
+            'trip plan',
+            'travel plan',
+            'plan a trip',
+            'plan for',
+            'day itinerary',
+            'day trip',
+            'sample itinerary',
+            'itiniraryo',
             // safe broad itinerary signals (excluded first day/last day/what to do first)
-            'suggest an itinerary', 'build an itinerary', 'travel schedule', 'daily schedule', 'plano ng byahe', 'balak',
+            'suggest an itinerary',
+            'build an itinerary',
+            'travel schedule',
+            'daily schedule',
+            'plano ng byahe',
+            'balak',
         ];
         foreach ($itin as $i) {
             if (str_contains($lower, $i)) {
@@ -533,9 +810,24 @@ class IntentRouter
     protected function hasPackageIntent(string $lower): bool
     {
         $pkg = [
-            'package', 'packages', 'promo', 'deal', 'deals', 'bundle', 'tipid', 'all-in', 'all inclusive',
+            'package',
+            'packages',
+            'promo',
+            'deal',
+            'deals',
+            'bundle',
+            'tipid',
+            'all-in',
+            'all inclusive',
             // safe broad package signals (excluded voucher/gift certificate)
-            'promo code', 'discount code', 'group package', 'honeymoon package', 'early bird', 'flash sale', 'limited offer', 'seasonal promo',
+            'promo code',
+            'discount code',
+            'group package',
+            'honeymoon package',
+            'early bird',
+            'flash sale',
+            'limited offer',
+            'seasonal promo',
         ];
         foreach ($pkg as $p) {
             if (str_contains($lower, $p)) {
@@ -606,12 +898,79 @@ class IntentRouter
         return false;
     }
 
+    /**
+     * The catalog a message explicitly names, in classify() priority order.
+     * Null when the message carries no catalog keyword.
+     */
+    public function explicitCatalogIntent(string $query): ?string
+    {
+        $lower = mb_strtolower($query);
+        if ($this->hasPackageIntent($lower)) {
+            return self::PACKAGE_SEARCH;
+        }
+        if ($this->hasAddOnIntent($lower)) {
+            return self::ADDON_SEARCH;
+        }
+        if ($this->hasRoomIntent($lower)) {
+            return self::ROOM_SEARCH;
+        }
+        if ($this->hasHotelIntent($lower)) {
+            return self::HOTEL_SEARCH;
+        }
+        if ($this->hasActivityIntent($lower)) {
+            return self::ACTIVITY_SEARCH;
+        }
+
+        return null;
+    }
+
+    /**
+     * True when the query carries an explicit keyword for any searchable
+     * catalog. Used to gate the semantic-routing fallback: keyword hits always
+     * win, embeddings only decide genuinely ambiguous queries.
+     */
+    public function hasExplicitCatalogIntent(string $query): bool
+    {
+        $lower = mb_strtolower($query);
+
+        return $this->hasRoomIntent($lower)
+            || $this->hasHotelIntent($lower)
+            || $this->hasActivityIntent($lower)
+            || $this->hasPackageIntent($lower)
+            || $this->hasAddOnIntent($lower);
+    }
+
     protected function hasActivityIntent(string $lower): bool
     {
         $act = [
-            'activity', 'activities', 'tour', 'tours', 'island hopping', 'diving', 'snorkeling', 'hiking', 'trek', 'surfing', 'kayak', 'zipline', 'thing to do', 'things to do', 'attraction', 'attractions', 'adventure', 'gawain', 'pasyalan', 'libangan',
+            'activity',
+            'activities',
+            'tour',
+            'tours',
+            'island hopping',
+            'diving',
+            'snorkeling',
+            'hiking',
+            'trek',
+            'surfing',
+            'kayak',
+            'zipline',
+            'atv',
+            'thing to do',
+            'things to do',
+            'attraction',
+            'attractions',
+            'adventure',
+            'gawain',
+            'pasyalan',
+            'libangan',
             // safe broad activity signals (excluded sup/zoo/waterfall etc. — DB-missing, sup substring risky)
-            'paddleboarding', 'cliff jumping', 'cave exploring', 'spelunking', 'cultural tour', 'sunset cruise',
+            'paddleboarding',
+            'cliff jumping',
+            'cave exploring',
+            'spelunking',
+            'cultural tour',
+            'sunset cruise',
         ];
         foreach ($act as $a) {
             if (str_contains($lower, $a)) {

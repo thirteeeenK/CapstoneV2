@@ -326,7 +326,7 @@
                                             <span x-text="locatingLocation ? 'Locating…' : 'Share my current location'"></span>
                                         </button>
                                         <p x-show="geoError" x-text="geoError" class="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1.5"></p>
-                                        <p class="text-[10px] text-slate-500">Or tell me where you are, e.g. “How far is Manila from <span x-text="msg.location_target"></span>?”</p>
+                                        <p class="text-[10px] text-slate-500">Or tell me where you are, e.g. “How far is El Nido from <span x-text="msg.location_target"></span>?”</p>
                                     </div>
                                 </template>
 
@@ -592,9 +592,24 @@
                 let listType = null;
                 let listItems = [];
 
-                const formatInline = value => value
+                const linkify = value => {
+                    const stored = [];
+                    const withPlaceholders = value.replace(
+                        /\[([^\]]+)\]\((https?:\/\/[^)\s]+|\/[^)\s]*)\)/g,
+                        (match, label, url) => {
+                            stored.push(`<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-ocean-600 underline underline-offset-2 hover:text-ocean-700 break-all">${label}</a>`);
+                            return `\u0000CHATLINK${stored.length - 1}\u0000`;
+                        }
+                    );
+                    const autolinked = withPlaceholders
+                        .replace(/(https?:\/\/[^\s<]+?)([.,;:!?)]?(?=\s|$|<))/g, '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-ocean-600 underline underline-offset-2 hover:text-ocean-700 break-all">$1</a>$2')
+                        .replace(/(?<![\w/"'])(\/bookings\/[A-Za-z0-9\-_]+)([.,;:!?)]?(?=\s|$|<))/g, '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-ocean-600 underline underline-offset-2 hover:text-ocean-700 break-all">$1</a>$2');
+                    return autolinked.replace(/\u0000CHATLINK(\d+)\u0000/g, (match, index) => stored[Number(index)] ?? match);
+                };
+
+                const formatInline = value => linkify(value
                     .replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold text-ink-800">$1</strong>')
-                    .replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, '$1<em>$2</em>');
+                    .replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, '$1<em>$2</em>'));
 
                 const flushParagraph = () => {
                     if (!paragraph.length) return;

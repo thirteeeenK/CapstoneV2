@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnforceGuestChatLimits;
+use App\Models\ActivityModel;
 use App\Models\AdminModel;
 use App\Models\Booking;
 use App\Models\BookingItem;
@@ -10,8 +11,11 @@ use App\Models\ChatSession;
 use App\Models\DestinationModel;
 use App\Models\Faq;
 use App\Models\HotelModel;
+use App\Models\Package;
 use App\Models\RoomType;
 use App\Models\SupportInquiry;
+use App\Services\Chat\ChatbotService;
+use App\Services\GeminiService;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 
@@ -567,6 +571,190 @@ test('map distance query works', function () {
     expect($response->json('status'))->toBe('success');
 });
 
+test('map hotel distance from user requests location', function () {
+    DestinationModel::create([
+        'name' => 'Boracay',
+        'description' => 'A beautiful island',
+        'image' => null,
+        'latitude' => 11.9686,
+        'longitude' => 121.9230,
+    ]);
+    HotelModel::create([
+        'hotel_name' => 'Henann Garden Resort',
+        'destination_id' => DestinationModel::where('name', 'Boracay')->first()->id,
+        'latitude' => 11.9686,
+        'longitude' => 121.9230,
+        'is_shown' => true,
+        'type' => 'Resort',
+        'hotel_description' => 'A nice resort in Boracay.',
+        'specific_address' => 'Station 1, Boracay',
+    ]);
+
+    $this->actingAs($this->user);
+    $response = $this->postJson('/chat', [
+        'message' => 'distance between hennan garden resort and my current location',
+    ]);
+
+    $response->assertStatus(200);
+    expect($response->json('location_request'))->toBeTrue();
+    expect($response->json('location_target'))->toContain('Henann Garden Resort');
+});
+
+test('tagalog map distance from user requests location', function () {
+    $this->actingAs($this->user);
+    $response = $this->postJson('/chat', [
+        'message' => 'gaano ako kalayo sa boracay?',
+    ]);
+
+    $response->assertStatus(200);
+    expect($response->json('location_request'))->toBeTrue();
+    expect($response->json('location_target'))->toBe('Boracay');
+});
+
+test('unknown place gives helpful fallback', function () {
+    $this->actingAs($this->user);
+    $response = $this->postJson('/chat', [
+        'message' => 'distance between manila and my current location',
+    ]);
+
+    $response->assertStatus(200);
+    expect($response->json('reply'))->toContain('could not find the location');
+    expect($response->json('reply'))->toContain('Boracay');
+});
+
+test('package per-pax price not divided by min_pax', function () {
+    $destination = DestinationModel::create([
+        'name' => 'Boracay',
+        'description' => 'A beautiful island',
+        'image' => null,
+    ]);
+    $package = Package::create([
+        'destination_id' => $destination->id,
+        'name' => 'Boracay Sulit Deal',
+        'price' => 8699,
+        'days' => 3,
+        'nights' => 2,
+        'min_pax' => 2,
+        'is_active' => true,
+    ]);
+
+    $gemini = app(GeminiService::class);
+    $scored = [['item' => $package, 'score' => 1.0]];
+    $context = $gemini->getPackageContext($scored);
+
+    expect($context)->toContain('Price: ₱8,699.00 per pax');
+    expect($context)->not->toContain('4,349');
+});
+
+test('specific package query returns single card', function () {
+    $destination = DestinationModel::create([
+        'name' => 'Boracay',
+        'description' => 'A beautiful island',
+        'image' => null,
+    ]);
+    Package::create([
+        'destination_id' => $destination->id,
+        'name' => 'Boracay Sulit Deal',
+        'price' => 8699,
+        'days' => 3,
+        'nights' => 2,
+        'min_pax' => 2,
+        'is_active' => true,
+    ]);
+    // Another package to ensure we don't return it
+    Package::create([
+        'destination_id' => $destination->id,
+        'name' => 'Boracay Best Deal',
+        'price' => 9999,
+        'days' => 3,
+        'nights' => 2,
+        'min_pax' => 2,
+        'is_active' => true,
+    ]);
+
+    $this->actingAs($this->user);
+    $response = $this->postJson('/chat', [
+        'message' => 'Tell me about Boracay Sulit Deal',
+    ]);
+
+    $response->assertStatus(200);
+    $packages = $response->json('retrieved_packages');
+    expect($packages)->toHaveCount(1);
+    expect($packages[0]['name'])->toBe('Boracay Sulit Deal');
+});
+
+test('specific hotel query returns single card', function () {
+    $destination = DestinationModel::create([
+        'name' => 'Boracay',
+        'description' => 'A beautiful island',
+        'image' => null,
+    ]);
+    HotelModel::create([
+        'hotel_name' => 'Henann Garden Resort',
+        'destination_id' => $destination->id,
+        'type' => 'Resort',
+        'hotel_description' => 'A nice resort',
+        'specific_address' => 'Station 1, Boracay',
+        'latitude' => 11.9686,
+        'longitude' => 121.9230,
+        'is_shown' => true,
+    ]);
+    HotelModel::create([
+        'hotel_name' => 'Another Hotel',
+        'destination_id' => $destination->id,
+        'type' => 'Hotel',
+        'hotel_description' => 'Another hotel',
+        'specific_address' => 'Station 2, Boracay',
+        'latitude' => 11.9686,
+        'longitude' => 121.9230,
+        'is_shown' => true,
+    ]);
+
+    $this->actingAs($this->user);
+    $response = $this->postJson('/chat', [
+        'message' => 'Tell me about Henann Garden Resort',
+    ]);
+
+    $response->assertStatus(200);
+    $hotels = $response->json('retrieved_hotels');
+    expect($hotels)->toHaveCount(1);
+    expect($hotels[0]['hotel_name'])->toBe('Henann Garden Resort');
+});
+
+test('specific activity query returns single card', function () {
+    $destination = DestinationModel::create([
+        'name' => 'Boracay',
+        'description' => 'A beautiful island',
+        'image' => null,
+    ]);
+    ActivityModel::create([
+        'activity_name' => 'Island Hopping',
+        'destination_id' => $destination->id,
+        'category' => 'Water',
+        'activity_level' => 'Relaxing',
+        'rate' => 1200,
+        'is_shown' => true,
+    ]);
+    ActivityModel::create([
+        'activity_name' => 'Scuba Diving',
+        'destination_id' => $destination->id,
+        'category' => 'Water',
+        'activity_level' => 'Underwater',
+        'rate' => 2500,
+        'is_shown' => true,
+    ]);
+
+    $this->actingAs($this->user);
+    $response = $this->postJson('/chat', [
+        'message' => 'Tell me about Island Hopping',
+    ]);
+
+    $response->assertStatus(200);
+    $activities = $response->json('retrieved_activities');
+    expect($activities)->toHaveCount(1);
+    expect($activities[0]['activity_name'])->toBe('Island Hopping');
+});
+
 test('matching FAQ returns the stored answer verbatim without Gemini', function () {
     Faq::create([
         'question' => 'Does SunnyTrips support airline ticket booking?',
@@ -1078,8 +1266,30 @@ test('authed user asking about booking status gets live status grounded in their
         return str_contains($request->url(), 'generateContent')
             && str_contains((string) $request->body(), $booking->booking_code)
             && str_contains((string) $request->body(), 'Deluxe Ocean View')
-            && str_contains((string) $request->body(), 'Status: approved');
+            && str_contains((string) $request->body(), 'Status: approved')
+            && str_contains((string) $request->body(), "[View full details for {$booking->booking_code}]")
+            && str_contains((string) $request->body(), 'markdown-link format');
     });
+});
+
+test('booking status reply with flattened plain-text link gets deterministic markdown link', function () {
+    $booking = Booking::factory()->approved()->create([
+        'user_id' => $this->user->id,
+        'net_amount' => 6000.00,
+    ]);
+
+    // Simulate Gemini dropping the (url) half and returning the label as plain text
+    $flattened = "Booking Code: {$booking->booking_code}\nStatus: approved\nView full details for {$booking->booking_code}";
+
+    $service = app(ChatbotService::class);
+    $method = new ReflectionMethod($service, 'linkifyBookingReferences');
+    $repaired = $method->invoke($service, $flattened, collect([$booking]));
+
+    $expected = "[View full details for {$booking->booking_code}](".route('booking.show', $booking->booking_code).')';
+    expect($repaired)->toContain($expected);
+
+    // Already-linked replies pass through untouched (idempotent, no double-wrapping)
+    expect($method->invoke($service, $repaired, collect([$booking])))->toBe($repaired);
 });
 
 test('authed user with no bookings gets a deterministic nudge without a Gemini call', function () {

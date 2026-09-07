@@ -52,6 +52,9 @@ test('classifies weather query', function () {
 test('classifies map query', function () {
     expect($this->router->classify('Where is Boracay?'))->toBe(IntentRouter::MAP_QUERY);
     expect($this->router->classify('How far is El Nido from Boracay?'))->toBe(IntentRouter::MAP_QUERY);
+    expect($this->router->classify('gaano ako kalayo sa boracay?'))->toBe(IntentRouter::MAP_QUERY);
+    expect($this->router->classify('layo ko sa el nido?'))->toBe(IntentRouter::MAP_QUERY);
+    expect($this->router->classify('nasaan ako boracay?'))->toBe(IntentRouter::MAP_QUERY);
 });
 
 test('extracts pax count from query', function () {

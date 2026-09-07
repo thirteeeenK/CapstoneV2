@@ -182,7 +182,7 @@ class GeminiService
             "Tour Package Name: {$package->name}",
             'Package Type: '.($package->type ?: 'Standard Tour Promo'),
             "Destination: {$destinationName}{$region}",
-            'Rate / Price: ₱'.number_format($package->price, 2),
+            'Rate / Price: ₱'.number_format($package->price, 2).' per pax (total = price × guests)',
             'Duration: '.($package->days ?: 3).' Days / '.($package->nights ?: 2).' Nights',
             'Minimum Guests Required: '.($package->min_pax ?: 2).' Pax',
             $validity,
@@ -533,6 +533,90 @@ class GeminiService
         usort($scored, fn ($a, $b) => $b['score'] <=> $a['score']);
 
         return array_slice($scored, 0, $limit);
+    }
+
+    /**
+     * Minimum top-catalog cosine score for semantic routing to fire.
+     * Cross-catalog scores are not calibrated — validate against seed data when tuning.
+     */
+    public const SEMANTIC_ROUTE_FLOOR = 0.35;
+
+    /**
+     * Minimum gap between the winning catalog and the runner-up.
+     */
+    public const SEMANTIC_ROUTE_MARGIN = 0.03;
+
+    /**
+     * Semantic catalog routing: full-RAG fallback for keyword misses.
+     *
+     * Embeds the query once and scores it against all visible candidates per
+     * catalog, returning the winning catalog key ('rooms', 'hotels',
+     * 'activities', 'packages', 'addons'). Returns null when embeddings are
+     * unavailable or no catalog wins clearly — the caller must keep its
+     * keyword default in that case.
+     */
+    public function resolveSemanticCatalog(string $query, ?int $destinationId = null): ?string
+    {
+        $queryVector = $this->generateEmbedding($query, 'RETRIEVAL_QUERY');
+        if (! $queryVector) {
+            return null;
+        }
+
+        $scores = [
+            'activities' => $this->topCatalogScore(ActivityModel::with('destination')
+                ->where('is_shown', true)
+                ->whereNotNull('embedding')
+                ->when($destinationId, fn ($q) => $q->where('destination_id', $destinationId))
+                ->get(), $queryVector),
+            'hotels' => $this->topCatalogScore(HotelModel::with('destination')
+                ->where('is_shown', true)
+                ->whereNotNull('embedding')
+                ->when($destinationId, fn ($q) => $q->where('destination_id', $destinationId))
+                ->get(), $queryVector),
+            'rooms' => $this->topCatalogScore(RoomType::with('hotel.destination')
+                ->where('is_shown', true)
+                ->whereNotNull('embedding')
+                ->when($destinationId, fn ($q) => $q->whereHas('hotel', fn ($qq) => $qq->where('destination_id', $destinationId)))
+                ->get(), $queryVector),
+            'packages' => $this->topCatalogScore(Package::with('destination')
+                ->where('is_active', true)
+                ->whereNotNull('embedding')
+                ->when($destinationId, fn ($q) => $q->where('destination_id', $destinationId))
+                ->get(), $queryVector),
+            'addons' => $this->topCatalogScore(AddOnModel::with('destination')
+                ->where('is_shown', true)
+                ->whereNotNull('embedding')
+                ->get(), $queryVector),
+        ];
+
+        $scores = array_filter($scores, fn ($s) => $s !== null);
+        if (empty($scores)) {
+            return null;
+        }
+        arsort($scores);
+        $keys = array_keys($scores);
+        $top = $scores[$keys[0]];
+        if ($top < self::SEMANTIC_ROUTE_FLOOR) {
+            return null;
+        }
+        if (isset($keys[1]) && ($top - $scores[$keys[1]]) < self::SEMANTIC_ROUTE_MARGIN) {
+            return null;
+        }
+
+        return $keys[0];
+    }
+
+    protected function topCatalogScore($candidates, array $queryVector): ?float
+    {
+        if ($candidates->isEmpty()) {
+            return null;
+        }
+        $ranked = $this->rankRecommendations($queryVector, $candidates, 1);
+        if (empty($ranked)) {
+            return null;
+        }
+
+        return (float) $ranked[0]['score'];
     }
 
     public function extractPricingContext($contextText, $userQuery)
@@ -894,7 +978,7 @@ class GeminiService
      * @param  int  $limit  Maximum results to return
      * @return array Scored results: [['item' => ActivityModel, 'score' => float], ...]
      */
-    public function searchActivities(string $query, int $limit = 5): array
+    public function searchActivities(string $query, int $limit = 5, ?int $destinationId = null): array
     {
         $queryVector = $this->generateEmbedding($query, 'RETRIEVAL_QUERY');
 
@@ -907,6 +991,7 @@ class GeminiService
         $activities = ActivityModel::with('destination')
             ->where('is_shown', true)
             ->whereNotNull('embedding')
+            ->when($destinationId, fn ($q) => $q->where('destination_id', $destinationId))
             ->get();
 
         if ($activities->isEmpty()) {
@@ -1137,7 +1222,7 @@ class GeminiService
                 "Package Name: {$package->name}",
                 "Destination: {$destName}",
                 'Type: '.($package->type ?: 'Standard Tour Promo'),
-                'Price: ₱'.number_format($package->price, 2),
+                'Price: ₱'.number_format($package->price, 2).' per pax (total = price × guests)',
                 "Duration: {$package->days}D/{$package->nights}N",
                 "Minimum Guests: {$package->min_pax} pax",
                 $validity,

@@ -44,7 +44,7 @@
 
                 {{-- Package Price --}}
                 <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Package Rate (₱ per pax/package) *</label>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Package Rate (₱ per pax) *</label>
                     <input type="number" name="price" step="0.01" min="0" required placeholder="e.g. 5999.00" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">
                 </div>
 
