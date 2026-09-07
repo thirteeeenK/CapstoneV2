@@ -312,6 +312,22 @@
                                     </div>
                                 </template>
 
+                                {{-- Suggested actions (pills) --}}
+                                <template x-if="msg.suggested_actions && msg.suggested_actions.length">
+                                    <div class="mt-3 flex flex-wrap gap-1.5">
+                                        <template x-for="action in msg.suggested_actions" :key="action.id">
+                                            <button
+                                                type="button"
+                                                @click="useSuggestedAction(msg, action)"
+                                                :disabled="isActionUsed(msg.id, action.id)"
+                                                :class="isActionUsed(msg.id, action.id) ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-default' : 'bg-ocean-50 text-ocean-700 border-ocean-200 hover:bg-ocean-100 cursor-pointer'"
+                                                class="text-[11px] font-bold px-3 py-1.5 rounded-full border transition-colors font-headline disabled:opacity-60">
+                                                <span x-text="action.label"></span>
+                                            </button>
+                                        </template>
+                                    </div>
+                                </template>
+
                                 {{-- Location request --}}
                                 <template x-if="msg.location_request">
                                     <div class="mt-3 bg-ocean-50 rounded-xl p-3 border border-ocean-200/80 space-y-2">
@@ -424,6 +440,7 @@
             locatingLocation: false,
             geoError: null,
             hasUnreadAdmin: false,
+            usedActionIds: new Set(),
             isAuthed: @json(auth()->check()),
 
             async init() {
@@ -541,6 +558,7 @@
                         if (ctx.retrieved_packages?.length) extras.packages = ctx.retrieved_packages;
                         if (ctx.itinerary) extras.itinerary = ctx.itinerary;
                         if (ctx.map) extras.map = ctx.map;
+                        if (ctx.suggested_actions?.length) extras.suggested_actions = ctx.suggested_actions;
                         if (ctx.location_request) {
                             extras.location_request = true;
                             extras.location_target = ctx.location_target || ctx.map?.target?.name || '';
@@ -760,6 +778,7 @@
                     if (data.retrieved_activities) extras.activities = data.retrieved_activities;
                     if (data.retrieved_packages) extras.packages = data.retrieved_packages;
                     if (data.map) extras.map = data.map;
+                    if (data.suggested_actions?.length) extras.suggested_actions = data.suggested_actions;
                     if (data.location_request) {
                         extras.location_request = true;
                         extras.location_target = data.location_target || data.map?.target?.name || '';
@@ -788,6 +807,23 @@
                 if (typeof window.addToCart === 'function') {
                     window.addToCart(type, id, opts);
                 }
+            },
+
+            isActionUsed(msgId, actionId) {
+                return this.usedActionIds.has(`${msgId}:${actionId}`);
+            },
+
+            async useSuggestedAction(msg, action) {
+                if (!action || !action.prompt) {
+                    return;
+                }
+                const key = `${msg.id}:${action.id}`;
+                if (this.usedActionIds.has(key)) {
+                    return;
+                }
+                this.usedActionIds.add(key);
+                this.input = action.prompt;
+                await this.send();
             },
 
             getCachedCoords() {

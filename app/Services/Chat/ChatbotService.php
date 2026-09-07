@@ -117,6 +117,33 @@ class ChatbotService
             return array_merge(['status' => 'success', 'control' => 'ai', 'session_token' => $session->session_token, 'reply' => $text], $reply);
         }
 
+        // Availability follow-up over a prior exact room: short queries like
+        // "is the room available?" / "is it still open?" must stay scoped to the
+        // exact room instead of broadening back to the whole hotel/destination.
+        if ($lastBot && $this->isExactRoomAvailabilityFollowUp($message, $lastBot)) {
+            $constraints = $this->intentRouter->extractConstraints($message);
+            $constraints = $this->inheritRoomContext($constraints, $session);
+            $reply = $this->handleAvailabilityQuery($message, $constraints, $user, $session);
+            $text = $reply['reply'] ?? 'Sorry, I could not process that request. Please try again.';
+            $this->conversation->persist($session, 'bot', $text, $reply);
+
+            return array_merge(['status' => 'success', 'control' => 'ai', 'session_token' => $session->session_token, 'reply' => $text], $reply);
+        }
+
+        // "Check alternatives" pill/typed follow-up after an unavailable exact
+        // room → drop room-specific filter and surface same-hotel/destination
+        // alternatives via the regular availability path.
+        if ($lastBot && $this->isCheckAlternativesFollowUp($message, $lastBot)) {
+            $constraints = $this->intentRouter->extractConstraints($message);
+            $constraints = $this->inheritRoomContext($constraints, $session);
+            unset($constraints['room_id'], $constraints['room_name']);
+            $reply = $this->handleAvailabilityQuery($message, $constraints, $user, $session);
+            $text = $reply['reply'] ?? 'Sorry, I could not process that request. Please try again.';
+            $this->conversation->persist($session, 'bot', $text, $reply);
+
+            return array_merge(['status' => 'success', 'control' => 'ai', 'session_token' => $session->session_token, 'reply' => $text], $reply);
+        }
+
         $faq = $this->faq->findBestMatch($message);
         // Don't hijack amenity refinements or explicit Boracay hotel/room queries with FAQ
         $lowerForFaq = mb_strtolower(trim($message));
@@ -1101,6 +1128,146 @@ class ChatbotService
         return $constraints;
     }
 
+    /**
+     * Detect a short availability follow-up that refers to a specific room
+     * from the prior turn (e.g. "is the room available?", "is it still open?",
+     * "available pa rin ba?"). Only matches when the last bot turn had exactly
+     * one room card so we never steal broad "what rooms are available" queries.
+     */
+    protected function isExactRoomAvailabilityFollowUp(string $message, ChatMessage $lastBot): bool
+    {
+        $lower = mb_strtolower(trim($message));
+        if ($lower === '') {
+            return false;
+        }
+        if (count(preg_split('/\s+/', $lower)) > 10) {
+            return false;
+        }
+
+        $data = $lastBot->context_data ?: [];
+        $rooms = $data['retrieved_rooms'] ?? [];
+        if (count($rooms) !== 1) {
+            return false;
+        }
+
+        $patterns = [
+            '/\b(is|are)\b.*\b(the|this|that|it)\b.*\b(room|rooms)\b.*\b(available|open|free|vacant|book|booked)\b/i',
+            '/\b(available|open|free|vacant)\b.*\b(pa rin|pang|ngayon|pa)\b/i',
+            '/\b(availa\w*|bakante)\b/i',
+            '/\b(still open|still available|can (we|i) (book|reserve))\b/i',
+            // Date-bearing follow-up after an exact room turn (e.g. "check sep 8-9 for 2 pax")
+            '/\b(check|verify|confirm)\b.*\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|sept|month|tomorrow|next|this)\b/i',
+            '/\b\d{1,2}\s*(?:-|to|–)\s*\d{1,2}\b/i',
+        ];
+        foreach ($patterns as $p) {
+            if (preg_match($p, $lower)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Detect a "check alternatives" follow-up after an unavailable exact room
+     * turn. Triggered by the suggested pill click or a typed message like
+     * "check alternatives", "show me other rooms", "any other room for [name]?".
+     */
+    protected function isCheckAlternativesFollowUp(string $message, ChatMessage $lastBot): bool
+    {
+        $lower = mb_strtolower(trim($message));
+        if ($lower === '') {
+            return false;
+        }
+        if (count(preg_split('/\s+/', $lower)) > 12) {
+            return false;
+        }
+
+        $data = $lastBot->context_data ?: [];
+        if (empty($data['retrieved_rooms'])) {
+            return false;
+        }
+        $hasUnavailableExactRoom = false;
+        foreach ($data['retrieved_rooms'] as $r) {
+            $remaining = $r['remaining'] ?? null;
+            $total = $r['total_rooms'] ?? null;
+            if ($remaining !== null && $total !== null && (int) $remaining <= 0) {
+                $hasUnavailableExactRoom = true;
+                break;
+            }
+        }
+        if (! $hasUnavailableExactRoom) {
+            return false;
+        }
+
+        $patterns = [
+            '/\bcheck\s+alternatives?\b/i',
+            '/\bshow\s+(me\s+)?(other|alternative)\b/i',
+            '/\b(any|other|different)\s+(rooms?|options?)\b/i',
+            '/\balternatives?\b/i',
+        ];
+        foreach ($patterns as $p) {
+            if (preg_match($p, $lower)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Inherit the exact room (and its dates/pax) from the last bot turn when the
+     * user follows up on a specific room without re-naming it. This keeps
+     * availability questions scoped to that room instead of broadening back to
+     * the whole hotel or destination.
+     */
+    protected function inheritRoomContext(array $constraints, ChatSession $session, ?int $roomId = null): array
+    {
+        $lastBot = $session->messages()->where('sender', 'bot')->latest()->first();
+        $data = $lastBot?->context_data ?: [];
+        $prior = null;
+        foreach ($data['retrieved_rooms'] ?? [] as $r) {
+            if ($roomId === null || (int) ($r['id'] ?? 0) === (int) $roomId) {
+                $prior = $r;
+                break;
+            }
+        }
+        if (! $prior) {
+            return $constraints;
+        }
+
+        if (empty($constraints['room_id'])) {
+            $constraints['room_id'] = (int) ($prior['id'] ?? 0) ?: null;
+        }
+        if (empty($constraints['room_name'])) {
+            $constraints['room_name'] = $prior['room_name'] ?? null;
+        }
+        if (! empty($prior['hotel_id']) && empty($constraints['hotel_id'])) {
+            $constraints['hotel_id'] = (int) $prior['hotel_id'];
+        }
+        if (! empty($prior['hotel_name']) && empty($constraints['hotel_name'])) {
+            $constraints['hotel_name'] = $prior['hotel_name'];
+        }
+        if (! empty($prior['destination']) && empty($constraints['destination_id'])) {
+            $destId = DestinationModel::where('name', 'ILIKE', $prior['destination'])->value('id');
+            if ($destId) {
+                $constraints['destination_id'] = (int) $destId;
+                $constraints['destination_name'] = $prior['destination'];
+            }
+        }
+        if (empty($constraints['check_in_date']) && ! empty($prior['check_in_date'])) {
+            $constraints['check_in_date'] = $prior['check_in_date'];
+        }
+        if (empty($constraints['check_out_date']) && ! empty($prior['check_out_date'])) {
+            $constraints['check_out_date'] = $prior['check_out_date'];
+        }
+        if (empty($constraints['pax']) && ! empty($prior['pax'])) {
+            $constraints['pax'] = (int) $prior['pax'];
+        }
+
+        return $constraints;
+    }
+
     protected function resolveDefaultDestination(array $constraints, ?User $user): array
     {
         // Conversational destination already resolved in handle(); keep it if present
@@ -1431,10 +1598,16 @@ class ChatbotService
 
     protected function handleAvailabilityQuery(string $query, array $constraints, ?User $user, ChatSession $session): array
     {
-        // Merge previous hotel/destination when follow-up has no explicit hotel (e.g., "yes check availabilith" after Lazy Dog)
+        // Merge previous hotel/destination/room when follow-up has no explicit hotel (e.g., "yes check availabilith" after Lazy Dog)
+        $lastBot = $session->messages()->where('sender', 'bot')->latest()->first();
+        $data = $lastBot?->context_data ?: [];
+        if (empty($constraints['hotel_id']) && empty($constraints['room_id']) && empty($constraints['room_name'])) {
+            $prevRoomId = $data['retrieved_rooms'][0]['id'] ?? null;
+            if ($prevRoomId) {
+                $constraints = $this->inheritRoomContext($constraints, $session, (int) $prevRoomId);
+            }
+        }
         if (empty($constraints['hotel_id']) && empty($constraints['room_id'])) {
-            $lastBot = $session->messages()->where('sender', 'bot')->latest()->first();
-            $data = $lastBot?->context_data ?: [];
             $prevHotelId = $data['retrieved_hotels'][0]['id'] ?? $data['retrieved_rooms'][0]['hotel_id'] ?? null;
             if ($prevHotelId) {
                 $constraints['hotel_id'] = (int) $prevHotelId;
@@ -1492,7 +1665,65 @@ class ChatbotService
             }
         }
 
+        $hasExactRoom = ! empty($constraints['room_name']) || ! empty($constraints['room_id']);
+
         if (empty($exactAvailable)) {
+            // Exact-room follow-up: scope the reply to just that room and offer alternatives via pill (no auto-list).
+            if ($hasExactRoom) {
+                $exactEntry = null;
+                foreach ($rooms as $entry) {
+                    /** @var RoomType $room */
+                    $room = $entry['item'];
+                    $matches = false;
+                    if (! empty($constraints['room_id']) && (int) $room->id === (int) $constraints['room_id']) {
+                        $matches = true;
+                    } elseif (! empty($constraints['room_name']) && strcasecmp((string) $room->room_name, (string) $constraints['room_name']) === 0) {
+                        $matches = true;
+                    }
+                    if ($matches) {
+                        $exactEntry = $entry;
+                        $exactEntry['availability'] = $this->availability->check($room, $checkIn, $checkOut);
+                        $unitRate = $room->calculateNightlyRate($pax);
+                        $exactEntry['total_stay'] = round($unitRate * $nights, 2);
+                        $exactEntry['formatted_total'] = '₱'.number_format($exactEntry['total_stay'], 2);
+                        break;
+                    }
+                }
+
+                if ($exactEntry) {
+                    $room = $exactEntry['item'];
+                    $reply = "{$room->room_name} at {$room->hotel?->hotel_name} is not available from {$checkIn->format('M d')} to {$checkOut->format('M d')}. Would you like me to check alternative rooms for those dates?";
+                    $formatted = [[
+                        'id' => $room->id,
+                        'room_name' => $room->room_name,
+                        'hotel_name' => $room->hotel?->hotel_name ?? 'Unknown Hotel',
+                        'hotel_id' => $room->hotel_id ?? $room->hotel?->id ?? null,
+                        'destination' => $room->hotel?->destination?->name ?? null,
+                        'base_price' => (float) $room->base_price,
+                        'occupancy' => $room->occupancy,
+                        'base_occupancy' => (int) ($room->base_occupancy ?: 2),
+                        'max_occupancy' => (int) ($room->max_occupancy ?: ($room->occupancy ?: 2)),
+                        'extra_person_fee' => (float) ($room->extra_person_fee ?: 0),
+                        'image' => $this->firstImage($room->images),
+                        'check_in_date' => $checkIn->format('Y-m-d'),
+                        'check_out_date' => $checkOut->format('Y-m-d'),
+                        'pax' => $pax,
+                        'remaining' => $exactEntry['availability']['remaining'] ?? null,
+                        'total_rooms' => $exactEntry['availability']['total_rooms'] ?? null,
+                    ]];
+
+                    return [
+                        'reply' => $reply,
+                        'retrieved_rooms' => $formatted,
+                        'suggested_actions' => [[
+                            'id' => 'check-alternatives',
+                            'label' => 'Check alternatives',
+                            'prompt' => "Check alternatives for {$room->room_name} at {$room->hotel?->hotel_name}",
+                        ]],
+                    ];
+                }
+            }
+
             $destName2 = $constraints['destination_name'] ?? 'your request';
 
             return [
@@ -1500,10 +1731,11 @@ class ChatbotService
             ];
         }
 
-        // Two-phase: if exact room was requested but <3 available, supplement with close alternatives (same hotel/destination)
+        // Two-phase: only when the exact room was requested but yielded NO
+        // available match, supplement with same-hotel/destination alternatives.
+        // When the exact room was found and is available, stay scoped to it.
         $available = $exactAvailable;
-        $hasExactRoom = ! empty($constraints['room_name']) || ! empty($constraints['room_id']);
-        if ($hasExactRoom && count($available) < 3) {
+        if (! $hasExactRoom && count($available) < 5) {
             $altConstraints = $constraints;
             unset($altConstraints['room_name'], $altConstraints['room_id']);
             // Keep hotel_id/destination_id/pax, drop room-specific filter
@@ -1747,6 +1979,7 @@ class ChatbotService
             return ['reply' => 'Which destination would you like the weather for? For example, "What\'s the weather in '.$example.' this weekend?"'];
         }
 
+        /** @var DestinationModel|null $dest */
         $dest = DestinationModel::where('name', 'ILIKE', $destinationName)->first();
 
         if (! $dest) {

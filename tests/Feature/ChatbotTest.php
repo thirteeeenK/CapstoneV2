@@ -1157,6 +1157,102 @@ test('follow-ups about a specific hotel keep only that hotels cards', function (
     expect($hotels[0]['hotel_name'])->toBe('Frendz Resort & Hostel');
 });
 
+test('follow-ups about an exact room stay scoped to that room', function () {
+    $embedding = '['.implode(',', array_fill(0, 3072, '0.01')).']';
+
+    $happiness = HotelModel::create([
+        'hotel_name' => 'Happiness Hostel',
+        'destination_id' => $this->destination->id,
+        'type' => 'Hostel',
+        'hotel_description' => 'Social hostel in Boracay.',
+        'specific_address' => 'Station 2',
+        'latitude' => 11.9674,
+        'longitude' => 121.9251,
+        'is_shown' => true,
+        'images' => json_encode([]),
+    ]);
+
+    $boho = RoomType::create([
+        'hotel_id' => $happiness->id,
+        'room_name' => 'Boho Private Double Room',
+        'base_price' => 1800.00,
+        'base_occupancy' => 2,
+        'max_occupancy' => 2,
+        'extra_person_fee' => 0,
+        'total_rooms' => 1,
+        'room_amenities' => json_encode([]),
+        'images' => json_encode([]),
+        'is_shown' => true,
+        'embedding' => $embedding,
+    ]);
+
+    $otherHotel = HotelModel::create([
+        'hotel_name' => 'Sunny Budget Inn',
+        'destination_id' => $this->destination->id,
+        'type' => 'Hotel',
+        'hotel_description' => 'Budget hotel in Boracay.',
+        'specific_address' => 'Station 3',
+        'latitude' => 11.9674,
+        'longitude' => 121.9251,
+        'is_shown' => true,
+        'images' => json_encode([]),
+    ]);
+
+    foreach (['Budget Single', 'Budget Double', 'Budget Twin', 'Budget Family'] as $roomName) {
+        RoomType::create([
+            'hotel_id' => $otherHotel->id,
+            'room_name' => $roomName,
+            'base_price' => 1200.00,
+            'base_occupancy' => 2,
+            'max_occupancy' => 2,
+            'extra_person_fee' => 0,
+            'total_rooms' => 5,
+            'room_amenities' => json_encode([]),
+            'images' => json_encode([]),
+            'is_shown' => true,
+            'embedding' => $embedding,
+        ]);
+    }
+
+    $booking = Booking::factory()->approved()->create(['user_id' => $this->user->id]);
+    BookingItem::factory()->create([
+        'booking_id' => $booking->id,
+        'item_type' => 'room',
+        'item_id' => $boho->id,
+        'item_title' => 'Boho Private Double Room',
+        'hotel_name' => 'Happiness Hostel',
+        'check_in_date' => '2026-09-08',
+        'check_out_date' => '2026-09-09',
+        'quantity' => 1,
+    ]);
+
+    $first = $this->postJson('/chat', ['message' => 'my happiness hostel rooms']);
+    $first->assertOk()->assertJsonPath('status', 'success');
+    $firstRooms = $first->json('retrieved_rooms');
+    expect($firstRooms)->toHaveCount(1);
+    expect($firstRooms[0]['room_name'])->toBe('Boho Private Double Room');
+
+    $second = $this->postJson('/chat', [
+        'message' => 'is the room available?',
+        'session_token' => $first->json('session_token'),
+    ]);
+    $second->assertOk()->assertJsonPath('status', 'success');
+    $secondRooms = $second->json('retrieved_rooms');
+    expect($secondRooms)->toHaveCount(1);
+    expect($secondRooms[0]['room_name'])->toBe('Boho Private Double Room');
+
+    $third = $this->postJson('/chat', [
+        'message' => 'check september 8-9 for 2 pax',
+        'session_token' => $first->json('session_token'),
+    ]);
+    $third->assertOk()->assertJsonPath('status', 'success');
+    $thirdRooms = $third->json('retrieved_rooms') ?? [];
+    expect($thirdRooms)->toHaveCount(1);
+    expect($thirdRooms[0]['room_name'])->toBe('Boho Private Double Room');
+    expect($third->json('reply'))->toContain('Boho Private Double Room');
+    expect($third->json('suggested_actions.0.id'))->toBe('check-alternatives');
+});
+
 test('asking about a hotel not in the database falls back to similar options', function () {
     $embedding = '['.implode(',', array_fill(0, 3072, '0.01')).']';
     $this->hotel->update(['embedding' => $embedding]);
