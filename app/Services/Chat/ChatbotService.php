@@ -1773,6 +1773,7 @@ class ChatbotService
         if ($outlook !== '') {
             $reply .= "\n\n".$outlook;
         }
+        $reply .= "\n\n".$this->weatherCoverageNote();
 
         $normalized = $this->weather->normalize($forecast);
         $suitability = $this->weather->bookingSuitability($forecast);
@@ -2045,6 +2046,8 @@ class ChatbotService
             $reply = $fallback;
         }
 
+        $reply = rtrim($reply)."\n\n".$this->weatherCoverageNote();
+
         return [
             'reply' => $reply,
             'weather_advisory' => [
@@ -2126,6 +2129,11 @@ class ChatbotService
     // ────────────────────────────────────────────────
     //  Helpers
     // ────────────────────────────────────────────────
+
+    protected function weatherCoverageNote(): string
+    {
+        return 'Note: forecasts here cover only the next 5 days; dates beyond that can\'t be generated.';
+    }
 
     protected function buildPrompt(string $stage, string $context, string $query, ?User $user): string
     {

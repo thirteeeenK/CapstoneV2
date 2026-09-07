@@ -527,6 +527,7 @@ test('follow-up prompts do not duplicate the system prompt into user content', f
 });
 
 test('weather query returns structured response', function () {
+    config()->set('services.openweather.api_key', 'test-key');
     Http::fake([
         '*embedContent*' => Http::response(['embedding' => ['values' => array_fill(0, 3072, 0.01)]]),
         '*generateContent*' => Http::response(['candidates' => [['content' => ['parts' => [['text' => 'Weather is nice!']]]]]]),
@@ -551,6 +552,10 @@ test('weather query returns structured response', function () {
     ]);
 
     $response->assertStatus(200)->assertJson(['status' => 'success']);
+    expect($response->json('reply'))
+        ->toContain('5-day outlook')
+        ->toContain('cover only the next 5 days')
+        ->toContain('beyond that');
 });
 
 test('map distance query works', function () {
