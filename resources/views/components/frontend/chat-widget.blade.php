@@ -1,16 +1,27 @@
-<div x-data="chatWidget()" x-init="init()" class="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3"
-    x-trap="open">
+<div x-data="chatWidget()" x-init="init()"
+     @cart-drawer-toggle.window="cartOpen = $event.detail.open; if (cartOpen && open) open = false"
+     x-show="!cartOpen"
+     x-cloak
+     x-transition:enter="transition ease-out duration-200"
+     x-transition:enter-start="opacity-0 scale-90 translate-y-2"
+     x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+     x-transition:leave="transition ease-in duration-150"
+     x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+     x-transition:leave-end="opacity-0 scale-90 translate-y-2"
+     class="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-3"
+     x-trap="open">
     {{-- Floating bubble button --}}
     <button @click="toggle()"
-        class="w-14 h-14 rounded-full bg-gradient-to-r from-ocean-600 to-ocean-700 text-white shadow-xl shadow-ocean-600/30 flex items-center justify-center transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ocean-400 focus:ring-offset-2 hover:scale-105 active:scale-95 cursor-pointer"
-        :class="open ? 'rotate-90 scale-95 bg-slate-900 shadow-slate-900/30' : ''" aria-label="Chat with SunnyTrips AI">
-        <svg x-show="!open" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.86 9.86 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-        </svg>
+        class="relative w-14 h-14 rounded-full flex items-center justify-center transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ocean-400 focus:ring-offset-2 hover:scale-105 active:scale-95 cursor-pointer"
+        :class="open ? 'rotate-90 scale-95 bg-slate-900 text-white shadow-xl shadow-slate-900/30' : 'bg-transparent'" aria-label="Chat with SunnyTrips AI">
+        <img x-show="!open" src="{{ asset('images/favicon-sun.png') }}" alt="Chat with SunnyBot"
+            class="w-14 h-14 rounded-full object-cover shadow-xl shadow-ocean-600/20">
         <svg x-show="open" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
         </svg>
+        <span x-show="!open && hasUnreadAdmin" class="absolute -top-1 -right-1 w-4 h-4 bg-coral-500 border-2 border-white rounded-full flex items-center justify-center">
+            <span class="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>
+        </span>
     </button>
 
     {{-- Chat panel --}}
@@ -28,8 +39,9 @@
             <div class="flex items-center gap-3 relative z-10">
                 <div class="relative">
                     <div
-                        class="w-9 h-9 rounded-2xl bg-ocean-600 text-white flex items-center justify-center text-sm font-black font-headline shadow-xs">
-                        S
+                        class="w-9 h-9 rounded-2xl bg-white flex items-center justify-center shadow-xs overflow-hidden">
+                        <img src="{{ asset('images/favicon-sun.png') }}" alt="SunnyBot"
+                            class="w-9 h-9 object-cover">
                     </div>
                     <span
                         class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-slate-900"></span>
@@ -101,8 +113,9 @@
             <template x-if="messages.length === 0 && !guestLimited">
                 <div class="text-center py-6 px-4 bg-white rounded-2xl border border-slate-200/80 shadow-xs space-y-2">
                     <div
-                        class="w-10 h-10 rounded-2xl bg-ocean-50 text-ocean-600 mx-auto flex items-center justify-center font-headline font-black text-sm border border-ocean-100">
-                        S
+                        class="w-10 h-10 rounded-2xl bg-white mx-auto flex items-center justify-center border border-ocean-100 overflow-hidden">
+                        <img src="{{ asset('images/favicon-sun.png') }}" alt="SunnyBot"
+                            class="w-10 h-10 object-cover">
                     </div>
                     <p class="text-slate-800 text-xs font-bold font-headline">Welcome to SunnyBot AI!</p>
                     <p class="text-slate-500 text-[11px] font-body leading-relaxed">Ask me about sanctuary hotels,
@@ -127,8 +140,9 @@
                     <template x-if="msg.sender === 'bot'">
                         <div class="flex gap-2.5 items-start">
                             <div
-                                class="w-7 h-7 rounded-xl bg-ocean-600 text-white flex items-center justify-center text-xs font-bold shrink-0 font-headline shadow-xs mt-0.5">
-                                S</div>
+                                class="w-7 h-7 rounded-xl bg-white flex items-center justify-center shrink-0 shadow-xs mt-0.5 overflow-hidden border border-amber-100">
+                                <img src="{{ asset('images/favicon-sun.png') }}" alt="SunnyBot"
+                                    class="w-7 h-7 object-cover"></div>
                             <div
                                 class="bg-white rounded-2xl rounded-tl-xs px-3.5 py-3 shadow-xs border border-slate-200/80 max-w-[85%]">
                                 <div class="text-xs sm:text-sm text-slate-800 font-body leading-relaxed space-y-2"
@@ -359,8 +373,9 @@
             {{-- Thinking orb --}}
             <div x-show="sending" class="flex gap-2.5 items-start pl-1 py-1">
                 <div
-                    class="w-7 h-7 rounded-xl bg-ocean-600 text-white flex items-center justify-center text-xs font-bold shrink-0 font-headline shadow-xs">
-                    S</div>
+                    class="w-7 h-7 rounded-xl bg-white flex items-center justify-center shrink-0 shadow-xs overflow-hidden border border-amber-100">
+                    <img src="{{ asset('images/favicon-sun.png') }}" alt="SunnyBot"
+                        class="w-7 h-7 object-cover"></div>
                 <div class="bg-white rounded-2xl rounded-tl-xs px-4 py-3 shadow-xs border border-slate-200/80">
                     <x-thinking-orb state="composing" :size="18" />
                 </div>
@@ -393,6 +408,7 @@
     function chatWidget() {
         return {
             open: false,
+            cartOpen: false,
             input: '',
             messages: [],
             sending: false,
@@ -407,25 +423,100 @@
             handoffLastMessageId: 0,
             locatingLocation: false,
             geoError: null,
+            hasUnreadAdmin: false,
+            isAuthed: @json(auth()->check()),
 
-            init() {
+            async init() {
                 this.sessionToken = localStorage.getItem('sunnytrips_chat_session');
-                this.loadConversation();
+                // Authed users with lost token (logout rotation) recover via /chat/active instead of empty.
+                if (!this.sessionToken && this.isAuthed) {
+                    await this.syncActiveSession();
+                }
+                await this.loadConversation();
+                // After initial load, sync again to catch admin-initiated while offline (token mismatch).
+                if (this.isAuthed) {
+                    await this.syncActiveSession();
+                    // Background check for admin-initiated messages while widget closed (badge).
+                    setInterval(() => {
+                        if (!this.open) this.syncActiveSession();
+                    }, 30000);
+                }
+            },
+
+            async syncActiveSession() {
+                try {
+                    const res = await fetch('/chat/active', {
+                        headers: { 'Accept': 'application/json' }
+                    });
+                    if (!res.ok) return false;
+                    const data = await res.json();
+                    if (data.session_token && data.session_token !== this.sessionToken) {
+                        this.sessionToken = data.session_token;
+                        localStorage.setItem('sunnytrips_chat_session', data.session_token);
+                        if (data.handoff_status === 'PENDING_ASSIGNMENT') {
+                            this.handoffStatus = 'pending';
+                            this.handoffTicket = data.ticket_number || '';
+                        } else if (data.handoff_status === 'HUMAN_SUPPORT_ACTIVE') {
+                            this.handoffStatus = 'active';
+                        }
+                        // Reload conversation with the recovered token so history reappears.
+                        await this.loadConversation();
+                        return true;
+                    }
+                    if (data.has_active) {
+                        if (data.handoff_status === 'PENDING_ASSIGNMENT') {
+                            this.handoffStatus = 'pending';
+                            this.handoffTicket = data.ticket_number || '';
+                        } else if (data.handoff_status === 'HUMAN_SUPPORT_ACTIVE') {
+                            this.handoffStatus = 'active';
+                        }
+                        if (!this.open) this.hasUnreadAdmin = true;
+                        this.startHandoffPolling();
+                    }
+                    return false;
+                } catch (e) {
+                    return false;
+                }
             },
 
             async loadConversation() {
-                if (!this.sessionToken) return;
+                if (!this.sessionToken) {
+                    // Try one more recovery for authed users before giving up (covers first load with empty storage).
+                    if (this.isAuthed) {
+                        const recovered = await this.syncActiveSession();
+                        if (!recovered) return;
+                    } else {
+                        return;
+                    }
+                }
                 try {
                     const res = await fetch(`/chat/history?session_token=${encodeURIComponent(this.sessionToken)}`, {
                         headers: { 'Accept': 'application/json' }
                     });
                     if (!res.ok) return;
                     const data = await res.json();
-                    if (data.session_token) {
+                    // Guest probing an authed token — server returns a fresh guest token with isolated=true.
+                    // Keep the owner's original token instead of overwriting it, otherwise logout→login loses history.
+                    if (data.isolated) {
+                        return;
+                    }
+                    if (data.session_token && data.session_token !== this.sessionToken) {
                         this.sessionToken = data.session_token;
                         localStorage.setItem('sunnytrips_chat_session', data.session_token);
                     }
-                    if (!data.messages || !data.messages.length) return;
+                    if (!data.messages || !data.messages.length) {
+                        // Even with no messages, honour handoff status (e.g., fresh admin-initiated).
+                        if (data.handoff_status === 'PENDING_ASSIGNMENT') {
+                            this.handoffStatus = 'pending';
+                        } else if (data.handoff_status === 'HUMAN_SUPPORT_ACTIVE') {
+                            this.handoffStatus = 'active';
+                            if (!this.open) this.hasUnreadAdmin = true;
+                        }
+                        if (this.handoffStatus === 'pending' || this.handoffStatus === 'active') {
+                            this.startHandoffPolling();
+                        }
+                        return;
+                    }
 
                     const handoffStatus = data.handoff_status;
                     if (handoffStatus === 'PENDING_ASSIGNMENT') {
@@ -464,7 +555,8 @@
             toggle() {
                 this.open = !this.open;
                 if (this.open) {
-                    this.loadConversation();
+                    this.hasUnreadAdmin = false;
+                    this.syncActiveSession().then(() => this.loadConversation());
                     this.$nextTick(() => {
                         this.$refs.input?.focus();
                         this.scrollDown();
@@ -877,7 +969,8 @@
 
             async pollHandoffMessages() {
                 if (!this.sessionToken || !this.handoffStatus) return;
-                if (!this.open) return;
+                // Keep polling even when closed to catch admin-initiated while off-screen (badge), but throttle via hasUnread.
+                const wasClosed = !this.open;
                 try {
                     const params = new URLSearchParams({ session_token: this.sessionToken });
                     if (this.handoffLastMessageId > 0) params.set('after_id', this.handoffLastMessageId);
@@ -908,6 +1001,7 @@
                     for (const msg of msgs) {
                         if (msg.id > this.handoffLastMessageId) this.handoffLastMessageId = msg.id;
                         if ((msg.sender === 'admin' || msg.sender === 'bot') && !this.messages.some(m => m.id === msg.id)) {
+                            if (wasClosed) this.hasUnreadAdmin = true;
                             this.addMessage(msg.sender, msg.text, { id: msg.id });
                         }
                     }

@@ -1,5 +1,6 @@
 <div x-data="cartDrawer()"
      x-init="initDrawer()"
+     x-effect="window.dispatchEvent(new CustomEvent('cart-drawer-toggle', { detail: { open: isOpen } }))"
      @open-cart-drawer.window="openDrawer()"
      @cart-updated.window="fetchCartData()"
      class="relative z-50">
@@ -207,12 +208,14 @@ function cartDrawer() {
         openDrawer() {
             this.isOpen = true;
             document.body.style.overflow = 'hidden';
+            window.dispatchEvent(new CustomEvent('cart-drawer-toggle', { detail: { open: true } }));
             this.fetchCartData();
         },
 
         closeDrawer() {
             this.isOpen = false;
             document.body.style.overflow = '';
+            window.dispatchEvent(new CustomEvent('cart-drawer-toggle', { detail: { open: false } }));
         },
 
         async fetchCartData() {

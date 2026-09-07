@@ -3,6 +3,7 @@
 namespace App\Services\Chat;
 
 use App\Models\ActivityModel;
+use App\Models\Booking;
 use App\Models\ChatMessage;
 use App\Models\ChatSession;
 use App\Models\DestinationModel;
@@ -65,6 +66,16 @@ class ChatbotService
         }
 
         $lastBot = $session->messages()->where('sender', 'bot')->latest()->first();
+
+        // DSS: "is it okay to book in that weather" → scored advisory using previous forecast (not repeat outlook)
+        if ($lastBot && $this->isWeatherAdvisoryFollowUp($message, $lastBot)) {
+            $reply = $this->handleWeatherAdvisory($message, $session, $user);
+            $text = $reply['reply'] ?? 'Sorry, I could not process that request. Please try again.';
+            $this->conversation->persist($session, 'bot', $text, $reply);
+
+            return array_merge(['status' => 'success', 'control' => 'ai', 'session_token' => $session->session_token, 'reply' => $text], $reply);
+        }
+
         // Filter refinements like "luxury quiet pool" should re-search with inherited destination, not Q&A over old cards
         if ($lastBot && $this->isFilterRefinementQuery($message, $lastBot) && ! $this->startsNewSearch(mb_strtolower(trim($message)))) {
             // fall through to fresh search with conversational destination inheritance
@@ -110,7 +121,7 @@ class ChatbotService
         }
 
         $intent = $this->intentRouter->classify($message);
-        $constraints = in_array($intent, [IntentRouter::GENERAL_TALK, IntentRouter::DESTINATIONS_OVERVIEW], true)
+        $constraints = in_array($intent, [IntentRouter::GENERAL_TALK, IntentRouter::DESTINATIONS_OVERVIEW, IntentRouter::BOOKING_STATUS], true)
             ? []
             : $this->intentRouter->extractConstraints($message);
         $constraints = $this->resolveConversationalDestination($constraints, $session);
@@ -128,6 +139,7 @@ class ChatbotService
             IntentRouter::WEATHER_QUERY => $this->handleWeatherQuery($message, $constraints, $session),
             IntentRouter::DESTINATIONS_OVERVIEW => $this->handleDestinationsOverview($session),
             IntentRouter::DISCOUNT_QUERY => $this->handleDiscountQuery($message, $session),
+            IntentRouter::BOOKING_STATUS => $this->handleBookingStatus($message, $user, $session),
             default => $this->handleGeneralChat($message, $session),
         };
 
@@ -304,6 +316,11 @@ class ChatbotService
                 'retrieved_packages',
                 'itinerary',
                 'availability',
+                'weather',
+                'weather_forecast_raw',
+                'weather_normalized',
+                'destination_id',
+                'destination_name',
             ]));
 
             $hotelName = $this->intentRouter->extractHotelName($query);
@@ -392,6 +409,27 @@ class ChatbotService
         if (! empty($data['retrieved_packages'])) {
             foreach ($data['retrieved_packages'] as $p) {
                 $blocks[] = "- Package: {$p['name']} — ₱".number_format((float) $p['price'], 2)." ({$p['days']}D/{$p['nights']}N)";
+            }
+        }
+
+        if (! empty($data['weather'])) {
+            $w = $data['weather'];
+            $suit = $w['suitability'] ?? null;
+            $suitLine = $suit ? " — Booking score {$suit['score']}/100 ({$suit['label']})" : '';
+            $blocks[] = "- Weather: {$w['destination']} — {$w['description']} at {$w['temp']}°C{$suitLine}";
+            if (! empty($suit['reasons'])) {
+                foreach ($suit['reasons'] as $r) {
+                    $blocks[] = "  - {$r}";
+                }
+            }
+            if (! empty($suit['driestDate'])) {
+                $blocks[] = "  - Driest date in 5-day: {$suit['driestDate']}";
+            }
+        } elseif (! empty($data['destination_name']) && ! empty($data['weather_normalized'])) {
+            $wn = $data['weather_normalized'];
+            $cur = $wn['current'] ?? null;
+            if ($cur) {
+                $blocks[] = "- Weather: {$data['destination_name']} — {$cur['description']} at {$cur['temp']}°C";
             }
         }
 
@@ -677,6 +715,75 @@ class ChatbotService
         $reply = $this->geminiChatResponse($prompt, $session);
 
         return ['reply' => $reply, 'discount_rules' => $context];
+    }
+
+    protected function handleBookingStatus(string $query, ?User $user, ChatSession $session): array
+    {
+        // Booking data is identity-scoped: guests must log in, no code-based lookup
+        if (! $user) {
+            return [
+                'reply' => 'Please log in to your SunnyTrips account and ask again — I\'ll pull up your bookings and their latest status.',
+            ];
+        }
+
+        $code = $this->intentRouter->extractBookingCode($query);
+        $bookingsQuery = Booking::where('user_id', $user->id)->with('items')->latest('created_at');
+        if ($code) {
+            $bookingsQuery->where('booking_code', $code);
+        }
+        $bookings = $bookingsQuery->limit(5)->get();
+
+        if ($bookings->isEmpty()) {
+            if ($code) {
+                return [
+                    'reply' => "I couldn't find a booking with code **{$code}** in your account. Double-check the code, or just ask me for \"my bookings\" to see all of them.",
+                ];
+            }
+
+            return [
+                'reply' => "You don't have any bookings yet. Ask me to find a room, hotel, or package and I'll help you plan your trip — once you book, I can track the status here.",
+            ];
+        }
+
+        $context = $this->buildBookingContext($bookings);
+        $prompt = $this->buildPrompt('booking-status', $context, $query, $user);
+        $reply = $this->geminiChatResponse($prompt, $session);
+
+        return ['reply' => $reply];
+    }
+
+    protected function buildBookingContext($bookings): string
+    {
+        $blocks = [];
+        foreach ($bookings as $booking) {
+            /** @var Booking $booking */
+            $lines = [
+                "Booking Code: {$booking->booking_code}",
+                'Status: '.str_replace('_', ' ', (string) $booking->status),
+                'Payment Status: '.str_replace('_', ' ', (string) $booking->payment_status),
+                'Total: ₱'.number_format((float) $booking->net_amount, 2),
+            ];
+            if ($booking->status === Booking::STATUS_APPROVED && $booking->payment_deadline) {
+                $lines[] = 'Payment Deadline: '.$booking->payment_deadline->format('M j, Y g:i A').' (48-hour window)';
+            }
+            foreach ($booking->items as $item) {
+                $dates = $item->check_in_date
+                    ? " ({$item->check_in_date} to {$item->check_out_date}, {$item->nights} night(s))"
+                    : '';
+                $lines[] = "- {$item->item_title}{$dates}";
+            }
+            if ($booking->status === Booking::STATUS_REJECTED && $booking->rejection_reason) {
+                $lines[] = 'Rejection Reason: '.$booking->rejection_reason;
+            }
+            if ($booking->status === Booking::STATUS_CANCELLED && $booking->cancellation_reason) {
+                $lines[] = 'Cancellation Reason: '.$booking->cancellation_reason;
+            }
+            $lines[] = 'View full details: '.route('booking.show', $booking->booking_code);
+
+            $blocks[] = implode("\n", $lines);
+        }
+
+        return "=== USER BOOKINGS (live records for the logged-in user) ===\n\n".implode("\n\n", $blocks);
     }
 
     protected function handleHotelSearch(string $query, array $constraints, ?User $user, ChatSession $session): array
@@ -1499,16 +1606,26 @@ class ChatbotService
             $reply .= "\n\n".$outlook;
         }
 
+        $normalized = $this->weather->normalize($forecast);
+        $suitability = $this->weather->bookingSuitability($forecast);
+
         return [
             'reply' => $reply,
             'weather' => [
                 'destination' => $dest->name,
+                'destination_id' => $dest->id,
                 'temp' => $temp,
                 'description' => $desc,
                 'feels_like' => round($main['feels_like'] ?? $temp),
                 'humidity' => $main['humidity'] ?? null,
                 'advice' => $advice,
+                'suitability' => $suitability,
             ],
+            // Persist raw forecast + normalized for follow-up advisory reasoning (not shown to user directly).
+            'weather_forecast_raw' => $forecast,
+            'weather_normalized' => $normalized,
+            'destination_id' => $dest->id,
+            'destination_name' => $dest->name,
         ];
     }
 
@@ -1599,6 +1716,213 @@ class ChatbotService
         return "**5-day outlook:**\n".implode("\n", $lines);
     }
 
+    protected function isWeatherAdvisoryFollowUp(string $query, ?ChatMessage $lastBot): bool
+    {
+        if (! $lastBot) {
+            return false;
+        }
+
+        $data = $lastBot->context_data ?: [];
+        $hasWeather = ! empty($data['weather']) || ! empty($data['weather_normalized']) || ! empty($data['weather_forecast_raw']) || ! empty($data['destination_id']);
+
+        if (! $hasWeather) {
+            $msg = mb_strtolower($lastBot->message ?? '');
+            if (! str_contains($msg, '5-day outlook') && ! str_contains($msg, 'current weather') && ! str_contains($msg, 'weather in')) {
+                return false;
+            }
+            $hasWeather = true;
+        }
+
+        $lower = mb_strtolower(trim($query));
+        if ($lower === '') {
+            return false;
+        }
+
+        // Direct advisory phrases in English + Taglish
+        $advisoryPattern = '/\b(okay to book|ok to book|worth (it|booking)|should i (book|go|postpone|proceed|cancel)|is it (safe|advisable|good|worth|okay|ok) |advisable|postpone|cancel|reschedule|sulit.*book|tuloy.*(book|biyahe)|maganda.*panahon|pangit.*panahon)\b/i';
+        if (preg_match($advisoryPattern, $lower)) {
+            return true;
+        }
+
+        // booking + weather in same short query (e.g., "is it okay to book in that weather")
+        if (preg_match('/\b(book|booking|biyahe|pasyal|reserve)\b/i', $lower) && preg_match('/\b(weather|rain|ulan|bagyo|panahon|forecast|outlook)\b/i', $lower)) {
+            return true;
+        }
+
+        // Pure "is it okay?" / "sulit ba?" after a weather turn is implicitly about that weather
+        if (preg_match('/^(is it (okay|ok|worth|safe|good)|okay ba|sulit ba|tuloy ba|should i)/i', $lower) && $hasWeather) {
+            return true;
+        }
+
+        // Very short booking question after weather (≤6 words, contains book)
+        if (str_word_count($lower) <= 8 && preg_match('/\b(book|booking)\b/i', $lower) && $hasWeather) {
+            return true;
+        }
+
+        return false;
+    }
+
+    protected function handleWeatherAdvisory(string $query, ChatSession $session, ?User $user): array
+    {
+        $lastBot = $session->messages()->where('sender', 'bot')->latest()->first();
+        $data = $lastBot?->context_data ?: [];
+        $constraints = $this->intentRouter->extractConstraints($query);
+        $constraints = $this->resolveConversationalDestination($constraints, $session);
+        $constraints = $this->resolveDefaultDestination($constraints, $user);
+
+        $destinationId = $constraints['destination_id'] ?? $data['destination_id'] ?? $data['weather']['destination_id'] ?? null;
+        $destinationName = $constraints['destination_name'] ?? $data['destination_name'] ?? $data['weather']['destination'] ?? null;
+
+        if (! $destinationId && $destinationName) {
+            $destinationId = DestinationModel::where('name', 'ILIKE', $destinationName)->value('id');
+        }
+
+        // Fallback: try to extract from last user messages if still missing
+        if (! $destinationId) {
+            $recentUsers = $session->messages()->where('sender', 'user')->latest('created_at')->limit(3)->pluck('message');
+            foreach ($recentUsers as $msg) {
+                $name = $this->intentRouter->extractDestinationName($msg);
+                if ($name) {
+                    $destinationName = $name;
+                    $destinationId = DestinationModel::where('name', 'ILIKE', $name)->value('id');
+                    if ($destinationId) {
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (! $destinationId) {
+            $example = $this->exampleDestinations(1);
+
+            return ['reply' => 'Which destination would you like booking advice for? For example, "Is it okay to book in Boracay this week?" (Try '.$example.')'];
+        }
+
+        $dest = DestinationModel::find($destinationId);
+        if (! $dest) {
+            return ['reply' => 'I could not find that destination. Could you check the spelling?'];
+        }
+
+        // Reuse cached forecast from previous turn if same destination, else fetch
+        $forecast = null;
+        $reused = false;
+        if (! empty($data['weather_forecast_raw']) && (int) ($data['destination_id'] ?? $data['weather']['destination_id'] ?? 0) === (int) $destinationId) {
+            $forecast = $data['weather_forecast_raw'];
+            $reused = true;
+        }
+
+        if (! $forecast) {
+            $forecast = $this->weather->forecastForDestination($dest);
+        }
+
+        if (! $forecast) {
+            return ['reply' => "I'm sorry, weather data for {$dest->name} is currently unavailable. Please try again later — meanwhile I can show you indoor-friendly activities there."];
+        }
+
+        $normalized = $data['weather_normalized'] ?? $this->weather->normalize($forecast);
+        if ($reused && empty($normalized['current'])) {
+            $normalized = $this->weather->normalize($forecast);
+        }
+
+        $suitability = $data['weather']['suitability'] ?? $this->weather->bookingSuitability($forecast);
+        if (empty($suitability) || ! isset($suitability['score'])) {
+            $suitability = $this->weather->bookingSuitability($forecast);
+        }
+
+        // Indoor-friendly activities (infer, no DB column)
+        $allActivities = ActivityModel::where('destination_id', $destinationId)->where('is_shown', true)->get();
+        $indoor = [];
+        $outdoor = [];
+        foreach ($allActivities as $act) {
+            if ($act->isIndoor()) {
+                $indoor[] = $act;
+            } else {
+                $outdoor[] = $act;
+            }
+        }
+
+        // Indoor / alternative destination removed per user spec (Option A trimmed)
+        $indoorSample = [];
+        $indoorContext = '';
+        $altContext = '';
+        $altDestName = null;
+        $altSuitability = null;
+
+        // Driest date for current dest
+        $driestDate = $suitability['driestDate'] ?? null;
+        $driestLabel = 'the driest day in the 5-day';
+        $driestPop = null;
+        if ($driestDate) {
+            try {
+                $driestLabel = (new \DateTimeImmutable($driestDate))->format('D M j');
+                $driestPop = $suitability['dailyScores'][$driestDate]['pop'] ?? null;
+            } catch (\Throwable $e) {
+                $driestLabel = $driestDate;
+            }
+        }
+
+        // Build DSS prompt for Gemini
+        $outlook = $this->buildFiveDayOutlook($forecast);
+        $dailyLines = [];
+        foreach ($suitability['dailyScores'] ?? [] as $date => $d) {
+            try {
+                $lbl = (new \DateTimeImmutable($date))->format('D M j');
+            } catch (\Throwable $e) {
+                $lbl = $date;
+            }
+            $dailyLines[] = "- {$lbl}: score {$d['score']}/100, POP ".(int) round($d['pop'] * 100)."% , rain {$d['rain']}mm, wind {$d['wind']}m/s, temp {$d['temp']}°C";
+        }
+
+        $context = "DESTINATION: {$dest->name}\n";
+        $context .= "BOOKING SUITABILITY: {$suitability['score']}/100 — {$suitability['label']} (level: {$suitability['level']})\n";
+        $context .= 'REASONS: '.implode('; ', $suitability['reasons'] ?? [])."\n";
+        $context .= "DAILY BREAKDOWN:\n".implode("\n", $dailyLines)."\n\n";
+        $context .= "5-DAY OUTLOOK (from forecast):\n{$outlook}\n\n";
+        $context .= "USER QUESTION: {$query}";
+
+        $prompt = $this->buildPrompt('weather-advisory', $context, $query, $user);
+        $reply = $this->geminiChatResponse($prompt, $session);
+
+        // If Gemini unavailable, deterministic fallback that still uses DSS scoring
+        if (! $reply || trim($reply) === '' || str_contains($reply, 'I could not generate a response')) {
+            $intro = $suitability['level'] === 'good'
+                ? "Based on the weather forecast for {$dest->name}, it's a good time to book."
+                : ($suitability['level'] === 'okay'
+                    ? "Based on the weather forecast for {$dest->name}, conditions are mixed for booking."
+                    : "Based on the weather forecast for {$dest->name}, it's not the best time to book.");
+            $fallback = "{$intro}\n\n";
+            $fallback .= "Booking Suitability: {$suitability['score']}/100 (".ucfirst($suitability['level']).")\n\n";
+            $fallback .= "Reasons:\n".implode("\n", array_map(fn ($r) => "- {$r}", $suitability['reasons'] ?? []))."\n";
+            $reply = $fallback;
+        }
+
+        return [
+            'reply' => $reply,
+            'weather_advisory' => [
+                'destination' => $dest->name,
+                'destination_id' => $dest->id,
+                'score' => $suitability['score'],
+                'level' => $suitability['level'],
+                'label' => $suitability['label'],
+                'reasons' => $suitability['reasons'] ?? [],
+                'driestDate' => $driestDate,
+                'driestLabel' => $driestLabel,
+                'dailyScores' => $suitability['dailyScores'] ?? [],
+                'alternative' => $altDestName ? ['name' => $altDestName, 'score' => $altSuitability['score'] ?? null, 'label' => $altSuitability['label'] ?? null] : null,
+            ],
+            'weather' => [
+                'destination' => $dest->name,
+                'destination_id' => $dest->id,
+                'suitability' => $suitability,
+                'advice' => $this->weather->advice($this->weather->normalize($forecast)),
+            ],
+            'weather_forecast_raw' => $forecast,
+            'weather_normalized' => $normalized,
+            'destination_id' => $dest->id,
+            'destination_name' => $dest->name,
+        ];
+    }
+
     protected function handleDestinationsOverview(ChatSession $session): array
     {
         $names = DestinationModel::orderBy('name')->pluck('name')->all();
@@ -1665,6 +1989,8 @@ class ChatbotService
             'availability' => 'TASK: Report real-time room availability, prices, and remaining inventory.',
             'itinerary' => 'TASK: Present a day-by-day itinerary plan using the provided items.',
             'discount' => 'TASK: Explain SunnyTrips passenger pricing rules and discounts based on the database results below.',
+            'booking-status' => 'TASK: Report the status of the user\'s bookings using the booking records below.',
+            'weather-advisory' => 'TASK: Advise on booking given the weather forecast — provide a scored recommendation.',
             default => "TASK: Answer the user's travel question.",
         };
 
@@ -1687,6 +2013,21 @@ class ChatbotService
             $rules[] = 'Do not introduce any other locations, attractions, activities, venues, services, logistics, fees, or expenses.';
             $rules[] = 'Do not create airport arrival or departure plans, transfer details, meal plans, or extra budget estimates. Only use the listed room and activity prices and the pre-computed total.';
             $rules[] = 'If a part of the trip is not covered by the provided results, say that it is not included in the database results.';
+        }
+
+        if ($stage === 'booking-status') {
+            $rules[] = 'Report ONLY the booking records provided below; never invent or guess a status, amount, or date.';
+            $rules[] = 'Do not mention admin notes, internal price adjustments, payment links, or gateway references.';
+            $rules[] = 'Suggest opening the full-details link for actions like payment or cancellation requests.';
+        }
+
+        if ($stage === 'weather-advisory') {
+            $rules[] = 'Use ONLY the weather forecast numbers provided (POP, rain mm, wind m/s, temp °C) — cite exact values per day; never invent weather.';
+            $rules[] = 'Explain the booking score 0-100 and level (Good ≥70, Okay 40-69, Poor <40) with 2-3 short reasons from the provided suitability reasons.';
+            $rules[] = 'If score is good, confirm it is a good window; if okay or poor, advise to consider postponing when POP is persistently high. Do NOT mention a driest date, do NOT suggest bringing a rain jacket, and do NOT suggest alternative dates.';
+            $rules[] = 'Do NOT suggest alternative destinations, indoor activities, or free cancellation — keep advice to the single destination forecast only.';
+            $rules[] = 'Keep Taglish if user used Tagalog, otherwise English; keep tone warm and concise like a Filipino travel buddy.';
+            $rules[] = 'Do not add fees, transports, landmarks, restaurants, or activities not in context.';
         }
 
         $header .= "\n\nRULES:\n- ".implode("\n- ", $rules);

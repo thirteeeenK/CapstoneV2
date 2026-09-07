@@ -42,13 +42,13 @@ class ReviewService
     {
         $class = self::REVIEWABLE_ITEM_TYPES[$item->item_type] ?? null;
 
-        if (! $class) {
+        if (!$class) {
             return null;
         }
 
         $target = $item->itemable;
 
-        if (! $target) {
+        if (!$target) {
             return null;
         }
 
@@ -108,17 +108,17 @@ class ReviewService
             $item = $booking->items()->whereKey($bookingItemId)->first();
         }
 
-        if (! $item) {
+        if (!$item) {
             $item = $booking->items()
                 ->whereIn('item_type', array_keys(self::REVIEWABLE_ITEM_TYPES))
                 ->first();
         }
 
-        abort_unless($item, 422, 'This booking has no reviewable items.');
+        abort_unless($item !== null, 422, 'This booking has no reviewable items.');
 
         $target = $this->resolveReviewableFromItem($item);
 
-        abort_unless($target, 422, 'This booking has no reviewable items.');
+        abort_unless($target !== null, 422, 'This booking has no reviewable items.');
 
         $imagePaths = $this->storeReviewImages($imageFiles);
 
@@ -171,7 +171,7 @@ class ReviewService
 
         $reviewer = $user ?? $booking->user;
 
-        abort_unless($reviewer, 422, 'This booking has no guest account to attribute the review to.');
+        abort_unless($reviewer !== null, 422, 'This booking has no guest account to attribute the review to.');
 
         $reviewedItemIds = Review::where('booking_id', $booking->id)->pluck('booking_item_id')->filter();
 
@@ -181,18 +181,18 @@ class ReviewService
             $item = $booking->items()->whereKey($bookingItemId)->first();
         }
 
-        if (! $item) {
+        if (!$item) {
             $item = $booking->items()
                 ->whereIn('item_type', array_keys(self::REVIEWABLE_ITEM_TYPES))
                 ->whereNotIn('id', $reviewedItemIds)
                 ->first();
         }
 
-        abort_unless($item, 422, 'This booking has no unreviewed items.');
+        abort_unless($item !== null, 422, 'This booking has no unreviewed items.');
 
         $target = $this->resolveReviewableFromItem($item);
 
-        abort_unless($target, 422, 'This booking has no reviewable items.');
+        abort_unless($target !== null, 422, 'This booking has no reviewable items.');
 
         $imagePaths = $this->storeReviewImages($imageFiles);
 
@@ -238,7 +238,7 @@ class ReviewService
 
         $entity = $class::find($entityId);
 
-        abort_unless($entity, 422, "Entity not found: {$entityType} #{$entityId}");
+        abort_unless($entity !== null, 422, "Entity not found: {$entityType} #{$entityId}");
 
         $label = $entity->hotel_name ?? $entity->room_name ?? $entity->activity_name ?? $entity->name ?? 'Listing';
 
@@ -306,7 +306,7 @@ class ReviewService
             ->get()
             ->map(function (Booking $booking) {
                 $items = $booking->items
-                    ->filter(fn ($item) => array_key_exists($item->item_type, self::REVIEWABLE_ITEM_TYPES))
+                    ->filter(fn($item) => array_key_exists($item->item_type, self::REVIEWABLE_ITEM_TYPES))
                     ->map(function (BookingItem $item) {
                         $review = Review::where('booking_id', $item->booking_id)
                             ->where('booking_item_id', $item->id)
@@ -339,7 +339,7 @@ class ReviewService
                     'has_unreviewed_items' => $hasUnreviewed,
                 ];
             })
-            ->filter(fn ($b) => $b['has_unreviewed_items'])
+            ->filter(fn($b) => $b['has_unreviewed_items'])
             ->values();
     }
 
@@ -389,10 +389,10 @@ class ReviewService
         $reviews = $query->limit($limit)->get();
 
         if ($sort === 'helpful') {
-            $reviews = $reviews->sortByDesc(fn (Review $review) => count($review->extracted_keywords ?? []))->values();
+            $reviews = $reviews->sortByDesc(fn(Review $review) => count($review->extracted_keywords ?? []))->values();
         }
 
-        return $reviews->map(fn (Review $review) => $this->presentForFeed($review));
+        return $reviews->map(fn(Review $review) => $this->presentForFeed($review));
     }
 
     /**
@@ -428,7 +428,7 @@ class ReviewService
             'entity_location' => $location,
             'rating' => (int) $review->rating,
             'comment' => $review->comment,
-            'images' => array_map(fn (?string $p) => $p ? self::resolveImg($p) : null, $images),
+            'images' => array_map(fn(?string $p) => $p ? self::resolveImg($p) : null, $images),
             'images_raw' => $images,
             'sentiment' => $review->sentiment,
             'sentiment_score' => (float) $review->sentiment_score,
@@ -451,7 +451,7 @@ class ReviewService
             ->latest()
             ->limit($limit)
             ->get()
-            ->map(fn (Review $review) => $this->presentForFeed($review));
+            ->map(fn(Review $review) => $this->presentForFeed($review));
     }
 
     /**
@@ -470,7 +470,7 @@ class ReviewService
         $paths = [];
 
         foreach (array_slice($files, 0, 3) as $file) {
-            if (! $file instanceof UploadedFile || ! $file->isValid()) {
+            if (!$file instanceof UploadedFile || !$file->isValid()) {
                 continue;
             }
             $paths[] = $file->store('reviews', $disk);

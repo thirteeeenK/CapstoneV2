@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'user_id',
     'assigned_admin_id',
     'status',
+    'initiated_by',
     'requested_at',
     'assigned_at',
     'returned_to_ai_at',
@@ -31,6 +32,10 @@ class SupportInquiry extends Model
     public const STATUS_RETURNED_AI = 'RETURNED_TO_AI';
 
     public const STATUS_RESOLVED = 'RESOLVED';
+
+    public const INITIATED_BY_USER = 'user';
+
+    public const INITIATED_BY_ADMIN = 'admin';
 
     protected $casts = [
         'requested_at' => 'datetime',

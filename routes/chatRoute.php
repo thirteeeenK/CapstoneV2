@@ -12,6 +12,10 @@ Route::get('/chat/history', [ChatbotController::class, 'history'])
     ->name('chat.history')
     ->middleware(['throttle:chat-poll']);
 
+Route::get('/chat/active', [ChatbotController::class, 'active'])
+    ->name('chat.active')
+    ->middleware(['throttle:chat-poll']);
+
 Route::post('/chat/handoff', [ChatbotController::class, 'handoff'])
     ->name('chat.handoff')
     ->middleware(['throttle:ai']);
