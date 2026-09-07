@@ -25,6 +25,12 @@ class AdminReportController extends Controller
     {
         $data = $this->reportData($request);
         $data['analysis'] = session('analysis');
+        $data['bookings'] = $this->baseBookingQuery($request)
+            ->with('user')
+            ->withCount('items')
+            ->orderByDesc('created_at')
+            ->paginate(50)
+            ->withQueryString();
 
         return view('admin.reports.index', $data);
     }
@@ -71,15 +77,7 @@ class AdminReportController extends Controller
         $fromLabel = $from->format('Y-m-d');
         $toLabel = $to->format('Y-m-d');
 
-        $query = Booking::query()
-            ->where('created_at', '>=', $from)
-            ->where('created_at', '<=', $to);
-
-        if ($status === 'closed') {
-            $query->whereIn('status', ['rejected', 'cancelled', 'expired', 'completed', 'cancellation_denied']);
-        } elseif ($status) {
-            $query->where('status', $status);
-        }
+        $query = $this->baseBookingQuery($request, $from, $to, $status);
 
         $daily = $query->clone()
             ->selectRaw(
@@ -106,13 +104,35 @@ class AdminReportController extends Controller
             ->with('user')
             ->withCount('items')
             ->orderByDesc('created_at')
-            ->limit(150)
+            ->limit(50)
             ->get();
 
         return compact(
             'from', 'to', 'fromLabel', 'toLabel', 'status',
             'daily', 'totalBookings', 'collected', 'estimated', 'avgValue', 'statusCounts', 'bookings',
         );
+    }
+
+    /**
+     * Filtered bookings query shared by the HTML page, PDF export, and AI analysis.
+     */
+    protected function baseBookingQuery(Request $request, ?Carbon $from = null, ?Carbon $to = null, ?string $status = null)
+    {
+        $from ??= $request->query('from') ? Carbon::parse($request->query('from'))->startOfDay() : now()->subDays(30)->startOfDay();
+        $to ??= $request->query('to') ? Carbon::parse($request->query('to'))->endOfDay() : now()->endOfDay();
+        $status ??= $request->query('status');
+
+        $query = Booking::query()
+            ->where('created_at', '>=', $from)
+            ->where('created_at', '<=', $to);
+
+        if ($status === 'closed') {
+            $query->whereIn('status', ['rejected', 'cancelled', 'expired', 'completed', 'cancellation_denied']);
+        } elseif ($status) {
+            $query->where('status', $status);
+        }
+
+        return $query;
     }
 
     /**

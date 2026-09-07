@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SunnyTrips RAG Pipeline — Export</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="/mermaid.min.js"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#fdfaf4;font-family:'DM Sans',system-ui,sans-serif;padding:32px;color:#111827}
+  h1{font-family:'Sora',sans-serif;font-size:22px;color:#063f58;text-align:center;margin-bottom:4px}
+  .sub{font-size:11px;color:#6b7280;text-align:center;margin-bottom:18px;letter-spacing:.04em}
+  .card{background:#fff;border:1px solid #b8e3f6;border-radius:16px;padding:20px 18px;box-shadow:0 4px 24px rgba(10,120,168,.08)}
+  /* Mermaid tweaks */
+  :root{--mermaid-fontFamily:'DM Sans'}
+  .mermaid{font-family:'DM Sans',sans-serif}
+</style>
+<script>
+mermaid.initialize({
+  startOnLoad: true,
+  theme: 'base',
+  themeVariables: {
+    primaryColor: '#ffffff',
+    primaryBorderColor: '#0a78a8',
+    primaryTextColor: '#111827',
+    secondaryColor: '#f0f9ff',
+    tertiaryColor: '#fdfaf4',
+    lineColor: '#0a78a8',
+    textColor: '#111827',
+    fontFamily: 'DM Sans',
+    fontSize: '12px',
+  },
+  flowchart:{ htmlLabels:true, curve:'linear', padding:8, nodeSpacing:18, rankSpacing:22 },
+  securityLevel:'loose'
+});
+</script>
+</head>
+<body>
+  <h1>SunnyTrips — RAG Pipeline (Updated)</h1>
+  <p class="sub">Phase 1: Background Setup (Data Indexing) &nbsp;·&nbsp; Phase 2: Real-Time User Interaction — POST /chat &nbsp;·&nbsp; Laravel 13 / Gemini text-embedding-001 / gemini-2.5-flash-lite / pgvector 3072</p>
+  <div class="card">
+<pre class="mermaid">
+flowchart TB
+
+subgraph Phase1 ["Phase 1: Background Setup (Data Indexing)  —  php artisan embed:all [--force]"]
+  direction LR
+  SRC["<b>Travel Content Sources</b><br/>Hotels · RoomTypes · Activities<br/>Packages · AddOns · FAQs<br/>Destinations · Users.preferences"]
+  PROC["<b>Content Processing</b><br/>buildHotelEmbeddingText()<br/>buildRoomEmbeddingText()<br/>buildActivityEmbeddingText()<br/>buildPackageEmbeddingText()<br/>buildAddOnEmbeddingText()<br/>buildFaqEmbeddingText()"]
+  EMB["<b>Gemini Embedding Model</b><br/>text-embedding-001<br/>RETRIEVAL_DOCUMENT<br/>L2-normalized · vector(3072)"]
+  STORE["<b>Store Embeddings</b><br/>PostgreSQL + pgvector<br/>hotels.embedding / rooms.embedding<br/>activities.embedding / packages.embedding<br/>add_ons.embedding / faqs.embedding<br/>users.preferences_embedding"]
+  SRC -->|Content Processing| PROC -->|Generate Embeddings| EMB -->|Store Embeddings| STORE
+end
+
+STORE --> KB
+
+subgraph Phase2 ["Phase 2: Real-Time User Interaction  —  POST /chat  +  GET /chat/history  ·  /poll  ·  /handoff"]
+  direction LR
+
+  subgraph UIL ["User Interface Layer"]
+    direction TB
+    USER["👤  User"]
+    WIDGET["<b>Chat Interface</b><br/>chat-widget.blade.php (Alpine.js)<br/>Hotel / Room / Activity / Package cards<br/>Add to Trip Basket · Preview Modal<br/>Inline date pickers · Handoff UI<br/>localStorage session_token<br/>GET /chat/history restores on refresh"]
+    USER <--> WIDGET
+  end
+
+  subgraph APP ["Application Layer  —  ChatbotController · ChatbotService · IntentRouter · ConversationManager"]
+    direction TB
+    A1["<b>1. Entrypoint &amp; Session</b><br/>ChatbotController.chat() validates<br/>message ≤1000ch + lat/lng<br/>EnforceGuestChatLimits: 15/day/IP + 5/min burst<br/>ConversationManager.resolveSession()<br/>guest → login claim + isolation<br/>ConversationManager.history() 6-turn window"]
+    A2{"<b>2. Abuse Guard</b><br/>GeminiService.detectAbuseAndGuard()"}
+    A2B["<b>Blocked 403</b><br/>guest: keyword block<br/>authed: + ChatbotAbuseReport + ban"]
+    A3{"<b>3. Human Handoff Gate</b><br/>SupportInquiry status?"}
+    A3B["<b>Bypass Gemini</b><br/>PENDING → pending_assignment<br/>HUMAN_ACTIVE → control: admin<br/>SupportQueueService (polling, no WebSockets)"]
+    A4["<b>4. Conversational Memory</b><br/>isFollowUpQuery() · isFilterRefinementQuery()<br/>isAffirmativeSearchQuery() · isWeatherAdvisoryFollowUp()<br/>resolveConversationalDestination() inherits last destination"]
+    A5{"<b>5. FAQ Shortcut</b><br/>FaqService.findBestMatch()"}
+    A5B["<b>Verbatim Answer</b><br/>0 LLM cost · idempotent"]
+    A6["<b>6. Intent Router</b><br/>IntentRouter.classify() — 13 intents<br/>ROOM / HOTEL / ACTIVITY / PACKAGE / ADDON<br/>ITINERARY / AVAILABILITY / MAP / WEATHER<br/>DISCOUNT / BOOKING_STATUS / DESTINATIONS_OVERVIEW / GENERAL_TALK<br/>+ extractConstraints(): pax, max_price, dates,<br/>destination_id, hotel_id, room_id, limit<br/>+ resolveDefaultDestination() + blendedVector<br/>0.65 user + 0.35 query (personalized)"]
+    A7{"<b>7. Intent Handler (match)</b>"}
+    R1["<b>ROOM_SEARCH</b><br/>searchRoomsHybrid() constrained<br/>or rankRecommendations(blended)<br/>sortRoomsByPrice + pax-aware hint"]
+    R2["<b>HOTEL_SEARCH</b><br/>searchHotels() / rankRecommendations<br/>sortHotelsByPrice"]
+    R3["<b>ACTIVITY_SEARCH</b><br/>searchActivities()"]
+    R4["<b>PACKAGE_SEARCH</b><br/>searchPackages()<br/>pgvector &lt;=&gt; cosine (SQL)"]
+    R5["<b>ADDON_SEARCH</b><br/>searchAddOns()"]
+    R6["<b>ITINERARY_QUERY</b><br/>buildItineraryContext()<br/>selectHotelAndRoom + selectActivities"]
+    R7["<b>AVAILABILITY</b><br/>RoomAvailabilityService"]
+    R8["<b>MAP_QUERY</b><br/>DistanceService (Haversine)"]
+    R9["<b>WEATHER_QUERY</b><br/>WeatherService<br/>+ DSS booking score"]
+    R10["<b>DISCOUNT</b><br/>getPassengerDiscountContext()<br/>passenger_category_rules (deterministic)"]
+    R11["<b>BOOKING_STATUS</b><br/>Booking where(user_id) — identity-scoped<br/>guests must log in"]
+    R12["<b>GENERAL / OVERVIEW</b><br/>no retrieval"]
+
+    RETR["<b>8. Context Builder</b><br/>getRoomContext() / getHotelContext()<br/>getActivityContext() / getPackageContext()<br/>getAddOnContext() + extractPricingContext()<br/>pre-computed pax × nights totals"]
+    PROMPT["<b>9. Prompt Writing</b><br/>buildPrompt() + loadChatbotSystemPrompt()<br/>SystemPrompts/chatbot-system-prompt.md<br/>+ history + userProfile (user_preferences)<br/>cachedContents TTL 86400s"]
+    RESP["<b>10. Response Handling</b><br/>GeminiService.generateChatResponse()<br/>gemini-2.5-flash-lite · temp 0.4<br/>topP 0.95 · max 1024<br/>ConversationManager.persist(user+bot + context_data)<br/>→ JSON: reply + retrieved_rooms/hotels/...<br/>control: ai | admin | pending + session_token"]
+
+    A1 --> A2 --> A3
+    A2 -- blocked --> A2B
+    A3 -- PENDING / HUMAN_ACTIVE --> A3B --> RESP
+    A3 -- AI_ACTIVE / none --> A4 --> A5
+    A5 -- match &amp; no explicit dest --> A5B --> RESP
+    A5 -- no hit --> A6 --> A7
+    A7 --> R1 & R2 & R3 & R4 & R5 & R6 & R7 & R8 & R9 & R10 & R11 & R12
+    R1 & R2 & R3 & R4 & R5 & R6 --> RETR
+    R7 & R8 & R9 & R10 & R11 & R12 --> RETR
+    RETR --> PROMPT --> RESP
+  end
+
+  subgraph KB ["Knowledge Base Layer  —  PostgreSQL + pgvector"]
+    direction TB
+    K1[("Guides<br/>Hotels · Rooms · Activities")]
+    K2[("Packages · AddOns<br/>vector(3072)")]
+    K3[("FAQs<br/>vector(3072)")]
+    K4[("Destinations<br/>coords · region")]
+    K5[("Users<br/>preferences_embedding<br/>user_preferences row")]
+    K6[("Operational<br/>Bookings · Reviews<br/>PassengerCategoryRules")]
+  end
+
+  subgraph AI ["AI Service Layer"]
+    direction TB
+    E1["Gemini Embedding API<br/>text-embedding-001"]
+    E2["Gemini Chat API<br/>LLM: gemini-2.5-flash-lite<br/>generateChatResponse()<br/>generateContent()"]
+    E3["External<br/>Weather API (wttr.in)<br/>Distance (Haversine)"]
+  end
+
+  WIDGET -- "Question<br/>message + session_token" --> A1
+  A6 -. "query → RETRIEVAL_QUERY embedding" .-> E1
+  E1 -. "query vector" .-> RETR
+  RETR <-- "Retrieval Request<br/>Context Return" --> KB
+  PROMPT -- "AI Generation Call" --> E2
+  E2 -- "AI Output" --> RESP
+  RESP -- "Final Answer<br/>reply + cards + basket CTA" --> WIDGET
+  WIDGET -. "POST /handoff · /poll · /returnToBot" .-> A3
+end
+
+classDef phase fill:#f0f9ff,stroke:#0a78a8,stroke-width:2px,color:#063f58
+classDef ui fill:#ffffff,stroke:#0a78a8,stroke-width:1.5px,color:#111827
+classDef app fill:#ffffff,stroke:#085e85,stroke-width:1.5px,color:#111827
+classDef kb fill:#e0f2fe,stroke:#0a78a8,stroke-width:1.5px,color:#063f58
+classDef ai fill:#fdf1ec,stroke:#e85e37,stroke-width:1.5px,color:#111827
+classDef gate fill:#f8f1e1,stroke:#d24f29,stroke-width:1.5px,color:#111827
+class Phase1,Phase2 phase
+class USER,WIDGET ui
+class A1,A4,A6,RETR,PROMPT,RESP,R1,R2,R3,R4,R5,R6,R7,R8,R9,R10,R11,R12 app
+class K1,K2,K3,K4,K5,K6,KB kb
+class E1,E2,E3,AI ai
+class A2,A3,A5,A7,A2B,A3B,A5B gate
+linkStyle default stroke:#0a78a8,stroke-width:1.5px
+</pre>
+  </div>
+  <p style="text-align:center;margin-top:12px;font-size:10px;color:#9ca3af">SunnyTripsCapstoneV2 — refs: app/Services/Chat/ChatbotService.php:36 · IntentRouter.php:79 · ConversationManager.php:87 · GeminiService.php:509 · ChatbotController.php:20</p>
+</body>
+</html>

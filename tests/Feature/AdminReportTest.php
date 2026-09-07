@@ -97,6 +97,28 @@ it('returns an AI analysis fragment with the offline fallback when no API key is
         ->assertDontSee('Booking Reports');
 });
 
+it('paginates booking details at 50 per page', function () {
+    foreach (range(1, 55) as $i) {
+        createReportBooking(['created_at' => now()->subDays(2)]);
+    }
+
+    $pageOne = $this->actingAs($this->admin, 'admin')
+        ->get(route('admin.reports.index'))
+        ->assertOk();
+
+    $bookings = $pageOne->viewData('bookings');
+
+    expect($bookings->perPage())->toBe(50)
+        ->and($bookings->total())->toBe(55)
+        ->and($bookings->count())->toBe(50);
+
+    $pageTwo = $this->actingAs($this->admin, 'admin')
+        ->get(route('admin.reports.index', ['page' => 2]))
+        ->assertOk();
+
+    expect($pageTwo->viewData('bookings')->count())->toBe(5);
+});
+
 it('redirects back with the analysis for non-AJAX submissions', function () {
     createReportBooking(['status' => Booking::STATUS_EXPIRED]);
 

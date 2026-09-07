@@ -56,7 +56,7 @@
         @endforelse
     </table>
 
-    <h2>Booking Details (latest {{ min(50, $bookings->count()) }} of {{ $bookings->count() }})</h2>
+    <h2>Booking Details (latest {{ $bookings->count() }} of {{ $totalBookings }})</h2>
     <table>
         <tr>
             <th>Code</th><th>Guest</th><th>Items</th><th class="right">Net Amount</th><th>Status</th><th>Payment</th><th>Requested</th>

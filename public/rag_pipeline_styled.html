@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SunnyTrips RAG Pipeline — Styled Export</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#fdfaf4;font-family:'DM Sans',sans-serif;color:#111827;padding:28px 24px}
+.wrap{max-width:1360px;margin:0 auto}
+h1{font-family:'Sora',sans-serif;font-size:26px;font-weight:700;color:#063f58;text-align:center;letter-spacing:-.02em}
+.subtitle{font-size:11.5px;color:#6b7280;text-align:center;margin:6px 0 18px;letter-spacing:.02em}
+.phase{border:1.8px solid #0a78a8;border-radius:14px;overflow:hidden;background:#fff;margin-bottom:18px}
+.phase-head{font-family:'Sora',sans-serif;font-size:12.5px;font-weight:700;color:#fff;background:#0a78a8;padding:8px 14px;letter-spacing:.02em}
+.phase-body{padding:16px 18px}
+.row{display:flex;align-items:stretch;gap:14px}
+.card{flex:1;background:#fff;border:1.4px solid #b8e3f6;border-radius:12px;padding:12px 12px;text-align:center;position:relative}
+.card b{font-family:'Sora',sans-serif;font-size:11.5px;color:#063f58;display:block;margin-bottom:6px}
+.card .small{font-size:10.5px;line-height:1.45;color:#374151}
+.card.emb{background:#f0f9ff;border-color:#0a78a8}
+.card.store{border-style:dashed}
+.cyl{flex:1;background:#e0f2fe;border:1.4px solid #0a78a8;border-radius:12px;padding:12px 10px;text-align:center;position:relative}
+.cyl b{font-family:'Sora',sans-serif;font-size:11px;color:#063f58}
+.cyl .small{font-size:10px;line-height:1.4;color:#374151}
+.arrow{flex:0 0 44px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:2px}
+.arrow span{font-size:10px;color:#0a78a8;font-weight:600}
+.arrow i{width:28px;height:1.8px;background:#0a78a8;position:relative;display:block}
+.arrow i:after{content:'';position:absolute;right:-1px;top:50%;transform:translateY(-50%);border:5px solid transparent;border-left:7px solid #0a78a8}
+.arrow.down{flex-direction:column}
+.arrow.down i{width:1.8px;height:22px}
+.arrow.down i:after{right:50%;top:auto;bottom:-1px;transform:translateX(50%);border:5px solid transparent;border-top:7px solid #0a78a8}
+/* Phase2 grid */
+.p2grid{display:grid;grid-template-columns:230px 1fr 300px;gap:14px;align-items:start}
+.col{background:#fff;border:1.4px solid #b8e3f6;border-radius:12px;overflow:hidden}
+.col-head{font-family:'Sora',sans-serif;font-size:11px;font-weight:700;color:#fff;padding:7px 10px;text-align:center;letter-spacing:.04em}
+.col-head.ink{background:#074e6d}
+.col-head.ocean{background:#0a78a8}
+.col-head.coral{background:#e85e37}
+.col-body{padding:10px 11px}
+.ui-user{border:1.4px solid #b8e3f6;border-radius:10px;padding:8px;text-align:center;background:#f0f9ff;margin-bottom:8px}
+.ui-user b{font-family:'Sora';font-size:11px;color:#063f58}
+.ui-chat{border:1.4px solid #0a78a8;border-radius:10px;padding:10px;background:#fff}
+.ui-chat b{font-family:'Sora';font-size:11px;color:#063f58}
+.ui-chat li{font-size:10px;line-height:1.45;color:#374151;margin-left:12px}
+.app-steps{list-style:none;counter-reset:step}
+.app-steps li{position:relative;padding:8px 8px 8px 34px;border-left:3px solid #e0f2fe;margin-bottom:7px;background:#f8fbfc;border-radius:6px}
+.app-steps li:before{counter-increment:step;content:counter(step);position:absolute;left:6px;top:8px;width:20px;height:20px;background:#0a78a8;color:#fff;border-radius:50%;font-family:'Sora';font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.app-steps li:last-child{margin-bottom:0}
+.app-steps b{font-size:10.5px;color:#063f58}
+.app-steps .d{font-size:9.8px;line-height:1.45;color:#4b5563;margin-top:2px}
+.app-steps .tag{display:inline-block;font-size:8.5px;font-weight:700;letter-spacing:.04em;padding:1px 5px;border-radius:4px;margin-top:4px}
+.tag-blue{background:#e0f2fe;color:#0a78a8;border:1px solid #b8e3f6}
+.tag-coral{background:#fdf1ec;color:#d24f29;border:1px solid #f6c1ac}
+.tag-sand{background:#fdfaf4;color:#7c5a2b;border:1px solid #ede3cb}
+.kb-block{background:#f0f9ff;border:1px solid #b8e3f6;border-radius:8px;padding:8px;margin-bottom:8px}
+.kb-block b{font-size:10px;color:#063f58}
+.kb-block .d{font-size:9.5px;color:#374151;line-height:1.4}
+.kb-block:last-child{margin-bottom:0}
+.ai-block{background:#fdf1ec;border:1px solid #f6c1ac;border-radius:8px;padding:8px;margin-bottom:8px}
+.ai-block b{font-size:10px;color:#7c2d12}
+.ai-block .d{font-size:9.5px;color:#7c2d12;line-height:1.4}
+.conn{font-size:9px;color:#0a78a8;font-weight:700;text-align:center;padding:4px 0;letter-spacing:.02em}
+.conn.coral{color:#d24f29}
+.footer{margin-top:10px;padding:10px 12px;background:#f0f9ff;border:1px solid #b8e3f6;border-radius:8px;font-size:9px;color:#4b5563;line-height:1.5;text-align:center}
+.footer b{color:#063f58}
+.refs{font-size:9px;color:#6b7280;text-align:center;margin-top:8px}
+@media print{body{padding:0}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>SunnyTrips — RAG Pipeline <span style="font-weight:600;color:#0a78a8">(Updated — Hybrid 13-Intent)</span></h1>
+  <p class="subtitle">Laravel 13 · PostgreSQL + pgvector <code>vector(3072)</code> · Gemini <code>text-embedding-001</code> · Gemini <code>2.5 flash-lite</code> · Blade + Tailwind 3 + Alpine.js</p>
+
+  <!-- PHASE 1 -->
+  <div class="phase">
+    <div class="phase-head">Phase 1: Background Setup (Data Indexing) &nbsp;—&nbsp; <span style="font-weight:500;opacity:.92">php artisan embed:all [--force] &nbsp;·&nbsp; GEMINI_API_KEY required, warn if missing</span></div>
+    <div class="phase-body">
+      <div class="row">
+        <div class="card">
+          <b>Travel Content Sources</b>
+          <div class="small">Hotels · RoomTypes<br>Activities · Packages<br>AddOns · FAQs · Destinations<br><span style="color:#0a78a8;font-weight:600">Users.preferences</span> (onboarding)</div>
+        </div>
+        <div class="arrow"><span>Content</span><span>Processing</span><i></i></div>
+        <div class="card">
+          <b>Content Processing</b>
+          <div class="small" style="text-align:left;line-height:1.35">
+            buildHotelEmbeddingText()<br>buildRoomEmbeddingText()<br>buildActivityEmbeddingText()<br>buildPackageEmbeddingText()<br>buildAddOnEmbeddingText()<br>buildFaqEmbeddingText()
+          </div>
+        </div>
+        <div class="arrow"><span>Generate</span><span>Embeddings</span><i></i></div>
+        <div class="card emb">
+          <b>Gemini Embedding Model</b>
+          <div class="small"><b style="color:#0a78a8">text-embedding-001</b><br>RETRIEVAL_DOCUMENT<br>L2-normalized<br><span style="font-family:monospace;font-size:9.5px">vector(3072)</span></div>
+        </div>
+        <div class="arrow"><span>Store</span><span>Embeddings</span><i></i></div>
+        <div class="cyl">
+          <b>Knowledge Base Layer</b>
+          <div class="small" style="margin-top:6px;line-height:1.35">
+            hotels.embedding<br>room_types.embedding<br>activities.embedding<br>packages.embedding<br>add_ons.embedding<br>faqs.embedding<br>users.preferences_embedding
+          </div>
+          <div style="margin-top:6px;font-size:8.5px;color:#0a78a8;font-weight:700">PostgreSQL + pgvector</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PHASE 2 -->
+  <div class="phase">
+    <div class="phase-head" style="background:#074e6d">Phase 2: Real-Time User Interaction &nbsp;—&nbsp; <span style="font-weight:500;opacity:.92">POST /chat · GET /chat/history · GET /chat/poll · POST /chat/handoff · GET /chat/active &nbsp;·&nbsp; ChatbotController + ConversationManager + SupportQueueService</span></div>
+    <div class="phase-body">
+      <div class="p2grid">
+        <!-- UI -->
+        <div class="col" style="border-color:#0a78a8">
+          <div class="col-head ink">User Interface Layer</div>
+          <div class="col-body">
+            <div class="ui-user">
+              <b>👤 User</b>
+              <div style="font-size:10px;color:#4b5563;margin-top:2px">guest or authed<br><span style="font-size:9px">CheckUserOnboarding → /onboarding if<br>preferences_embedding is null</span></div>
+            </div>
+            <div style="text-align:center;padding:4px 0"><span style="font-size:14px">↕</span><br><span style="font-size:9px;color:#0a78a8;font-weight:700">Question &amp; Query+Filters</span></div>
+            <div class="ui-chat">
+              <b>Chat Interface</b>
+              <div style="font-size:9px;color:#6b7280;margin-bottom:6px">chat-widget.blade.php · Alpine.js</div>
+              <ul style="list-style:disc">
+                <li>Hotel / Room / Activity / Package cards with <b>Add to Trip Basket</b></li>
+                <li>Activity preview modal + inline room date pickers</li>
+                <li>Human-agent handoff UI (polling, no WebSockets)</li>
+                <li>localStorage <code>session_token</code> · <code>GET /chat/history</code> restores on refresh · guest→login claim</li>
+              </ul>
+            </div>
+            <div class="conn">▲ Final Answer<br><span style="font-weight:400;font-size:8.5px">reply + cards + basket CTA + session_token</span></div>
+          </div>
+        </div>
+
+        <!-- APP -->
+        <div class="col" style="border-color:#0a78a8">
+          <div class="col-head ocean">Application Layer — ChatbotService orchestrator</div>
+          <div class="col-body" style="padding:8px 10px">
+            <ol class="app-steps">
+              <li>
+                <b>Entrypoint &amp; Session</b>
+                <div class="d"><code>ChatbotController.chat()</code> validates <code>message ≤1000ch</code> + <code>user_lat/lng</code><br><b>EnforceGuestChatLimits</b>: 15 msg/day/IP + 5/min burst<br><code>ConversationManager.resolveSession()</code>: guest→login claim, isolation, <code>latestForUser()</code><br><code>history()</code>: 6-turn window · <code>summarizeHistory()</code> if &gt;20 msgs</div>
+                <span class="tag tag-blue">POST /chat</span> <span class="tag tag-blue">session_token</span>
+              </li>
+              <li>
+                <b>Abuse Guard</b>
+                <div class="d"><code>GeminiService.detectAbuseAndGuard()</code> — 42+ keywords (NSFW, prompt injection, Taglish)<br>guest → <b>403 keyword block</b> · authed → block + <code>ChatbotAbuseReport</code> + <code>chatbot_flag_count</code> → possible ban</div>
+                <span class="tag tag-coral">security</span>
+              </li>
+              <li>
+                <b>Human Handoff Gate (state machine)</b>
+                <div class="d">If <code>SupportInquiry</code> is <code>PENDING</code> → <code>pending_assignment</code> · <code>HUMAN_ACTIVE</code> → <code>control: admin</code><br><b>Bypasses Gemini entirely</b> · <code>SupportQueueService</code> atomic ticket claiming (polling)</div>
+                <span class="tag tag-coral">bypass LLM</span>
+              </li>
+              <li>
+                <b>Conversational Memory</b>
+                <div class="d"><code>isFollowUpQuery()</code> · <code>isFilterRefinementQuery()</code> · <code>isAffirmativeSearchQuery()</code> · <code>isWeatherAdvisoryFollowUp()</code><br><code>resolveConversationalDestination()</code> inherits last destination from last bot cards</div>
+              </li>
+              <li>
+                <b>FAQ Shortcut</b>
+                <div class="d"><code>FaqService.findBestMatch()</code> · verbatim answer · <b>0 LLM cost</b> · idempotent<br>Skipped if bare amenity filter or explicit destination</div>
+                <span class="tag tag-sand">zero LLM</span>
+              </li>
+              <li>
+                <b>Intent Router — 13 intents</b>
+                <div class="d"><code>IntentRouter.classify()</code>: <b>ROOM</b> · <b>HOTEL</b> · <b>ACTIVITY</b> · <b>PACKAGE</b> · <b>ADDON</b> · <b>ITINERARY</b> · <b>AVAILABILITY</b> · <b>MAP</b> · <b>WEATHER</b> · <b>DISCOUNT</b> · <b>BOOKING_STATUS</b> · <b>DESTINATIONS_OVERVIEW</b> · <b>GENERAL_TALK</b><br><code>extractConstraints()</code>: pax, max_price, destination_id, hotel_id, room_id/addon_id, check_in/out, nights, limit, place_names<br><code>resolveDefaultDestination()</code> + <b>blendedVector</b> <code>0.65·user + 0.35·query</code> (L2-norm) when <code>isPersonalized()</code></div>
+                <span class="tag tag-blue">hybrid retrieval</span>
+              </li>
+              <li>
+                <b>Intent Handler (match)</b>
+                <div class="d" style="display:grid;grid-template-columns:1fr 1fr;gap:3px 8px;font-size:9.2px">
+                  <span><b>ROOM</b> → searchRoomsHybrid() + sortRoomsByPrice + pax hint</span><span><b>HOTEL</b> → searchHotels() + sortHotelsByPrice</span>
+                  <span><b>ACTIVITY</b> → searchActivities()</span><span><b>PACKAGE</b> → searchPackages() <code>&lt;=&gt;</code> SQL</span>
+                  <span><b>ADDON</b> → searchAddOns()</span><span><b>ITINERARY</b> → buildItineraryContext()</span>
+                  <span><b>AVAILABILITY</b> → RoomAvailabilityService</span><span><b>MAP</b> → DistanceService (Haversine)</span>
+                  <span><b>WEATHER</b> → WeatherService + DSS score</span><span><b>DISCOUNT</b> → passenger_category_rules</span>
+                  <span><b>BOOKING_STATUS</b> → Booking→user_id scoped</span><span><b>GENERAL</b> → no retrieval</span>
+                </div>
+              </li>
+              <li>
+                <b>Context Builder</b>
+                <div class="d">getRoomContext() / getHotelContext() / getActivityContext() / getPackageContext() / getAddOnContext()<br>+ <code>extractPricingContext()</code> — pre-computes <code>pax × nights</code> totals for prompt grounding</div>
+              </li>
+              <li>
+                <b>Prompt Writing</b>
+                <div class="d"><code>buildPrompt()</code> + <code>loadChatbotSystemPrompt()</code> → <code>SystemPrompts/chatbot-system-prompt.md</code><br>+ 6-turn history + <code>userProfile (user_preferences)</code> + <code>cachedContents TTL 86400s</code></div>
+              </li>
+              <li>
+                <b>AI Generation &amp; Response Handling</b>
+                <div class="d"><code>GeminiService.generateChatResponse()</code> → <b>gemini-2.5-flash-lite</b> (temp 0.4, topP 0.95, max 1024)<br><code>ConversationManager.persist(user+bot + context_data)</code> → JSON <code>{ reply, retrieved_rooms/hotels/activities/packages, control: ai|admin|pending, session_token }</code></div>
+                <span class="tag tag-blue">AI Service Layer</span> <span class="tag tag-coral">control flag</span>
+              </li>
+            </ol>
+          </div>
+        </div>
+
+        <!-- RIGHT -->
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <div class="col" style="border-color:#0a78a8">
+            <div class="col-head ocean">Knowledge Base Layer</div>
+            <div class="col-body">
+              <div class="kb-block"><b>Guides — Hotels · Rooms · Activities</b><div class="d">embedding <code>vector(3072)</code> · featured_amenities, vibe_tags, coordinates</div></div>
+              <div class="kb-block"><b>Packages · AddOns</b><div class="d">packages uses <b>pgvector &lt;=&gt; cosine in SQL</b> · others use PHP <code>cosineSimilarity</code> via <code>rankRecommendations</code></div></div>
+              <div class="kb-block"><b>FAQs</b><div class="d">embedding + verbatim shortcut · also <code>Does SunnyTrips offer discounts?</code></div></div>
+              <div class="kb-block"><b>Destinations</b><div class="d">name, region, lat/lng — used for constraint extraction &amp; map</div></div>
+              <div class="kb-block"><b>Users</b><div class="d"><code>users.preferences_embedding</code> + <code>user_preferences</code> row (vibes, amenities, destination, traveler_type)</div></div>
+              <div class="kb-block"><b>Operational</b><div class="d">Bookings (scoped) · Reviews + ReviewSummary (DSS) · PassengerCategoryRules (deterministic pricing)</div></div>
+              <div class="conn">Retrieval Request ⇄ Context Return</div>
+            </div>
+          </div>
+          <div class="col" style="border-color:#e85e37">
+            <div class="col-head coral">AI Service Layer</div>
+            <div class="col-body">
+              <div class="ai-block"><b>Gemini Embedding API</b><div class="d">text-embedding-001 · RETRIEVAL_QUERY for searches · RETRIEVAL_DOCUMENT for indexing</div></div>
+              <div class="ai-block"><b>Gemini Chat API</b><div class="d">LLM: <b>gemini-2.5-flash-lite</b> · generateChatResponse() · generateContent() · fallback sentiment if no key</div></div>
+              <div class="ai-block"><b>External Services</b><div class="d">WeatherService (wttr.in) · DistanceService (Haversine + user coords) · RoomAvailabilityService</div></div>
+              <div class="ai-block" style="background:#fff7ed"><b>Human Agent Handoff</b><div class="d">Admin inbox · SupportQueueController atomic claim · state gatekeeper in ChatbotService.handle()</div></div>
+              <div class="conn coral">AI Generation Call ⇄ AI Output</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- arrows legend row -->
+      <div style="display:flex;gap:12px;margin-top:10px;flex-wrap:wrap;justify-content:center;font-size:9px;color:#4b5563">
+        <span><span style="display:inline-block;width:14px;height:2px;background:#0a78a8;vertical-align:middle;margin-right:4px"></span> Application → Knowledge Base</span>
+        <span><span style="display:inline-block;width:14px;height:2px;background:#e85e37;vertical-align:middle;margin-right:4px"></span> Application → AI Service</span>
+        <span><span style="display:inline-block;width:14px;height:2px;background:#0a78a8;vertical-align:middle;margin-right:4px;opacity:.5"></span> Dashed = context/answer return</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <b>IntentRouter 13 intents</b>: ROOM_SEARCH · HOTEL_SEARCH · ACTIVITY_SEARCH · PACKAGE_SEARCH · ADDON_SEARCH · ITINERARY_QUERY · AVAILABILITY_QUERY · MAP_QUERY · WEATHER_QUERY · DISCOUNT_QUERY · BOOKING_STATUS · DESTINATIONS_OVERVIEW · GENERAL_TALK &nbsp;—&nbsp;
+    <b>Flow</b>: Question → Entrypoint/Session → Abuse Guard → Handoff Gate → Conversational Memory → FAQ Shortcut → Intent Router + Constraints → Handler → Context Builder → Prompt Writing → AI Generation → Response Handling → Final Answer (cards + Trip Basket)
+  </div>
+  <div class="refs">Refs: app/Services/Chat/ChatbotService.php:36 · app/Services/Chat/IntentRouter.php:79 · app/Services/Chat/ConversationManager.php:87 · app/Services/GeminiService.php:509/2160 · app/Http/Controllers/ChatbotController.php:20 · SystemPrompts/chatbot-system-prompt.md — Old diagram [Image 1] structure preserved, internals updated to live codebase</div>
+</div>
+</body>
+</html>
