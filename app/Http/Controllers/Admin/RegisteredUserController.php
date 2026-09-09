@@ -30,8 +30,12 @@ class RegisteredUserController extends Controller
 
         if ($tab === 'flagged') {
             $query->where('chatbot_flag_count', '>', 0);
-        } elseif ($tab === 'banned') {
-            $query->activeBan();
+        } elseif ($tab === 'warned') {
+            $query->where('ban_level', User::BAN_LEVEL_WARNING);
+        } elseif ($tab === 'temporary') {
+            $query->where('ban_level', User::BAN_LEVEL_TEMPORARY);
+        } elseif ($tab === 'permanent') {
+            $query->where('ban_level', User::BAN_LEVEL_PERMANENT);
         }
 
         if ($search) {
@@ -47,7 +51,9 @@ class RegisteredUserController extends Controller
 
         $allCount = User::count();
         $flaggedCount = User::where('chatbot_flag_count', '>', 0)->count();
-        $bannedCount = User::activeBan()->count();
+        $warnedCount = User::where('ban_level', User::BAN_LEVEL_WARNING)->count();
+        $temporaryCount = User::where('ban_level', User::BAN_LEVEL_TEMPORARY)->count();
+        $permanentCount = User::where('ban_level', User::BAN_LEVEL_PERMANENT)->count();
 
         if ($request->ajax()) {
             return view('admin.users._table', compact(
@@ -56,7 +62,9 @@ class RegisteredUserController extends Controller
                 'search',
                 'allCount',
                 'flaggedCount',
-                'bannedCount'
+                'warnedCount',
+                'temporaryCount',
+                'permanentCount'
             ));
         }
 
@@ -66,7 +74,9 @@ class RegisteredUserController extends Controller
             'search',
             'allCount',
             'flaggedCount',
-            'bannedCount'
+            'warnedCount',
+            'temporaryCount',
+            'permanentCount'
         ));
     }
 
@@ -197,5 +207,29 @@ class RegisteredUserController extends Controller
         }
 
         return redirect()->back()->with('success', 'Abuse report warning dismissed.');
+    }
+
+    /**
+     * Clear all chatbot abuse flags for a user. Resolved reports stay in
+     * history as dismissed; only the active flag counter is reset.
+     */
+    public function clearFlags($id)
+    {
+        $user = User::findOrFail($id);
+        $oldValues = $user->getOriginal();
+        $user->chatbot_flag_count = 0;
+        $user->save();
+        AdminAuditService::log($user, $oldValues);
+
+        ChatbotAbuseReport::where('user_id', $id)
+            ->where('status', 'pending')
+            ->update([
+                'status' => 'reviewed_dismissed',
+                'reviewed_by' => Auth::guard('admin')->id(),
+            ]);
+
+        $this->supportQueue->closeOpenInquiriesForUser($user->id);
+
+        return redirect()->back()->with('success', "All chatbot abuse flags cleared for {$user->name}.");
     }
 }

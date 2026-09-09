@@ -11,6 +11,8 @@ use Illuminate\Http\Request;
 
 class ChatbotController extends Controller
 {
+    private const WARNING_MARKER = '⚠️ Account notice:';
+
     public function __construct(
         protected ChatbotService $chatbot,
         protected ConversationManager $conversation,
@@ -45,6 +47,20 @@ class ChatbotController extends Controller
                 'status' => 'blocked',
                 'reply' => $result['response'],
             ], 403);
+        }
+
+        if (($result['status'] ?? null) === 'success' && isset($result['reply']) && $user && $user->isWarned()) {
+            $alreadyNotified = $session->messages()
+                ->where('sender', 'bot')
+                ->where('message', 'like', self::WARNING_MARKER.'%')
+                ->exists();
+
+            if (! $alreadyNotified) {
+                $notice = self::WARNING_MARKER.' Your account has been warned for inappropriate usage.'
+                    .($user->ban_reason ? ' Admin note: '.$user->ban_reason : '');
+                $result['reply'] = $notice."\n\n".$result['reply'];
+                $session->messages()->where('sender', 'bot')->latest('id')->first()?->update(['message' => $result['reply']]);
+            }
         }
 
         return response()->json($result);

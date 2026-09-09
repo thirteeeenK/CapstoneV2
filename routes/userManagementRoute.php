@@ -11,5 +11,6 @@ Route::prefix('admin')->group(function () {
         Route::post('/registered-users/{id}/ban', [RegisteredUserController::class, 'ban'])->name('admin.users.ban');
         Route::post('/registered-users/{id}/unban', [RegisteredUserController::class, 'unban'])->name('admin.users.unban');
         Route::post('/registered-users/reports/{reportId}/dismiss', [RegisteredUserController::class, 'dismissReport'])->name('admin.users.dismiss-report');
+        Route::post('/registered-users/{id}/clear-flags', [RegisteredUserController::class, 'clearFlags'])->name('admin.users.clear-flags');
     });
 });

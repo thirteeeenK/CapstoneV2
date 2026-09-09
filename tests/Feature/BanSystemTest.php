@@ -176,22 +176,37 @@ it('lets an admin unban a user and clears all ban fields', function () {
         ->and($user->isBanned())->toBeFalse();
 });
 
-it('lists only active bans on the banned tab', function () {
-    $permanent = createBannedUser();
-    $expired = createBannedUser([
-        'ban_level' => User::BAN_LEVEL_TEMPORARY,
-        'banned_at' => now()->subDays(10),
-        'ban_expires_at' => now()->subDay(),
-    ]);
+it('filters users by warned, temporary, and permanent tabs', function () {
     $warned = User::factory()->create(['ban_level' => 'warning', 'banned_at' => now()]);
+    $temporary = createBannedUser([
+        'ban_level' => User::BAN_LEVEL_TEMPORARY,
+        'ban_expires_at' => now()->addDays(3),
+    ]);
+    $permanent = createBannedUser();
     $active = User::factory()->create();
 
     $this->actingAs($this->admin, 'admin')
-        ->get(route('admin.users.index', ['tab' => 'banned']))
+        ->get(route('admin.users.index', ['tab' => 'warned']))
+        ->assertOk()
+        ->assertSee($warned->name)
+        ->assertDontSee($temporary->name)
+        ->assertDontSee($permanent->name)
+        ->assertDontSee($active->name);
+
+    $this->actingAs($this->admin, 'admin')
+        ->get(route('admin.users.index', ['tab' => 'temporary']))
+        ->assertOk()
+        ->assertSee($temporary->name)
+        ->assertDontSee($warned->name)
+        ->assertDontSee($permanent->name)
+        ->assertDontSee($active->name);
+
+    $this->actingAs($this->admin, 'admin')
+        ->get(route('admin.users.index', ['tab' => 'permanent']))
         ->assertOk()
         ->assertSee($permanent->name)
-        ->assertDontSee($expired->name)
         ->assertDontSee($warned->name)
+        ->assertDontSee($temporary->name)
         ->assertDontSee($active->name);
 });
 

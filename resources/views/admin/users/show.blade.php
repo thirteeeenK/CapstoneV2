@@ -18,10 +18,21 @@
                 @if($user->ban_level)
                     <form action="{{ route('admin.users.unban', $user->id) }}" method="POST">
                         @csrf
-                        <button type="submit" onclick="return confirm('Restore normal access for {{ $user->name }}?')"
+                        <button type="submit" @if($user->isWarned()) onclick="return confirm('Remove warning for {{ $user->name }}?')" @else onclick="return confirm('Restore normal access for {{ $user->name }}?')" @endif
                                 class="inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-sm transition-colors cursor-pointer">
                             <span class="material-symbols-outlined text-[18px]">lock_open</span>
-                            Restore Account Access
+                            {{ $user->isWarned() ? 'Remove Warning' : 'Restore Account Access' }}
+                        </button>
+                    </form>
+                @endif
+
+                @if($user->chatbot_flag_count > 0)
+                    <form action="{{ route('admin.users.clear-flags', $user->id) }}" method="POST">
+                        @csrf
+                        <button type="submit" onclick="return confirm('Clear all chatbot abuse flags for {{ $user->name }}? This will mark all pending reports as dismissed.')"
+                                class="inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold shadow-sm transition-colors cursor-pointer">
+                            <span class="material-symbols-outlined text-[18px]">cleaning_services</span>
+                            Clear Flags
                         </button>
                     </form>
                 @endif
@@ -91,6 +102,15 @@
                                                   placeholder="e.g. Repeated inappropriate queries and rule abuse."
                                                   class="w-full text-xs bg-slate-50 border border-slate-300 rounded p-2 text-slate-900 focus:ring-2 focus:ring-rose-500/20 focus:border-rose-600"></textarea>
                                     </div>
+
+                                        <label x-show="level !== 'warning'" x-cloak class="flex items-start gap-2 py-2 px-2 border border-slate-200 rounded-md bg-slate-50/50 cursor-pointer">
+                                            <input type="checkbox" name="also_ban_ip" value="1" class="mt-0.5 accent-rose-600">
+                                            <span class="text-xs">
+                                                <span class="font-semibold text-slate-800">Also ban IP address</span>
+                                                <span class="text-slate-500"> — {{ $user->consent_ip_address ?? 'auto-detect from sessions' }}</span>
+                                                <span class="block text-[11px] text-slate-500">Same level/duration as account. Temporary/Permanent = IP blocked site-wide.</span>
+                                            </span>
+                                        </label>
 
                                     <div class="flex gap-3 pt-2">
                                         <button @click="openBanModal = false" type="button" class="flex-1 h-8 px-3 bg-white border border-slate-300 text-slate-700 text-xs font-medium rounded hover:bg-slate-50 transition-colors">
