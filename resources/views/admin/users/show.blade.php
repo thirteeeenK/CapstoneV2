@@ -15,6 +15,12 @@
             </div>
 
             <div class="flex items-center gap-3">
+                <a href="{{ route('admin.bookings.create', ['user_id' => $user->id]) }}"
+                   class="inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-ocean-600 hover:bg-ocean-700 text-white text-xs font-semibold shadow-sm transition-colors cursor-pointer">
+                    <span class="material-symbols-outlined text-[18px]">add_shopping_cart</span>
+                    Book on Behalf
+                </a>
+
                 @if($user->ban_level)
                     <form action="{{ route('admin.users.unban', $user->id) }}" method="POST">
                         @csrf

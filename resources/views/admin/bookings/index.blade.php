@@ -39,7 +39,12 @@
                 <h1 class="text-xl sm:text-2xl font-bold text-slate-900 font-headline">Booking Requests</h1>
                 <p class="text-xs sm:text-sm text-slate-500 mt-1">Verify availability, approve bookings, and manage payments.</p>
             </div>
-            <div class="flex items-center gap-2 text-xs font-bold flex-wrap">
+            <div class="flex items-center gap-3 flex-wrap">
+                <a href="{{ route('admin.bookings.create') }}"
+                   class="px-3.5 py-2 rounded-xl bg-ocean-600 hover:bg-ocean-700 text-white font-bold text-xs shadow-xs transition-colors flex items-center gap-1.5">
+                    <span class="material-symbols-outlined text-[18px]">add</span>
+                    <span>Create Booking</span>
+                </a>
                 <span class="px-3 py-1.5 rounded-xl bg-amber-50 text-amber-700 border border-amber-200">{{ $stats['pending'] }} pending</span>
                 <span class="px-3 py-1.5 rounded-xl bg-sky-50 text-sky-700 border border-sky-200">{{ $stats['approved'] }} awaiting payment</span>
                 <span class="px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200">{{ $stats['paid'] }} paid</span>

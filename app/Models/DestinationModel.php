@@ -39,4 +39,9 @@ class DestinationModel extends Model
     {
         return $this->hasMany(Package::class, 'destination_id');
     }
+
+    public function addOns()
+    {
+        return $this->hasMany(AddOnModel::class, 'destination_id');
+    }
 }

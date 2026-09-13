@@ -3,8 +3,17 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\StoreAdminBookingRequest;
+use App\Models\ActivityModel;
+use App\Models\AddOnModel;
 use App\Models\Booking;
+use App\Models\BookingItem;
 use App\Models\BookingStatusHistory;
+use App\Models\DestinationModel;
+use App\Models\Package;
+use App\Models\PassengerCategoryRule;
+use App\Models\RoomType;
+use App\Models\User;
 use App\Notifications\BookingApproved;
 use App\Notifications\BookingCancellationApproved;
 use App\Notifications\BookingCancellationDenied;
@@ -12,10 +21,18 @@ use App\Notifications\BookingCancelled;
 use App\Notifications\BookingNotification;
 use App\Notifications\BookingPaid;
 use App\Notifications\BookingRejected;
+use App\Notifications\BookingRequestReceived;
+use App\Notifications\NewGuestAccountCreated;
 use App\Services\AdminAuditService;
 use App\Services\BookingRequestService;
 use App\Services\RoomAvailabilityService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Validation\ValidationException;
 
 class AdminBookingController extends Controller
 {
@@ -78,6 +95,324 @@ class AdminBookingController extends Controller
         }
 
         return view('admin.bookings.index', compact('bookings', 'search', 'status', 'stats'));
+    }
+
+    /**
+     * Show booking creation interface for admin proxy/concierge bookings.
+     */
+    public function create(Request $request)
+    {
+        $destinations = DestinationModel::with([
+            'hotels' => fn ($q) => $q->where('is_shown', true)->with(['rooms' => fn ($rq) => $rq->where('is_shown', true)]),
+            'packages' => fn ($q) => $q->where('is_active', true),
+            'activities' => fn ($q) => $q->where('is_shown', true),
+            'addOns' => fn ($q) => $q->where('is_shown', true),
+        ])->get();
+
+        $categoryRules = PassengerCategoryRule::where('is_active', true)->get();
+
+        $selectedUser = null;
+        if ($request->filled('user_id')) {
+            $selectedUser = User::find($request->query('user_id'));
+        }
+
+        return view('admin.bookings.create', compact('destinations', 'categoryRules', 'selectedUser'));
+    }
+
+    /**
+     * Search registered users for autocomplete in booking builder.
+     */
+    public function searchUsers(Request $request)
+    {
+        $term = trim((string) $request->query('query', ''));
+        if (strlen($term) < 2) {
+            return response()->json([]);
+        }
+
+        $users = User::where(function ($q) use ($term) {
+            $q->where('name', 'ilike', "%{$term}%")
+                ->orWhere('email', 'ilike', "%{$term}%")
+                ->orWhere('phone_number', 'ilike', "%{$term}%");
+        })
+            ->orderBy('name')
+            ->limit(10)
+            ->get(['id', 'name', 'email', 'phone_number', 'address']);
+
+        return response()->json($users);
+    }
+
+    /**
+     * Check real-time availability for a room type.
+     */
+    public function checkAvailability(Request $request)
+    {
+        $request->validate([
+            'room_id' => 'required|exists:rooms,id',
+            'check_in_date' => 'required|date',
+            'check_out_date' => 'required|date|after:check_in_date',
+        ]);
+
+        $room = RoomType::findOrFail($request->room_id);
+        $checkIn = Carbon::parse($request->check_in_date);
+        $checkOut = Carbon::parse($request->check_out_date);
+
+        $availability = $this->availabilityService->check($room, $checkIn, $checkOut);
+
+        return response()->json($availability);
+    }
+
+    /**
+     * Store a proxy booking created by admin.
+     */
+    public function store(StoreAdminBookingRequest $request)
+    {
+        $validated = $request->validated();
+
+        $isWalkIn = (bool) ($validated['is_walk_in'] ?? false);
+        $autoCreate = (bool) ($validated['auto_create_account'] ?? false);
+        $targetUser = null;
+        $tempPassword = null;
+        $accountCreated = false;
+
+        return DB::transaction(function () use ($validated, $isWalkIn, $autoCreate, &$targetUser, &$tempPassword, &$accountCreated, $request) {
+            // 1. Resolve User
+            if ($isWalkIn) {
+                if ($autoCreate) {
+                    $existing = User::where('email', $validated['contact_email'])->first();
+                    if ($existing) {
+                        $targetUser = $existing;
+                    } else {
+                        $tempPassword = ! empty($validated['temporary_password'])
+                            ? trim($validated['temporary_password'])
+                            : 'Sunny'.rand(1000, 9999).'!';
+
+                        $targetUser = User::create([
+                            'name' => $validated['contact_name'],
+                            'email' => $validated['contact_email'],
+                            'phone_number' => $validated['contact_phone'],
+                            'password' => Hash::make($tempPassword),
+                        ]);
+                        $accountCreated = true;
+                    }
+                    $userId = $targetUser->id;
+                } else {
+                    $userId = null;
+                }
+            } else {
+                $userId = $validated['user_id'];
+                $targetUser = User::find($userId);
+            }
+
+            // 2. Process Items & Availability
+            $calculatedItems = [];
+            $totalAmount = 0.00;
+
+            foreach ($validated['items'] as $itemData) {
+                $type = $itemData['item_type'];
+                $itemId = (int) $itemData['item_id'];
+                $qty = max(1, (int) $itemData['quantity']);
+                $pax = max(1, (int) $itemData['selected_pax']);
+                $checkIn = ! empty($itemData['check_in_date']) ? Carbon::parse($itemData['check_in_date']) : null;
+                $checkOut = ! empty($itemData['check_out_date']) ? Carbon::parse($itemData['check_out_date']) : null;
+
+                $nights = ($checkIn && $checkOut) ? max(1, (int) $checkIn->diffInDays($checkOut)) : 1;
+
+                if ($type === 'room') {
+                    $room = RoomType::with('hotel')->lockForUpdate()->findOrFail($itemId);
+
+                    // Check room availability
+                    if ($checkIn && $checkOut) {
+                        $avail = $this->availabilityService->check($room, $checkIn, $checkOut);
+                        if ($avail['remaining'] < $qty) {
+                            $availMsg = $avail['remaining'] === 0
+                                ? 'fully booked for the selected dates'
+                                : "only {$avail['remaining']} of {$avail['total_rooms']} unit(s) left for {$checkIn->format('M d')}–{$checkOut->format('M d, Y')}";
+                            throw ValidationException::withMessages([
+                                'items' => ["Room '{$room->room_name}' — {$availMsg}. You requested {$qty} unit(s). Set Quantity to {$avail['remaining']} and increase Guests (Pax) if you need more guests in one unit, or pick another room type."],
+                            ]);
+                        }
+                    }
+
+                    $unitPrice = $room->calculateNightlyRate($pax);
+                    $lineSubtotal = $unitPrice * $qty * $nights;
+                    $title = $room->room_name;
+                    $subtitle = $room->hotel ? ($room->hotel->hotel_name ?? 'Hotel Stay') : 'Hotel Stay';
+                    $hotelName = $room->hotel ? ($room->hotel->hotel_name ?? null) : null;
+                } elseif ($type === 'package') {
+                    $pkg = Package::with('destination')->findOrFail($itemId);
+                    $unitPrice = (float) $pkg->price;
+                    $lineSubtotal = $unitPrice * max($pax, $qty);
+                    $title = $pkg->name;
+                    $subtitle = 'Tour Package • '.($pkg->destination ? $pkg->destination->name : '');
+                    $hotelName = null;
+                } elseif ($type === 'activity') {
+                    $act = ActivityModel::with('destination')->findOrFail($itemId);
+                    $effectivePax = max($pax, $qty);
+                    $unitPrice = $act->calculateRateForPax($effectivePax);
+                    $lineSubtotal = $act->isPerPersonRate() ? $unitPrice * $effectivePax : $unitPrice * $qty;
+                    $title = $act->activity_name;
+                    $subtitle = 'Activity • '.($act->destination ? $act->destination->name : '');
+                    $hotelName = null;
+                } elseif ($type === 'addon') {
+                    $addon = AddOnModel::with('destination')->findOrFail($itemId);
+                    $effectivePax = max($pax, $qty);
+                    $unitPrice = $addon->getRateForPax($effectivePax);
+                    $lineSubtotal = $unitPrice * $effectivePax;
+                    $title = $addon->name;
+                    $subtitle = 'Add-on • '.($addon->destination ? $addon->destination->name : '');
+                    $hotelName = null;
+                } else {
+                    throw ValidationException::withMessages(['items' => ['Invalid item type specified.']]);
+                }
+
+                $totalAmount += $lineSubtotal;
+
+                $calculatedItems[] = [
+                    'item_type' => $type,
+                    'item_id' => $itemId,
+                    'item_title' => $title,
+                    'item_subtitle' => $subtitle,
+                    'hotel_name' => $hotelName,
+                    'unit_price' => $lineSubtotal / max(1, $qty),
+                    'quantity' => $qty,
+                    'selected_pax' => $pax,
+                    'check_in_date' => $checkIn?->format('Y-m-d'),
+                    'check_out_date' => $checkOut?->format('Y-m-d'),
+                    'nights' => $nights,
+                    'subtotal' => $lineSubtotal,
+                    'availability_status' => BookingItem::AVAIL_AVAILABLE,
+                ];
+            }
+
+            // 3. Passenger Category Rules (guest_manifest)
+            $discountAmount = 0.00;
+            $surchargeAmount = 0.00;
+            $guestManifest = $validated['guest_manifest'] ?? [];
+
+            if (! empty($guestManifest)) {
+                $rulesMap = PassengerCategoryRule::getActiveRulesMap();
+                foreach ($guestManifest as $g) {
+                    $cat = $g['category'] ?? 'Adult';
+                    if (isset($rulesMap[$cat])) {
+                        $rule = $rulesMap[$cat];
+                        if ($rule->adjustment_type === 'discount') {
+                            $discountAmount += (float) $rule->amount;
+                        } elseif ($rule->adjustment_type === 'surcharge') {
+                            $surchargeAmount += (float) $rule->amount;
+                        }
+                    }
+                }
+            }
+
+            // 4. Admin Adjustments
+            $adminDiscount = (float) ($validated['admin_discount_amount'] ?? 0);
+            $adminSurcharge = (float) ($validated['admin_surcharge_amount'] ?? 0);
+            $reason = trim((string) ($validated['price_adjustment_reason'] ?? ''));
+
+            $netAmount = max(0.00, $totalAmount - $discountAmount + $surchargeAmount - $adminDiscount + $adminSurcharge);
+
+            // 5. Initial Status Setup
+            $initialStatus = $validated['initial_status'];
+            $bookingCode = $this->bookingRequestService->generateBookingCode();
+
+            $bookingData = [
+                'booking_code' => $bookingCode,
+                'user_id' => $userId,
+                'status' => $initialStatus,
+                'total_amount' => $totalAmount,
+                'discount_amount' => $discountAmount,
+                'tax_amount' => $surchargeAmount,
+                'admin_discount_amount' => $adminDiscount,
+                'admin_surcharge_amount' => $adminSurcharge,
+                'price_adjustment_reason' => ($adminDiscount > 0 || $adminSurcharge > 0) ? $reason : null,
+                'price_adjusted_at' => ($adminDiscount > 0 || $adminSurcharge > 0) ? now() : null,
+                'net_amount' => $netAmount,
+                'payment_status' => $initialStatus === Booking::STATUS_PAID ? Booking::PAYMENT_PAID : Booking::PAYMENT_UNPAID,
+                'payment_method' => $initialStatus === Booking::STATUS_PAID ? ($validated['payment_method'] ?? 'Cash') : null,
+                'payment_reference' => $initialStatus === Booking::STATUS_PAID ? ($validated['payment_reference'] ?? null) : null,
+                'contact_name' => $validated['contact_name'],
+                'contact_email' => $validated['contact_email'],
+                'contact_phone' => $validated['contact_phone'],
+                'special_requests' => $validated['special_requests'] ?? null,
+                'guest_manifest' => $guestManifest,
+                'admin_notes' => $validated['admin_notes'] ?? null,
+                'booked_by_admin_id' => auth('admin')->id(),
+                'booking_source' => $validated['booking_source'],
+                'is_walk_in' => $isWalkIn,
+            ];
+
+            if ($initialStatus === Booking::STATUS_APPROVED) {
+                $bookingData['approved_at'] = now();
+                $bookingData['payment_deadline'] = now()->addHours(48);
+                $bookingData['reviewed_by_admin_id'] = auth('admin')->id();
+            } elseif ($initialStatus === Booking::STATUS_PAID) {
+                $bookingData['approved_at'] = now();
+                $bookingData['paid_at'] = now();
+                $bookingData['reviewed_by_admin_id'] = auth('admin')->id();
+            }
+
+            $booking = Booking::create($bookingData);
+
+            // 6. Create Booking Items
+            foreach ($calculatedItems as $cItem) {
+                $cItem['booking_id'] = $booking->id;
+                BookingItem::create($cItem);
+            }
+
+            // 7. Audit Logging & Status History
+            AdminAuditService::log($booking);
+
+            BookingStatusHistory::create([
+                'booking_id' => $booking->id,
+                'from_status' => 'created',
+                'to_status' => $booking->status,
+                'note' => 'Booking created by admin ('.(auth('admin')->user()?->name ?? 'Admin').') via '.str_replace('_', ' ', $validated['booking_source']),
+                'actor_type' => auth('admin')->user() ? get_class(auth('admin')->user()) : null,
+                'actor_id' => auth('admin')->id(),
+            ]);
+
+            // 8. Notifications
+            if ($accountCreated && $targetUser && $tempPassword) {
+                session()->flash('new_user_account', [
+                    'name' => $targetUser->name,
+                    'email' => $targetUser->email,
+                    'password' => $tempPassword,
+                ]);
+
+                try {
+                    $resetToken = Password::broker()->createToken($targetUser);
+                    $resetUrl = route('password.reset', ['token' => $resetToken, 'email' => $targetUser->email]);
+                    $targetUser->notify(new NewGuestAccountCreated($booking, $tempPassword, $resetUrl));
+                } catch (\Throwable $e) {
+                    Log::warning('Could not deliver welcome email to '.$targetUser->email.': '.$e->getMessage());
+                }
+            }
+
+            if ($booking->status === Booking::STATUS_PENDING) {
+                BookingNotification::send($booking, new BookingRequestReceived($booking));
+            } elseif ($booking->status === Booking::STATUS_APPROVED) {
+                BookingNotification::send($booking, new BookingApproved($booking));
+            } elseif ($booking->status === Booking::STATUS_PAID) {
+                BookingNotification::send($booking, new BookingPaid($booking));
+            }
+
+            $successMsg = "Booking {$booking->booking_code} created successfully on behalf of {$booking->contact_name}.";
+
+            if ($request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => $successMsg,
+                    'new_user_account' => $accountCreated ? [
+                        'name' => $targetUser->name,
+                        'email' => $targetUser->email,
+                        'password' => $tempPassword,
+                    ] : null,
+                    'redirect_url' => route('admin.bookings.show', $booking->id),
+                ]);
+            }
+
+            return redirect()->route('admin.bookings.show', $booking->id)->with('success', $successMsg);
+        });
     }
 
     /**
@@ -420,5 +755,30 @@ class AdminBookingController extends Controller
 
         return redirect()->route('admin.bookings.show', $booking->id)
             ->with('success', "Booking {$booking->booking_code} marked as refunded.");
+    }
+
+    /**
+     * Send or resend a password reset link to the booking customer/user.
+     */
+    public function sendPasswordReset($id)
+    {
+        $booking = Booking::with('user')->findOrFail($id);
+
+        $user = $booking->user;
+        if (! $user && ! empty($booking->contact_email)) {
+            $user = User::where('email', $booking->contact_email)->first();
+        }
+
+        if (! $user) {
+            return back()->with('error', 'No registered account found with email "'.$booking->contact_email.'". The guest has not been registered yet.');
+        }
+
+        $status = Password::broker()->sendResetLink(['email' => $user->email]);
+
+        if ($status === Password::RESET_LINK_SENT) {
+            return back()->with('success', 'A password reset link has been emailed to '.$user->email.'.');
+        }
+
+        return back()->with('error', __($status));
     }
 }

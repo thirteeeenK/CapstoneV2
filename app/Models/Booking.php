@@ -78,6 +78,9 @@ class Booking extends Model
         'contact_phone',
         'special_requests',
         'guest_manifest',
+        'booked_by_admin_id',
+        'booking_source',
+        'is_walk_in',
     ];
 
     protected $casts = [
@@ -89,6 +92,7 @@ class Booking extends Model
         'net_amount' => 'decimal:2',
         'guest_manifest' => 'array',
         'gateway_data' => 'array',
+        'is_walk_in' => 'boolean',
         'approved_at' => 'datetime',
         'payment_deadline' => 'datetime',
         'paid_at' => 'datetime',
@@ -107,6 +111,16 @@ class Booking extends Model
     public function reviewer()
     {
         return $this->belongsTo(AdminModel::class, 'reviewed_by_admin_id');
+    }
+
+    public function bookedByAdmin()
+    {
+        return $this->belongsTo(AdminModel::class, 'booked_by_admin_id');
+    }
+
+    public function isAgentBooked(): bool
+    {
+        return $this->booked_by_admin_id !== null;
     }
 
     public function items()

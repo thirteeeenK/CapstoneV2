@@ -96,6 +96,35 @@
             </div>
         @endif
 
+        @if (session('new_user_account'))
+            <div class="bg-emerald-50/90 border-2 border-emerald-300 rounded-3xl p-5 shadow-xs space-y-3">
+                <div class="flex items-center gap-2 text-emerald-950 font-bold text-sm">
+                    <span class="material-symbols-outlined text-emerald-600 text-xl">key</span>
+                    <span>New Member Account Created for Guest!</span>
+                </div>
+                <p class="text-xs text-emerald-800">
+                    A SunnyTrips account was automatically generated for <strong>{{ session('new_user_account.name') }}</strong>. Provide these login details to the customer:
+                </p>
+                <div class="bg-white border border-emerald-200 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                    <div class="space-y-1.5 font-medium">
+                        <div class="flex items-center gap-2">
+                            <span class="text-slate-500 w-32 shrink-0">Login Email:</span>
+                            <strong class="text-slate-900 font-mono text-xs">{{ session('new_user_account.email') }}</strong>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-slate-500 w-32 shrink-0">Temporary Password:</span>
+                            <span class="font-mono font-bold text-emerald-700 bg-emerald-100/80 px-2.5 py-0.5 rounded-md text-xs">{{ session('new_user_account.password') }}</span>
+                        </div>
+                    </div>
+                    <button type="button" onclick="navigator.clipboard.writeText('Email: {{ session('new_user_account.email') }}\nPassword: {{ session('new_user_account.password') }}'); alert('Credentials copied to clipboard!');"
+                            class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center gap-1.5 transition shrink-0 cursor-pointer shadow-xs">
+                        <span class="material-symbols-outlined text-[16px]">content_copy</span>
+                        <span>Copy Credentials</span>
+                    </button>
+                </div>
+            </div>
+        @endif
+
         @if (session('error'))
             <div class="bg-rose-50 border border-rose-200/80 text-rose-800 text-sm px-4 py-3 rounded-2xl flex items-center gap-2">
                 <span class="material-symbols-outlined text-[20px] text-rose-600">error</span>
@@ -181,7 +210,30 @@
                     <p class="text-base font-extrabold">{{ $booking->contact_name }}</p>
                     <p class="text-slate-600 flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">mail</span>{{ $booking->contact_email }}</p>
                     <p class="text-slate-600 flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">call</span>{{ $booking->contact_phone }}</p>
-                    <p class="text-slate-500 pt-1">Account: {{ $booking->user ? $booking->user->name : 'Guest (no account)' }}</p>
+                    <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+                        <p class="text-slate-500">Account: {{ $booking->user ? $booking->user->name : 'Guest (no account)' }}</p>
+                        @if($booking->user || \App\Models\User::where('email', $booking->contact_email)->exists())
+                            <form action="{{ route('admin.bookings.send-password-reset', $booking->id) }}" method="POST" class="inline">
+                                @csrf
+                                <button type="submit"
+                                        onclick="return confirm('Send a password reset link to {{ $booking->contact_email }}?');"
+                                        title="Send a fresh password reset email to customer"
+                                        class="inline-flex items-center gap-1 text-[11px] font-bold text-sky-700 hover:text-sky-900 bg-sky-50 hover:bg-sky-100 border border-sky-200/80 px-2 py-0.5 rounded-md transition cursor-pointer">
+                                    <span class="material-symbols-outlined text-[14px]">lock_reset</span>
+                                    <span>Send Password Reset</span>
+                                </button>
+                            </form>
+                        @endif
+                    </div>
+                    @if($booking->isAgentBooked())
+                        <div class="pt-2 border-t border-slate-100 mt-2">
+                            <span class="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-md">
+                                <span class="material-symbols-outlined text-[14px]">support_agent</span>
+                                Booked on behalf by: {{ $booking->bookedByAdmin?->name ?? 'Admin Staff' }}
+                            </span>
+                            <p class="text-[10px] text-slate-400 mt-0.5">Source: {{ ucwords(str_replace('_', ' ', $booking->booking_source ?? 'walk in')) }}</p>
+                        </div>
+                    @endif
                 </div>
                 @if($booking->special_requests)
                     <div class="mt-4 bg-amber-50 border border-amber-200 rounded-xl p-3 text-[11px] text-amber-900 font-medium">

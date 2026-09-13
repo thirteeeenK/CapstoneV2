@@ -81,6 +81,13 @@
 
                             <td class="px-3 py-3 whitespace-nowrap text-xs">
                                 <div class="flex items-center gap-2">
+                                    <a href="{{ route('admin.bookings.create', ['user_id' => $u->id]) }}"
+                                       class="inline-flex items-center gap-1 h-8 px-2.5 rounded bg-sky-50 border border-sky-200 hover:bg-sky-100 text-sky-700 font-medium transition-colors shadow-xs"
+                                       title="Create a booking on behalf of {{ $u->name }}">
+                                        <span class="material-symbols-outlined text-[16px]">add_shopping_cart</span>
+                                        Book
+                                    </a>
+
                                     <a href="{{ route('admin.users.show', $u->id) }}"
                                        class="inline-flex items-center gap-1 h-8 px-3 rounded bg-white border border-ocean-300 hover:border-ocean-600 text-ocean-600 hover:bg-ocean-50 font-medium transition-colors shadow-sm">
                                         <span class="material-symbols-outlined text-[16px]">visibility</span>

@@ -36,6 +36,11 @@
                             <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 font-mono text-xs font-bold text-slate-900">
                                 {{ $booking->booking_code }}
                             </span>
+                            @if($booking->isAgentBooked())
+                                <span class="block mt-1 text-[9px] font-bold uppercase tracking-wider text-indigo-700 bg-indigo-50 border border-indigo-200 px-1.5 py-0.5 rounded w-fit">
+                                    Agent Booked
+                                </span>
+                            @endif
                         </td>
                         <td class="py-4 px-6">
                             <p class="font-bold text-slate-900">{{ $booking->contact_name }}</p>
