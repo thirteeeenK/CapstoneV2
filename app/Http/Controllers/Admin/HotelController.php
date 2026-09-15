@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\DestinationModel;
 use App\Models\HotelModel;
+use App\Services\AdminAuditService;
 use App\Services\GeminiService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -62,6 +63,8 @@ class HotelController extends Controller
             'images' => $imagePaths,
             'is_shown' => $request->has('is_shown') ? $request->boolean('is_shown') : true,
         ]);
+
+        AdminAuditService::log($hotel);
 
         // Retrieve destination name for semantic grounding
         $destination = DestinationModel::find($request->destination_id);
@@ -133,6 +136,7 @@ class HotelController extends Controller
         ]);
 
         $hotel = HotelModel::findOrFail($id);
+        $oldValues = $hotel->getOriginal();
 
         $vibeTags = $request->vibe_tags
             ? array_values(array_filter(array_map('trim', explode(',', $request->vibe_tags))))
@@ -193,6 +197,8 @@ class HotelController extends Controller
 
         $hotel->save();
 
+        AdminAuditService::log($hotel, $oldValues);
+
         return redirect()->back()->with('success', 'Hotel information updated successfully!');
     }
 
@@ -207,6 +213,8 @@ class HotelController extends Controller
                 Storage::disk('public')->delete($img);
             }
         }
+
+        AdminAuditService::log($hotel, $hotel->getOriginal());
 
         $hotel->delete();
 

@@ -766,7 +766,8 @@
                                 <p class="text-xs text-slate-500">Your request will be reviewed by our team. Cancellation is not immediate — you will be notified of the decision. A reason is required.</p>
                             </div>
                         </div>
-                        <form action="{{ route('booking.cancel', $booking->booking_code) }}" method="POST" class="space-y-3">
+                        <form action="{{ route('booking.cancel', $booking->booking_code) }}" method="POST" class="space-y-3"
+                              onsubmit="return confirm('Submit this cancellation request for review? Your booking dates remain held until a decision is made.')">
                             @csrf
                             <div>
                                 <label for="cancel-reason" class="font-label text-[11px] uppercase font-bold tracking-[0.15em] text-slate-500 block mb-1.5">Reason for cancellation <span class="text-rose-600">*</span></label>

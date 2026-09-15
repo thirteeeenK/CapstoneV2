@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Faq;
+use App\Services\AdminAuditService;
 use App\Services\GeminiService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -87,6 +88,8 @@ class AdminFaqController extends Controller
             'is_active' => (bool) $validated['is_active'],
         ]);
 
+        AdminAuditService::log($faq);
+
         $this->refreshEmbedding($faq);
 
         return redirect()->route('admin.faqs.index')->with('success', "FAQ '{$faq->question}' created successfully!");
@@ -108,6 +111,7 @@ class AdminFaqController extends Controller
     public function update(Request $request, $id)
     {
         $faq = Faq::findOrFail($id);
+        $oldValues = $faq->getOriginal();
 
         $validated = $request->validate([
             'question' => 'required|string|max:255',
@@ -127,6 +131,8 @@ class AdminFaqController extends Controller
             'is_active' => (bool) $validated['is_active'],
         ]);
 
+        AdminAuditService::log($faq, $oldValues);
+
         $this->refreshEmbedding($faq);
 
         return redirect()->route('admin.faqs.index')->with('success', "FAQ '{$faq->question}' updated successfully!");
@@ -138,8 +144,11 @@ class AdminFaqController extends Controller
     public function toggleVisibility(Request $request, $id)
     {
         $faq = Faq::findOrFail($id);
+        $oldValues = ['is_active' => $faq->is_active];
         $faq->is_active = ! $faq->is_active;
         $faq->save();
+
+        AdminAuditService::log($faq, $oldValues);
 
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
@@ -159,6 +168,9 @@ class AdminFaqController extends Controller
     {
         $faq = Faq::findOrFail($id);
         $question = $faq->question;
+
+        AdminAuditService::log($faq, $faq->getOriginal());
+
         $faq->delete();
 
         return redirect()->route('admin.faqs.index')->with('success', "FAQ '{$question}' deleted successfully.");

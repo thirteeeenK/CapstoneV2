@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\DestinationModel;
+use App\Services\AdminAuditService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -32,11 +33,13 @@ class DestinationController extends Controller
             $imagePath = $request->image_url;
         }
 
-        DestinationModel::create([
+        $destination = DestinationModel::create([
             'name' => $request->name,
             'description' => $request->description,
             'image' => $imagePath,
         ]);
+
+        AdminAuditService::log($destination);
 
         return redirect()->route('admin.destinations')->with('success', 'Destination added successfully!');
     }
@@ -51,6 +54,7 @@ class DestinationController extends Controller
         ]);
 
         $destination = DestinationModel::findOrFail($id);
+        $oldValues = $destination->getOriginal();
 
         $imagePath = $destination->image;
         if ($request->hasFile('image')) {
@@ -68,6 +72,8 @@ class DestinationController extends Controller
             'image' => $imagePath,
         ]);
 
+        AdminAuditService::log($destination, $oldValues);
+
         return redirect()->route('admin.destinations')->with('success', 'Destination updated successfully!');
     }
 
@@ -77,6 +83,8 @@ class DestinationController extends Controller
         if ($destination->image && ! str_starts_with($destination->image, 'http')) {
             Storage::disk('public')->delete($destination->image);
         }
+        AdminAuditService::log($destination, $destination->getOriginal());
+
         $destination->delete();
 
         return redirect()->route('admin.destinations')->with('success', 'Destination deleted successfully!');

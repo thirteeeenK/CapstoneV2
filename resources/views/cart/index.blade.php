@@ -502,6 +502,7 @@
             },
 
             async removeItem(itemId) {
+                if (!confirm('Remove this item from your trip basket?')) return;
                 try {
                     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
                     const res = await fetch('/cart/remove/' + itemId, {

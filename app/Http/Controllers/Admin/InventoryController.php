@@ -9,6 +9,7 @@ use App\Models\DestinationModel;
 use App\Models\HotelModel;
 use App\Models\Package;
 use App\Models\RoomType;
+use App\Services\AdminAuditService;
 use Illuminate\Http\Request;
 
 class InventoryController extends Controller
@@ -175,8 +176,12 @@ class InventoryController extends Controller
             $item = ActivityModel::findOrFail($id);
         }
 
+        $oldValues = ['is_shown' => $item->is_shown];
+
         $item->is_shown = $isShown;
         $item->save();
+
+        AdminAuditService::log($item, $oldValues);
 
         if ($request->wantsJson()) {
             return response()->json([

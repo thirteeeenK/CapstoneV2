@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\HotelModel;
 use App\Models\RoomType;
+use App\Services\AdminAuditService;
 use App\Services\GeminiService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -87,6 +88,8 @@ class RoomController extends Controller
             'is_shown' => $request->has('is_shown') ? $request->boolean('is_shown') : true,
         ]);
 
+        AdminAuditService::log($room);
+
         // Build structured embedding text and generate normalized vector embedding
         $destinationName = $hotel->destination?->name;
         $embeddingText = $geminiService->buildRoomEmbeddingText($room, $hotel->hotel_name, $destinationName);
@@ -121,6 +124,7 @@ class RoomController extends Controller
     public function updateRoom(Request $request, $id, GeminiService $geminiService)
     {
         $room = RoomType::findOrFail($id);
+        $oldValues = $room->getOriginal();
         $hotel = HotelModel::with('destination')->findOrFail($room->hotel_id);
 
         $request->validate([
@@ -206,6 +210,8 @@ class RoomController extends Controller
 
         $room->save();
 
+        AdminAuditService::log($room, $oldValues);
+
         // Auto-generate parent hotel embedding if missing
         if (empty($hotel->embedding)) {
             $hotelText = $geminiService->buildHotelEmbeddingText($hotel, $destinationName);
@@ -230,6 +236,8 @@ class RoomController extends Controller
                 Storage::disk('public')->delete($img);
             }
         }
+
+        AdminAuditService::log($room, $room->getOriginal());
 
         $room->delete();
 

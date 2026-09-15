@@ -9,6 +9,7 @@
         searchQuery: @js($searchQuery ?? ''),
         previewPackage: null,
         activeImgIdx: 0,
+        packageIndex: @js($packages->map(fn($p) => ['dest' => (string) $p->destination_id, 'name' => $p->name, 'type' => $p->type ?? ''])),
         matchesPackage(destId, pkgName = '', pkgType = '') {
             if (this.activeDestId !== 'all' && String(this.activeDestId) !== String(destId)) {
                 return false;
@@ -19,6 +20,9 @@
                 if (!hay.includes(q)) return false;
             }
             return true;
+        },
+        get anyVisiblePackage() {
+            return this.packageIndex.some(p => this.matchesPackage(p.dest, p.name, p.type));
         }
     }" class="pt-20 sm:pt-28 pb-12 bg-sand-50/70 text-slate-900 min-h-screen relative overflow-hidden">
 
@@ -103,12 +107,25 @@
 
             {{-- Packages Grid --}}
             @if($packages->isEmpty())
-                <div class="bg-white p-12 rounded-3xl border border-slate-200 text-center text-slate-400 text-sm shadow-xs">
-                    <span class="material-symbols-outlined text-4xl text-slate-300 mb-2 block">card_travel</span>
-                    No tour packages listed yet. Check back soon!
+                <div class="bg-white p-12 rounded-3xl border border-slate-200 text-center text-slate-500 text-sm shadow-xs">
+                    <span class="material-symbols-outlined text-4xl text-slate-300 mb-2 block">search_off</span>
+                    {{ $searchQuery ? 'No packages match your search. Try different keywords or clear your filters.' : 'No tour packages listed yet. Check back soon!' }}
+                    <div class="mt-4 flex flex-wrap items-center justify-center gap-2">
+                        <a href="{{ route('packages.index') }}"
+                            class="px-4 py-2 rounded-2xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs transition-colors shadow-xs">{{ $searchQuery ? 'Clear Filters & View All Packages' : 'View All Packages' }}</a>
+                    </div>
                 </div>
             @else
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
+                <div x-show="!anyVisiblePackage" x-cloak
+                    class="bg-white p-12 rounded-3xl border border-slate-200 text-center text-slate-500 text-sm shadow-xs">
+                    <span class="material-symbols-outlined text-4xl text-slate-300 mb-2 block">search_off</span>
+                    No packages match your search or filters. Try different keywords or clear your filters.
+                    <div class="mt-4 flex flex-wrap items-center justify-center gap-2">
+                        <a href="{{ route('packages.index') }}"
+                            class="px-4 py-2 rounded-2xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs transition-colors shadow-xs">Clear Filters &amp; View All Packages</a>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6" x-show="anyVisiblePackage">
                     @foreach($packages as $pkg)
                         @php
                             $destName = $pkg->destination->name ?? 'Philippines';

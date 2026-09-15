@@ -3,10 +3,11 @@
 namespace App\Notifications;
 
 use App\Models\Booking;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\Notification as NotificationFacade;
 
-abstract class BookingNotification extends Notification
+abstract class BookingNotification extends Notification implements ShouldQueue
 {
     public function __construct(protected Booking $booking) {}
 

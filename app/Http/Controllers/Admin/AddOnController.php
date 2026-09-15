@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\AddOnModel;
 use App\Models\DestinationModel;
+use App\Services\AdminAuditService;
 use App\Services\GeminiService;
 use Illuminate\Http\Request;
 
@@ -63,6 +64,8 @@ class AddOnController extends Controller
 
         $addon = AddOnModel::create($validated);
 
+        AdminAuditService::log($addon);
+
         // Generate AI Vector Embedding
         $text = $geminiService->buildAddOnEmbeddingText($addon);
         $vector = $geminiService->generateEmbedding($text, 'RETRIEVAL_DOCUMENT', $addon->name);
@@ -96,7 +99,11 @@ class AddOnController extends Controller
 
         $validated['is_shown'] = $request->has('is_shown');
 
+        $oldValues = $addon->getOriginal();
+
         $addon->update($validated);
+
+        AdminAuditService::log($addon, $oldValues);
 
         // Generate/Update AI Vector Embedding
         $text = $geminiService->buildAddOnEmbeddingText($addon);
@@ -111,6 +118,8 @@ class AddOnController extends Controller
 
     public function destroy(AddOnModel $addon)
     {
+        AdminAuditService::log($addon, $addon->getOriginal());
+
         $addon->delete();
 
         return redirect()->route('admin.addons.index')->with('success', 'Add-on deleted successfully.');

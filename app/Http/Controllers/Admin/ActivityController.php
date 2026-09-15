@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\ActivityModel;
 use App\Models\DestinationModel;
+use App\Services\AdminAuditService;
 use App\Services\GeminiService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -131,6 +132,8 @@ class ActivityController extends Controller
             'is_shown' => $request->has('is_shown') ? $request->boolean('is_shown') : true,
         ]);
 
+        AdminAuditService::log($activity);
+
         // Retrieve destination name for semantic grounding
         $destination = DestinationModel::find($request->destination_id);
         $destinationName = $destination ? $destination->name : null;
@@ -181,6 +184,7 @@ class ActivityController extends Controller
         ]);
 
         $activity = ActivityModel::findOrFail($id);
+        $oldValues = $activity->getOriginal();
 
         $vibeTags = $request->vibe_tags
             ? array_values(array_filter(array_map('trim', explode(',', $request->vibe_tags))))
@@ -247,6 +251,8 @@ class ActivityController extends Controller
 
         $activity->save();
 
+        AdminAuditService::log($activity, $oldValues);
+
         return redirect()->route('admin.activities.index')->with('success', 'Activity updated successfully.');
     }
 
@@ -260,6 +266,8 @@ class ActivityController extends Controller
                 Storage::disk('public')->delete($img);
             }
         }
+
+        AdminAuditService::log($activity, $activity->getOriginal());
 
         $activity->delete();
 

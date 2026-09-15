@@ -28,6 +28,7 @@ class StripeDriver implements PaymentDriver
     {
         $response = Http::withBasicAuth($this->secretKey, '')
             ->timeout(6)
+            ->withHeaders(['Idempotency-Key' => 'checkout-'.$booking->booking_code.'-'.$booking->net_amount])
             ->asForm()
             ->post('https://api.stripe.com/v1/checkout/sessions', [
                 'mode' => 'payment',

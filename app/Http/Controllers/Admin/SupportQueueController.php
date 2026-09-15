@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\SupportInquiry;
 use App\Models\User;
+use App\Services\AdminAuditService;
 use App\Services\Support\SupportQueueService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -62,6 +63,9 @@ class SupportQueueController extends Controller
 
         $inquiry = $result['inquiry'];
         $msg = $result['message'];
+
+        AdminAuditService::log($inquiry);
+        AdminAuditService::log($msg);
 
         return response()->json([
             'status' => 'success',
@@ -200,6 +204,8 @@ class SupportQueueController extends Controller
         try {
             $inquiry = $this->supportQueue->claimInquiry($id, $admin->id);
 
+            AdminAuditService::log($inquiry, ['status' => SupportInquiry::STATUS_PENDING]);
+
             return response()->json(['status' => 'success', 'inquiry' => ['id' => $inquiry->id, 'ticket_number' => $inquiry->ticket_number, 'status' => $inquiry->status]]);
         } catch (RuntimeException $e) {
             return response()->json(['status' => 'error', 'message' => $e->getMessage()], 409);
@@ -219,6 +225,8 @@ class SupportQueueController extends Controller
 
         $msg = $this->supportQueue->sendAdminMessage($inquiry, $validated['message']);
 
+        AdminAuditService::log($msg);
+
         return response()->json([
             'status' => 'success',
             'message' => ['id' => $msg->id, 'sender' => 'admin', 'text' => $msg->message, 'created_at' => $msg->created_at?->toIso8601String()],
@@ -235,6 +243,8 @@ class SupportQueueController extends Controller
         }
 
         $message = $this->supportQueue->resumeAi($inquiry);
+
+        AdminAuditService::log($inquiry, ['status' => SupportInquiry::STATUS_HUMAN_ACTIVE]);
 
         return response()->json([
             'status' => 'success',
@@ -257,6 +267,8 @@ class SupportQueueController extends Controller
         }
 
         $message = $this->supportQueue->resolve($inquiry);
+
+        AdminAuditService::log($inquiry, ['status' => SupportInquiry::STATUS_HUMAN_ACTIVE]);
 
         return response()->json([
             'status' => 'success',

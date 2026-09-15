@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\OnboardingOption;
+use App\Services\AdminAuditService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
@@ -109,6 +110,8 @@ class AdminOnboardingOptionController extends Controller
             'is_active' => (bool) $validated['is_active'],
         ]);
 
+        AdminAuditService::log($option);
+
         return redirect()->route('admin.onboarding-options.index')
             ->with('success', "Option '{$option->name}' created successfully!");
     }
@@ -129,6 +132,7 @@ class AdminOnboardingOptionController extends Controller
     public function update(Request $request, $id)
     {
         $option = OnboardingOption::findOrFail($id);
+        $oldValues = $option->getOriginal();
 
         $validated = $request->validate([
             'type' => ['required', 'string', Rule::in(array_keys(self::TYPES))],
@@ -173,6 +177,8 @@ class AdminOnboardingOptionController extends Controller
             'is_active' => (bool) $validated['is_active'],
         ]);
 
+        AdminAuditService::log($option, $oldValues);
+
         return redirect()->route('admin.onboarding-options.index')
             ->with('success', "Option '{$option->name}' updated successfully!");
     }
@@ -183,8 +189,11 @@ class AdminOnboardingOptionController extends Controller
     public function toggleActive(Request $request, $id)
     {
         $option = OnboardingOption::findOrFail($id);
+        $oldValues = ['is_active' => $option->is_active];
         $option->is_active = ! $option->is_active;
         $option->save();
+
+        AdminAuditService::log($option, $oldValues);
 
         if ($request->wantsJson() || $request->ajax()) {
             return response()->json([
@@ -208,6 +217,8 @@ class AdminOnboardingOptionController extends Controller
         if ($option->image_path && Storage::disk('public')->exists($option->image_path)) {
             Storage::disk('public')->delete($option->image_path);
         }
+
+        AdminAuditService::log($option, $option->getOriginal());
 
         $option->delete();
 

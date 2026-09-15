@@ -178,6 +178,7 @@ function cartDrawer() {
         totalCount: 0,
         selectedCount: 0,
         subtotal: 0,
+        formattedSubtotal: '₱0.00',
         get isAllSelected() {
             return this.items.length > 0 && this.items.every(i => i.is_selected);
         },
@@ -380,6 +381,7 @@ function cartDrawer() {
         },
 
         async removeItem(id) {
+            if (!confirm('Remove this item from your trip basket?')) return;
             try {
                 const res = await fetch(`/cart/remove/${id}`, {
                     method: 'DELETE',
