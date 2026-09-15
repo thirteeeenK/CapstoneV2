@@ -18,6 +18,13 @@ class ChatSession extends Model
 {
     use HasFactory;
 
+    protected function casts(): array
+    {
+        return [
+            'metadata' => 'array',
+        ];
+    }
+
     public static function generateToken(): string
     {
         return 'sess_'.Str::random(40);

@@ -100,6 +100,49 @@ test('chat response includes session token that persists', function () {
     expect($res2->json('session_token'))->toBe($token);
 });
 
+test('a retrieval turn stores compact destination state on its session', function () {
+    $this->hotel->update([
+        'embedding' => '['.implode(',', array_fill(0, 3072, '0.01')).']',
+    ]);
+
+    $response = $this->postJson('/chat', [
+        'message' => 'Find hotels in Boracay',
+    ]);
+
+    $response->assertOk();
+    $session = ChatSession::where('session_token', $response->json('session_token'))->firstOrFail();
+
+    expect($session->metadata['retrieval_state'])->toMatchArray([
+        'type' => 'hotel',
+        'entity_id' => $this->hotel->id,
+        'destination_id' => $this->destination->id,
+        'destination_name' => 'Boracay',
+    ]);
+});
+
+test('the current message is sent to Gemini once', function () {
+    config(['services.gemini.chat_context_cache' => false]);
+    $payload = null;
+
+    Http::fake([
+        '*embedContent*' => Http::response([
+            'embedding' => ['values' => array_fill(0, 3072, 0.01)],
+        ]),
+        '*generateContent*' => function (Request $request) use (&$payload) {
+            $payload = $request->data();
+
+            return Http::response([
+                'candidates' => [['content' => ['parts' => [['text' => 'Here is a recommendation for you!']]]]],
+            ]);
+        },
+    ]);
+
+    $this->postJson('/chat', ['message' => 'Hello there'])->assertOk();
+
+    expect($payload['contents'])->toHaveCount(1);
+    expect($payload['contents'][0]['role'])->toBe('user');
+});
+
 test('authed user can chat', function () {
     $this->actingAs($this->user);
 

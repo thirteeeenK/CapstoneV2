@@ -22,6 +22,9 @@ use Illuminate\Support\Facades\Log;
 
 class GeminiService
 {
+    /** @var array<string, array<int, float>|null> */
+    protected array $requestEmbeddingCache = [];
+
     /**
      * Builds structured, semantically optimized text for ActivityModel embedding generation.
      */
@@ -413,11 +416,19 @@ class GeminiService
      */
     public function generateEmbedding(string $text, string $taskType = 'RETRIEVAL_DOCUMENT', ?string $title = null): ?array
     {
+        $cacheKey = null;
+        if ($taskType === 'RETRIEVAL_QUERY') {
+            $cacheKey = hash('sha256', $taskType."\0".$title."\0".$text);
+            if (array_key_exists($cacheKey, $this->requestEmbeddingCache)) {
+                return $this->requestEmbeddingCache[$cacheKey];
+            }
+        }
+
         $apiKey = config('services.gemini.api_key');
         if (! $apiKey) {
             Log::warning('Gemini API key is not configured in services.gemini.api_key.');
 
-            return null;
+            return $this->cacheQueryEmbedding($cacheKey, null);
         }
 
         $modelName = config('services.gemini.embedding_model') ?? 'models/text-embedding-001';
@@ -445,7 +456,7 @@ class GeminiService
             if ($response->successful() && isset($response->json()['embedding']['values'])) {
                 $rawVector = $response->json()['embedding']['values'];
 
-                return $this->normalizeVector($rawVector);
+                return $this->cacheQueryEmbedding($cacheKey, $this->normalizeVector($rawVector));
             }
 
             Log::error('Gemini Embedding Failed: ', ['response' => $response->body()]);
@@ -453,7 +464,20 @@ class GeminiService
             Log::error('Gemini Embedding Exception: '.$e->getMessage());
         }
 
-        return null;
+        return $this->cacheQueryEmbedding($cacheKey, null);
+    }
+
+    /**
+     * @param  array<int, float>|null  $embedding
+     * @return array<int, float>|null
+     */
+    protected function cacheQueryEmbedding(?string $cacheKey, ?array $embedding): ?array
+    {
+        if ($cacheKey !== null) {
+            $this->requestEmbeddingCache[$cacheKey] = $embedding;
+        }
+
+        return $embedding;
     }
 
     /**
@@ -704,9 +728,16 @@ class GeminiService
             return [];
         }
 
+        $vector = $this->formatVectorForDb($queryVector);
+        if (! $vector) {
+            return [];
+        }
+
         $hotels = HotelModel::with('destination')
             ->where('is_shown', true)
-            ->whereNotNull('embedding');
+            ->whereNotNull('embedding')
+            ->select('*')
+            ->selectRaw('1.0 - (embedding <=> ?) AS similarity', [$vector]);
 
         if ($hotelId) {
             $hotels->where('id', $hotelId);
@@ -716,13 +747,12 @@ class GeminiService
             $hotels->where('destination_id', $destinationId);
         }
 
-        $hotels = $hotels->get();
-
-        if ($hotels->isEmpty()) {
-            return [];
-        }
-
-        return $this->rankRecommendations($queryVector, $hotels, $limit);
+        return $hotels
+            ->orderByRaw('embedding <=> ? ASC', [$vector])
+            ->limit($limit)
+            ->get()
+            ->map(fn (HotelModel $hotel): array => ['item' => $hotel, 'score' => (float) $hotel->similarity])
+            ->all();
     }
 
     /**
@@ -988,17 +1018,22 @@ class GeminiService
             return [];
         }
 
-        $activities = ActivityModel::with('destination')
-            ->where('is_shown', true)
-            ->whereNotNull('embedding')
-            ->when($destinationId, fn ($q) => $q->where('destination_id', $destinationId))
-            ->get();
-
-        if ($activities->isEmpty()) {
+        $vector = $this->formatVectorForDb($queryVector);
+        if (! $vector) {
             return [];
         }
 
-        return $this->rankRecommendations($queryVector, $activities, $limit);
+        return ActivityModel::with('destination')
+            ->where('is_shown', true)
+            ->whereNotNull('embedding')
+            ->when($destinationId, fn ($q) => $q->where('destination_id', $destinationId))
+            ->select('*')
+            ->selectRaw('1.0 - (embedding <=> ?) AS similarity', [$vector])
+            ->orderByRaw('embedding <=> ? ASC', [$vector])
+            ->limit($limit)
+            ->get()
+            ->map(fn (ActivityModel $activity): array => ['item' => $activity, 'score' => (float) $activity->similarity])
+            ->all();
     }
 
     /**
@@ -1287,16 +1322,21 @@ class GeminiService
             return [];
         }
 
-        $addons = AddOnModel::with('destination')
-            ->where('is_shown', true)
-            ->whereNotNull('embedding')
-            ->get();
-
-        if ($addons->isEmpty()) {
+        $vector = $this->formatVectorForDb($queryVector);
+        if (! $vector) {
             return [];
         }
 
-        return $this->rankRecommendations($queryVector, $addons, $limit);
+        return AddOnModel::with('destination')
+            ->where('is_shown', true)
+            ->whereNotNull('embedding')
+            ->select('*')
+            ->selectRaw('1.0 - (embedding <=> ?) AS similarity', [$vector])
+            ->orderByRaw('embedding <=> ? ASC', [$vector])
+            ->limit($limit)
+            ->get()
+            ->map(fn (AddOnModel $addon): array => ['item' => $addon, 'score' => (float) $addon->similarity])
+            ->all();
     }
 
     /**

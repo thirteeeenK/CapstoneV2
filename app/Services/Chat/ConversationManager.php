@@ -84,14 +84,18 @@ class ConversationManager
         );
     }
 
-    public function history(ChatSession $session, int $turns = 6): array
+    public function history(ChatSession $session, int $turns = 6, bool $excludeLatestUserMessage = false): array
     {
         $messages = $session->messages()
             ->latest('created_at')
-            ->limit($turns * 2)
+            ->limit(($turns * 2) + ($excludeLatestUserMessage ? 1 : 0))
             ->get()
             ->reverse()
             ->values();
+
+        if ($excludeLatestUserMessage && $messages->last()?->sender === 'user') {
+            $messages->pop();
+        }
 
         $contents = [];
         foreach ($messages as $msg) {
@@ -114,12 +118,56 @@ class ConversationManager
 
     public function persist(ChatSession $session, string $sender, string $message, ?array $contextData = null): ChatMessage
     {
-        return ChatMessage::create([
+        $chatMessage = ChatMessage::create([
             'chat_session_id' => $session->id,
             'sender' => $sender,
             'message' => $message,
             'context_data' => $contextData,
         ]);
+
+        if ($sender === 'bot' && $contextData) {
+            $this->rememberRetrievalState($session, $contextData);
+        }
+
+        return $chatMessage;
+    }
+
+    /**
+     * Store only the compact, structured parts of the latest retrieval turn.
+     * This avoids repeatedly inferring conversational scope from rendered prose.
+     *
+     * @param  array<string, mixed>  $contextData
+     */
+    protected function rememberRetrievalState(ChatSession $session, array $contextData): void
+    {
+        $resultGroups = [
+            'retrieved_rooms' => 'room',
+            'retrieved_hotels' => 'hotel',
+            'retrieved_activities' => 'activity',
+            'retrieved_packages' => 'package',
+        ];
+
+        foreach ($resultGroups as $key => $type) {
+            $result = $contextData[$key][0] ?? null;
+            if (! is_array($result)) {
+                continue;
+            }
+
+            $metadata = $session->metadata ?? [];
+            $metadata['retrieval_state'] = array_filter([
+                'type' => $type,
+                'entity_id' => isset($result['id']) ? (int) $result['id'] : null,
+                'hotel_id' => isset($result['hotel_id']) ? (int) $result['hotel_id'] : null,
+                'destination_id' => isset($result['destination_id']) ? (int) $result['destination_id'] : null,
+                'destination_name' => $result['destination'] ?? null,
+                'check_in_date' => $result['check_in_date'] ?? null,
+                'check_out_date' => $result['check_out_date'] ?? null,
+                'pax' => isset($result['pax']) ? (int) $result['pax'] : null,
+            ], static fn (mixed $value): bool => $value !== null && $value !== '');
+            $session->update(['metadata' => $metadata]);
+
+            return;
+        }
     }
 
     public function summarizeHistory(ChatSession $session): ?string

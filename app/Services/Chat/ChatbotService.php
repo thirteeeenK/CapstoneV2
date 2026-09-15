@@ -1077,6 +1077,14 @@ class ChatbotService
             return $constraints;
         }
         try {
+            $state = $session->metadata['retrieval_state'] ?? [];
+            if (! empty($state['destination_id'])) {
+                $constraints['destination_id'] = (int) $state['destination_id'];
+                $constraints['destination_name'] = $state['destination_name'] ?? null;
+
+                return $constraints;
+            }
+
             // Last explicit destination from prior bot cards or user messages (last 6 turns)
             $lastBot = $session->messages()->where('sender', 'bot')->latest()->first();
             $data = $lastBot?->context_data ?: [];
@@ -2446,7 +2454,9 @@ class ChatbotService
 
     protected function geminiChatResponse(string $prompt, ChatSession $session): string
     {
-        $history = $this->conversation->history($session, 6);
+        // The current user message has already been persisted. Exclude it from
+        // history because generateChatResponse appends $prompt as the one current turn.
+        $history = $this->conversation->history($session, 6, true);
 
         return $this->gemini->generateChatResponse(
             $this->geminiChatSystemPrompt(),
@@ -2529,6 +2539,7 @@ class ChatbotService
             'hotel_name' => $e['item']->hotel?->hotel_name ?? 'Unknown Hotel',
             'hotel_id' => $e['item']->hotel_id ?? $e['item']->hotel?->id ?? null,
             'destination' => $e['item']->hotel?->destination?->name ?? null,
+            'destination_id' => $e['item']->hotel?->destination_id ?? $e['item']->hotel?->destination?->id ?? null,
             'base_price' => (float) $e['item']->base_price,
             'occupancy' => $e['item']->occupancy,
             'base_occupancy' => (int) ($e['item']->base_occupancy ?: 2),
@@ -2563,6 +2574,7 @@ class ChatbotService
             'id' => $e['item']->id,
             'activity_name' => $e['item']->activity_name,
             'destination' => $e['item']->destination?->name ?? null,
+            'destination_id' => $e['item']->destination_id ?? $e['item']->destination?->id ?? null,
             'category' => $e['item']->category,
             'rate' => $e['item']->rate,
             'description' => strip_tags($e['item']->description ?? ''),
@@ -2577,6 +2589,7 @@ class ChatbotService
             'id' => $e['item']->id,
             'name' => $e['item']->name,
             'destination' => $e['item']->destination?->name ?? null,
+            'destination_id' => $e['item']->destination_id ?? $e['item']->destination?->id ?? null,
             'type' => $e['item']->type,
             'price' => (float) $e['item']->price,
             'days' => $e['item']->days,
