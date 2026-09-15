@@ -220,6 +220,11 @@ class IntentRouter
         }
 
         if ($this->hasItineraryIntent($lower)) {
+            $activityName = $this->extractActivityName($query);
+            if ($activityName !== null && ! $this->hasItineraryPlanningSignals($lower, $query)) {
+                return self::ACTIVITY_SEARCH;
+            }
+
             return self::ITINERARY_QUERY;
         }
 
@@ -785,6 +790,36 @@ class IntentRouter
         }
 
         return preg_match('/plan\s+(?:a|my|our|an?)\s+(?:trip|vacation|holiday|bakasyon)/i', $lower);
+    }
+
+    protected function hasItineraryPlanningSignals(string $lower, string $query): bool
+    {
+        if (preg_match('/\d+\s*(?:pax|persons?|people|tao|katao|miyembro|guests?)/i', $query)) {
+            return true;
+        }
+        if (preg_match('/\b(couple|couples|solo|alone)\b/i', $lower)) {
+            return true;
+        }
+        if (preg_match('/\d+\s*(?:nights?|gabi|days?|araw)\b/i', $query)) {
+            return true;
+        }
+        if (preg_match('/(?:₱|php|peso|budget)\b/i', $lower)) {
+            return true;
+        }
+        if (preg_match('/\b(?:under|below|less\s*than|max|maximum)\s*(?:₱|php|peso)?\s*\d/i', $lower)) {
+            return true;
+        }
+        if ($this->extractDateRange($query) !== null) {
+            return true;
+        }
+        if (preg_match('/\b(plan\s+(a|my|our|an?)\s+(trip|vacation|holiday|bakasyon)|trip\s*plan|travel\s*plan|suggest an itinerary|build an itinerary|travel schedule|daily schedule)\b/i', $lower)) {
+            return true;
+        }
+        if (preg_match('/(\d+)\s*(?:day|araw)\s*(?:itinerary|plan|trip|itiniraryo)/i', $lower)) {
+            return true;
+        }
+
+        return false;
     }
 
     protected function hasDiscountIntent(string $lower): bool

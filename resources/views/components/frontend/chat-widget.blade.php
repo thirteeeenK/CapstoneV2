@@ -138,7 +138,7 @@
                 <div class="space-y-2">
                     {{-- Bot --}}
                     <template x-if="msg.sender === 'bot'">
-                        <div class="flex gap-2.5 items-start">
+                        <div class="flex gap-2.5 items-start" data-bot-bubble>
                             <div
                                 class="w-7 h-7 rounded-xl bg-white flex items-center justify-center shrink-0 shadow-xs mt-0.5 overflow-hidden border border-amber-100">
                                 <img src="{{ asset('images/favicon-sun.png') }}" alt="SunnyBot"
@@ -690,7 +690,14 @@
             scrollDown() {
                 this.$nextTick(() => {
                     const el = this.$refs.messages;
-                    if (el) el.scrollTop = el.scrollHeight;
+                    if (!el) return;
+                    const bubbles = el.querySelectorAll('[data-bot-bubble]');
+                    const last = bubbles[bubbles.length - 1];
+                    if (last && last.offsetHeight > el.clientHeight * 0.7) {
+                        el.scrollTop = Math.max(0, last.offsetTop - 12);
+                    } else {
+                        el.scrollTop = el.scrollHeight;
+                    }
                 });
             },
 

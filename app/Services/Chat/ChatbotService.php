@@ -76,6 +76,33 @@ class ChatbotService
             return array_merge(['status' => 'success', 'control' => 'ai', 'session_token' => $session->session_token, 'reply' => $text], $reply);
         }
 
+        // Availability follow-up over a prior exact room: short queries like
+        // "is the room available?" / "is it still open?" / "yes check it" must stay
+        // scoped to the exact room instead of broadening back to the whole hotel/destination.
+        if ($lastBot && $this->isExactRoomAvailabilityFollowUp($message, $lastBot)) {
+            $constraints = $this->intentRouter->extractConstraints($message);
+            $constraints = $this->inheritRoomContext($constraints, $session);
+            $reply = $this->handleAvailabilityQuery($message, $constraints, $user, $session);
+            $text = $reply['reply'] ?? 'Sorry, I could not process that request. Please try again.';
+            $this->conversation->persist($session, 'bot', $text, $reply);
+
+            return array_merge(['status' => 'success', 'control' => 'ai', 'session_token' => $session->session_token, 'reply' => $text], $reply);
+        }
+
+        // "Check alternatives" pill/typed follow-up after an unavailable exact
+        // room → drop room-specific filter and surface same-hotel/destination
+        // alternatives via the regular availability path.
+        if ($lastBot && $this->isCheckAlternativesFollowUp($message, $lastBot)) {
+            $constraints = $this->intentRouter->extractConstraints($message);
+            $constraints = $this->inheritRoomContext($constraints, $session);
+            unset($constraints['room_id'], $constraints['room_name']);
+            $reply = $this->handleAvailabilityQuery($message, $constraints, $user, $session);
+            $text = $reply['reply'] ?? 'Sorry, I could not process that request. Please try again.';
+            $this->conversation->persist($session, 'bot', $text, $reply);
+
+            return array_merge(['status' => 'success', 'control' => 'ai', 'session_token' => $session->session_token, 'reply' => $text], $reply);
+        }
+
         // Filter refinements like "luxury quiet pool" should re-search with inherited destination, not Q&A over old cards
         if ($lastBot && $this->isFilterRefinementQuery($message, $lastBot) && ! $this->startsNewSearch(mb_strtolower(trim($message)))) {
             // fall through to fresh search with conversational destination inheritance
@@ -111,33 +138,6 @@ class ChatbotService
                     $reply = $hotelReply;
                 }
             }
-            $text = $reply['reply'] ?? 'Sorry, I could not process that request. Please try again.';
-            $this->conversation->persist($session, 'bot', $text, $reply);
-
-            return array_merge(['status' => 'success', 'control' => 'ai', 'session_token' => $session->session_token, 'reply' => $text], $reply);
-        }
-
-        // Availability follow-up over a prior exact room: short queries like
-        // "is the room available?" / "is it still open?" must stay scoped to the
-        // exact room instead of broadening back to the whole hotel/destination.
-        if ($lastBot && $this->isExactRoomAvailabilityFollowUp($message, $lastBot)) {
-            $constraints = $this->intentRouter->extractConstraints($message);
-            $constraints = $this->inheritRoomContext($constraints, $session);
-            $reply = $this->handleAvailabilityQuery($message, $constraints, $user, $session);
-            $text = $reply['reply'] ?? 'Sorry, I could not process that request. Please try again.';
-            $this->conversation->persist($session, 'bot', $text, $reply);
-
-            return array_merge(['status' => 'success', 'control' => 'ai', 'session_token' => $session->session_token, 'reply' => $text], $reply);
-        }
-
-        // "Check alternatives" pill/typed follow-up after an unavailable exact
-        // room → drop room-specific filter and surface same-hotel/destination
-        // alternatives via the regular availability path.
-        if ($lastBot && $this->isCheckAlternativesFollowUp($message, $lastBot)) {
-            $constraints = $this->intentRouter->extractConstraints($message);
-            $constraints = $this->inheritRoomContext($constraints, $session);
-            unset($constraints['room_id'], $constraints['room_name']);
-            $reply = $this->handleAvailabilityQuery($message, $constraints, $user, $session);
             $text = $reply['reply'] ?? 'Sorry, I could not process that request. Please try again.';
             $this->conversation->persist($session, 'bot', $text, $reply);
 
@@ -426,7 +426,7 @@ class ChatbotService
                 $occupancyText = $fee > 0 && $maxOcc > $baseOcc
                     ? "Base {$baseOcc}/Max {$maxOcc}, Extra ₱".number_format((float) $fee, 2).'/head/night'
                     : "No extra guests allowed — maximum {$maxOcc} guests";
-                $blocks[] = "- Room: {$r['room_name']} at {$r['hotel_name']} — {$price}/night — {$occupancyText} (Total physical rooms not live — check dates for real availability)";
+                $blocks[] = "- Room: {$r['room_name']} at {$r['hotel_name']} — {$price}/night — {$occupancyText} (inventory count, not live availability)";
             }
         }
 
@@ -1158,6 +1158,9 @@ class ChatbotService
             // Date-bearing follow-up after an exact room turn (e.g. "check sep 8-9 for 2 pax")
             '/\b(check|verify|confirm)\b.*\b(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec|sept|month|tomorrow|next|this)\b/i',
             '/\b\d{1,2}\s*(?:-|to|–)\s*\d{1,2}\b/i',
+            '/\bcheck\s+it\b/i',
+            '/\byes\b.*\bcheck\b/i',
+            '/^\s*check\s*\.?$/i',
         ];
         foreach ($patterns as $p) {
             if (preg_match($p, $lower)) {
@@ -2388,8 +2391,8 @@ class ChatbotService
             'Answer ONLY using the provided database results and explicitly supplied live data.',
             'Treat the current DATABASE RESULTS section as the source of truth. Do not carry unsupported facts from earlier conversation turns into the answer.',
             'Never invent prices, availability, names, durations, or other factual details.',
-            'Never present "Total Physical Rooms" as live availability. If the context says "not live availability", tell the user to provide check-in/check-out dates for a live check (e.g., "check Aug 30-31 for 2 pax").',
-            'In DATABASE RESULTS, Rank #1 is the system\'s best AI match (highest relevance score) for the query; Rank #2+ are next-best alternatives. You must list every Rank provided (up to 5 hotels/rooms/activities/packages where provided, e.g., top 5) — Rank #1 under ### Best Match with one sentence why #1 is top (use Vibe/Category/Featured Amenities/Price Range/Guest Rating from that block), and Rank #2+ under ### Other Options each one bullet (name — Price Range — one key amenity). Do not omit alternatives to stay concise; this ranked-list rule overrides the concise 3-paragraph limit. If 2 or more Ranks were provided, then add one short line "Ranked by system: #1 is best match, #2+ are close alternatives." If only Rank #1 was provided, do NOT add any ranked/“best match” line and do not mention alternatives. Do not show raw relevance numbers unless helpful.',
+            'Never present "Total Physical Rooms" as live availability.',
+            'In DATABASE RESULTS, Rank #1 is the system\'s best AI match (highest relevance score) for the query; Rank #2+ are next-best alternatives. You must list every Rank provided (up to 5 hotels/rooms/activities/packages where provided, e.g., top 5) — Rank #1 under ### Best Match with one sentence why #1 is top (use Vibe/Category/Featured Amenities/Price Range/Guest Rating from that block), and Rank #2+ under ### Other Options each one bullet (name — Price Range — one key amenity). Do not omit alternatives to stay concise; this ranked-list rule overrides the concise 3-paragraph limit. If 2 or more Ranks were provided, add one short line "Ranked by system: #1 is best match, #2+ are close alternatives." as the FINAL line of your response (bottom footnote, not at the top). If only Rank #1 was provided, do NOT add any ranked/“best match” line and do not mention alternatives. Do not show raw relevance numbers unless helpful.',
             'Never add airports, ferry terminals, boats, vans, transfers, beaches, landmarks, restaurants, shops, fees, or food and drink estimates unless the exact fact appears in the database results.',
             'If information is unavailable, say it is not in our database instead of filling the gap with general travel knowledge.',
             'Use **bold** for short labels, ### for section headings, and - for bullet lists. Do not output HTML.',
@@ -2512,7 +2515,7 @@ class ChatbotService
         }
 
         $header = count($available) > 1
-            ? "Ranked by AI semantic relevance + availability: Rank #1 = requested room/best match, Rank #2+ = close alternatives. Tell the user this.\n\n=== AVAILABLE ROOMS ({$pax} pax, {$nights} nights) ==="
+            ? "Ranked by AI semantic relevance + availability: Rank #1 = requested room/best match, Rank #2+ = close alternatives.\n\n=== AVAILABLE ROOMS ({$pax} pax, {$nights} nights) ==="
             : "=== AVAILABLE ROOMS ({$pax} pax, {$nights} nights) ===";
 
         return $header."\n\n".implode("\n\n", $blocks);

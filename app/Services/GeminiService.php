@@ -799,7 +799,7 @@ class GeminiService
             $blocks[] = implode("\n", $lines);
         }
 
-        $header = count($scoredHotels) > 1 ? "Ranked by AI semantic relevance: Rank #1 = best match for the query, Rank #2+ = close alternatives. Tell the user this.\n\n" : '';
+        $header = count($scoredHotels) > 1 ? "Ranked by AI semantic relevance: Rank #1 = best match for the query, Rank #2+ = close alternatives.\n\n" : '';
 
         return "=== HOTEL DATABASE RESULTS ===\n\n".$header.implode("\n\n", $blocks)."\n\n=== END HOTEL RESULTS ===";
     }
@@ -930,7 +930,7 @@ class GeminiService
                 $room->room_size ? "Room Size: {$room->room_size}" : null,
                 'Base Price: ₱'.number_format($room->base_price, 2).' per night',
                 $room->view_type ? "View Type: {$room->view_type}" : null,
-                "Total Physical Rooms: {$room->total_rooms} (not live availability — ask me to check for your dates, e.g., 'check Aug 30-31 for 2 pax')",
+                "Total Physical Rooms: {$room->total_rooms} (inventory count, not live availability)",
                 $amenities ? "Amenities: {$amenities}" : null,
                 $notes ? "Additional Notes & Policies: {$notes}" : null,
                 $desc ? "Description: {$desc}" : null,
@@ -939,7 +939,7 @@ class GeminiService
             $blocks[] = implode("\n", $lines);
         }
 
-        $header = count($scoredRooms) > 1 ? "Ranked by AI semantic relevance: Rank #1 = best match for the query, Rank #2+ = close alternatives. Tell the user this.\n\n" : '';
+        $header = count($scoredRooms) > 1 ? "Ranked by AI semantic relevance: Rank #1 = best match for the query, Rank #2+ = close alternatives.\n\n" : '';
 
         return "=== ROOM DATABASE RESULTS ===\n\n".$header.implode("\n\n", $blocks)."\n\n=== END ROOM RESULTS ===";
     }
@@ -1038,6 +1038,38 @@ class GeminiService
                 $notes = mb_substr($notes, 0, 300).'…';
             }
             $reqs = trim(preg_replace('/\s+/', ' ', strip_tags($activity->requirements ?? '')));
+            $inclusions = $this->formatListToString($activity->inclusions);
+            if (mb_strlen($inclusions) > 400) {
+                $inclusions = mb_substr($inclusions, 0, 400).'…';
+            }
+            $exclusions = $this->formatListToString($activity->exclusions);
+            if (mb_strlen($exclusions) > 400) {
+                $exclusions = mb_substr($exclusions, 0, 400).'…';
+            }
+            $itineraryText = '';
+            if (is_array($activity->itinerary) && ! empty($activity->itinerary)) {
+                $parts = [];
+                foreach (array_slice($activity->itinerary, 0, 8) as $step) {
+                    if (is_string($step)) {
+                        $t = trim($step);
+                        if ($t !== '') {
+                            $parts[] = $t;
+                        }
+                    } elseif (is_array($step)) {
+                        $title = $step['title'] ?? $step['name'] ?? null;
+                        if ($title) {
+                            $duration = $step['duration'] ?? null;
+                            $parts[] = $duration ? trim($title).' ('.trim($duration).')' : trim($title);
+                        }
+                    }
+                }
+                if ($parts) {
+                    $itineraryText = implode(' → ', $parts);
+                    if (mb_strlen($itineraryText) > 400) {
+                        $itineraryText = mb_substr($itineraryText, 0, 400).'…';
+                    }
+                }
+            }
             $rateType = $activity->isPerPersonRate() ? 'per person/head/pax' : 'per group/unit';
             $coords = null;
             if ($activity->latitude && $activity->longitude) {
@@ -1060,14 +1092,17 @@ class GeminiService
                 $activity->ideal_for ? "Ideal Participants: {$activity->ideal_for}" : null,
                 $vibes ? "Vibes & Tags: {$vibes}" : null,
                 $reqs ? "Requirements & Restrictions: {$reqs}" : null,
-                $notes ? "Inclusions & Notes: {$notes}" : null,
+                $inclusions ? "Inclusions: {$inclusions}" : null,
+                $exclusions ? "Exclusions: {$exclusions}" : null,
+                $itineraryText ? "Itinerary: {$itineraryText}" : null,
+                $notes ? "Additional Notes: {$notes}" : null,
                 $desc ? "Description: {$desc}" : null,
             ]);
 
             $blocks[] = implode("\n", $lines);
         }
 
-        $header = count($scoredActivities) > 1 ? "Ranked by AI semantic relevance: Rank #1 = best match for the query, Rank #2+ = close alternatives. Tell the user this.\n\n" : '';
+        $header = count($scoredActivities) > 1 ? "Ranked by AI semantic relevance: Rank #1 = best match for the query, Rank #2+ = close alternatives.\n\n" : '';
 
         return "=== ACTIVITY & TOUR DATABASE RESULTS ===\n\n".$header.implode("\n\n", $blocks)."\n\n=== END ACTIVITY RESULTS ===";
     }
@@ -1235,7 +1270,7 @@ class GeminiService
             $blocks[] = implode("\n", $lines);
         }
 
-        $header = count($scoredPackages) > 1 ? "Ranked by AI semantic relevance: Rank #1 = best match for the query, Rank #2+ = close alternatives. Tell the user this.\n\n" : '';
+        $header = count($scoredPackages) > 1 ? "Ranked by AI semantic relevance: Rank #1 = best match for the query, Rank #2+ = close alternatives.\n\n" : '';
 
         return "=== PACKAGE DATABASE RESULTS ===\n\n".$header.implode("\n\n", $blocks)."\n\n=== END PACKAGE RESULTS ===";
     }
@@ -1322,7 +1357,7 @@ class GeminiService
             $blocks[] = implode("\n", $lines);
         }
 
-        $header = count($scoredAddOns) > 1 ? "Ranked by AI semantic relevance: Rank #1 = best match for the query, Rank #2+ = close alternatives. Tell the user this.\n\n" : '';
+        $header = count($scoredAddOns) > 1 ? "Ranked by AI semantic relevance: Rank #1 = best match for the query, Rank #2+ = close alternatives.\n\n" : '';
 
         return "=== ADDON DATABASE RESULTS ===\n\n".$header.implode("\n\n", $blocks)."\n\n=== END ADDON RESULTS ===";
     }
@@ -2360,7 +2395,8 @@ class GeminiService
         $pickedRoom = $selection['room'];
 
         $budgetForActivities = $maxBudget - ($pickedRoom->calculateNightlyRate($pax) * $nights);
-        $activities = $this->selectItineraryActivities((int) $destinationId, $pax, $nights, $budgetForActivities);
+        $requestedActivityName = $constraints['activity_name'] ?? null;
+        $activities = $this->selectItineraryActivities((int) $destinationId, $pax, $nights, $budgetForActivities, $requestedActivityName ? (string) $requestedActivityName : null);
 
         $roomRate = $pickedRoom->calculateNightlyRate($pax);
         $roomTotal = $roomRate * $nights;
@@ -2437,13 +2473,30 @@ class GeminiService
 
     /**
      * Select suitable activities for itinerary.
+     * If a specific activity was requested and belongs to this destination,
+     * it is included first before filling the remaining cheapest slots.
      */
-    private function selectItineraryActivities(int $destinationId, int $pax, int $nights, float $budgetForActivities): Collection
+    private function selectItineraryActivities(int $destinationId, int $pax, int $nights, float $budgetForActivities, ?string $requestedActivityName = null): Collection
     {
         $activityCount = min(4, $nights + 1);
 
-        return ActivityModel::where('destination_id', $destinationId)
+        $requested = null;
+        if ($requestedActivityName) {
+            $requested = ActivityModel::where('destination_id', $destinationId)
+                ->where('is_shown', true)
+                ->where('activity_name', 'ILIKE', $requestedActivityName)
+                ->first();
+            if ($requested) {
+                $cost = $requested->isPerPersonRate()
+                    ? round($requested->calculateRateForPax($pax) * $pax, 2)
+                    : round($requested->calculateRateForPax($pax), 2);
+                $requested->_computed_cost = $cost;
+            }
+        }
+
+        $candidates = ActivityModel::where('destination_id', $destinationId)
             ->where('is_shown', true)
+            ->when($requested, fn ($q) => $q->where('id', '!=', $requested->id))
             ->get()
             ->map(function ($activity) use ($pax) {
                 $cost = $activity->isPerPersonRate()
@@ -2454,9 +2507,14 @@ class GeminiService
                 return $activity;
             })
             ->filter(fn ($a) => $a->_computed_cost <= $budgetForActivities * 0.8)
-            ->sortBy('_computed_cost')
-            ->take($activityCount)
-            ->values();
+            ->sortBy('_computed_cost');
+
+        if ($requested) {
+            // Always honor the requested activity — show it first even if over budget slice
+            return collect([$requested])->concat($candidates->take($activityCount - 1))->take($activityCount)->values();
+        }
+
+        return $candidates->take($activityCount)->values();
     }
 
     private function formatItineraryContextText(
