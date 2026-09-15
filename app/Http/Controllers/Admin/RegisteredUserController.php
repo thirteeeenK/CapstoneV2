@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ChatbotAbuseReport;
 use App\Models\IpBan;
 use App\Models\User;
+use App\Notifications\AccountModerationNotice;
 use App\Services\AdminAuditService;
 use App\Services\Support\SupportQueueService;
 use Illuminate\Http\Request;
@@ -121,6 +122,12 @@ class RegisteredUserController extends Controller
         $user->save();
         AdminAuditService::log($user, $oldValues);
 
+        $user->notify(new AccountModerationNotice(
+            $request->ban_level,
+            $user->ban_reason,
+            $user->ban_expires_at?->format('M d, Y'),
+        ));
+
         if ($request->boolean('also_ban_ip')) {
             $targetIp = $user->consent_ip_address
                 ?: DB::table('sessions')->where('user_id', $user->id)->orderByDesc('last_activity')->value('ip_address');
@@ -171,6 +178,10 @@ class RegisteredUserController extends Controller
         $user->ban_reason = null;
         $user->save();
         AdminAuditService::log($user, $oldValues);
+
+        if ($oldValues['ban_level'] ?? null) {
+            $user->notify(new AccountModerationNotice('restored'));
+        }
 
         if ($targetIp) {
             $ipBans = IpBan::active()->where('ip_address', $targetIp)->get();

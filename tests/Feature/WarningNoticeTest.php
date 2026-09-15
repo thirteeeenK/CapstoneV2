@@ -2,7 +2,9 @@
 
 use App\Models\AdminModel;
 use App\Models\User;
+use App\Notifications\AccountModerationNotice;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Notification;
 
 beforeEach(function () {
     Http::fake([
@@ -76,4 +78,48 @@ it('lets an admin clear all chatbot abuse flags while keeping report history', f
     expect($user->chatbot_flag_count)->toBe(0)
         ->and($user->abuseReports()->where('status', 'pending')->count())->toBe(0)
         ->and($user->abuseReports()->count())->toBe(2);
+});
+
+it('emails the user when an admin issues a warning, suspension, or permanent ban', function (string $level) {
+    Notification::fake();
+    $admin = AdminModel::create([
+        'name' => 'Test Admin',
+        'email' => 'moderation-admin@sunnytripstest.com',
+        'password' => 'password',
+    ]);
+    $user = onboardedUser();
+
+    $payload = ['ban_level' => $level, 'ban_reason' => 'Inappropriate chatbot usage.'];
+    if ($level === 'temporary') {
+        $payload['ban_duration_days'] = 7;
+    }
+
+    $this->actingAs($admin, 'admin')
+        ->post(route('admin.users.ban', $user->id), $payload)
+        ->assertRedirect();
+
+    Notification::assertSentTo($user, AccountModerationNotice::class, function ($notification) use ($level) {
+        return $notification->level === $level
+            && $notification->reason === 'Inappropriate chatbot usage.';
+    });
+})->with(['warning', 'temporary', 'permanent']);
+
+it('emails the user when an admin restores their account', function () {
+    Notification::fake();
+    $admin = AdminModel::create([
+        'name' => 'Test Admin',
+        'email' => 'unban-admin@sunnytripstest.com',
+        'password' => 'password',
+    ]);
+    $user = onboardedUser([
+        'ban_level' => User::BAN_LEVEL_PERMANENT,
+        'banned_at' => now(),
+        'ban_reason' => 'Repeated violations.',
+    ]);
+
+    $this->actingAs($admin, 'admin')
+        ->post(route('admin.users.unban', $user->id))
+        ->assertRedirect();
+
+    Notification::assertSentTo($user, AccountModerationNotice::class, fn ($notification) => $notification->level === 'restored');
 });
