@@ -561,9 +561,12 @@ class GeminiService
 
     /**
      * Minimum top-catalog cosine score for semantic routing to fire.
-     * Cross-catalog scores are not calibrated — validate against seed data when tuning.
+     * Calibrated 2026-09-16 on dev seed data (20 probes: 10 must-route
+     * typos/paraphrases scored 0.649–0.761, 10 greetings/off-topic scored
+     * 0.548–0.614). Floor sits in that gap; the margin gate rejects the one
+     * high-scoring greeting ("what can you do", 0.614).
      */
-    public const SEMANTIC_ROUTE_FLOOR = 0.35;
+    public const SEMANTIC_ROUTE_FLOOR = 0.60;
 
     /**
      * Minimum gap between the winning catalog and the runner-up.

@@ -65,7 +65,7 @@ class ChatbotService
             }
         }
 
-        $lastBot = $session->messages()->where('sender', 'bot')->latest()->first();
+        $lastBot = $session->messages()->where('sender', 'bot')->latest('id')->first();
 
         // DSS: "is it okay to book in that weather" → scored advisory using previous forecast (not repeat outlook)
         if ($lastBot && $this->isWeatherAdvisoryFollowUp($message, $lastBot)) {
@@ -119,21 +119,29 @@ class ChatbotService
         if ($lastBot && $this->isAffirmativeSearchQuery($message, $lastBot)) {
             // The current user message is already persisted, so the latest
             // *previous* user message is the second-latest user row.
-            $previousUser = $session->messages()->where('sender', 'user')->latest()->skip(1)->first();
+            $previousUser = $session->messages()->where('sender', 'user')->latest('id')->skip(1)->first();
             $intent = $this->resolveAffirmativeIntent($lastBot, $previousUser?->message);
-            $constraints = $this->intentRouter->extractConstraints($message);
+            // Reuse the prior user message as the search query so the handler
+            // embeds something meaningful ("how about banana boat") instead of
+            // the affirmation text ("yes search") — unless the affirmation
+            // itself carries searchable content ("yes, search El Nido hotels").
+            $searchQuery = $previousUser?->message ?: $message;
+            if ($searchQuery !== $message && $this->affirmationCarriesSearch($message)) {
+                $searchQuery = $message;
+            }
+            $constraints = $this->intentRouter->extractConstraints($searchQuery);
             $constraints = $this->resolveConversationalDestination($constraints, $session);
             $constraints = $this->resolveDefaultDestination($constraints, $user);
             $reply = match ($intent) {
-                IntentRouter::ACTIVITY_SEARCH => $this->handleActivitySearch($message, $constraints, $user, $session),
-                IntentRouter::HOTEL_SEARCH => $this->handleHotelSearch($message, $constraints, $user, $session),
-                IntentRouter::PACKAGE_SEARCH => $this->handlePackageSearch($message, $constraints, $user, $session),
-                IntentRouter::ADDON_SEARCH => $this->handleAddOnSearch($message, $constraints, $user, $session),
-                default => $this->handleRoomSearch($message, $constraints, $user, $session),
+                IntentRouter::ACTIVITY_SEARCH => $this->handleActivitySearch($searchQuery, $constraints, $user, $session),
+                IntentRouter::HOTEL_SEARCH => $this->handleHotelSearch($searchQuery, $constraints, $user, $session),
+                IntentRouter::PACKAGE_SEARCH => $this->handlePackageSearch($searchQuery, $constraints, $user, $session),
+                IntentRouter::ADDON_SEARCH => $this->handleAddOnSearch($searchQuery, $constraints, $user, $session),
+                default => $this->handleRoomSearch($searchQuery, $constraints, $user, $session),
             };
             // Fallback to hotel search if room search yields nothing but hotels exist
             if ($intent === IntentRouter::ROOM_SEARCH && empty($reply['retrieved_rooms']) && ! empty($constraints['destination_id'])) {
-                $hotelReply = $this->handleHotelSearch($message, $constraints, $user, $session);
+                $hotelReply = $this->handleHotelSearch($searchQuery, $constraints, $user, $session);
                 if (! empty($hotelReply['retrieved_hotels'])) {
                     $reply = $hotelReply;
                 }
@@ -166,12 +174,20 @@ class ChatbotService
         // Semantic catalog routing: keyword misses (e.g. a new offering with no
         // keyword yet) fall back to embeddings instead of defaulting to rooms.
         // Keyword hits and named hotels/rooms always keep their intent.
+        // GENERAL_TALK gets one embedding-based chance at a catalog search
+        // (typos like "parawsailing", novel phrasings) before general chat.
         if (
-            $intent === IntentRouter::ROOM_SEARCH
+            ($intent === IntentRouter::ROOM_SEARCH
             && ! $this->intentRouter->hasExplicitCatalogIntent($message)
             && empty($constraints['hotel_id']) && empty($constraints['hotel_name'])
-            && empty($constraints['room_id']) && empty($constraints['room_name'])
+            && empty($constraints['room_id']) && empty($constraints['room_name']))
+            || ($intent === IntentRouter::GENERAL_TALK && ! $this->isGeneralKnowledgeQuery($message))
         ) {
+            if ($intent === IntentRouter::GENERAL_TALK) {
+                $constraints = $this->intentRouter->extractConstraints($message);
+                $constraints = $this->resolveConversationalDestination($constraints, $session);
+                $constraints = $this->resolveDefaultDestination($constraints, $user);
+            }
             $catalog = $this->gemini->resolveSemanticCatalog($message, $constraints['destination_id'] ?? null);
             $intent = match ($catalog) {
                 'activities' => IntentRouter::ACTIVITY_SEARCH,
@@ -195,6 +211,7 @@ class ChatbotService
             IntentRouter::DESTINATIONS_OVERVIEW => $this->handleDestinationsOverview($session),
             IntentRouter::DISCOUNT_QUERY => $this->handleDiscountQuery($message, $session),
             IntentRouter::BOOKING_STATUS => $this->handleBookingStatus($message, $user, $session),
+            IntentRouter::SUPPORT_AGENT => $this->handleSupportAgentRequest(),
             default => $this->handleGeneralChat($message, $session),
         };
 
@@ -235,10 +252,71 @@ class ChatbotService
             return false;
         }
 
+        // A message naming a catalog entity absent from the previous cards
+        // ("how about banana boat" after Scuba Diving) is a fresh search,
+        // not Q&A over old cards — even with follow-up phrasing.
+        if ($this->namesNewEntity($query, $lastBot)) {
+            return false;
+        }
+
         $referential = '/\b(it|its|they|them|their|his|her|those|these|this one|that one|the one|which one|the first|the second|the other)\b/';
         $continuation = '/^(how much|how many|how about|what about|what is|what are|what\'s|and what|what else|and how|tell me more|more info|more details|more options|why|is it|are they|does it|do they|can you|give me the|whose|price of|prices of|cost of)/';
 
         return (bool) (preg_match($referential, $lower) || preg_match($continuation, $lower));
+    }
+
+    /**
+     * True when the message names a catalog entity (activity/package/hotel)
+     * absent from the previous turn's cards. Such messages start a fresh
+     * search instead of follow-up Q&A over stale cards.
+     */
+    protected function namesNewEntity(string $query, ChatMessage $lastBot): bool
+    {
+        $data = $lastBot->context_data ?: [];
+        $prev = [];
+        foreach (($data['retrieved_activities'] ?? []) as $a) {
+            $prev[] = mb_strtolower(trim((string) ($a['activity_name'] ?? '')));
+        }
+        foreach (($data['retrieved_packages'] ?? []) as $p) {
+            $prev[] = mb_strtolower(trim((string) ($p['name'] ?? '')));
+        }
+        foreach (($data['retrieved_hotels'] ?? []) as $h) {
+            $prev[] = mb_strtolower(trim((string) ($h['hotel_name'] ?? '')));
+        }
+        foreach (($data['retrieved_rooms'] ?? []) as $r) {
+            $prev[] = mb_strtolower(trim((string) ($r['room_name'] ?? '')));
+            $prev[] = mb_strtolower(trim((string) ($r['hotel_name'] ?? '')));
+        }
+        $prev = array_filter($prev);
+
+        foreach ([
+            $this->intentRouter->extractActivityName($query),
+            $this->intentRouter->extractPackageName($query),
+            $this->intentRouter->extractHotelName($query),
+        ] as $named) {
+            if ($named && ! in_array(mb_strtolower(trim($named)), $prev, true)) {
+                return true;
+            }
+        }
+
+        // Combo/new-topic queries ("atv and zipline combo, is it offered?")
+        // name no single entity but carry a catalog keyword with zero overlap
+        // with the previous cards — also a fresh search, not Q&A over them.
+        if ($this->intentRouter->hasNounCatalogIntent($query)) {
+            $lower = mb_strtolower($query);
+            foreach ($prev as $name) {
+                foreach (preg_split('/\s+/', $name) as $t) {
+                    $t = trim((string) $t);
+                    if (strlen($t) >= 4 && str_contains($lower, $t)) {
+                        return false;
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        return false;
     }
 
     /**
@@ -339,7 +417,7 @@ class ChatbotService
 
     protected function handleFollowUp(string $query, ChatSession $session): array
     {
-        $lastBot = $session->messages()->where('sender', 'bot')->latest()->first();
+        $lastBot = $session->messages()->where('sender', 'bot')->latest('id')->first();
         $context = $lastBot ? $this->followUpContext($lastBot) : '';
 
         $header = "TASK: Answer the user's follow-up question using ONLY the previous conversation and the last recommendation details below.";
@@ -714,7 +792,7 @@ class ChatbotService
         // Visible filter badge when destination was inherited for a bare amenity refinement
         $hadExplicitDest = (bool) $this->intentRouter->extractDestinationName($query);
         if (! $hadExplicitDest && ! empty($constraints['destination_name'])) {
-            $lastBotBadge = $session->messages()->where('sender', 'bot')->latest()->first();
+            $lastBotBadge = $session->messages()->where('sender', 'bot')->latest('id')->first();
             if ($lastBotBadge && $this->isFilterRefinementQuery($query, $lastBotBadge)) {
                 $reply = "Filtered for **{$constraints['destination_name']}**: {$query}\n\n".$reply;
             }
@@ -919,7 +997,7 @@ class ChatbotService
         $reply = $this->stripRankLineIfSingle($this->geminiChatResponse($prompt, $session), $scored);
         $hadExplicitDest = (bool) $this->intentRouter->extractDestinationName($query);
         if (! $hadExplicitDest && ! empty($constraints['destination_name'])) {
-            $lastBotBadge = $session->messages()->where('sender', 'bot')->latest()->first();
+            $lastBotBadge = $session->messages()->where('sender', 'bot')->latest('id')->first();
             if ($lastBotBadge && $this->isFilterRefinementQuery($query, $lastBotBadge)) {
                 $reply = "Filtered for **{$constraints['destination_name']}**: {$query}\n\n".$reply;
             }
@@ -1086,7 +1164,7 @@ class ChatbotService
             }
 
             // Last explicit destination from prior bot cards or user messages (last 6 turns)
-            $lastBot = $session->messages()->where('sender', 'bot')->latest()->first();
+            $lastBot = $session->messages()->where('sender', 'bot')->latest('id')->first();
             $data = $lastBot?->context_data ?: [];
 
             $candidates = [];
@@ -1234,7 +1312,7 @@ class ChatbotService
      */
     protected function inheritRoomContext(array $constraints, ChatSession $session, ?int $roomId = null): array
     {
-        $lastBot = $session->messages()->where('sender', 'bot')->latest()->first();
+        $lastBot = $session->messages()->where('sender', 'bot')->latest('id')->first();
         $data = $lastBot?->context_data ?: [];
         $prior = null;
         foreach ($data['retrieved_rooms'] ?? [] as $r) {
@@ -1351,13 +1429,35 @@ class ChatbotService
             return true;
         }
         $data = $lastBot->context_data ?: [];
-        // If last turn returned activities and user said yes, they likely want
-        // to proceed with that activity offer (resolved by resolveAffirmativeIntent)
-        if (! empty($data['retrieved_activities']) && preg_match('/\b(yes|yep|ok|search)\b/i', $lower)) {
+        // A bare "yes"/"ok"/"search" after a results turn repeats that turn's
+        // search (intent resolved by resolveAffirmativeIntent from the previous
+        // user message and stored cards), whatever the catalog was.
+        $hadResults = ! empty($data['retrieved_activities']) || ! empty($data['retrieved_packages'])
+            || ! empty($data['retrieved_hotels']) || ! empty($data['retrieved_rooms'])
+            || ! empty($data['retrieved_addons']);
+        if ($hadResults && preg_match('/\b(yes|yep|ok|search)\b/i', $lower)) {
             return true;
         }
 
         return false;
+    }
+
+    /**
+     * True when an affirmative message carries its own searchable content
+     * (a destination or named entity), so it must be searched as-is instead
+     * of inheriting the previous user message.
+     */
+    protected function affirmationCarriesSearch(string $message): bool
+    {
+        if ($this->intentRouter->extractDestinationName($message)) {
+            return true;
+        }
+
+        return (bool) ($this->intentRouter->extractActivityName($message)
+            || $this->intentRouter->extractPackageName($message)
+            || $this->intentRouter->extractRoomName($message)
+            || $this->intentRouter->extractHotelName($message)
+            || $this->intentRouter->extractAddOnName($message));
     }
 
     /**
@@ -1387,6 +1487,26 @@ class ChatbotService
 
         if ($previousUserMessage && ($catalog = $this->intentRouter->explicitCatalogIntent($previousUserMessage))) {
             return $catalog;
+        }
+
+        // Named-entity fallback: "how about banana boat" carries no catalog
+        // keyword, but names a DB entity — honor that over carried cards.
+        if ($previousUserMessage) {
+            if ($this->intentRouter->extractActivityName($previousUserMessage)) {
+                return IntentRouter::ACTIVITY_SEARCH;
+            }
+            if ($this->intentRouter->extractPackageName($previousUserMessage)) {
+                return IntentRouter::PACKAGE_SEARCH;
+            }
+            if ($this->intentRouter->extractRoomName($previousUserMessage)) {
+                return IntentRouter::ROOM_SEARCH;
+            }
+            if ($this->intentRouter->extractHotelName($previousUserMessage)) {
+                return IntentRouter::HOTEL_SEARCH;
+            }
+            if ($this->intentRouter->extractAddOnName($previousUserMessage)) {
+                return IntentRouter::ADDON_SEARCH;
+            }
         }
 
         $data = $lastBot->context_data ?: [];
@@ -1449,6 +1569,18 @@ class ChatbotService
     {
         $constraints = $this->resolveConversationalDestination($constraints, $session);
         $constraints = $this->resolveDefaultDestination($constraints, $user);
+
+        // Side-by-side comparison when the user names two activities.
+        $comparisonNames = $this->activityComparisonNames($query);
+        if (! empty($comparisonNames)) {
+            return $this->handleActivityComparison($comparisonNames, $query, $user, $session);
+        }
+
+        $maxPrice = ! empty($constraints['max_price']) ? (float) $constraints['max_price'] : null;
+        $priceIntent = $this->detectPriceIntent($query);
+        // Widen the vector window so budget filters and price sorts see the
+        // whole candidate pool, not just the top 3 semantic hits.
+        $window = ($maxPrice !== null || $priceIntent !== null) ? 50 : 3;
         $scored = null;
 
         // Exact-match shortcut: if a specific activity name is extracted, return just that activity.
@@ -1471,12 +1603,12 @@ class ChatbotService
                         ->when(! empty($constraints['destination_id']), fn ($q) => $q->where('destination_id', $constraints['destination_id']))
                         ->get();
                     if ($candidates->isNotEmpty()) {
-                        $scored = $this->gemini->rankRecommendations($blended, $candidates, 3);
+                        $scored = $this->gemini->rankRecommendations($blended, $candidates, $window);
                     }
                 }
             }
             if ($scored === null) {
-                $scored = $this->gemini->searchActivities($query, 3, $constraints['destination_id'] ?? null);
+                $scored = $this->gemini->searchActivities($query, $window, $constraints['destination_id'] ?? null);
                 // If personalized default added destination but global search returned broader set, re-rank with blended for that destination
                 if ($this->isPersonalized($user) && ! empty($constraints['destination_id']) && ! empty($scored)) {
                     $blended = $this->blendedVector($user, $query);
@@ -1487,12 +1619,21 @@ class ChatbotService
                             ->where('destination_id', $constraints['destination_id'])
                             ->get();
                         if ($destCandidates->isNotEmpty()) {
-                            $scored = $this->gemini->rankRecommendations($blended, $destCandidates, 3);
+                            $scored = $this->gemini->rankRecommendations($blended, $destCandidates, $window);
                         }
                     }
                 }
             }
         }
+
+        $priceNotice = null;
+        if ($maxPrice !== null) {
+            [$scored, $priceNotice] = $this->applyActivityPriceCeiling($scored, $maxPrice);
+        }
+        if ($priceIntent) {
+            $scored = $this->sortActivitiesByPrice($scored, $priceIntent);
+        }
+        $scored = array_slice($scored, 0, 3);
 
         $context = $this->gemini->getActivityContext($scored);
 
@@ -1502,11 +1643,121 @@ class ChatbotService
 
         $prompt = $this->buildPrompt('activity-search', $context, $query, $user);
         $reply = $this->stripRankLineIfSingle($this->geminiChatResponse($prompt, $session), $scored);
+        if ($priceNotice) {
+            $reply = $priceNotice."\n\n".$reply;
+        }
 
         return [
             'reply' => $reply,
             'retrieved_activities' => $this->formatActivityResults($scored),
         ];
+    }
+
+    /**
+     * Names of two or more activities the user is explicitly comparing.
+     *
+     * @return string[]
+     */
+    protected function activityComparisonNames(string $query): array
+    {
+        if (! preg_match('/\b(compare|comparison|vs\.?|versus|difference|differences|better)\b/i', $query)) {
+            return [];
+        }
+
+        $names = array_values(array_unique($this->intentRouter->extractActivityNames($query)));
+
+        return count($names) >= 2 ? $names : [];
+    }
+
+    /**
+     * Compare two named activities side by side using real DB fields.
+     *
+     * @param  string[]  $names
+     */
+    protected function handleActivityComparison(array $names, string $query, ?User $user, ChatSession $session): array
+    {
+        $activities = ActivityModel::with('destination')
+            ->whereIn('activity_name', $names)
+            ->get()
+            ->keyBy('activity_name');
+
+        $scored = [];
+        foreach ($names as $name) {
+            $activity = $activities->get($name);
+            if ($activity) {
+                $scored[] = ['item' => $activity, 'score' => 1.0];
+            }
+        }
+
+        if (count($scored) < 2) {
+            $scored = $this->gemini->searchActivities($query, 3, null);
+        }
+
+        $context = $this->gemini->getActivityContext($scored);
+
+        if (empty(trim($context))) {
+            return ['reply' => $this->noResultsReply('activities')];
+        }
+
+        $prompt = $this->buildPrompt('activity-compare', $context, $query, $user);
+        $reply = $this->geminiChatResponse($prompt, $session);
+
+        return [
+            'reply' => $reply,
+            'retrieved_activities' => $this->formatActivityResults($scored),
+        ];
+    }
+
+    /**
+     * Numeric rate for an activity (min of a range, per-person/unit basis).
+     */
+    protected function activityPrice(ActivityModel $activity): float
+    {
+        return $activity->calculateRateForPax(1);
+    }
+
+    /**
+     * Keep only scored activities at or below the budget. When nothing fits,
+     * return the cheapest few with a notice so the user still sees options.
+     *
+     * @return array{0: array, 1: string|null}
+     */
+    protected function applyActivityPriceCeiling(array $scored, float $maxPrice): array
+    {
+        $within = array_values(array_filter($scored, fn ($e) => $this->activityPrice($e['item']) <= $maxPrice));
+
+        if (! empty($within)) {
+            return [$within, null];
+        }
+
+        if (empty($scored)) {
+            return [[], null];
+        }
+
+        usort($scored, fn ($a, $b) => $this->activityPrice($a['item']) <=> $this->activityPrice($b['item']));
+        $cheapest = $this->activityPrice($scored[0]['item']);
+        $notice = 'Nothing matched your **₱'.number_format($maxPrice).'** budget — here are the closest options, starting at ₱'.number_format($cheapest).'.';
+
+        return [array_slice($scored, 0, 3), $notice];
+    }
+
+    /**
+     * Sort scored activities by numeric price.
+     */
+    protected function sortActivitiesByPrice(array $scored, string $direction): array
+    {
+        usort($scored, function ($a, $b) use ($direction) {
+            $pa = $this->activityPrice($a['item']);
+            $pb = $this->activityPrice($b['item']);
+
+            if ($pa === $pb) {
+                return $b['score'] <=> $a['score'];
+            }
+
+            return $direction === 'expensive' ? $pb <=> $pa : $pa <=> $pb;
+        });
+
+        return array_values($scored);
     }
 
     protected function handlePackageSearch(string $query, array $constraints, ?User $user, ChatSession $session): array
@@ -1610,7 +1861,7 @@ class ChatbotService
     protected function handleAvailabilityQuery(string $query, array $constraints, ?User $user, ChatSession $session): array
     {
         // Merge previous hotel/destination/room when follow-up has no explicit hotel (e.g., "yes check availabilith" after Lazy Dog)
-        $lastBot = $session->messages()->where('sender', 'bot')->latest()->first();
+        $lastBot = $session->messages()->where('sender', 'bot')->latest('id')->first();
         $data = $lastBot?->context_data ?: [];
         if (empty($constraints['hotel_id']) && empty($constraints['room_id']) && empty($constraints['room_name'])) {
             $prevRoomId = $data['retrieved_rooms'][0]['id'] ?? null;
@@ -1929,7 +2180,9 @@ class ChatbotService
                 }
 
                 return [
-                    'reply' => "{$place['name']} is located at latitude {$coords['lat']}, longitude {$coords['lng']}.",
+                    'reply' => $place['type'] === 'activity'
+                        ? $this->activityLocationReply($place, $coords)
+                        : "{$place['name']} is located at latitude {$coords['lat']}, longitude {$coords['lng']}.",
                     'map' => [
                         'name' => $place['name'],
                         'lat' => $coords['lat'],
@@ -1975,9 +2228,38 @@ class ChatbotService
             if ($hotel && $hotel->latitude && $hotel->longitude) {
                 return ['lat' => (float) $hotel->latitude, 'lng' => (float) $hotel->longitude];
             }
+        } elseif ($place['type'] === 'activity') {
+            $activity = $place['model'] ?? ActivityModel::where('activity_name', 'ILIKE', $place['name'])->first();
+            $lat = $activity?->latitude_with_fallback;
+            $lng = $activity?->longitude_with_fallback;
+            if ($lat !== null && $lng !== null) {
+                return ['lat' => (float) $lat, 'lng' => (float) $lng];
+            }
         }
 
         return null;
+    }
+
+    /**
+     * Human reply for an activity location query, naming the host destination
+     * when the coordinates come from the destination fallback.
+     *
+     * @param  array{name: string, type: string, model?: ActivityModel}  $place
+     * @param  array{lat: float, lng: float}  $coords
+     */
+    protected function activityLocationReply(array $place, array $coords): string
+    {
+        $coordsLabel = "latitude {$coords['lat']}, longitude {$coords['lng']}";
+        $activity = $place['model'] ?? null;
+        $destination = $activity?->destination?->name;
+
+        if ($activity && $activity->latitude === null && $destination) {
+            return "{$place['name']} is located in {$destination} (around {$coordsLabel}).";
+        }
+
+        return $destination
+            ? "{$place['name']} is located at {$coordsLabel}, in {$destination}."
+            : "{$place['name']} is located at {$coordsLabel}.";
     }
 
     protected function handleWeatherQuery(string $query, array $constraints, ChatSession $session): array
@@ -2177,7 +2459,7 @@ class ChatbotService
 
     protected function handleWeatherAdvisory(string $query, ChatSession $session, ?User $user): array
     {
-        $lastBot = $session->messages()->where('sender', 'bot')->latest()->first();
+        $lastBot = $session->messages()->where('sender', 'bot')->latest('id')->first();
         $data = $lastBot?->context_data ?: [];
         $constraints = $this->intentRouter->extractConstraints($query);
         $constraints = $this->resolveConversationalDestination($constraints, $session);
@@ -2354,6 +2636,32 @@ class ChatbotService
         return implode(' or ', $names);
     }
 
+    /**
+     * Off-topic, world-knowledge questions that must never be force-routed
+     * into a catalog search just because they score above the semantic floor.
+     */
+    protected function isGeneralKnowledgeQuery(string $message): bool
+    {
+        return (bool) preg_match(
+            '/\b(who|whom|whose|capital|president|prime\s+minister|history|historical|invented|invention|meaning|definition|translate|synonym|antonym|recipe|science|physics|chemistry|math|mathematics|calculate)\b/i',
+            $message
+        );
+    }
+
+    /**
+     * The user asked for a human — point them at the handoff control and offer
+     * a one-tap action that triggers it from inside the chat.
+     */
+    protected function handleSupportAgentRequest(): array
+    {
+        return [
+            'reply' => "Of course — tap the button below and I'll connect you to a human agent from our team. You can also use **Talk to Admin** at the top of this chat at any time.\n\nWhile you wait, feel free to type your question here so the agent has the context when they join.",
+            'suggested_actions' => [
+                ['id' => 'talk-to-agent', 'label' => 'Talk to a human agent', 'handoff' => true],
+            ],
+        ];
+    }
+
     protected function handleGeneralChat(string $query, ChatSession $session): array
     {
         $destNames = DestinationModel::orderBy('name')->pluck('name')->all();
@@ -2385,6 +2693,7 @@ class ChatbotService
             'room-search' => 'TASK: Recommend rooms based on the database results below.',
             'hotel-search' => 'TASK: Recommend hotels based on the database results below.',
             'activity-search' => 'TASK: Recommend activities and tours based on the database results below.',
+            'activity-compare' => 'TASK: Compare the named activities/tours below side by side.',
             'package-search' => 'TASK: Recommend travel packages and promos based on the database results below.',
             'addon-search' => 'TASK: Recommend add-ons and transfer services based on the database results below.',
             'availability' => 'TASK: Report real-time room availability, prices, and remaining inventory.',
@@ -2408,12 +2717,20 @@ class ChatbotService
             'Keep responses friendly, concise, and helpful.',
         ];
 
+        if ($stage === 'activity-compare') {
+            $rules[] = 'Compare the listed activities ONLY against each other, using the provided fields.';
+            $rules[] = 'Do NOT rank them, do NOT add a "best match" or "ranked by system" line.';
+            $rules[] = 'Give one short block per activity (name — price — duration — activity level — key inclusions), then a brief "Which to pick" line naming the practical difference.';
+            $rules[] = 'If a field is missing for one item, say it is not in our database instead of guessing.';
+        }
+
         if ($stage === 'itinerary') {
             $rules[] = 'Build this itinerary ONLY from the listed destination, hotel, room, and activities.';
             $rules[] = 'Use the provided Day labels and activity assignments; do not invent new day-specific details.';
             $rules[] = 'Do not introduce any other locations, attractions, activities, venues, services, logistics, fees, or expenses.';
             $rules[] = 'Do not create airport arrival or departure plans, transfer details, meal plans, or extra budget estimates. Only use the listed room and activity prices and the pre-computed total.';
             $rules[] = 'If a part of the trip is not covered by the provided results, say that it is not included in the database results.';
+            $rules[] = 'When the context gives a pre-computed total, quote that exact figure verbatim and never recompute or re-sum prices yourself. If no total is provided, list individual prices instead of stating a combined total.';
         }
 
         if ($stage === 'booking-status') {

@@ -684,7 +684,10 @@
 
             imgSrc(path) {
                 if (!path) return '';
-                return path.startsWith('http') ? path : '/storage/' + path;
+                if (path.startsWith('http')) return path;
+                if (path.startsWith('/storage/')) return path;
+                if (path.startsWith('storage/')) return '/' + path;
+                return '/storage/' + path.replace(/^\/+/, '');
             },
 
             scrollDown() {
@@ -821,7 +824,7 @@
             },
 
             async useSuggestedAction(msg, action) {
-                if (!action || !action.prompt) {
+                if (!action || (!action.prompt && !action.handoff)) {
                     return;
                 }
                 const key = `${msg.id}:${action.id}`;
@@ -829,6 +832,10 @@
                     return;
                 }
                 this.usedActionIds.add(key);
+                if (action.handoff) {
+                    await this.requestHandoff();
+                    return;
+                }
                 this.input = action.prompt;
                 await this.send();
             },

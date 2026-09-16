@@ -40,6 +40,8 @@ class IntentRouter
 
     public const BOOKING_STATUS = 'BOOKING_STATUS';
 
+    public const SUPPORT_AGENT = 'SUPPORT_AGENT';
+
     protected array $travelKeywords = [
         'hotel',
         'hotels',
@@ -181,6 +183,19 @@ class IntentRouter
         'island tour',
         'guided tour',
         'sunnytrips',
+        // missing-from-keyword-gap: water/land activities that should still travel-route
+        'banana boat',
+        'parasailing',
+        'parasail',
+        'paraw',
+        'jet ski',
+        'jetski',
+        'helmet diving',
+        'crystal kayak',
+        'paddleboard',
+        'canopy walk',
+        'nacpan',
+        'puka',
     ];
 
     public function isTravelQuery(string $query): bool
@@ -198,6 +213,10 @@ class IntentRouter
     public function classify(string $query): string
     {
         $lower = mb_strtolower($query);
+
+        if ($this->hasSupportAgentIntent($lower)) {
+            return self::SUPPORT_AGENT;
+        }
 
         if ($this->hasBookingStatusIntent($lower)) {
             return self::BOOKING_STATUS;
@@ -386,6 +405,18 @@ class IntentRouter
             }
         }
 
+        // Concatenated / misspelled forms ("elnido" for "El Nido") — compare
+        // both sides with all non-letters stripped so spacing is ignored.
+        $flattened = (string) preg_replace('/[^\p{L}\p{N}]/u', '', $lower);
+        if ($flattened !== '') {
+            foreach ($destinations as $name) {
+                $flatName = (string) preg_replace('/[^\p{L}\p{N}]/u', '', mb_strtolower((string) $name));
+                if ($flatName !== '' && str_contains($flattened, $flatName)) {
+                    return $name;
+                }
+            }
+        }
+
         return null;
     }
 
@@ -521,7 +552,155 @@ class IntentRouter
             }
         }
 
-        return null;
+        // Partial-name fallback ("el nido tour b itinerary" → "El Nido Tour B
+        // (Caves & Coves)"): every distinctive name token must appear in the
+        // query is too strict when the query identifies the item another way
+        // (e.g. the "Tour B" letter). Instead require ≥1 distinctive hit AND
+        // full coverage of the query's significant tokens by the name.
+        [$genericWords, $destinationTokens] = $this->activityTokenFilters();
+
+        $queryTokens = [];
+        foreach (preg_split('/\s+/', $lower) as $t) {
+            $t = $this->cleanToken($t);
+            if ($t !== '' && ! in_array($t, $genericWords, true) && ! in_array($t, $destinationTokens, true)) {
+                $queryTokens[] = $t;
+            }
+        }
+        $queryTokens = array_unique($queryTokens);
+
+        $best = null;
+        $bestHits = 0;
+        $bestRatio = 0.0;
+        foreach ($activities as $name) {
+            $nameTokens = [];
+            foreach (preg_split('/\s+/', mb_strtolower((string) $name)) as $t) {
+                $t = $this->cleanToken($t);
+                if ($t !== '' && ! in_array($t, $genericWords, true) && ! in_array($t, $destinationTokens, true)) {
+                    $nameTokens[] = $t;
+                }
+            }
+            $nameTokens = array_unique($nameTokens);
+            if (empty($nameTokens)) {
+                continue;
+            }
+            $hits = 0;
+            foreach ($nameTokens as $token) {
+                if (preg_match('/\b'.preg_quote($token, '/').'\b/', $lower)) {
+                    $hits++;
+                }
+            }
+            if ($hits === 0) {
+                continue;
+            }
+            // Every significant query token must be covered by the name.
+            $covered = true;
+            foreach ($queryTokens as $qt) {
+                if (! in_array($qt, $nameTokens, true)) {
+                    $covered = false;
+                    break;
+                }
+            }
+            if (! $covered) {
+                continue;
+            }
+            $ratio = $hits / count($nameTokens);
+            if ($hits > $bestHits || ($hits === $bestHits && $ratio > $bestRatio)) {
+                $best = (string) $name;
+                $bestHits = $hits;
+                $bestRatio = $ratio;
+            }
+        }
+
+        return $best;
+    }
+
+    protected function cleanToken(string $token): string
+    {
+        return (string) preg_replace('/[^\p{L}\p{N}]/u', '', mb_strtolower(trim($token)));
+    }
+
+    /**
+     * Shared word filters used when matching catalog names against a query.
+     *
+     * @return array{0: string[], 1: string[]} [genericWords, destinationTokens]
+     */
+    protected function activityTokenFilters(): array
+    {
+        $genericWords = [
+            'tour', 'tours', 'activity', 'activities', 'island', 'islands',
+            'ride', 'rides', 'experience', 'package', 'packages',
+            'the', 'a', 'an', 'and', 'or', 'of', 'in', 'on', 'at', 'for', 'to', 'with',
+            'what', 'how', 'is', 'are', 'was', 'were', 'do', 'does', 'did', 'it', 'its',
+            'much', 'many', 'about', 'vs', 'versus', 'between', 'compare', 'comparison',
+            'difference', 'differences', 'different',
+            'itinerary', 'itineraries', 'inclusion', 'inclusions', 'exclusion', 'exclusions',
+            'requirement', 'requirements', 'price', 'prices', 'cost', 'costs', 'rate', 'rates',
+            'duration', 'location', 'details', 'detail', 'info', 'information',
+            'offered', 'offer', 'offering', 'available', 'availability', 'best', 'top',
+            'boracay', 'elnido', 'el', 'nido', 'palawan', 'cebu', 'philippines',
+        ];
+
+        $destinationTokens = [];
+        foreach (DestinationModel::pluck('name')->all() as $destName) {
+            foreach (preg_split('/\s+/', mb_strtolower((string) $destName)) as $t) {
+                $t = $this->cleanToken($t);
+                if ($t !== '') {
+                    $destinationTokens[] = $t;
+                }
+            }
+        }
+
+        return [$genericWords, array_values(array_unique($destinationTokens))];
+    }
+
+    /**
+     * Every activity whose full significant name is mentioned in the query.
+     * Unlike extractActivityName() this is not limited to a single best match,
+     * so comparisons ("atv and zipline", "banana boat vs parasailing") can
+     * resolve both sides.
+     *
+     * @return string[]
+     */
+    public function extractActivityNames(string $query): array
+    {
+        $activities = ActivityModel::pluck('activity_name');
+        $lower = mb_strtolower($query);
+        [$genericWords, $destinationTokens] = $this->activityTokenFilters();
+
+        $matches = [];
+        foreach ($activities as $name) {
+            $lowerName = mb_strtolower((string) $name);
+            if (str_contains($lower, $lowerName)) {
+                $matches[] = (string) $name;
+
+                continue;
+            }
+
+            $nameTokens = [];
+            foreach (preg_split('/\s+/', $lowerName) as $t) {
+                $t = $this->cleanToken($t);
+                if ($t !== '' && ! in_array($t, $genericWords, true) && ! in_array($t, $destinationTokens, true)) {
+                    $nameTokens[] = $t;
+                }
+            }
+            $nameTokens = array_unique($nameTokens);
+            if (empty($nameTokens)) {
+                continue;
+            }
+
+            $allPresent = true;
+            foreach ($nameTokens as $token) {
+                if (! preg_match('/\b'.preg_quote($token, '/').'\b/', $lower)) {
+                    $allPresent = false;
+                    break;
+                }
+            }
+            if ($allPresent) {
+                $matches[] = (string) $name;
+            }
+        }
+
+        return $matches;
     }
 
     protected function extractPlaceNames(string $query): array
@@ -540,6 +719,14 @@ class IntentRouter
             $hotel = HotelModel::where('hotel_name', 'ILIKE', $hotelName)->first();
             if ($hotel && $hotel->latitude && $hotel->longitude) {
                 $places[] = ['type' => 'hotel', 'name' => $hotelName, 'model' => $hotel];
+            }
+        }
+
+        $activityName = $this->extractActivityName($query);
+        if ($activityName) {
+            $activity = ActivityModel::where('activity_name', 'ILIKE', $activityName)->first();
+            if ($activity && $activity->latitude_with_fallback !== null) {
+                $places[] = ['type' => 'activity', 'name' => $activityName, 'model' => $activity];
             }
         }
 
@@ -975,6 +1162,21 @@ class IntentRouter
             || $this->hasAddOnIntent($lower);
     }
 
+    /**
+     * True for noun-catalog keywords (activity/package/add-on) whose hit is
+     * rarely incidental. Room/hotel intent is excluded: amenity words like
+     * "family" or "pool" appear in genuine follow-ups ("is it family
+     * friendly?") and must not force a fresh search.
+     */
+    public function hasNounCatalogIntent(string $query): bool
+    {
+        $lower = mb_strtolower($query);
+
+        return $this->hasActivityIntent($lower)
+            || $this->hasPackageIntent($lower)
+            || $this->hasAddOnIntent($lower);
+    }
+
     protected function hasActivityIntent(string $lower): bool
     {
         $act = [
@@ -1006,6 +1208,23 @@ class IntentRouter
             'spelunking',
             'cultural tour',
             'sunset cruise',
+            // missing-from-keyword-gap: DB has these names but they were never routed to ACTIVITY_SEARCH
+            'banana boat',
+            'parasailing',
+            'parasail',
+            'paraw',
+            'paraw sailing',
+            'jet ski',
+            'jetski',
+            'ufo',
+            'ufo ride',
+            'helmet diving',
+            'crystal kayak',
+            'paddleboard',
+            'canopy walk',
+            'nacpan',
+            'puka',
+            'cliff dive',
         ];
         foreach ($act as $a) {
             if (str_contains($lower, $a)) {
@@ -1056,6 +1275,22 @@ class IntentRouter
         }
 
         return (bool) preg_match("/\bwhere(?:'s|\s+is)\s+my\s+(booking|reservation)\b/", $lower);
+    }
+
+    /**
+     * User is explicitly asking for a human/agent rather than the bot.
+     */
+    protected function hasSupportAgentIntent(string $lower): bool
+    {
+        if (preg_match('/\b(talk|speak|chat|connect|message)\s+(to|with)\s+(a\s+|the\s+|an\s+)?(human|person|people|agent|someone|somebody|staff|representative|rep|support|admin|team)\b/', $lower)) {
+            return true;
+        }
+
+        if (preg_match('/\b(live|real|actual|human|customer)\s+(agent|support|person|representative|rep|service)\b/', $lower)) {
+            return true;
+        }
+
+        return (bool) preg_match('/\b(totoong\s+tao|kausapin\s+ang\s+tao|makipag-?usap\s+sa\s+tao)\b/u', $lower);
     }
 
     /**

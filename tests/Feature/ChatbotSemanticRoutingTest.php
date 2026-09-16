@@ -121,6 +121,109 @@ test('yes search after an activity offer repeats the activity search', function 
     expect($second->json('retrieved_rooms') ?? [])->toBeEmpty();
 });
 
+test('follow-up naming an off-card activity starts a fresh search', function () {
+    ActivityModel::factory()->create([
+        'destination_id' => $this->destination->id,
+        'activity_name' => 'Banana Boat',
+        'embedding' => unitVectorString(0),
+    ]);
+    mockGemini(unitVector(0));
+
+    $first = $this->postJson('/chat', [
+        'message' => 'ATV Adventure Ride',
+    ]);
+    $first->assertOk();
+
+    $second = $this->postJson('/chat', [
+        'message' => 'how about banana boat',
+        'session_token' => $first->json('session_token'),
+    ]);
+
+    $second->assertOk()->assertJsonPath('status', 'success');
+    $activities = $second->json('retrieved_activities') ?? [];
+    expect($activities)->toHaveCount(1);
+    expect($activities[0]['activity_name'])->toContain('Banana Boat');
+});
+
+test('activity combo follow-up with catalog keywords starts a fresh search', function () {
+    mockGemini(unitVector(0));
+
+    $first = $this->postJson('/chat', [
+        'message' => 'May atv offering ba kayo in Boracay?',
+    ]);
+    $first->assertOk();
+    expect($first->json('retrieved_activities') ?? [])->not->toBeEmpty();
+
+    $second = $this->postJson('/chat', [
+        'message' => 'atv and zipline combo, is it offered?',
+        'session_token' => $first->json('session_token'),
+    ]);
+
+    $second->assertOk()->assertJsonPath('status', 'success');
+    expect($second->json('retrieved_activities') ?? [])->not->toBeEmpty();
+    expect($second->json('reply'))->not->toContain('previous recommendations');
+});
+
+test('yes search reuses the previous user message as the query', function () {
+    ActivityModel::factory()->create([
+        'destination_id' => $this->destination->id,
+        'activity_name' => 'Banana Boat',
+        'embedding' => unitVectorString(0),
+    ]);
+    mockGemini(unitVector(0), 'Would you like me to search for that banana boat separately?');
+
+    $first = $this->postJson('/chat', [
+        'message' => 'how about banana boat',
+    ]);
+    $first->assertOk();
+    $token = $first->json('session_token');
+
+    $second = $this->postJson('/chat', [
+        'message' => 'yes search',
+        'session_token' => $token,
+    ]);
+
+    $second->assertOk()->assertJsonPath('status', 'success');
+    $activities = $second->json('retrieved_activities') ?? [];
+    expect($activities)->toHaveCount(1);
+    expect($activities[0]['activity_name'])->toContain('Banana Boat');
+});
+
+test('keyword-less typo routes to activity search via general-talk fallback', function () {
+    ActivityModel::factory()->create([
+        'destination_id' => $this->destination->id,
+        'activity_name' => 'Jet Ski (30 mins)',
+        'embedding' => unitVectorString(0),
+    ]);
+    mockGemini(unitVector(0));
+
+    // "jetski" (no space) matches no keyword, so it classifies GENERAL_TALK —
+    // the semantic fallback must still find the Jet Ski activity.
+    $response = $this->postJson('/chat', [
+        'message' => 'jetski',
+    ]);
+
+    $response->assertOk()->assertJsonPath('status', 'success');
+    $activities = $response->json('retrieved_activities') ?? [];
+    expect($activities)->not->toBeEmpty();
+    expect(collect($activities)->pluck('activity_name')->implode(' '))->toContain('Jet Ski (30 mins)');
+});
+
+test('greeting with no catalog affinity stays in general chat', function () {
+    // Orthogonal vector: ~zero similarity to every catalog → below the floor.
+    mockGemini(unitVector(5), 'Hello! How can I help with your trip?');
+
+    $response = $this->postJson('/chat', [
+        'message' => 'hello',
+    ]);
+
+    $response->assertOk()->assertJsonPath('status', 'success');
+    expect($response->json('retrieved_activities') ?? [])->toBeEmpty();
+    expect($response->json('retrieved_rooms') ?? [])->toBeEmpty();
+    expect($response->json('retrieved_hotels') ?? [])->toBeEmpty();
+    expect($response->json('retrieved_packages') ?? [])->toBeEmpty();
+});
+
 test('guest booking status reply links to the login page', function () {
     mockGemini(null, 'unused');
 
@@ -175,4 +278,145 @@ test('multiple package results keep the ranked-by-system line', function () {
     $response->assertOk()->assertJsonPath('status', 'success');
     expect($response->json('retrieved_packages') ?? [])->toHaveCount(2);
     expect($response->json('reply'))->toContain('close alternatives');
+});
+
+test('activity budget filter keeps only activities within the price ceiling', function () {
+    ActivityModel::factory()->create([
+        'destination_id' => $this->destination->id,
+        'activity_name' => 'Crystal Kayak',
+        'rate' => '₱300/person',
+        'embedding' => unitVectorString(0),
+    ]);
+    ActivityModel::factory()->create([
+        'destination_id' => $this->destination->id,
+        'activity_name' => 'Banana Boat',
+        'rate' => '₱450/person',
+        'embedding' => unitVectorString(0),
+    ]);
+    ActivityModel::factory()->create([
+        'destination_id' => $this->destination->id,
+        'activity_name' => 'ATV Adventure Ride',
+        'rate' => '₱850/person',
+        'embedding' => unitVectorString(0),
+    ]);
+    mockGemini(unitVector(0), 'Here are the activities within your budget.');
+
+    $response = $this->postJson('/chat', [
+        'message' => 'show me activities under 500',
+    ]);
+
+    $response->assertOk()->assertJsonPath('status', 'success');
+    $activities = $response->json('retrieved_activities') ?? [];
+    expect($activities)->toHaveCount(2);
+    expect(collect($activities)->pluck('activity_name'))->not->toContain('ATV Adventure Ride');
+    expect($response->json('reply'))->not->toContain('could not find any activities');
+});
+
+test('activity budget with no affordable match returns the closest options', function () {
+    ActivityModel::factory()->create([
+        'destination_id' => $this->destination->id,
+        'activity_name' => 'Crystal Kayak',
+        'rate' => '₱300/person',
+        'embedding' => unitVectorString(0),
+    ]);
+    ActivityModel::factory()->create([
+        'destination_id' => $this->destination->id,
+        'activity_name' => 'ATV Adventure Ride',
+        'rate' => '₱850/person',
+        'embedding' => unitVectorString(0),
+    ]);
+    mockGemini(unitVector(0), 'Here are the activities.');
+
+    $response = $this->postJson('/chat', [
+        'message' => 'show me activities under 100',
+    ]);
+
+    $response->assertOk()->assertJsonPath('status', 'success');
+    expect($response->json('reply'))->toContain('closest options');
+    $activities = $response->json('retrieved_activities') ?? [];
+    expect($activities)->not->toBeEmpty();
+    expect($activities[0]['activity_name'])->toContain('Crystal Kayak');
+});
+
+test('cheapest activity query sorts by real price, not semantic order', function () {
+    ActivityModel::factory()->create([
+        'destination_id' => $this->destination->id,
+        'activity_name' => 'Crystal Kayak',
+        'rate' => '₱300/person',
+        'embedding' => unitVectorString(0),
+    ]);
+    ActivityModel::factory()->create([
+        'destination_id' => $this->destination->id,
+        'activity_name' => 'Helmet Diving',
+        'rate' => '₱850/person',
+        'embedding' => unitVectorString(0),
+    ]);
+    ActivityModel::factory()->create([
+        'destination_id' => $this->destination->id,
+        'activity_name' => 'Zipline',
+        'rate' => '₱750/person',
+        'embedding' => unitVectorString(0),
+    ]);
+    mockGemini(unitVector(0), 'Crystal Kayak is the cheapest activity.');
+
+    $response = $this->postJson('/chat', [
+        'message' => 'what is the cheapest activity in Boracay',
+    ]);
+
+    $response->assertOk();
+    $activities = $response->json('retrieved_activities') ?? [];
+    expect($activities)->not->toBeEmpty();
+    expect($activities[0]['activity_name'])->toContain('Crystal Kayak');
+});
+
+test('comparison query returns both named activities', function () {
+    ActivityModel::factory()->create([
+        'destination_id' => $this->destination->id,
+        'activity_name' => 'Banana Boat',
+        'rate' => '₱450/person',
+        'embedding' => unitVectorString(0),
+    ]);
+    ActivityModel::factory()->create([
+        'destination_id' => $this->destination->id,
+        'activity_name' => 'Parasailing',
+        'rate' => '₱1200/person',
+        'embedding' => unitVectorString(0),
+    ]);
+    mockGemini(unitVector(0), 'Here is the comparison.');
+
+    $response = $this->postJson('/chat', [
+        'message' => 'compare banana boat and parasailing',
+    ]);
+
+    $response->assertOk()->assertJsonPath('status', 'success');
+    $activities = $response->json('retrieved_activities') ?? [];
+    $names = collect($activities)->pluck('activity_name')->implode(' ');
+    expect($activities)->toHaveCount(2);
+    expect($names)->toContain('Banana Boat')->toContain('Parasailing');
+});
+
+test('world-knowledge question does not leak catalog cards', function () {
+    // The embedding matches a catalog — the guard must still keep this general.
+    mockGemini(unitVector(0), 'Paris is the capital of France.');
+
+    $response = $this->postJson('/chat', [
+        'message' => 'what is the capital of france',
+    ]);
+
+    $response->assertOk()->assertJsonPath('status', 'success');
+    expect($response->json('reply'))->toBe('Paris is the capital of France.');
+    expect($response->json('retrieved_activities') ?? [])->toBeEmpty();
+    expect($response->json('retrieved_rooms') ?? [])->toBeEmpty();
+});
+
+test('human handoff request offers a one-tap handoff action', function () {
+    mockGemini(null, 'unused');
+
+    $response = $this->postJson('/chat', [
+        'message' => 'i want to talk to a human',
+    ]);
+
+    $response->assertOk()->assertJsonPath('status', 'success');
+    expect($response->json('suggested_actions.0.handoff'))->toBeTrue();
+    expect($response->json('suggested_actions.0.label'))->toContain('human');
 });

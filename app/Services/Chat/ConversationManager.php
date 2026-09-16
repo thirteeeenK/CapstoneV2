@@ -87,7 +87,7 @@ class ConversationManager
     public function history(ChatSession $session, int $turns = 6, bool $excludeLatestUserMessage = false): array
     {
         $messages = $session->messages()
-            ->latest('created_at')
+            ->latest('id')
             ->limit(($turns * 2) + ($excludeLatestUserMessage ? 1 : 0))
             ->get()
             ->reverse()
