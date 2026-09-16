@@ -39,6 +39,19 @@ it('lets an admin issue a warning that does not restrict access', function () {
         ->and($user->ban_expires_at)->toBeNull();
 });
 
+it('exposes full name and email on hover via title tooltips in the users table', function () {
+    $user = User::factory()->create([
+        'name' => 'Alexandra Constantinople Dela Cruz',
+        'email' => 'alexandra.constantinople.delacruz@example.com',
+    ]);
+
+    $this->actingAs($this->admin, 'admin')
+        ->get(route('admin.users.index'))
+        ->assertOk()
+        ->assertSee('title="'.$user->name.'"', false)
+        ->assertSee('title="'.$user->email.'"', false);
+});
+
 it('still lets a warned user log in', function () {
     $user = User::factory()->create();
     $user->update(['ban_level' => 'warning', 'banned_at' => now()]);

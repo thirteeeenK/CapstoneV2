@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\AdminAuth\AdminAuth;
 use App\Http\Controllers\AdminAuth\AdminNewPasswordController;
 use App\Http\Controllers\AdminAuth\AdminPasswordResetLinkController;
@@ -24,9 +25,7 @@ Route::prefix('admin')->group(function () {
     });
 
     Route::middleware('auth:admin')->group(function () {
-        Route::get('/dashboard', function () {
-            return view('admin.dashboard');
-        })->name('admin.dashboard');
+        Route::get('/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
 
         Route::post('/logout', [AdminAuth::class, 'destroy'])->name('admin.logout');
     });

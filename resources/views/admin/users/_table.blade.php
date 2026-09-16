@@ -26,21 +26,31 @@
                                 {{ $users->firstItem() + $index }}
                             </td>
 
-                            <td class="px-3 py-3 font-semibold text-slate-900">
+                            <td class="px-3 py-3 font-semibold text-slate-900 group relative cursor-default">
                                 <div class="flex items-center gap-2.5">
                                     <div class="w-8 h-8 rounded-full bg-ocean-50 text-ocean-700 font-bold flex items-center justify-center text-xs shrink-0 border border-ocean-200">
                                         {{ strtoupper(substr($u->name, 0, 2)) }}
                                     </div>
-                                    <div>
+                                    <div class="min-w-0">
                                         <div class="font-semibold text-slate-900 truncate max-w-[150px]">{{ $u->name }}</div>
                                         <div class="text-[11px] text-slate-500 font-normal truncate max-w-[150px]">{{ $u->email }}</div>
                                     </div>
                                 </div>
+                                {{-- Hover Tooltip --}}
+                                <div class="pointer-events-none absolute left-12 top-1/2 -translate-y-1/2 z-30 hidden group-hover:flex flex-col bg-slate-900 text-white text-[11px] font-normal rounded-lg px-2.5 py-1.5 shadow-xl border border-slate-700 whitespace-nowrap">
+                                    <span class="font-semibold text-white">{{ $u->name }}</span>
+                                    <span class="text-slate-300 text-[10px]">{{ $u->email }}</span>
+                                </div>
                             </td>
 
-                            <td class="px-3 py-3 text-[11px] text-slate-600">
+                            <td class="px-3 py-3 text-[11px] text-slate-600 group relative cursor-default">
                                 <div><strong class="text-slate-700">Phone:</strong> {{ $u->phone_number ?? 'N/A' }}</div>
-                                <div class="text-slate-500 truncate max-w-[160px]" title="{{ $u->address }}">{{ $u->address ?? 'No address set' }}</div>
+                                <div class="text-slate-500 truncate max-w-[160px]">{{ $u->address ?? 'No address set' }}</div>
+                                {{-- Hover Tooltip --}}
+                                <div class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 z-30 hidden group-hover:flex flex-col max-w-xs bg-slate-900 text-white text-[11px] font-normal rounded-lg px-2.5 py-1.5 shadow-xl border border-slate-700">
+                                    <span class="text-slate-300"><strong class="text-white">Phone:</strong> {{ $u->phone_number ?? 'N/A' }}</span>
+                                    <span class="text-slate-200 mt-0.5"><strong class="text-white">Address:</strong> {{ $u->address ?? 'No address set' }}</span>
+                                </div>
                             </td>
 
                             <td class="px-3 py-3 text-[11px] text-slate-500 whitespace-nowrap">

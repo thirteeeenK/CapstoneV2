@@ -18,7 +18,6 @@
         $navGroups = [
             'Overview' => [
                 ['route' => 'admin.dashboard', 'icon' => 'dashboard', 'label' => 'Dashboard', 'href' => route('admin.dashboard')],
-                ['route' => 'admin.insights.*', 'icon' => 'psychology', 'label' => 'AI Insights', 'href' => '#'],
                 ['route' => 'admin.reports.*', 'icon' => 'analytics', 'label' => 'Generate Reports', 'href' => route('admin.reports.index')],
             ],
             'Operations' => [
