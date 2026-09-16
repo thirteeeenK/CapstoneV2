@@ -312,11 +312,12 @@
                                         </div>
 
                                         <div class="p-4 pt-0">
-                                            <a href="{{ route('activities.index') }}"
-                                                class="w-full py-2 px-3 rounded-xl bg-slate-50 hover:bg-emerald-600 text-slate-700 hover:text-white font-bold text-[11px] transition-all duration-300 flex items-center justify-between border border-slate-200 hover:border-emerald-600">
+                                            <button type="button"
+                                                @click="$store.preview.openActivityById({{ $act->id }})"
+                                                class="w-full py-2 px-3 rounded-xl bg-slate-50 hover:bg-emerald-600 text-slate-700 hover:text-white font-bold text-[11px] transition-all duration-300 flex items-center justify-between border border-slate-200 hover:border-emerald-600 cursor-pointer">
                                                 <span>View Experience</span>
                                                 <span class="material-symbols-outlined text-[15px]">arrow_forward</span>
-                                            </a>
+                                            </button>
                                         </div>
                                     </div>
                                 @endforeach
@@ -471,11 +472,12 @@
                                         </div>
 
                                         <div class="p-4 pt-0">
-                                            <a href="{{ route('activities.index') }}"
-                                                class="w-full py-2 px-3 rounded-xl bg-slate-50 hover:bg-emerald-600 text-slate-700 hover:text-white font-bold text-[11px] transition-all duration-300 flex items-center justify-between border border-slate-200 hover:border-emerald-600">
+                                            <button type="button"
+                                                @click="$store.preview.openActivityById({{ $act->id }})"
+                                                class="w-full py-2 px-3 rounded-xl bg-slate-50 hover:bg-emerald-600 text-slate-700 hover:text-white font-bold text-[11px] transition-all duration-300 flex items-center justify-between border border-slate-200 hover:border-emerald-600 cursor-pointer">
                                                 <span>View Experience</span>
                                                 <span class="material-symbols-outlined text-[15px]">arrow_forward</span>
-                                            </a>
+                                            </button>
                                         </div>
                                     </div>
                                 @endforeach

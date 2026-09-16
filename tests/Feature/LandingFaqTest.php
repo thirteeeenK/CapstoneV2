@@ -51,3 +51,22 @@ it('does not render the FAQ section when there are no active FAQs', function () 
         ->assertOk()
         ->assertDontSee('Frequently Asked Questions', false);
 });
+
+it('renders markdown bold and lists in FAQ answers while escaping HTML', function () {
+    Faq::create([
+        'question' => 'Markdown FAQ test?',
+        'answer' => "Yes — **Passenger Pricing Rules** apply:\n\n- **Student** — ₱50 off\n- Regular — none\n\n<script>alert(1)</script>",
+        'keywords' => 'markdown',
+        'category' => 'Pricing & Discounts',
+        'sort_order' => 30,
+        'is_active' => true,
+    ]);
+
+    $content = $this->get(route('landing'))->assertOk()->getContent();
+
+    expect($content)->toContain('<strong>Passenger Pricing Rules</strong>')
+        ->toContain('<strong>Student</strong>')
+        ->toContain('<ul')
+        ->not->toContain('**Student**')
+        ->toContain('&lt;script&gt;');
+});

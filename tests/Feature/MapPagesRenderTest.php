@@ -49,3 +49,15 @@ test('dashboard renders map preview wrapper', function () {
     expect($res->getContent())->toContain('"cover_image"');
     expect($res->getContent())->toContain($dest->name);
 });
+
+test('dashboard activity cards open per-activity preview modal', function () {
+    $user = onboardedUser();
+    $dest = DestinationModel::factory()->create(['latitude' => '12', 'longitude' => '122']);
+    $act = ActivityModel::factory()->create(['destination_id' => $dest->id, 'is_shown' => true]);
+
+    $res = $this->actingAs($user)->get(route('dashboard'));
+    $res->assertOk();
+    $content = $res->getContent();
+    expect($content)->toContain('View Experience');
+    expect($content)->toContain('openActivityById('.$act->id.')');
+});

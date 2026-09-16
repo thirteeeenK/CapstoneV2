@@ -58,9 +58,9 @@
                                     x-cloak
                                     class="px-5 sm:px-6 pb-5"
                                 >
-                                    <p class="text-xs md:text-sm leading-relaxed text-slate-600 bg-slate-50 border border-slate-100 rounded-xl px-4 py-3">
-                                        {{ $faq->answer }}
-                                    </p>
+                                    <div class="text-xs md:text-sm leading-relaxed text-slate-600 bg-slate-50 border border-slate-100 rounded-xl px-4 py-3">
+                                        {!! $faq->rendered_answer !!}
+                                    </div>
                                 </div>
                             </div>
                         @endforeach
