@@ -27,7 +27,9 @@ test('new users can register with consent', function () {
         'ai_disclosure_version' => config('legal.documents.ai_disclosure.version'),
     ]);
 
-    $response->assertRedirect(route('login', absolute: false));
+    $response->assertRedirect(route('onboarding.index', absolute: false));
+    $response->assertSessionHas('success');
+    $this->assertAuthenticated();
 });
 
 test('registration fails without all consent checkboxes', function () {

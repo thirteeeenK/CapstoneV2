@@ -71,9 +71,10 @@
             @endif
 
             {{-- AI Recommendations & Default Listings Tabs Section (First Priority) --}}
-            <div id="recommendations">
+            <div id="recommendations" data-rec-token="{{ $recSessionToken ?? '' }}" data-rec-click-url="{{ route('recommendations.click') }}">
+                {{-- rec-session-token feeds Hit Rate@5 click tracking (RecommendationHit impression + beacon) --}}
                 <x-frontend.recommendations :is-personalized="$isPersonalized" :ai-recommendations="$aiRecommendations"
-                    :default-recommendations="$defaultRecommendations" :preferred-dest-id="$preferredDestId ?? null" />
+                    :default-recommendations="$defaultRecommendations" :preferred-dest-id="$preferredDestId ?? null" :rec-session-token="$recSessionToken ?? null" />
             </div>
 
             {{-- DSS Destination Overview Map Section (Below Recommendations) --}}
@@ -236,4 +237,40 @@
 
         </div>
     </div>
+
+    {{-- Hit Rate@5 catch-all: same-origin link exits outside the rec cards (sidebar,
+        burger, packages, nav) beacon once per session as entity_type=nav (MISS).
+        Rec cards carry data-rec and beacon themselves, so they are skipped here.
+        Refresh/close sends nothing (no beforeunload) and stays excluded. --}}
+    <script>
+        (function () {
+            var box = document.getElementById('recommendations');
+            if (!box || !box.dataset.recToken) return;
+            var sent = false;
+            document.addEventListener('click', function (e) {
+                if (sent) return;
+                var a = e.target.closest('a[href]');
+                if (!a || a.closest('[data-rec]')) return;
+                var href = a.getAttribute('href') || '';
+                if (href === '' || href.charAt(0) === '#' || href.indexOf('javascript:') === 0) return;
+                var url;
+                try {
+                    url = new URL(href, window.location.href);
+                } catch (err) {
+                    return;
+                }
+                if (url.origin !== window.location.origin) return;
+                var aiVisible = Array.from(box.querySelectorAll('span')).some(function (s) {
+                    return s.textContent.trim() === 'Ranked by AI Match' && s.offsetParent !== null;
+                });
+                sent = true;
+                fetch(box.dataset.recClickUrl, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.content ?? ''},
+                    body: JSON.stringify({session_token: box.dataset.recToken, mode: (aiVisible ? 'ai' : 'default'), entity_type: 'nav'}),
+                    keepalive: true,
+                }).catch(function () {});
+            });
+        })();
+    </script>
 </x-frontend.layout>

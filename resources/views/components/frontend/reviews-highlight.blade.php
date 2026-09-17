@@ -54,7 +54,7 @@
                     </div>
                     <div class="flex items-center gap-2">
                         <span class="material-symbols-outlined text-[18px] text-ocean-600">reviews</span>
-                        <span class="text-xs font-bold text-slate-700">{{ $summary->total_reviews }} guest reviews</span>
+                        <span class="text-xs font-bold text-slate-700">{{ $summary->total_reviews }} Reviews</span>
                     </div>
                     <div class="flex items-center gap-1.5">
                         <span
@@ -102,9 +102,11 @@
                             </div>
                             <div class="min-w-0">
                                 <h5 class="font-headline font-bold text-slate-900 text-xs md:text-sm truncate">
-                                    {{ $review->reviewer_alias }}</h5>
+                                    {{ $review->reviewer_alias }}
+                                </h5>
                                 <p class="text-slate-400 text-[10px] uppercase tracking-wider font-semibold truncate">
-                                    {{ $entityLabel($review) }}</p>
+                                    {{ $entityLabel($review) }}
+                                </p>
                                 <p class="text-slate-400 text-[10px] font-semibold mt-0.5">
                                     {{ $review->created_at?->format('M j, Y') }}
                                 </p>

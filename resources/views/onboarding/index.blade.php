@@ -90,6 +90,18 @@
 
         <div class="max-w-3xl w-full mx-auto px-4 sm:px-6 relative z-10 space-y-4">
 
+            {{-- Registration success flash (new accounts land here via CheckUserOnboarding) --}}
+            @if(session('success'))
+                <div x-data="{ show: true }" x-show="show" x-transition.opacity.duration.300ms
+                    class="flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700 shadow-xs">
+                    <span class="material-symbols-outlined text-emerald-500 shrink-0" style="font-size:20px">check_circle</span>
+                    <span class="flex-1 leading-relaxed">{{ session('success') }}</span>
+                    <button type="button" @click="show = false" class="p-1 rounded-full hover:bg-emerald-100 text-emerald-600 transition-colors shrink-0" aria-label="Dismiss">
+                        <span class="material-symbols-outlined" style="font-size:18px">close</span>
+                    </button>
+                </div>
+            @endif
+
             {{-- Top Branding Header --}}
             <div class="flex items-center justify-end px-2">
                 <a href="{{ route('landing') }}" class="flex items-center gap-2">

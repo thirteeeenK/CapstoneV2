@@ -14,12 +14,15 @@ class Recommendations extends Component
 
     public $preferredDestId;
 
-    public function __construct($isPersonalized = false, $aiRecommendations = [], $defaultRecommendations = [], $preferredDestId = null)
+    public $recSessionToken;
+
+    public function __construct($isPersonalized = false, $aiRecommendations = [], $defaultRecommendations = [], $preferredDestId = null, $recSessionToken = null)
     {
         $this->isPersonalized = $isPersonalized;
         $this->aiRecommendations = $aiRecommendations;
         $this->defaultRecommendations = $defaultRecommendations;
         $this->preferredDestId = $preferredDestId;
+        $this->recSessionToken = $recSessionToken;
     }
 
     public function render()

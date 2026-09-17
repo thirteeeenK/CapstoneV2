@@ -6,11 +6,14 @@ use App\Models\ActivityModel;
 use App\Models\DestinationModel;
 use App\Models\HotelModel;
 use App\Models\Package;
+use App\Models\RecommendationHit;
 use App\Services\GeminiService;
 use App\Services\MapService;
 use App\Services\Recommendations\RecommendationExplainer;
 use App\Services\WeatherService;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class RecommendationController extends Controller
 {
@@ -141,7 +144,73 @@ class RecommendationController extends Controller
             }
         }
 
-        return view('dashboard', compact('user', 'isPersonalized', 'aiRecommendations', 'defaultRecommendations', 'mapMarkers', 'weatherCards', 'preferredDestId'));
+        // Hit-rate tracking: one session per user, locked on their first click.
+        // Until then the impression row (and its token) is reused across reloads so
+        // the real first click still lands. After the first click, detection stops.
+        // ponytail: impression+clicks in one table, split into recommendation_sessions if rival-index scans ever matter.
+        $recSessionToken = null;
+        if ($user && $isPersonalized && $aiRecommendations !== []) {
+            $hasClicked = RecommendationHit::where('user_id', $user->id)
+                ->whereIn('entity_type', [RecommendationHit::TYPE_HOTEL, RecommendationHit::TYPE_ACTIVITY, RecommendationHit::TYPE_NAV])
+                ->exists();
+
+            if (! $hasClicked) {
+                $impression = RecommendationHit::where('user_id', $user->id)
+                    ->where('entity_type', RecommendationHit::TYPE_IMPRESSION)
+                    ->first();
+
+                if ($impression) {
+                    $recSessionToken = $impression->session_token;
+                } else {
+                    $recSessionToken = (string) Str::uuid();
+                    RecommendationHit::create([
+                        'user_id' => $user->id,
+                        'session_token' => $recSessionToken,
+                        'mode' => RecommendationHit::MODE_AI,
+                        'entity_type' => RecommendationHit::TYPE_IMPRESSION,
+                    ]);
+                }
+            }
+        }
+
+        return view('dashboard', compact('user', 'isPersonalized', 'aiRecommendations', 'defaultRecommendations', 'mapMarkers', 'weatherCards', 'preferredDestId', 'recSessionToken'));
+    }
+
+    /**
+     * Fire-and-forget beacon: a recommendation card click, or a nav-exit
+     * (same-origin link/button outside the rec cards), within a tracked session.
+     */
+    public function click(Request $request)
+    {
+        // Only the user's first click is ever recorded.
+        $alreadyTracked = RecommendationHit::where('user_id', $request->user()->id)
+            ->whereIn('entity_type', [RecommendationHit::TYPE_HOTEL, RecommendationHit::TYPE_ACTIVITY, RecommendationHit::TYPE_NAV])
+            ->exists();
+
+        if ($alreadyTracked) {
+            return response()->noContent();
+        }
+
+        $data = $request->validate([
+            'session_token' => ['required', 'string', 'max:64'],
+            'mode' => ['required', 'in:ai,default'],
+            'entity_type' => ['required', 'in:hotel,activity,nav'],
+            'entity_id' => ['nullable', 'integer', 'min:1'],
+            'rank' => ['nullable', 'integer', 'min:1', 'max:5'],
+        ]);
+
+        // Ignore beacons for unknown sessions (stale page, double render).
+        $impression = RecommendationHit::where('session_token', $data['session_token'])
+            ->where('entity_type', RecommendationHit::TYPE_IMPRESSION)
+            ->first();
+
+        if (! $impression || (int) $impression->user_id !== (int) $request->user()->id) {
+            return response()->noContent();
+        }
+
+        RecommendationHit::create($data + ['user_id' => $request->user()->id]);
+
+        return response()->noContent();
     }
 
     /**

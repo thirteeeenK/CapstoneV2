@@ -65,11 +65,11 @@ class RegisteredUserController extends Controller
 
         event(new Registered($user));
 
-        // Auth::login($user);
+        Auth::login($user);
 
-        // return redirect(route('dashboard', absolute: false));
+        return redirect()->route('onboarding.index')->with('success', 'Account created successfully! Welcome to SunnyTrips, '.$user->name.' — let\'s personalize your escape.');
 
-        return redirect(route('login', absolute: false))->with('success', 'Account created Successfully. Please login to Continue.');
+        // return redirect(route('login', absolute: false))->with('success', 'Account created Successfully. Please login to Continue.');
 
         // return redirect(route('dashboard', absolute: false));
         // instead of redirection to the dashboard after creating account, force the user to login their newly created credentials

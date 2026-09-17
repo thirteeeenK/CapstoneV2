@@ -1,4 +1,5 @@
 @props(['isPersonalized' => false, 'aiRecommendations' => [], 'defaultRecommendations' => [], 'preferredDestId' => null])
+{{-- $recSessionToken comes from the class component public prop (constructor), not @props — @props default would overwrite it with null. --}}
 
 @php
     $hasAi = !empty($aiRecommendations);
@@ -23,7 +24,17 @@
     mode: '{{ $defaultMode }}',
     activeAiDestId: {{ $defaultAiId ? (int) $defaultAiId : 'null' }},
     activeDefaultDestId: {{ $defaultDefaultId ? (int) $defaultDefaultId : 'null' }},
-    activePackageDestId: {{ $defaultPackageId ? (int) $defaultPackageId : 'null' }}
+    activePackageDestId: {{ $defaultPackageId ? (int) $defaultPackageId : 'null' }},
+    recToken: '{{ $recSessionToken ?? '' }}',
+    recClick(entityType, entityId, rank) {
+        if (!this.recToken) return;
+        fetch('{{ route('recommendations.click') }}', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]')?.content ?? ''},
+            body: JSON.stringify({session_token: this.recToken, mode: (this.mode === 'ai' ? 'ai' : 'default'), entity_type: entityType, entity_id: entityId, rank: rank}),
+            keepalive: true
+        }).catch(() => {});
+    }
 }"
     class="bg-white text-slate-900 rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-8 relative overflow-hidden">
 
@@ -205,7 +216,8 @@
                                             'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80'
                                         );
                                     @endphp
-                                    <a href="{{ route('hotels.show', $hotel->id) }}"
+                                    <a href="{{ route('hotels.show', $hotel->id) }}" data-rec
+                                        @click="recClick('hotel', {{ $hotel->id }}, {{ $loop->index + 1 }})"
                                         class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs hover:shadow-md hover:border-sky-300 transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between group">
                                         <div>
                                             <div class="relative h-40 overflow-hidden bg-slate-100">
@@ -312,8 +324,8 @@
                                         </div>
 
                                         <div class="p-4 pt-0">
-                                            <button type="button"
-                                                @click="$store.preview.openActivityById({{ $act->id }})"
+                                            <button type="button" data-rec
+                                                @click="$store.preview.openActivityById({{ $act->id }}); recClick('activity', {{ $act->id }}, {{ $loop->index + 1 }})"
                                                 class="w-full py-2 px-3 rounded-xl bg-slate-50 hover:bg-emerald-600 text-slate-700 hover:text-white font-bold text-[11px] transition-all duration-300 flex items-center justify-between border border-slate-200 hover:border-emerald-600 cursor-pointer">
                                                 <span>View Experience</span>
                                                 <span class="material-symbols-outlined text-[15px]">arrow_forward</span>
@@ -377,7 +389,8 @@
                                             'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80'
                                         );
                                     @endphp
-                                    <a href="{{ route('hotels.show', $hotel->id) }}"
+                                    <a href="{{ route('hotels.show', $hotel->id) }}" data-rec
+                                        @click="recClick('hotel', {{ $hotel->id }}, {{ $loop->index + 1 }})"
                                         class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs hover:shadow-md hover:border-sky-300 transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between group">
                                         <div>
                                             <div class="relative h-40 overflow-hidden bg-slate-100">
@@ -472,8 +485,8 @@
                                         </div>
 
                                         <div class="p-4 pt-0">
-                                            <button type="button"
-                                                @click="$store.preview.openActivityById({{ $act->id }})"
+                                            <button type="button" data-rec
+                                                @click="$store.preview.openActivityById({{ $act->id }}); recClick('activity', {{ $act->id }}, {{ $loop->index + 1 }})"
                                                 class="w-full py-2 px-3 rounded-xl bg-slate-50 hover:bg-emerald-600 text-slate-700 hover:text-white font-bold text-[11px] transition-all duration-300 flex items-center justify-between border border-slate-200 hover:border-emerald-600 cursor-pointer">
                                                 <span>View Experience</span>
                                                 <span class="material-symbols-outlined text-[15px]">arrow_forward</span>

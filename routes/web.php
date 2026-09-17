@@ -23,6 +23,10 @@ Route::get('/dashboard', [RecommendationController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 
+Route::post('/recommendations/click', [RecommendationController::class, 'click'])
+    ->middleware(['auth', 'verified'])
+    ->name('recommendations.click');
+
 use App\Http\Controllers\OnboardingController;
 
 Route::middleware(['auth', 'throttle:users'])->group(function () {
