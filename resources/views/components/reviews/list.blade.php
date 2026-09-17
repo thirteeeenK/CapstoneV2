@@ -31,9 +31,8 @@
                         </div>
                         <div class="flex items-center gap-2">
                             <p class="text-xs sm:text-sm font-bold text-slate-900 font-headline leading-tight">{{ $review->reviewer_alias }}</p>
-                            <span class="text-[10px] text-slate-400 flex items-center gap-0.5 font-medium">
-                                <span class="material-symbols-outlined text-[11px] text-emerald-600">verified</span>
-                                Verified · {{ $review->created_at?->format('M j, Y') }}
+                            <span class="text-[10px] text-slate-400 font-medium">
+                                {{ $review->created_at?->format('M j, Y') }}
                             </span>
                         </div>
                     </div>

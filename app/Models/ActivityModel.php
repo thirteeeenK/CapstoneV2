@@ -32,6 +32,7 @@ class ActivityModel extends Model
         'is_shown',
         'latitude',
         'longitude',
+        'specific_address',
     ];
 
     protected $casts = [

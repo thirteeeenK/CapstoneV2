@@ -2182,7 +2182,7 @@ class ChatbotService
                 return [
                     'reply' => $place['type'] === 'activity'
                         ? $this->activityLocationReply($place, $coords)
-                        : "{$place['name']} is located at latitude {$coords['lat']}, longitude {$coords['lng']}.",
+                        : $this->hotelLocationReply($place, $coords),
                     'map' => [
                         'name' => $place['name'],
                         'lat' => $coords['lat'],
@@ -2253,6 +2253,10 @@ class ChatbotService
         $activity = $place['model'] ?? null;
         $destination = $activity?->destination?->name;
 
+        if ($activity?->specific_address) {
+            return "{$place['name']} is located at {$activity->specific_address}.";
+        }
+
         if ($activity && $activity->latitude === null && $destination) {
             return "{$place['name']} is located in {$destination} (around {$coordsLabel}).";
         }
@@ -2260,6 +2264,24 @@ class ChatbotService
         return $destination
             ? "{$place['name']} is located at {$coordsLabel}, in {$destination}."
             : "{$place['name']} is located at {$coordsLabel}.";
+    }
+
+    /**
+     * Human reply for a hotel location query. Prefers the admin-typed
+     * specific address; falls back to raw coordinates.
+     *
+     * @param  array{name: string, type: string, model?: HotelModel}  $place
+     * @param  array{lat: float, lng: float}  $coords
+     */
+    protected function hotelLocationReply(array $place, array $coords): string
+    {
+        $hotel = $place['model'] ?? null;
+
+        if ($hotel?->specific_address) {
+            return "{$place['name']} is located at {$hotel->specific_address}.";
+        }
+
+        return "{$place['name']} is located at latitude {$coords['lat']}, longitude {$coords['lng']}.";
     }
 
     protected function handleWeatherQuery(string $query, array $constraints, ChatSession $session): array

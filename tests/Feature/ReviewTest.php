@@ -12,6 +12,8 @@ use App\Models\ReviewSummary;
 use App\Models\RoomType;
 use App\Models\User;
 use App\Services\GeminiService;
+use App\Services\ReviewService;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 
@@ -745,4 +747,94 @@ it('hides the review button when all items are reviewed', function () {
 
     $bookings = $response->json('bookings');
     expect($bookings)->toHaveCount(0);
+});
+
+it('includes hotel-alias reviews in the hotels feed tab', function () {
+    $hotel = $this->room->hotel;
+
+    Review::create([
+        'reviewer_name' => 'Hotel Guest',
+        'reviewable_type' => (new HotelModel)->getMorphClass(),
+        'reviewable_id' => $hotel->id,
+        'hotel_id' => $hotel->id,
+        'rating' => 5,
+        'comment' => 'Loved the beachfront and the breakfast buffet spread.',
+        'is_published' => true,
+    ]);
+
+    Review::create([
+        'reviewer_name' => 'Room Guest',
+        'reviewable_type' => (new RoomType)->getMorphClass(),
+        'reviewable_id' => $this->room->id,
+        'hotel_id' => $hotel->id,
+        'room_id' => $this->room->id,
+        'rating' => 4,
+        'comment' => 'Spacious room with a great view of the ocean.',
+        'is_published' => true,
+    ]);
+
+    $feed = app(ReviewService::class)->feed('hotels');
+
+    expect($feed)->toHaveCount(2)
+        ->and($feed->pluck('entity_type')->all())->toContain((new HotelModel)->getMorphClass());
+});
+
+it('paginates the full published feed across pages', function () {
+    $hotel = $this->room->hotel;
+
+    for ($i = 1; $i <= 15; $i++) {
+        Review::create([
+            'reviewer_name' => 'Paginated Guest '.$i,
+            'reviewable_type' => (new HotelModel)->getMorphClass(),
+            'reviewable_id' => $hotel->id,
+            'hotel_id' => $hotel->id,
+            'rating' => 5,
+            'comment' => 'Paginated guest review number '.$i.' with plenty of detail for the feed.',
+            'is_published' => true,
+        ]);
+    }
+
+    $page1 = app(ReviewService::class)->feedPaginated('all', null, 0, 'recent', null, 12);
+
+    expect($page1->total())->toBe(15)
+        ->and($page1->count())->toBe(12)
+        ->and($page1->hasMorePages())->toBeTrue();
+
+    Paginator::currentPageResolver(fn () => 2);
+
+    $page2 = app(ReviewService::class)->feedPaginated('all', null, 0, 'recent', null, 12);
+
+    expect($page2->count())->toBe(3);
+
+    Paginator::currentPageResolver(fn () => 1);
+});
+
+it('searches reviews by comment text and entity name', function () {
+    $hotel = $this->room->hotel;
+
+    Review::create([
+        'reviewer_name' => 'Search Guest',
+        'reviewable_type' => (new HotelModel)->getMorphClass(),
+        'reviewable_id' => $hotel->id,
+        'hotel_id' => $hotel->id,
+        'rating' => 5,
+        'comment' => 'Unforgettable kayak sunrise outing, highly recommended for adventurers.',
+        'is_published' => true,
+    ]);
+
+    $hit = app(ReviewService::class)->feedPaginated('all', null, 0, 'recent', 'kayak sunrise', 12);
+    $miss = app(ReviewService::class)->feedPaginated('all', null, 0, 'recent', 'zzz-no-such-review', 12);
+    $byHotel = app(ReviewService::class)->feedPaginated('all', null, 0, 'recent', $hotel->hotel_name, 12);
+
+    expect($hit->total())->toBe(1)
+        ->and($miss->total())->toBe(0)
+        ->and($byHotel->total())->toBeGreaterThanOrEqual(1);
+});
+
+it('does not label hub reviews as verified bookings', function () {
+    $this->get(route('reviews.index'))
+        ->assertOk()
+        ->assertDontSee('Verified Booking', false)
+        ->assertDontSee('Verified Guest Reviews', false)
+        ->assertSee('Guest Reviews', false);
 });

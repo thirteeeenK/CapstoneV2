@@ -249,6 +249,14 @@
                         </div>
                     </div>
 
+                    <!-- Specific Address -->
+                    <div class="space-y-1.5">
+                        <label class="block text-xs font-semibold text-slate-700">Specific Address</label>
+                        <input name="specific_address" type="text" placeholder="e.g., Station 2, White Beach, Boracay"
+                            value="{{ old('specific_address', $activity->specific_address) }}"
+                            class="w-full bg-slate-50 border border-slate-300 rounded-md p-3 text-xs text-slate-900 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all" />
+                    </div>
+
                     </div>
                 </section>
 

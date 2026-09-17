@@ -1468,3 +1468,47 @@ test('guest asking about booking status is told to log in', function () {
 
     Http::assertNothingSent();
 });
+
+test('activity location reply prefers the typed specific address', function () {
+    ActivityModel::factory()->create([
+        'activity_name' => 'Island Hopping',
+        'destination_id' => $this->destination->id,
+        'specific_address' => 'Station 2, White Beach',
+        'latitude' => 11.9595,
+        'longitude' => 121.929,
+    ]);
+
+    $response = $this->actingAs($this->user)->postJson('/chat', [
+        'message' => 'where is island hopping located',
+    ]);
+
+    $response->assertOk();
+    expect($response->json('reply'))->toContain('Station 2, White Beach');
+    expect($response->json('reply'))->not->toContain('latitude');
+});
+
+test('activity location reply falls back to coordinates without a typed address', function () {
+    ActivityModel::factory()->create([
+        'activity_name' => 'Island Hopping',
+        'destination_id' => $this->destination->id,
+        'latitude' => 11.9595,
+        'longitude' => 121.929,
+    ]);
+
+    $response = $this->actingAs($this->user)->postJson('/chat', [
+        'message' => 'where is island hopping located',
+    ]);
+
+    $response->assertOk();
+    expect($response->json('reply'))->toContain('latitude 11.9595');
+});
+
+test('hotel location reply prefers the typed specific address', function () {
+    $response = $this->actingAs($this->user)->postJson('/chat', [
+        'message' => 'where is test beach resort located',
+    ]);
+
+    $response->assertOk();
+    expect($response->json('reply'))->toContain('Station 1');
+    expect($response->json('reply'))->not->toContain('latitude');
+});

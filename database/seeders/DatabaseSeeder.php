@@ -31,9 +31,13 @@ class DatabaseSeeder extends Seeder
             AdminSeeder::class,
             OnboardingOptionSeeder::class,
             HotelSeeder::class,
+            // Runs BEFORE the room seeders on purpose: it only backfills
+            // occupancy/fee gaps on pre-existing rows. The room seeders below
+            // write exact live values (incl. explicit 0.00 fees and null
+            // max_occupancy), so they must have the last word.
+            RoomExtraPersonFeeSeeder::class,
             RoomSeeder::class,
             ElNidoRoomSeeder::class,
-            RoomExtraPersonFeeSeeder::class,
             ActivitySeeder::class,
             ElNidoActivitySeeder::class,
             ActivityCoordinatesSeeder::class,
@@ -42,6 +46,7 @@ class DatabaseSeeder extends Seeder
             PackageSeeder::class,
             PassengerCategoryRuleSeeder::class,
             ReviewSeeder::class,
+            HotelReviewSeeder::class,
             FaqSeeder::class,
         ]);
     }

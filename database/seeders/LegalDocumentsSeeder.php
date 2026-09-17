@@ -62,7 +62,9 @@ class LegalDocumentsSeeder extends Seeder
                         'body' => 'We may update these Terms from time to time. If you continue to use SunnyTrips after a material change, you will be deemed to have accepted the revised Terms. For major changes, we may require you to re-confirm your consent.',
                     ],
                 ],
+                'updated_by' => 'system',
             ],
+
             'privacy' => [
                 'title' => 'Privacy Policy',
                 'version' => '1.0',
@@ -96,13 +98,15 @@ class LegalDocumentsSeeder extends Seeder
                         'body' => 'We may update this Privacy Policy from time to time. If we make material changes, we will notify you and may ask you to renew your consent.',
                     ],
                 ],
+                'updated_by' => 'system',
             ],
+
             'ai_disclosure' => [
                 'title' => 'AI Usage Disclosure',
                 'version' => '1.0',
                 'content' => [
                     [
-                        'heading' => 'AI-Powered Features',
+                        'heading' => 'AI-Assisted Features',
                         'body' => 'SunnyTrips uses artificial intelligence to help you plan trips. The AI may recommend destinations, accommodations, activities, itineraries, and respond to your travel questions.',
                     ],
                     [
@@ -126,6 +130,7 @@ class LegalDocumentsSeeder extends Seeder
                         'body' => 'By using SunnyTrips, you acknowledge that our recommendations are AI-assisted and that your preference data may be processed to improve your experience.',
                     ],
                 ],
+                'updated_by' => 'Administrator',
             ],
         ];
 
@@ -136,7 +141,7 @@ class LegalDocumentsSeeder extends Seeder
                     'title' => $data['title'],
                     'content' => $data['content'],
                     'version' => $data['version'],
-                    'updated_by' => 'system',
+                    'updated_by' => $data['updated_by'] ?? 'system',
                 ]
             );
         }

@@ -7,6 +7,7 @@
         showAll: false,
         previewActivity: null,
         activePreviewImgIdx: 0,
+        tabCounts: {'all': {{ $activities->count() }}@foreach($destinations as $dest), '{{ $dest->id }}': {{ $activities->where('destination_id', $dest->id)->count() }}@endforeach},
         matchesActivity(destId, level, searchableText) {
             if (this.activeTab !== 'all' && String(this.activeTab) !== String(destId)) {
                 return false;
@@ -48,7 +49,7 @@
             @if($destinations->isNotEmpty())
                 <div
                     class="flex flex-wrap items-center justify-center md:justify-start gap-1.5 sm:gap-2 max-w-full p-1.5 bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200/80 shadow-xs">
-                    <button @click="activeTab = 'all'"
+                    <button @click="activeTab = 'all'; showAll = false"
                         :class="activeTab === 'all' ? 'bg-gradient-to-r from-sky-600 to-sky-700 text-white font-bold shadow-md shadow-sky-500/25' : 'text-slate-600 hover:bg-slate-100 font-medium'"
                         class="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs transition-all duration-200 flex items-center gap-1.5 cursor-pointer">
                         <span class="material-symbols-outlined text-[15px]">explore</span>
@@ -60,7 +61,7 @@
                     </button>
 
                     @foreach($destinations as $dest)
-                        <button @click="activeTab = '{{ $dest->id }}'"
+                        <button @click="activeTab = '{{ $dest->id }}'; showAll = false"
                             :class="activeTab === '{{ $dest->id }}' ? 'bg-gradient-to-r from-sky-600 to-sky-700 text-white font-bold shadow-md shadow-sky-500/25' : 'text-slate-600 hover:bg-slate-100 font-medium'"
                             class="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs transition-all duration-200 flex items-center gap-1.5 cursor-pointer">
                             <span class="material-symbols-outlined text-[15px]">location_on</span>
@@ -110,7 +111,7 @@
                 @endforeach
 
                 <button x-show="searchQuery || levelFilter !== 'all' || activeTab !== 'all'"
-                    @click="searchQuery = ''; levelFilter = 'all'; activeTab = 'all';"
+                    @click="searchQuery = ''; levelFilter = 'all'; activeTab = 'all'; showAll = false;"
                     class="text-[11px] font-bold text-rose-600 hover:text-rose-700 ml-2 flex items-center gap-1 cursor-pointer shrink-0">
                     <span class="material-symbols-outlined text-[14px]">restart_alt</span>
                     <span>Reset</span>
@@ -127,6 +128,7 @@
         @else
             @php
                 $actCount = $activities->count();
+                $destPos = [];
                 $actGridClass = match (true) {
                     $actCount === 1 => 'grid-cols-1 max-w-2xl mx-auto',
                     $actCount === 2 => 'grid-cols-1 md:grid-cols-2',
@@ -137,6 +139,8 @@
             <div class="grid {{ $actGridClass }} gap-8">
                 @foreach($activities as $index => $act)
                     @php
+                        $destPos[$act->destination_id] = ($destPos[$act->destination_id] ?? 0) + 1;
+                        $posInDest = $destPos[$act->destination_id] - 1;
                         $imagesRaw = is_array($act->images) ? $act->images : (is_string($act->images) ? (json_decode($act->images, true) ?: []) : []);
                         $actImg = App\Concerns\ResolvesImages::resolveActivityImage($imagesRaw[0] ?? null, $act->activity_name, $act->category);
                         $resolvedImages = [$actImg];
@@ -186,7 +190,7 @@
                             'vibe_tags' => array_values($vibeTagsRaw),
                         ];
                     @endphp
-                    <div x-show="matchesActivity('{{ $act->destination_id }}', '{{ addslashes($act->activity_level ?? '') }}', {{ json_encode($searchablePayload) }}) && (showAll || {{ $loop->index }} < 6)"
+                    <div x-show="matchesActivity('{{ $act->destination_id }}', '{{ addslashes($act->activity_level ?? '') }}', {{ json_encode($searchablePayload) }}) && (showAll || {{ $loop->index }} < 6 || (activeTab === '{{ $act->destination_id }}' && {{ $posInDest }} < 6))"
                         x-transition:enter="transition ease-out duration-300"
                         x-transition:enter-start="opacity-0 transform scale-95"
                         x-transition:enter-end="opacity-100 transform scale-100"
@@ -297,11 +301,17 @@
             </div>
 
             {{-- Show More / Show Less Button --}}
-            @if($activities->count() > 6)
-                <div x-show="activeTab === 'all'" class="flex justify-center pt-8 reveal-on-scroll">
+            @php
+                $maxDestCount = 0;
+                foreach ($destinations as $dest) {
+                    $maxDestCount = max($maxDestCount, $activities->where('destination_id', $dest->id)->count());
+                }
+            @endphp
+            @if($activities->count() > 6 || $maxDestCount > 6)
+                <div x-show="(tabCounts[activeTab] ?? 0) > 6" class="flex justify-center pt-8 reveal-on-scroll">
                     <button type="button" @click="showAll = !showAll"
                         class="px-8 py-3.5 rounded-full bg-white hover:bg-slate-900 text-slate-800 hover:text-white font-bold text-xs border border-slate-200/90 shadow-md hover:shadow-xl transition-all duration-300 flex items-center gap-2 group cursor-pointer">
-                        <span x-text="showAll ? 'Show Less Experiences' : 'Show All Experiences ({{ $activities->count() }})'"></span>
+                        <span x-text="showAll ? 'Show Less Experiences' : 'Show All Experiences (' + ((tabCounts[activeTab] ?? 0)) + ')'"></span>
                         <span class="material-symbols-outlined text-[18px] transition-transform duration-300"
                             :class="showAll ? 'rotate-180' : 'group-hover:translate-y-0.5'">
                             expand_more

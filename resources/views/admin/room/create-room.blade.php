@@ -118,12 +118,12 @@
                             <div class="space-y-1.5">
                                 <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">Max Capacity (Max Pax)</label>
                                 <input class="w-full bg-white border border-slate-300 hover:border-slate-400 rounded-md py-2 px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
-                                       name="max_occupancy" name="occupancy" type="number" min="1" value="{{ old('max_occupancy', old('occupancy', 3)) }}" placeholder="e.g., 3" />
+                                       name="max_occupancy" id="maxOccupancyInput" type="number" min="1" value="{{ old('max_occupancy', old('occupancy', 3)) }}" placeholder="e.g., 3" />
                                 <p class="text-[11px] text-slate-400">Maximum allowed guests in this room.</p>
                             </div>
                         </div>
 
-                        <input type="hidden" name="occupancy" :value="document.querySelector('[name=max_occupancy]') ? document.querySelector('[name=max_occupancy]').value : 3">
+                        <input type="hidden" name="occupancy" id="occupancyHidden" value="{{ old('occupancy', old('max_occupancy', 3)) }}">
 
                         <div class="space-y-1.5">
                             <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">Bed
@@ -263,6 +263,25 @@
             </div>
         </form>
     </div>
+
+    {{-- Occupancy Sync Script --}}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const maxInput = document.getElementById('maxOccupancyInput');
+            const hiddenInput = document.getElementById('occupancyHidden');
+            if (!maxInput || !hiddenInput) {
+                return;
+            }
+            const syncOccupancy = () => {
+                if (maxInput.value !== '') {
+                    hiddenInput.value = maxInput.value;
+                }
+            };
+            maxInput.addEventListener('input', syncOccupancy);
+            maxInput.closest('form')?.addEventListener('submit', syncOccupancy);
+            syncOccupancy();
+        });
+    </script>
 
     {{-- Amenity Add Script --}}
     <script>

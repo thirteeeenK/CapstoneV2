@@ -53,6 +53,9 @@ beforeEach(function () {
     $this->activity = ActivityModel::factory()->create([
         'destination_id' => $this->destination->id,
         'activity_name' => 'ATV Adventure Ride',
+        // Pinned above every test price ceiling: the factory default is a
+        // random ₱300–2000, which flaked budget assertions whenever it drew low.
+        'rate' => '₱850/person',
         'embedding' => unitVectorString(0),
     ]);
 });

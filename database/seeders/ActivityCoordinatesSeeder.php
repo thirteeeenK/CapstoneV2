@@ -20,17 +20,13 @@ class ActivityCoordinatesSeeder extends Seeder
                 // Island hopping meet-up at White Beach Station 2
                 'Joiners Island Hopping' => [11.9658, 121.9260],
 
-                // Land tour variants depart from different White Beach stations
-                '6–7 Destinations (E-Trike)' => [11.9658, 121.9260],
-                '6–7 Destinations (FB Van/Multicab)' => [11.9715, 121.9243],
+                // Land tour variant departs from White Beach
                 '6–7 Destinations (Aircon Van)' => [11.9595, 121.9290],
 
                 // Water sports run off Bulabog Beach / White Beach
                 'Parasailing' => [11.9702, 121.9293],
-                'Parasailing (Solo)' => [11.9725, 121.9290],
                 'Banana Boat' => [11.9595, 121.9290],
                 'UFO Ride' => [11.9680, 121.9248],
-                'Jet Ski (15 mins)' => [11.9700, 121.9295],
                 'Jet Ski (30 mins)' => [11.9685, 121.9298],
 
                 // Boat parties dock near Station 3
@@ -41,21 +37,15 @@ class ActivityCoordinatesSeeder extends Seeder
                 'Helmet Diving' => [11.9720, 121.9245],
                 'Scuba Diving' => [11.9700, 121.9260],
 
-                // ATV / zipline combos on mainland Malay (Aklan)
-                'ATV + Zipline Package (Shingley Company)' => [11.9270, 121.9450],
-                'ATV + Zipline Package (Mega Paraw Company)' => [11.9260, 121.9440],
-                'ATV Only (Mainland)' => [11.9280, 121.9460],
-                'Zipline Only' => [11.9275, 121.9455],
-
-                // Newcoast premium trail
-                'ATV (New Coast)' => [11.9560, 121.9700],
+                // ATV / zipline on mainland Malay (Aklan)
+                'ATV' => [11.9280, 121.9460],
+                'Zipline' => [11.9275, 121.9455],
 
                 // Traditional paraw sailing along White Beach
                 'Paraw Sailing (Private)' => [11.9658, 121.9255],
-                'Paraw Sailing (Joiners)' => [11.9720, 121.9238],
 
                 // Clear kayak photo sessions off White Beach
-                'Crystal Kayak' => [11.9600, 121.9286],
+                'Crystal Kayak - Boracay' => [11.9600, 121.9286],
             ],
 
             'El Nido' => [
@@ -75,8 +65,8 @@ class ActivityCoordinatesSeeder extends Seeder
                 'Discover Scuba Diving (DSD)' => [11.1805, 119.3950],
 
                 // Calm-water rentals & cruises along Corong-Corong and Lio
-                'Clear Kayak Rental' => [11.1520, 119.3990],
-                'Sunset Cruise / Party Boat' => [11.1515, 119.3985],
+                'Clear Kayak - El Nido' => [11.1520, 119.3990],
+                'Sunset Cruise' => [11.1515, 119.3985],
                 'Stand-Up Paddleboarding (SUP)' => [11.1290, 119.3990],
             ],
         ];

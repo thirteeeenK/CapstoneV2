@@ -14,8 +14,10 @@ use App\Models\Review;
 use App\Models\ReviewSummary;
 use App\Models\RoomType;
 use App\Models\User;
+use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 
@@ -352,7 +354,7 @@ class ReviewService
 
         if ($tab !== 'all') {
             $typeMap = [
-                'hotels' => [HotelModel::class, (new RoomType)->getMorphClass()],
+                'hotels' => [(new HotelModel)->getMorphClass(), (new RoomType)->getMorphClass()],
                 'rooms' => [(new RoomType)->getMorphClass()],
                 'activities' => [(new ActivityModel)->getMorphClass()],
                 'packages' => [(new Package)->getMorphClass()],
@@ -393,6 +395,77 @@ class ReviewService
         }
 
         return $reviews->map(fn (Review $review) => $this->presentForFeed($review));
+    }
+
+    /**
+     * Paginated variant of feed() for the /reviews hub: every filter runs in
+     * SQL so all published reviews are reachable across pages (no 200 cap).
+     *
+     * @return LengthAwarePaginator<int, array>
+     */
+    public function feedPaginated(string $tab = 'all', ?string $sentiment = null, int $minRating = 0, string $sort = 'recent', ?string $search = null, int $perPage = 12): LengthAwarePaginator
+    {
+        $query = Review::published()->with(['user', 'reviewable']);
+
+        if ($tab !== 'all') {
+            $typeMap = [
+                'hotels' => [(new HotelModel)->getMorphClass(), (new RoomType)->getMorphClass()],
+                'rooms' => [(new RoomType)->getMorphClass()],
+                'activities' => [(new ActivityModel)->getMorphClass()],
+                'packages' => [(new Package)->getMorphClass()],
+            ];
+
+            $classes = $typeMap[$tab] ?? null;
+            if ($classes) {
+                $query->whereIn('reviewable_type', $classes);
+            }
+        }
+
+        if ($sentiment && in_array($sentiment, [Review::SENTIMENT_POSITIVE, Review::SENTIMENT_NEUTRAL, Review::SENTIMENT_NEGATIVE], true)) {
+            $query->where('sentiment', $sentiment);
+        }
+
+        if ($minRating > 0) {
+            $query->where('rating', $minRating);
+        }
+
+        if (trim((string) $search) !== '') {
+            $like = '%'.str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], trim((string) $search)).'%';
+
+            $query->where(function ($q) use ($like) {
+                $q->where('comment', 'ilike', $like)
+                    ->orWhere('reviewer_name', 'ilike', $like)
+                    ->orWhereHas('user', fn ($u) => $u->where('name', 'ilike', $like))
+                    ->orWhereHasMorph('reviewable', [HotelModel::class, RoomType::class, ActivityModel::class, Package::class], function (EloquentBuilder $mq, string $type) use ($like) {
+                        match ($type) {
+                            HotelModel::class => $mq->where('hotel_name', 'ilike', $like),
+                            RoomType::class => $mq->where('room_name', 'ilike', $like)
+                                ->orWhereHas('hotel', fn ($h) => $h->where('hotel_name', 'ilike', $like)),
+                            ActivityModel::class => $mq->where('activity_name', 'ilike', $like),
+                            Package::class => $mq->where('name', 'ilike', $like),
+                        };
+                    });
+            });
+        }
+
+        switch ($sort) {
+            case 'highest':
+                $query->orderByDesc('rating')->orderByDesc('id');
+                break;
+            case 'lowest':
+                $query->orderBy('rating')->orderByDesc('id');
+                break;
+            case 'helpful':
+                $query->orderByRaw('COALESCE(jsonb_array_length(extracted_keywords), 0) DESC')->orderByDesc('id');
+                break;
+            default:
+                $query->latest();
+        }
+
+        $paginator = $query->paginate($perPage);
+        $paginator->setCollection($paginator->getCollection()->map(fn (Review $review) => $this->presentForFeed($review)));
+
+        return $paginator;
     }
 
     /**

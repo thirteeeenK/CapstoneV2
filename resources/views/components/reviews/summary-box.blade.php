@@ -102,7 +102,7 @@
             {{ $title }}
         </h2>
         <p class="text-xs text-slate-500 mt-3">
-            {{ $fallbackCount }} verified {{ Str::plural('guest review', $fallbackCount) }}. The AI summary is being
+            {{ $fallbackCount }} guest {{ Str::plural('review', $fallbackCount) }}. The AI summary is being
             generated.
         </p>
     </section>

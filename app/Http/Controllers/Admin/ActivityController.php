@@ -95,6 +95,7 @@ class ActivityController extends Controller
             'notes' => 'nullable|string',
             'latitude' => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|numeric|between:-180,180',
+            'specific_address' => 'nullable|string|max:255',
             'images' => 'nullable|array',
             'images.*' => 'image|mimes:jpeg,png,jpg,webp|max:5120',
         ]);
@@ -128,6 +129,7 @@ class ActivityController extends Controller
             'notes' => $request->notes,
             'latitude' => $request->latitude,
             'longitude' => $request->longitude,
+            'specific_address' => $request->specific_address,
             'images' => $imagePaths,
             'is_shown' => $request->has('is_shown') ? $request->boolean('is_shown') : true,
         ]);
@@ -178,6 +180,7 @@ class ActivityController extends Controller
             'notes' => 'nullable|string',
             'latitude' => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|numeric|between:-180,180',
+            'specific_address' => 'nullable|string|max:255',
             'images' => 'nullable|array',
             'images.*' => 'image|mimes:jpeg,png,jpg,webp|max:5120',
             'removed_images' => 'nullable|array',
@@ -207,6 +210,7 @@ class ActivityController extends Controller
         $activity->notes = $request->notes;
         $activity->latitude = $request->latitude;
         $activity->longitude = $request->longitude;
+        $activity->specific_address = $request->specific_address;
         $activity->is_shown = $request->has('is_shown') ? $request->boolean('is_shown') : false;
 
         $currentImages = $activity->images;

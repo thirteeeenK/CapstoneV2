@@ -24,7 +24,6 @@ class AddOnSeeder extends Seeder
 
         $addons = [
             [
-                'destination_id' => $boracay->id,
                 'name' => 'Airport to Hotel Roundtrip Transfer',
                 'type' => 'Transfer',
                 'description' => 'Complete hassle-free airport to hotel roundtrip transfer service in Boracay including van, port fees, environmental fees, boat tickets, e-trike/multicab hotel drop-off, and tour guide assistance.',
@@ -40,27 +39,66 @@ class AddOnSeeder extends Seeder
                     'With Tourguide Assistance',
                 ],
                 'pricing_tiers' => [
-                    ['min_pax' => 1, 'max_pax' => 1, 'rate' => 1850],
-                    ['min_pax' => 2, 'max_pax' => 2, 'rate' => 1450],
-                    ['min_pax' => 3, 'max_pax' => 3, 'rate' => 1250],
-                    ['min_pax' => 4, 'max_pax' => 4, 'rate' => 1150],
-                    ['min_pax' => 5, 'max_pax' => 5, 'rate' => 1100],
-                    ['min_pax' => 6, 'max_pax' => 6, 'rate' => 1050],
-                    ['min_pax' => 7, 'max_pax' => 15, 'rate' => 1000],
-                    ['min_pax' => 16, 'max_pax' => 999, 'rate' => 950],
+                    [
+                        'min_pax' => 1,
+                        'max_pax' => 1,
+                        'rate' => 1850,
+                    ],
+                    [
+                        'min_pax' => 2,
+                        'max_pax' => 2,
+                        'rate' => 1450,
+                    ],
+                    [
+                        'min_pax' => 3,
+                        'max_pax' => 3,
+                        'rate' => 1250,
+                    ],
+                    [
+                        'min_pax' => 4,
+                        'max_pax' => 4,
+                        'rate' => 1150,
+                    ],
+                    [
+                        'min_pax' => 5,
+                        'max_pax' => 5,
+                        'rate' => 1100,
+                    ],
+                    [
+                        'min_pax' => 6,
+                        'max_pax' => 6,
+                        'rate' => 1050,
+                    ],
+                    [
+                        'min_pax' => 7,
+                        'max_pax' => 15,
+                        'rate' => 1000,
+                    ],
+                    [
+                        'min_pax' => 16,
+                        'max_pax' => 999,
+                        'rate' => 950,
+                    ],
                 ],
                 'surcharges' => [
-                    ['name' => 'Station 1 or Station 0 Hotel Drop-off Charge', 'amount' => 200, 'type' => 'per_pax'],
+                    [
+                        'name' => 'Station 1 or Station 0 Hotel Drop-off Charge',
+                        'amount' => 200,
+                        'type' => 'per_pax',
+                    ],
                 ],
                 'is_shown' => true,
             ],
         ];
 
         foreach ($addons as $addonData) {
+            $name = $addonData['name'];
+            unset($addonData['name']);
+
             $addon = AddOnModel::updateOrCreate(
                 [
-                    'destination_id' => $addonData['destination_id'],
-                    'name' => $addonData['name'],
+                    'destination_id' => $boracay->id,
+                    'name' => $name,
                 ],
                 $addonData
             );

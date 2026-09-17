@@ -4,6 +4,7 @@ namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
+use App\Models\Review;
 use App\Services\ReviewService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -37,10 +38,14 @@ class ReviewController extends Controller
             $sort = 'recent';
         }
 
-        $reviews = $this->reviewService->feed($tab, $sentiment, $minRating, $sort, 200);
-        $platform = $this->reviewService->platformSummary();
+        $search = trim((string) $request->query('search', ''));
 
-        return view('reviews.index', compact('tab', 'sentiment', 'minRating', 'sort', 'reviews', 'platform'));
+        $paginator = $this->reviewService->feedPaginated($tab, $sentiment, $minRating, $sort, $search !== '' ? $search : null, 12);
+        $reviews = $paginator->getCollection();
+        $platform = $this->reviewService->platformSummary();
+        $totalPublished = $paginator->total();
+
+        return view('reviews.index', compact('tab', 'sentiment', 'minRating', 'sort', 'search', 'reviews', 'paginator', 'platform', 'totalPublished'));
     }
 
     /**

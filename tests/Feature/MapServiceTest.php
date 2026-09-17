@@ -62,3 +62,18 @@ test('allMarkers hotel and activity carry enriched fields', function () {
     expect($a['images'])->toBeArray();
     expect($a['vibe_tags'])->toBe(['adventure']);
 });
+
+test('activity marker carries the typed specific address for map popups', function () {
+    $dest = DestinationModel::factory()->create(['latitude' => '12', 'longitude' => '122']);
+    ActivityModel::factory()->create([
+        'destination_id' => $dest->id, 'is_shown' => true,
+        'latitude' => '12.2', 'longitude' => '122.2',
+        'specific_address' => 'Station 2, White Beach',
+    ]);
+
+    $markers = app(MapService::class)->allMarkers();
+    $a = collect($markers)->firstWhere(fn ($x) => $x['type'] === 'activity');
+
+    expect($a)->toHaveKey('address');
+    expect($a['address'])->toBe('Station 2, White Beach');
+});

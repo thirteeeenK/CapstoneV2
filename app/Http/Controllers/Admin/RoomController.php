@@ -40,9 +40,9 @@ class RoomController extends Controller
             'ideal_for' => 'nullable|string|max:255',
             'additional_notes' => 'nullable|string',
             'total_rooms' => 'required|integer|min:1',
-            'occupancy' => 'required|integer|min:1',
+            'occupancy' => 'nullable|integer|min:1',
             'base_occupancy' => 'nullable|integer|min:1',
-            'max_occupancy' => 'nullable|integer|min:1',
+            'max_occupancy' => 'required|integer|min:1',
             'bed_configuration' => 'required|string|max:255',
             'room_size' => 'nullable|string|max:255',
             'base_price' => 'required|numeric|min:0',
@@ -66,6 +66,10 @@ class RoomController extends Controller
             $amenities = array_values(array_filter(array_map('trim', explode(',', $request->room_amenities))));
         }
 
+        // Legacy occupancy mirrors max capacity when the hidden field is missing.
+        $effectiveMax = $request->max_occupancy;
+        $effectiveOccupancy = $request->occupancy ?: $effectiveMax;
+
         $room = RoomType::create([
             'hotel_id' => $hotel->id,
             'room_name' => $request->room_name,
@@ -75,9 +79,9 @@ class RoomController extends Controller
             'ideal_for' => $request->ideal_guest ?? $request->ideal_for,
             'additional_notes' => $request->additional_notes,
             'total_rooms' => $request->total_rooms,
-            'occupancy' => $request->occupancy,
+            'occupancy' => $effectiveOccupancy,
             'base_occupancy' => $request->base_occupancy ?: 2,
-            'max_occupancy' => $request->max_occupancy ?: $request->occupancy,
+            'max_occupancy' => $effectiveMax,
             'bed_configuration' => $request->bed_configuration,
             'room_size' => $request->room_size,
             'base_price' => $request->base_price,
@@ -135,9 +139,9 @@ class RoomController extends Controller
             'ideal_for' => 'nullable|string|max:255',
             'additional_notes' => 'nullable|string',
             'total_rooms' => 'required|integer|min:1',
-            'occupancy' => 'required|integer|min:1',
+            'occupancy' => 'nullable|integer|min:1',
             'base_occupancy' => 'nullable|integer|min:1',
-            'max_occupancy' => 'nullable|integer|min:1',
+            'max_occupancy' => 'required|integer|min:1',
             'bed_configuration' => 'required|string|max:255',
             'room_size' => 'nullable|string|max:255',
             'base_price' => 'required|numeric|min:0',
@@ -156,9 +160,9 @@ class RoomController extends Controller
         $room->setAttribute('ideal_for', $idealGuest);
         $room->additional_notes = $request->additional_notes;
         $room->total_rooms = $request->total_rooms;
-        $room->occupancy = $request->occupancy;
+        $room->max_occupancy = $request->max_occupancy;
+        $room->occupancy = $request->occupancy ?: $request->max_occupancy;
         $room->base_occupancy = $request->base_occupancy ?: 2;
-        $room->max_occupancy = $request->max_occupancy ?: $request->occupancy;
         $room->bed_configuration = $request->bed_configuration;
         $room->room_size = $request->room_size;
         $room->base_price = $request->base_price;

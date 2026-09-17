@@ -141,7 +141,7 @@
                     </div>
                     <p class="text-[11px] text-slate-600 font-bold">
                         <span x-text="$store.preview.room.review_summary.average_rating.toFixed(1)"></span> / 5.0 ·
-                        <span x-text="$store.preview.room.review_summary.total_reviews"></span> verified reviews
+                        <span x-text="$store.preview.room.review_summary.total_reviews"></span> guest reviews
                     </p>
                     <p class="text-[11px] text-slate-500" x-text="$store.preview.room.review_summary.ai_summary_text"></p>
                 </div>
@@ -150,7 +150,7 @@
             {{-- Room Recent Reviews --}}
             <template x-if="$store.preview.room?.reviews && $store.preview.room.reviews.length > 0">
                 <div class="space-y-3">
-                    <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Recent Verified Reviews</h4>
+                    <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Recent Guest Reviews</h4>
                     <template x-for="(rv, idx) in $store.preview.room.reviews" :key="idx">
                         <div class="bg-white border border-sand-200 rounded-xl p-3.5 space-y-1.5">
                             <div class="flex items-center justify-between gap-2">

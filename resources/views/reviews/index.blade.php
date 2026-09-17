@@ -46,10 +46,10 @@
 
             <header class="mb-8 animate-fade-up">
                 <h1 class="font-headline text-3xl sm:text-4xl font-black tracking-tight text-slate-900">
-                    Verified Guest Reviews
+                    Guest Reviews
                 </h1>
                 <p class="font-body text-xs sm:text-sm text-slate-500 leading-relaxed mt-2 max-w-xl">
-                    Honest, booking-verified feedback across hotels, rooms, activities, and packages —
+                    Honest guest feedback across hotels, rooms, activities, and packages —
                     distilled with our AI Decision Support System.
                 </p>
             </header>
@@ -60,7 +60,7 @@
             @endif
 
             {{-- Controls + feed --}}
-            <div x-data="reviewHub({{ Js::from($reviews) }})" x-init="$watch('lightbox', v => document.body.classList.toggle('overflow-hidden', !!v))" class="mt-8 animate-fade-up">
+            <div x-data="reviewHub({{ Js::from($reviews) }}, {{ Js::from(['tab' => $tab, 'minRating' => $minRating, 'sentiment' => $sentiment ?? '', 'sort' => $sort, 'search' => $search]) }})" x-init="$watch('lightbox', v => document.body.classList.toggle('overflow-hidden', !!v))" class="mt-8 animate-fade-up">
                 {{-- Lightbox Modal -- Teleported to body to avoid ancestor transform/animation containing-block traps --}}
                 <template x-teleport="body">
                     <div x-show="lightbox" x-cloak
@@ -231,19 +231,24 @@
                         </div>
                     </div>
 
-                    <div class="mt-5 relative">
+                    <form method="GET" action="{{ route('reviews.index') }}" class="mt-5 relative">
+                        <input type="hidden" name="tab" value="{{ $tab }}">
+                        <input type="hidden" name="rating" value="{{ $minRating }}">
+                        <input type="hidden" name="sentiment" value="{{ $sentiment }}">
+                        <input type="hidden" name="sort" value="{{ $sort }}">
                         <span
                             class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[18px] text-slate-400">search</span>
-                        <input x-model="search" @input="refresh()" type="search"
+                        <input name="search" value="{{ $search }}" type="search"
                             placeholder="Search by hotel, room, activity, or package name..."
                             class="w-full rounded-2xl border border-sand-200 bg-white pl-11 pr-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-ocean-400 focus:ring-ocean-100">
-                    </div>
+                    </form>
                 </div>
 
                 {{-- Result count --}}
                 <p class="text-[11px] text-slate-500 mb-4 font-bold">
-                    <span x-text="filtered.length"></span>
-                    <span x-text="filtered.length === 1 ? 'review' : 'reviews'"></span> shown
+                    Showing {{ $paginator->firstItem() ?? 0 }}–{{ $paginator->lastItem() ?? 0 }}
+                    of {{ $paginator->total() }}
+                    {{ $paginator->total() === 1 ? 'review' : 'reviews' }}
                 </p>
 
                 {{-- Empty state --}}
@@ -330,27 +335,29 @@
                                         class="px-2.5 py-1 rounded-lg bg-sand-100 border border-sand-200 text-slate-600 text-[10px] font-bold">#<span
                                             x-text="tag"></span></span>
                                 </template>
-                                <span
-                                    class="ml-auto inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-teal-50 text-teal-700 border border-teal-100 text-[10px] font-bold">
-                                    <span class="material-symbols-outlined text-[12px]">verified</span>
-                                    Verified Booking
-                                </span>
                             </div>
                         </article>
                     </template>
                 </div>
+
+                {{-- Pagination --}}
+                @if ($paginator->hasPages())
+                    <div class="mt-6">
+                        {{ $paginator->appends(request()->except('page'))->links() }}
+                    </div>
+                @endif
             </div>
 
             {{-- Colophon --}}
             <p class="text-center font-label text-[10px] uppercase font-bold tracking-[0.25em] text-slate-400 pt-10">
-                SunnyTrips · AI-assisted sentiment analysis on verified bookings
+                SunnyTrips · AI-assisted sentiment analysis on guest reviews
             </p>
         </div>
     </div>
 
     @once
         <script>
-            function reviewHub(initialReviews) {
+            function reviewHub(initialReviews, state) {
                 return {
                     all: initialReviews,
                     filtered: initialReviews,
@@ -358,11 +365,11 @@
                     lightboxReview: null,
                     lightboxImg: null,
                     lightboxImgIdx: 0,
-                    tab: 'all',
-                    minRating: 0,
-                    sentiment: '',
-                    search: '',
-                    sort: 'recent',
+                    tab: state.tab,
+                    minRating: state.minRating,
+                    sentiment: state.sentiment,
+                    search: state.search,
+                    sort: state.sort,
 
                     openLightbox(review, img) {
                         this.lightboxReview = review;
@@ -389,7 +396,7 @@
                     },
                     iconFor(type) {
                         const map = {
-                            'App\\Models\\HotelModel': 'hotel',
+                            'hotel': 'hotel',
                             'room': 'king_bed',
                             'activity': 'explore',
                             'package': 'card_travel'
@@ -397,47 +404,33 @@
                         return map[type] || 'reviews';
                     },
                     setTab(key) {
-                        this.tab = key;
-                        this.refresh();
+                        this.go({ tab: key });
                     },
                     setRating(key) {
-                        this.minRating = key;
-                        this.refresh();
+                        this.go({ rating: key });
                     },
                     setSentiment(key) {
-                        this.sentiment = key;
-                        this.refresh();
+                        this.go({ sentiment: key });
                     },
                     applySort() {
-                        this.refresh();
+                        this.go({});
                     },
-                    matches(review) {
-                        if (this.tab !== 'all') {
-                            if (this.tab === 'hotels') {
-                                if (!['App\\Models\\HotelModel', 'room'].includes(review.entity_type)) return false;
-                            } else if (this.tab === 'rooms' && review.entity_type !== 'room') return false;
-                            else if (this.tab === 'activities' && review.entity_type !== 'activity') return false;
-                            else if (this.tab === 'packages' && review.entity_type !== 'package') return false;
+                    go(overrides) {
+                        const q = new URLSearchParams({
+                            tab: this.tab,
+                            rating: this.minRating,
+                            sentiment: this.sentiment,
+                            sort: this.sort,
+                            search: this.search,
+                            ...overrides,
+                        });
+                        for (const [k, v] of [...q]) {
+                            if (v === '' || v === null || v === undefined) q.delete(k);
                         }
-                        if (this.minRating > 0 && review.rating !== this.minRating) return false;
-                        if (this.sentiment && review.sentiment !== this.sentiment) return false;
-                        if (this.search) {
-                            const q = this.search.toLowerCase();
-                            const hay = [
-                                review.entity_label, review.entity_location || '',
-                                review.comment, (review.keywords || []).join(' ')
-                            ].join(' ').toLowerCase();
-                            if (!hay.includes(q)) return false;
-                        }
-                        return true;
+                        window.location.search = q.toString();
                     },
                     refresh() {
-                        const filtered = this.all.filter(r => this.matches(r));
-                        if (this.sort === 'highest') filtered.sort((a, b) => b.rating - a.rating || b.id - a.id);
-                        else if (this.sort === 'lowest') filtered.sort((a, b) => a.rating - b.rating || b.id - a.id);
-                        else if (this.sort === 'helpful') filtered.sort((a, b) => (b.keywords || []).length - (a.keywords || []).length || b.id - a.id);
-                        else filtered.sort((a, b) => b.id - a.id);
-                        this.filtered = filtered;
+                        this.filtered = [...this.all];
                     }
                 };
             }
