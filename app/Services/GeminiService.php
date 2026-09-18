@@ -1417,7 +1417,7 @@ class GeminiService
      * Loads a system prompt from an external .md file in Services/SystemPrompts/.
      * Fails loudly (HTTP 500) if the file is missing — never silently degrades.
      */
-    protected function loadSystemPrompt(string $filename): string
+    public function loadSystemPrompt(string $filename): string
     {
         if (isset(self::$promptCache[$filename])) {
             return self::$promptCache[$filename];
@@ -1458,6 +1458,24 @@ class GeminiService
      */
     public function generateContent(string $systemInstruction, string $prompt): ?string
     {
+        $modelName = config('services.gemini.chat_model') ?? 'models/gemini-2.5-flash-lite';
+
+        return $this->postGenerate($modelName, $systemInstruction, $prompt, 0.2);
+    }
+
+    /**
+     * Same as generateContent() but against an explicit model + temperature
+     * (e.g. a stronger judge model at temperature 0 for eval grading).
+     *
+     * @return string|null The raw model output text, or null on failure.
+     */
+    public function generateContentWithModel(string $modelName, string $systemInstruction, string $prompt, float $temperature = 0.0): ?string
+    {
+        return $this->postGenerate($modelName, $systemInstruction, $prompt, $temperature);
+    }
+
+    protected function postGenerate(string $modelName, string $systemInstruction, string $prompt, float $temperature): ?string
+    {
         $apiKey = config('services.gemini.api_key');
         if (! $apiKey) {
             Log::warning('Gemini API key is not configured in services.gemini.api_key.');
@@ -1465,7 +1483,6 @@ class GeminiService
             return null;
         }
 
-        $modelName = config('services.gemini.chat_model') ?? 'models/gemini-2.5-flash-lite';
         $url = "https://generativelanguage.googleapis.com/v1beta/{$modelName}:generateContent?key={$apiKey}";
 
         $payload = [
@@ -1477,7 +1494,7 @@ class GeminiService
             ],
             'generationConfig' => [
                 'responseMimeType' => 'application/json',
-                'temperature' => 0.2,
+                'temperature' => $temperature,
             ],
         ];
 
