@@ -7,10 +7,13 @@ use App\Models\AddOnModel;
 use App\Models\HotelModel;
 use App\Models\Package;
 use App\Models\RoomType;
+use App\Listeners\SeedDemoBookingsListener;
+use Illuminate\Auth\Events\Registered;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 
@@ -32,6 +35,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Event::listen(Registered::class, SeedDemoBookingsListener::class);
+
         Relation::morphMap([
             'hotel' => HotelModel::class,
             'room' => RoomType::class,

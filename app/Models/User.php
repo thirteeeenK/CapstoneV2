@@ -138,6 +138,11 @@ class User extends Authenticatable
         return $this->hasMany(ChatbotAbuseReport::class, 'user_id');
     }
 
+    public function bookings()
+    {
+        return $this->hasMany(Booking::class, 'user_id');
+    }
+
     /**
      * The structured onboarding preference data persisted alongside the embedding.
      */
