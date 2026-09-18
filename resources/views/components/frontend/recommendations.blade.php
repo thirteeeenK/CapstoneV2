@@ -188,7 +188,7 @@
                             @if(!empty($item['hotels_reason']))
                                 <p class="text-xs sm:text-[13px] text-sky-800 bg-sky-50 border border-sky-100 rounded-xl px-4 py-3 leading-relaxed flex items-start gap-2.5">
                                     <span class="material-symbols-outlined text-[18px] shrink-0 text-sky-500 mt-0.5">auto_awesome</span>
-                                    <span>{{ $item['hotels_reason'] }}</span>
+                                    <span><strong class="font-bold">Why these were picked:</strong> {{ $item['hotels_reason'] }}</span>
                                 </p>
                             @else
                                 <p class="text-xs text-slate-500">
@@ -271,7 +271,7 @@
                             @if(!empty($item['activities_reason']))
                                 <p class="text-xs sm:text-[13px] text-emerald-800 bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3 leading-relaxed flex items-start gap-2.5">
                                     <span class="material-symbols-outlined text-[18px] shrink-0 text-emerald-500 mt-0.5">auto_awesome</span>
-                                    <span>{{ $item['activities_reason'] }}</span>
+                                    <span><strong class="font-bold">Why these were picked:</strong> {{ $item['activities_reason'] }}</span>
                                 </p>
                             @else
                                 <p class="text-xs text-slate-500">

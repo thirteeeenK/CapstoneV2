@@ -25,3 +25,17 @@
 - Amenities exceed standard hostel expectations, including a good free breakfast of pancakes and eggs, reliable Wi-Fi, and rare hot water showers with strong pressure.
 - The social atmosphere is a major draw, with staff organizing engaging events like BBQ nights and pub crawls to help guests meet other travelers.
 - It offers a highly convenient location just a short walk away from the main beach and local restaurants.
+
+## Happiness Hostel
+
+- Guests praise the social party vibe, with a fun downstairs bar, boat parties, and staff-organized events making it easy to meet people.
+- Beds are commended as comfortable with privacy curtains, and bathrooms are consistently described as very clean with working air conditioning.
+- The location earns frequent praise for its easy walk to the beach and nearby clubs, though nights can get loud as expected in a party hostel.
+- Staff receive strong marks for helpfulness, especially with booking tours, and the on-site restaurant food surprises guests positively
+
+## Henann Palm Beach Resort
+
+- Staff are consistently described as warm, kind, and attentive, delivering seamless service from check-in to check-out.
+- Rooms earn praise as spotless, modern, and comfortable with clean beds and fluffy bath towels.
+- Guests highlight the beachfront location near D'Mall, the sky and regular pools, and the beautiful beach right in front.
+- The breakfast buffet draws repeated compliments, capping stays guests describe as exceeding expectations and worth every peso.

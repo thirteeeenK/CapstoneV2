@@ -86,8 +86,15 @@ it('shows a section-level fallback explanation on the dashboard', function () {
         ->assertOk()
         ->assertSee('Based on your preference for Beachfront & Spa Services')
         ->assertSee('these top stays')
+        ->assertSee('were picked for you.')
+        ->assertSee('Includes ')
+        ->assertSee('for its Beachfront.')
+        ->assertSee($hotel->hotel_name, false)
         ->assertSee('Based on your preference for Adventure & Thrills')
         ->assertSee('these top experiences')
+        ->assertSee('for its Adventure & Thrills.')
+        ->assertSee($activity->activity_name, false)
+        ->assertSee('Perfect if you want')
         ->assertDontSee('% Match')
         ->assertDontSee('Matches your');
 });

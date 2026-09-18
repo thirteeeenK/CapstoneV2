@@ -10,17 +10,22 @@ How to compute the three Chapter 4 metrics for SunnyTrips using the existing cod
 
 ### What ROUGE-1 measures
 
-ROUGE-1 compares an AI summary against a human-written *reference* summary by counting overlapping unigrams (words).
+ROUGE-1 compares an AI summary against a human-written _reference_ summary by counting overlapping unigrams (words).
 
 ### Ground truth collection (blind, like `README_GROUND_TRUTH.md:18`)
 
 1. Pick **N = 20–30 entities** (RoomType / HotelModel / ActivityModel) each with ≥5 verified reviews.
 2. For each entity, a human reads **only the reviews** and writes a 4-bullet reference summary (same constraint the AI has — 4 bullets via `review-summary-prompt.md`).
 3. Store pairs as `storage/app/summary_eval/{entity_type}_{id}.json`:
-   ```json
-   {"entity_type": "App\\Models\\RoomType", "entity_id": 12, "reference_summary": "Human 4 bullets...", "ai_summary_text": "AI 4 bullets..."}
-   ```
-   The `ai_summary_text` is already in `review_summaries` — just export it; do not regenerate.
+    ```json
+    {
+        "entity_type": "App\\Models\\RoomType",
+        "entity_id": 12,
+        "reference_summary": "Human 4 bullets...",
+        "ai_summary_text": "AI 4 bullets..."
+    }
+    ```
+    The `ai_summary_text` is already in `review_summaries` — just export it; do not regenerate.
 
 ### Worked example (from your prompt)
 
@@ -83,12 +88,12 @@ php artisan summary:evaluate --export=storage/app/rouge_eval.csv
 
 ### Chapter 4 table template
 
-| Entity | Ref len | AI len | Overlap | R | P | F1 |
-|---|---|---|---|---|---|---|
-| Room 12 — Deluxe Ocean View | 48 | 52 | 29 | 0.604 | 0.558 | 0.580 |
-| Hotel 3 — Villa Maria | 51 | 44 | 27 | 0.529 | 0.614 | 0.568 |
-| ... | ... | ... | ... | ... | ... | ... |
-| **Mean (N=20)** | — | — | — | **0.61** | **0.58** | **0.59** |
+| Entity                      | Ref len | AI len | Overlap | R        | P        | F1       |
+| --------------------------- | ------- | ------ | ------- | -------- | -------- | -------- |
+| Room 12 — Deluxe Ocean View | 48      | 52     | 29      | 0.604    | 0.558    | 0.580    |
+| Hotel 3 — Villa Maria       | 51      | 44     | 27      | 0.529    | 0.614    | 0.568    |
+| ...                         | ...     | ...    | ...     | ...      | ...      | ...      |
+| **Mean (N=20)**             | —       | —      | —       | **0.61** | **0.58** | **0.59** |
 
 Interpretation: F1 ≥ 0.45 acceptable for abstractive 4-bullet summary; ≥ 0.60 good.
 
@@ -100,7 +105,7 @@ Interpretation: F1 ≥ 0.45 acceptable for abstractive 4-bullet summary; ≥ 0.6
 
 ### Definition
 
-Hit Rate (HR@K) checks if the *correct* travel package appears in the top K results when executing cosine similarity logic.
+Hit Rate (HR@K) checks if the _correct_ travel package appears in the top K results when executing cosine similarity logic.
 
 ```
 HR@K = Total Hits / Total Test Cases
@@ -168,11 +173,11 @@ HR@5 = hits_in_top5 / 10
 
 ### Baseline comparison (required for DSS claim)
 
-| Model | HR@1 | HR@3 | HR@5 |
-|---|---|---|---|
-| Popularity baseline (most-booked) | 0.20 | 0.35 | 0.50 |
-| Keyword match baseline | 0.30 | 0.50 | 0.65 |
-| **Vector DSS (proposed)** | **0.50** | **0.80** | **0.90** |
+| Model                             | HR@1     | HR@3     | HR@5     |
+| --------------------------------- | -------- | -------- | -------- |
+| Popularity baseline (most-booked) | 0.20     | 0.35     | 0.50     |
+| Keyword match baseline            | 0.30     | 0.50     | 0.65     |
+| **Vector DSS (proposed)**         | **0.50** | **0.80** | **0.90** |
 
 ### Storage
 
@@ -272,12 +277,12 @@ Relevance = 18/20 = 0.90 (90%)
 
 ### Chapter 4 table template
 
-| Query # | Intent | Claims (total) | Grounded | Faithfulness | Relevance (0/1) |
-|---|---|---|---|---|---|
-| 1 | room | 4 | 4 | 1.00 | 1 |
-| 2 | availability | 3 | 2 | 0.67 | 1 |
-| ... | ... | ... | ... | ... | ... |
-| **Mean (N=20)** | — | — | — | **0.93** | **0.90** |
+| Query #         | Intent       | Claims (total) | Grounded | Faithfulness | Relevance (0/1) |
+| --------------- | ------------ | -------------- | -------- | ------------ | --------------- |
+| 1               | room         | 4              | 4        | 1.00         | 1               |
+| 2               | availability | 3              | 2        | 0.67         | 1               |
+| ...             | ...          | ...            | ...      | ...          | ...             |
+| **Mean (N=20)** | —            | —              | —        | **0.93**     | **0.90**        |
 
 Normalize to 0–100 if needed for the paper. Discuss: which intent hallucinates most, and why (e.g., itinerary without `destination_id` requires elicitation per `DSS_CAPSTONE_GUIDE.md:58`).
 

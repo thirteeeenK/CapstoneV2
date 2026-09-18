@@ -189,6 +189,8 @@ class RecommendationExplainer
 
     /**
      * Build the fallback overview paragraph for a single section — grounded to displayed island.
+     * Mirrors the Gemini prompt scaffold (grounding + standout pick + benefit close) so the
+     * offline copy still reads as a clear 3-sentence "why these were picked" explanation.
      */
     private function fallbackSectionText(UserPreference $preference, $destination, Collection $items, string $kind, string $noun): string
     {
@@ -198,24 +200,75 @@ class RecommendationExplainer
 
         $displayName = is_object($destination) ? ($destination->name ?? '') : (string) $destination;
         $dest = $displayName ? " in {$displayName}" : '';
-        $traveler = $preference->traveler_type;
+        $traveler = trim((string) $preference->traveler_type);
         $matches = $this->matchedTags($preference, $items, $kind);
+        $display = $matches !== [] ? implode(' & ', array_slice($matches, 0, 2)) : '';
 
-        $sentences = [];
+        $first = $items->first();
+        $standout = $kind === 'hotel'
+            ? ($first->hotel_name ?? null)
+            : ($first->activity_name ?? null);
+        $standoutTag = $this->standoutTagForItem($preference, $first, $kind) ?? ($matches[0] ?? null);
 
-        if (empty($matches)) {
-            $sentences[] = "Based on your AI travel profile, these top {$noun}{$dest} were handpicked for you.";
-            $sentences[] = 'Each one balances comfort and character, so explore them to find your perfect match.';
-        } else {
-            $display = implode(' & ', array_slice($matches, 0, 2));
-            $sentences[] = "Based on your preference for {$display}, these top {$noun}{$dest} are a perfect fit.";
-            if ($traveler) {
-                $sentences[] = "They're ideal for {$traveler} travelers.";
-            }
-            $sentences[] = 'Each one was chosen to complement the rest of your escape.';
+        if ($display === '') {
+            $sentence1 = "Based on your AI travel profile, these top {$noun}{$dest} were handpicked for you.";
+            $sentence2 = $standout
+                ? "Includes {$standout} for a balanced mix of comfort and character."
+                : 'Each one balances comfort and character for easy choosing.';
+            $sentence3 = $traveler !== ''
+                ? "Perfect if you want a smooth {$traveler} escape{$dest} without the guesswork."
+                : "Perfect if you want a smooth, easy escape{$dest} without the guesswork.";
+
+            return "{$sentence1} {$sentence2} {$sentence3}";
         }
 
-        return implode(' ', array_filter($sentences));
+        $sentence1 = "Based on your preference for {$display}, these top {$noun}{$dest} were picked for you.";
+        $sentence2 = $standout && $standoutTag
+            ? "Includes {$standout} for its {$standoutTag}."
+            : "Each one matches your {$display} taste.";
+        $sentence3 = $traveler !== ''
+            ? "Perfect if you want {$display} experiences made for {$traveler} travelers."
+            : "Perfect if you want {$display} without the guesswork.";
+
+        return "{$sentence1} {$sentence2} {$sentence3}";
+    }
+
+    /**
+     * Find the first user tag (in display form) that appears on the given item.
+     */
+    private function standoutTagForItem(UserPreference $preference, mixed $item, string $kind): ?string
+    {
+        if (! $item) {
+            return null;
+        }
+
+        $userTagMap = $this->normalizeTagMap(array_merge(
+            $this->arrayify($preference->vibes),
+            $this->arrayify($preference->amenities)
+        ));
+
+        if ($userTagMap === []) {
+            return null;
+        }
+
+        $itemTags = $kind === 'hotel'
+            ? $this->normalizeTags(array_merge(
+                $this->arrayify($item->vibe_tags ?? null),
+                $this->arrayify($item->featured_amenities ?? null)
+            ))
+            : $this->normalizeTags(array_filter(array_merge(
+                $this->arrayify($item->vibe_tags ?? null),
+                [$item->category ?? null],
+                [$item->ideal_for ?? null]
+            )));
+
+        foreach ($itemTags as $normalized) {
+            if (isset($userTagMap[$normalized])) {
+                return $userTagMap[$normalized];
+            }
+        }
+
+        return null;
     }
 
     /**

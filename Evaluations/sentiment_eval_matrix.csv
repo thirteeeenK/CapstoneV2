@@ -1,0 +1,12 @@
+"actual \ predicted",negative,neutral,positive,actual_total
+negative,5,2,0,7
+neutral,0,12,0,12
+positive,0,3,213,216
+pred_total,5,17,213,235
+
+class,support,tp,fp,fn,precision,recall,f1
+negative,7,5,0,2,1,0.7143,0.8333
+neutral,12,12,5,0,0.7059,1,0.8276
+positive,216,213,0,3,1,0.9861,0.993
+
+accuracy,0.9787,macroF1,0.8846,weightedF1,0.9798
