@@ -76,3 +76,34 @@ test('service is idempotent', function () {
 
     expect($user->bookings()->count())->toBe(2);
 });
+
+test('new signup owns two payable approved bookings when demo mode on', function () {
+    Notification::fake();
+    Config::set('app.demo_mode', true);
+    RoomType::factory()->create(['base_price' => 2000.00, 'base_occupancy' => 2, 'is_shown' => true]);
+
+    $response = $this->post('/register', [
+        'name' => 'Demo Tester',
+        'email' => 'demotester@example.com',
+        'password' => 'password',
+        'password_confirmation' => 'password',
+        'address' => '123 Test St, Manila',
+        'phone_number' => '09123456789',
+        'age_confirmed' => '1',
+        'terms_accepted' => '1',
+        'privacy_accepted' => '1',
+        'ai_disclosure_accepted' => '1',
+    ]);
+
+    $response->assertRedirect(route('onboarding.index', absolute: false));
+
+    $user = User::where('email', 'demotester@example.com')->first();
+    $bookings = $user->bookings()->where('status', Booking::STATUS_APPROVED)->get();
+    expect($bookings)->toHaveCount(2);
+
+    foreach ($bookings as $booking) {
+        expect($booking->isPaymentDeadlinePassed())->toBeFalse();
+    }
+
+    Notification::assertNothingSent();
+});
