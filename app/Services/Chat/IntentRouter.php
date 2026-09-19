@@ -287,6 +287,80 @@ class IntentRouter
         return self::GENERAL_TALK;
     }
 
+    /**
+     * Normalize user text for matching: lowercase, strip emoji/punctuation,
+     * collapse whitespace. Ponytailed typo tolerance starts here — every
+     * extractor below should match against this, not raw input.
+     */
+    public function normalizeText(string $query): string
+    {
+        $text = mb_strtolower($query);
+        $text = (string) preg_replace('/[^\p{L}\p{N}\s]/u', ' ', $text);
+        $text = (string) preg_replace('/\s+/', ' ', $text);
+
+        return trim($text);
+    }
+
+    /**
+     * Fuzzy token match: true when $needle matches $haystack exactly or
+     * within $maxDistance levenshtein edits per token (typos like
+     * "borakay" → "boracay"). Bounded: tokens < 4 chars require exact.
+     */
+    protected function fuzzyContains(string $haystack, string $needle, int $maxDistance = 2): bool
+    {
+        $needle = $this->normalizeText($needle);
+        $haystack = $this->normalizeText($haystack);
+        if ($needle === '' || $haystack === '') {
+            return false;
+        }
+        if (str_contains($haystack, $needle)) {
+            return true;
+        }
+        // Concatenated typo ("elnedo" → "el nido"): whole-string edit
+        // distance, only when the query is about as short as the name.
+        $flatHay = str_replace(' ', '', $haystack);
+        $flatNeedle = str_replace(' ', '', $needle);
+        if ($flatNeedle !== '' && strlen($flatHay) <= strlen($flatNeedle) + 2
+            && abs(strlen($flatHay) - strlen($flatNeedle)) <= 2
+            && levenshtein($flatHay, $flatNeedle) <= 2) {
+            return true;
+        }
+        $hayTokens = preg_split('/\s+/', $haystack) ?: [];
+        // Concatenated name typed as one typo'd token ("elnedo" in a longer
+        // query): compare the spaceless name against each query token.
+        if (str_contains($needle, ' ')) {
+            foreach ($hayTokens as $ht) {
+                if (abs(strlen($ht) - strlen($flatNeedle)) <= 2 && levenshtein($ht, $flatNeedle) <= 2) {
+                    return true;
+                }
+            }
+        }
+        $hayTokens = preg_split('/\s+/', $haystack) ?: [];
+        $needleTokens = preg_split('/\s+/', $needle) ?: [];
+        $checked = 0;
+        foreach ($needleTokens as $nt) {
+            if (strlen($nt) < 4) {
+                continue;
+            }
+            $checked++;
+            $matched = false;
+            foreach ($hayTokens as $ht) {
+                if (abs(strlen($ht) - strlen($nt)) > $maxDistance) {
+                    continue;
+                }
+                if (levenshtein($ht, $nt) <= $maxDistance) {
+                    $matched = true;
+                    break;
+                }
+            }
+            if (! $matched) {
+                return false;
+            }
+        }
+
+        return $checked > 0;
+    }
+
     public function extractConstraints(string $query): array
     {
         $lower = mb_strtolower($query);
@@ -311,7 +385,13 @@ class IntentRouter
             'place_names' => [],
         ];
 
-        if (preg_match('/(\d+)\s*(?:pax|persons?|people|tao|katao|miyembro|guests?)/i', $query, $m)) {
+        if (preg_match('/(\d+)\s*(?:pax|persons?|people|tao|katao|miyembro|guests?|adults?|children|kids|heads?)\b/i', $query, $m)) {
+            $constraints['pax'] = (int) $m[1];
+        }
+        if (preg_match('/\bfor\s+(\d+)\s*(?:pax|persons?|people|guests?)?\b(?!\s*(?:nights?|days?|gabi|araw))/i', $query, $m) && ! $constraints['pax']) {
+            $constraints['pax'] = (int) $m[1];
+        }
+        if (preg_match('/(\d+)\s*kami\b/i', $query, $m) && ! $constraints['pax']) {
             $constraints['pax'] = (int) $m[1];
         }
         if (preg_match('/couple|couples|2\s*pax/i', $query) && ! $constraints['pax']) {
@@ -321,11 +401,17 @@ class IntentRouter
             $constraints['pax'] = 1;
         }
 
-        if (preg_match('/(?:(?:under|below|less\s*than|max|maximum|budget\s*(?:of|is)?))\s*(?:₱|php|peso)?\s*(\d[\d,]{0,8})/i', $query, $m)) {
+        if (preg_match('/(?:(?:under|below|less\s*than|max|maximum|budget\s*(?:of|is)?))\s*(?:₱|php|peso)?\s*(\d[\d,]{0,8})\b(?!\s*k\b)/i', $query, $m)) {
             $constraints['max_price'] = (int) str_replace(',', '', $m[1]);
         }
-        if (preg_match('/(?:₱|php|peso)?\s*(\d[\d,]{1,8})\s*(?:budget|max|pesos)/i', $query, $m)) {
+        if (preg_match('/(?:₱|php|peso)?\s*(\d[\d,]{1,8})(?!\s*k\b)\s*(?:budget|max|pesos)/i', $query, $m)) {
             $constraints['max_price'] = (int) str_replace(',', '', $m[1]);
+        }
+        if (! $constraints['max_price'] && preg_match('/(?:under|below|less\s*than|max|maximum|budget|around|approx(?:imate(?:ly)?)?)\s*(?:of\s*)?(?:₱|php|peso)?\s*(\d+(?:\.\d+)?)\s*k\b/i', $query, $m)) {
+            $constraints['max_price'] = (int) ((float) $m[1] * 1000);
+        }
+        if (! $constraints['max_price'] && preg_match('/(\d+(?:\.\d+)?)\s*k\s*(?:budget|max|per\s*(?:head|person|pax))?\b/i', $query, $m)) {
+            $constraints['max_price'] = (int) ((float) $m[1] * 1000);
         }
 
         if (preg_match('/(\d+)\s*(?:nights?|gabi)\b/i', $query, $m)) {
@@ -417,6 +503,13 @@ class IntentRouter
             }
         }
 
+        // Typo tolerance ("borakay" → "Boracay", "elnedo" → "El Nido").
+        foreach ($destinations as $name) {
+            if ($this->fuzzyContains($query, (string) $name)) {
+                return $name;
+            }
+        }
+
         return null;
     }
 
@@ -492,6 +585,13 @@ class IntentRouter
                 if (preg_match('/\b'.preg_quote($token, '/').'\b/', $lower)) {
                     return (string) $name;
                 }
+            }
+        }
+
+        // Typo tolerance ("happines" → "Happiness Beach Resort").
+        foreach ($hotels as $name) {
+            if ($this->fuzzyContains($query, (string) $name)) {
+                return (string) $name;
             }
         }
 
@@ -608,6 +708,15 @@ class IntentRouter
                 $best = (string) $name;
                 $bestHits = $hits;
                 $bestRatio = $ratio;
+            }
+        }
+
+        // Typo tolerance ("parawsailing" → "Parasailing").
+        if ($best === null) {
+            foreach ($activities as $name) {
+                if ($this->fuzzyContains($query, (string) $name)) {
+                    return (string) $name;
+                }
             }
         }
 

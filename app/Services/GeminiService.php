@@ -659,6 +659,118 @@ class GeminiService
         return $pax ? (float) $room->calculateNightlyRate($pax) : (float) $room->base_price;
     }
 
+    /**
+     * Canonical effective occupancy: NULL max_occupancy (e.g. Water Villa,
+     * Beach Villa seeder rows) falls back to occupancy/base_occupancy so the
+     * room stays visible to pax-filtered queries instead of vanishing.
+     */
+    public function effectiveMaxOccupancy(RoomType $room): int
+    {
+        return (int) ($room->max_occupancy ?: ($room->occupancy ?: ($room->base_occupancy ?: 2)));
+    }
+
+    public function largestRoom(?int $destinationId = null, ?int $hotelId = null): ?RoomType
+    {
+        return RoomType::with('hotel.destination')
+            ->where('is_shown', true)
+            ->when($hotelId, fn ($q) => $q->where('hotel_id', $hotelId))
+            ->when($destinationId, fn ($q) => $q->whereHas('hotel', fn ($qq) => $qq->where('destination_id', $destinationId)))
+            ->orderByRaw('COALESCE(max_occupancy, base_occupancy, 2) DESC')
+            ->orderBy('base_price', 'asc')
+            ->first();
+    }
+
+    public function maxRoomOccupancy(?int $destinationId = null, ?int $hotelId = null): int
+    {
+        $room = $this->largestRoom($destinationId, $hotelId);
+
+        return $room ? $this->effectiveMaxOccupancy($room) : 0;
+    }
+
+    /**
+     * Cheapest 2-room same-hotel splits covering $pax, ignoring budget.
+     * Each pair: ['rooms' => [RoomType, RoomType], 'pax' => [int, int], 'total' => float].
+     * Empty when even two rooms cannot cover the group.
+     */
+    public function groupSplitOptions(?int $destinationId, ?int $hotelId, int $pax, ?array $queryVector = null, int $maxPairs = 2): array
+    {
+        $candidates = RoomType::with('hotel.destination')
+            ->where('is_shown', true)
+            ->whereNotNull('embedding')
+            ->when($hotelId, fn ($q) => $q->where('hotel_id', $hotelId))
+            ->when($destinationId, fn ($q) => $q->whereHas('hotel', fn ($qq) => $qq->where('destination_id', $destinationId)))
+            ->get();
+        if ($candidates->isEmpty()) {
+            return [];
+        }
+
+        $ranked = $queryVector
+            ? array_map(fn ($e) => $e['item'], $this->rankRecommendations($queryVector, $candidates, 30))
+            : $candidates->sortBy('base_price')->values()->all();
+
+        $pairs = [];
+        $seen = [];
+        foreach (array_slice($ranked, 0, 10) as $roomA) {
+            $effA = $this->effectiveMaxOccupancy($roomA);
+            $best = null;
+            foreach ($ranked as $roomB) {
+                if ($roomB->id === $roomA->id || ($roomB->hotel_id !== $roomA->hotel_id)) {
+                    continue;
+                }
+                $effB = $this->effectiveMaxOccupancy($roomB);
+                if ($effA + $effB < $pax) {
+                    continue;
+                }
+                $paxA = min($effA, $pax);
+                $paxB = $pax - $paxA;
+                if ($paxB < 1 || $paxB > $effB) {
+                    continue;
+                }
+                $total = $roomA->calculateNightlyRate($paxA) + $roomB->calculateNightlyRate($paxB);
+                if ($best === null || $total < $best['total']) {
+                    $best = ['rooms' => [$roomA, $roomB], 'pax' => [$paxA, $paxB], 'total' => $total];
+                }
+            }
+            if ($best !== null) {
+                $key = min($best['rooms'][0]->id, $best['rooms'][1]->id).'-'.max($best['rooms'][0]->id, $best['rooms'][1]->id);
+                if (! isset($seen[$key])) {
+                    $seen[$key] = true;
+                    $pairs[] = $best;
+                }
+            }
+        }
+
+        usort($pairs, fn ($a, $b) => $a['total'] <=> $b['total']);
+
+        return array_slice($pairs, 0, max(1, $maxPairs));
+    }
+
+    /**
+     * Flatten group-split pairs into normal room entries flagged combo_* so
+     * getRoomContext/formatRoomResults/budgetNotice keep working unchanged.
+     */
+    protected function flattenGroupPairs(array $pairs, ?float $maxPrice): array
+    {
+        $entries = [];
+        foreach ($pairs as $gi => $pair) {
+            [$roomA, $roomB] = $pair['rooms'];
+            [$paxA, $paxB] = $pair['pax'];
+            $flags = ['combo_group' => $gi + 1, 'combo_total' => round($pair['total'], 2)];
+            if ($maxPrice !== null && $maxPrice > 0 && $pair['total'] > $maxPrice) {
+                $flags[$pair['total'] <= $this->budgetCeiling($maxPrice) ? 'over_budget' : 'fallback'] = true;
+                if (isset($flags['fallback'])) {
+                    // ponytail: over_by only meaningful inside the ~10% window
+                } else {
+                    $flags['over_by'] = round($pair['total'] - $maxPrice, 2);
+                }
+            }
+            $entries[] = array_merge(['item' => $roomA, 'score' => 1.0 - ($gi * 0.01), 'combo_with' => $roomB->room_name, 'combo_pax' => $paxA], $flags);
+            $entries[] = array_merge(['item' => $roomB, 'score' => 1.0 - ($gi * 0.01) - 0.005, 'combo_with' => $roomA->room_name, 'combo_pax' => $paxB], $flags);
+        }
+
+        return $entries;
+    }
+
     public function hotelMinPrice(HotelModel $hotel): ?float
     {
         $min = $hotel->rooms()->where('is_shown', true)->min('base_price');
@@ -2372,7 +2484,7 @@ class GeminiService
                 ->where('is_shown', true)
                 ->whereNotNull('embedding')
                 ->when(! empty($constraints['destination_id']), fn ($q) => $q->whereHas('hotel', fn ($qq) => $qq->where('destination_id', $constraints['destination_id'])))
-                ->when($pax, fn ($q) => $q->where('max_occupancy', '>=', $pax))
+                ->when($pax, fn ($q) => $q->whereRaw('COALESCE(max_occupancy, base_occupancy, 2) >= ?', [$pax]))
                 ->when(! empty($constraints['hotel_id']), fn ($q) => $q->where('hotel_id', $constraints['hotel_id']))
                 ->when(! empty($constraints['room_id']), fn ($q) => $q->where('id', $constraints['room_id']))
                 ->when(empty($constraints['room_id']) && ! empty($constraints['room_name']), fn ($q) => $q->where('room_name', 'ILIKE', $constraints['room_name']))
@@ -2384,9 +2496,20 @@ class GeminiService
                 $fallback = RoomType::with('hotel.destination')
                     ->where('is_shown', true)
                     ->whereNotNull('embedding')
+                    ->when(! empty($constraints['destination_id']), fn ($q) => $q->whereHas('hotel', fn ($qq) => $qq->where('destination_id', $constraints['destination_id'])))
                     ->orderBy('base_price', 'asc')
                     ->limit(max($limit * 10, 50))
                     ->get();
+            }
+
+            if ($fallback->isEmpty() && $pax && empty($constraints['hotel_id']) && empty($constraints['room_id']) && empty($constraints['room_name'])) {
+                $scopeMax = $this->maxRoomOccupancy($constraints['destination_id'] ?? null, null);
+                if ($scopeMax > 0 && $pax > $scopeMax) {
+                    $pairs = $this->groupSplitOptions($constraints['destination_id'] ?? null, null, $pax, null, 2);
+                    if (! empty($pairs)) {
+                        return $this->flattenGroupPairs($pairs, $maxPrice);
+                    }
+                }
             }
 
             if ($fallback->isEmpty()) {
@@ -2417,7 +2540,7 @@ class GeminiService
             $roomsQuery->where('hotel_id', $constraints['hotel_id']);
         }
         if ($pax) {
-            $roomsQuery->where('max_occupancy', '>=', $pax);
+            $roomsQuery->whereRaw('COALESCE(max_occupancy, base_occupancy, 2) >= ?', [$pax]);
         }
         if (! empty($constraints['room_id'])) {
             $roomsQuery->where('id', $constraints['room_id']);
@@ -2436,10 +2559,23 @@ class GeminiService
                 ->get();
         }
 
+        // Group too big for any single room: suggest cheapest 2-room same-hotel
+        // splits instead of returning nothing (pax is the blocker, not budget).
+        if ($rooms->isEmpty() && $pax && empty($constraints['hotel_id']) && empty($constraints['room_id']) && empty($constraints['room_name'])) {
+            $scopeMax = $this->maxRoomOccupancy($constraints['destination_id'] ?? null, null);
+            if ($scopeMax > 0 && $pax > $scopeMax) {
+                $pairs = $this->groupSplitOptions($constraints['destination_id'] ?? null, null, $pax, $queryVector, 2);
+                if (! empty($pairs)) {
+                    return $this->flattenGroupPairs($pairs, $maxPrice);
+                }
+            }
+        }
+
         if ($rooms->isEmpty() && empty($constraints['hotel_id']) && empty($constraints['room_id']) && empty($constraints['room_name'])) {
             $rooms = RoomType::with('hotel.destination')
                 ->where('is_shown', true)
                 ->whereNotNull('embedding')
+                ->when(! empty($constraints['destination_id']), fn ($q) => $q->whereHas('hotel', fn ($qq) => $qq->where('destination_id', $constraints['destination_id'])))
                 ->get();
         }
 

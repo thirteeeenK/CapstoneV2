@@ -132,6 +132,7 @@ class ChatbotService
             $constraints = $this->intentRouter->extractConstraints($searchQuery);
             $constraints = $this->resolveConversationalDestination($constraints, $session);
             $constraints = $this->resolveDefaultDestination($constraints, $user);
+            $constraints = $this->inheritConversationalConstraints($searchQuery, $constraints, $session);
             $reply = match ($intent) {
                 IntentRouter::ACTIVITY_SEARCH => $this->handleActivitySearch($searchQuery, $constraints, $user, $session),
                 IntentRouter::HOTEL_SEARCH => $this->handleHotelSearch($searchQuery, $constraints, $user, $session),
@@ -170,6 +171,7 @@ class ChatbotService
             : $this->intentRouter->extractConstraints($message);
         $constraints = $this->resolveConversationalDestination($constraints, $session);
         $constraints = $this->resolveDefaultDestination($constraints, $user);
+        $constraints = $this->inheritConversationalConstraints($message, $constraints, $session);
 
         // Semantic catalog routing: keyword misses (e.g. a new offering with no
         // keyword yet) fall back to embeddings instead of defaulting to rooms.
@@ -187,6 +189,7 @@ class ChatbotService
                 $constraints = $this->intentRouter->extractConstraints($message);
                 $constraints = $this->resolveConversationalDestination($constraints, $session);
                 $constraints = $this->resolveDefaultDestination($constraints, $user);
+                $constraints = $this->inheritConversationalConstraints($message, $constraints, $session);
             }
             $catalog = $this->gemini->resolveSemanticCatalog($message, $constraints['destination_id'] ?? null);
             $intent = match ($catalog) {
@@ -765,9 +768,33 @@ class ChatbotService
 
         // Pax-aware extra-person hint for queries like "for 3 pax" or "additional per head"
         $pax = $constraints['pax'] ?? null;
+        $comboGroups = [];
+        foreach ($scored as $entry) {
+            if (! empty($entry['combo_group'])) {
+                $comboGroups[$entry['combo_group']]['rooms'][] = $entry;
+                $comboGroups[$entry['combo_group']]['total'] = $entry['combo_total'] ?? null;
+            }
+        }
+        if (! empty($comboGroups)) {
+            $comboLines = [];
+            foreach ($comboGroups as $gi => $group) {
+                $parts = [];
+                foreach ($group['rooms'] as $entry) {
+                    /** @var RoomType $room */
+                    $room = $entry['item'];
+                    $roomPax = (int) ($entry['combo_pax'] ?? 0);
+                    $parts[] = "{$room->room_name} at {$room->hotel->hotel_name} ({$roomPax} pax, ₱".number_format($room->calculateNightlyRate($roomPax), 2).'/night)';
+                }
+                $comboLines[] = 'Option '.$gi.': '.implode(' + ', $parts).' = ₱'.number_format((float) ($group['total'] ?? 0), 2).'/night combined';
+            }
+            $context .= "\n\n--- GROUP SPLIT (no single room fits {$pax} pax — trust these pairings and totals) ---\n".implode("\n", $comboLines)."\n---\n";
+        }
         if ($pax) {
             $hint = '';
             foreach ($scored as $entry) {
+                if (! empty($entry['combo_group'])) {
+                    continue;
+                }
                 /** @var RoomType $room */
                 $room = $entry['item'];
                 $baseOcc = (int) ($room->base_occupancy ?: 2);
@@ -1393,6 +1420,50 @@ class ChatbotService
             }
         } catch (\Throwable $e) {
             Log::debug('resolveDefaultDestination failed: '.$e->getMessage());
+        }
+
+        return $constraints;
+    }
+
+    /**
+     * Carry pax/budget/dates/destination across follow-up turns ("may pool
+     * ba yun?" after "Boracay under 5000 for 5 pax") so refinements re-search
+     * with the prior scope instead of dropping it. Explicit values in the
+     * current message always win; a fresh topic resets stored state so
+     * nothing leaks across conversations (e.g. Boracay → El Nido switch).
+     */
+    protected function inheritConversationalConstraints(string $message, array $constraints, ChatSession $session): array
+    {
+        $keys = ['pax', 'max_price', 'destination_id', 'destination_name', 'check_in_date', 'check_out_date', 'nights'];
+        try {
+            $lastBot = $session->messages()->where('sender', 'bot')->latest('id')->first();
+            $isContinuation = $lastBot && ($this->isFollowUpQuery($message, $lastBot)
+                || $this->isFilterRefinementQuery($message, $lastBot)
+                || $this->isExactRoomAvailabilityFollowUp($message, $lastBot)
+                || $this->isCheckAlternativesFollowUp($message, $lastBot)
+                || $this->isAffirmativeSearchQuery($message, $lastBot));
+
+            $metadata = $session->metadata ?? [];
+            $state = $metadata['constraint_state'] ?? [];
+
+            if ($isContinuation) {
+                foreach ($keys as $key) {
+                    if (empty($constraints[$key]) && ! empty($state[$key])) {
+                        $constraints[$key] = $state[$key];
+                    }
+                }
+            }
+
+            $newState = [];
+            foreach ($keys as $key) {
+                if (! empty($constraints[$key])) {
+                    $newState[$key] = $constraints[$key];
+                }
+            }
+            $metadata['constraint_state'] = $newState;
+            $session->update(['metadata' => $metadata]);
+        } catch (\Throwable $e) {
+            Log::debug('inheritConversationalConstraints failed: '.$e->getMessage());
         }
 
         return $constraints;
@@ -2795,7 +2866,18 @@ class ChatbotService
 
     protected function geminiChatSystemPrompt(): string
     {
-        return $this->gemini->loadChatbotSystemPrompt();
+        $base = $this->gemini->loadChatbotSystemPrompt();
+
+        // Ground destination examples to reality: Gemini free-associates
+        // Philippine destinations (Palawan, Cebu, ...) unless told otherwise.
+        $names = DestinationModel::orderBy('name')->pluck('name')->all();
+        if (empty($names)) {
+            return $base;
+        }
+
+        $list = implode(', ', $names);
+
+        return $base."\n\n## Supported Destinations (EXHAUSTIVE — from the live database)\n\nSunnyTrips currently serves ONLY these destinations: {$list}. When asking the user where they want to go, or giving destination examples, reference ONLY these. NEVER offer Palawan, Cebu, Siargao, Bohol, or any other destination as an option or example. If the user asks about a destination not in this list, say it is not in our database yet.";
     }
 
     protected function noResultsReply(string $type, array $constraints = []): string
@@ -2812,6 +2894,31 @@ class ChatbotService
             $bits[] = 'for '.(int) $constraints['pax'].' pax';
         }
         $scope = $bits ? ' '.implode(' ', $bits) : '';
+
+        // Name the real blocker instead of blaming budget: when the group does
+        // not fit any single room, say so with the biggest-room fact and the
+        // cheapest 2-room split (or why even a split cannot cover them).
+        if ($type === 'rooms' && ! empty($constraints['pax'])) {
+            $pax = (int) $constraints['pax'];
+            $destId = $constraints['destination_id'] ?? null;
+            $destName = $constraints['destination_name'] ?? 'this destination';
+            $scopeMax = $this->gemini->maxRoomOccupancy($destId, $constraints['hotel_id'] ?? null);
+            if ($scopeMax > 0 && $pax > $scopeMax) {
+                $biggest = $this->gemini->largestRoom($destId, $constraints['hotel_id'] ?? null);
+                $biggestFact = $biggest
+                    ? "our biggest, {$biggest->room_name} at {$biggest->hotel?->hotel_name}, fits {$scopeMax}"
+                    : "our biggest room fits {$scopeMax}";
+                $splits = $this->gemini->groupSplitOptions($destId, $constraints['hotel_id'] ?? null, $pax, null, 1);
+                if (! empty($splits)) {
+                    $cheapest = '₱'.number_format($splits[0]['total'], 2).'/night';
+                    $budgetBit = ! empty($constraints['max_price']) ? ' (above your ₱'.number_format((float) $constraints['max_price']).' budget)' : '';
+
+                    return "No single room in {$destName} fits {$pax} — {$biggestFact}. The cheapest 2-room split covering {$pax} is {$cheapest}{$budgetBit}. Raise your budget to that, or shrink the group size.";
+                }
+
+                return "No single room in {$destName} fits {$pax} — {$biggestFact}, and even 2 rooms cannot cover {$pax} in one hotel. Try 3 rooms, or shrink the group size.";
+            }
+        }
 
         return "I could not find any {$type} matching your request{$scope}. Try raising your budget or lowering the group size, or ask me about a specific destination like {$examples}!";
     }
@@ -2917,6 +3024,10 @@ class ChatbotService
             'over_budget' => ! empty($e['over_budget']),
             'over_by' => isset($e['over_by']) ? round((float) $e['over_by'], 2) : null,
             'fallback' => ! empty($e['fallback']),
+            'combo_group' => $e['combo_group'] ?? null,
+            'combo_total' => isset($e['combo_total']) ? round((float) $e['combo_total'], 2) : null,
+            'combo_with' => $e['combo_with'] ?? null,
+            'combo_pax' => isset($e['combo_pax']) ? (int) $e['combo_pax'] : null,
         ], $scored);
     }
 
