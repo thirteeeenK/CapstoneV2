@@ -574,6 +574,118 @@ class GeminiService
      */
     public const SEMANTIC_ROUTE_MARGIN = 0.03;
 
+    public const RETRIEVAL_FLOOR_ROOMS = 0.55;
+
+    public const RETRIEVAL_FLOOR_HOTELS = 0.60;
+
+    public const RETRIEVAL_FLOOR_ACTIVITIES = 0.55;
+
+    public const RETRIEVAL_FLOOR_PACKAGES = 0.60;
+
+    public const RETRIEVAL_FLOOR_ADDONS = 0.55;
+
+    public const OVER_BUDGET_TOLERANCE = 0.10;
+
+    public const OVER_BUDGET_MAX = 2;
+
+    public function budgetCeiling(?float $maxPrice): ?float
+    {
+        if ($maxPrice === null || $maxPrice <= 0) {
+            return null;
+        }
+
+        return $maxPrice * (1 + self::OVER_BUDGET_TOLERANCE);
+    }
+
+    public function applyRelevanceFloor(array $scored, float $floor, string $catalog): array
+    {
+        if (empty($scored)) {
+            return [];
+        }
+        $top = max(array_map(fn ($e) => (float) $e['score'], $scored));
+        $kept = array_values(array_filter($scored, fn ($e) => (float) $e['score'] >= $floor));
+        Log::debug('retrieval floor', ['catalog' => $catalog, 'floor' => $floor, 'top_score' => round($top, 4), 'kept' => count($kept), 'dropped' => count($scored) - count($kept)]);
+
+        return $kept;
+    }
+
+    public function splitBudgetOverflow(array $scored, callable $priceFor, ?float $maxPrice, int $overflowMax = 2): array
+    {
+        if ($maxPrice === null || $maxPrice <= 0) {
+            return [$scored, []];
+        }
+        $ceiling = $this->budgetCeiling($maxPrice);
+        $inBudget = [];
+        $overflowCandidates = [];
+        foreach ($scored as $entry) {
+            $price = $priceFor($entry['item']);
+            if ($price <= 0) {
+                $inBudget[] = $entry;
+
+                continue;
+            }
+            if ($price <= $maxPrice) {
+                $inBudget[] = $entry;
+            } elseif ($price <= $ceiling) {
+                $entry['over_budget'] = true;
+                $entry['over_by'] = $price - $maxPrice;
+                $overflowCandidates[] = $entry;
+            }
+        }
+        usort($overflowCandidates, fn ($a, $b) => $priceFor($a['item']) <=> $priceFor($b['item']));
+        $overflow = array_slice($overflowCandidates, 0, $overflowMax);
+        Log::debug('budget split', ['max_price' => $maxPrice, 'ceiling' => $ceiling, 'in_budget' => count($inBudget), 'overflow' => count($overflow)]);
+
+        return [$inBudget, $overflow];
+    }
+
+    public function cheapestFallback(array $scored, callable $priceFor, int $limit = 3): array
+    {
+        if (empty($scored)) {
+            return [];
+        }
+        usort($scored, fn ($a, $b) => $priceFor($a['item']) <=> $priceFor($b['item']));
+        $fallback = array_slice(array_values($scored), 0, $limit);
+        foreach ($fallback as &$entry) {
+            $entry['fallback'] = true;
+        }
+        unset($entry);
+
+        return $fallback;
+    }
+
+    public function roomPriceForPax(RoomType $room, ?int $pax): float
+    {
+        return $pax ? (float) $room->calculateNightlyRate($pax) : (float) $room->base_price;
+    }
+
+    public function hotelMinPrice(HotelModel $hotel): ?float
+    {
+        $min = $hotel->rooms()->where('is_shown', true)->min('base_price');
+
+        return $min !== null ? (float) $min : null;
+    }
+
+    public function hotelMaxOccupancy(HotelModel $hotel): int
+    {
+        return (int) ($hotel->rooms()->where('is_shown', true)->max('max_occupancy') ?: 0);
+    }
+
+    public function activityPriceForPax(ActivityModel $activity, ?int $pax): float
+    {
+        return (float) $activity->calculateRateForPax(max(1, $pax ?? 1));
+    }
+
+    public function addonPriceForPax(AddOnModel $addon, ?int $pax): float
+    {
+        return (float) $addon->getRateForPax(max(1, $pax ?? 1));
+    }
+
+    public function packagePrice(Package $package): float
+    {
+        return (float) $package->price;
+    }
+
     /**
      * Semantic catalog routing: full-RAG fallback for keyword misses.
      *
@@ -722,7 +834,7 @@ class GeminiService
      * @param  int  $limit  Maximum results to return
      * @return array Scored results: [['item' => HotelModel, 'score' => float], ...]
      */
-    public function searchHotels(string $query, int $limit = 5, ?int $hotelId = null, ?int $destinationId = null): array
+    public function searchHotels(string $query, int $limit = 5, ?int $hotelId = null, ?int $destinationId = null, array $constraints = []): array
     {
         $queryVector = $this->generateEmbedding($query, 'RETRIEVAL_QUERY');
 
@@ -736,6 +848,10 @@ class GeminiService
         if (! $vector) {
             return [];
         }
+
+        $maxPrice = isset($constraints['max_price']) ? (float) $constraints['max_price'] : null;
+        $pax = isset($constraints['pax']) ? (int) $constraints['pax'] : null;
+        $fetch = ($maxPrice !== null || $pax !== null) ? max($limit * 10, 50) : $limit;
 
         $hotels = HotelModel::with('destination')
             ->where('is_shown', true)
@@ -751,12 +867,31 @@ class GeminiService
             $hotels->where('destination_id', $destinationId);
         }
 
-        return $hotels
+        if ($pax !== null) {
+            $hotels->whereHas('rooms', fn ($q) => $q->where('is_shown', true)->where('max_occupancy', '>=', $pax));
+        }
+
+        $scored = $hotels
             ->orderByRaw('embedding <=> ? ASC', [$vector])
-            ->limit($limit)
+            ->limit($fetch)
             ->get()
             ->map(fn (HotelModel $hotel): array => ['item' => $hotel, 'score' => (float) $hotel->similarity])
             ->all();
+
+        $scored = $this->applyRelevanceFloor($scored, self::RETRIEVAL_FLOOR_HOTELS, 'hotels');
+        if ($pax !== null) {
+            $scored = array_values(array_filter($scored, fn ($e) => $this->hotelMaxOccupancy($e['item']) >= $pax));
+        }
+        if ($maxPrice !== null) {
+            [$inBudget, $overflow] = $this->splitBudgetOverflow($scored, fn ($h) => $this->hotelMinPrice($h) ?? 0, $maxPrice, self::OVER_BUDGET_MAX);
+            $merged = array_merge($inBudget, $overflow);
+            if (empty($merged) && ! empty($scored)) {
+                return $this->cheapestFallback($scored, fn ($h) => $this->hotelMinPrice($h) ?? PHP_FLOAT_MAX, min(3, $limit));
+            }
+            $scored = $merged;
+        }
+
+        return array_slice(array_values($scored), 0, $limit);
     }
 
     /**
@@ -1012,7 +1147,7 @@ class GeminiService
      * @param  int  $limit  Maximum results to return
      * @return array Scored results: [['item' => ActivityModel, 'score' => float], ...]
      */
-    public function searchActivities(string $query, int $limit = 5, ?int $destinationId = null): array
+    public function searchActivities(string $query, int $limit = 5, ?int $destinationId = null, array $constraints = []): array
     {
         $queryVector = $this->generateEmbedding($query, 'RETRIEVAL_QUERY');
 
@@ -1027,17 +1162,47 @@ class GeminiService
             return [];
         }
 
-        return ActivityModel::with('destination')
+        $maxPrice = isset($constraints['max_price']) ? (float) $constraints['max_price'] : null;
+        $pax = $constraints['pax'] ?? $this->extractPaxFromQuery($query);
+        $pax = $pax !== null ? (int) $pax : null;
+        $fetch = ($maxPrice !== null || $pax !== null) ? max($limit * 10, 50) : $limit;
+
+        $scored = ActivityModel::with('destination')
             ->where('is_shown', true)
             ->whereNotNull('embedding')
             ->when($destinationId, fn ($q) => $q->where('destination_id', $destinationId))
             ->select('*')
             ->selectRaw('1.0 - (embedding <=> ?) AS similarity', [$vector])
             ->orderByRaw('embedding <=> ? ASC', [$vector])
-            ->limit($limit)
+            ->limit($fetch)
             ->get()
             ->map(fn (ActivityModel $activity): array => ['item' => $activity, 'score' => (float) $activity->similarity])
             ->all();
+
+        $scored = $this->applyRelevanceFloor($scored, self::RETRIEVAL_FLOOR_ACTIVITIES, 'activities');
+        if ($pax !== null) {
+            $scored = array_values(array_filter($scored, fn ($e) => $e['item']->getMaxCapacityInt() >= $pax));
+        }
+        if ($maxPrice !== null) {
+            $paxForPrice = $pax ?? 1;
+            [$inBudget, $overflow] = $this->splitBudgetOverflow($scored, fn ($a) => $this->activityPriceForPax($a, $paxForPrice), $maxPrice, self::OVER_BUDGET_MAX);
+            $merged = array_merge($inBudget, $overflow);
+            if (empty($merged) && ! empty($scored)) {
+                return $this->cheapestFallback($scored, fn ($a) => $this->activityPriceForPax($a, $paxForPrice), min(3, $limit));
+            }
+            $scored = $merged;
+        }
+
+        return array_slice(array_values($scored), 0, $limit);
+    }
+
+    protected function extractPaxFromQuery(string $query): ?int
+    {
+        if (preg_match('/(\d+)\s*(?:pax|persons?|people|guests?)/i', $query, $m)) {
+            return (int) $m[1];
+        }
+
+        return null;
     }
 
     /**
@@ -1175,7 +1340,7 @@ class GeminiService
     /**
      * Semantic search over packages using pgvector cosine distance (<=>).
      */
-    public function searchPackages(string $query, int $limit = 5, ?int $destinationId = null): array
+    public function searchPackages(string $query, int $limit = 5, ?int $destinationId = null, array $constraints = []): array
     {
         $queryVector = $this->generateEmbedding($query, 'RETRIEVAL_QUERY');
 
@@ -1190,14 +1355,19 @@ class GeminiService
             return [];
         }
 
+        $maxPrice = isset($constraints['max_price']) ? (float) $constraints['max_price'] : null;
+        $pax = isset($constraints['pax']) ? (int) $constraints['pax'] : null;
+        $fetch = ($maxPrice !== null || $pax !== null) ? max($limit * 10, 50) : $limit;
+
         $packages = Package::with('destination')
             ->where('is_active', true)
             ->whereNotNull('embedding')
             ->when($destinationId, fn ($q) => $q->where('destination_id', $destinationId))
+            ->when($pax !== null, fn ($q) => $q->where('min_pax', '<=', $pax))
             ->select('*')
             ->selectRaw('1.0 - (embedding <=> ?) AS similarity', [$vectorStr])
             ->orderByRaw('embedding <=> ? ASC', [$vectorStr])
-            ->limit($limit)
+            ->limit($fetch)
             ->get();
 
         $results = [];
@@ -1205,7 +1375,17 @@ class GeminiService
             $results[] = ['item' => $pkg, 'score' => (float) $pkg->similarity];
         }
 
-        return $results;
+        $results = $this->applyRelevanceFloor($results, self::RETRIEVAL_FLOOR_PACKAGES, 'packages');
+        if ($maxPrice !== null) {
+            [$inBudget, $overflow] = $this->splitBudgetOverflow($results, fn ($p) => $this->packagePrice($p), $maxPrice, self::OVER_BUDGET_MAX);
+            $merged = array_merge($inBudget, $overflow);
+            if (empty($merged) && ! empty($results)) {
+                return $this->cheapestFallback($results, fn ($p) => $this->packagePrice($p), min(3, $limit));
+            }
+            $results = $merged;
+        }
+
+        return array_slice(array_values($results), 0, $limit);
     }
 
     /**
@@ -1318,7 +1498,7 @@ class GeminiService
     /**
      * Semantic search over AddOns using pgvector / PHP ranking.
      */
-    public function searchAddOns(string $query, int $limit = 5): array
+    public function searchAddOns(string $query, int $limit = 5, ?int $destinationId = null, array $constraints = []): array
     {
         $queryVector = $this->generateEmbedding($query, 'RETRIEVAL_QUERY');
         if (! $queryVector) {
@@ -1332,16 +1512,37 @@ class GeminiService
             return [];
         }
 
-        return AddOnModel::with('destination')
+        $maxPrice = isset($constraints['max_price']) ? (float) $constraints['max_price'] : null;
+        $pax = isset($constraints['pax']) ? (int) $constraints['pax'] : null;
+        $fetch = ($maxPrice !== null || $pax !== null || $destinationId !== null) ? max($limit * 10, 50) : $limit;
+
+        $scored = AddOnModel::with('destination')
             ->where('is_shown', true)
             ->whereNotNull('embedding')
+            ->when($destinationId, fn ($q) => $q->where('destination_id', $destinationId))
             ->select('*')
             ->selectRaw('1.0 - (embedding <=> ?) AS similarity', [$vector])
             ->orderByRaw('embedding <=> ? ASC', [$vector])
-            ->limit($limit)
+            ->limit($fetch)
             ->get()
             ->map(fn (AddOnModel $addon): array => ['item' => $addon, 'score' => (float) $addon->similarity])
             ->all();
+
+        $scored = $this->applyRelevanceFloor($scored, self::RETRIEVAL_FLOOR_ADDONS, 'addons');
+        if ($pax !== null) {
+            $scored = array_values(array_filter($scored, fn ($e) => $e['item']->getMaxPax() >= $pax));
+        }
+        if ($maxPrice !== null) {
+            $paxForPrice = $pax ?? 1;
+            [$inBudget, $overflow] = $this->splitBudgetOverflow($scored, fn ($a) => $this->addonPriceForPax($a, $paxForPrice), $maxPrice, self::OVER_BUDGET_MAX);
+            $merged = array_merge($inBudget, $overflow);
+            if (empty($merged) && ! empty($scored)) {
+                return $this->cheapestFallback($scored, fn ($a) => $this->addonPriceForPax($a, $paxForPrice), min(3, $limit));
+            }
+            $scored = $merged;
+        }
+
+        return array_slice(array_values($scored), 0, $limit);
     }
 
     /**
@@ -2161,6 +2362,8 @@ class GeminiService
 
     public function searchRoomsHybrid(string $query, array $constraints, int $limit = 5): array
     {
+        $maxPrice = ! empty($constraints['max_price']) ? (float) $constraints['max_price'] : null;
+        $pax = ! empty($constraints['pax']) ? (int) $constraints['pax'] : null;
         $queryVector = $this->generateEmbedding($query, 'RETRIEVAL_QUERY');
         if (! $queryVector) {
             Log::warning('searchRoomsHybrid: query embedding failed, fallback to price-only', ['query' => $query, 'constraints' => $constraints]);
@@ -2169,13 +2372,12 @@ class GeminiService
                 ->where('is_shown', true)
                 ->whereNotNull('embedding')
                 ->when(! empty($constraints['destination_id']), fn ($q) => $q->whereHas('hotel', fn ($qq) => $qq->where('destination_id', $constraints['destination_id'])))
-                ->when(! empty($constraints['pax']), fn ($q) => $q->where('max_occupancy', '>=', $constraints['pax']))
+                ->when($pax, fn ($q) => $q->where('max_occupancy', '>=', $pax))
                 ->when(! empty($constraints['hotel_id']), fn ($q) => $q->where('hotel_id', $constraints['hotel_id']))
-                ->when(! empty($constraints['max_price']), fn ($q) => $q->where('base_price', '<=', $constraints['max_price']))
                 ->when(! empty($constraints['room_id']), fn ($q) => $q->where('id', $constraints['room_id']))
                 ->when(empty($constraints['room_id']) && ! empty($constraints['room_name']), fn ($q) => $q->where('room_name', 'ILIKE', $constraints['room_name']))
                 ->orderBy('base_price', 'asc')
-                ->limit($limit)
+                ->limit(max($limit * 10, 50))
                 ->get();
 
             if ($fallback->isEmpty() && empty($constraints['hotel_id']) && empty($constraints['room_id']) && empty($constraints['room_name'])) {
@@ -2183,7 +2385,7 @@ class GeminiService
                     ->where('is_shown', true)
                     ->whereNotNull('embedding')
                     ->orderBy('base_price', 'asc')
-                    ->limit($limit)
+                    ->limit(max($limit * 10, 50))
                     ->get();
             }
 
@@ -2191,7 +2393,17 @@ class GeminiService
                 return [];
             }
 
-            return $fallback->map(fn ($r) => ['item' => $r, 'score' => 0.0])->all();
+            $scored = $fallback->map(fn ($r) => ['item' => $r, 'score' => 0.0])->all();
+            if ($maxPrice !== null) {
+                [$inBudget, $overflow] = $this->splitBudgetOverflow($scored, fn ($r) => $this->roomPriceForPax($r, $pax), $maxPrice, self::OVER_BUDGET_MAX);
+                $merged = array_merge($inBudget, $overflow);
+                if (empty($merged) && ! empty($scored)) {
+                    return $this->cheapestFallback($scored, fn ($r) => $this->roomPriceForPax($r, $pax), min(3, $limit));
+                }
+                $scored = $merged;
+            }
+
+            return array_slice(array_values($scored), 0, $limit);
         }
 
         $roomsQuery = RoomType::with('hotel.destination')
@@ -2204,11 +2416,8 @@ class GeminiService
         if (! empty($constraints['hotel_id'])) {
             $roomsQuery->where('hotel_id', $constraints['hotel_id']);
         }
-        if (! empty($constraints['pax'])) {
-            $roomsQuery->where('max_occupancy', '>=', $constraints['pax']);
-        }
-        if (! empty($constraints['max_price'])) {
-            $roomsQuery->where('base_price', '<=', $constraints['max_price']);
+        if ($pax) {
+            $roomsQuery->where('max_occupancy', '>=', $pax);
         }
         if (! empty($constraints['room_id'])) {
             $roomsQuery->where('id', $constraints['room_id']);
@@ -2238,7 +2447,18 @@ class GeminiService
             return [];
         }
 
-        return $this->rankRecommendations($queryVector, $rooms, $limit);
+        $scored = $this->rankRecommendations($queryVector, $rooms, max($limit * 10, 50));
+        $scored = $this->applyRelevanceFloor($scored, self::RETRIEVAL_FLOOR_ROOMS, 'rooms');
+        if ($maxPrice !== null) {
+            [$inBudget, $overflow] = $this->splitBudgetOverflow($scored, fn ($r) => $this->roomPriceForPax($r, $pax), $maxPrice, self::OVER_BUDGET_MAX);
+            $merged = array_merge($inBudget, $overflow);
+            if (empty($merged) && ! empty($scored)) {
+                return $this->cheapestFallback($scored, fn ($r) => $this->roomPriceForPax($r, $pax), min(3, $limit));
+            }
+            $scored = $merged;
+        }
+
+        return array_slice(array_values($scored), 0, $limit);
     }
 
     /**

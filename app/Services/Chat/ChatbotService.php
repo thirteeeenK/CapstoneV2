@@ -716,7 +716,7 @@ class ChatbotService
                     $roomsQuery->where('max_occupancy', '>=', $constraints['pax']);
                 }
                 if (! empty($constraints['max_price'])) {
-                    $roomsQuery->where('base_price', '<=', $constraints['max_price']);
+                    $roomsQuery->where('base_price', '<=', (float) $constraints['max_price'] * 1.10);
                 }
                 if (! empty($constraints['room_id'])) {
                     $roomsQuery->where('id', $constraints['room_id']);
@@ -760,7 +760,7 @@ class ChatbotService
         $context = $this->gemini->getRoomContext($scored);
 
         if (empty(trim($context))) {
-            return ['reply' => $this->noResultsReply('rooms')];
+            return ['reply' => $this->noResultsReply('rooms', $constraints)];
         }
 
         // Pax-aware extra-person hint for queries like "for 3 pax" or "additional per head"
@@ -789,6 +789,9 @@ class ChatbotService
         $context = $this->gemini->extractPricingContext($context, $query);
         $prompt = $this->buildPrompt('room-search', $context, $query, $user);
         $reply = $this->stripRankLineIfSingle($this->geminiChatResponse($prompt, $session), $scored);
+        if ($notice = $this->budgetNotice($scored, $constraints)) {
+            $reply = $notice."\n\n".$reply;
+        }
         // Visible filter badge when destination was inherited for a bare amenity refinement
         $hadExplicitDest = (bool) $this->intentRouter->extractDestinationName($query);
         if (! $hadExplicitDest && ! empty($constraints['destination_name'])) {
@@ -806,16 +809,21 @@ class ChatbotService
 
     protected function handleAddOnSearch(string $query, array $constraints, ?User $user, ChatSession $session): array
     {
-        $scored = $this->gemini->searchAddOns($query, 5);
+        $constraints = $this->resolveConversationalDestination($constraints, $session);
+        $constraints = $this->resolveDefaultDestination($constraints, $user);
+        $scored = $this->gemini->searchAddOns($query, 5, $constraints['destination_id'] ?? null, $constraints);
         $context = $this->gemini->getAddOnContext($scored);
 
         if (empty(trim($context))) {
-            return ['reply' => $this->noResultsReply('add-ons')];
+            return ['reply' => $this->noResultsReply('add-ons', $constraints)];
         }
 
         $context = $this->gemini->extractPricingContext($context, $query);
         $prompt = $this->buildPrompt('addon-search', $context, $query, $user);
         $reply = $this->stripRankLineIfSingle($this->geminiChatResponse($prompt, $session), $scored);
+        if ($notice = $this->budgetNotice($scored, $constraints)) {
+            $reply = $notice."\n\n".$reply;
+        }
 
         return [
             'reply' => $reply,
@@ -825,6 +833,9 @@ class ChatbotService
                 'type' => $e['item']->type,
                 'destination' => $e['item']->destination?->name ?? null,
                 'similarity_score' => round($e['score'], 4),
+                'over_budget' => ! empty($e['over_budget']),
+                'over_by' => isset($e['over_by']) ? round((float) $e['over_by'], 2) : null,
+                'fallback' => ! empty($e['fallback']),
             ], $scored),
         ];
     }
@@ -978,7 +989,7 @@ class ChatbotService
                 }
             }
             if ($scored === null) {
-                $scored = $this->gemini->searchHotels($query, $limit, $constraints['hotel_id'] ?? null, $constraints['destination_id'] ?? null);
+                $scored = $this->gemini->searchHotels($query, $limit, $constraints['hotel_id'] ?? null, $constraints['destination_id'] ?? null, $constraints);
             }
         }
 
@@ -990,11 +1001,14 @@ class ChatbotService
         $context = $this->gemini->getHotelContext($scored);
 
         if (empty(trim($context))) {
-            return ['reply' => $this->noResultsReply('hotels')];
+            return ['reply' => $this->noResultsReply('hotels', $constraints)];
         }
 
         $prompt = $this->buildPrompt('hotel-search', $context, $query, $user);
         $reply = $this->stripRankLineIfSingle($this->geminiChatResponse($prompt, $session), $scored);
+        if ($notice = $this->budgetNotice($scored, $constraints)) {
+            $reply = $notice."\n\n".$reply;
+        }
         $hadExplicitDest = (bool) $this->intentRouter->extractDestinationName($query);
         if (! $hadExplicitDest && ! empty($constraints['destination_name'])) {
             $lastBotBadge = $session->messages()->where('sender', 'bot')->latest('id')->first();
@@ -1608,7 +1622,7 @@ class ChatbotService
                 }
             }
             if ($scored === null) {
-                $scored = $this->gemini->searchActivities($query, $window, $constraints['destination_id'] ?? null);
+                $scored = $this->gemini->searchActivities($query, $window, $constraints['destination_id'] ?? null, $constraints);
                 // If personalized default added destination but global search returned broader set, re-rank with blended for that destination
                 if ($this->isPersonalized($user) && ! empty($constraints['destination_id']) && ! empty($scored)) {
                     $blended = $this->blendedVector($user, $query);
@@ -1626,19 +1640,16 @@ class ChatbotService
             }
         }
 
-        $priceNotice = null;
-        if ($maxPrice !== null) {
-            [$scored, $priceNotice] = $this->applyActivityPriceCeiling($scored, $maxPrice);
-        }
         if ($priceIntent) {
             $scored = $this->sortActivitiesByPrice($scored, $priceIntent);
         }
         $scored = array_slice($scored, 0, 3);
+        $priceNotice = $this->budgetNotice($scored, $constraints);
 
         $context = $this->gemini->getActivityContext($scored);
 
         if (empty(trim($context))) {
-            return ['reply' => $this->noResultsReply('activities')];
+            return ['reply' => $this->noResultsReply('activities', $constraints)];
         }
 
         $prompt = $this->buildPrompt('activity-search', $context, $query, $user);
@@ -1717,31 +1728,6 @@ class ChatbotService
     }
 
     /**
-     * Keep only scored activities at or below the budget. When nothing fits,
-     * return the cheapest few with a notice so the user still sees options.
-     *
-     * @return array{0: array, 1: string|null}
-     */
-    protected function applyActivityPriceCeiling(array $scored, float $maxPrice): array
-    {
-        $within = array_values(array_filter($scored, fn ($e) => $this->activityPrice($e['item']) <= $maxPrice));
-
-        if (! empty($within)) {
-            return [$within, null];
-        }
-
-        if (empty($scored)) {
-            return [[], null];
-        }
-
-        usort($scored, fn ($a, $b) => $this->activityPrice($a['item']) <=> $this->activityPrice($b['item']));
-        $cheapest = $this->activityPrice($scored[0]['item']);
-        $notice = 'Nothing matched your **₱'.number_format($maxPrice).'** budget — here are the closest options, starting at ₱'.number_format($cheapest).'.';
-
-        return [array_slice($scored, 0, 3), $notice];
-    }
-
-    /**
      * Sort scored activities by numeric price.
      */
     protected function sortActivitiesByPrice(array $scored, string $direction): array
@@ -1792,7 +1778,7 @@ class ChatbotService
                 }
             }
             if ($scored === null) {
-                $scored = $this->gemini->searchPackages($query, 5, $destinationId);
+                $scored = $this->gemini->searchPackages($query, 5, $destinationId, $constraints);
             }
         }
 
@@ -1816,12 +1802,15 @@ class ChatbotService
         $context = $this->gemini->getPackageContext($scored);
 
         if (empty(trim($context))) {
-            return ['reply' => $this->noResultsReply('packages')];
+            return ['reply' => $this->noResultsReply('packages', $constraints)];
         }
 
         $context = $this->gemini->extractPricingContext($context, $query);
         $prompt = $this->buildPrompt('package-search', $context, $query, $user);
         $reply = $this->stripRankLineIfSingle($this->geminiChatResponse($prompt, $session), $scored);
+        if ($notice = $this->budgetNotice($scored, $constraints)) {
+            $reply = $notice."\n\n".$reply;
+        }
 
         return [
             'reply' => $reply,
@@ -2809,11 +2798,46 @@ class ChatbotService
         return $this->gemini->loadChatbotSystemPrompt();
     }
 
-    protected function noResultsReply(string $type): string
+    protected function noResultsReply(string $type, array $constraints = []): string
     {
         $examples = $this->exampleDestinations(2);
+        $bits = [];
+        if (! empty($constraints['destination_name'])) {
+            $bits[] = 'in '.$constraints['destination_name'];
+        }
+        if (! empty($constraints['max_price'])) {
+            $bits[] = 'under ₱'.number_format((float) $constraints['max_price']);
+        }
+        if (! empty($constraints['pax'])) {
+            $bits[] = 'for '.(int) $constraints['pax'].' pax';
+        }
+        $scope = $bits ? ' '.implode(' ', $bits) : '';
 
-        return "I could not find any {$type} matching your request. Try broadening your search, or ask me about a specific destination like {$examples}!";
+        return "I could not find any {$type} matching your request{$scope}. Try raising your budget or lowering the group size, or ask me about a specific destination like {$examples}!";
+    }
+
+    /**
+     * Budget notice for overflow/fallback flags set by GeminiService search.
+     * Null when everything shown is in budget (or no budget was given).
+     */
+    protected function budgetNotice(array $scored, array $constraints): ?string
+    {
+        $maxPrice = ! empty($constraints['max_price']) ? (float) $constraints['max_price'] : null;
+        if ($maxPrice === null || empty($scored)) {
+            return null;
+        }
+        $fallbackCount = count(array_filter($scored, fn ($e) => ! empty($e['fallback'])));
+        if ($fallbackCount > 0 && $fallbackCount === count($scored)) {
+            return 'Nothing matched your **₱'.number_format($maxPrice).'** budget — here are the closest options above it.';
+        }
+        $overCount = count(array_filter($scored, fn ($e) => ! empty($e['over_budget'])));
+        if ($overCount > 0) {
+            $plural = $overCount > 1;
+
+            return 'Heads up: '.($plural ? "{$overCount} marked options run" : '1 marked option runs').' slightly over your **₱'.number_format($maxPrice).'** budget (within ~10%).';
+        }
+
+        return null;
     }
 
     /**
@@ -2890,6 +2914,9 @@ class ChatbotService
             'check_in_date' => $e['check_in_date'] ?? null,
             'check_out_date' => $e['check_out_date'] ?? null,
             'pax' => $e['pax'] ?? null,
+            'over_budget' => ! empty($e['over_budget']),
+            'over_by' => isset($e['over_by']) ? round((float) $e['over_by'], 2) : null,
+            'fallback' => ! empty($e['fallback']),
         ], $scored);
     }
 
@@ -2904,6 +2931,9 @@ class ChatbotService
             'price_from' => $this->hotelPriceFrom($e['item']),
             'image' => $this->firstImage($e['item']->images),
             'similarity_score' => round($e['score'], 4),
+            'over_budget' => ! empty($e['over_budget']),
+            'over_by' => isset($e['over_by']) ? round((float) $e['over_by'], 2) : null,
+            'fallback' => ! empty($e['fallback']),
         ], $scored);
     }
 
@@ -2919,6 +2949,9 @@ class ChatbotService
             'description' => strip_tags($e['item']->description ?? ''),
             'image' => $this->firstImage($e['item']->images),
             'similarity_score' => round($e['score'], 4),
+            'over_budget' => ! empty($e['over_budget']),
+            'over_by' => isset($e['over_by']) ? round((float) $e['over_by'], 2) : null,
+            'fallback' => ! empty($e['fallback']),
         ], $scored);
     }
 
@@ -2938,6 +2971,9 @@ class ChatbotService
             'inclusions' => $e['item']->generic_inclusions,
             'image' => $this->firstImage($e['item']->images),
             'similarity_score' => round($e['score'], 4),
+            'over_budget' => ! empty($e['over_budget']),
+            'over_by' => isset($e['over_by']) ? round((float) $e['over_by'], 2) : null,
+            'fallback' => ! empty($e['fallback']),
         ], $scored);
     }
 
