@@ -625,6 +625,40 @@
                         @endif
                     </section>
 
+                    {{-- Travel Documents (uploaded by admin) --}}
+                    @if($booking->attachments->isNotEmpty())
+                    <section class="bg-white rounded-3xl border border-sand-200/80 shadow-xs p-6">
+                        <h2 class="font-headline text-sm font-bold text-slate-900 flex items-center gap-2 mb-4">
+                            <span class="w-7 h-7 rounded-lg bg-sky-100 text-sky-700 border border-sky-200 flex items-center justify-center">
+                                <span class="material-symbols-outlined text-[15px]">folder_shared</span>
+                            </span>
+                            Travel Documents
+                        </h2>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            @foreach($booking->attachments as $doc)
+                                <a href="{{ asset('storage/' . $doc->path) }}" target="_blank"
+                                   class="flex items-center gap-3 bg-sand-50/60 border border-sand-200/80 rounded-2xl p-3 hover:border-sky-300 hover:shadow-sm transition group">
+                                    @if($doc->isImage())
+                                        <img src="{{ asset('storage/' . $doc->path) }}" alt="{{ $doc->label }}" class="w-14 h-14 rounded-xl object-cover shrink-0 border border-sand-200">
+                                    @else
+                                        <span class="w-14 h-14 rounded-xl bg-rose-50 text-rose-600 border border-rose-200 flex items-center justify-center shrink-0">
+                                            <span class="material-symbols-outlined">picture_as_pdf</span>
+                                        </span>
+                                    @endif
+                                    <span class="flex-1 min-w-0">
+                                        <span class="block text-xs font-bold text-slate-900 truncate group-hover:text-sky-800">{{ $doc->label }}</span>
+                                        <span class="block text-[10px] text-slate-500 font-medium mt-0.5">
+                                            {{ ucfirst($doc->kind) }}
+                                            @if($doc->item) · {{ Str::limit($doc->item->item_title, 30) }} @endif
+                                        </span>
+                                    </span>
+                                    <span class="material-symbols-outlined text-slate-400 group-hover:text-sky-600 text-lg shrink-0">open_in_new</span>
+                                </a>
+                            @endforeach
+                        </div>
+                    </section>
+                    @endif
+
                     {{-- Settlement --}}
                     <section class="bg-white rounded-3xl border border-sand-200/80 shadow-xs p-6">
                         <h2 class="font-headline text-sm font-bold text-slate-900 flex items-center gap-2 mb-4">

@@ -7,6 +7,7 @@ use App\Http\Requests\Admin\StoreAdminBookingRequest;
 use App\Models\ActivityModel;
 use App\Models\AddOnModel;
 use App\Models\Booking;
+use App\Models\BookingAttachment;
 use App\Models\BookingItem;
 use App\Models\BookingStatusHistory;
 use App\Models\DestinationModel;
@@ -18,6 +19,7 @@ use App\Notifications\BookingApproved;
 use App\Notifications\BookingCancellationApproved;
 use App\Notifications\BookingCancellationDenied;
 use App\Notifications\BookingCancelled;
+use App\Notifications\BookingDocumentAdded;
 use App\Notifications\BookingNotification;
 use App\Notifications\BookingPaid;
 use App\Notifications\BookingRejected;
@@ -32,6 +34,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 class AdminBookingController extends Controller
@@ -420,8 +423,17 @@ class AdminBookingController extends Controller
      */
     public function show($id)
     {
-        $booking = Booking::with(['items', 'user', 'reviewer', 'history'])
+        $booking = Booking::with(['items', 'user', 'reviewer', 'history', 'attachments'])
             ->findOrFail($id);
+
+        $flightHints = [];
+        foreach ($booking->items as $item) {
+            if ($item->item_type === 'package' && $item->item_id) {
+                $pkg = Package::find($item->item_id);
+                $text = strtolower(implode(' ', (array) ($pkg->generic_inclusions ?? [])));
+                $flightHints[$item->id] = str_contains($text, 'air') || str_contains($text, 'flight') || str_contains($text, 'ticket');
+            }
+        }
 
         $roomAvailability = [];
         foreach ($booking->items as $item) {
@@ -435,7 +447,7 @@ class AdminBookingController extends Controller
             }
         }
 
-        return view('admin.bookings.show', compact('booking', 'roomAvailability'));
+        return view('admin.bookings.show', compact('booking', 'roomAvailability', 'flightHints'));
     }
 
     /**
@@ -780,5 +792,70 @@ class AdminBookingController extends Controller
         }
 
         return back()->with('error', __($status));
+    }
+
+    /**
+     * Upload a travel document for a booking. Works in any non-terminal
+     * status (even after payment/confirmation) — attachments never touch
+     * the status machine or money fields.
+     */
+    public function uploadAttachment(Request $request, $id)
+    {
+        $booking = Booking::with('items')->findOrFail($id);
+
+        if (in_array($booking->status, BookingAttachment::TERMINAL_STATUSES, true)) {
+            return back()->with('error', 'Documents cannot be added to a closed booking.');
+        }
+
+        $validated = $request->validate([
+            'kind' => 'required|string|in:'.implode(',', BookingAttachment::KINDS),
+            'label' => 'required|string|max:120',
+            'booking_item_id' => 'nullable|integer|exists:booking_items,id',
+            'file' => 'required|file|mimes:jpg,jpeg,png,webp,pdf|max:5120',
+        ]);
+
+        if (! empty($validated['booking_item_id'])
+            && ! $booking->items->contains('id', (int) $validated['booking_item_id'])) {
+            return back()->with('error', 'The selected booking item does not belong to this booking.');
+        }
+
+        $file = $request->file('file');
+
+        $attachment = BookingAttachment::create([
+            'booking_id' => $booking->id,
+            'booking_item_id' => $validated['booking_item_id'] ?? null,
+            'kind' => $validated['kind'],
+            'label' => trim($validated['label']),
+            'path' => $file->store('booking-documents', 'public'),
+            'mime' => $file->getMimeType(),
+            'size' => $file->getSize(),
+            'uploaded_by_admin_id' => auth('admin')->id(),
+        ]);
+
+        BookingNotification::send($booking, new BookingDocumentAdded($attachment->load('booking')));
+
+        return back()->with('success', "Document \"{$attachment->label}\" added and sent to the customer.");
+    }
+
+    /**
+     * Delete a travel document (admin-only, any non-terminal status).
+     */
+    public function destroyAttachment($id, $attachmentId)
+    {
+        $booking = Booking::findOrFail($id);
+
+        if (in_array($booking->status, BookingAttachment::TERMINAL_STATUSES, true)) {
+            return back()->with('error', 'Documents cannot be removed from a closed booking.');
+        }
+
+        $attachment = BookingAttachment::where('booking_id', $booking->id)->findOrFail($attachmentId);
+        $label = $attachment->label;
+
+        if ($attachment->path) {
+            Storage::disk('public')->delete($attachment->path);
+        }
+        $attachment->delete();
+
+        return back()->with('success', "Document \"{$label}\" removed.");
     }
 }

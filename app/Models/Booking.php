@@ -138,6 +138,11 @@ class Booking extends Model
         return $this->hasMany(BookingStatusHistory::class)->orderBy('id', 'desc');
     }
 
+    public function attachments()
+    {
+        return $this->hasMany(BookingAttachment::class)->orderBy('id', 'desc');
+    }
+
     /**
      * Whether this booking currently holds inventory.
      */

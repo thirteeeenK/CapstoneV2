@@ -20,5 +20,7 @@ Route::prefix('admin')->group(function () {
         Route::post('/bookings/{id}/mark-completed', [AdminBookingController::class, 'markCompleted'])->name('admin.bookings.mark-completed');
         Route::post('/bookings/{id}/mark-refunded', [AdminBookingController::class, 'markRefunded'])->name('admin.bookings.mark-refunded');
         Route::post('/bookings/{id}/send-password-reset', [AdminBookingController::class, 'sendPasswordReset'])->name('admin.bookings.send-password-reset');
+        Route::post('/bookings/{id}/attachments', [AdminBookingController::class, 'uploadAttachment'])->name('admin.bookings.attachments.store');
+        Route::delete('/bookings/{id}/attachments/{attachmentId}', [AdminBookingController::class, 'destroyAttachment'])->name('admin.bookings.attachments.destroy');
     });
 });

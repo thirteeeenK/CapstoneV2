@@ -459,6 +459,106 @@
             </form>
         </div>
 
+        {{-- Travel Documents (admin → customer, works in any non-terminal status) --}}
+        <div class="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
+                <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-sky-600">folder_shared</span>
+                    Travel Documents ({{ $booking->attachments->count() }})
+                </h3>
+                <span class="text-[11px] font-bold text-slate-500 bg-slate-100 border border-slate-200 rounded-lg px-2.5 py-1">
+                    Visible to customer instantly · works after payment
+                </span>
+            </div>
+
+            @foreach($booking->items->where('item_type', 'package') as $pkgItem)
+                @if(!empty($flightHints[$pkgItem->id]))
+                    <p class="mb-3 text-[11px] font-bold text-sky-800 bg-sky-50 border border-sky-200 rounded-xl px-3 py-2 flex items-center gap-1.5">
+                        <span class="material-symbols-outlined text-[15px]">flight</span>
+                        {{ $pkgItem->item_title }} includes flights — attach the e-ticket below (kind: Ticket).
+                    </p>
+                @endif
+            @endforeach
+
+            @if($booking->attachments->isNotEmpty())
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
+                    @foreach($booking->attachments as $doc)
+                        <div class="flex items-center gap-2.5 bg-slate-50 border border-slate-200/70 rounded-xl p-2.5">
+                            @if($doc->isImage())
+                                <img src="{{ asset('storage/' . $doc->path) }}" alt="{{ $doc->label }}" class="w-11 h-11 rounded-lg object-cover shrink-0 border border-slate-200">
+                            @else
+                                <div class="w-11 h-11 rounded-lg bg-rose-50 text-rose-600 border border-rose-200 flex items-center justify-center shrink-0">
+                                    <span class="material-symbols-outlined">picture_as_pdf</span>
+                                </div>
+                            @endif
+                            <div class="flex-1 min-w-0">
+                                <p class="text-xs font-bold text-slate-900 truncate">{{ $doc->label }}</p>
+                                <p class="text-[10px] text-slate-500 font-medium">
+                                    {{ ucfirst($doc->kind) }}
+                                    @if($doc->item) · {{ Str::limit($doc->item->item_title, 28) }} @endif
+                                </p>
+                            </div>
+                            <a href="{{ asset('storage/' . $doc->path) }}" target="_blank" class="text-sky-600 hover:text-sky-800 shrink-0" title="View">
+                                <span class="material-symbols-outlined text-lg">visibility</span>
+                            </a>
+                            @if(!in_array($booking->status, ['rejected', 'cancelled', 'expired'], true))
+                                <form action="{{ route('admin.bookings.attachments.destroy', [$booking->id, $doc->id]) }}" method="POST" class="shrink-0" onsubmit="return confirm('Remove this document? The customer will no longer see it.')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="text-rose-500 hover:text-rose-700" title="Remove">
+                                        <span class="material-symbols-outlined text-lg">delete</span>
+                                    </button>
+                                </form>
+                            @endif
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <p class="text-xs text-slate-400 font-medium mb-4">No documents yet. Upload tickets, vouchers, confirmations or receipts — the customer sees them immediately.</p>
+            @endif
+
+            @if(!in_array($booking->status, ['rejected', 'cancelled', 'expired'], true))
+                <form action="{{ route('admin.bookings.attachments.store', $booking->id) }}" method="POST" enctype="multipart/form-data" class="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50 border border-slate-200/70 rounded-2xl p-4">
+                    @csrf
+                    <div>
+                        <label class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block mb-1">Kind</label>
+                        <select name="kind" required class="w-full px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">
+                            <option value="ticket">Ticket</option>
+                            <option value="voucher">Voucher</option>
+                            <option value="confirmation">Confirmation</option>
+                            <option value="receipt">Receipt</option>
+                            <option value="other" selected>Other</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block mb-1">Attach to item (optional)</label>
+                        <select name="booking_item_id" class="w-full px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">
+                            <option value="">Whole booking</option>
+                            @foreach($booking->items as $item)
+                                <option value="{{ $item->id }}">{{ Str::limit($item->item_title, 40) }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block mb-1">Label (shown to customer)</label>
+                        <input type="text" name="label" required maxlength="120" placeholder="e.g. Airline e-ticket — outbound"
+                               class="w-full px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block mb-1">File (JPG/PNG/WebP/PDF, max 5MB)</label>
+                        <input type="file" name="file" required accept=".jpg,.jpeg,.png,.webp,.pdf"
+                               class="w-full px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">
+                    </div>
+                    <div class="sm:col-span-2">
+                        <button type="submit" class="w-full py-2.5 px-6 rounded-xl bg-sky-600 text-white font-extrabold text-xs transition-all hover:bg-sky-500 cursor-pointer shadow-lg shadow-sky-600/25 flex items-center justify-center gap-2">
+                            <span class="material-symbols-outlined text-lg">upload</span>
+                            Upload & Send to Customer
+                        </button>
+                    </div>
+                </form>
+            @endif
+        </div>
+
         {{-- Status History --}}
         @if($booking->history->isNotEmpty())
             <div class="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs">

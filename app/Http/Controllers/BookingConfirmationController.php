@@ -43,7 +43,7 @@ class BookingConfirmationController extends Controller
      */
     protected function loadOwnedBooking(string $bookingCode): Booking
     {
-        $booking = Booking::with(['items', 'user', 'history', 'reviews'])
+        $booking = Booking::with(['items', 'user', 'history', 'reviews', 'attachments'])
             ->where('booking_code', $bookingCode)
             ->first();
 
