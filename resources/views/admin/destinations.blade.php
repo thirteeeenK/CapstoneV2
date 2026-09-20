@@ -185,7 +185,7 @@
 
             <!-- Items -->
             <div class="divide-y divide-slate-100">
-                <template x-for="destination in filteredDestinations" :key="destination.id">
+                <template x-for="(destination, index) in filteredDestinations" :key="destination.id">
                     <div class="group flex items-center px-6 py-4 hover:bg-slate-50/60 transition-colors duration-150">
                         <!-- Destination Info -->
                         <div class="flex-1 min-w-0 flex items-center gap-4">
@@ -200,7 +200,7 @@
                                 </svg>
                             </div>
                             <div class="min-w-0">
-                                <h3 class="text-sm font-semibold text-slate-900 truncate" x-text="destination.id + '. ' + destination.name">
+                                <h3 class="text-sm font-semibold text-slate-900 truncate" x-text="(index + 1) + '. ' + destination.name">
                                 </h3>
                             </div>
                         </div>
@@ -312,7 +312,7 @@
             </div>
 
             <!-- Modal Body -->
-            <form x-bind:action="formAction" method="POST" class="px-6 py-6">
+            <form x-bind:action="formAction" method="POST" enctype="multipart/form-data" class="px-6 py-6">
                 @csrf
 
                 <template x-if="methodType === 'PUT'">
