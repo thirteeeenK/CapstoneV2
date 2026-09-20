@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ChatSession;
 use App\Models\SupportInquiry;
 use App\Services\Chat\ChatbotService;
 use App\Services\Chat\ConversationManager;
@@ -12,6 +13,10 @@ use Illuminate\Http\Request;
 class ChatbotController extends Controller
 {
     private const WARNING_MARKER = '⚠️ Account notice:';
+
+    private const GUEST_NUDGE_THRESHOLD = 10;
+
+    private const GUEST_NUDGE = ChatbotService::GUEST_NUDGE;
 
     public function __construct(
         protected ChatbotService $chatbot,
@@ -34,19 +39,28 @@ class ChatbotController extends Controller
             $user
         );
 
-        $result = $this->chatbot->handle(
-            $session,
-            $user,
-            $validated['message'],
-            isset($validated['user_lat']) ? (float) $validated['user_lat'] : null,
-            isset($validated['user_lng']) ? (float) $validated['user_lng'] : null
-        );
+        $result = $this->chatbot->checkRepetition($session, $user, $validated['message'], $request->ip())
+            ?? $this->chatbot->handle(
+                $session,
+                $user,
+                $validated['message'],
+                isset($validated['user_lat']) ? (float) $validated['user_lat'] : null,
+                isset($validated['user_lng']) ? (float) $validated['user_lng'] : null
+            );
 
         if (! empty($result['blocked'])) {
             return response()->json([
                 'status' => 'blocked',
                 'reply' => $result['response'],
             ], 403);
+        }
+
+        if (! $user && ($result['status'] ?? null) === 'success' && ($result['control'] ?? null) === 'ai' && isset($result['reply'])) {
+            $nudge = $this->guestNudgeSuffix($session);
+            if ($nudge !== null && ! str_ends_with($result['reply'], $nudge)) {
+                $result['reply'] .= "\n\n".$nudge;
+                $session->messages()->where('sender', 'bot')->latest('id')->first()?->update(['message' => $result['reply']]);
+            }
         }
 
         if (($result['status'] ?? null) === 'success' && isset($result['reply']) && $user && $user->isWarned()) {
@@ -64,6 +78,18 @@ class ChatbotController extends Controller
         }
 
         return response()->json($result);
+    }
+
+    /**
+     * RSC action: guests chatting past the question threshold get a login /
+     * agency-contact nudge on every AI reply. Returns null for authed users
+     * or sessions still under the threshold.
+     */
+    private function guestNudgeSuffix(ChatSession $session): ?string
+    {
+        $questionCount = $session->messages()->where('sender', 'user')->count();
+
+        return $questionCount >= self::GUEST_NUDGE_THRESHOLD ? self::GUEST_NUDGE : null;
     }
 
     public function active(Request $request): JsonResponse

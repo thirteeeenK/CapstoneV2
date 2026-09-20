@@ -41,7 +41,7 @@ class CheckIpBanned
                     'level' => $ban?->ban_level ?? 'temporary',
                     'reason' => $ban?->reason ?? 'Terms of service violation.',
                     'banned_at' => $ban?->banned_at?->format('M d, Y'),
-                    'expires_at' => $ban?->expires_at?->format('M d, Y'),
+                    'expires_at' => $ban?->expires_at?->format('M d, Y g:i A'),
                     'message' => $ban?->reason
                         ? 'Your IP has been banned. Reason: '.$ban->reason
                         : 'Your IP has been banned.',

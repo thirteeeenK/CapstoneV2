@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\ActivityModel;
 use App\Models\AddOnModel;
+use App\Models\AdminAuditLog;
 use App\Models\ChatbotAbuseReport;
 use App\Models\DestinationModel;
 use App\Models\Faq;
@@ -1169,6 +1170,42 @@ class GeminiService
      * @param  array  $scoredRooms  Output from searchRooms() or rankRecommendations()
      * @return string Formatted context string ready for prompt injection
      */
+    /**
+     * RSC action: last date a price field changed, per item id, from admin
+     * audit logs (create rows count — the price was set then). Single query
+     * per result set. Falls back to the model's updated_at at call sites.
+     *
+     * @return array<int, string> id => 'M d, Y'
+     */
+    public function priceUpdatedDates(string $auditableType, array $ids, string $priceField): array
+    {
+        $dates = [];
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids))));
+        if (empty($ids)) {
+            return $dates;
+        }
+        try {
+            $logs = AdminAuditLog::where('auditable_type', $auditableType)
+                ->whereIn('auditable_id', $ids)
+                ->orderByDesc('created_at')
+                ->get(['auditable_id', 'new_values', 'created_at']);
+            foreach ($logs as $log) {
+                $id = (int) $log->auditable_id;
+                if (isset($dates[$id])) {
+                    continue;
+                }
+                $new = $log->new_values;
+                if (is_array($new) && array_key_exists($priceField, $new)) {
+                    $dates[$id] = $log->created_at->format('M d, Y');
+                }
+            }
+        } catch (\Throwable $e) {
+            Log::debug('priceUpdatedDates failed: '.$e->getMessage());
+        }
+
+        return $dates;
+    }
+
     public function getRoomContext(array $scoredRooms): string
     {
         if (empty($scoredRooms)) {
@@ -1176,6 +1213,7 @@ class GeminiService
         }
 
         $blocks = [];
+        $priceDates = $this->priceUpdatedDates('room', array_map(fn ($e) => $e['item']->id, $scoredRooms), 'base_price');
 
         foreach ($scoredRooms as $index => $entry) {
             /** @var RoomType $room */
@@ -1217,6 +1255,7 @@ class GeminiService
             }
 
             $rankLabel = $rank === 1 ? "Rank #{$rank} — BEST MATCH (relevance: {$score})" : "Rank #{$rank} — Alternative (relevance: {$score})";
+            $priceDate = $priceDates[$room->id] ?? $room->updated_at?->format('M d, Y');
             $lines = array_filter([
                 "--- Room {$rankLabel} ---",
                 "Room Name: {$room->room_name}",
@@ -1230,6 +1269,7 @@ class GeminiService
                 "Bed Configuration: {$room->bed_configuration}",
                 $room->room_size ? "Room Size: {$room->room_size}" : null,
                 'Base Price: ₱'.number_format($room->base_price, 2).' per night',
+                $priceDate ? "Price last updated: {$priceDate}" : null,
                 $room->view_type ? "View Type: {$room->view_type}" : null,
                 "Total Physical Rooms: {$room->total_rooms} (inventory count, not live availability)",
                 $amenities ? "Amenities: {$amenities}" : null,
@@ -1350,6 +1390,7 @@ class GeminiService
         }
 
         $blocks = [];
+        $priceDates = $this->priceUpdatedDates('activity', array_map(fn ($e) => $e['item']->id, $scoredActivities), 'rate');
 
         foreach ($scoredActivities as $index => $entry) {
             /** @var ActivityModel $activity */
@@ -1415,6 +1456,7 @@ class GeminiService
             }
 
             $rankLabel = $rank === 1 ? "Rank #{$rank} — BEST MATCH (relevance: {$score})" : "Rank #{$rank} — Alternative (relevance: {$score})";
+            $priceDate = $priceDates[$activity->id] ?? $activity->updated_at?->format('M d, Y');
             $lines = array_filter([
                 "--- Activity {$rankLabel} ---",
                 "Activity Name: {$activity->activity_name}",
@@ -1426,6 +1468,7 @@ class GeminiService
                 $activity->duration ? "Duration: {$activity->duration}" : null,
                 $activity->capacity ? "Group Capacity: {$activity->capacity}" : null,
                 "Rate / Pricing: {$activity->rate} ({$rateType})",
+                $priceDate ? "Price last updated: {$priceDate}" : null,
                 $activity->ideal_for ? "Ideal Participants: {$activity->ideal_for}" : null,
                 $vibes ? "Vibes & Tags: {$vibes}" : null,
                 $reqs ? "Requirements & Restrictions: {$reqs}" : null,
@@ -1564,6 +1607,7 @@ class GeminiService
         }
 
         $blocks = [];
+        $priceDates = $this->priceUpdatedDates('package', array_map(fn ($e) => $e['item']->id, $scoredPackages), 'price');
 
         foreach ($scoredPackages as $index => $entry) {
             /** @var Package $package */
@@ -1614,12 +1658,14 @@ class GeminiService
             }
 
             $rankLabel = $rank === 1 ? "Rank #{$rank} — BEST MATCH (relevance: {$score})" : "Rank #{$rank} — Alternative (relevance: {$score})";
+            $priceDate = $priceDates[$package->id] ?? $package->updated_at?->format('M d, Y');
             $lines = array_filter([
                 "--- Package {$rankLabel} ---",
                 "Package Name: {$package->name}",
                 "Destination: {$destName}",
                 'Type: '.($package->type ?: 'Standard Tour Promo'),
                 'Price: ₱'.number_format($package->price, 2).' per pax (total = price × guests)',
+                $priceDate ? "Price last updated: {$priceDate}" : null,
                 "Duration: {$package->days}D/{$package->nights}N",
                 "Minimum Guests: {$package->min_pax} pax",
                 $validity,
@@ -1699,6 +1745,7 @@ class GeminiService
         }
 
         $blocks = [];
+        $priceDates = $this->priceUpdatedDates('addon', array_map(fn ($e) => $e['item']->id, $scoredAddOns), 'pricing_tiers');
 
         foreach ($scoredAddOns as $index => $entry) {
             /** @var AddOnModel $addon */
@@ -1733,6 +1780,7 @@ class GeminiService
             }
 
             $rankLabel = $rank === 1 ? "Rank #{$rank} — BEST MATCH (relevance: {$score})" : "Rank #{$rank} — Alternative (relevance: {$score})";
+            $priceDate = $priceDates[$addon->id] ?? $addon->updated_at?->format('M d, Y');
             $lines = array_filter([
                 "--- AddOn {$rankLabel} ---",
                 "AddOn Name: {$addon->name}",
@@ -1741,6 +1789,7 @@ class GeminiService
                 $inclusions ? "Inclusions: {$inclusions}" : null,
                 $pricingList ? "Tiered Pricing: {$pricingList}" : null,
                 $surchargeList ? "Surcharges: {$surchargeList}" : null,
+                $priceDate ? "Price last updated: {$priceDate}" : null,
                 $desc ? "Description: {$desc}" : null,
             ]);
 

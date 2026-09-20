@@ -89,26 +89,6 @@
 
         {{-- Messages area --}}
         <div x-ref="messages" class="flex-1 overflow-y-auto px-4 py-4 space-y-4 bg-slate-50/80">
-            {{-- Guest rate limit reached --}}
-            <template x-if="guestLimited">
-                <div class="text-center py-6 px-4 bg-white rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
-                    <div
-                        class="w-12 h-12 rounded-2xl bg-coral-50 text-coral-600 mx-auto flex items-center justify-center border border-coral-100">
-                        <span class="material-symbols-outlined text-[24px]">lock</span>
-                    </div>
-                    <p class="text-slate-800 font-body text-xs font-bold" x-text="guestLimitMessage"></p>
-                    <div class="flex flex-col gap-2 pt-1">
-                        <a :href="loginUrl"
-                            class="inline-block bg-ocean-600 text-white text-xs px-4 py-2.5 rounded-xl hover:bg-ocean-700 transition-colors font-headline font-bold shadow-xs">
-                            Log in
-                        </a>
-                        <a :href="registerUrl" class="inline-block text-ocean-600 text-xs hover:underline font-bold">
-                            Sign up for free
-                        </a>
-                    </div>
-                </div>
-            </template>
-
             {{-- Welcome --}}
             <template x-if="messages.length === 0 && !guestLimited">
                 <div class="text-center py-6 px-4 bg-white rounded-2xl border border-slate-200/80 shadow-xs space-y-2">
@@ -396,6 +376,28 @@
                     <x-thinking-orb state="composing" :size="18" />
                 </div>
             </div>
+
+            {{-- Guest rate limit / spam block: last child so it renders at the
+                bottom of the list where the eye already rests (list auto-scrolls
+                to bottom on every message; input hides while limited). --}}
+            <template x-if="guestLimited">
+                <div class="text-center py-6 px-4 bg-white rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
+                    <div
+                        class="w-12 h-12 rounded-2xl bg-coral-50 text-coral-600 mx-auto flex items-center justify-center border border-coral-100">
+                        <span class="material-symbols-outlined text-[24px]">lock</span>
+                    </div>
+                    <p class="text-slate-800 font-body text-xs font-bold" x-text="guestLimitMessage"></p>
+                    <div class="flex flex-col gap-2 pt-1">
+                        <a :href="loginUrl"
+                            class="inline-block bg-ocean-600 text-white text-xs px-4 py-2.5 rounded-xl hover:bg-ocean-700 transition-colors font-headline font-bold shadow-xs">
+                            Log in
+                        </a>
+                        <a :href="registerUrl" class="inline-block text-ocean-600 text-xs hover:underline font-bold">
+                            Sign up for free
+                        </a>
+                    </div>
+                </div>
+            </template>
         </div>
 
         {{-- Input area --}}
@@ -704,6 +706,11 @@
                 });
             },
 
+            showLockPanel(message) {
+                this.guestLimited = true;
+                this.guestLimitMessage = message;
+            },
+
             addMessage(sender, text, extra = {}) {
                 this.messages.push({ id: Date.now(), sender, text, ...extra });
                 this.scrollDown();
@@ -735,8 +742,7 @@
                     const data = await res.json();
 
                     if (res.status === 429 && data.status === 'guest_limit_reached') {
-                        this.guestLimited = true;
-                        this.guestLimitMessage = data.reply;
+                        this.showLockPanel(data.reply);
                         this.loginUrl = data.login_url || this.loginUrl;
                         this.registerUrl = data.register_url || this.registerUrl;
                         return;
@@ -744,6 +750,11 @@
 
                     if (res.status === 429) {
                         this.addMessage('bot', 'You are sending messages too quickly. Please wait a few seconds and try again.', {});
+                        return;
+                    }
+
+                    if (res.status === 403 && data.status === 'blocked') {
+                        this.showLockPanel(data.reply || 'Your message was blocked by our safety system.');
                         return;
                     }
 

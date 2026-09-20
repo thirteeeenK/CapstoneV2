@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\EnforceGuestChatLimits;
 use App\Models\ActivityModel;
+use App\Models\AdminAuditLog;
 use App\Models\AdminModel;
 use App\Models\Booking;
 use App\Models\BookingItem;
@@ -11,12 +12,14 @@ use App\Models\ChatSession;
 use App\Models\DestinationModel;
 use App\Models\Faq;
 use App\Models\HotelModel;
+use App\Models\IpBan;
 use App\Models\Package;
 use App\Models\RoomType;
 use App\Models\SupportInquiry;
 use App\Services\Chat\ChatbotService;
 use App\Services\GeminiService;
 use Illuminate\Http\Client\Request;
+use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Support\Facades\Http;
 
 beforeEach(function () {
@@ -1534,4 +1537,321 @@ test('hotel location reply prefers the typed specific address', function () {
     $response->assertOk();
     expect($response->json('reply'))->toContain('Station 1');
     expect($response->json('reply'))->not->toContain('latitude');
+});
+
+test('guest under the question threshold gets no login nudge', function () {
+    $this->withoutMiddleware([
+        EnforceGuestChatLimits::class,
+        ThrottleRequests::class,
+    ]);
+
+    $token = null;
+    for ($i = 1; $i <= 9; $i++) {
+        $res = $this->postJson('/chat', [
+            'message' => "guest threshold probe question {$i}",
+            'session_token' => $token,
+        ]);
+        $res->assertOk()->assertJsonPath('status', 'success');
+        $token = $res->json('session_token');
+    }
+
+    expect($res->json('reply'))->not->toContain('09682447153');
+});
+
+test('guest at ten questions gets login and agency contact nudge on every reply', function () {
+    $this->withoutMiddleware([
+        EnforceGuestChatLimits::class,
+        ThrottleRequests::class,
+    ]);
+
+    $token = null;
+    for ($i = 1; $i <= 11; $i++) {
+        $res = $this->postJson('/chat', [
+            'message' => "guest nudge probe question {$i}",
+            'session_token' => $token,
+        ]);
+        $res->assertOk()->assertJsonPath('status', 'success');
+        $token = $res->json('session_token');
+
+        if ($i >= 10) {
+            expect($res->json('reply'))
+                ->toContain('09682447153')
+                ->toContain('log in or register');
+        } else {
+            expect($res->json('reply'))->not->toContain('09682447153');
+        }
+    }
+});
+
+test('room context includes price last updated from admin audit log', function () {
+    AdminAuditLog::create([
+        'admin_id' => null,
+        'auditable_type' => 'room',
+        'auditable_id' => $this->room->id,
+        'old_values' => ['base_price' => 2000.00],
+        'new_values' => ['base_price' => 2500.00],
+    ]);
+
+    $response = $this->postJson('/chat', [
+        'message' => 'Find a beachfront room in Boracay',
+    ]);
+
+    $response->assertOk()->assertJsonPath('status', 'success');
+    Http::assertSent(fn (Request $r) => str_contains(json_encode($r->data()), 'Price last updated: '.now()->format('M d, Y')));
+});
+
+test('room context falls back to updated_at when no audit history exists', function () {
+    expect(AdminAuditLog::where('auditable_type', 'room')->count())->toBe(0);
+
+    $response = $this->postJson('/chat', [
+        'message' => 'Find a beachfront room in Boracay',
+    ]);
+
+    $response->assertOk()->assertJsonPath('status', 'success');
+    Http::assertSent(fn (Request $r) => str_contains(json_encode($r->data()), 'Price last updated: '.$this->room->updated_at->format('M d, Y')));
+});
+
+test('repetition guard off by default lets identical guest questions through', function () {
+    $this->withoutMiddleware([
+        EnforceGuestChatLimits::class,
+        ThrottleRequests::class,
+    ]);
+
+    $token = null;
+    for ($i = 1; $i <= 6; $i++) {
+        $res = $this->postJson('/chat', [
+            'message' => 'repeat probe ping idle',
+            'session_token' => $token,
+        ]);
+        $res->assertOk()->assertJsonPath('status', 'success');
+        $token = $res->json('session_token');
+    }
+
+    expect(IpBan::count())->toBe(0);
+});
+
+test('repetition guard bans guest IP after five identical questions', function () {
+    putenv('CHATBOT_REPETITION_BAN_ENABLED=true');
+    try {
+        $this->withoutMiddleware([
+            EnforceGuestChatLimits::class,
+            ThrottleRequests::class,
+        ]);
+        $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.9']);
+
+        $token = null;
+        for ($i = 1; $i <= 4; $i++) {
+            $res = $this->postJson('/chat', [
+                'message' => 'repeat ban probe question',
+                'session_token' => $token,
+            ]);
+            $res->assertOk()->assertJsonPath('status', 'success');
+            $token = $res->json('session_token');
+        }
+
+        $blocked = $this->postJson('/chat', [
+            'message' => 'repeat ban probe question',
+            'session_token' => $token,
+        ]);
+
+        $blocked->assertStatus(403)->assertJsonPath('status', 'blocked');
+        expect(IpBan::where('ip_address', '203.0.113.9')->where('ban_level', 'temporary')->exists())->toBeTrue();
+    } finally {
+        putenv('CHATBOT_REPETITION_BAN_ENABLED');
+    }
+});
+
+test('repetition guard never bans localhost', function () {
+    putenv('CHATBOT_REPETITION_BAN_ENABLED=true');
+    try {
+        $this->withoutMiddleware([
+            EnforceGuestChatLimits::class,
+            ThrottleRequests::class,
+        ]);
+
+        $token = null;
+        for ($i = 1; $i <= 5; $i++) {
+            $res = $this->postJson('/chat', [
+                'message' => 'localhost repeat probe',
+                'session_token' => $token,
+            ]);
+            $res->assertOk()->assertJsonPath('status', 'success');
+            $token = $res->json('session_token');
+        }
+
+        expect(IpBan::count())->toBe(0);
+    } finally {
+        putenv('CHATBOT_REPETITION_BAN_ENABLED');
+    }
+});
+
+test('repetition guard logs abuse report for authed users instead of IP ban', function () {
+    putenv('CHATBOT_REPETITION_BAN_ENABLED=true');
+    try {
+        $this->withoutMiddleware(ThrottleRequests::class);
+        $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.10']);
+
+        $token = null;
+        for ($i = 1; $i <= 4; $i++) {
+            $res = $this->actingAs($this->user)->postJson('/chat', [
+                'message' => 'authed repeat probe',
+                'session_token' => $token,
+            ]);
+            $res->assertOk()->assertJsonPath('status', 'success');
+            $token = $res->json('session_token');
+        }
+
+        $blocked = $this->actingAs($this->user)->postJson('/chat', [
+            'message' => 'authed repeat probe',
+            'session_token' => $token,
+        ]);
+
+        $blocked->assertStatus(403)->assertJsonPath('status', 'blocked');
+        expect(ChatbotAbuseReport::where('user_id', $this->user->id)->where('category', 'Spam/Repetition')->exists())->toBeTrue();
+        expect(IpBan::count())->toBe(0);
+    } finally {
+        putenv('CHATBOT_REPETITION_BAN_ENABLED');
+    }
+});
+
+test('repetition ban honors configured seconds and expires', function () {
+    putenv('CHATBOT_REPETITION_BAN_ENABLED=true');
+    putenv('CHATBOT_REPETITION_BAN_SECONDS=10');
+    try {
+        $this->withoutMiddleware([
+            EnforceGuestChatLimits::class,
+            ThrottleRequests::class,
+        ]);
+        $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.11']);
+
+        $token = null;
+        for ($i = 1; $i <= 5; $i++) {
+            $res = $this->postJson('/chat', [
+                'message' => 'expiring ban probe question',
+                'session_token' => $token,
+            ]);
+            $token = $res->json('session_token');
+        }
+
+        $ban = IpBan::where('ip_address', '203.0.113.11')->first();
+        expect($ban)->not->toBeNull();
+        expect($ban->banned_at->diffInSeconds($ban->expires_at))->toEqual(10);
+        expect(IpBan::isBanned('203.0.113.11'))->toBeTrue();
+
+        $this->travel(11)->seconds();
+        expect(IpBan::isBanned('203.0.113.11'))->toBeFalse();
+    } finally {
+        putenv('CHATBOT_REPETITION_BAN_ENABLED');
+        putenv('CHATBOT_REPETITION_BAN_SECONDS');
+    }
+});
+
+test('repetition ban allow-local flag lets localhost trigger the guard', function () {
+    putenv('CHATBOT_REPETITION_BAN_ENABLED=true');
+    putenv('CHATBOT_REPETITION_BAN_ALLOW_LOCAL=true');
+    try {
+        $this->withoutMiddleware([
+            EnforceGuestChatLimits::class,
+            ThrottleRequests::class,
+        ]);
+
+        $token = null;
+        for ($i = 1; $i <= 4; $i++) {
+            $res = $this->postJson('/chat', [
+                'message' => 'allow local repeat probe',
+                'session_token' => $token,
+            ]);
+            $res->assertOk();
+            $token = $res->json('session_token');
+        }
+
+        $blocked = $this->postJson('/chat', [
+            'message' => 'allow local repeat probe',
+            'session_token' => $token,
+        ]);
+
+        $blocked->assertStatus(403)->assertJsonPath('status', 'blocked');
+        expect(IpBan::where('ip_address', '127.0.0.1')->where('ban_level', 'temporary')->exists())->toBeTrue();
+    } finally {
+        putenv('CHATBOT_REPETITION_BAN_ENABLED');
+        putenv('CHATBOT_REPETITION_BAN_ALLOW_LOCAL');
+    }
+});
+
+test('authenticated user past ten questions gets no guest nudge', function () {
+    $this->withoutMiddleware(ThrottleRequests::class);
+
+    $token = null;
+    for ($i = 1; $i <= 11; $i++) {
+        $res = $this->actingAs($this->user)->postJson('/chat', [
+            'message' => "authed nudge probe question {$i}",
+            'session_token' => $token,
+        ]);
+        $res->assertOk()->assertJsonPath('status', 'success');
+        $token = $res->json('session_token');
+    }
+
+    expect($res->json('reply'))->not->toContain('09682447153');
+});
+
+test('guest nudge is stripped from Gemini-bound history so it never doubles', function () {
+    $this->withoutMiddleware([
+        EnforceGuestChatLimits::class,
+        ThrottleRequests::class,
+    ]);
+
+    $session = ChatSession::create(['session_token' => 'nudge-strip-probe', 'user_id' => null]);
+    for ($i = 1; $i <= 10; $i++) {
+        $session->messages()->create(['sender' => 'user', 'message' => "history probe question {$i}"]);
+        $session->messages()->create([
+            'sender' => 'bot',
+            'message' => "history probe reply {$i}\n\n".ChatbotService::GUEST_NUDGE,
+        ]);
+    }
+
+    $res = $this->postJson('/chat', [
+        'message' => 'history probe question 11',
+        'session_token' => 'nudge-strip-probe',
+    ]);
+    $res->assertOk()->assertJsonPath('status', 'success');
+
+    Http::assertSent(fn (Request $r) => str_contains($r->url(), 'generateContent')
+        && ! str_contains(json_encode($r->data()), '09682447153'));
+
+    expect(substr_count($res->json('reply'), '09682447153'))->toBe(1);
+});
+
+test('guest nudge is appended only once when Gemini echoes it back', function () {
+    $this->withoutMiddleware([
+        EnforceGuestChatLimits::class,
+        ThrottleRequests::class,
+    ]);
+
+    Http::fake([
+        '*generateContent*' => Http::response([
+            'candidates' => [
+                [
+                    'content' => [
+                        'parts' => [
+                            ['text' => 'A mimic reply that copies the sign-off. '.ChatbotService::GUEST_NUDGE],
+                        ],
+                    ],
+                ],
+            ],
+        ]),
+    ]);
+
+    $session = ChatSession::create(['session_token' => 'nudge-echo-probe', 'user_id' => null]);
+    for ($i = 1; $i <= 10; $i++) {
+        $session->messages()->create(['sender' => 'user', 'message' => "echo probe question {$i}"]);
+        $session->messages()->create(['sender' => 'bot', 'message' => "echo probe reply {$i}"]);
+    }
+
+    $res = $this->postJson('/chat', [
+        'message' => 'echo probe question 11',
+        'session_token' => 'nudge-echo-probe',
+    ]);
+    $res->assertOk()->assertJsonPath('status', 'success');
+
+    expect(substr_count($res->json('reply'), '09682447153'))->toBe(1);
 });

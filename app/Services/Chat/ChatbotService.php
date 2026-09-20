@@ -4,11 +4,13 @@ namespace App\Services\Chat;
 
 use App\Models\ActivityModel;
 use App\Models\Booking;
+use App\Models\ChatbotAbuseReport;
 use App\Models\ChatMessage;
 use App\Models\ChatSession;
 use App\Models\DestinationModel;
 use App\Models\Faq;
 use App\Models\HotelModel;
+use App\Models\IpBan;
 use App\Models\Package;
 use App\Models\RoomType;
 use App\Models\SupportInquiry;
@@ -23,6 +25,13 @@ use Illuminate\Support\Facades\Log;
 
 class ChatbotService
 {
+    /**
+     * Guest login nudge appended by ChatbotController. Canonical home is here
+     * so Gemini-bound history can strip it (else the model mimics it and the
+     * reply ends up with the nudge twice).
+     */
+    public const GUEST_NUDGE = "You're chatting as a guest — log in or register for the full experience, or contact SUNNYTRIPS TRAVEL SERVICES at 09682447153 for more inquiries.";
+
     public function __construct(
         protected GeminiService $gemini,
         protected IntentRouter $intentRouter,
@@ -695,6 +704,89 @@ class ChatbotService
         }
 
         return null;
+    }
+
+    public const REPETITION_THRESHOLD = 5;
+
+    public const REPETITION_WINDOW = 10;
+
+    /**
+     * RSC action: title-defense repetition guard. The same normalized question
+     * REPETITION_THRESHOLD times inside the trailing user-message window means
+     * a bot hammering one query: guests get a temporary IP ban (enforced
+     * globally by CheckIpBanned), authed users get a logged abuse report.
+     * Kill-switch env CHATBOT_REPETITION_BAN_ENABLED (default off); localhost
+     * is exempt unless CHATBOT_REPETITION_BAN_ALLOW_LOCAL is true (demo use).
+     * Duration via CHATBOT_REPETITION_BAN_SECONDS (default 600). Active
+     * human-support sessions are never punished.
+     */
+    public function checkRepetition(ChatSession $session, ?User $user, string $message, ?string $ip): ?array
+    {
+        if (! env('CHATBOT_REPETITION_BAN_ENABLED', false)) {
+            return null;
+        }
+        if ($ip && in_array($ip, ['127.0.0.1', '::1'], true) && ! env('CHATBOT_REPETITION_BAN_ALLOW_LOCAL', false)) {
+            return null;
+        }
+
+        $normalized = mb_strtolower(trim((string) preg_replace('/\s+/', ' ', $message)));
+        if ($normalized === '') {
+            return null;
+        }
+
+        $handoffActive = SupportInquiry::where('chat_session_id', $session->id)
+            ->whereIn('status', [SupportInquiry::STATUS_PENDING, SupportInquiry::STATUS_HUMAN_ACTIVE])
+            ->exists();
+        if ($handoffActive) {
+            return null;
+        }
+
+        $priorMatches = $session->messages()
+            ->where('sender', 'user')
+            ->latest('id')
+            ->limit(self::REPETITION_WINDOW)
+            ->pluck('message')
+            ->filter(fn ($m) => mb_strtolower(trim((string) preg_replace('/\s+/', ' ', (string) $m))) === $normalized)
+            ->count();
+
+        if ($priorMatches < self::REPETITION_THRESHOLD - 1) {
+            return null;
+        }
+
+        if ($user) {
+            ChatbotAbuseReport::create([
+                'user_id' => $user->id,
+                'message' => $message,
+                'category' => 'Spam/Repetition',
+                'reason' => 'Same question repeated '.self::REPETITION_THRESHOLD.'+ times in one session.',
+                'status' => 'pending',
+            ]);
+            $user->increment('chatbot_flag_count');
+
+            return [
+                'blocked' => true,
+                'response' => 'Your message contains content that violates our community guidelines. This incident has been logged for administrator review.',
+            ];
+        }
+
+        if (! $ip) {
+            return null;
+        }
+        if (! IpBan::isBanned($ip)) {
+            IpBan::create([
+                'ip_address' => $ip,
+                'ban_level' => 'temporary',
+                'reason' => 'Repeated identical chatbot messages (spam protection).',
+                'banned_at' => now(),
+                'expires_at' => now()->addSeconds((int) env('CHATBOT_REPETITION_BAN_SECONDS', 600)),
+            ]);
+        }
+        Log::warning('Chatbot repetition IP ban', ['ip' => $ip, 'session_id' => $session->id]);
+
+        return [
+            'blocked' => true,
+            'response' => 'You have been temporarily blocked from chatting due to repeated messages. Please try again later or contact SUNNYTRIPS TRAVEL SERVICES at 09682447153.',
+        ];
     }
 
     // ────────────────────────────────────────────────
@@ -2904,6 +2996,18 @@ class ChatbotService
         // The current user message has already been persisted. Exclude it from
         // history because generateChatResponse appends $prompt as the one current turn.
         $history = $this->conversation->history($session, 6, true);
+
+        // Strip the guest nudge from prior bot turns: it is appended at
+        // response time and persisted, so without this Gemini sees its own
+        // sign-off in history and echoes it (doubled nudge).
+        $suffix = "\n\n".self::GUEST_NUDGE;
+        foreach ($history as &$turn) {
+            $text = $turn['parts'][0]['text'] ?? null;
+            if (is_string($text) && str_ends_with($text, $suffix)) {
+                $turn['parts'][0]['text'] = substr($text, 0, -strlen($suffix));
+            }
+        }
+        unset($turn);
 
         return $this->gemini->generateChatResponse(
             $this->geminiChatSystemPrompt(),
