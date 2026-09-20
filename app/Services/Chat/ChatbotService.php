@@ -155,10 +155,12 @@ class ChatbotService
 
         $faq = $this->faq->findBestMatch($message);
         // Don't hijack amenity refinements or explicit Boracay hotel/room queries with FAQ
+        // Legal/contact queries have their own deterministic handler — never FAQ.
         $lowerForFaq = mb_strtolower(trim($message));
+        $isLegalQuery = $this->intentRouter->classify($message) === IntentRouter::LEGAL_QUERY;
         $isBareFilter = $lastBot && $this->isFilterRefinementQuery($message, $lastBot);
         $hasExplicitDest = (bool) $this->intentRouter->extractDestinationName($message);
-        if ($faq && ! $isBareFilter && ! $hasExplicitDest) {
+        if ($faq && ! $isLegalQuery && ! $isBareFilter && ! $hasExplicitDest) {
             $reply = ['reply' => $faq->answer, 'faq' => ['id' => $faq->id, 'question' => $faq->question, 'answer' => $faq->answer]];
             $this->conversation->persist($session, 'bot', $reply['reply'], $reply);
 
@@ -166,7 +168,7 @@ class ChatbotService
         }
 
         $intent = $this->intentRouter->classify($message);
-        $constraints = in_array($intent, [IntentRouter::GENERAL_TALK, IntentRouter::DESTINATIONS_OVERVIEW, IntentRouter::BOOKING_STATUS], true)
+        $constraints = in_array($intent, [IntentRouter::GENERAL_TALK, IntentRouter::DESTINATIONS_OVERVIEW, IntentRouter::BOOKING_STATUS, IntentRouter::LEGAL_QUERY], true)
             ? []
             : $this->intentRouter->extractConstraints($message);
         $constraints = $this->resolveConversationalDestination($constraints, $session);
@@ -215,6 +217,7 @@ class ChatbotService
             IntentRouter::DISCOUNT_QUERY => $this->handleDiscountQuery($message, $session),
             IntentRouter::BOOKING_STATUS => $this->handleBookingStatus($message, $user, $session),
             IntentRouter::SUPPORT_AGENT => $this->handleSupportAgentRequest(),
+            IntentRouter::LEGAL_QUERY => $this->handleLegalQuery($message),
             default => $this->handleGeneralChat($message, $session),
         };
 
@@ -2741,6 +2744,51 @@ class ChatbotService
             'suggested_actions' => [
                 ['id' => 'talk-to-agent', 'label' => 'Talk to a human agent', 'handoff' => true],
             ],
+        ];
+    }
+
+    /**
+     * Deterministic legal/contact answers — canned text plus links to the
+     * legal pages. No Gemini call, so nothing can be hallucinated.
+     */
+    protected function handleLegalQuery(string $message): array
+    {
+        $lower = mb_strtolower($message);
+
+        $wantsPrivacy = (bool) preg_match('/\bprivacy\b/', $lower);
+        $wantsTerms = (bool) preg_match('/\bterms\b|\bconditions\b/', $lower);
+        $wantsAi = (bool) preg_match('/\bai\b|\bartificial\s+intelligence\b|\bdisclosure\b/', $lower);
+        $wantsContact = (bool) preg_match('/\bcontact\b|\be-?mail\b|\bhotline\b|\btelephone\b|\bcellphone\b|\bphone\s+number\b|\bcontact\s+number\b|\baddress\b|\blocated\b|\blocation\b|\boffice\b|\breach\b/', $lower);
+
+        if ($wantsContact) {
+            return [
+                'reply' => "You can reach SUNNYTRIPS TRAVEL SERVICES at sunnytrips01@gmail.com or 09682447153. Address: Pili, Camarines Sur.\n\nFor data requests, see our [Privacy Policy](/privacy-policy).",
+                'legal' => ['topic' => 'contact'],
+            ];
+        }
+
+        $docs = array_filter([$wantsPrivacy ? 'privacy' : null, $wantsTerms ? 'terms' : null, $wantsAi ? 'ai' : null]);
+
+        if (count($docs) === 1) {
+            return match (reset($docs)) {
+                'privacy' => [
+                    'reply' => 'We handle your bookings and inquiries under our Privacy Policy — what we collect (name, contact, ID/travel docs, payment for processing), how we use it (bookings, updates, compliance), and your rights (access, correct, delete where allowed). Read the full policy here: [Privacy Policy](/privacy-policy)',
+                    'legal' => ['topic' => 'privacy'],
+                ],
+                'terms' => [
+                    'reply' => 'Our Terms cover eligibility (18+), your account, AI-assisted recommendations, supplier bookings, payments/refunds, and conduct. Read them here: [Terms and Conditions](/terms-and-conditions)',
+                    'legal' => ['topic' => 'terms'],
+                ],
+                default => [
+                    'reply' => 'Our AI Disclosure explains what the assistant can do, what data it uses, and its limits — always verify prices and availability before booking. Read it here: [AI Usage Disclosure](/ai-disclosure)',
+                    'legal' => ['topic' => 'ai_disclosure'],
+                ],
+            };
+        }
+
+        return [
+            'reply' => 'I can share our [Terms and Conditions](/terms-and-conditions), [Privacy Policy](/privacy-policy), or [AI Usage Disclosure](/ai-disclosure) — which one would you like? For anything else, reach us at sunnytrips01@gmail.com / 09682447153.',
+            'legal' => ['topic' => 'menu'],
         ];
     }
 

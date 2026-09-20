@@ -176,6 +176,23 @@ test('ordinary travel questions are not mistaken for handoff', function () {
     expect($this->router->classify('what activities can I talk about?'))->toBe(IntentRouter::ACTIVITY_SEARCH);
 });
 
+test('classifies legal and contact queries as legal query', function () {
+    expect($this->router->classify('What is your privacy policy?'))->toBe(IntentRouter::LEGAL_QUERY);
+    expect($this->router->classify('Show me the terms and conditions'))->toBe(IntentRouter::LEGAL_QUERY);
+    expect($this->router->classify('What is your AI disclosure?'))->toBe(IntentRouter::LEGAL_QUERY);
+    expect($this->router->classify('What is your contact number?'))->toBe(IntentRouter::LEGAL_QUERY);
+    expect($this->router->classify('Where are you located?'))->toBe(IntentRouter::LEGAL_QUERY);
+    expect($this->router->classify('How can I contact you?'))->toBe(IntentRouter::LEGAL_QUERY);
+});
+
+test('human handoff still wins over contact phrasing', function () {
+    expect($this->router->classify('I want to talk to a human agent'))->toBe(IntentRouter::SUPPORT_AGENT);
+});
+
+test('comparative and weather phrasing is not legal', function () {
+    expect($this->router->classify('In terms of price, which Boracay room is cheapest?'))->not->toBe(IntentRouter::LEGAL_QUERY);
+    expect($this->router->classify('What are the weather conditions in Boracay?'))->not->toBe(IntentRouter::LEGAL_QUERY);
+});
 test('activity location queries include the activity as a place', function () {
     ActivityModel::factory()->create([
         'activity_name' => 'Banana Boat',

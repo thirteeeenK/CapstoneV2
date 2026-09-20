@@ -42,6 +42,8 @@ class IntentRouter
 
     public const SUPPORT_AGENT = 'SUPPORT_AGENT';
 
+    public const LEGAL_QUERY = 'LEGAL_QUERY';
+
     protected array $travelKeywords = [
         'hotel',
         'hotels',
@@ -216,6 +218,10 @@ class IntentRouter
 
         if ($this->hasSupportAgentIntent($lower)) {
             return self::SUPPORT_AGENT;
+        }
+
+        if ($this->hasLegalIntent($lower)) {
+            return self::LEGAL_QUERY;
         }
 
         if ($this->hasBookingStatusIntent($lower)) {
@@ -1384,6 +1390,59 @@ class IntentRouter
         }
 
         return (bool) preg_match("/\bwhere(?:'s|\s+is)\s+my\s+(booking|reservation)\b/", $lower);
+    }
+
+    /**
+     * Deterministic legal/contact lookup (privacy, terms, AI disclosure,
+     * contact info). Checked right after the human-agent intent so
+     * "talk to an agent" still wins over "contact info".
+     */
+    protected function hasLegalIntent(string $lower): bool
+    {
+        // "in terms of X" is comparative phrasing, not the legal document.
+        $hasLegalAnchor = (bool) preg_match('/\b(privacy|terms|condition|disclosure|contact|hotline|email|e-mail|telephone|cellphone|address|located|location)\b/', $lower);
+        if (str_contains($lower, 'in terms of') && ! $hasLegalAnchor) {
+            return false;
+        }
+        if (str_contains($lower, 'in terms of') && preg_match('/\b(privacy|disclosure|contact|hotline|email|address)\b/', $lower) === 0
+            && preg_match('/\bterms\s+(and\s+conditions|of\s+(service|use))\b/', $lower) === 0) {
+            return false;
+        }
+
+        // Weather "conditions" are not legal terms.
+        if (preg_match('/\bweather\b/', $lower) && preg_match('/\b(privacy|terms|contact|email|hotline|address|disclosure)\b/', $lower) === 0) {
+            return false;
+        }
+
+        if (preg_match('/\bprivacy(\s+polic\w*)?\b/', $lower)) {
+            return true;
+        }
+
+        if (preg_match('/\bterms\s+(and\s+conditions|of\s+(service|use))\b/', $lower)) {
+            return true;
+        }
+
+        if (preg_match('/\bterms\b/', $lower) && preg_match('/\b(conditions?|service|use|polic\w*|agree)\b/', $lower)) {
+            return true;
+        }
+
+        if (preg_match('/\b(ai(\s+usage)?\s+disclosure|artificial\s+intelligence(\s+disclosure)?)\b/', $lower)) {
+            return true;
+        }
+
+        if (preg_match('/\bcontact(\s+(us|info|information|number|details?|email|address))?\b/', $lower)) {
+            return true;
+        }
+
+        if (preg_match('/\b(e-?mail|hotline|telephone|cellphone|contact\s+number|phone\s+number)\b/', $lower)) {
+            return true;
+        }
+
+        if (preg_match('/\bhow\s+(do|can)\s+(i|we)\s+(contact|reach)\b/', $lower)) {
+            return true;
+        }
+
+        return (bool) preg_match('/\b(where\s+are\s+you\s+located|your\s+(address|location|office|contact))\b/', $lower);
     }
 
     /**

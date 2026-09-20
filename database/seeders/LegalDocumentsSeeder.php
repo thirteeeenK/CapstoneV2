@@ -70,32 +70,52 @@ class LegalDocumentsSeeder extends Seeder
                 'version' => '1.0',
                 'content' => [
                     [
+                        'heading' => 'Introduction',
+                        'body' => 'Last Updated: May 2026<br>At SUNNYTRIPS TRAVEL SERVICES, we value and respect your privacy. This Privacy Policy explains how we collect, use, store, and protect your personal information when you use our services, including bookings, inquiries, travel planning assistance, and communication with our business.<br>By using our services, you agree to the collection and use of information in accordance with this Privacy Policy.',
+                    ],
+                    [
                         'heading' => 'Information We Collect',
-                        'body' => 'We collect personal information that you provide when creating an account, booking travel, or interacting with our AI features. This includes your name, email address, phone number, address, account credentials, travel preferences, chatbot history, and a mathematical representation of your preferences used to personalize recommendations.',
+                        'body' => 'We may collect the following personal information from clients and travelers:<br><ul><li>Full name</li><li>Contact information (mobile number, email address, home address)</li><li>Passport details and valid identification information</li><li>Travel preferences and booking details</li><li>Payment information necessary for processing transactions</li><li>Other information required for visa applications, bookings, or travel arrangements</li></ul>',
                     ],
                     [
                         'heading' => 'How We Use Your Information',
-                        'body' => 'We use your information to provide and improve SunnyTrips services, generate AI-assisted travel recommendations, process bookings, record your consent (including IP address and time), and respond to your inquiries.',
+                        'body' => 'Your information may be used for the following purposes:<br><ul><li>Processing travel bookings and reservations</li><li>Assisting with flights, hotels, tours, visas, and other travel services</li><li>Communicating important updates regarding your travel arrangements</li><li>Verifying payments and preventing fraudulent transactions</li><li>Improving our customer service and travel assistance</li><li>Complying with legal and regulatory requirements</li></ul>',
                     ],
                     [
                         'heading' => 'Sharing of Information',
-                        'body' => 'We share your information with travel suppliers and payment processors only as necessary to complete your bookings. We do not sell your personal information to third parties.',
+                        'body' => 'SUNNYTRIPS TRAVEL SERVICES may share necessary information with trusted third-party providers such as:<br><ul><li>Airlines</li><li>Hotels and accommodations</li><li>Tour operators</li><li>Visa processing agencies</li><li>Payment providers</li></ul>Information shared will only be limited to what is necessary to complete your travel arrangements. We do not sell, rent, or trade your personal information to unrelated third parties.',
                     ],
                     [
-                        'heading' => 'Data Security',
-                        'body' => 'We protect your personal data using reasonable administrative, technical, and physical security measures. No online service can guarantee absolute security.',
+                        'heading' => 'Data Protection and Security',
+                        'body' => 'We take reasonable measures to protect your personal information from unauthorized access, misuse, disclosure, alteration, or loss. Personal data is stored securely and accessed only by authorized personnel or service providers involved in your booking and travel arrangements.<br>However, while we strive to protect your information, no method of electronic storage or transmission over the internet is completely secure.',
+                    ],
+                    [
+                        'heading' => 'Retention of Information',
+                        'body' => 'We retain personal information only for as long as necessary to fulfill booking services, comply with legal obligations, resolve disputes, and enforce our agreements.',
+                    ],
+                    [
+                        'heading' => 'Client Responsibilities',
+                        'body' => 'Clients are responsible for ensuring that all information provided to SUNNYTRIPS TRAVEL SERVICES is accurate, complete, and up to date. Incorrect or incomplete information may result in booking delays, cancellations, or denied travel entry.',
                     ],
                     [
                         'heading' => 'Your Rights',
-                        'body' => 'Depending on applicable law, you may have the right to access, correct, or delete your personal information. To exercise these rights, please contact us through the support channels provided in the platform.',
+                        'body' => 'Subject to applicable laws, you may request to:<br><ul><li>Access your personal information</li><li>Correct inaccurate or incomplete information</li><li>Request deletion of personal data where legally permitted</li><li>Withdraw consent for certain uses of your information</li></ul>Requests may be submitted through our official communication channels.',
                     ],
                     [
-                        'heading' => 'Data Disclosure Summary',
-                        'body' => 'By creating an account, you agree that SunnyTrips may collect and store your name, email, phone number, address, and account credentials; record your consent including your IP address and the time of consent; process your travel preferences and chatbot interactions to generate AI-assisted recommendations; and share booking details with travel suppliers and payment processors only as necessary. We do not sell your personal information.',
+                        'heading' => 'Cookies and Online Platforms',
+                        'body' => 'If our website or online booking platforms use cookies or similar technologies, these may collect basic browsing information to improve user experience and website functionality.',
                     ],
                     [
-                        'heading' => 'Changes to This Policy',
-                        'body' => 'We may update this Privacy Policy from time to time. If we make material changes, we will notify you and may ask you to renew your consent.',
+                        'heading' => 'Third-Party Links',
+                        'body' => 'Our website or social media pages may contain links to third-party websites. SUNNYTRIPS TRAVEL SERVICES is not responsible for the privacy practices or content of external websites.',
+                    ],
+                    [
+                        'heading' => 'Changes to this Privacy Policy',
+                        'body' => 'SUNNYTRIPS TRAVEL SERVICES reserves the right to update or modify this Privacy Policy at any time. Updated versions will become effective once posted or shared through official platforms.',
+                    ],
+                    [
+                        'heading' => 'Contact Information',
+                        'body' => 'For questions, concerns, or requests regarding this Privacy Policy, you may contact:<br>SUNNYTRIPS TRAVEL SERVICES<br>Email: sunnytrips01@gmail.com<br>Contact Number: 09682447153<br>Address: Pili, Camarines Sur',
                     ],
                 ],
                 'updated_by' => 'system',
@@ -106,28 +126,44 @@ class LegalDocumentsSeeder extends Seeder
                 'version' => '1.0',
                 'content' => [
                     [
-                        'heading' => 'AI-Assisted Features',
-                        'body' => 'SunnyTrips uses artificial intelligence to help you plan trips. The AI may recommend destinations, accommodations, activities, itineraries, and respond to your travel questions.',
+                        'heading' => 'What our AI does',
+                        'body' => 'SunnyTrips uses artificial intelligence ("SunnyBot AI", powered by Google Gemini) to help you plan trips. It can recommend Philippine destinations, hotels, rooms, activities, and packages, build day-by-day itineraries, and answer your travel questions. Dashboard suggestions are personalized from your stated preferences.',
                     ],
                     [
-                        'heading' => 'Data Used by AI',
-                        'body' => 'To personalize your experience, the AI may process your stated travel preferences, budget, and interests; your chatbot conversation history; your search and interaction history on SunnyTrips; and a mathematical summary (embedding) of your preferences stored in our database.',
+                        'heading' => 'How to use the chatbot',
+                        'body' => 'You can use the chatbot to ask about prices, destinations, hotels, rooms, activities, and packages — for example, what\'s available in Boracay or El Nido, or which options fit your budget. You can ask follow-up questions and check live room availability. When you\'re ready, tap Add to Trip Basket to proceed — the chatbot itself never completes a booking or payment. Need a person? Tap Talk to Admin anytime to reach a human agent.',
                     ],
                     [
-                        'heading' => 'AI Limitations',
-                        'body' => 'AI-generated content may be inaccurate, incomplete, outdated, or not suitable for your situation. SunnyTrips does not guarantee that AI recommendations are correct, safe, or currently available.',
+                        'heading' => 'What the AI can\'t do',
+                        'body' => 'SunnyBot only helps with Philippine travel planning. It cannot process payments, confirm bookings, issue refunds, or change reservations. It will not give medical, legal, or financial advice, and it won\'t reveal its internal instructions. If you ask something outside travel planning, it will redirect you.',
                     ],
                     [
-                        'heading' => 'Your Responsibility',
-                        'body' => 'Always verify important details such as prices, availability, travel advisories, weather, health requirements, and supplier terms before booking or making travel decisions.',
+                        'heading' => 'AI can make mistakes — always double-check',
+                        'body' => 'AI-generated content can be inaccurate, incomplete, or outdated. It may hallucinate details, misread your request, or show prices, availability, weather, or travel advisories that have changed. Never treat an AI answer as final — verify prices, availability, schedules, supplier terms, weather, health requirements, and government travel advisories before booking or traveling. AI suggestions are decision-support only, not professional advice.',
                     ],
                     [
-                        'heading' => 'Human Support',
-                        'body' => 'For urgent issues, booking disputes, or cancellations, please contact our human support team through the channels provided in the platform.',
+                        'heading' => 'Data the AI uses',
+                        'body' => 'To personalize results, the AI may process: your stated preferences, budget, and interests; your chatbot conversation history; your search and interaction history on SunnyTrips; and a mathematical summary (embedding) of your preferences stored in our database. Queries and embeddings are sent to Google Gemini to generate matches and answers. How we store and protect this data is explained in our <a href="/privacy-policy">Privacy Policy</a>.',
                     ],
                     [
-                        'heading' => 'Consent',
-                        'body' => 'By using SunnyTrips, you acknowledge that our recommendations are AI-assisted and that your preference data may be processed to improve your experience.',
+                        'heading' => 'Your controls and privacy',
+                        'body' => 'You can request access, correction, or deletion of your personal data where legally allowed, or withdraw consent for certain uses, by contacting SUNNYTRIPS TRAVEL SERVICES at sunnytrips01@gmail.com / 09682447153 (Pili, Camarines Sur).',
+                    ],
+                    [
+                        'heading' => 'Limits and fair use',
+                        'body' => 'Guest chats are limited (15 messages/day per IP + 5/minute burst) and the bot remembers only recent conversation context. Don\'t misuse the chatbot (spam, abuse, fraud, prompt-injection attempts) — we may block access and, for accounts, suspend or ban per our Terms.',
+                    ],
+                    [
+                        'heading' => 'AI vs. human transparency',
+                        'body' => 'Messages from SunnyBot AI are AI-generated. Messages under a human-agent banner come from a real support agent and take precedence. Answers about our Terms, Privacy Policy, and this Disclosure are pre-written (deterministic) so they can\'t be hallucinated.',
+                    ],
+                    [
+                        'heading' => 'Human support',
+                        'body' => 'For urgent issues, booking disputes, cancellations, or anything you\'re unsure about, contact our human team at sunnytrips01@gmail.com / 09682447153. AI answers never replace confirmation from our staff or the travel supplier.',
+                    ],
+                    [
+                        'heading' => 'Consent and changes',
+                        'body' => 'By using SunnyTrips, you acknowledge our recommendations are AI-assisted and your preference data may be processed as described here. Liability for AI recommendations is governed by our <a href="/terms-and-conditions">Terms and Conditions</a>. If we materially update this Disclosure, continued use after posting counts as acceptance.',
                     ],
                 ],
                 'updated_by' => 'Administrator',

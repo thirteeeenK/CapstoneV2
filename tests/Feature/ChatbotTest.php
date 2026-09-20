@@ -86,6 +86,29 @@ test('guest can send a chat message and get a response', function () {
         ->assertJson(['status' => 'success']);
 });
 
+test('legal queries get deterministic replies with page links', function () {
+    $privacy = $this->postJson('/chat', ['message' => 'What is your privacy policy?']);
+    $privacy->assertOk()->assertJson(['status' => 'success']);
+    expect($privacy->json('reply'))->toContain('/privacy-policy');
+
+    $terms = $this->postJson('/chat', ['message' => 'Show me the terms and conditions']);
+    $terms->assertOk()->assertJson(['status' => 'success']);
+    expect($terms->json('reply'))->toContain('/terms-and-conditions');
+
+    $ai = $this->postJson('/chat', ['message' => 'What is your AI disclosure?']);
+    $ai->assertOk()->assertJson(['status' => 'success']);
+    expect($ai->json('reply'))->toContain('/ai-disclosure');
+});
+
+test('contact queries return the business contact block', function () {
+    $response = $this->postJson('/chat', ['message' => 'What is your contact number?']);
+    $response->assertOk()->assertJson(['status' => 'success']);
+
+    $reply = $response->json('reply');
+    expect($reply)->toContain('sunnytrips01@gmail.com')
+        ->and($reply)->toContain('09682447153')
+        ->and($reply)->toContain('Pili, Camarines Sur');
+});
 test('chat response includes session token that persists', function () {
     $res1 = $this->postJson('/chat', ['message' => 'Hello']);
     $token = $res1->json('session_token');
