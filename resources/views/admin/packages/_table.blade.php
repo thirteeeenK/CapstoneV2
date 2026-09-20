@@ -68,6 +68,27 @@
                                 </span>
                             </div>
 
+                            {{-- Linked records snapshot --}}
+                            @if(($package->hotels_count ?? 0) || ($package->activities_count ?? 0) || ($package->add_ons_count ?? 0))
+                                <div class="flex flex-wrap items-center gap-1.5 pt-1">
+                                    @if(($package->hotels_count ?? 0))
+                                        <span class="text-[10px] font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded border border-sky-100 flex items-center gap-1">
+                                            <span class="material-symbols-outlined text-[13px]">hotel</span>{{ $package->hotels_count }} hotel{{ $package->hotels_count > 1 ? 's' : '' }}
+                                        </span>
+                                    @endif
+                                    @if(($package->activities_count ?? 0))
+                                        <span class="text-[10px] font-bold text-violet-700 bg-violet-50 px-2 py-0.5 rounded border border-violet-100 flex items-center gap-1">
+                                            <span class="material-symbols-outlined text-[13px]">kayaking</span>{{ $package->activities_count }} activit{{ $package->activities_count > 1 ? 'ies' : 'y' }}
+                                        </span>
+                                    @endif
+                                    @if(($package->add_ons_count ?? 0))
+                                        <span class="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-100 flex items-center gap-1">
+                                            <span class="material-symbols-outlined text-[13px]">add_circle</span>{{ $package->add_ons_count }} add-on{{ $package->add_ons_count > 1 ? 's' : '' }}
+                                        </span>
+                                    @endif
+                                </div>
+                            @endif
+
                             {{-- Inclusions Snapshot --}}
                             @if(!empty($package->generic_inclusions) && is_array($package->generic_inclusions))
                                 <div class="pt-2 border-t border-slate-100 space-y-1">

@@ -50,12 +50,27 @@ class Package extends Model
 
     public function hotels()
     {
-        return $this->belongsToMany(HotelModel::class, 'package_hotel', 'package_id', 'hotel_id');
+        return $this->belongsToMany(HotelModel::class, 'package_hotel', 'package_id', 'hotel_id')
+            ->withPivot('room_type_id')
+            ->withTimestamps();
+    }
+
+    public function rooms()
+    {
+        return $this->belongsToMany(RoomType::class, 'package_hotel', 'package_id', 'room_type_id')
+            ->withTimestamps();
     }
 
     public function activities()
     {
-        return $this->belongsToMany(ActivityModel::class, 'package_activity', 'package_id', 'activity_id');
+        return $this->belongsToMany(ActivityModel::class, 'package_activity', 'package_id', 'activity_id')
+            ->withTimestamps();
+    }
+
+    public function addOns()
+    {
+        return $this->belongsToMany(AddOnModel::class, 'package_addon', 'package_id', 'add_on_id')
+            ->withTimestamps();
     }
 
     public function reviews()

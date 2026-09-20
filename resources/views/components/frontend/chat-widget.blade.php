@@ -275,7 +275,7 @@
                                                         x-text="pkg.days + 'D/' + pkg.nights + 'N'"></span>
                                                 </div>
                                                 <button
-                                                    @click="addToBasket('package', pkg.id, { selected_pax: pkg.min_pax || 2 })"
+                                                    @click="addToBasket('package', pkg.id, { quantity: pkg.min_pax || 2, selected_pax: pkg.min_pax || 2 })"
                                                     class="mt-1.5 w-full text-[11px] bg-amber-500 text-slate-950 font-bold px-2 py-1.5 rounded-lg hover:bg-amber-600 transition-colors font-headline cursor-pointer">+
                                                     Add to Trip Basket</button>
                                             </div>

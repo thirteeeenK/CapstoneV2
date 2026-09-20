@@ -46,8 +46,8 @@
                         quantity: options.quantity || 1,
                         selected_pax: options.selected_pax || 1,
                         check_in_date: options.check_in_date || null,
-                        check_out_date: options.check_out_date || null,
-                        notes: options.notes || null,
+                    check_out_date: options.check_out_date || null,
+                    notes: options.notes || null,
                     };
 
                     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '{{ csrf_token() }}';

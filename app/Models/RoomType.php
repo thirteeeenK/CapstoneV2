@@ -90,6 +90,13 @@ class RoomType extends Model
         return $this->belongsTo(HotelModel::class, 'hotel_id');
     }
 
+    public function packages()
+    {
+        return $this->belongsToMany(Package::class, 'package_hotel', 'room_type_id', 'package_id')
+            ->withPivot('hotel_id')
+            ->withTimestamps();
+    }
+
     public function reviews()
     {
         return $this->morphMany(Review::class, 'reviewable', 'reviewable_type', 'reviewable_id');

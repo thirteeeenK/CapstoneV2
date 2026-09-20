@@ -26,6 +26,7 @@ class CartItem extends Model
         'check_in_date',
         'check_out_date',
         'selected_pax',
+        'room_option',
         'is_selected',
         'notes',
         'lucky_group_id',
@@ -267,7 +268,9 @@ class CartItem extends Model
             // min_pax only gates booking eligibility at checkout, never inflates pax
             $effectivePax = max(1, (int) ($this->selected_pax ?: 1), (int) ($this->quantity ?: 1));
 
-            return $unitRate * $effectivePax;
+            $subtotal = $unitRate * $effectivePax;
+
+            return $subtotal;
         }
 
         return $unitRate * max(1, $this->quantity);
@@ -342,6 +345,12 @@ class CartItem extends Model
             $duration = ($item->days ? $item->days.'D' : '').($item->nights ? $item->nights.'N' : '');
             if ($duration) {
                 $parts[] = $duration.' Package';
+            }
+            // Room preference only — never affects price (per-pax pricing covers occupancy).
+            if ($this->room_option === 'separate') {
+                $parts[] = 'Separate rooms';
+            } elseif ($this->room_option === 'shared') {
+                $parts[] = 'Share 1 room';
             }
 
             return implode(' • ', $parts);

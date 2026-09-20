@@ -3,12 +3,17 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\ActivityModel;
+use App\Models\AddOnModel;
 use App\Models\DestinationModel;
+use App\Models\HotelModel;
 use App\Models\Package;
+use App\Models\RoomType;
 use App\Services\AdminAuditService;
 use App\Services\GeminiService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 class AdminPackageController extends Controller
 {
@@ -23,7 +28,7 @@ class AdminPackageController extends Controller
 
         $destinations = DestinationModel::orderBy('name', 'asc')->get();
 
-        $query = Package::with('destination');
+        $query = Package::with('destination')->withCount(['hotels', 'activities', 'addOns']);
 
         if ($search) {
             $query->where('name', 'ilike', "%{$search}%")
@@ -61,8 +66,11 @@ class AdminPackageController extends Controller
     public function create()
     {
         $destinations = DestinationModel::orderBy('name', 'asc')->get();
+        $hotels = HotelModel::with('rooms')->orderBy('hotel_name', 'asc')->get();
+        $activities = ActivityModel::orderBy('activity_name', 'asc')->get();
+        $addOns = AddOnModel::orderBy('name', 'asc')->get();
 
-        return view('admin.packages.create', compact('destinations'));
+        return view('admin.packages.create', compact('destinations', 'hotels', 'activities', 'addOns'));
     }
 
     /**
@@ -80,15 +88,30 @@ class AdminPackageController extends Controller
             'min_pax' => 'required|integer|min:1',
             'valid_from' => 'nullable|date',
             'valid_to' => 'nullable|date|after_or_equal:valid_from',
+            'inclusions' => 'nullable|array',
+            'inclusions.*' => 'nullable|string|max:255',
             'inclusions_text' => 'nullable|string',
             'image' => 'nullable|image|max:4096',
             'image_url' => 'nullable|url|max:500',
             'is_active' => 'required|boolean',
+            'hotel_ids' => 'nullable|array',
+            'hotel_ids.*' => 'exists:hotels,id',
+            'room_ids' => 'nullable|array',
+            'room_ids.*' => 'exists:rooms,id',
+            'activity_ids' => 'nullable|array',
+            'activity_ids.*' => 'exists:activities,id',
+            'add_on_ids' => 'nullable|array',
+            'add_on_ids.*' => 'exists:add_ons,id',
         ]);
 
-        // Process Inclusions into JSON array
+        // Fail fast before the package row is created.
+        $this->validateRelationMatches($validated);
+
+        // Process Inclusions into JSON array (one input row per item; legacy textarea fallback)
         $inclusions = [];
-        if (! empty($validated['inclusions_text'])) {
+        if (! empty($validated['inclusions']) && is_array($validated['inclusions'])) {
+            $inclusions = array_values(array_filter(array_map('trim', $validated['inclusions'])));
+        } elseif (! empty($validated['inclusions_text'])) {
             $inclusions = array_values(array_filter(array_map('trim', explode("\n", $validated['inclusions_text']))));
         }
 
@@ -118,12 +141,14 @@ class AdminPackageController extends Controller
             'is_active' => (bool) $validated['is_active'],
         ]);
 
+        $this->syncPackageRelations($package, $validated);
+
         AdminAuditService::log($package);
 
         // Auto-generate AI Vector Embedding for Chatbot & Recommendation Engine
         try {
             $geminiService = app(GeminiService::class);
-            $text = $geminiService->buildPackageEmbeddingText($package->fresh('destination'));
+            $text = $geminiService->buildPackageEmbeddingText($package->fresh(['destination', 'hotels', 'rooms', 'activities', 'addOns']));
             $vector = $geminiService->generateEmbedding($text, 'RETRIEVAL_DOCUMENT', $package->name);
             if ($vector) {
                 $package->embedding = $geminiService->formatVectorForDb($vector);
@@ -141,10 +166,13 @@ class AdminPackageController extends Controller
      */
     public function edit($id)
     {
-        $package = Package::findOrFail($id);
+        $package = Package::with(['hotels', 'rooms', 'activities', 'addOns'])->findOrFail($id);
         $destinations = DestinationModel::orderBy('name', 'asc')->get();
+        $hotels = HotelModel::with('rooms')->orderBy('hotel_name', 'asc')->get();
+        $activities = ActivityModel::orderBy('activity_name', 'asc')->get();
+        $addOns = AddOnModel::orderBy('name', 'asc')->get();
 
-        return view('admin.packages.edit', compact('package', 'destinations'));
+        return view('admin.packages.edit', compact('package', 'destinations', 'hotels', 'activities', 'addOns'));
     }
 
     /**
@@ -165,15 +193,30 @@ class AdminPackageController extends Controller
             'min_pax' => 'required|integer|min:1',
             'valid_from' => 'nullable|date',
             'valid_to' => 'nullable|date|after_or_equal:valid_from',
+            'inclusions' => 'nullable|array',
+            'inclusions.*' => 'nullable|string|max:255',
             'inclusions_text' => 'nullable|string',
             'image' => 'nullable|image|max:4096',
             'image_url' => 'nullable|url|max:500',
             'is_active' => 'required|boolean',
+            'hotel_ids' => 'nullable|array',
+            'hotel_ids.*' => 'exists:hotels,id',
+            'room_ids' => 'nullable|array',
+            'room_ids.*' => 'exists:rooms,id',
+            'activity_ids' => 'nullable|array',
+            'activity_ids.*' => 'exists:activities,id',
+            'add_on_ids' => 'nullable|array',
+            'add_on_ids.*' => 'exists:add_ons,id',
         ]);
 
-        // Process Inclusions
+        // Fail fast before the package row is touched.
+        $this->validateRelationMatches($validated);
+
+        // Process Inclusions (one input row per item; legacy textarea fallback)
         $inclusions = [];
-        if (! empty($validated['inclusions_text'])) {
+        if (! empty($validated['inclusions']) && is_array($validated['inclusions'])) {
+            $inclusions = array_values(array_filter(array_map('trim', $validated['inclusions'])));
+        } elseif (! empty($validated['inclusions_text'])) {
             $inclusions = array_values(array_filter(array_map('trim', explode("\n", $validated['inclusions_text']))));
         }
 
@@ -201,12 +244,14 @@ class AdminPackageController extends Controller
             'is_active' => (bool) $validated['is_active'],
         ]);
 
+        $this->syncPackageRelations($package, $validated);
+
         AdminAuditService::log($package, $oldValues);
 
         // Auto-re-generate AI Vector Embedding
         try {
             $geminiService = app(GeminiService::class);
-            $text = $geminiService->buildPackageEmbeddingText($package->fresh('destination'));
+            $text = $geminiService->buildPackageEmbeddingText($package->fresh(['destination', 'hotels', 'rooms', 'activities', 'addOns']));
             $vector = $geminiService->generateEmbedding($text, 'RETRIEVAL_DOCUMENT', $package->name);
             if ($vector) {
                 $package->embedding = $geminiService->formatVectorForDb($vector);
@@ -217,6 +262,55 @@ class AdminPackageController extends Controller
         }
 
         return redirect()->route('admin.packages.index')->with('success', "Tour package '{$package->name}' updated successfully with fresh AI vector embedding!");
+    }
+
+    /**
+     * Guard: every chosen room must belong to a chosen hotel (max one room per hotel).
+     *
+     * @throws ValidationException
+     */
+    protected function validateRelationMatches(array $validated): void
+    {
+        $hotelIds = collect($validated['hotel_ids'] ?? [])->map(fn ($id) => (int) $id);
+        $rooms = RoomType::whereIn('id', $validated['room_ids'] ?? [])->get();
+
+        $stray = $rooms->reject(fn ($room) => $hotelIds->contains((int) $room->hotel_id));
+        if ($stray->isNotEmpty()) {
+            throw ValidationException::withMessages([
+                'room_ids' => 'Each room must belong to one of the selected hotels: '.$stray->pluck('room_name')->join(', ').'.',
+            ]);
+        }
+        $dupes = $rooms->groupBy('hotel_id')->filter(fn ($group) => $group->count() > 1);
+        if ($dupes->isNotEmpty()) {
+            throw ValidationException::withMessages([
+                'room_ids' => 'Only one room per hotel is allowed.',
+            ]);
+        }
+    }
+
+    /**
+     * Sync the package's linked hotels (+room per hotel), activities and add-ons.
+     * Price stays a manual admin flat — relations are descriptive links, never summed.
+     *
+     * @throws ValidationException
+     */
+    protected function syncPackageRelations(Package $package, array $validated): void
+    {
+        $this->validateRelationMatches($validated);
+
+        $hotelIds = collect($validated['hotel_ids'] ?? [])->map(fn ($id) => (int) $id)->unique()->values();
+        $rooms = RoomType::whereIn('id', $validated['room_ids'] ?? [])->get();
+
+        $hotelSync = [];
+        foreach ($hotelIds as $hotelId) {
+            $hotelSync[$hotelId] = ['room_type_id' => null];
+        }
+        foreach ($rooms as $room) {
+            $hotelSync[(int) $room->hotel_id] = ['room_type_id' => $room->id];
+        }
+        $package->hotels()->sync($hotelSync);
+        $package->activities()->sync($validated['activity_ids'] ?? []);
+        $package->addOns()->sync($validated['add_on_ids'] ?? []);
     }
 
     /**

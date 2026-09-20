@@ -42,7 +42,7 @@ class CheckoutController extends Controller
                         RoomType::class => ['hotel', 'hotel.destination'],
                         ActivityModel::class => ['destination'],
                         AddOnModel::class => ['destination'],
-                        Package::class => ['destination'],
+                        Package::class => ['destination', 'rooms'],
                     ]);
                 },
             ])

@@ -208,6 +208,7 @@ class BookingRequestService
                         'hotel_name' => $item->hotel_name,
                         'location_name' => $item->location_name,
                         'image' => $item->item_image,
+                        'room_option' => $item->room_option,
                     ],
                 ]);
             }

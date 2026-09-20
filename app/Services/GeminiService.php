@@ -181,6 +181,24 @@ class GeminiService
         } catch (\Throwable $e) {
             // ignore
         }
+        $roomNames = '';
+        try {
+            $rooms = $package->rooms()->pluck('room_name')->all();
+            if (! empty($rooms)) {
+                $roomNames = 'Room Types Included: '.implode(', ', array_slice($rooms, 0, 10));
+            }
+        } catch (\Throwable $e) {
+            // ignore
+        }
+        $addOnNames = '';
+        try {
+            $addOns = $package->addOns()->pluck('name')->all();
+            if (! empty($addOns)) {
+                $addOnNames = 'Add-ons Included: '.implode(', ', array_slice($addOns, 0, 10));
+            }
+        } catch (\Throwable $e) {
+            // ignore
+        }
 
         return implode("\n", array_filter([
             "Tour Package Name: {$package->name}",
@@ -192,7 +210,9 @@ class GeminiService
             $validity,
             $status,
             $hotelNames ?: null,
+            $roomNames ?: null,
             $activityNames ?: null,
+            $addOnNames ?: null,
             $inclusions ? "Included Inclusions & Features: {$inclusions}" : 'All-inclusive promo package',
         ]));
     }
@@ -1569,15 +1589,25 @@ class GeminiService
             $status = $package->is_active ? 'Status: Active' : 'Status: Inactive';
 
             $hotelNames = null;
+            $roomNames = null;
             $activityNames = null;
+            $addOnNames = null;
             try {
                 $hotels = $package->hotels()->pluck('hotel_name')->all();
                 if (! empty($hotels)) {
                     $hotelNames = 'Hotels Included: '.implode(', ', array_slice($hotels, 0, 10));
                 }
+                $rooms = $package->rooms()->pluck('room_name')->all();
+                if (! empty($rooms)) {
+                    $roomNames = 'Rooms Included: '.implode(', ', array_slice($rooms, 0, 10));
+                }
                 $activities = $package->activities()->pluck('activity_name')->all();
                 if (! empty($activities)) {
                     $activityNames = 'Activities Included: '.implode(', ', array_slice($activities, 0, 10));
+                }
+                $addOns = $package->addOns()->pluck('name')->all();
+                if (! empty($addOns)) {
+                    $addOnNames = 'Add-ons Included: '.implode(', ', array_slice($addOns, 0, 10));
                 }
             } catch (\Throwable $e) {
                 // ignore
@@ -1595,7 +1625,9 @@ class GeminiService
                 $validity,
                 $status,
                 $hotelNames,
+                $roomNames,
                 $activityNames,
+                $addOnNames,
                 $inclusions ? "Inclusions: {$inclusions}" : null,
             ]);
 

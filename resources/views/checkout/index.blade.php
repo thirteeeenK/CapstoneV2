@@ -98,6 +98,8 @@
                     'package_slot' => $pkgNum,
                     'is_lead' => $pkgNum === 1,
                     'total_pax' => $pax,
+                    'room_option' => $cItem->room_option,
+                    'has_linked_rooms' => $cItem->itemable->rooms->isNotEmpty(),
                 ];
             }
         }
@@ -228,6 +230,30 @@
                                 @endif
                             </div>
                         </div>
+
+                        {{-- Room preference (package slot 1 only, no price effect — ops instruction for partner hotels) --}}
+                        @if($manifest['type'] === 'package' && ($manifest['package_slot'] ?? 0) === 1 && ! empty($manifest['has_linked_rooms']))
+                            <div x-data="{ choice: '{{ $manifest['room_option'] ?? 'shared' }}' }"
+                                class="bg-sky-50/60 border border-sky-200/70 rounded-xl px-3 py-2.5">
+                                <p class="text-[10.5px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-[15px] text-sky-600">bed</span>
+                                    Room Arrangement
+                                </p>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    <label class="flex items-center gap-2 text-xs text-slate-700 bg-white px-3 py-2 rounded-xl border cursor-pointer" :class="choice === 'shared' ? 'border-sky-500 ring-2 ring-sky-500/20' : 'border-slate-200'">
+                                        <input type="radio" value="shared" x-model="choice" class="accent-sky-600"
+                                            @change="fetch('{{ route('cart.update', $manifest['cart_item_id']) }}', { method: 'PATCH', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' }, body: JSON.stringify({ room_option: 'shared' }) })">
+                                        <span class="font-bold">Share 1 room</span>
+                                    </label>
+                                    <label class="flex items-center gap-2 text-xs text-slate-700 bg-white px-3 py-2 rounded-xl border cursor-pointer" :class="choice === 'separate' ? 'border-sky-500 ring-2 ring-sky-500/20' : 'border-slate-200'">
+                                        <input type="radio" value="separate" x-model="choice" class="accent-sky-600"
+                                            @change="fetch('{{ route('cart.update', $manifest['cart_item_id']) }}', { method: 'PATCH', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' }, body: JSON.stringify({ room_option: 'separate' }) })">
+                                        <span class="font-bold">Separate rooms</span>
+                                    </label>
+                                </div>
+                                <p class="text-[10px] text-slate-400 mt-1.5">No extra charge — same price per person. We relay this to the hotel.</p>
+                            </div>
+                        @endif
 
                         {{-- Passenger rows --}}
                         <div class="space-y-2 sm:space-y-3">

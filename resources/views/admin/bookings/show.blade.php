@@ -336,6 +336,13 @@
                                                         {{ $item->item_subtitle }} • {{ $item->selected_pax }} pax
                                                     @endif
                                                 </p>
+                                                {{-- Room preference for SME relay (package bookings) --}}
+                                                @if($item->item_type === 'package' && ! empty($item->item_snapshot['room_option']))
+                                                    <span class="mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border {{ ($item->item_snapshot['room_option'] ?? null) === 'separate' ? 'bg-amber-50 text-amber-800 border-amber-300' : 'bg-slate-100 text-slate-600 border-slate-300' }}">
+                                                        <span class="material-symbols-outlined text-[13px]">bed</span>
+                                                        {{ ($item->item_snapshot['room_option'] ?? null) === 'separate' ? 'Separate rooms — relay to partner' : 'Share 1 room' }}
+                                                    </span>
+                                                @endif
                                             </div>
                                         </div>
 

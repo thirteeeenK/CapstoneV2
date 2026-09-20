@@ -54,7 +54,7 @@ class CartService
     /**
      * Add an item to the cart (dedupe, room-hold check, pax normalization).
      *
-     * @param  array  $payload  item_type, item_id, quantity, selected_pax, check_in_date, check_out_date, notes
+     * @param  array  $payload  item_type, item_id, quantity, selected_pax, check_in_date, check_out_date, notes, room_option
      * @param  string|null  $luckyGroupId  shared group id for "I'm Feeling Lucky" itineraries
      * @return array{status: string, cart_item: CartItem} status: added|incremented|already_in_cart
      *
@@ -72,6 +72,10 @@ class CartService
         $selectedPax = max(1, (int) ($payload['selected_pax'] ?? 1));
         $checkIn = $payload['check_in_date'] ?? null;
         $checkOut = $payload['check_out_date'] ?? null;
+        // Package-only room preference (no price effect). Null = legacy/no choice.
+        $roomOption = $itemType === 'package' && in_array($payload['room_option'] ?? null, ['shared', 'separate'], true)
+            ? $payload['room_option']
+            : null;
 
         // Past-date guard (Option A: check_in < today is expired)
         if ($itemType === 'room' && $checkIn) {
@@ -115,6 +119,11 @@ class CartService
 
         if ($checkIn) {
             $query->where('check_in_date', $checkIn);
+        }
+
+        if ($itemType === 'package') {
+            // Share vs separate rooms are distinct cart lines.
+            $roomOption ? $query->where('room_option', $roomOption) : $query->whereNull('room_option');
         }
 
         if (in_array($itemType, ['activity', 'addon'])) {
@@ -161,6 +170,7 @@ class CartService
             'item_id' => $itemId,
             'quantity' => $quantity,
             'selected_pax' => $selectedPax,
+            'room_option' => $roomOption,
             'check_in_date' => $checkIn ?: null,
             'check_out_date' => $checkOut ?: null,
             'notes' => $payload['notes'] ?? null,

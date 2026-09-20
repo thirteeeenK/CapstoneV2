@@ -2,7 +2,10 @@
 
 namespace Database\Seeders;
 
+use App\Models\ActivityModel;
+use App\Models\AddOnModel;
 use App\Models\DestinationModel;
+use App\Models\HotelModel;
 use App\Models\Package;
 use Illuminate\Database\Seeder;
 
@@ -102,14 +105,32 @@ class PackageSeeder extends Seeder
         // NOTE: package_hotel / package_activity pivots are empty in the
         // source database, so no relations are seeded here.
 
+        // Link demo relations: hotels (+first room each), activities, add-ons.
+        // Generic text inclusions (airfare, fees) stay as-is — only catalogue
+        // records get FK links.
+        $demoHotels = HotelModel::where('destination_id', $boracay->id)
+            ->with('rooms')->limit(2)->get();
+        $demoActivityIds = ActivityModel::where('destination_id', $boracay->id)
+            ->limit(3)->pluck('id')->all();
+        $demoAddOnIds = AddOnModel::where('destination_id', $boracay->id)
+            ->limit(2)->pluck('id')->all();
+
         foreach ($packages as $pkg) {
             $name = $pkg['name'];
             unset($pkg['name']);
 
-            Package::updateOrCreate(
+            $package = Package::updateOrCreate(
                 ['name' => $name],
                 array_merge(['destination_id' => $boracay->id], $pkg)
             );
+
+            $hotelSync = [];
+            foreach ($demoHotels as $hotel) {
+                $hotelSync[$hotel->id] = ['room_type_id' => $hotel->rooms->first()?->id];
+            }
+            $package->hotels()->sync($hotelSync);
+            $package->activities()->sync($demoActivityIds);
+            $package->addOns()->sync($demoAddOnIds);
         }
     }
 }

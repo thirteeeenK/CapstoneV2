@@ -35,6 +35,12 @@ class AddOnModel extends Model
         return $this->belongsTo(DestinationModel::class, 'destination_id');
     }
 
+    public function packages()
+    {
+        return $this->belongsToMany(Package::class, 'package_addon', 'add_on_id', 'package_id')
+            ->withTimestamps();
+    }
+
     /**
      * Get rate per pax from matching pricing tier.
      */

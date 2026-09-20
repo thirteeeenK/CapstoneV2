@@ -15,7 +15,7 @@ class PackageShowController extends Controller
     {
         $destinations = DestinationModel::orderBy('name', 'asc')->get();
 
-        $query = Package::where('is_active', true)->with(['destination', 'hotels', 'activities']);
+        $query = Package::where('is_active', true)->with(['destination', 'hotels', 'rooms', 'activities', 'addOns']);
 
         if ($request->has('destination_id') && ! empty($request->destination_id)) {
             $query->where('destination_id', $request->destination_id);

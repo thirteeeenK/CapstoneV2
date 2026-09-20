@@ -168,6 +168,7 @@ class CartController extends Controller
                     'item_id' => $item->item_id,
                     'quantity' => $item->quantity,
                     'selected_pax' => $item->selected_pax,
+                    'room_option' => $item->room_option,
                     'min_pax' => ($item->item_type === 'package' && $item->itemable) ? (int) $item->itemable->min_pax : null,
                     'check_in_date' => $item->check_in_date ? Carbon::parse($item->check_in_date)->format('Y-m-d') : null,
                     'check_out_date' => $item->check_out_date ? Carbon::parse($item->check_out_date)->format('Y-m-d') : null,
@@ -212,6 +213,7 @@ class CartController extends Controller
                 'selected_pax' => 'nullable|integer|min:1',
                 'check_in_date' => 'nullable|date|after_or_equal:today',
                 'check_out_date' => 'nullable|date|after:check_in_date',
+                'room_option' => 'nullable|string|in:shared,separate',
                 'notes' => 'nullable|string',
             ]);
 
@@ -374,6 +376,7 @@ class CartController extends Controller
                 'check_in_date' => 'nullable|date|after_or_equal:today',
                 'check_out_date' => 'nullable|date|after:check_in_date',
                 'is_selected' => 'nullable|boolean',
+                'room_option' => 'nullable|string|in:shared,separate',
                 'notes' => 'nullable|string',
             ]);
 
@@ -430,6 +433,10 @@ class CartController extends Controller
             }
             if (array_key_exists('notes', $validated)) {
                 $cartItem->notes = $validated['notes'];
+            }
+            // Package-only room preference (no price effect).
+            if (array_key_exists('room_option', $validated) && $cartItem->item_type === 'package') {
+                $cartItem->room_option = $validated['room_option'];
             }
 
             $cartItem->save();

@@ -82,23 +82,29 @@
                 {{-- Package Image Upload --}}
                 <div>
                     <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Upload New Image File</label>
+                    @if(!empty($package->images) && is_array($package->images))
+                        <div class="mb-2 flex items-center gap-2">
+                            <img src="{{ asset('storage/'.ltrim($package->images[0], '/')) }}" alt="Current package image" class="w-16 h-16 rounded-xl object-cover border border-slate-200">
+                            <span class="text-[11px] text-slate-500 font-medium">Current image kept unless you upload or paste a new one.</span>
+                        </div>
+                    @endif
                     <input type="file" name="image" accept="image/*" class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-sky-50 file:text-sky-700 hover:file:bg-sky-100">
                 </div>
 
                 {{-- Image URL --}}
                 <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Or Image URL</label>
-                    <input type="url" name="image_url" value="{{ !empty($package->images) && is_array($package->images) ? $package->images[0] : '' }}" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Or Image URL (only to replace)</label>
+                    <input type="url" name="image_url" value="" placeholder="https://example.com/package.jpg" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">
                 </div>
 
-                {{-- Inclusions Text List --}}
-                <div class="sm:col-span-2">
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Included Inclusions / Highlights (1 item per line)</label>
-                    @php
-                        $inclusionsText = !empty($package->generic_inclusions) && is_array($package->generic_inclusions) ? implode("\n", $package->generic_inclusions) : '';
-                    @endphp
-                    <textarea name="inclusions_text" rows="5" class="w-full px-4 py-3 rounded-xl border border-slate-200 text-xs font-medium text-slate-900 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">{{ $inclusionsText }}</textarea>
-                </div>
+                {{-- Linked catalogue records --}}
+                @include('admin.packages._relations')
+
+                {{-- Inclusions as individual rows --}}
+                @php
+                    $inclusionsList = old('inclusions', !empty($package->generic_inclusions) && is_array($package->generic_inclusions) ? $package->generic_inclusions : []);
+                @endphp
+                @include('admin.packages._inclusions', ['inclusions' => $inclusionsList])
 
                 {{-- Public Visibility Toggle --}}
                 <div class="sm:col-span-2">

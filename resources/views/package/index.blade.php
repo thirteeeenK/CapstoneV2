@@ -153,7 +153,9 @@
                                 'images' => $resolvedImages,
                                 'generic_inclusions' => array_values($inclusionsRaw),
                                 'hotels' => $pkg->hotels->map(fn($h) => ['id' => $h->id, 'name' => $h->hotel_name])->toArray(),
+                                'rooms' => $pkg->rooms->map(fn($r) => ['id' => $r->id, 'name' => $r->room_name])->toArray(),
                                 'activities' => $pkg->activities->map(fn($a) => ['id' => $a->id, 'name' => $a->activity_name])->toArray(),
+                                'add_ons' => $pkg->addOns->map(fn($a) => ['id' => $a->id, 'name' => $a->name])->toArray(),
                                 'valid_from' => $pkg->valid_from ? $pkg->valid_from->format('M d, Y') : null,
                                 'valid_to' => $pkg->valid_to ? $pkg->valid_to->format('M d, Y') : null,
                             ];
@@ -252,7 +254,7 @@
                                 </button>
 
                                 <button type="button"
-                                    @click="window.addToCart('package', {{ $pkg->id }})"
+                                    @click="window.addToCart('package', {{ $pkg->id }}, { quantity: {{ $pkg->min_pax ?: 2 }}, selected_pax: {{ $pkg->min_pax ?: 2 }} })"
                                     class="w-full py-2.5 px-2 sm:px-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs transition-colors flex items-center justify-center gap-1 shadow-xs cursor-pointer">
                                     <span class="material-symbols-outlined text-[16px]">shopping_cart</span>
                                     <span class="truncate">Add to Basket</span>
@@ -354,7 +356,42 @@
                             </div>
                         </div>
                     </template>
-                </div>
+
+                    {{-- Linked stay, experiences & extras --}}
+                    <template x-if="previewPackage && (previewPackage.hotels?.length || previewPackage.rooms?.length || previewPackage.activities?.length || previewPackage.add_ons?.length)">
+                        <div class="space-y-2">
+                            <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-[16px] text-sky-600">link</span>
+                                <span>Stay, Experiences & Extras</span>
+                            </h3>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                <template x-for="hotel in (previewPackage.hotels || [])" :key="'h'+hotel.id">
+                                    <div class="flex items-center gap-2 text-xs text-slate-700 bg-sky-50/60 px-3 py-2.5 rounded-xl border border-sky-200/60">
+                                        <span class="material-symbols-outlined text-[16px] text-sky-600 shrink-0">hotel</span>
+                                        <span x-text="hotel.name"></span>
+                                    </div>
+                                </template>
+                                <template x-for="room in (previewPackage.rooms || [])" :key="'r'+room.id">
+                                    <div class="flex items-center gap-2 text-xs text-slate-700 bg-sky-50/60 px-3 py-2.5 rounded-xl border border-sky-200/60">
+                                        <span class="material-symbols-outlined text-[16px] text-sky-600 shrink-0">bed</span>
+                                        <span x-text="room.name"></span>
+                                    </div>
+                                </template>
+                                <template x-for="activity in (previewPackage.activities || [])" :key="'a'+activity.id">
+                                    <div class="flex items-center gap-2 text-xs text-slate-700 bg-violet-50/60 px-3 py-2.5 rounded-xl border border-violet-200/60">
+                                        <span class="material-symbols-outlined text-[16px] text-violet-600 shrink-0">kayaking</span>
+                                        <span x-text="activity.name"></span>
+                                    </div>
+                                </template>
+                                <template x-for="addon in (previewPackage.add_ons || [])" :key="'x'+addon.id">
+                                    <div class="flex items-center gap-2 text-xs text-slate-700 bg-amber-50/60 px-3 py-2.5 rounded-xl border border-amber-200/60">
+                                        <span class="material-symbols-outlined text-[16px] text-amber-600 shrink-0">add_circle</span>
+                                        <span x-text="addon.name"></span>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
 
                 {{-- Pinned Modal Footer --}}
                 <div
@@ -364,7 +401,7 @@
                         Close
                     </button>
 
-                    <button type="button" @click="window.addToCart('package', previewPackage.id); previewPackage = null;"
+                    <button type="button" @click="window.addToCart('package', previewPackage.id, { quantity: previewPackage.min_pax || 2, selected_pax: previewPackage.min_pax || 2 }); previewPackage = null;"
                         class="flex-1 py-2.5 px-4 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs sm:text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer">
                         <span class="material-symbols-outlined text-[17px]">shopping_cart</span>
                         <span>Add Package to Trip Basket</span>
