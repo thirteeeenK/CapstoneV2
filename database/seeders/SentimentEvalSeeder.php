@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Jobs\UpdateEntityReviewSummaryJob;
 use App\Models\ActivityModel;
 use App\Models\Booking;
 use App\Models\BookingItem;
@@ -9,7 +10,9 @@ use App\Models\DestinationModel;
 use App\Models\HotelModel;
 use App\Models\Package;
 use App\Models\Review;
+use App\Models\ReviewSummary;
 use App\Models\User;
+use App\Services\GeminiService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -24,9 +27,9 @@ class SentimentEvalSeeder extends Seeder
      * labeling exercise (see Evaluations/reviews_labeling_295.csv audit trail).
      * Target IDs assume a fresh seed (HotelSeeder/RoomSeeder/... run in fixed order).
      */
-    public function run(): void
+    public function run(GeminiService $gemini): void
     {
-        if (Review::whereHas('booking', fn ($q) => $q->where('booking_code', 'like', 'SEV-%'))->exists()) {
+        if (Review::whereHas('booking', fn($q) => $q->where('booking_code', 'like', 'SEV-%'))->exists()) {
             $this->command?->info('Sentiment eval reviews already exist — skipping SentimentEvalSeeder.');
 
             return;
@@ -72,6 +75,10 @@ class SentimentEvalSeeder extends Seeder
         }
 
         $this->command?->info("Seeded {$index} blind eval reviews (216 pos / 44 neu / 35 neg ground truth). Next: sentiment:run-ai -> sentiment:evaluate");
+
+        // Platform summary over the 295, built inline (one Gemini call) so
+        // fresh seeds show populated summary boxes with zero extra steps.
+        (new UpdateEntityReviewSummaryJob(ReviewSummary::PLATFORM_OVERALL_TYPE, null, 'SunnyTrips Overall Platform'))->handle($gemini);
     }
 
     /**
@@ -133,7 +140,7 @@ class SentimentEvalSeeder extends Seeder
     protected function createCompletedBooking(User $user, array $target): Booking
     {
         $booking = Booking::create([
-            'booking_code' => 'SEV-'.strtoupper(Str::random(8)),
+            'booking_code' => 'SEV-' . strtoupper(Str::random(8)),
             'user_id' => $user->id,
             'status' => Booking::STATUS_COMPLETED,
             'total_amount' => 0,
@@ -159,7 +166,7 @@ class SentimentEvalSeeder extends Seeder
             'booking_id' => $booking->id,
             'item_type' => $itemType,
             'item_id' => $target['id'],
-            'item_title' => $target['type'].' #'.$target['id'].' eval stay',
+            'item_title' => $target['type'] . ' #' . $target['id'] . ' eval stay',
             'item_subtitle' => $itemType === 'room' ? '1 night stay' : 'Standard booking',
             'hotel_name' => null,
             'unit_price' => 0,

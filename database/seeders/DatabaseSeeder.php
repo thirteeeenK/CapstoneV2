@@ -45,9 +45,11 @@ class DatabaseSeeder extends Seeder
             AddOnSeeder::class,
             PackageSeeder::class,
             PassengerCategoryRuleSeeder::class,
-            ReviewSeeder::class,
-            HotelReviewSeeder::class,
             FaqSeeder::class,
+            // Sole review source: 295 blind sentiment-eval reviews. The old
+            // demo pools (ReviewSeeder 55, HotelReviewSeeder md) are manual
+            // --class runs only, so bare db:seed never pollutes prod again.
+            SentimentEvalSeeder::class,
         ]);
     }
 }
