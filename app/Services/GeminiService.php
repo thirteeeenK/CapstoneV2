@@ -1035,7 +1035,42 @@ class GeminiService
      * @param  array  $scoredHotels  Output from searchHotels() or rankRecommendations()
      * @return string Formatted context string ready for prompt injection
      */
-    public function getHotelContext(array $scoredHotels): string
+    /**
+     * Objective-accurate rank labels: price-ordered sets say LOWEST/HIGHEST
+     * PRICE, single exact matches say EXACT MATCH — never BEST MATCH, which
+     * implies semantic relevance that a price sort did not compute.
+     */
+    public function rankLabel(int $rank, float|string $score, ?string $ordering = null): string
+    {
+        if ($ordering === 'price-asc' && $rank === 1) {
+            return "Rank #{$rank} — LOWEST PRICE";
+        }
+        if ($ordering === 'price-desc' && $rank === 1) {
+            return "Rank #{$rank} — HIGHEST PRICE";
+        }
+        if ($ordering === 'exact' && $rank === 1) {
+            return "Rank #{$rank} — EXACT MATCH";
+        }
+
+        return $rank === 1 ? "Rank #{$rank} — BEST MATCH (relevance: {$score})" : "Rank #{$rank} — Alternative (relevance: {$score})";
+    }
+
+    public function resultsHeader(int $count, ?string $ordering = null): string
+    {
+        if ($count <= 1) {
+            return '';
+        }
+        if ($ordering === 'price-asc') {
+            return "Ordered by price, lowest first: Rank #1 = lowest price.\n\n";
+        }
+        if ($ordering === 'price-desc') {
+            return "Ordered by price, highest first: Rank #1 = highest price.\n\n";
+        }
+
+        return "Ranked by AI semantic relevance: Rank #1 = best match for the query, Rank #2+ = close alternatives.\n\n";
+    }
+
+    public function getHotelContext(array $scoredHotels, ?string $ordering = null): string
     {
         if (empty($scoredHotels)) {
             return '';
@@ -1081,7 +1116,7 @@ class GeminiService
                 // ignore
             }
 
-            $rankLabel = $rank === 1 ? "Rank #{$rank} — BEST MATCH (relevance: {$score})" : "Rank #{$rank} — Alternative (relevance: {$score})";
+            $rankLabel = $this->rankLabel($rank, $score, $ordering);
             $lines = array_filter([
                 "--- Hotel {$rankLabel} ---",
                 "Name: {$hotel->hotel_name}",
@@ -1101,7 +1136,7 @@ class GeminiService
             $blocks[] = implode("\n", $lines);
         }
 
-        $header = count($scoredHotels) > 1 ? "Ranked by AI semantic relevance: Rank #1 = best match for the query, Rank #2+ = close alternatives.\n\n" : '';
+        $header = $this->resultsHeader(count($scoredHotels), $ordering);
 
         return "=== HOTEL DATABASE RESULTS ===\n\n".$header.implode("\n\n", $blocks)."\n\n=== END HOTEL RESULTS ===";
     }
@@ -1206,7 +1241,7 @@ class GeminiService
         return $dates;
     }
 
-    public function getRoomContext(array $scoredRooms): string
+    public function getRoomContext(array $scoredRooms, ?string $ordering = null): string
     {
         if (empty($scoredRooms)) {
             return '';
@@ -1254,7 +1289,7 @@ class GeminiService
                 $rateExample = "Rate Example: {$baseOcc} pax = ₱".number_format($room->base_price, 2)."/night; {$examplePax} pax = ₱".number_format($exampleTotal, 2).'/night';
             }
 
-            $rankLabel = $rank === 1 ? "Rank #{$rank} — BEST MATCH (relevance: {$score})" : "Rank #{$rank} — Alternative (relevance: {$score})";
+            $rankLabel = $this->rankLabel($rank, $score, $ordering);
             $priceDate = $priceDates[$room->id] ?? $room->updated_at?->format('M d, Y');
             $lines = array_filter([
                 "--- Room {$rankLabel} ---",
@@ -1280,7 +1315,7 @@ class GeminiService
             $blocks[] = implode("\n", $lines);
         }
 
-        $header = count($scoredRooms) > 1 ? "Ranked by AI semantic relevance: Rank #1 = best match for the query, Rank #2+ = close alternatives.\n\n" : '';
+        $header = $this->resultsHeader(count($scoredRooms), $ordering);
 
         return "=== ROOM DATABASE RESULTS ===\n\n".$header.implode("\n\n", $blocks)."\n\n=== END ROOM RESULTS ===";
     }
@@ -1383,7 +1418,7 @@ class GeminiService
      * @param  array  $scoredActivities  Output from searchActivities() or rankRecommendations()
      * @return string Formatted context string ready for prompt injection
      */
-    public function getActivityContext(array $scoredActivities): string
+    public function getActivityContext(array $scoredActivities, ?string $ordering = null): string
     {
         if (empty($scoredActivities)) {
             return '';
@@ -1455,7 +1490,7 @@ class GeminiService
                 $coords = "Near Coordinates: {$dest->latitude}, {$dest->longitude} (destination center)";
             }
 
-            $rankLabel = $rank === 1 ? "Rank #{$rank} — BEST MATCH (relevance: {$score})" : "Rank #{$rank} — Alternative (relevance: {$score})";
+            $rankLabel = $this->rankLabel($rank, $score, $ordering);
             $priceDate = $priceDates[$activity->id] ?? $activity->updated_at?->format('M d, Y');
             $lines = array_filter([
                 "--- Activity {$rankLabel} ---",
@@ -1482,7 +1517,7 @@ class GeminiService
             $blocks[] = implode("\n", $lines);
         }
 
-        $header = count($scoredActivities) > 1 ? "Ranked by AI semantic relevance: Rank #1 = best match for the query, Rank #2+ = close alternatives.\n\n" : '';
+        $header = $this->resultsHeader(count($scoredActivities), $ordering);
 
         return "=== ACTIVITY & TOUR DATABASE RESULTS ===\n\n".$header.implode("\n\n", $blocks)."\n\n=== END ACTIVITY RESULTS ===";
     }
@@ -1600,7 +1635,7 @@ class GeminiService
     /**
      * Formats scored package results into structured context text for RAG prompt injection.
      */
-    public function getPackageContext(array $scoredPackages): string
+    public function getPackageContext(array $scoredPackages, ?string $ordering = null): string
     {
         if (empty($scoredPackages)) {
             return '';
@@ -1657,7 +1692,7 @@ class GeminiService
                 // ignore
             }
 
-            $rankLabel = $rank === 1 ? "Rank #{$rank} — BEST MATCH (relevance: {$score})" : "Rank #{$rank} — Alternative (relevance: {$score})";
+            $rankLabel = $this->rankLabel($rank, $score, $ordering);
             $priceDate = $priceDates[$package->id] ?? $package->updated_at?->format('M d, Y');
             $lines = array_filter([
                 "--- Package {$rankLabel} ---",
@@ -1680,7 +1715,7 @@ class GeminiService
             $blocks[] = implode("\n", $lines);
         }
 
-        $header = count($scoredPackages) > 1 ? "Ranked by AI semantic relevance: Rank #1 = best match for the query, Rank #2+ = close alternatives.\n\n" : '';
+        $header = $this->resultsHeader(count($scoredPackages), $ordering);
 
         return "=== PACKAGE DATABASE RESULTS ===\n\n".$header.implode("\n\n", $blocks)."\n\n=== END PACKAGE RESULTS ===";
     }
@@ -1738,7 +1773,7 @@ class GeminiService
     /**
      * Formats scored addon results into structured context text for RAG prompt injection.
      */
-    public function getAddOnContext(array $scoredAddOns): string
+    public function getAddOnContext(array $scoredAddOns, ?string $ordering = null): string
     {
         if (empty($scoredAddOns)) {
             return '';
@@ -1779,7 +1814,7 @@ class GeminiService
                 }
             }
 
-            $rankLabel = $rank === 1 ? "Rank #{$rank} — BEST MATCH (relevance: {$score})" : "Rank #{$rank} — Alternative (relevance: {$score})";
+            $rankLabel = $this->rankLabel($rank, $score, $ordering);
             $priceDate = $priceDates[$addon->id] ?? $addon->updated_at?->format('M d, Y');
             $lines = array_filter([
                 "--- AddOn {$rankLabel} ---",
@@ -1796,7 +1831,7 @@ class GeminiService
             $blocks[] = implode("\n", $lines);
         }
 
-        $header = count($scoredAddOns) > 1 ? "Ranked by AI semantic relevance: Rank #1 = best match for the query, Rank #2+ = close alternatives.\n\n" : '';
+        $header = $this->resultsHeader(count($scoredAddOns), $ordering);
 
         return "=== ADDON DATABASE RESULTS ===\n\n".$header.implode("\n\n", $blocks)."\n\n=== END ADDON RESULTS ===";
     }

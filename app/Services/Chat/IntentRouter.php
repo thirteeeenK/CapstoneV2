@@ -52,6 +52,7 @@ class IntentRouter
         'resort',
         'resorts',
         'stay',
+        'stays',
         'accommodation',
         'book',
         'booking',
@@ -69,11 +70,15 @@ class IntentRouter
         'beach',
         'beaches',
         'trip',
+        'trips',
         'travel',
+        'travels',
         'vacation',
         'holiday',
         'itinerary',
+        'itineraries',
         'plan',
+        'plans',
         'planning',
         'trip plan',
         'travel plan',
@@ -107,7 +112,9 @@ class IntentRouter
         'price',
         'prices',
         'cost',
+        'costs',
         'budget',
+        'budgets',
         'pesos',
         'php',
         '₱',
@@ -117,7 +124,9 @@ class IntentRouter
         'magkano',
         'presyo',
         'pax',
+        'guest',
         'guests',
+        'person',
         'persons',
         'people',
         'couple',
@@ -204,7 +213,13 @@ class IntentRouter
     {
         $lower = mb_strtolower($query);
         foreach ($this->travelKeywords as $keyword) {
-            if (str_contains($lower, $keyword)) {
+            $kw = mb_strtolower(trim($keyword));
+            if ($kw === '') {
+                continue;
+            }
+            // Word-boundary match: short keywords like "rain" must not fire
+            // inside other words ("trainer" → "rain" misrouted to rooms).
+            if (preg_match('/(?<!\p{L})'.preg_quote($kw, '/').'(?!\p{L})/iu', $lower)) {
                 return true;
             }
         }
@@ -290,7 +305,23 @@ class IntentRouter
             return self::ROOM_SEARCH;
         }
 
+        // Bare price-ranked destination query ("cheapest place in El Nido"):
+        // no catalog keyword, so default to rooms (stay) deterministically
+        // instead of semantic-routing roulette.
+        if ($this->hasPriceRankingIntent($lower) && $this->extractDestinationName($query)) {
+            return self::ROOM_SEARCH;
+        }
+
         return self::GENERAL_TALK;
+    }
+
+    /**
+     * True when the query asks for price-based ranking (cheapest / most
+     * expensive). Mirrors ChatbotService::detectPriceIntent wording.
+     */
+    protected function hasPriceRankingIntent(string $lower): bool
+    {
+        return (bool) preg_match('/\b(most\s+expensive|expensive|pricey|costliest|premium|luxurious|luxury|high-end|high\s*end|mahal|cheapest|cheap|affordable|budget|lowest|least\s+expensive|mura)\b/', $lower);
     }
 
     /**
@@ -388,6 +419,7 @@ class IntentRouter
             'nights' => null,
             'days' => null,
             'limit' => null,
+            'field_intent' => null,
             'place_names' => [],
         ];
 
@@ -474,6 +506,7 @@ class IntentRouter
 
         $constraints['package_name'] = $this->extractPackageName($query);
         $constraints['activity_name'] = $this->extractActivityName($query);
+        $constraints['field_intent'] = $this->detectFieldIntent($query);
 
         // Dynamic top N (e.g., "top 5 hotel")
         if (preg_match('/\btop\s*(\d+)\b/i', $query, $m)) {
@@ -672,8 +705,54 @@ class IntentRouter
                 $queryTokens[] = $t;
             }
         }
-        $queryTokens = array_unique($queryTokens);
+        $queryTokens = array_values(array_unique($queryTokens));
 
+        $best = $this->matchActivityByTokens($activities, $lower, $queryTokens, $genericWords, $destinationTokens);
+
+        // Alias fallback ("scuba trainer" → "Discover Scuba Diving (DSD)").
+        if ($best === null) {
+            $expanded = array_values(array_unique(array_map(
+                fn ($t) => self::ACTIVITY_TOKEN_ALIASES[$t] ?? $t,
+                $queryTokens
+            )));
+            if ($expanded !== $queryTokens) {
+                $best = $this->matchActivityByTokens($activities, $lower, $expanded, $genericWords, $destinationTokens);
+            }
+        }
+
+        // Typo tolerance ("parawsailing" → "Parasailing"). Matched against the
+        // distinctive tokens only: destination + generic words ("El Nido …
+        // Activity") appear in every browse query and must not trigger a
+        // false exact hit that hijacks the whole search.
+        if ($best === null) {
+            foreach ($activities as $name) {
+                $distinctive = [];
+                foreach (preg_split('/\s+/', mb_strtolower((string) $name)) as $t) {
+                    $t = $this->cleanToken($t);
+                    if ($t !== '' && ! in_array($t, $genericWords, true) && ! in_array($t, $destinationTokens, true)) {
+                        $distinctive[] = $t;
+                    }
+                }
+                if (empty($distinctive)) {
+                    continue;
+                }
+                if ($this->fuzzyContains($query, implode(' ', $distinctive))) {
+                    return (string) $name;
+                }
+            }
+        }
+
+        return $best;
+    }
+
+    /**
+     * Score catalog activities against significant query tokens: ≥1
+     * distinctive name token must hit the raw query AND every significant
+     * query token must be covered by the name. Best hits, then best
+     * hit-ratio, wins.
+     */
+    protected function matchActivityByTokens($activities, string $lower, array $queryTokens, array $genericWords, array $destinationTokens): ?string
+    {
         $best = null;
         $bestHits = 0;
         $bestRatio = 0.0;
@@ -717,16 +796,62 @@ class IntentRouter
             }
         }
 
-        // Typo tolerance ("parawsailing" → "Parasailing").
-        if ($best === null) {
-            foreach ($activities as $name) {
-                if ($this->fuzzyContains($query, (string) $name)) {
-                    return (string) $name;
-                }
-            }
+        return $best;
+    }
+
+    /**
+     * Shorthand/role tokens users type that never appear in catalog names.
+     * Trainer-family words imply the beginner intro product ("Discover …"),
+     * not the generic certified activity: mapping them to "discover" lets
+     * "scuba trainer" resolve Discover Scuba Diving (DSD) even though the
+     * shorter "Scuba Diving" would otherwise win on hit-ratio. Hits are
+     * still counted against the raw query and every expanded token must be
+     * covered by the name, so the alias only relaxes coverage, never
+     * invents a match from thin air.
+     */
+    protected const ACTIVITY_TOKEN_ALIASES = [
+        'trainer' => 'discover',
+        'trainor' => 'discover',
+        'training' => 'discover',
+        'instructor' => 'discover',
+        'scuba' => 'scuba',
+        'snorkel' => 'snorkeling',
+    ];
+
+    /**
+     * Deterministic field-inquiry mode: what the user asks ABOUT a named
+     * entity (its inclusions, price, duration...), not which entity to find.
+     * Checked exclusions-first since "not included" contains "included".
+     */
+    public function detectFieldIntent(string $query): ?string
+    {
+        $lower = mb_strtolower($query);
+        if (preg_match('/\bnot\s+included\b|\bexclu|\bhindi\s+kasama\b|\bnot\s+part\s+of\b/i', $lower)) {
+            return 'exclusions';
+        }
+        if (preg_match('/\binclud|\bkasama\b|\bcomes?\s+with\b|\bwhat\s+do\s+(i|we)\s+get\b/i', $lower)) {
+            return 'inclusions';
+        }
+        if (preg_match('/\bhow\s+much\b|\bmagkano\b|\bpresyo\b|\bprices?\b|\bcosts?\b|\brates?\b/i', $lower)) {
+            return 'price';
+        }
+        if (preg_match('/\bhow\s+long\b|\bduration\b|\blong\s+does\b|\bgaano\s+katagal\b/i', $lower)) {
+            return 'duration';
+        }
+        if (preg_match('/\bcapacity\b|\bmax\s+pax\b|\bmaximum\s+(pax|guests|occupancy)\b|\bkasya\b/i', $lower)) {
+            return 'capacity';
+        }
+        if (preg_match('/\brequirements?\b|\bbring\b|\bdadalhin\b|\brestrictions?\b|\bage\s+limit\b|\bbawal\b/i', $lower)) {
+            return 'requirements';
+        }
+        if (preg_match('/\bwhere\s+is\b/i', $lower)) {
+            return 'location';
+        }
+        if (preg_match('/\bitinerary\b/i', $lower)) {
+            return 'itinerary';
         }
 
-        return $best;
+        return null;
     }
 
     protected function cleanToken(string $token): string
@@ -748,7 +873,8 @@ class IntentRouter
             'what', 'how', 'is', 'are', 'was', 'were', 'do', 'does', 'did', 'it', 'its',
             'much', 'many', 'about', 'vs', 'versus', 'between', 'compare', 'comparison',
             'difference', 'differences', 'different',
-            'itinerary', 'itineraries', 'inclusion', 'inclusions', 'exclusion', 'exclusions',
+            'itinerary', 'itineraries', 'inclusion', 'inclusions', 'include', 'includes', 'included', 'including',
+            'exclusion', 'exclusions', 'exclude', 'excludes', 'excluded', 'excluding',
             'requirement', 'requirements', 'price', 'prices', 'cost', 'costs', 'rate', 'rates',
             'duration', 'location', 'details', 'detail', 'info', 'information',
             'offered', 'offer', 'offering', 'available', 'availability', 'best', 'top',
@@ -1301,6 +1427,7 @@ class IntentRouter
             'tours',
             'island hopping',
             'diving',
+            'scuba',
             'snorkeling',
             'hiking',
             'trek',

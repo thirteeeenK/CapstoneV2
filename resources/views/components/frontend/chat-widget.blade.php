@@ -134,7 +134,7 @@
                                         <template x-for="room in msg.rooms">
                                             <div
                                                 class="bg-slate-50 rounded-xl p-2.5 border border-slate-200/80 space-y-1.5 relative">
-                                                <span x-show="msg.rooms[0] && msg.rooms[0].id === room.id" class="absolute -top-1.5 -right-1.5 text-[10px] font-black bg-coral-500 text-white px-2 py-0.5 rounded-full shadow-xs border border-white">Best Match</span>
+                                                <span x-show="msg.rooms[0] && msg.rooms[0].id === room.id" class="absolute -top-1.5 -right-1.5 text-[10px] font-black bg-coral-500 text-white px-2 py-0.5 rounded-full shadow-xs border border-white" x-text="rankPill(msg)"></span>
                                                 <img x-show="room.image" :src="imgSrc(room.image)"
                                                     class="w-full h-24 object-cover rounded-lg mb-1 border border-slate-200"
                                                     alt="" onerror="this.style.display='none'">
@@ -181,7 +181,7 @@
                                         <template x-for="act in msg.activities">
                                             <div
                                                 class="bg-slate-50 rounded-xl p-2.5 border border-slate-200/80 space-y-1.5 relative">
-                                                <span x-show="msg.activities[0] && msg.activities[0].id === act.id" class="absolute -top-1.5 -right-1.5 text-[10px] font-black bg-coral-500 text-white px-2 py-0.5 rounded-full shadow-xs border border-white">Best Match</span>
+                                                <span x-show="msg.activities[0] && msg.activities[0].id === act.id" class="absolute -top-1.5 -right-1.5 text-[10px] font-black bg-coral-500 text-white px-2 py-0.5 rounded-full shadow-xs border border-white" x-text="rankPill(msg)"></span>
                                                 <img x-show="act.image" :src="imgSrc(act.image)"
                                                     class="w-full h-24 object-cover rounded-lg mb-1 border border-slate-200"
                                                     alt="" onerror="this.style.display='none'">
@@ -214,7 +214,7 @@
                                         <template x-for="hotel in msg.hotels">
                                             <div
                                                 class="bg-slate-50 rounded-xl p-2.5 border border-slate-200/80 space-y-1.5 relative">
-                                                <span x-show="msg.hotels[0] && msg.hotels[0].id === hotel.id" class="absolute -top-1.5 -right-1.5 text-[10px] font-black bg-coral-500 text-white px-2 py-0.5 rounded-full shadow-xs border border-white">Best Match</span>
+                                                <span x-show="msg.hotels[0] && msg.hotels[0].id === hotel.id" class="absolute -top-1.5 -right-1.5 text-[10px] font-black bg-coral-500 text-white px-2 py-0.5 rounded-full shadow-xs border border-white" x-text="rankPill(msg)"></span>
                                                 <img x-show="hotel.image" :src="imgSrc(hotel.image)"
                                                     class="w-full h-24 object-cover rounded-lg mb-1 border border-slate-200"
                                                     alt="" onerror="this.style.display='none'">
@@ -240,7 +240,7 @@
                                         <template x-for="pkg in msg.packages">
                                             <div
                                                 class="bg-slate-50 rounded-xl p-2.5 border border-slate-200/80 space-y-1.5 relative">
-                                                <span x-show="msg.packages[0] && msg.packages[0].id === pkg.id" class="absolute -top-1.5 -right-1.5 text-[10px] font-black bg-coral-500 text-white px-2 py-0.5 rounded-full shadow-xs border border-white">Best Match</span>
+                                                <span x-show="msg.packages[0] && msg.packages[0].id === pkg.id" class="absolute -top-1.5 -right-1.5 text-[10px] font-black bg-coral-500 text-white px-2 py-0.5 rounded-full shadow-xs border border-white" x-text="rankPill(msg)"></span>
                                                 <img x-show="pkg.image" :src="imgSrc(pkg.image)"
                                                     class="w-full h-24 object-cover rounded-lg mb-1 border border-slate-200"
                                                     alt="" onerror="this.style.display='none'">
@@ -558,6 +558,7 @@
                         if (ctx.retrieved_hotels?.length) extras.hotels = ctx.retrieved_hotels;
                         if (ctx.retrieved_activities?.length) extras.activities = ctx.retrieved_activities;
                         if (ctx.retrieved_packages?.length) extras.packages = ctx.retrieved_packages;
+                        if (ctx.result_ordering) extras.ordering = ctx.result_ordering;
                         if (ctx.itinerary) extras.itinerary = ctx.itinerary;
                         if (ctx.map) extras.map = ctx.map;
                         if (ctx.suggested_actions?.length) extras.suggested_actions = ctx.suggested_actions;
@@ -692,6 +693,10 @@
                 return '/storage/' + path.replace(/^\/+/, '');
             },
 
+            rankPill(msg) {
+                return ({ 'price-asc': 'Lowest Price', 'price-desc': 'Highest Price', 'exact': 'Exact Match' })[msg.ordering] || 'Best Match';
+            },
+
             scrollDown() {
                 this.$nextTick(() => {
                     const el = this.$refs.messages;
@@ -771,8 +776,7 @@
                     const extras = {};
                     if (data.retrieved_rooms && data.retrieved_rooms.length > 0) {
                         extras.rooms = data.retrieved_rooms;
-                    } else if (data.availability && data.availability.length > 0) {
-                        // Map raw availability entries (item + availability) to room cards when retrieved_rooms missing
+                    } else if (data.availability && data.availability.length > 0) {                        // Map raw availability entries (item + availability) to room cards when retrieved_rooms missing
                         extras.rooms = data.availability.map(entry => {
                             const r = entry.item || entry;
                             return {
@@ -798,6 +802,7 @@
                     if (data.retrieved_hotels) extras.hotels = data.retrieved_hotels;
                     if (data.retrieved_activities) extras.activities = data.retrieved_activities;
                     if (data.retrieved_packages) extras.packages = data.retrieved_packages;
+                    if (data.result_ordering) extras.ordering = data.result_ordering;
                     if (data.map) extras.map = data.map;
                     if (data.suggested_actions?.length) extras.suggested_actions = data.suggested_actions;
                     if (data.location_request) {
@@ -932,6 +937,7 @@
                     if (data.retrieved_hotels?.length) extras.hotels = data.retrieved_hotels;
                     if (data.retrieved_activities?.length) extras.activities = data.retrieved_activities;
                     if (data.retrieved_packages?.length) extras.packages = data.retrieved_packages;
+                    if (data.result_ordering) extras.ordering = data.result_ordering;
                     if (data.itinerary) extras.itinerary = data.itinerary;
                     this.addMessage('bot', data.reply || 'I could not process that.', extras);
                 } catch (_) {

@@ -798,7 +798,13 @@ class ChatbotService
         $constraints = $this->resolveConversationalDestination($constraints, $session);
         $constraints = $this->resolveDefaultDestination($constraints, $user);
         $scored = null;
-        if ($this->isPersonalized($user)) {
+        // Objective-first: an explicit cheapest/most-expensive ask is answered
+        // from price-ordered DB rows, never from a top-5 semantic slice.
+        $priceIntent = $this->detectPriceIntent($query);
+        if ($priceIntent) {
+            $scored = $this->cheapestRoomsFirst($constraints, $priceIntent);
+        }
+        if ($scored === null && $this->isPersonalized($user)) {
             $blended = $this->blendedVector($user, $query);
             if ($blended) {
                 $roomsQuery = RoomType::with('hotel.destination')
@@ -844,7 +850,6 @@ class ChatbotService
             $scored = $this->gemini->searchRoomsHybrid($query, $constraints, 5);
         }
 
-        $priceIntent = $this->detectPriceIntent($query);
         if ($priceIntent) {
             $scored = $this->sortRoomsByPrice($scored, $priceIntent, $constraints['pax'] ?? 2);
         }
@@ -855,7 +860,9 @@ class ChatbotService
             $entry['pax'] = $constraints['pax'] ?? null;
         }
         unset($entry);
-        $context = $this->gemini->getRoomContext($scored);
+        $ordering = $this->resultOrdering($priceIntent, $scored, $constraints, 'room_name', 'room_id');
+        $fieldIntent = $constraints['field_intent'] ?? $this->intentRouter->detectFieldIntent($query);
+        $context = $this->gemini->getRoomContext($scored, $ordering);
 
         if (empty(trim($context))) {
             return ['reply' => $this->noResultsReply('rooms', $constraints)];
@@ -909,7 +916,7 @@ class ChatbotService
         }
 
         $context = $this->gemini->extractPricingContext($context, $query);
-        $prompt = $this->buildPrompt('room-search', $context, $query, $user);
+        $prompt = $this->buildPrompt('room-search', $context, $query, $user, $this->promptOptions($ordering, $scored, $constraints, $fieldIntent, 'room_name', 'room_id'));
         $reply = $this->stripRankLineIfSingle($this->geminiChatResponse($prompt, $session), $scored);
         if ($notice = $this->budgetNotice($scored, $constraints)) {
             $reply = $notice."\n\n".$reply;
@@ -926,6 +933,7 @@ class ChatbotService
         return [
             'reply' => $reply,
             'retrieved_rooms' => $this->formatRoomResults($scored),
+            'result_ordering' => $ordering,
         ];
     }
 
@@ -1084,6 +1092,7 @@ class ChatbotService
             }
         }
         $scored = null;
+        $priceIntent = $this->detectPriceIntent($query);
 
         // Exact-match shortcut: if a specific hotel name is extracted, return just that hotel.
         if (! empty($constraints['hotel_name'])) {
@@ -1096,7 +1105,9 @@ class ChatbotService
         }
 
         if ($scored === null) {
-            if ($this->isPersonalized($user)) {
+            if ($priceIntent) {
+                $scored = $this->cheapestHotelsFirst($constraints, $priceIntent, $limit);
+            } elseif ($this->isPersonalized($user)) {
                 $blended = $this->blendedVector($user, $query);
                 if ($blended) {
                     $candidates = HotelModel::with('destination')
@@ -1120,13 +1131,15 @@ class ChatbotService
             $scored = $this->sortHotelsByPrice($scored, $priceIntent);
         }
 
-        $context = $this->gemini->getHotelContext($scored);
+        $ordering = $this->resultOrdering($priceIntent, $scored, $constraints, 'hotel_name', 'hotel_id');
+        $fieldIntent = $constraints['field_intent'] ?? $this->intentRouter->detectFieldIntent($query);
+        $context = $this->gemini->getHotelContext($scored, $ordering);
 
         if (empty(trim($context))) {
             return ['reply' => $this->noResultsReply('hotels', $constraints)];
         }
 
-        $prompt = $this->buildPrompt('hotel-search', $context, $query, $user);
+        $prompt = $this->buildPrompt('hotel-search', $context, $query, $user, $this->promptOptions($ordering, $scored, $constraints, $fieldIntent, 'hotel_name', 'hotel_id'));
         $reply = $this->stripRankLineIfSingle($this->geminiChatResponse($prompt, $session), $scored);
         if ($notice = $this->budgetNotice($scored, $constraints)) {
             $reply = $notice."\n\n".$reply;
@@ -1142,6 +1155,7 @@ class ChatbotService
         return [
             'reply' => $reply,
             'retrieved_hotels' => $this->formatHotelResults($scored),
+            'result_ordering' => $ordering,
         ];
     }
 
@@ -1219,6 +1233,137 @@ class ChatbotService
         $min = $hotel->rooms()->where('is_shown', true)->min('base_price');
 
         return $min !== null ? (float) $min : null;
+    }
+
+    /**
+     * Objective-first room retrieval for explicit cheapest/most-expensive
+     * asks: price-ordered DB rows over the full scoped pool (no semantic
+     * top-N truncation, no relevance floor, no personalization blend).
+     * Vectors survive only as the price-tie breaker inside sortRoomsByPrice.
+     */
+    protected function cheapestRoomsFirst(array $constraints, string $direction, int $limit = 5): array
+    {
+        $pax = ! empty($constraints['pax']) ? (int) $constraints['pax'] : null;
+        $maxPrice = ! empty($constraints['max_price']) ? (float) $constraints['max_price'] : null;
+        $rooms = RoomType::with('hotel.destination')
+            ->where('is_shown', true)
+            ->when(! empty($constraints['destination_id']), fn ($q) => $q->whereHas('hotel', fn ($qq) => $qq->where('destination_id', $constraints['destination_id'])))
+            ->when(! empty($constraints['hotel_id']), fn ($q) => $q->where('hotel_id', $constraints['hotel_id']))
+            ->when($pax, fn ($q) => $q->whereRaw('COALESCE(max_occupancy, base_occupancy, 2) >= ?', [$pax]))
+            ->when(! empty($constraints['room_id']), fn ($q) => $q->where('id', $constraints['room_id']))
+            ->when(empty($constraints['room_id']) && ! empty($constraints['room_name']), fn ($q) => $q->where('room_name', 'ILIKE', $constraints['room_name']))
+            ->orderBy('base_price', $direction === 'expensive' ? 'desc' : 'asc')
+            ->limit(max($limit * 10, 50))
+            ->get();
+        $scored = $rooms->map(fn ($r) => ['item' => $r, 'score' => 0.0])->all();
+        if ($maxPrice !== null && ! empty($scored)) {
+            $scored = $this->applyBudgetOrCheapest($scored, fn ($r) => $this->gemini->roomPriceForPax($r, $pax), $maxPrice, $limit);
+        }
+        $scored = $this->sortRoomsByPrice($scored, $direction, $constraints['pax'] ?? 2);
+
+        return array_slice(array_values($scored), 0, $limit);
+    }
+
+    /**
+     * Objective-first hotel retrieval: full scoped pool sorted by each
+     * hotel's cheapest shown room rate.
+     */
+    protected function cheapestHotelsFirst(array $constraints, string $direction, int $limit): array
+    {
+        $maxPrice = ! empty($constraints['max_price']) ? (float) $constraints['max_price'] : null;
+        $hotels = HotelModel::with('destination')
+            ->where('is_shown', true)
+            ->when(! empty($constraints['hotel_id']), fn ($q) => $q->where('id', $constraints['hotel_id']))
+            ->when(! empty($constraints['destination_id']), fn ($q) => $q->where('destination_id', $constraints['destination_id']))
+            ->limit(max($limit * 10, 50))
+            ->get();
+        $scored = $hotels->map(fn ($h) => ['item' => $h, 'score' => 0.0])->all();
+        if ($maxPrice !== null && ! empty($scored)) {
+            $scored = $this->applyBudgetOrCheapest($scored, fn ($h) => $this->gemini->hotelMinPrice($h) ?? 0, $maxPrice, $limit);
+        }
+        $scored = $this->sortHotelsByPrice($scored, $direction);
+
+        return array_slice(array_values($scored), 0, $limit);
+    }
+
+    /**
+     * Objective-first activity retrieval: full scoped pool sorted by numeric
+     * rate (caller slices to display size).
+     */
+    protected function cheapestActivitiesFirst(array $constraints, string $direction): array
+    {
+        $maxPrice = ! empty($constraints['max_price']) ? (float) $constraints['max_price'] : null;
+        $pax = ! empty($constraints['pax']) ? (int) $constraints['pax'] : null;
+        $activities = ActivityModel::with('destination')
+            ->where('is_shown', true)
+            ->when(! empty($constraints['destination_id']), fn ($q) => $q->where('destination_id', $constraints['destination_id']))
+            ->limit(50)
+            ->get();
+        $scored = $activities->map(fn ($a) => ['item' => $a, 'score' => 0.0])->all();
+        if ($maxPrice !== null && ! empty($scored)) {
+            $paxForPrice = $pax ?? 1;
+            $scored = $this->applyBudgetOrCheapest($scored, fn ($a) => $this->gemini->activityPriceForPax($a, $paxForPrice), $maxPrice, 3);
+        }
+
+        return $this->sortActivitiesByPrice($scored, $direction);
+    }
+
+    /**
+     * Budget split shared by the objective-first paths: in-budget first,
+     * then up-to-2 slight-overflow options; cheapest overall when nothing
+     * fits (flagged as fallback downstream by budgetNotice).
+     */
+    protected function applyBudgetOrCheapest(array $scored, callable $priceFor, float $maxPrice, int $limit): array
+    {
+        [$inBudget, $overflow] = $this->gemini->splitBudgetOverflow($scored, $priceFor, $maxPrice, GeminiService::OVER_BUDGET_MAX);
+        $merged = array_merge($inBudget, $overflow);
+        if (empty($merged) && ! empty($scored)) {
+            return $this->gemini->cheapestFallback($scored, $priceFor, min(3, $limit));
+        }
+
+        return $merged;
+    }
+
+    /**
+     * Objective-accurate ordering tag for contexts and prompts:
+     * price-asc/price-desc for explicit price ranking, exact for a single
+     * named-entity hit, null (semantic) otherwise.
+     */
+    protected function resultOrdering(?string $priceIntent, array $scored, array $constraints, string $nameKey, string $idKey): ?string
+    {
+        if ($priceIntent) {
+            return $priceIntent === 'expensive' ? 'price-desc' : 'price-asc';
+        }
+        if (count($scored) === 1 && (! empty($constraints[$nameKey]) || ! empty($constraints[$idKey]))) {
+            return 'exact';
+        }
+
+        return null;
+    }
+
+    /**
+     * Prompt options shared by the search handlers: ordering-aware rank
+     * rules, field-first answering, and a deterministic INTERPRETATION
+     * block the LLM must not reinterpret.
+     */
+    protected function promptOptions(?string $ordering, array $scored, array $constraints, ?string $fieldIntent, string $nameKey, string $idKey): array
+    {
+        $options = [
+            'ordering' => $ordering,
+            'result_count' => count($scored),
+            'field' => $fieldIntent,
+        ];
+        if ($fieldIntent && count($scored) === 1) {
+            $entity = $constraints[$nameKey] ?? null;
+            if (! $entity && ! empty($constraints[$idKey])) {
+                $entity = '#'.$constraints[$idKey];
+            }
+            if ($entity) {
+                $options['interpretation'] = "entity: {$entity} (exact match) | question: {$fieldIntent} | answerable: yes — quote the {$fieldIntent} field first";
+            }
+        }
+
+        return $options;
     }
 
     // ────────────────────────────────────────────────
@@ -1774,7 +1919,9 @@ class ChatbotService
         }
 
         if ($scored === null) {
-            if ($this->isPersonalized($user)) {
+            if ($priceIntent) {
+                $scored = $this->cheapestActivitiesFirst($constraints, $priceIntent);
+            } elseif ($this->isPersonalized($user)) {
                 $blended = $this->blendedVector($user, $query);
                 if ($blended) {
                     $candidates = ActivityModel::with('destination')
@@ -1812,13 +1959,15 @@ class ChatbotService
         $scored = array_slice($scored, 0, 3);
         $priceNotice = $this->budgetNotice($scored, $constraints);
 
-        $context = $this->gemini->getActivityContext($scored);
+        $ordering = $this->resultOrdering($priceIntent, $scored, $constraints, 'activity_name', 'activity_id');
+        $fieldIntent = $constraints['field_intent'] ?? $this->intentRouter->detectFieldIntent($query);
+        $context = $this->gemini->getActivityContext($scored, $ordering);
 
         if (empty(trim($context))) {
             return ['reply' => $this->noResultsReply('activities', $constraints)];
         }
 
-        $prompt = $this->buildPrompt('activity-search', $context, $query, $user);
+        $prompt = $this->buildPrompt('activity-search', $context, $query, $user, $this->promptOptions($ordering, $scored, $constraints, $fieldIntent, 'activity_name', 'activity_id'));
         $reply = $this->stripRankLineIfSingle($this->geminiChatResponse($prompt, $session), $scored);
         if ($priceNotice) {
             $reply = $priceNotice."\n\n".$reply;
@@ -1827,6 +1976,7 @@ class ChatbotService
         return [
             'reply' => $reply,
             'retrieved_activities' => $this->formatActivityResults($scored),
+            'result_ordering' => $ordering,
         ];
     }
 
@@ -2909,7 +3059,31 @@ class ChatbotService
         return 'Note: forecasts here cover only the next 5 days; dates beyond that can\'t be generated.';
     }
 
-    protected function buildPrompt(string $stage, string $context, string $query, ?User $user): string
+    /**
+     * Ordering-aware ranked-list rule: price-ordered sets must never be
+     * described as AI best-match, and single exact hits get no rank
+     * language at all.
+     */
+    protected function rankRule(array $options): string
+    {
+        $ordering = $options['ordering'] ?? null;
+        $count = (int) ($options['result_count'] ?? 0);
+        if ($ordering === 'price-asc' || $ordering === 'price-desc') {
+            $asc = $ordering === 'price-asc';
+            $extreme = $asc ? 'lowest price' : 'highest price';
+            $heading = $asc ? 'Lowest Price' : 'Highest Price';
+            $footnote = $count >= 2 ? " If 2 or more Ranks were provided, add one short line \"Ordered by price: #1 is the {$extreme}.\" as the FINAL line of your response (bottom footnote, not at the top). If only Rank #1 was provided, do NOT add any ordered/ranked line and do not mention alternatives." : ' Do NOT add any ordered/ranked line and do not mention alternatives.';
+
+            return "In DATABASE RESULTS, results are ordered by price, NOT by AI relevance. Rank #1 is the {$extreme} option and Rank #2+ follow in price order. You must list every Rank provided — Rank #1 under ### {$heading} with one sentence why it costs least (use the rate/price fields from that block), and Rank #2+ under ### Other Options each one bullet (name — price — one key amenity). Do not omit alternatives to stay concise; this ranked-list rule overrides the concise 3-paragraph limit.{$footnote} Do not show raw relevance numbers.";
+        }
+        if ($ordering === 'exact') {
+            return 'A single exact database match was provided (EXACT MATCH). Do NOT use ranked-list language ("best match", "Rank #1", alternatives, footnotes). Answer the user\'s question directly from that block.';
+        }
+
+        return 'In DATABASE RESULTS, Rank #1 is the system\'s best AI match (highest relevance score) for the query; Rank #2+ are next-best alternatives. You must list every Rank provided (up to 5 hotels/rooms/activities/packages where provided, e.g., top 5) — Rank #1 under ### Best Match with one sentence why #1 is top (use Vibe/Category/Featured Amenities/Price Range/Guest Rating from that block), and Rank #2+ under ### Other Options each one bullet (name — Price Range — one key amenity). Do not omit alternatives to stay concise; this ranked-list rule overrides the concise 3-paragraph limit. If 2 or more Ranks were provided, add one short line "Ranked by system: #1 is best match, #2+ are close alternatives." as the FINAL line of your response (bottom footnote, not at the top). If only Rank #1 was provided, do NOT add any ranked/“best match” line and do not mention alternatives. Do not show raw relevance numbers unless helpful.';
+    }
+
+    protected function buildPrompt(string $stage, string $context, string $query, ?User $user, array $options = []): string
     {
         $header = match ($stage) {
             'room-search' => 'TASK: Recommend rooms based on the database results below.',
@@ -2931,7 +3105,7 @@ class ChatbotService
             'Treat the current DATABASE RESULTS section as the source of truth. Do not carry unsupported facts from earlier conversation turns into the answer.',
             'Never invent prices, availability, names, durations, or other factual details.',
             'Never present "Total Physical Rooms" as live availability.',
-            'In DATABASE RESULTS, Rank #1 is the system\'s best AI match (highest relevance score) for the query; Rank #2+ are next-best alternatives. You must list every Rank provided (up to 5 hotels/rooms/activities/packages where provided, e.g., top 5) — Rank #1 under ### Best Match with one sentence why #1 is top (use Vibe/Category/Featured Amenities/Price Range/Guest Rating from that block), and Rank #2+ under ### Other Options each one bullet (name — Price Range — one key amenity). Do not omit alternatives to stay concise; this ranked-list rule overrides the concise 3-paragraph limit. If 2 or more Ranks were provided, add one short line "Ranked by system: #1 is best match, #2+ are close alternatives." as the FINAL line of your response (bottom footnote, not at the top). If only Rank #1 was provided, do NOT add any ranked/“best match” line and do not mention alternatives. Do not show raw relevance numbers unless helpful.',
+            $this->rankRule($options),
             'Never add airports, ferry terminals, boats, vans, transfers, beaches, landmarks, restaurants, shops, fees, or food and drink estimates unless the exact fact appears in the database results.',
             'If information is unavailable, say it is not in our database instead of filling the gap with general travel knowledge.',
             'Use **bold** for short labels, ### for section headings, and - for bullet lists. Do not output HTML.',
@@ -2973,6 +3147,12 @@ class ChatbotService
 
         $header .= "\n\nRULES:\n- ".implode("\n- ", $rules);
 
+        // Field-first answering: the user asked ABOUT a named entity, so the
+        // requested field leads instead of a generic recommendation.
+        if (! empty($options['field'])) {
+            $header .= "\n- The user asked specifically about {$options['field']}. Answer that FIRST by quoting the matching database field verbatim, then add at most one short follow-up line.";
+        }
+
         if ($user) {
             $header .= "\n- The user is logged in as {$user->name}.";
             if ($this->isPersonalized($user)) {
@@ -2983,7 +3163,12 @@ class ChatbotService
             }
         }
 
-        return "{$header}\n\n=== DATABASE RESULTS ===\n{$context}\n=== END DATABASE RESULTS ===\n\nUSER QUERY: {$query}";
+        $tail = '';
+        if (! empty($options['interpretation'])) {
+            $tail = "\n\nINTERPRETATION (deterministic — do not reinterpret):\n".$options['interpretation'];
+        }
+
+        return "{$header}\n\n=== DATABASE RESULTS ===\n{$context}\n=== END DATABASE RESULTS ==={$tail}\n\nUSER QUERY: {$query}";
     }
 
     protected function buildSystemPrompt(string $type, bool $grounded): string
@@ -3110,7 +3295,7 @@ class ChatbotService
             return $reply;
         }
 
-        $cleaned = (string) preg_replace('/^[^\n]*Ranked by (system|AI semantic relevance)[^\n]*\n?/mi', '', $reply);
+        $cleaned = (string) preg_replace('/^[^\n]*(Ranked by (system|AI semantic relevance)|Ordered by price)[^\n]*\n?/mi', '', $reply);
 
         return trim((string) preg_replace("/\n{3,}/", "\n\n", $cleaned));
     }
