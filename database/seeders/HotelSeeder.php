@@ -614,5 +614,34 @@ class HotelSeeder extends Seeder
                 'destination_id' => $elNido->id,
             ],
         );
+
+        HotelModel::updateOrCreate(
+            [
+                'hotel_name' => 'Matinloc Resort',
+            ],
+            [
+                'hotel_name' => 'Matinloc Resort',
+                'type' => 'high-end-luxury-hotels',
+                'vibe_tags' => [
+                    'Island',
+                    'Beachfront',
+                    'Snorkeling',
+                    'Secluded',
+                ],
+                'featured_amenities' => [
+                    'Private Beach',
+                    'Restaurant',
+                    'Island Transfers',
+                    'Snorkeling Gear',
+                ],
+                'hotel_description' => 'Matinloc Resort is an island resort off El Nido, Palawan, offering beachfront cottages with access to nearby lagoons and snorkeling spots.',
+                'specific_address' => 'Matinloc Island, El Nido, 5313 Palawan',
+                'latitude' => 11.14850000,
+                'longitude' => 119.30350000,
+                'images' => [],
+                'is_shown' => true,
+                'destination_id' => $elNido->id,
+            ],
+        );
     }
 }
