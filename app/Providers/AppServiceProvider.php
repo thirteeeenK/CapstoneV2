@@ -2,12 +2,12 @@
 
 namespace App\Providers;
 
+use App\Listeners\SeedDemoBookingsListener;
 use App\Models\ActivityModel;
 use App\Models\AddOnModel;
 use App\Models\HotelModel;
 use App\Models\Package;
 use App\Models\RoomType;
-use App\Listeners\SeedDemoBookingsListener;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -109,5 +110,11 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('webhook', function (Request $request) {
             return Limit::perMinute(10)->by('webhook:'.$request->ip());
         });
+
+        // Railway proxy terminates TLS; trustProxies fixes request URLs,
+        // this covers console/queued URLs too. Local dev unaffected.
+        if (app()->environment('production')) {
+            URL::forceScheme('https');
+        }
     }
 }
