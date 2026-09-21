@@ -36,7 +36,6 @@
                 ['route' => 'admin.packages.*', 'icon' => 'card_travel', 'label' => 'Tour Packages & Promos', 'href' => route('admin.packages.index')],
                 ['route' => 'admin.activities.*', 'icon' => 'explore', 'label' => 'Activities & Tours', 'href' => Route::has('admin.activities.index') ? route('admin.activities.index') : '#'],
                 ['route' => 'admin.addons.*', 'icon' => 'extension', 'label' => 'Transfers and Add-ons', 'href' => route('admin.addons.index')],
-                ['route' => 'admin.ai.*', 'icon' => 'psychology', 'label' => 'Manage AI', 'href' => '#'],
             ],
             'Legal' => [
                 ['route' => 'admin.legal.*', 'icon' => 'gavel', 'label' => 'Legal Documents', 'href' => route('admin.legal.index')],
