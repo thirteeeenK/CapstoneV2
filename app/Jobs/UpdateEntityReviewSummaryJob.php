@@ -7,6 +7,7 @@ use App\Models\ReviewSummary;
 use App\Services\GeminiService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Facades\DB;
 
 class UpdateEntityReviewSummaryJob implements ShouldQueue
 {
@@ -49,15 +50,23 @@ class UpdateEntityReviewSummaryJob implements ShouldQueue
         }
 
         $limit = $this->entityId === null ? 100 : 50;
-        $reviews = $query->latest()->limit($limit)->get();
 
-        $total = $reviews->count();
+        // Only AI-analyzed sentiments feed the stats — 'pending' rows (fresh
+        // seeds, eval blinds) must never produce a 0%/0%/0% row or inflate
+        // the total. The limit below applies solely to the Gemini sample.
+        $analyzed = (clone $query)->whereIn('sentiment', [
+            Review::SENTIMENT_POSITIVE,
+            Review::SENTIMENT_NEUTRAL,
+            Review::SENTIMENT_NEGATIVE,
+        ]);
+
+        $total = (clone $analyzed)->count();
 
         $summaryData = [
             'summarizable_type' => $this->entityType,
             'summarizable_id' => $this->entityId,
             'total_reviews' => $total,
-            'average_rating' => $total > 0 ? round($reviews->avg('rating'), 2) : 0.00,
+            'average_rating' => $total > 0 ? round((clone $analyzed)->avg('rating'), 2) : 0.00,
             'positive_percentage' => 0.00,
             'neutral_percentage' => 0.00,
             'negative_percentage' => 0.00,
@@ -69,9 +78,20 @@ class UpdateEntityReviewSummaryJob implements ShouldQueue
         ];
 
         if ($total > 0) {
-            $summaryData['positive_percentage'] = round(($reviews->where('sentiment', Review::SENTIMENT_POSITIVE)->count() / $total) * 100, 2);
-            $summaryData['neutral_percentage'] = round(($reviews->where('sentiment', Review::SENTIMENT_NEUTRAL)->count() / $total) * 100, 2);
-            $summaryData['negative_percentage'] = round(($reviews->where('sentiment', Review::SENTIMENT_NEGATIVE)->count() / $total) * 100, 2);
+            $counts = (clone $analyzed)
+                ->select('sentiment', DB::raw('count(*) as aggregate'))
+                ->groupBy('sentiment')
+                ->pluck('aggregate', 'sentiment');
+
+            $positive = (int) ($counts[Review::SENTIMENT_POSITIVE] ?? 0);
+            $neutral = (int) ($counts[Review::SENTIMENT_NEUTRAL] ?? 0);
+            $negative = (int) ($counts[Review::SENTIMENT_NEGATIVE] ?? 0);
+
+            $summaryData['positive_percentage'] = round(($positive / $total) * 100, 2);
+            $summaryData['neutral_percentage'] = round(($neutral / $total) * 100, 2);
+            $summaryData['negative_percentage'] = round(($negative / $total) * 100, 2);
+
+            $reviews = (clone $analyzed)->latest()->limit($limit)->get();
 
             $ai = $gemini->summarizeReviews($reviews, $this->entityLabel);
 

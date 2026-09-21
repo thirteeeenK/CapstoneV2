@@ -380,6 +380,82 @@ it('regenerates the summary once the threshold of new reviews is reached', funct
         ->and($summary->ai_summary_text)->toContain('ocean view');
 });
 
+it('excludes pending reviews from summary stats and total', function () {
+    $morph = (new RoomType)->getMorphClass();
+    $booking = makeCompletedBooking($this->user, $this->room);
+
+    $make = fn (string $sentiment, int $rating) => Review::create([
+        'booking_id' => $booking->id,
+        'user_id' => $this->user->id,
+        'reviewable_type' => $morph,
+        'reviewable_id' => $this->room->id,
+        'hotel_id' => $this->room->hotel_id,
+        'room_id' => $this->room->id,
+        'rating' => $rating,
+        'comment' => "Sentiment probe {$sentiment} {$rating}.",
+        'sentiment' => $sentiment,
+    ]);
+
+    $make(Review::SENTIMENT_POSITIVE, 5);
+    $make(Review::SENTIMENT_POSITIVE, 5);
+    $make(Review::SENTIMENT_NEUTRAL, 3);
+    $make('pending', 5);
+    $make('pending', 1);
+    $make('pending', 4);
+
+    (new UpdateEntityReviewSummaryJob($morph, $this->room->id, 'Deluxe Ocean View', true))
+        ->handle(app(GeminiService::class));
+
+    $summary = ReviewSummary::where('summarizable_type', $morph)
+        ->where('summarizable_id', $this->room->id)
+        ->firstOrFail();
+
+    // 6 published rows, but only the 3 analyzed ones feed the stats.
+    expect($summary->total_reviews)->toBe(3)
+        ->and((float) $summary->positive_percentage)->toEqualWithDelta(66.67, 0.01)
+        ->and((float) $summary->neutral_percentage)->toEqualWithDelta(33.33, 0.01)
+        ->and((float) $summary->negative_percentage)->toBe(0.00)
+        ->and((float) $summary->average_rating)->toEqualWithDelta(4.33, 0.01);
+});
+
+it('stores the true review total beyond the AI sample limit', function () {
+    $morph = (new RoomType)->getMorphClass();
+    $booking = makeCompletedBooking($this->user, $this->room);
+
+    // Entity sample cap is 50 — 55 analyzed reviews must still count as 55.
+    $plan = array_merge(
+        array_fill(0, 30, [Review::SENTIMENT_POSITIVE, 5]),
+        array_fill(0, 15, [Review::SENTIMENT_NEUTRAL, 3]),
+        array_fill(0, 10, [Review::SENTIMENT_NEGATIVE, 1]),
+    );
+
+    foreach ($plan as $i => [$sentiment, $rating]) {
+        Review::create([
+            'booking_id' => $booking->id,
+            'user_id' => $this->user->id,
+            'reviewable_type' => $morph,
+            'reviewable_id' => $this->room->id,
+            'hotel_id' => $this->room->hotel_id,
+            'room_id' => $this->room->id,
+            'rating' => $rating,
+            'comment' => "Volume probe review number {$i}.",
+            'sentiment' => $sentiment,
+        ]);
+    }
+
+    (new UpdateEntityReviewSummaryJob($morph, $this->room->id, 'Deluxe Ocean View', true))
+        ->handle(app(GeminiService::class));
+
+    $summary = ReviewSummary::where('summarizable_type', $morph)
+        ->where('summarizable_id', $this->room->id)
+        ->firstOrFail();
+
+    expect($summary->total_reviews)->toBe(55)
+        ->and((float) $summary->positive_percentage)->toEqualWithDelta(54.55, 0.01)
+        ->and((float) $summary->neutral_percentage)->toEqualWithDelta(27.27, 0.01)
+        ->and((float) $summary->negative_percentage)->toEqualWithDelta(18.18, 0.01);
+});
+
 it('shows only featured published reviews on the landing page', function () {
     $bookingOne = makeCompletedBooking($this->user, $this->room);
 
