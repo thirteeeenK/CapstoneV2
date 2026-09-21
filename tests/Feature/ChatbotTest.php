@@ -306,7 +306,7 @@ test('bot stays silent while an admin controls the conversation', function () {
     expect($session->messages()->where('sender', 'bot')->count())->toBe(0);
 });
 
-test('chat returns a pending assignment notice while awaiting an agent', function () {
+test('chat stays available while a ticket is pending assignment', function () {
     $token = ChatSession::generateToken();
     $session = ChatSession::create(['session_token' => $token]);
     SupportInquiry::create([
@@ -317,16 +317,19 @@ test('chat returns a pending assignment notice while awaiting an agent', functio
     ]);
 
     $response = $this->postJson('/chat', [
-        'message' => 'Please help me',
+        'message' => 'Hello, recommend a room in Boracay',
         'session_token' => $token,
     ]);
 
     $response->assertOk()
         ->assertJson([
-            'status' => 'pending_assignment',
-            'control' => 'pending',
+            'status' => 'success',
+            'control' => 'ai',
+            'handoff_status' => SupportInquiry::STATUS_PENDING,
         ]);
-    expect($response->json('reply'))->toContain('An administrator will be with you shortly');
+    expect($response->json('reply'))->not->toContain('An administrator will be with you shortly');
+    expect(SupportInquiry::where('chat_session_id', $session->id)->first()->status)
+        ->toBe(SupportInquiry::STATUS_PENDING);
 });
 
 test('user can return control to SunnyBot and get AI answers again', function () {

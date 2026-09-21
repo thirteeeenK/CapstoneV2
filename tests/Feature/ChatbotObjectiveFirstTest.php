@@ -154,3 +154,103 @@ test('price-ordered contexts label rank one as lowest price', function () {
     expect($context)->toContain('LOWEST PRICE')
         ->and($context)->not->toContain('BEST MATCH');
 });
+
+test('scuba inclusions reply leads with the database inclusions', function () {
+    ActivityModel::factory()->create([
+        'activity_name' => 'Discover Scuba Diving (DSD)',
+        'destination_id' => $this->elNido->id,
+        'rate' => '₱2500/person',
+        'inclusions' => ['Scuba trainer', 'Gear rental', 'Boat transfer'],
+    ]);
+
+    $response = $this->postJson('/chat', [
+        'message' => 'scuba trainer are included?',
+    ]);
+
+    $response->assertOk();
+    expect($response->json('reply'))
+        ->toStartWith('Discover Scuba Diving (DSD) includes: Scuba trainer, Gear rental, Boat transfer');
+});
+
+test('ambiguous field query lists each activity with its field value', function () {
+    foreach (range(0, 2) as $i) {
+        ActivityModel::factory()->create([
+            'activity_name' => 'El Nido Reef Tour '.$i,
+            'destination_id' => $this->elNido->id,
+            'rate' => '₱'.(500 + $i * 100).'/person',
+            'inclusions' => ['Item A'.$i, 'Item B'.$i],
+            'embedding' => uniformEmbedding(),
+        ]);
+    }
+
+    $response = $this->postJson('/chat', [
+        'message' => 'what do the El Nido water activities include?',
+    ]);
+
+    $response->assertOk();
+    $reply = $response->json('reply');
+    expect($reply)->toContain('Here are the inclusions for each matching result:')
+        ->and($reply)->toContain('El Nido Reef Tour 0')
+        ->and($reply)->toContain('El Nido Reef Tour 2');
+});
+
+test('exact field query with empty field falls back to the llm reply', function () {
+    ActivityModel::factory()->create([
+        'activity_name' => 'Discover Scuba Diving (DSD)',
+        'destination_id' => $this->elNido->id,
+        'rate' => '₱2500/person',
+        'inclusions' => [],
+    ]);
+
+    $response = $this->postJson('/chat', [
+        'message' => 'scuba trainer are included?',
+    ]);
+
+    $response->assertOk();
+    expect($response->json('reply'))
+        ->not->toStartWith('Discover Scuba Diving (DSD) includes:')
+        ->and($response->json('reply'))->toContain('Here is a recommendation for you!');
+});
+
+test('cheapest room price query leads with the database price', function () {
+    foreach ([4200, 2800, 1500] as $i => $price) {
+        RoomType::factory()->create([
+            'hotel_id' => $this->hotel->id,
+            'room_name' => 'Room Tier '.$i,
+            'base_price' => $price,
+            'max_occupancy' => 2,
+        ]);
+    }
+
+    $response = $this->postJson('/chat', [
+        'message' => 'how much is the cheapest room in El Nido?',
+    ]);
+
+    $response->assertOk();
+    $reply = $response->json('reply');
+    expect($reply)->toContain('Room Tier 2')
+        ->and($reply)->toContain('₱1,500.00');
+});
+
+test('offer-phrased destination questions classify as overview', function () {
+    expect($this->router->classify('what destinations are offered'))->toBe(IntentRouter::DESTINATIONS_OVERVIEW);
+    expect($this->router->classify('destinations offered'))->toBe(IntentRouter::DESTINATIONS_OVERVIEW);
+    expect($this->router->classify('which destinations are available'))->toBe(IntentRouter::DESTINATIONS_OVERVIEW);
+    expect($this->router->classify('what destinations do you offer'))->toBe(IntentRouter::DESTINATIONS_OVERVIEW);
+});
+
+test('destinations offered reply lists only database destinations', function () {
+    DestinationModel::factory()->create(['name' => 'Boracay']);
+
+    foreach (['what destinations are offered', 'destinations offered'] as $message) {
+        $response = $this->postJson('/chat', ['message' => $message]);
+
+        $response->assertOk();
+        $reply = $response->json('reply');
+        expect($reply)->toContain('Boracay')
+            ->and($reply)->toContain('El Nido');
+        foreach (['Palawan', 'Coron', 'Cebu', 'Siargao', 'Bohol'] as $hallucinated) {
+            expect($reply)->not->toContain($hallucinated);
+        }
+    }
+});

@@ -1483,7 +1483,11 @@ class IntentRouter
             return true;
         }
 
-        if (preg_match('/\bdestinations?\b/', $lower) && preg_match('/\b(you|your|sunnytrips|sunny|trips|we|our)\b/', $lower)) {
+        if (preg_match('/\bdestinations?\b/', $lower) && preg_match('/\b(you|your|sunnytrips|sunny|trips|we|our|offer|offers|offered|offering|provide|provides|provided|available|have|has|listing|list)\b/', $lower)) {
+            return true;
+        }
+
+        if (preg_match('/\b(what|which)\b.*\bdestinations?\b/', $lower)) {
             return true;
         }
 

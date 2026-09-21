@@ -55,23 +55,22 @@ class ChatbotService
             ->whereIn('status', [SupportInquiry::STATUS_PENDING, SupportInquiry::STATUS_HUMAN_ACTIVE])
             ->first();
 
-        if ($inquiry) {
-            if ($inquiry->status === SupportInquiry::STATUS_PENDING) {
-                return [
-                    'status' => 'pending_assignment',
-                    'control' => 'pending',
-                    'reply' => 'An administrator will be with you shortly. Your message has been added to the queue.',
-                    'session_token' => $session->session_token,
-                ];
-            }
+        // Handoff state machine: a PENDING ticket means "AI + user conversation
+        // while waiting for assignment" — messages flow through the normal
+        // chatbot path (and are persisted for the future admin). Only a
+        // HUMAN_ACTIVE ticket (admin claimed) disables the AI.
+        $pendingHandoff = $inquiry && $inquiry->status === SupportInquiry::STATUS_PENDING;
+        $aiBase = ['status' => 'success', 'control' => 'ai', 'session_token' => $session->session_token];
+        if ($pendingHandoff) {
+            $aiBase['handoff_status'] = SupportInquiry::STATUS_PENDING;
+        }
 
-            if ($inquiry->status === SupportInquiry::STATUS_HUMAN_ACTIVE) {
-                return [
-                    'status' => 'human_support_active',
-                    'control' => 'admin',
-                    'session_token' => $session->session_token,
-                ];
-            }
+        if ($inquiry && $inquiry->status === SupportInquiry::STATUS_HUMAN_ACTIVE) {
+            return [
+                'status' => 'human_support_active',
+                'control' => 'admin',
+                'session_token' => $session->session_token,
+            ];
         }
 
         $lastBot = $session->messages()->where('sender', 'bot')->latest('id')->first();
@@ -82,7 +81,7 @@ class ChatbotService
             $text = $reply['reply'] ?? 'Sorry, I could not process that request. Please try again.';
             $this->conversation->persist($session, 'bot', $text, $reply);
 
-            return array_merge(['status' => 'success', 'control' => 'ai', 'session_token' => $session->session_token, 'reply' => $text], $reply);
+            return array_merge($aiBase, ['reply' => $text], $reply);
         }
 
         // Availability follow-up over a prior exact room: short queries like
@@ -95,7 +94,7 @@ class ChatbotService
             $text = $reply['reply'] ?? 'Sorry, I could not process that request. Please try again.';
             $this->conversation->persist($session, 'bot', $text, $reply);
 
-            return array_merge(['status' => 'success', 'control' => 'ai', 'session_token' => $session->session_token, 'reply' => $text], $reply);
+            return array_merge($aiBase, ['reply' => $text], $reply);
         }
 
         // "Check alternatives" pill/typed follow-up after an unavailable exact
@@ -109,7 +108,7 @@ class ChatbotService
             $text = $reply['reply'] ?? 'Sorry, I could not process that request. Please try again.';
             $this->conversation->persist($session, 'bot', $text, $reply);
 
-            return array_merge(['status' => 'success', 'control' => 'ai', 'session_token' => $session->session_token, 'reply' => $text], $reply);
+            return array_merge($aiBase, ['reply' => $text], $reply);
         }
 
         // Filter refinements like "luxury quiet pool" should re-search with inherited destination, not Q&A over old cards
@@ -120,7 +119,7 @@ class ChatbotService
             $text = $reply['reply'] ?? 'Sorry, I could not process that request. Please try again.';
             $this->conversation->persist($session, 'bot', $text, $reply);
 
-            return array_merge(['status' => 'success', 'control' => 'ai', 'session_token' => $session->session_token, 'reply' => $text], $reply);
+            return array_merge($aiBase, ['reply' => $text], $reply);
         }
 
         // Affirmative like "yes search" after bot offered to search → repeat the
@@ -159,7 +158,7 @@ class ChatbotService
             $text = $reply['reply'] ?? 'Sorry, I could not process that request. Please try again.';
             $this->conversation->persist($session, 'bot', $text, $reply);
 
-            return array_merge(['status' => 'success', 'control' => 'ai', 'session_token' => $session->session_token, 'reply' => $text], $reply);
+            return array_merge($aiBase, ['reply' => $text], $reply);
         }
 
         $faq = $this->faq->findBestMatch($message);
@@ -173,7 +172,7 @@ class ChatbotService
             $reply = ['reply' => $faq->answer, 'faq' => ['id' => $faq->id, 'question' => $faq->question, 'answer' => $faq->answer]];
             $this->conversation->persist($session, 'bot', $reply['reply'], $reply);
 
-            return array_merge(['status' => 'success', 'control' => 'ai', 'session_token' => $session->session_token], $reply);
+            return array_merge($aiBase, $reply);
         }
 
         $intent = $this->intentRouter->classify($message);
@@ -233,7 +232,7 @@ class ChatbotService
         $text = $reply['reply'] ?? 'Sorry, I could not process that request. Please try again.';
         $this->conversation->persist($session, 'bot', $text, $reply);
 
-        return array_merge(['status' => 'success', 'control' => 'ai', 'session_token' => $session->session_token, 'reply' => $text], $reply);
+        return array_merge($aiBase, ['reply' => $text], $reply);
     }
 
     // ────────────────────────────────────────────────
@@ -918,6 +917,9 @@ class ChatbotService
         $context = $this->gemini->extractPricingContext($context, $query);
         $prompt = $this->buildPrompt('room-search', $context, $query, $user, $this->promptOptions($ordering, $scored, $constraints, $fieldIntent, 'room_name', 'room_id'));
         $reply = $this->stripRankLineIfSingle($this->geminiChatResponse($prompt, $session), $scored);
+        if ($lead = $this->fieldLead($fieldIntent, $scored)) {
+            $reply = $lead."\n\n".$reply;
+        }
         if ($notice = $this->budgetNotice($scored, $constraints)) {
             $reply = $notice."\n\n".$reply;
         }
@@ -1100,6 +1102,7 @@ class ChatbotService
                 ->where('hotel_name', 'ILIKE', $constraints['hotel_name'])
                 ->first();
             if ($hotel) {
+                $constraints['hotel_id'] = $hotel->id;
                 $scored = [['item' => $hotel, 'score' => 1.0]];
             }
         }
@@ -1141,6 +1144,9 @@ class ChatbotService
 
         $prompt = $this->buildPrompt('hotel-search', $context, $query, $user, $this->promptOptions($ordering, $scored, $constraints, $fieldIntent, 'hotel_name', 'hotel_id'));
         $reply = $this->stripRankLineIfSingle($this->geminiChatResponse($prompt, $session), $scored);
+        if ($lead = $this->fieldLead($fieldIntent, $scored)) {
+            $reply = $lead."\n\n".$reply;
+        }
         if ($notice = $this->budgetNotice($scored, $constraints)) {
             $reply = $notice."\n\n".$reply;
         }
@@ -1361,9 +1367,130 @@ class ChatbotService
             if ($entity) {
                 $options['interpretation'] = "entity: {$entity} (exact match) | question: {$fieldIntent} | answerable: yes — quote the {$fieldIntent} field first";
             }
+        } elseif ($fieldIntent && count($scored) > 1) {
+            // Ambiguous field question over several results: name every
+            // entity so the LLM answers each one's field, not a generic list.
+            $names = [];
+            foreach (array_slice($scored, 0, 3) as $entry) {
+                $names[] = $this->fieldItemName($entry['item']);
+            }
+            $options['interpretation'] = 'entities: '.implode(', ', $names)." | question: {$fieldIntent} | answerable: yes — state each entity's {$fieldIntent} first";
         }
 
         return $options;
+    }
+
+    /**
+     * Deterministic field-first lead built verbatim from the database, so an
+     * exact field question is answered from stored values even when the LLM
+     * ignores the quote-the-field instruction. Null when the model has no
+     * value for the field — then the prompt-only behavior stands.
+     */
+    protected function fieldLead(?string $field, array $scored): ?string
+    {
+        if (! $field || $scored === []) {
+            return null;
+        }
+        if (count($scored) === 1) {
+            $value = $this->fieldValue($field, $scored[0]['item']);
+            if ($value === null) {
+                return null;
+            }
+
+            return $this->fieldItemName($scored[0]['item']).' '.$this->fieldVerb($field).': '.$value;
+        }
+        $lines = [];
+        foreach ($scored as $entry) {
+            $value = $this->fieldValue($field, $entry['item']);
+            if ($value === null) {
+                continue;
+            }
+            $lines[] = '- '.$this->fieldItemName($entry['item']).': '.$value;
+        }
+        if ($lines === []) {
+            return null;
+        }
+        $noun = $field === 'price' ? 'prices' : $field;
+
+        return "Here are the {$noun} for each matching result:\n".implode("\n", $lines);
+    }
+
+    protected function fieldVerb(string $field): string
+    {
+        return match ($field) {
+            'inclusions' => 'includes',
+            'exclusions' => 'excludes',
+            'price' => 'costs',
+            'duration' => 'lasts',
+            'capacity' => 'fits',
+            'requirements' => 'requires',
+            'location' => 'is located in',
+            'itinerary' => 'itinerary:',
+            default => 'details:',
+        };
+    }
+
+    protected function fieldValue(string $field, mixed $item): ?string
+    {
+        $value = match (true) {
+            $item instanceof ActivityModel => match ($field) {
+                'inclusions' => $this->joinList($item->inclusions),
+                'exclusions' => $this->joinList($item->exclusions),
+                'price' => $this->clean($item->rate),
+                'duration' => $this->clean($item->duration),
+                'capacity' => $this->clean($item->capacity),
+                'requirements' => $this->clean($item->requirements),
+                'location' => $this->clean($item->destination?->name),
+                'itinerary' => $this->joinList($item->itinerary, '; '),
+                default => null,
+            },
+            $item instanceof RoomType => match ($field) {
+                'price' => $item->base_price !== null ? '₱'.number_format((float) $item->base_price, 2).' per night' : null,
+                'capacity' => $item->max_occupancy ? ((int) $item->max_occupancy).' pax max' : null,
+                'location' => $this->clean($item->hotel?->hotel_name),
+                default => null,
+            },
+            $item instanceof HotelModel => match ($field) {
+                'location' => $this->clean($item->destination?->name),
+                default => null,
+            },
+            default => null,
+        };
+
+        return $value !== null && trim((string) $value) !== '' ? trim((string) $value) : null;
+    }
+
+    protected function fieldItemName(mixed $item): string
+    {
+        return match (true) {
+            $item instanceof ActivityModel => (string) $item->activity_name,
+            $item instanceof RoomType => (string) $item->room_name,
+            $item instanceof HotelModel => (string) $item->hotel_name,
+            default => 'This result',
+        };
+    }
+
+    protected function joinList(mixed $value, string $separator = ', '): ?string
+    {
+        if (is_string($value)) {
+            return $this->clean($value);
+        }
+        if (! is_array($value)) {
+            return null;
+        }
+        $parts = array_filter(array_map(fn ($v) => trim((string) $v), $value));
+
+        return $parts === [] ? null : implode($separator, $parts);
+    }
+
+    protected function clean(mixed $value): ?string
+    {
+        if (! is_string($value)) {
+            return null;
+        }
+        $value = trim($value);
+
+        return $value === '' ? null : $value;
     }
 
     // ────────────────────────────────────────────────
@@ -1914,6 +2041,7 @@ class ChatbotService
                 ->where('activity_name', 'ILIKE', $constraints['activity_name'])
                 ->first();
             if ($activity) {
+                $constraints['activity_id'] = $activity->id;
                 $scored = [['item' => $activity, 'score' => 1.0]];
             }
         }
@@ -1969,6 +2097,9 @@ class ChatbotService
 
         $prompt = $this->buildPrompt('activity-search', $context, $query, $user, $this->promptOptions($ordering, $scored, $constraints, $fieldIntent, 'activity_name', 'activity_id'));
         $reply = $this->stripRankLineIfSingle($this->geminiChatResponse($prompt, $session), $scored);
+        if ($lead = $this->fieldLead($fieldIntent, $scored)) {
+            $reply = $lead."\n\n".$reply;
+        }
         if ($priceNotice) {
             $reply = $priceNotice."\n\n".$reply;
         }

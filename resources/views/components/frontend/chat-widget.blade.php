@@ -1,25 +1,23 @@
 <div x-data="chatWidget()" x-init="init()"
-     @cart-drawer-toggle.window="cartOpen = $event.detail.open; if (cartOpen && open) open = false"
-     x-show="!cartOpen"
-     x-cloak
-     x-transition:enter="transition ease-out duration-200"
-     x-transition:enter-start="opacity-0 scale-90 translate-y-2"
-     x-transition:enter-end="opacity-100 scale-100 translate-y-0"
-     x-transition:leave="transition ease-in duration-150"
-     x-transition:leave-start="opacity-100 scale-100 translate-y-0"
-     x-transition:leave-end="opacity-0 scale-90 translate-y-2"
-     class="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-3"
-     x-trap="open">
+    @cart-drawer-toggle.window="cartOpen = $event.detail.open; if (cartOpen && open) open = false" x-show="!cartOpen"
+    x-cloak x-transition:enter="transition ease-out duration-200"
+    x-transition:enter-start="opacity-0 scale-90 translate-y-2"
+    x-transition:enter-end="opacity-100 scale-100 translate-y-0" x-transition:leave="transition ease-in duration-150"
+    x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+    x-transition:leave-end="opacity-0 scale-90 translate-y-2"
+    class="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-3" x-trap="open">
     {{-- Floating bubble button --}}
     <button @click="toggle()"
         class="relative w-14 h-14 rounded-full flex items-center justify-center transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ocean-400 focus:ring-offset-2 hover:scale-105 active:scale-95 cursor-pointer"
-        :class="open ? 'rotate-90 scale-95 bg-slate-900 text-white shadow-xl shadow-slate-900/30' : 'bg-transparent'" aria-label="Chat with SunnyTrips AI">
+        :class="open ? 'rotate-90 scale-95 bg-slate-900 text-white shadow-xl shadow-slate-900/30' : 'bg-transparent'"
+        aria-label="Chat with SunnyTrips AI">
         <img x-show="!open" src="{{ asset('images/favicon-sun.png') }}" alt="Chat with SunnyBot"
             class="w-14 h-14 rounded-full object-cover shadow-xl shadow-ocean-600/20">
         <svg x-show="open" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
         </svg>
-        <span x-show="!open && hasUnreadAdmin" class="absolute -top-1 -right-1 w-4 h-4 bg-coral-500 border-2 border-white rounded-full flex items-center justify-center">
+        <span x-show="!open && hasUnreadAdmin"
+            class="absolute -top-1 -right-1 w-4 h-4 bg-coral-500 border-2 border-white rounded-full flex items-center justify-center">
             <span class="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>
         </span>
     </button>
@@ -40,8 +38,7 @@
                 <div class="relative">
                     <div
                         class="w-9 h-9 rounded-2xl bg-white flex items-center justify-center shadow-xs overflow-hidden">
-                        <img src="{{ asset('images/favicon-sun.png') }}" alt="SunnyBot"
-                            class="w-9 h-9 object-cover">
+                        <img src="{{ asset('images/favicon-sun.png') }}" alt="SunnyBot" class="w-9 h-9 object-cover">
                     </div>
                     <span
                         class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-slate-900"></span>
@@ -71,7 +68,7 @@
                 <div class="bg-amber-50 border border-amber-200/90 rounded-2xl p-3 shadow-xs">
                     <p class="text-xs text-amber-800 font-body leading-relaxed">
                         <span class="font-bold">Waiting for an agent...</span> An administrator will be with you
-                        shortly. Ticket: <span class="font-mono font-bold text-amber-900" x-text="handoffTicket"></span>
+                        shortly. SunnyBot stays available while you wait. Ticket: <span class="font-mono font-bold text-amber-900" x-text="handoffTicket"></span>
                     </p>
                     <button @click="cancelHandoff()"
                         class="mt-1.5 text-[11px] text-amber-700 underline hover:text-amber-900 font-bold cursor-pointer">Cancel
@@ -94,21 +91,24 @@
                 <div class="text-center py-6 px-4 bg-white rounded-2xl border border-slate-200/80 shadow-xs space-y-2">
                     <div
                         class="w-10 h-10 rounded-2xl bg-white mx-auto flex items-center justify-center border border-ocean-100 overflow-hidden">
-                        <img src="{{ asset('images/favicon-sun.png') }}" alt="SunnyBot"
-                            class="w-10 h-10 object-cover">
+                        <img src="{{ asset('images/favicon-sun.png') }}" alt="SunnyBot" class="w-10 h-10 object-cover">
                     </div>
                     <p class="text-slate-800 text-xs font-bold font-headline">Welcome to SunnyBot AI!</p>
                     <p class="text-slate-500 text-[11px] font-body leading-relaxed">Ask me about sanctuary hotels,
                         island activities, room rates, or custom itineraries in the Philippines.</p>
                     <div class="flex flex-wrap gap-2 justify-center pt-2">
                         <button @click='input = "Where to stay in Boracay?"; send()'
-                            class="px-3 py-1.5 rounded-full bg-ocean-50 hover:bg-ocean-100 text-ocean-700 text-[11px] font-bold border border-ocean-200 transition-colors cursor-pointer">Where to stay in Boracay?</button>
+                            class="px-3 py-1.5 rounded-full bg-ocean-50 hover:bg-ocean-100 text-ocean-700 text-[11px] font-bold border border-ocean-200 transition-colors cursor-pointer">Where
+                            to stay in Boracay?</button>
                         <button @click='input = "Budget-friendly hotels in Boracay?"; send()'
-                            class="px-3 py-1.5 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[11px] font-bold border border-emerald-200 transition-colors cursor-pointer">Budget-friendly hotels in Boracay?</button>
+                            class="px-3 py-1.5 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[11px] font-bold border border-emerald-200 transition-colors cursor-pointer">Budget-friendly
+                            hotels in Boracay?</button>
                         <button @click='input = "Where to stay in El Nido?"; send()'
-                            class="px-3 py-1.5 rounded-full bg-ocean-50 hover:bg-ocean-100 text-ocean-700 text-[11px] font-bold border border-ocean-200 transition-colors cursor-pointer">Where to stay in El Nido?</button>
+                            class="px-3 py-1.5 rounded-full bg-ocean-50 hover:bg-ocean-100 text-ocean-700 text-[11px] font-bold border border-ocean-200 transition-colors cursor-pointer">Where
+                            to stay in El Nido?</button>
                         <button @click='input = "Best activities in El Nido?"; send()'
-                            class="px-3 py-1.5 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-700 text-[11px] font-bold border border-amber-200 transition-colors cursor-pointer">Best activities in El Nido?</button>
+                            class="px-3 py-1.5 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-700 text-[11px] font-bold border border-amber-200 transition-colors cursor-pointer">Best
+                            activities in El Nido?</button>
                     </div>
                 </div>
             </template>
@@ -122,7 +122,8 @@
                             <div
                                 class="w-7 h-7 rounded-xl bg-white flex items-center justify-center shrink-0 shadow-xs mt-0.5 overflow-hidden border border-amber-100">
                                 <img src="{{ asset('images/favicon-sun.png') }}" alt="SunnyBot"
-                                    class="w-7 h-7 object-cover"></div>
+                                    class="w-7 h-7 object-cover">
+                            </div>
                             <div
                                 class="bg-white rounded-2xl rounded-tl-xs px-3.5 py-3 shadow-xs border border-slate-200/80 max-w-[85%]">
                                 <div class="text-xs sm:text-sm text-slate-800 font-body leading-relaxed space-y-2"
@@ -134,7 +135,9 @@
                                         <template x-for="room in msg.rooms">
                                             <div
                                                 class="bg-slate-50 rounded-xl p-2.5 border border-slate-200/80 space-y-1.5 relative">
-                                                <span x-show="msg.rooms[0] && msg.rooms[0].id === room.id" class="absolute -top-1.5 -right-1.5 text-[10px] font-black bg-coral-500 text-white px-2 py-0.5 rounded-full shadow-xs border border-white" x-text="rankPill(msg)"></span>
+                                                <span x-show="msg.rooms[0] && msg.rooms[0].id === room.id"
+                                                    class="absolute -top-1.5 -right-1.5 text-[10px] font-black bg-coral-500 text-white px-2 py-0.5 rounded-full shadow-xs border border-white"
+                                                    x-text="rankPill(msg)"></span>
                                                 <img x-show="room.image" :src="imgSrc(room.image)"
                                                     class="w-full h-24 object-cover rounded-lg mb-1 border border-slate-200"
                                                     alt="" onerror="this.style.display='none'">
@@ -181,7 +184,9 @@
                                         <template x-for="act in msg.activities">
                                             <div
                                                 class="bg-slate-50 rounded-xl p-2.5 border border-slate-200/80 space-y-1.5 relative">
-                                                <span x-show="msg.activities[0] && msg.activities[0].id === act.id" class="absolute -top-1.5 -right-1.5 text-[10px] font-black bg-coral-500 text-white px-2 py-0.5 rounded-full shadow-xs border border-white" x-text="rankPill(msg)"></span>
+                                                <span x-show="msg.activities[0] && msg.activities[0].id === act.id"
+                                                    class="absolute -top-1.5 -right-1.5 text-[10px] font-black bg-coral-500 text-white px-2 py-0.5 rounded-full shadow-xs border border-white"
+                                                    x-text="rankPill(msg)"></span>
                                                 <img x-show="act.image" :src="imgSrc(act.image)"
                                                     class="w-full h-24 object-cover rounded-lg mb-1 border border-slate-200"
                                                     alt="" onerror="this.style.display='none'">
@@ -214,7 +219,9 @@
                                         <template x-for="hotel in msg.hotels">
                                             <div
                                                 class="bg-slate-50 rounded-xl p-2.5 border border-slate-200/80 space-y-1.5 relative">
-                                                <span x-show="msg.hotels[0] && msg.hotels[0].id === hotel.id" class="absolute -top-1.5 -right-1.5 text-[10px] font-black bg-coral-500 text-white px-2 py-0.5 rounded-full shadow-xs border border-white" x-text="rankPill(msg)"></span>
+                                                <span x-show="msg.hotels[0] && msg.hotels[0].id === hotel.id"
+                                                    class="absolute -top-1.5 -right-1.5 text-[10px] font-black bg-coral-500 text-white px-2 py-0.5 rounded-full shadow-xs border border-white"
+                                                    x-text="rankPill(msg)"></span>
                                                 <img x-show="hotel.image" :src="imgSrc(hotel.image)"
                                                     class="w-full h-24 object-cover rounded-lg mb-1 border border-slate-200"
                                                     alt="" onerror="this.style.display='none'">
@@ -240,7 +247,9 @@
                                         <template x-for="pkg in msg.packages">
                                             <div
                                                 class="bg-slate-50 rounded-xl p-2.5 border border-slate-200/80 space-y-1.5 relative">
-                                                <span x-show="msg.packages[0] && msg.packages[0].id === pkg.id" class="absolute -top-1.5 -right-1.5 text-[10px] font-black bg-coral-500 text-white px-2 py-0.5 rounded-full shadow-xs border border-white" x-text="rankPill(msg)"></span>
+                                                <span x-show="msg.packages[0] && msg.packages[0].id === pkg.id"
+                                                    class="absolute -top-1.5 -right-1.5 text-[10px] font-black bg-coral-500 text-white px-2 py-0.5 rounded-full shadow-xs border border-white"
+                                                    x-text="rankPill(msg)"></span>
                                                 <img x-show="pkg.image" :src="imgSrc(pkg.image)"
                                                     class="w-full h-24 object-cover rounded-lg mb-1 border border-slate-200"
                                                     alt="" onerror="this.style.display='none'">
@@ -296,9 +305,7 @@
                                 <template x-if="msg.suggested_actions && msg.suggested_actions.length">
                                     <div class="mt-3 flex flex-wrap gap-1.5">
                                         <template x-for="action in msg.suggested_actions" :key="action.id">
-                                            <button
-                                                type="button"
-                                                @click="useSuggestedAction(msg, action)"
+                                            <button type="button" @click="useSuggestedAction(msg, action)"
                                                 :disabled="isActionUsed(msg.id, action.id)"
                                                 :class="isActionUsed(msg.id, action.id) ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-default' : 'bg-ocean-50 text-ocean-700 border-ocean-200 hover:bg-ocean-100 cursor-pointer'"
                                                 class="text-[11px] font-bold px-3 py-1.5 rounded-full border transition-colors font-headline disabled:opacity-60">
@@ -311,29 +318,41 @@
                                 {{-- Location request --}}
                                 <template x-if="msg.location_request">
                                     <div class="mt-3 bg-ocean-50 rounded-xl p-3 border border-ocean-200/80 space-y-2">
-                                        <p class="text-xs font-bold text-ocean-800 font-headline flex items-center gap-1.5">
+                                        <p
+                                            class="text-xs font-bold text-ocean-800 font-headline flex items-center gap-1.5">
                                             <span class="material-symbols-outlined text-[16px]">my_location</span>
                                             Share your location?
                                         </p>
-                                        <p class="text-[11px] text-ocean-700 leading-relaxed">Allow location access to see your distance to <span class="font-bold" x-text="msg.location_target"></span>.</p>
+                                        <p class="text-[11px] text-ocean-700 leading-relaxed">Allow location access to
+                                            see your distance to <span class="font-bold"
+                                                x-text="msg.location_target"></span>.</p>
                                         <button @click="shareLocation(msg.location_target)" :disabled="locatingLocation"
                                             class="w-full text-xs bg-ocean-600 text-white font-bold px-3 py-2 rounded-xl hover:bg-ocean-700 transition-colors font-headline flex items-center justify-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer">
-                                            <span class="material-symbols-outlined text-[16px]" x-text="locatingLocation ? 'progress_activity' : 'near_me'"></span>
-                                            <span x-text="locatingLocation ? 'Locating…' : 'Share my current location'"></span>
+                                            <span class="material-symbols-outlined text-[16px]"
+                                                x-text="locatingLocation ? 'progress_activity' : 'near_me'"></span>
+                                            <span
+                                                x-text="locatingLocation ? 'Locating…' : 'Share my current location'"></span>
                                         </button>
-                                        <p x-show="geoError" x-text="geoError" class="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1.5"></p>
-                                        <p class="text-[10px] text-slate-500">Or tell me where you are, e.g. “How far is El Nido from <span x-text="msg.location_target"></span>?”</p>
+                                        <p x-show="geoError" x-text="geoError"
+                                            class="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1.5">
+                                        </p>
+                                        <p class="text-[10px] text-slate-500">Or tell me where you are, e.g. “How far is
+                                            El Nido from <span x-text="msg.location_target"></span>?”</p>
                                     </div>
                                 </template>
 
                                 {{-- Distance result --}}
                                 <template x-if="msg.map && msg.map.distance_label">
-                                    <div class="mt-3 bg-emerald-50 rounded-xl p-2.5 border border-emerald-200/80 flex items-center justify-between">
-                                        <span class="text-xs font-bold text-emerald-800 font-headline flex items-center gap-1">
+                                    <div
+                                        class="mt-3 bg-emerald-50 rounded-xl p-2.5 border border-emerald-200/80 flex items-center justify-between">
+                                        <span
+                                            class="text-xs font-bold text-emerald-800 font-headline flex items-center gap-1">
                                             <span class="material-symbols-outlined text-[16px]">route</span>
                                             <span x-text="msg.map.distance_label + ' away'"></span>
                                         </span>
-                                        <span class="text-[10px] text-emerald-700 bg-white px-2 py-0.5 rounded-md border border-emerald-200" x-text="msg.map.from?.label === 'You' ? 'from you' : ''"></span>
+                                        <span
+                                            class="text-[10px] text-emerald-700 bg-white px-2 py-0.5 rounded-md border border-emerald-200"
+                                            x-text="msg.map.from?.label === 'You' ? 'from you' : ''"></span>
                                     </div>
                                 </template>
                             </div>
@@ -370,16 +389,16 @@
             <div x-show="sending" class="flex gap-2.5 items-start pl-1 py-1">
                 <div
                     class="w-7 h-7 rounded-xl bg-white flex items-center justify-center shrink-0 shadow-xs overflow-hidden border border-amber-100">
-                    <img src="{{ asset('images/favicon-sun.png') }}" alt="SunnyBot"
-                        class="w-7 h-7 object-cover"></div>
+                    <img src="{{ asset('images/favicon-sun.png') }}" alt="SunnyBot" class="w-7 h-7 object-cover">
+                </div>
                 <div class="bg-white rounded-2xl rounded-tl-xs px-4 py-3 shadow-xs border border-slate-200/80">
                     <x-thinking-orb state="composing" :size="18" />
                 </div>
             </div>
 
             {{-- Guest rate limit / spam block: last child so it renders at the
-                bottom of the list where the eye already rests (list auto-scrolls
-                to bottom on every message; input hides while limited). --}}
+            bottom of the list where the eye already rests (list auto-scrolls
+            to bottom on every message; input hides while limited). --}}
             <template x-if="guestLimited">
                 <div class="text-center py-6 px-4 bg-white rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
                     <div
@@ -416,8 +435,8 @@
                     </svg>
                 </button>
             </form>
-            <p class="text-center text-slate-400 text-[10px] font-medium leading-tight">SunnyBot AI can make mistakes.
-                Be specific in inquiries for higher accuracy.</p>
+            <p class="text-center text-black text-[10px] font-medium leading-tight">SunnyBot AI can make mistakes.
+                Be specific in inquiries for higher accuracy. Do not treat SunnyBot as a Human.</p>
         </div>
     </div>
 </div>
@@ -776,7 +795,8 @@
                     const extras = {};
                     if (data.retrieved_rooms && data.retrieved_rooms.length > 0) {
                         extras.rooms = data.retrieved_rooms;
-                    } else if (data.availability && data.availability.length > 0) {                        // Map raw availability entries (item + availability) to room cards when retrieved_rooms missing
+                    } else if (data.availability && data.availability.length > 0) {
+                        // Map raw availability entries (item + availability) to room cards when retrieved_rooms missing
                         extras.rooms = data.availability.map(entry => {
                             const r = entry.item || entry;
                             return {
@@ -815,7 +835,8 @@
                         this.startHandoffPolling();
                         return;
                     }
-                    if (data.control === 'pending' || data.status === 'pending_assignment') {
+                    if (data.control === 'pending' || data.status === 'pending_assignment'
+                        || (data.control === 'ai' && data.handoff_status === 'PENDING_ASSIGNMENT')) {
                         this.handoffStatus = 'pending';
                         this.startHandoffPolling();
                     }
@@ -871,7 +892,7 @@
             saveCoords(coords) {
                 try {
                     sessionStorage.setItem('sunnytrip_chat_coords', JSON.stringify({ lat: coords.lat, lng: coords.lng, at: Date.now() }));
-                } catch (_) {}
+                } catch (_) { }
             },
 
             async shareLocation(destName) {
