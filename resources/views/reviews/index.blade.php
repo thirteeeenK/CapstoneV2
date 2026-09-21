@@ -31,8 +31,8 @@
         $sentimentTint = ['positive' => 'bg-emerald-50 text-emerald-700 border-emerald-100', 'neutral' => 'bg-amber-50 text-amber-700 border-amber-100', 'negative' => 'bg-rose-50 text-rose-700 border-rose-100'];
     @endphp
 
-    <div class="min-h-screen bg-sand-50/70 font-body">
-        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+    <div class="pt-20 sm:pt-28 pb-12 min-h-screen bg-sand-50/70 font-body">
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
 
             {{-- Masthead --}}
             <div class="flex items-center justify-between mb-5">

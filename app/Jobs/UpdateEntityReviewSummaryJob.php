@@ -15,7 +15,8 @@ class UpdateEntityReviewSummaryJob implements ShouldQueue
     public function __construct(
         public string $entityType,
         public ?int $entityId,
-        public string $entityLabel
+        public string $entityLabel,
+        public bool $force = false
     ) {}
 
     public function handle(GeminiService $gemini): void
@@ -24,7 +25,7 @@ class UpdateEntityReviewSummaryJob implements ShouldQueue
             ->where('summarizable_id', $this->entityId)
             ->first();
 
-        if ($existing && $existing->last_analyzed_at !== null) {
+        if (! $this->force && $existing && $existing->last_analyzed_at !== null) {
             $threshold = (int) config('services.gemini.review_summary_threshold', 3);
 
             $sinceQuery = Review::published()->where('created_at', '>', $existing->last_analyzed_at);
@@ -47,7 +48,8 @@ class UpdateEntityReviewSummaryJob implements ShouldQueue
             $query = $query->ofEntity($this->entityType, $this->entityId)->with('user');
         }
 
-        $reviews = $query->latest()->limit(50)->get();
+        $limit = $this->entityId === null ? 100 : 50;
+        $reviews = $query->latest()->limit($limit)->get();
 
         $total = $reviews->count();
 
