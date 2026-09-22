@@ -111,9 +111,11 @@ class CheckoutController extends Controller
         $validated = $request->validate([
             'contact_name' => 'required|string|max:150',
             'contact_email' => 'required|email|max:150',
-            'contact_phone' => 'required|string|max:30',
+            'contact_phone' => 'required|string|regex:/^\d{11}$/|max:30',
             'special_requests' => 'nullable|string|max:1000',
             'guest_manifest' => 'nullable|string',
+        ], [
+            'contact_phone.regex' => 'The mobile phone number must be exactly 11 digits.',
         ]);
 
         // Validate Package minimum pax

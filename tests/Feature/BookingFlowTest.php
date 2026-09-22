@@ -572,3 +572,27 @@ test('cart data payload exposes min_pax for package items so checkout can be pre
         ->and($packageItem['min_pax'])->toBe(3)
         ->and($packageItem['selected_pax'])->toBe(1);
 });
+
+it('rejects checkout when the phone number is not exactly 11 digits', function () {
+    addRoomToCart($this->user, $this->room);
+
+    foreach (['0917123456', '091712345678', '0917-123-456', 'abcdefghijk'] as $badPhone) {
+        $this->actingAs($this->user)->post(route('checkout.process'), [
+            'contact_name' => 'Juan Dela Cruz',
+            'contact_email' => $this->user->email,
+            'contact_phone' => $badPhone,
+            'guest_manifest' => null,
+        ])->assertSessionHasErrors('contact_phone');
+    }
+
+    expect(Booking::count())->toBe(0);
+
+    $this->actingAs($this->user)->post(route('checkout.process'), [
+        'contact_name' => 'Juan Dela Cruz',
+        'contact_email' => $this->user->email,
+        'contact_phone' => '09171234567',
+        'guest_manifest' => null,
+    ])->assertOk()->assertJson(['success' => true]);
+
+    expect(Booking::count())->toBe(1);
+});

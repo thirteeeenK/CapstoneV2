@@ -18,6 +18,8 @@ test('users can authenticate using the login screen', function () {
 
     $this->assertAuthenticated();
     $response->assertRedirect(route('dashboard', absolute: false));
+    // Chat guide re-arms on every true login.
+    $response->assertSessionHas('show_chat_guide', true);
 });
 
 test('users can not authenticate with invalid password', function () {

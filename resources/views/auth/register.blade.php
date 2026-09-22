@@ -44,8 +44,9 @@
         {{-- Phone --}}
         <div>
             <x-input-label for="phone_number" :value="__('Phone number')" />
-            <x-text-input id="phone_number" type="number" name="phone_number" :value="old('phone_number')" required
-                placeholder="09XXXXXXXXX" />
+            <x-text-input id="phone_number" type="tel" name="phone_number" :value="old('phone_number')" required
+                placeholder="09XXXXXXXXX" maxlength="11" inputmode="numeric" pattern="[0-9]{11}"
+                title="Enter exactly 11 digits" oninput="this.value = this.value.replace(/\D/g, '').slice(0, 11)" />
             <x-input-error :messages="$errors->get('phone_number')" />
         </div>
 

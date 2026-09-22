@@ -68,7 +68,8 @@
                 <div class="bg-amber-50 border border-amber-200/90 rounded-2xl p-3 shadow-xs">
                     <p class="text-xs text-amber-800 font-body leading-relaxed">
                         <span class="font-bold">Waiting for an agent...</span> An administrator will be with you
-                        shortly. SunnyBot stays available while you wait. Ticket: <span class="font-mono font-bold text-amber-900" x-text="handoffTicket"></span>
+                        shortly. SunnyBot stays available while you wait. Ticket: <span
+                            class="font-mono font-bold text-amber-900" x-text="handoffTicket"></span>
                     </p>
                     <button @click="cancelHandoff()"
                         class="mt-1.5 text-[11px] text-amber-700 underline hover:text-amber-900 font-bold cursor-pointer">Cancel
@@ -86,8 +87,59 @@
 
         {{-- Messages area --}}
         <div x-ref="messages" class="flex-1 overflow-y-auto px-4 py-4 space-y-4 bg-slate-50/80">
+            {{-- First-open guide --}}
+            <template x-if="showGuide && messages.length === 0 && !guestLimited">
+                <div data-chat-guide class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+                    <div class="px-4 pt-4 pb-3 text-center space-y-2">
+                        <div
+                            class="w-10 h-10 rounded-2xl bg-white mx-auto flex items-center justify-center border border-ocean-100 overflow-hidden">
+                            <img src="{{ asset('images/favicon-sun.png') }}" alt="SunnyBot"
+                                class="w-10 h-10 object-cover">
+                        </div>
+                        <p class="text-slate-800 text-xs font-bold font-headline">Meet SunnyBot AI!</p>
+                        <p class="text-slate-500 text-[11px] font-body leading-relaxed">Your smart island guide for
+                            Philippine getaways. Here's what I can do:</p>
+                    </div>
+                    <ul class="px-4 pb-3 space-y-1.5 text-left">
+                        <li class="flex items-center gap-2 text-[11px] text-slate-600 font-body">
+                            <span class="material-symbols-outlined text-[15px] text-ocean-500">hotel</span>
+                            Find sanctuary hotels and compare where to stay
+                        </li>
+                        <li class="flex items-center gap-2 text-[11px] text-slate-600 font-body">
+                            <span class="material-symbols-outlined text-[15px] text-ocean-500">king_bed</span>
+                            Check rooms and rates
+                        </li>
+                        <li class="flex items-center gap-2 text-[11px] text-slate-600 font-body">
+                            <span class="material-symbols-outlined text-[15px] text-ocean-500">explore</span>
+                            Recommend activities, packages, and custom itineraries
+                        </li>
+                        <li class="flex items-center gap-2 text-[11px] text-slate-600 font-body">
+                            <span class="material-symbols-outlined text-[15px] text-ocean-500">headset_mic</span>
+                            Hand you to a human agent any time — just click the Talk to Agent button above.
+                        </li>
+                    </ul>
+                    <div class="px-4 pb-3 flex flex-wrap gap-2 justify-center">
+                        <button @click='input = "Plan a 3-day Boracay trip for 2"; send()'
+                            class="px-3 py-1.5 rounded-full bg-ocean-50 hover:bg-ocean-100 text-ocean-700 text-[11px] font-bold border border-ocean-200 transition-colors cursor-pointer">Plan
+                            a 3-day Boracay trip</button>
+                        <button @click='input = "Where to stay in El Nido?"; send()'
+                            class="px-3 py-1.5 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[11px] font-bold border border-emerald-200 transition-colors cursor-pointer">Where
+                            to stay in El Nido?</button>
+                        <button @click='input = "Best activities in El Nido?"; send()'
+                            class="px-3 py-1.5 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-700 text-[11px] font-bold border border-amber-200 transition-colors cursor-pointer">Best
+                            activities in El Nido?</button>
+                        <button @click='input = "What is the weather like in Boracay?"; send()'
+                            class="px-3 py-1.5 rounded-full bg-sky-50 hover:bg-sky-100 text-sky-700 text-[11px] font-bold border border-sky-200 transition-colors cursor-pointer">Boracay
+                            weather today?</button>
+                    </div>
+                    <button @click="dismissGuide()"
+                        class="w-full py-2 bg-slate-50 hover:bg-slate-100 border-t border-slate-100 text-slate-500 hover:text-slate-700 text-[11px] font-bold font-headline transition-colors cursor-pointer">Got
+                        it, thanks!</button>
+                </div>
+            </template>
+
             {{-- Welcome --}}
-            <template x-if="messages.length === 0 && !guestLimited">
+            <template x-if="!showGuide && messages.length === 0 && !guestLimited">
                 <div class="text-center py-6 px-4 bg-white rounded-2xl border border-slate-200/80 shadow-xs space-y-2">
                     <div
                         class="w-10 h-10 rounded-2xl bg-white mx-auto flex items-center justify-center border border-ocean-100 overflow-hidden">
@@ -461,6 +513,7 @@
             locatingLocation: false,
             geoError: null,
             hasUnreadAdmin: false,
+            showGuide: false,
             usedActionIds: new Set(),
             isAuthed: @json(auth()->check()),
 
@@ -596,6 +649,18 @@
                 this.open = !this.open;
                 if (this.open) {
                     this.hasUnreadAdmin = false;
+                    @if (session('show_chat_guide'))
+                        // Fresh login: reset the seen-flag so the guide shows again.
+                        localStorage.removeItem('sunnytrips_chat_guide_seen');
+                    @endif
+                    // First-open guide: show once per browser, only when there is
+                    // no history to restore. Flag is set on display, so even a
+                    // dismiss-free close still counts as "seen".
+                    if (this.messages.length === 0
+                        && !localStorage.getItem('sunnytrips_chat_guide_seen')) {
+                        this.showGuide = true;
+                        localStorage.setItem('sunnytrips_chat_guide_seen', '1');
+                    }
                     this.syncActiveSession().then(() => this.loadConversation());
                     this.$nextTick(() => {
                         this.$refs.input?.focus();
@@ -607,6 +672,10 @@
             close() {
                 this.open = false;
                 this.stopHandoffPolling();
+            },
+
+            dismissGuide() {
+                this.showGuide = false;
             },
 
             autoResize(el) {

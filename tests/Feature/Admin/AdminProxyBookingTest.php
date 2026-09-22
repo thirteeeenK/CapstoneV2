@@ -75,6 +75,41 @@ it('searches registered users via ajax autocomplete', function () {
         ]);
 });
 
+it('rejects an admin booking when the phone number is not exactly 11 digits', function () {
+    $checkIn = now()->addDays(5)->format('Y-m-d');
+    $checkOut = now()->addDays(7)->format('Y-m-d');
+
+    $payload = [
+        'is_walk_in' => 0,
+        'user_id' => $this->user->id,
+        'booking_source' => 'admin_phone',
+        'contact_name' => $this->user->name,
+        'contact_email' => $this->user->email,
+        'initial_status' => 'pending',
+        'items' => [
+            [
+                'item_type' => 'room',
+                'item_id' => $this->room->id,
+                'quantity' => 1,
+                'selected_pax' => 2,
+                'check_in_date' => $checkIn,
+                'check_out_date' => $checkOut,
+            ],
+        ],
+        'guest_manifest' => [
+            ['full_name' => 'Maria Clara', 'category' => 'Adult'],
+        ],
+    ];
+
+    foreach (['0917123456', '091712345678'] as $badPhone) {
+        $this->actingAs($this->admin, 'admin')
+            ->post(route('admin.bookings.store'), array_merge($payload, ['contact_phone' => $badPhone]))
+            ->assertSessionHasErrors('contact_phone');
+    }
+
+    expect(Booking::count())->toBe(0);
+});
+
 it('allows an admin to book on behalf of an existing registered user as pending', function () {
     $checkIn = now()->addDays(5)->format('Y-m-d');
     $checkOut = now()->addDays(7)->format('Y-m-d');

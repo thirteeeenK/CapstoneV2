@@ -521,6 +521,8 @@
                 <div>
                     <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Contact Phone Number *</label>
                     <input type="text" name="contact_phone" x-model="contactPhone" required placeholder="e.g. 0917 123 4567"
+                           inputmode="numeric" pattern="[0-9]{11}" title="Enter exactly 11 digits"
+                           @input="contactPhone = contactPhone.replace(/\D/g, '').slice(0, 11)"
                            class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-medium text-slate-900 focus:border-ocean-500 focus:ring-2 focus:ring-ocean-500/20">
                 </div>
             </div>

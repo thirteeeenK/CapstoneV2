@@ -31,10 +31,10 @@ class AuthenticatedSessionController extends Controller
 
         $redirect = $request->input('redirect');
         if (is_string($redirect) && $this->isSafeLocalRedirect($redirect)) {
-            return redirect($redirect);
+            return redirect($redirect)->with('show_chat_guide', true);
         }
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        return redirect()->intended(route('dashboard', absolute: false))->with('show_chat_guide', true);
     }
 
     /**

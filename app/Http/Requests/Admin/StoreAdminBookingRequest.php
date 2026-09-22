@@ -31,7 +31,7 @@ class StoreAdminBookingRequest extends FormRequest
             'booking_source' => ['required', 'string', 'in:admin_walk_in,admin_phone,admin_concierge'],
             'contact_name' => ['required', 'string', 'max:150'],
             'contact_email' => ['required', 'email', 'max:150'],
-            'contact_phone' => ['required', 'string', 'max:30'],
+            'contact_phone' => ['required', 'string', 'regex:/^\d{11}$/', 'max:30'],
             'special_requests' => ['nullable', 'string', 'max:1000'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.item_type' => ['required', 'string', 'in:room,package,activity,addon'],
@@ -50,6 +50,18 @@ class StoreAdminBookingRequest extends FormRequest
             'payment_method' => ['nullable', 'required_if:initial_status,paid', 'string', 'max:50'],
             'payment_reference' => ['nullable', 'string', 'max:100'],
             'admin_notes' => ['nullable', 'string', 'max:2000'],
+        ];
+    }
+
+    /**
+     * Get custom validation messages.
+     *
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'contact_phone.regex' => 'The mobile phone number must be exactly 11 digits.',
         ];
     }
 
