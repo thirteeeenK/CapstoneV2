@@ -576,7 +576,7 @@ class GeminiService
             }
         }
 
-        usort($scored, fn ($a, $b) => $b['score'] <=> $a['score']);
+        usort($scored, fn ($a, $b) => ($b['score'] <=> $a['score']) ?: ($a['item']->id <=> $b['item']->id));
 
         return array_slice($scored, 0, $limit);
     }
@@ -653,7 +653,7 @@ class GeminiService
                 $overflowCandidates[] = $entry;
             }
         }
-        usort($overflowCandidates, fn ($a, $b) => $priceFor($a['item']) <=> $priceFor($b['item']));
+        usort($overflowCandidates, fn ($a, $b) => ($priceFor($a['item']) <=> $priceFor($b['item'])) ?: (($b['score'] ?? 0) <=> ($a['score'] ?? 0)) ?: ($a['item']->id <=> $b['item']->id));
         $overflow = array_slice($overflowCandidates, 0, $overflowMax);
         Log::debug('budget split', ['max_price' => $maxPrice, 'ceiling' => $ceiling, 'in_budget' => count($inBudget), 'overflow' => count($overflow)]);
 
@@ -665,7 +665,7 @@ class GeminiService
         if (empty($scored)) {
             return [];
         }
-        usort($scored, fn ($a, $b) => $priceFor($a['item']) <=> $priceFor($b['item']));
+        usort($scored, fn ($a, $b) => ($priceFor($a['item']) <=> $priceFor($b['item'])) ?: (($b['score'] ?? 0) <=> ($a['score'] ?? 0)) ?: ($a['item']->id <=> $b['item']->id));
         $fallback = array_slice(array_values($scored), 0, $limit);
         foreach ($fallback as &$entry) {
             $entry['fallback'] = true;
@@ -1005,7 +1005,7 @@ class GeminiService
         }
 
         $scored = $hotels
-            ->orderByRaw('embedding <=> ? ASC', [$vector])
+            ->orderByRaw('embedding <=> ? ASC, id ASC', [$vector])
             ->limit($fetch)
             ->get()
             ->map(fn (HotelModel $hotel): array => ['item' => $hotel, 'score' => (float) $hotel->similarity])
@@ -1380,7 +1380,7 @@ class GeminiService
             ->when($destinationId, fn ($q) => $q->where('destination_id', $destinationId))
             ->select('*')
             ->selectRaw('1.0 - (embedding <=> ?) AS similarity', [$vector])
-            ->orderByRaw('embedding <=> ? ASC', [$vector])
+            ->orderByRaw('embedding <=> ? ASC, id ASC', [$vector])
             ->limit($fetch)
             ->get()
             ->map(fn (ActivityModel $activity): array => ['item' => $activity, 'score' => (float) $activity->similarity])
@@ -1576,7 +1576,7 @@ class GeminiService
             ->when($pax !== null, fn ($q) => $q->where('min_pax', '<=', $pax))
             ->select('*')
             ->selectRaw('1.0 - (embedding <=> ?) AS similarity', [$vectorStr])
-            ->orderByRaw('embedding <=> ? ASC', [$vectorStr])
+            ->orderByRaw('embedding <=> ? ASC, id ASC', [$vectorStr])
             ->limit($fetch)
             ->get();
 
@@ -1620,7 +1620,7 @@ class GeminiService
             ->whereNotNull('embedding')
             ->select('*')
             ->selectRaw('1.0 - (embedding <=> ?) AS similarity', [$vectorStr])
-            ->orderByRaw('embedding <=> ? ASC', [$vectorStr])
+            ->orderByRaw('embedding <=> ? ASC, id ASC', [$vectorStr])
             ->limit($limit)
             ->get();
 
@@ -1747,7 +1747,7 @@ class GeminiService
             ->when($destinationId, fn ($q) => $q->where('destination_id', $destinationId))
             ->select('*')
             ->selectRaw('1.0 - (embedding <=> ?) AS similarity', [$vector])
-            ->orderByRaw('embedding <=> ? ASC', [$vector])
+            ->orderByRaw('embedding <=> ? ASC, id ASC', [$vector])
             ->limit($fetch)
             ->get()
             ->map(fn (AddOnModel $addon): array => ['item' => $addon, 'score' => (float) $addon->similarity])
@@ -2814,7 +2814,32 @@ class GeminiService
     /**
      * Multi-turn chat response (plain-text, no forced JSON).
      */
-    public function generateChatResponse(string $systemInstruction, array $history, string $userPrompt): ?string
+    /**
+     * Chat generation settings by response mode. Grounded answers use
+     * temperature 0 (deterministic wording over identical retrieval);
+     * conversational chat keeps a small temperature for friendly tone.
+     * Temperature zero reduces variation but cannot guarantee
+     * byte-identical cloud-model text — the factual source of truth is the
+     * normalized server context and retrieved IDs, not the prose.
+     *
+     * @return array{temperature: float, topP: float}
+     */
+    public function chatGenerationSettings(bool $conversational = false): array
+    {
+        if ($conversational) {
+            return [
+                'temperature' => (float) config('services.gemini.chat_conversational_temperature', 0.2),
+                'topP' => 0.95,
+            ];
+        }
+
+        return [
+            'temperature' => (float) config('services.gemini.chat_grounded_temperature', 0),
+            'topP' => 1.0,
+        ];
+    }
+
+    public function generateChatResponse(string $systemInstruction, array $history, string $userPrompt, bool $conversational = false): ?string
     {
         $apiKey = config('services.gemini.api_key');
         if (! $apiKey) {
@@ -2841,11 +2866,12 @@ class GeminiService
         $response = null;
 
         for ($attempt = 0; $attempt < 2; $attempt++) {
+            $settings = $this->chatGenerationSettings($conversational);
             $payload = [
                 'contents' => $contents,
                 'generationConfig' => [
-                    'temperature' => 0.4,
-                    'topP' => 0.95,
+                    'temperature' => $settings['temperature'],
+                    'topP' => $settings['topP'],
                     'maxOutputTokens' => 1024,
                 ],
             ];

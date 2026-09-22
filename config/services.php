@@ -41,6 +41,10 @@ return [
         'judge_model' => env('GEMINI_JUDGE_MODEL', 'models/gemini-3.1-pro-preview'),
         'review_summary_threshold' => (int) env('REVIEW_SUMMARY_THRESHOLD', 3),
         'chat_context_cache' => env('GEMINI_CHAT_CONTEXT_CACHE', true),
+        // Cross-device consistency: grounded factual answers use the grounded
+        // temperature, general chat uses the conversational one.
+        'chat_grounded_temperature' => (float) env('GEMINI_CHAT_GROUNDED_TEMP', 0),
+        'chat_conversational_temperature' => (float) env('GEMINI_CHAT_CONVERSATIONAL_TEMP', 0.2),
     ],
 
     'payment' => [

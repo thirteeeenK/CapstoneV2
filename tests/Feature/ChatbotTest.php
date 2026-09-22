@@ -16,6 +16,7 @@ use App\Models\IpBan;
 use App\Models\Package;
 use App\Models\RoomType;
 use App\Models\SupportInquiry;
+use App\Models\UserPreference;
 use App\Services\Chat\ChatbotService;
 use App\Services\GeminiService;
 use Illuminate\Http\Client\Request;
@@ -1857,4 +1858,193 @@ test('guest nudge is appended only once when Gemini echoes it back', function ()
     $res->assertOk()->assertJsonPath('status', 'success');
 
     expect(substr_count($res->json('reply'), '09682447153'))->toBe(1);
+});
+
+test('grounded hotel query resolves identically across sessions with conflicting histories', function () {
+    $this->hotel->update([
+        'embedding' => '['.implode(',', array_fill(0, 3072, '0.01')).']',
+    ]);
+    $payloads = [];
+    Http::fake([
+        '*embedContent*' => Http::response([
+            'embedding' => ['values' => array_fill(0, 3072, 0.01)],
+        ]),
+        '*generateContent*' => function (Request $request) use (&$payloads) {
+            $payloads[] = $request->data();
+
+            return Http::response([
+                'candidates' => [['content' => ['parts' => [['text' => 'Here is a recommendation for you!']]]]],
+            ]);
+        },
+    ]);
+
+    $resA1 = $this->postJson('/chat', ['message' => 'Hello']);
+    $tokenA = $resA1->json('session_token');
+    $resA2 = $this->postJson('/chat', ['message' => 'Find hotels in Boracay', 'session_token' => $tokenA]);
+
+    $resB1 = $this->postJson('/chat', ['message' => 'Find a room in Boracay']);
+    $tokenB = $resB1->json('session_token');
+    $resB2 = $this->postJson('/chat', ['message' => 'Find hotels in Boracay', 'session_token' => $tokenB]);
+
+    $resA2->assertOk();
+    $resB2->assertOk();
+    expect($resA2->json('retrieved_hotels'))->not->toBeEmpty();
+
+    $idsA = array_column($resA2->json('retrieved_hotels'), 'id');
+    expect(array_column($resB2->json('retrieved_hotels'), 'id'))->toBe($idsA);
+
+    // The two factual calls are the last two Gemini requests: prompt only, no history.
+    foreach (array_slice($payloads, -2) as $payload) {
+        expect($payload['contents'])->toHaveCount(1);
+        expect($payload['contents'][0]['role'])->toBe('user');
+        expect($payload['generationConfig']['temperature'])->toEqual(0);
+    }
+
+    expect($resA2->json('trace.response_mode'))->toBe('grounded')
+        ->and($resA2->json('trace.history_used'))->toBeFalse()
+        ->and($resB2->json('trace.retrieval_ids.hotels'))->toBe($idsA);
+});
+
+test('general talk still sends recent conversation history', function () {
+    $payloads = [];
+    Http::fake([
+        '*embedContent*' => Http::response([
+            'embedding' => ['values' => array_fill(0, 3072, 0.01)],
+        ]),
+        '*generateContent*' => function (Request $request) use (&$payloads) {
+            $payloads[] = $request->data();
+
+            return Http::response([
+                'candidates' => [['content' => ['parts' => [['text' => 'Here is a recommendation for you!']]]]],
+            ]);
+        },
+    ]);
+
+    $res1 = $this->postJson('/chat', ['message' => 'Hello']);
+    $token = $res1->json('session_token');
+    $res2 = $this->postJson('/chat', ['message' => 'What is the history of Boracay?', 'session_token' => $token]);
+
+    $res2->assertOk();
+    $last = end($payloads);
+    // Prior user turn + prior bot turn + current prompt.
+    expect($last['contents'])->toHaveCount(3);
+    expect($last['generationConfig']['temperature'])->toEqual(0.2);
+    expect($res2->json('trace.response_mode'))->toBe('conversational')
+        ->and($res2->json('trace.history_used'))->toBeTrue();
+});
+
+test('availability follow-up uses stored retrieval state without history', function () {
+    $payloads = [];
+    Http::fake([
+        '*embedContent*' => Http::response([
+            'embedding' => ['values' => array_fill(0, 3072, 0.01)],
+        ]),
+        '*generateContent*' => function (Request $request) use (&$payloads) {
+            $payloads[] = $request->data();
+
+            return Http::response([
+                'candidates' => [['content' => ['parts' => [['text' => 'Here is a recommendation for you!']]]]],
+            ]);
+        },
+    ]);
+
+    $res1 = $this->postJson('/chat', ['message' => 'Find rooms in Boracay']);
+    $res1->assertOk();
+    $token = $res1->json('session_token');
+
+    $res2 = $this->postJson('/chat', ['message' => 'Is that room available?', 'session_token' => $token]);
+    $res2->assertOk();
+
+    foreach ($payloads as $payload) {
+        expect($payload['contents'])->toHaveCount(1);
+    }
+    expect($res2->json('trace.intent'))->toBe('AVAILABILITY_QUERY')
+        ->and($res2->json('trace.response_mode'))->toBe('grounded');
+});
+
+test('grounded generation uses the configured temperature', function () {
+    config(['services.gemini.chat_grounded_temperature' => 0.7]);
+    $this->hotel->update([
+        'embedding' => '['.implode(',', array_fill(0, 3072, '0.01')).']',
+    ]);
+    $payloads = [];
+    Http::fake([
+        '*embedContent*' => Http::response([
+            'embedding' => ['values' => array_fill(0, 3072, 0.01)],
+        ]),
+        '*generateContent*' => function (Request $request) use (&$payloads) {
+            $payloads[] = $request->data();
+
+            return Http::response([
+                'candidates' => [['content' => ['parts' => [['text' => 'Here is a recommendation for you!']]]]],
+            ]);
+        },
+    ]);
+
+    $this->postJson('/chat', ['message' => 'Find hotels in Boracay'])->assertOk();
+
+    expect(end($payloads)['generationConfig']['temperature'])->toEqual(0.7);
+});
+
+test('explicit destination ignores profile destination but bare recommendation is labeled personalized', function () {
+    $embedding = '['.implode(',', array_fill(0, 3072, '0.01')).']';
+    $this->hotel->update(['embedding' => $embedding]);
+    $elnido = DestinationModel::factory()->create(['name' => 'El Nido']);
+    HotelModel::factory()->create([
+        'hotel_name' => 'El Nido Escape',
+        'destination_id' => $elnido->id,
+        'type' => 'Resort',
+        'hotel_description' => 'A test resort.',
+        'specific_address' => 'Station 1',
+        'latitude' => 11.9674,
+        'longitude' => 121.9251,
+        'embedding' => $embedding,
+    ]);
+    UserPreference::create(['user_id' => $this->user->id, 'destination' => 'El Nido']);
+
+    $this->actingAs($this->user);
+
+    $bare = $this->postJson('/chat', ['message' => 'Recommend a hotel']);
+    $bare->assertOk();
+    expect($bare->json('retrieved_hotels'))->not->toBeEmpty();
+    expect($bare->json('reply'))->toContain(ChatbotService::PERSONALIZED_LABEL);
+    expect($bare->json('trace.response_mode'))->toBe('personalized');
+
+    $explicit = $this->postJson('/chat', ['message' => 'Find hotels in Boracay']);
+    $explicit->assertOk();
+    $hotels = $explicit->json('retrieved_hotels');
+    expect($hotels)->not->toBeEmpty();
+    foreach ($hotels as $hotel) {
+        expect($hotel['destination'])->toBe('Boracay');
+    }
+    expect($explicit->json('reply'))->not->toContain(ChatbotService::PERSONALIZED_LABEL);
+    expect($explicit->json('trace.response_mode'))->toBe('grounded');
+});
+
+test('chat response carries trace id and hygienic diagnostic context', function () {
+    $this->hotel->update([
+        'embedding' => '['.implode(',', array_fill(0, 3072, '0.01')).']',
+    ]);
+
+    $res = $this->postJson('/chat', ['message' => 'Find hotels in Boracay']);
+    $res->assertOk();
+
+    $traceId = $res->json('trace_id');
+    expect($traceId)->toBeString();
+    expect(preg_match('/^[0-9a-f-]{36}$/i', (string) $traceId))->toBe(1);
+
+    $trace = $res->json('trace');
+    expect($trace['trace_id'])->toBe($traceId);
+    foreach (['intent', 'response_mode', 'history_used', 'constraints', 'retrieval_ids', 'model', 'temperature'] as $key) {
+        expect($trace)->toHaveKey($key);
+    }
+    expect($trace['intent'])->toBe('HOTEL_SEARCH');
+
+    $session = ChatSession::where('session_token', $res->json('session_token'))->firstOrFail();
+    $bot = $session->messages()->where('sender', 'bot')->latest('id')->firstOrFail();
+    expect($bot->context_data['trace']['trace_id'])->toBe($traceId);
+
+    $blob = json_encode($bot->context_data);
+    expect($blob)->not->toContain($session->session_token);
+    expect($blob)->not->toContain('USER QUERY:');
 });

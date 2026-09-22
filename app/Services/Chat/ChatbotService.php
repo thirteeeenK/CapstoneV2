@@ -22,6 +22,7 @@ use App\Services\RoomAvailabilityService;
 use App\Services\WeatherService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class ChatbotService
 {
@@ -31,6 +32,27 @@ class ChatbotService
      * reply ends up with the nudge twice).
      */
     public const GUEST_NUDGE = "You're chatting as a guest — log in or register for the full experience, or contact SUNNYTRIPS TRAVEL SERVICES at 09682447153 for more inquiries.";
+
+    /**
+     * Short label marking a recommendation as profile-driven. Shown only when
+     * the request lacks explicit factual constraints and the signed-in user
+     * has saved onboarding preferences, so intentional per-account differences
+     * are explainable instead of looking like inconsistency.
+     */
+    public const PERSONALIZED_LABEL = 'Personalized for your saved trip preferences.';
+
+    /**
+     * Intents whose replies are database/live-data grounded (no chat history
+     * sent to the model). Everything else deterministic uses grounded too;
+     * only GENERAL_TALK sends recent history.
+     */
+    protected const RECOMMENDATION_INTENTS = [
+        IntentRouter::ROOM_SEARCH,
+        IntentRouter::HOTEL_SEARCH,
+        IntentRouter::ACTIVITY_SEARCH,
+        IntentRouter::PACKAGE_SEARCH,
+        IntentRouter::ADDON_SEARCH,
+    ];
 
     public function __construct(
         protected GeminiService $gemini,
@@ -60,7 +82,10 @@ class ChatbotService
         // chatbot path (and are persisted for the future admin). Only a
         // HUMAN_ACTIVE ticket (admin claimed) disables the AI.
         $pendingHandoff = $inquiry && $inquiry->status === SupportInquiry::STATUS_PENDING;
-        $aiBase = ['status' => 'success', 'control' => 'ai', 'session_token' => $session->session_token];
+        // Opaque per-request trace: returned to the widget and stored with the
+        // persisted bot message so testers can report wrong answers by ID.
+        $traceId = (string) Str::uuid();
+        $aiBase = ['status' => 'success', 'control' => 'ai', 'session_token' => $session->session_token, 'trace_id' => $traceId];
         if ($pendingHandoff) {
             $aiBase['handoff_status'] = SupportInquiry::STATUS_PENDING;
         }
@@ -79,7 +104,7 @@ class ChatbotService
         if ($lastBot && $this->isWeatherAdvisoryFollowUp($message, $lastBot)) {
             $reply = $this->handleWeatherAdvisory($message, $session, $user);
             $text = $reply['reply'] ?? 'Sorry, I could not process that request. Please try again.';
-            $this->conversation->persist($session, 'bot', $text, $reply);
+            $reply = $this->finalizeBotReply($session, $text, $reply, IntentRouter::WEATHER_QUERY, 'grounded', [], false, $traceId);
 
             return array_merge($aiBase, ['reply' => $text], $reply);
         }
@@ -92,7 +117,7 @@ class ChatbotService
             $constraints = $this->inheritRoomContext($constraints, $session);
             $reply = $this->handleAvailabilityQuery($message, $constraints, $user, $session);
             $text = $reply['reply'] ?? 'Sorry, I could not process that request. Please try again.';
-            $this->conversation->persist($session, 'bot', $text, $reply);
+            $reply = $this->finalizeBotReply($session, $text, $reply, IntentRouter::AVAILABILITY_QUERY, 'grounded', $constraints, false, $traceId);
 
             return array_merge($aiBase, ['reply' => $text], $reply);
         }
@@ -106,7 +131,7 @@ class ChatbotService
             unset($constraints['room_id'], $constraints['room_name']);
             $reply = $this->handleAvailabilityQuery($message, $constraints, $user, $session);
             $text = $reply['reply'] ?? 'Sorry, I could not process that request. Please try again.';
-            $this->conversation->persist($session, 'bot', $text, $reply);
+            $reply = $this->finalizeBotReply($session, $text, $reply, IntentRouter::AVAILABILITY_QUERY, 'grounded', $constraints, false, $traceId);
 
             return array_merge($aiBase, ['reply' => $text], $reply);
         }
@@ -117,7 +142,9 @@ class ChatbotService
         } elseif ($this->isFollowUpQuery($message, $lastBot)) {
             $reply = $this->handleFollowUp($message, $session);
             $text = $reply['reply'] ?? 'Sorry, I could not process that request. Please try again.';
-            $this->conversation->persist($session, 'bot', $text, $reply);
+            // Follow-ups draw only on the session's own validated retrieval
+            // state (structured cards), never on multi-turn model history.
+            $reply = $this->finalizeBotReply($session, $text, $reply, null, 'grounded', [], false, $traceId);
 
             return array_merge($aiBase, ['reply' => $text], $reply);
         }
@@ -138,9 +165,17 @@ class ChatbotService
                 $searchQuery = $message;
             }
             $constraints = $this->intentRouter->extractConstraints($searchQuery);
+            // A refinement re-offered via "yes search" carries the same weak
+            // entity matches: strip them so scope inherits from saved state.
+            if ($lastBot && $this->isFilterRefinementQuery($searchQuery, $lastBot) && ! $this->startsNewSearch(mb_strtolower(trim($searchQuery)))) {
+                $constraints = $this->stripWeakEntityMatches($searchQuery, $constraints);
+            }
+            // Message-derived scope snapshot: resolvers below inject state,
+            // which must never read back as "explicit".
+            $affirmScope = $this->hasExplicitScope($constraints);
             $constraints = $this->resolveConversationalDestination($constraints, $session);
             $constraints = $this->resolveDefaultDestination($constraints, $user);
-            $constraints = $this->inheritConversationalConstraints($searchQuery, $constraints, $session);
+            $constraints = $this->inheritConversationalConstraints($searchQuery, $constraints, $session, $affirmScope);
             $reply = match ($intent) {
                 IntentRouter::ACTIVITY_SEARCH => $this->handleActivitySearch($searchQuery, $constraints, $user, $session),
                 IntentRouter::HOTEL_SEARCH => $this->handleHotelSearch($searchQuery, $constraints, $user, $session),
@@ -156,7 +191,7 @@ class ChatbotService
                 }
             }
             $text = $reply['reply'] ?? 'Sorry, I could not process that request. Please try again.';
-            $this->conversation->persist($session, 'bot', $text, $reply);
+            $reply = $this->finalizeBotReply($session, $text, $reply, $intent, 'grounded', $constraints, false, $traceId);
 
             return array_merge($aiBase, ['reply' => $text], $reply);
         }
@@ -170,7 +205,7 @@ class ChatbotService
         $hasExplicitDest = (bool) $this->intentRouter->extractDestinationName($message);
         if ($faq && ! $isLegalQuery && ! $isBareFilter && ! $hasExplicitDest) {
             $reply = ['reply' => $faq->answer, 'faq' => ['id' => $faq->id, 'question' => $faq->question, 'answer' => $faq->answer]];
-            $this->conversation->persist($session, 'bot', $reply['reply'], $reply);
+            $reply = $this->finalizeBotReply($session, $reply['reply'], $reply, null, 'grounded', [], false, $traceId);
 
             return array_merge($aiBase, $reply);
         }
@@ -179,9 +214,22 @@ class ChatbotService
         $constraints = in_array($intent, [IntentRouter::GENERAL_TALK, IntentRouter::DESTINATIONS_OVERVIEW, IntentRouter::BOOKING_STATUS, IntentRouter::LEGAL_QUERY], true)
             ? []
             : $this->intentRouter->extractConstraints($message);
+        // Pre-resolution snapshot: personalization labeling is decided from
+        // what the user actually typed, not from inherited/profile state.
+        // Bare amenity refinements ("luxury quiet pool") often token-match a
+        // catalog name ("luxury" in "Boracay Luxury Pool Resort") without
+        // naming it: drop those weak matches so the turn inherits scope and
+        // keeps its filter badge instead of pinning to a guessed entity.
+        if ($lastBot && $this->isFilterRefinementQuery($message, $lastBot) && ! $this->startsNewSearch(mb_strtolower(trim($message)))) {
+            $constraints = $this->stripWeakEntityMatches($message, $constraints);
+        }
+        $rawConstraints = $constraints;
+        // Message-derived scope snapshot: the resolvers below inject
+        // retrieval/profile state, which must never read back as "explicit".
+        $messageScope = $this->hasExplicitScope($constraints);
         $constraints = $this->resolveConversationalDestination($constraints, $session);
         $constraints = $this->resolveDefaultDestination($constraints, $user);
-        $constraints = $this->inheritConversationalConstraints($message, $constraints, $session);
+        $constraints = $this->inheritConversationalConstraints($message, $constraints, $session, $messageScope);
 
         // Semantic catalog routing: keyword misses (e.g. a new offering with no
         // keyword yet) fall back to embeddings instead of defaulting to rooms.
@@ -197,9 +245,10 @@ class ChatbotService
         ) {
             if ($intent === IntentRouter::GENERAL_TALK) {
                 $constraints = $this->intentRouter->extractConstraints($message);
+                $generalScope = $this->hasExplicitScope($constraints);
                 $constraints = $this->resolveConversationalDestination($constraints, $session);
                 $constraints = $this->resolveDefaultDestination($constraints, $user);
-                $constraints = $this->inheritConversationalConstraints($message, $constraints, $session);
+                $constraints = $this->inheritConversationalConstraints($message, $constraints, $session, $generalScope);
             }
             $catalog = $this->gemini->resolveSemanticCatalog($message, $constraints['destination_id'] ?? null);
             $intent = match ($catalog) {
@@ -230,7 +279,13 @@ class ChatbotService
         };
 
         $text = $reply['reply'] ?? 'Sorry, I could not process that request. Please try again.';
-        $this->conversation->persist($session, 'bot', $text, $reply);
+        $historyUsed = $intent === IntentRouter::GENERAL_TALK;
+        $mode = $historyUsed ? 'conversational' : 'grounded';
+        if (! $historyUsed) {
+            [$reply, $mode] = $this->decorateRecommendationReply($reply, $intent, $rawConstraints, $user);
+            $text = $reply['reply'] ?? $text;
+        }
+        $reply = $this->finalizeBotReply($session, $text, $reply, $intent, $mode, $constraints, $historyUsed, $traceId);
 
         return array_merge($aiBase, ['reply' => $text], $reply);
     }
@@ -794,6 +849,7 @@ class ChatbotService
 
     protected function handleRoomSearch(string $query, array $constraints, ?User $user, ChatSession $session): array
     {
+        $explicitScope = $this->hasExplicitScope($constraints);
         $constraints = $this->resolveConversationalDestination($constraints, $session);
         $constraints = $this->resolveDefaultDestination($constraints, $user);
         $scored = null;
@@ -803,7 +859,7 @@ class ChatbotService
         if ($priceIntent) {
             $scored = $this->cheapestRoomsFirst($constraints, $priceIntent);
         }
-        if ($scored === null && $this->isPersonalized($user)) {
+        if ($scored === null && $this->isPersonalized($user) && ! $explicitScope) {
             $blended = $this->blendedVector($user, $query);
             if ($blended) {
                 $roomsQuery = RoomType::with('hotel.destination')
@@ -951,7 +1007,7 @@ class ChatbotService
         }
 
         $context = $this->gemini->extractPricingContext($context, $query);
-        $prompt = $this->buildPrompt('addon-search', $context, $query, $user);
+        $prompt = $this->buildPrompt('addon-search', $context, $query, $user, ['explicit_scope' => $this->hasExplicitScope($constraints)]);
         $reply = $this->stripRankLineIfSingle($this->geminiChatResponse($prompt, $session), $scored);
         if ($notice = $this->budgetNotice($scored, $constraints)) {
             $reply = $notice."\n\n".$reply;
@@ -1084,6 +1140,7 @@ class ChatbotService
 
     protected function handleHotelSearch(string $query, array $constraints, ?User $user, ChatSession $session): array
     {
+        $explicitScope = $this->hasExplicitScope($constraints);
         $constraints = $this->resolveConversationalDestination($constraints, $session);
         $constraints = $this->resolveDefaultDestination($constraints, $user);
         $limit = (int) ($constraints['limit'] ?? 0);
@@ -1110,7 +1167,7 @@ class ChatbotService
         if ($scored === null) {
             if ($priceIntent) {
                 $scored = $this->cheapestHotelsFirst($constraints, $priceIntent, $limit);
-            } elseif ($this->isPersonalized($user)) {
+            } elseif ($this->isPersonalized($user) && ! $explicitScope) {
                 $blended = $this->blendedVector($user, $query);
                 if ($blended) {
                     $candidates = HotelModel::with('destination')
@@ -1201,7 +1258,7 @@ class ChatbotService
             $pb = $priceMap[$b['item']->id];
 
             if ($pa === $pb) {
-                return $b['score'] <=> $a['score'];
+                return ($b['score'] <=> $a['score']) ?: ($a['item']->id <=> $b['item']->id);
             }
 
             return $direction === 'expensive' ? $pb <=> $pa : $pa <=> $pb;
@@ -1222,7 +1279,7 @@ class ChatbotService
             $pb = (float) $b['item']->calculateNightlyRate($pax);
 
             if ($pa === $pb) {
-                return $b['score'] <=> $a['score'];
+                return ($b['score'] <=> $a['score']) ?: ($a['item']->id <=> $b['item']->id);
             }
 
             return $direction === 'expensive' ? $pb <=> $pa : $pa <=> $pb;
@@ -1358,6 +1415,7 @@ class ChatbotService
             'ordering' => $ordering,
             'result_count' => count($scored),
             'field' => $fieldIntent,
+            'explicit_scope' => $this->hasExplicitScope($constraints),
         ];
         if ($fieldIntent && count($scored) === 1) {
             $entity = $constraints[$nameKey] ?? null;
@@ -1560,6 +1618,11 @@ class ChatbotService
     protected function resolveConversationalDestination(array $constraints, ChatSession $session): array
     {
         if (! empty($constraints['destination_id'])) {
+            return $constraints;
+        }
+        // Explicitly scoped factual queries never borrow scope from another
+        // turn: identical prompts must resolve identically on every device.
+        if ($this->hasExplicitScope($constraints)) {
             return $constraints;
         }
         try {
@@ -1767,8 +1830,9 @@ class ChatbotService
 
     protected function resolveDefaultDestination(array $constraints, ?User $user): array
     {
-        // Conversational destination already resolved in handle(); keep it if present
-        if (! empty($constraints['destination_id'])) {
+        // Conversational destination already resolved in handle(); keep it if present.
+        // Explicitly scoped queries never inherit the profile destination.
+        if (! empty($constraints['destination_id']) || $this->hasExplicitScope($constraints)) {
             return $constraints;
         }
         if (! $this->isPersonalized($user)) {
@@ -1799,7 +1863,7 @@ class ChatbotService
      * current message always win; a fresh topic resets stored state so
      * nothing leaks across conversations (e.g. Boracay → El Nido switch).
      */
-    protected function inheritConversationalConstraints(string $message, array $constraints, ChatSession $session): array
+    protected function inheritConversationalConstraints(string $message, array $constraints, ChatSession $session, ?bool $explicitScope = null): array
     {
         $keys = ['pax', 'max_price', 'destination_id', 'destination_name', 'check_in_date', 'check_out_date', 'nights'];
         try {
@@ -1813,7 +1877,7 @@ class ChatbotService
             $metadata = $session->metadata ?? [];
             $state = $metadata['constraint_state'] ?? [];
 
-            if ($isContinuation) {
+            if ($isContinuation && ! ($explicitScope ?? $this->hasExplicitScope($constraints))) {
                 foreach ($keys as $key) {
                     if (empty($constraints[$key]) && ! empty($state[$key])) {
                         $constraints[$key] = $state[$key];
@@ -2019,6 +2083,7 @@ class ChatbotService
 
     protected function handleActivitySearch(string $query, array $constraints, ?User $user, ChatSession $session): array
     {
+        $explicitScope = $this->hasExplicitScope($constraints);
         $constraints = $this->resolveConversationalDestination($constraints, $session);
         $constraints = $this->resolveDefaultDestination($constraints, $user);
 
@@ -2049,7 +2114,7 @@ class ChatbotService
         if ($scored === null) {
             if ($priceIntent) {
                 $scored = $this->cheapestActivitiesFirst($constraints, $priceIntent);
-            } elseif ($this->isPersonalized($user)) {
+            } elseif ($this->isPersonalized($user) && ! $explicitScope) {
                 $blended = $this->blendedVector($user, $query);
                 if ($blended) {
                     $candidates = ActivityModel::with('destination')
@@ -2065,7 +2130,7 @@ class ChatbotService
             if ($scored === null) {
                 $scored = $this->gemini->searchActivities($query, $window, $constraints['destination_id'] ?? null, $constraints);
                 // If personalized default added destination but global search returned broader set, re-rank with blended for that destination
-                if ($this->isPersonalized($user) && ! empty($constraints['destination_id']) && ! empty($scored)) {
+                if ($this->isPersonalized($user) && ! $explicitScope && ! empty($constraints['destination_id']) && ! empty($scored)) {
                     $blended = $this->blendedVector($user, $query);
                     if ($blended) {
                         $destCandidates = ActivityModel::with('destination')
@@ -2157,7 +2222,7 @@ class ChatbotService
             return ['reply' => $this->noResultsReply('activities')];
         }
 
-        $prompt = $this->buildPrompt('activity-compare', $context, $query, $user);
+        $prompt = $this->buildPrompt('activity-compare', $context, $query, $user, ['explicit_scope' => true]);
         $reply = $this->geminiChatResponse($prompt, $session);
 
         return [
@@ -2184,7 +2249,7 @@ class ChatbotService
             $pb = $this->activityPrice($b['item']);
 
             if ($pa === $pb) {
-                return $b['score'] <=> $a['score'];
+                return ($b['score'] <=> $a['score']) ?: ($a['item']->id <=> $b['item']->id);
             }
 
             return $direction === 'expensive' ? $pb <=> $pa : $pa <=> $pb;
@@ -2195,6 +2260,7 @@ class ChatbotService
 
     protected function handlePackageSearch(string $query, array $constraints, ?User $user, ChatSession $session): array
     {
+        $explicitScope = $this->hasExplicitScope($constraints);
         $constraints = $this->resolveConversationalDestination($constraints, $session);
         $constraints = $this->resolveDefaultDestination($constraints, $user);
         $destinationId = $constraints['destination_id'] ?? null;
@@ -2211,7 +2277,7 @@ class ChatbotService
         }
 
         if ($scored === null) {
-            if ($this->isPersonalized($user)) {
+            if ($this->isPersonalized($user) && ! $explicitScope) {
                 $blended = $this->blendedVector($user, $query);
                 if ($blended) {
                     $candidates = Package::with('destination')
@@ -2253,7 +2319,7 @@ class ChatbotService
         }
 
         $context = $this->gemini->extractPricingContext($context, $query);
-        $prompt = $this->buildPrompt('package-search', $context, $query, $user);
+        $prompt = $this->buildPrompt('package-search', $context, $query, $user, ['explicit_scope' => $this->hasExplicitScope($constraints)]);
         $reply = $this->stripRankLineIfSingle($this->geminiChatResponse($prompt, $session), $scored);
         if ($notice = $this->budgetNotice($scored, $constraints)) {
             $reply = $notice."\n\n".$reply;
@@ -2285,7 +2351,7 @@ class ChatbotService
         }
 
         $context = $itinerary['context'];
-        $prompt = $this->buildPrompt('itinerary', $context, $query, $user);
+        $prompt = $this->buildPrompt('itinerary', $context, $query, $user, ['explicit_scope' => $this->hasExplicitScope($constraints)]);
         $reply = $this->geminiChatResponse($prompt, $session);
 
         return [
@@ -2517,7 +2583,7 @@ class ChatbotService
             $query
         );
 
-        $prompt = $this->buildPrompt('availability', $context, $query, $user);
+        $prompt = $this->buildPrompt('availability', $context, $query, $user, ['explicit_scope' => $this->hasExplicitScope($constraints)]);
         $reply = $this->geminiChatResponse($prompt, $session);
 
         // Formatted rooms for widget cards (so alternatives also render as cards with Best Match badge)
@@ -3176,7 +3242,9 @@ class ChatbotService
         }
 
         $prompt = $grounding.'USER QUERY: '.$query;
-        $reply = $this->geminiChatResponse($prompt, $session);
+        // General chat is the only conversational path: recent history is
+        // intentionally supplied so small talk stays coherent.
+        $reply = $this->geminiChatResponse($prompt, $session, true);
 
         return ['reply' => $reply];
     }
@@ -3286,7 +3354,9 @@ class ChatbotService
 
         if ($user) {
             $header .= "\n- The user is logged in as {$user->name}.";
-            if ($this->isPersonalized($user)) {
+            // Explicitly scoped factual queries get no profile tailoring, so
+            // the same prompt yields the same wording on every account.
+            if (! ($options['explicit_scope'] ?? false) && $this->isPersonalized($user)) {
                 $profile = $this->buildUserProfileText($user);
                 if ($profile) {
                     $header .= "\n- Personalized for this user (from onboarding quiz). Use it to tailor why #1 is best:\n".$profile;
@@ -3307,8 +3377,206 @@ class ChatbotService
         return $this->geminiChatSystemPrompt();
     }
 
-    protected function geminiChatResponse(string $prompt, ChatSession $session): string
+    // ────────────────────────────────────────────────
+    //  Cross-device consistency helpers
+    // ────────────────────────────────────────────────
+
+    /**
+     * Whether the current message already pins the search scope (named
+     * destination / hotel / room / activity / package / add-on / place).
+     * Explicitly scoped queries skip conversational inheritance, profile
+     * destination injection, and personalization blending so the same text
+     * resolves the same way on every device, session, and account.
+     */
+    protected function hasExplicitScope(array $constraints): bool
     {
+        foreach (['destination_id', 'destination_name', 'hotel_id', 'hotel_name', 'room_id', 'room_name', 'addon_id', 'addon_name', 'package_name', 'activity_name'] as $key) {
+            if (! empty($constraints[$key])) {
+                return true;
+            }
+        }
+
+        return ! empty($constraints['place_names']);
+    }
+
+    /**
+     * Drop entity-name extractions that are not literally mentioned in the
+     * message (single-token or fuzzy catalog matches). A full-name substring
+     * is a strong explicit mention and is kept; anything weaker is usually
+     * filter vocabulary ("luxury", "pool") and must not pin search scope.
+     */
+    protected function stripWeakEntityMatches(string $message, array $constraints): array
+    {
+        $lower = mb_strtolower($message);
+        foreach ([
+            'hotel_name' => 'hotel_id',
+            'room_name' => 'room_id',
+            'activity_name' => 'activity_id',
+            'package_name' => null,
+            'addon_name' => 'addon_id',
+        ] as $nameKey => $idKey) {
+            $name = $constraints[$nameKey] ?? null;
+            if (is_string($name) && $name !== '' && ! str_contains($lower, mb_strtolower($name))) {
+                unset($constraints[$nameKey]);
+                if ($idKey !== null) {
+                    unset($constraints[$idKey]);
+                }
+            }
+        }
+        // Same weak-match problem for router place entries (a hotel/activity
+        // token-matched as a "place"): keep only literally mentioned names.
+        if (! empty($constraints['place_names']) && is_array($constraints['place_names'])) {
+            $kept = array_values(array_filter(
+                $constraints['place_names'],
+                fn ($place) => is_array($place) && isset($place['name']) && str_contains($lower, mb_strtolower((string) $place['name']))
+            ));
+            if ($kept !== []) {
+                $constraints['place_names'] = $kept;
+            } else {
+                unset($constraints['place_names']);
+            }
+        }
+
+        return $constraints;
+    }
+
+    /**
+     * Normalize constraints to the compact, non-sensitive subset stored in
+     * the diagnostic trace. Never includes raw profile notes, IPs, or tokens.
+     */
+    protected function normalizeTraceConstraints(array $constraints): array
+    {
+        $trace = [];
+        foreach (['destination_id', 'destination_name', 'hotel_id', 'hotel_name', 'room_id', 'room_name', 'activity_name', 'package_name', 'addon_name', 'max_price', 'pax', 'check_in_date', 'check_out_date', 'nights'] as $key) {
+            if (! empty($constraints[$key])) {
+                $trace[$key] = $constraints[$key];
+            }
+        }
+        if (! empty($constraints['place_names'])) {
+            // Type + name only: entries may carry full model payloads
+            // (including embedding vectors) that must never be persisted.
+            $places = [];
+            foreach ((array) $constraints['place_names'] as $place) {
+                if (is_array($place) && isset($place['name'])) {
+                    $places[] = ['type' => $place['type'] ?? null, 'name' => $place['name']];
+                }
+            }
+            if ($places !== []) {
+                $trace['place_names'] = $places;
+            }
+        }
+
+        return $trace;
+    }
+
+    /**
+     * Retrieval IDs in displayed order, grouped by catalog, derived from the
+     * reply payload. Presence flags cover non-list results.
+     */
+    protected function traceRetrievalIds(array $reply): array
+    {
+        $ids = [];
+        foreach ([
+            'retrieved_rooms' => 'rooms',
+            'retrieved_hotels' => 'hotels',
+            'retrieved_activities' => 'activities',
+            'retrieved_packages' => 'packages',
+            'retrieved_addons' => 'addons',
+        ] as $key => $group) {
+            if (! empty($reply[$key]) && is_array($reply[$key])) {
+                $groupIds = [];
+                foreach ($reply[$key] as $card) {
+                    if (is_array($card) && isset($card['id'])) {
+                        $groupIds[] = (int) $card['id'];
+                    }
+                }
+                if ($groupIds !== []) {
+                    $ids[$group] = $groupIds;
+                }
+            }
+        }
+        foreach (['itinerary', 'availability', 'weather', 'booking', 'faq'] as $flag) {
+            if (! empty($reply[$flag])) {
+                $ids[$flag] = true;
+            }
+        }
+
+        return $ids;
+    }
+
+    protected function buildTrace(string $traceId, ?string $intent, string $mode, array $constraints, array $reply, bool $historyUsed): array
+    {
+        $settings = $this->gemini->chatGenerationSettings($historyUsed);
+
+        return [
+            'trace_id' => $traceId,
+            'intent' => $intent,
+            'response_mode' => $mode,
+            'history_used' => $historyUsed,
+            'constraints' => $this->normalizeTraceConstraints($constraints),
+            'retrieval_ids' => $this->traceRetrievalIds($reply),
+            'model' => config('services.gemini.chat_model'),
+            'temperature' => $settings['temperature'],
+        ];
+    }
+
+    /**
+     * Attach the diagnostic trace, persist the bot message, and return the
+     * reply (trace included, so the widget can show the trace ID).
+     */
+    protected function finalizeBotReply(ChatSession $session, string $text, array $reply, ?string $intent, string $mode, array $constraints, bool $historyUsed, string $traceId): array
+    {
+        $reply['trace'] = $this->buildTrace($traceId, $intent, $mode, $constraints, $reply, $historyUsed);
+        $this->conversation->persist($session, 'bot', $text, $reply);
+
+        return $reply;
+    }
+
+    protected function replyHasRetrievedCards(array $reply): bool
+    {
+        foreach (['retrieved_rooms', 'retrieved_hotels', 'retrieved_activities', 'retrieved_packages', 'retrieved_addons'] as $key) {
+            if (! empty($reply[$key])) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Mark a recommendation as personalized (with explainable label) only
+     * when the request lacks explicit factual constraints and the signed-in
+     * user has saved preferences. Returns [reply, mode].
+     */
+    protected function decorateRecommendationReply(array $reply, string $intent, array $rawConstraints, ?User $user): array
+    {
+        if (! in_array($intent, self::RECOMMENDATION_INTENTS, true)
+            || ! $this->isPersonalized($user)
+            || $this->hasExplicitScope($rawConstraints)
+            || ! $this->replyHasRetrievedCards($reply)) {
+            return [$reply, 'grounded'];
+        }
+        $reply['reply'] = self::PERSONALIZED_LABEL."\n\n".($reply['reply'] ?? '');
+        $reply['personalized'] = true;
+
+        return [$reply, 'personalized'];
+    }
+
+    protected function geminiChatResponse(string $prompt, ChatSession $session, bool $includeHistory = false): string
+    {
+        // Grounded path (default): only the fully constructed database /
+        // live-data prompt is sent, so identical factual queries resolve
+        // identically regardless of device, session, or account history.
+        if (! $includeHistory) {
+            return $this->gemini->generateChatResponse(
+                $this->geminiChatSystemPrompt(),
+                [],
+                $prompt,
+                false
+            ) ?? 'I apologize, but I could not generate a response at this moment. Please try again.';
+        }
+
+        // Conversational path (general chat only): recent history included.
         // The current user message has already been persisted. Exclude it from
         // history because generateChatResponse appends $prompt as the one current turn.
         $history = $this->conversation->history($session, 6, true);
@@ -3328,7 +3596,8 @@ class ChatbotService
         return $this->gemini->generateChatResponse(
             $this->geminiChatSystemPrompt(),
             $history,
-            $prompt
+            $prompt,
+            true
         ) ?? 'I apologize, but I could not generate a response at this moment. Please try again.';
     }
 
