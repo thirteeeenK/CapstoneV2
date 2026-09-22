@@ -233,7 +233,10 @@
           },
 
           isPerPersonRate(rateStr) {
-              return /\/person|per person|\/pax|per pax|\/head|per head/i.test(String(rateStr || ''));
+              const s = String(rateStr || '').toLowerCase();
+              // Mirror of ActivityModel::isPerPersonRate(): default per-person,
+              // only explicit flat markers opt out into a one-charge group rate.
+              return !/flat|per group|group rate|per unit|\/unit|per van|per boat|per trip|private|\/hour|per hour|hourly|per booking|per session/i.test(s);
           },
 
           parseActivityRate(rateStr, pax) {

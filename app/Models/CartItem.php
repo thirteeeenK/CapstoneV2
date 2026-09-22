@@ -256,8 +256,10 @@ class CartItem extends Model
             $effectivePax = max(1, (int) ($this->selected_pax ?: 1), (int) ($this->quantity ?: 1));
 
             if ($item && method_exists($item, 'isPerPersonRate') && ! $item->isPerPersonRate()) {
-                // Flat group rate (e.g. ₱2,000 for E-Trike 1-6 persons)
-                return $unitRate * max(1, $this->quantity);
+                // Flat group rate (e.g. hourly kayak rental for a fixed price):
+                // one charge per line — quantity doubles as pax for activities
+                // and must not multiply a flat rate.
+                return $unitRate;
             }
 
             // Default activity tickets: unit rate per pax * effective pax

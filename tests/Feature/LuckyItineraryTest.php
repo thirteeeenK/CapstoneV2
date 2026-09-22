@@ -76,6 +76,10 @@ it('generates an itinerary where the hotel and every activity are in the same de
     foreach ($itinerary['activities'] as $activity) {
         expect((int) ActivityModel::find($activity['id'])->destination_id)->toBe((int) $dest->id);
     }
+
+    foreach ($itinerary['activities'] as $activity) {
+        expect($activity)->toHaveKey('is_per_person');
+    }
 });
 
 it('keeps the total within the budget and flags when nothing fits', function () {
@@ -166,7 +170,8 @@ it('adds the accepted itinerary to the cart as a single lucky group', function (
 
     $response->assertOk()
         ->assertJson(['success' => true])
-        ->assertJsonPath('redirect_url', route('cart.index'));
+        ->assertJsonStructure(['group_id', 'cart_count', 'cart_total'])
+        ->assertJsonMissingPath('redirect_url');
 
     $items = CartItem::where('user_id', $this->user->id)->orderBy('item_type')->get();
     expect($items)->toHaveCount(3);
@@ -182,6 +187,36 @@ it('adds the accepted itinerary to the cart as a single lucky group', function (
     expect($activityItems)->toHaveCount(2)
         ->and($activityItems->pluck('lucky_group_id')->unique())->toHaveCount(1)
         ->and($activityItems->first()->lucky_group_id)->toBe($roomItem->lucky_group_id);
+});
+
+it('creates separate cart lines when the same lucky itinerary is accepted twice', function () {
+    $data = createLuckyDestination('El Nido');
+    $dest = $data['destination'];
+    $activityIds = $data['activities']->pluck('id')->all();
+
+    $payload = [
+        'destination_id' => $dest->id,
+        'room_id' => $data['room']->id,
+        'activity_ids' => $activityIds,
+        'nights' => 2,
+        'pax' => 2,
+        'max_budget' => 4000,
+        'check_in_date' => '2026-12-01',
+        'check_out_date' => '2026-12-03',
+    ];
+
+    $first = $this->actingAs($this->user)->postJson(route('lucky.accept'), $payload)->assertOk();
+    $second = $this->actingAs($this->user)->postJson(route('lucky.accept'), $payload)->assertOk();
+
+    expect($second->json('group_id'))->not->toBe($first->json('group_id'));
+
+    $rooms = CartItem::where('user_id', $this->user->id)->where('item_type', 'room')->get();
+    expect($rooms)->toHaveCount(2)
+        ->and($rooms->pluck('quantity')->all())->each->toBe(1)
+        ->and($rooms->pluck('lucky_group_id')->unique())->toHaveCount(2);
+
+    $activities = CartItem::where('user_id', $this->user->id)->where('item_type', 'activity')->get();
+    expect($activities)->toHaveCount(count($activityIds) * 2);
 });
 
 it('rejects tampered or over-budget accepts and requires authentication', function () {
@@ -295,4 +330,90 @@ it('books a lucky group through the existing checkout flow unchanged', function 
         ->and($booking->items->where('item_type', 'activity')->count())->toBe(2);
 
     expect(CartItem::where('user_id', $this->user->id)->count())->toBe(0);
+});
+
+it('scales a bare unit activity rate per pax so preview and basket totals match', function () {
+    $data = createLuckyDestination('El Nido');
+    $dest = $data['destination'];
+    $van = ActivityModel::factory()->create([
+        'destination_id' => $dest->id,
+        'activity_name' => '6-7 Destinations Aircon Van',
+        'category' => 'Land Tour',
+        'activity_level' => 'Sightseeing',
+        'rate' => '₱3,700/person',
+        'duration' => '8 hours',
+    ]);
+
+    $response = $this->actingAs($this->user)->postJson(route('lucky.accept'), [
+        'destination_id' => $dest->id,
+        'room_id' => $data['room']->id,
+        'activity_ids' => [$van->id],
+        'nights' => 2,
+        'pax' => 2,
+        'max_budget' => 10000,
+        'check_in_date' => '2026-12-01',
+        'check_out_date' => '2026-12-03',
+    ])->assertOk();
+
+    $activityItem = CartItem::where('user_id', $this->user->id)->where('item_type', 'activity')->first();
+    // room 1000/night × 2 nights = 2000 + van 3700 × 2 pax = 7400 → 9400 on both sides
+    expect($activityItem->subtotal)->toBe(7400.0)
+        ->and((float) $response->json('cart_total'))->toBe(9400.0);
+
+    // Per-person rates still scale with pax.
+    $perPerson = $data['activities']->first();
+    $this->actingAs($this->user)->postJson(route('cart.add'), [
+        'item_type' => 'activity',
+        'item_id' => $perPerson->id,
+        'quantity' => 1,
+        'selected_pax' => 2,
+    ])->assertOk()->assertJson(['success' => true]);
+
+    $scaled = CartItem::where('user_id', $this->user->id)
+        ->where('item_type', 'activity')->where('item_id', $perPerson->id)->first();
+    expect($scaled->subtotal)->toBe(1000.0);
+});
+
+it('charges a genuine flat hourly activity rate once for 2 pax on both sides', function () {
+    $data = createLuckyDestination('El Nido');
+    $dest = $data['destination'];
+    $kayak = ActivityModel::factory()->create([
+        'destination_id' => $dest->id,
+        'activity_name' => 'Kayak Rental',
+        'category' => 'Water Activity',
+        'activity_level' => 'Relaxing',
+        'rate' => '₱400/hour',
+        'duration' => '1 hour',
+    ]);
+
+    expect($kayak->isPerPersonRate())->toBeFalse();
+
+    $preview = $this->actingAs($this->user)->postJson(route('lucky.generate'), [
+        'destination_id' => $dest->id,
+        'max_budget' => 50000,
+        'activity_count' => 3,
+        'nights' => 2,
+        'pax' => 2,
+    ])->assertOk()->json('itinerary');
+
+    $previewActivity = collect($preview['activities'])->firstWhere('id', $kayak->id);
+    // Flat hourly rate: one charge regardless of pax.
+    expect($previewActivity['is_per_person'])->toBeFalse()
+        ->and((float) $previewActivity['rate_for_pax'])->toBe(400.0);
+
+    $response = $this->actingAs($this->user)->postJson(route('lucky.accept'), [
+        'destination_id' => $dest->id,
+        'room_id' => $data['room']->id,
+        'activity_ids' => [$kayak->id],
+        'nights' => 2,
+        'pax' => 2,
+        'max_budget' => 50000,
+        'check_in_date' => '2026-12-01',
+        'check_out_date' => '2026-12-03',
+    ])->assertOk();
+
+    $activityItem = CartItem::where('user_id', $this->user->id)->where('item_type', 'activity')->first();
+    // room 2000 + flat 400 = 2400 on both sides
+    expect($activityItem->subtotal)->toBe(400.0)
+        ->and((float) $response->json('cart_total'))->toBe(2400.0);
 });

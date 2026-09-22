@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Concerns\ResolvesImages;
 use App\Models\ActivityModel;
 use App\Models\DestinationModel;
 use App\Models\HotelModel;
@@ -11,6 +12,8 @@ use Illuminate\Support\Collection;
 
 class LuckyItineraryService
 {
+    use ResolvesImages;
+
     public const MAX_ATTEMPTS = 40;
 
     /**
@@ -258,19 +261,21 @@ class LuckyItineraryService
         if (is_string($roomImages)) {
             $roomImages = json_decode($roomImages, true);
         }
+        $roomRaw = is_array($roomImages) && count($roomImages) > 0 ? $roomImages[0] : null;
+        $hotelRaw = is_array($hotelImages) && count($hotelImages) > 0 ? $hotelImages[0] : null;
 
         return [
             'destination' => [
                 'id' => $destination->id,
                 'name' => $destination->name,
                 'region' => $destination->region,
-                'image' => $destination->image,
+                'image' => self::resolveImg($destination->image),
             ],
             'hotel' => [
                 'id' => $hotel->id,
                 'hotel_name' => $hotel->hotel_name,
                 'type' => $hotel->type,
-                'image' => is_array($hotelImages) && count($hotelImages) > 0 ? $hotelImages[0] : null,
+                'image' => self::resolveImg($hotelRaw),
             ],
             'room' => [
                 'id' => $room->id,
@@ -279,18 +284,29 @@ class LuckyItineraryService
                 'formatted_nightly_rate' => '₱'.number_format($room->calculateNightlyRate($pax), 2),
                 'max_occupancy' => $room->max_occupancy,
                 'bed_configuration' => $room->bed_configuration,
-                'image' => is_array($roomImages) && count($roomImages) > 0 ? $roomImages[0] : null,
+                'image' => self::resolveImg($roomRaw ?: $hotelRaw),
             ],
-            'activities' => $activities->map(fn (ActivityModel $activity) => [
-                'id' => $activity->id,
-                'activity_name' => $activity->activity_name,
-                'category' => $activity->category,
-                'activity_level' => $activity->activity_level,
-                'duration' => $activity->duration,
-                'rate' => $activity->rate,
-                'rate_for_pax' => $activity->calculateRateForPax($pax),
-                'formatted_rate' => '₱'.number_format($this->activityCost($activity, $pax), 2),
-            ])->values()->all(),
+            'activities' => $activities->map(function (ActivityModel $activity) use ($pax) {
+                $images = $activity->images;
+                if (is_string($images)) {
+                    $images = json_decode($images, true);
+                }
+                $raw = is_array($images) && count($images) > 0 ? $images[0] : null;
+
+                return [
+                    'id' => $activity->id,
+                    'activity_name' => $activity->activity_name,
+                    'category' => $activity->category,
+                    'activity_level' => $activity->activity_level,
+                    'duration' => $activity->duration,
+                    'rate' => $activity->rate,
+                    'rate_for_pax' => $activity->calculateRateForPax($pax),
+                    'formatted_unit_rate' => '₱'.number_format($activity->calculateRateForPax($pax), 2),
+                    'is_per_person' => $activity->isPerPersonRate(),
+                    'formatted_rate' => '₱'.number_format($this->activityCost($activity, $pax), 2),
+                    'image' => self::resolveActivityImage($raw, $activity->activity_name, $activity->category),
+                ];
+            })->values()->all(),
             'nights' => $nights,
             'pax' => $pax,
             'check_in_date' => $checkIn->format('Y-m-d'),

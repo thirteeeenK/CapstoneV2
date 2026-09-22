@@ -121,6 +121,14 @@ class CartService
             $query->where('check_in_date', $checkIn);
         }
 
+        if ($itemType === 'room' && $checkOut) {
+            $query->where('check_out_date', $checkOut);
+        }
+
+        if ($itemType === 'room' && $hasPax) {
+            $query->where('selected_pax', $selectedPax);
+        }
+
         if ($itemType === 'package') {
             // Share vs separate rooms are distinct cart lines.
             $roomOption ? $query->where('room_option', $roomOption) : $query->whereNull('room_option');
@@ -137,7 +145,7 @@ class CartService
             $selectedPax = $paxVal;
         }
 
-        $existingItem = $query->first();
+        $existingItem = $luckyGroupId ? null : $query->first();
 
         if ($existingItem) {
             // Packages are non-stackable — each package is a single booking entry.

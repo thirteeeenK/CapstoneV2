@@ -263,6 +263,7 @@
                                 <template x-if="itinerary.room.image || itinerary.hotel.image">
                                     <img :src="itinerary.room.image || itinerary.hotel.image"
                                         :alt="itinerary.hotel.hotel_name"
+                                        onerror="this.onerror=null;this.src='{{ asset('images/placeholder.jpg') }}'"
                                         class="w-full sm:w-40 h-36 sm:h-28 rounded-xl object-cover border border-slate-200 shrink-0">
                                 </template>
                                 <div class="flex-1 min-w-0 space-y-1.5">
@@ -321,9 +322,16 @@
                                 <template x-for="(activity, i) in itinerary.activities" :key="activity.id">
                                     <div
                                         class="flex items-center gap-3.5 bg-slate-50 rounded-2xl p-4 border border-slate-200/80 hover:bg-slate-100/60 transition-colors">
-                                        <span
-                                            class="w-7 h-7 rounded-xl bg-ocean-600 text-white text-xs font-bold flex items-center justify-center shrink-0 font-headline"
-                                            x-text="i + 1"></span>
+                                        <template x-if="activity.image">
+                                            <img :src="activity.image" :alt="activity.activity_name"
+                                                onerror="this.style.display='none'"
+                                                class="w-14 h-14 rounded-xl object-cover border border-slate-200 shrink-0">
+                                        </template>
+                                        <template x-if="!activity.image">
+                                            <span
+                                                class="w-7 h-7 rounded-xl bg-ocean-600 text-white text-xs font-bold flex items-center justify-center shrink-0 font-headline"
+                                                x-text="i + 1"></span>
+                                        </template>
                                         <div class="flex-1 min-w-0">
                                             <p class="text-xs sm:text-sm font-bold text-slate-900 font-headline"
                                                 x-text="activity.activity_name"></p>
@@ -342,8 +350,14 @@
                                             </div>
                                         </div>
                                         <div class="text-right shrink-0">
-                                            <span class="block text-[10px] text-slate-400 font-medium">for <span
-                                                    x-text="itinerary.pax"></span> pax</span>
+                                            <template x-if="activity.is_per_person">
+                                                <span class="block text-[10px] text-slate-400 font-medium">for <span
+                                                        x-text="itinerary.pax"></span> pax</span>
+                                            </template>
+                                            <template x-if="!activity.is_per_person">
+                                                <span
+                                                    class="block text-[10px] text-slate-400 font-medium">flat group rate</span>
+                                            </template>
                                             <span
                                                 class="block text-xs sm:text-sm font-bold text-slate-900 font-headline mt-0.5"
                                                 x-text="activity.formatted_rate"></span>
@@ -464,7 +478,15 @@
                         const data = await res.json();
                         if (data.success) {
                             window.dispatchEvent(new CustomEvent('cart-updated'));
-                            window.location.href = data.redirect_url || '{{ route('cart.index') }}';
+                            window.dispatchEvent(new CustomEvent('show-cart-modal', {
+                                detail: {
+                                    message: data.message || 'Your surprise itinerary is in your Trip Basket!',
+                                    cartCount: data.cart_count,
+                                    cartTotal: data.cart_total,
+                                }
+                            }));
+                            this.accepting = false;
+                            return;
                         } else {
                             this.error = data.message || 'Could not add the itinerary to your basket.';
                         }

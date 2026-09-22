@@ -296,7 +296,7 @@ class ElNidoActivitySeeder extends Seeder
                 'activity_name' => 'Nacpan Beach Inland Tour',
                 'category' => 'Land Tour',
                 'activity_level' => 'Relaxing',
-                'rate' => '₱600/person (Joiner) | ₱1,500 (Private Tricycle)',
+                'rate' => '₱600/person (Joiner)',
                 'duration' => 'Half Day (4 to 5 Hours)',
                 'capacity' => '1–4 pax (Tricycle) / Joiner Van',
                 'requirements' => 'Comfortable Clothes, Towel, Sun Protection',

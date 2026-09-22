@@ -67,7 +67,7 @@
             {{-- Price --}}
             <div class="text-right shrink-0">
                 <template x-if="item.item_type === 'addon' || item.item_type === 'activity' || item.item_type === 'package'">
-                    <span class="block text-[10px] text-ink-400 font-medium" x-text="item.formatted_unit_rate + ' / pax'"></span>
+                    <span class="block text-[10px] text-ink-400 font-medium" x-text="item.is_per_person === false ? 'flat group rate' : item.formatted_unit_rate + ' / pax'"></span>
                 </template>
                 <template x-if="item.item_type !== 'addon' && item.item_type !== 'activity' && item.item_type !== 'package' && item.quantity > 1">
                     <span class="block text-[10px] text-ink-400 font-medium" x-text="item.quantity + ' × ' + item.formatted_unit_rate"></span>

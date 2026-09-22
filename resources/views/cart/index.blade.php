@@ -49,6 +49,7 @@
             'image' => $item->item_image,
             'unit_rate' => (float) $item->unit_rate,
             'subtotal' => (float) $item->subtotal,
+            'is_per_person' => $item->itemable && method_exists($item->itemable, 'isPerPersonRate') ? $item->itemable->isPerPersonRate() : true,
             'formatted_unit_rate' => '₱' . number_format($item->unit_rate, 2),
             'formatted_subtotal' => '₱' . number_format($item->subtotal, 2),
             'max_qty' => $availableCount,

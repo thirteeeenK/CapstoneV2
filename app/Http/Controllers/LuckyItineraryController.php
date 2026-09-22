@@ -103,7 +103,9 @@ class LuckyItineraryController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Your surprise itinerary is in your Trip Basket!',
-            'redirect_url' => route('cart.index'),
+            'group_id' => $groupId,
+            'cart_count' => $this->cartService->getCartQuery($request)->count(),
+            'cart_total' => round($this->cartService->getCartQuery($request)->get()->sum(fn ($item) => $item->subtotal), 2),
         ]);
     }
 }

@@ -126,14 +126,28 @@ class ActivityModel extends Model
 
     /**
      * Determine if the activity rate is priced per person/participant.
+     *
+     * Default is per-person: bare amounts (e.g. "₱3,700", "₱850") are unit
+     * prices scaled by pax everywhere (cart, checkout, Lucky preview, admin).
+     * Only explicit flat markers opt out into a one-charge group rate.
      */
     public function isPerPersonRate(): bool
     {
         $rateStr = mb_strtolower($this->rate ?? '');
 
-        return str_contains($rateStr, '/person') || str_contains($rateStr, 'per person')
-            || str_contains($rateStr, '/pax') || str_contains($rateStr, 'per pax')
-            || str_contains($rateStr, '/head') || str_contains($rateStr, 'per head');
+        $flatMarkers = [
+            'flat', 'per group', 'group rate', 'per unit', '/unit',
+            'per van', 'per boat', 'per trip', 'private',
+            '/hour', 'per hour', 'hourly', 'per booking', 'per session',
+        ];
+
+        foreach ($flatMarkers as $marker) {
+            if (str_contains($rateStr, $marker)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /**
