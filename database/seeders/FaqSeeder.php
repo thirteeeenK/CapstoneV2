@@ -47,8 +47,8 @@ class FaqSeeder extends Seeder
 
             [
                 'question' => 'Which destinations does SunnyTrips cover?',
-                'answer' => 'SunnyTrips focuses on Philippine destinations — including Palawan (El Nido, Coron), Boracay, Cebu, Siargao, Bohol, and more. Each destination page highlights curated stays and experiences powered by our AI recommendations.',
-                'keywords' => 'destinations, palawan, el nido, boracay, cebu, siargao, bohol, philippines',
+                'answer' => 'SunnyTrips covers Philippine destinations listed on our destinations page — each destination page highlights curated stays and experiences. Ask SunnyBot "what destinations are offered" for the current live list.',
+                'keywords' => 'destinations, philippines, where, cover, offered',
                 'category' => 'Destinations',
                 'sort_order' => 5,
             ],

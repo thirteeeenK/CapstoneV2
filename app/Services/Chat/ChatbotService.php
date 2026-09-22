@@ -203,7 +203,9 @@ class ChatbotService
         $isLegalQuery = $this->intentRouter->classify($message) === IntentRouter::LEGAL_QUERY;
         $isBareFilter = $lastBot && $this->isFilterRefinementQuery($message, $lastBot);
         $hasExplicitDest = (bool) $this->intentRouter->extractDestinationName($message);
-        if ($faq && ! $isLegalQuery && ! $isBareFilter && ! $hasExplicitDest) {
+        // Destination-overview queries have a deterministic DB-grounded handler — never FAQ.
+        $isDestinationsOverview = $this->intentRouter->classify($message) === IntentRouter::DESTINATIONS_OVERVIEW;
+        if ($faq && ! $isLegalQuery && ! $isBareFilter && ! $hasExplicitDest && ! $isDestinationsOverview) {
             $reply = ['reply' => $faq->answer, 'faq' => ['id' => $faq->id, 'question' => $faq->question, 'answer' => $faq->answer]];
             $reply = $this->finalizeBotReply($session, $reply['reply'], $reply, null, 'grounded', [], false, $traceId);
 

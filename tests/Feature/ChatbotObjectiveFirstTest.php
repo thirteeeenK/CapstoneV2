@@ -2,6 +2,7 @@
 
 use App\Models\ActivityModel;
 use App\Models\DestinationModel;
+use App\Models\Faq;
 use App\Models\HotelModel;
 use App\Models\RoomType;
 use App\Services\Chat\IntentRouter;
@@ -241,6 +242,20 @@ test('offer-phrased destination questions classify as overview', function () {
 
 test('destinations offered reply lists only database destinations', function () {
     DestinationModel::factory()->create(['name' => 'Boracay']);
+
+    // Regression: seeded FAQ row must not shadow the deterministic overview.
+    // Prod rows carry embeddings so the semantic path can hijack the query —
+    // mirror that here or the test passes vacuously on the lexical miss.
+    $faq = Faq::create([
+        'question' => 'Which destinations does SunnyTrips cover?',
+        'answer' => 'SunnyTrips focuses on Philippine destinations — including Palawan (El Nido, Coron), Boracay, Cebu, Siargao, Bohol, and more.',
+        'keywords' => 'destinations, palawan, el nido, boracay, cebu, siargao, bohol, philippines',
+        'category' => 'Destinations',
+        'sort_order' => 5,
+        'is_active' => true,
+    ]);
+    $faq->embedding = uniformEmbedding();
+    $faq->save();
 
     foreach (['what destinations are offered', 'destinations offered'] as $message) {
         $response = $this->postJson('/chat', ['message' => $message]);
