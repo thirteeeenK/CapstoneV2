@@ -5,23 +5,6 @@ use App\Models\DestinationModel;
 use App\Models\HotelModel;
 use App\Models\Package;
 use App\Models\RoomType;
-use App\Services\GeminiService;
-
-function unitVectorString(int $hotIndex, int $dims = 3072): string
-{
-    $v = array_fill(0, $dims, 0.0);
-    $v[$hotIndex] = 1.0;
-
-    return '['.implode(',', $v).']';
-}
-
-function unitVector(int $hotIndex, int $dims = 3072): array
-{
-    $v = array_fill(0, $dims, 0.0);
-    $v[$hotIndex] = 1.0;
-
-    return $v;
-}
 
 beforeEach(function () {
     $this->destination = DestinationModel::factory()->create([
@@ -59,14 +42,6 @@ beforeEach(function () {
         'embedding' => unitVectorString(0),
     ]);
 });
-
-function mockGemini(?array $queryVector, string $chatReply = 'Here are the ATV activities I found in Boracay!'): void
-{
-    $mock = Mockery::mock(GeminiService::class)->makePartial();
-    $mock->shouldReceive('generateEmbedding')->andReturn($queryVector);
-    $mock->shouldReceive('generateChatResponse')->andReturn($chatReply);
-    app()->instance(GeminiService::class, $mock);
-}
 
 test('reported ATV query routes to activity search and returns ATV cards', function () {
     mockGemini(unitVector(0));

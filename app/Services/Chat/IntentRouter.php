@@ -382,7 +382,10 @@ class IntentRouter
             $checked++;
             $matched = false;
             foreach ($hayTokens as $ht) {
-                if (abs(strlen($ht) - strlen($nt)) > $maxDistance) {
+                // Mirror the needle guard: 1-3 char query words ("in",
+                // "sea", "to") otherwise align to any short name fragment
+                // ("mins", "seda") and pin entities from thin air.
+                if (strlen($ht) < 4 || abs(strlen($ht) - strlen($nt)) > $maxDistance) {
                     continue;
                 }
                 if (levenshtein($ht, $nt) <= $maxDistance) {
@@ -596,6 +599,20 @@ class IntentRouter
             'house',
             'homes',
             'home',
+            // Scenery words that name no hotel by themselves ("fly above the
+            // sea" must not pin a hotel carrying a "sea" token).
+            'sea',
+            'seas',
+            'ocean',
+            'oceans',
+            'sand',
+            'sands',
+            'sun',
+            'sunset',
+            'lagoon',
+            'lagoons',
+            'cove',
+            'coves',
             'the',
             'and',
             'de',
@@ -738,6 +755,21 @@ class IntentRouter
                 }
                 if ($this->fuzzyContains($query, implode(' ', $distinctive))) {
                     return (string) $name;
+                }
+                // Concatenated typing ("jetski" → "Jet Ski (30 mins)"): a
+                // single long query token containing (or contained in) the
+                // spaceless distinctive core counts as a hit. Threshold 5+
+                // so short words ("mins", "tour") can't pin items alone.
+                // Skipped for price-seeking queries ("jetski price El Nido"
+                // wants a scoped price listing, not the item itself).
+                $flatCore = str_replace(' ', '', implode(' ', $distinctive));
+                if ($flatCore !== '' && $this->detectFieldIntent($query) !== 'price') {
+                    foreach (preg_split('/\s+/', mb_strtolower($query)) as $qt) {
+                        $qt = $this->cleanToken($qt);
+                        if (strlen($qt) >= 5 && (str_contains($flatCore, $qt) || str_contains($qt, $flatCore))) {
+                            return (string) $name;
+                        }
+                    }
                 }
             }
         }

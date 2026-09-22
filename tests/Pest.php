@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use App\Services\GeminiService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -57,4 +58,28 @@ function onboardedUser(array $attributes = []): User
     $user->save();
 
     return $user;
+}
+
+function unitVectorString(int $hotIndex, int $dims = 3072): string
+{
+    $v = array_fill(0, $dims, 0.0);
+    $v[$hotIndex] = 1.0;
+
+    return '['.implode(',', $v).']';
+}
+
+function unitVector(int $hotIndex, int $dims = 3072): array
+{
+    $v = array_fill(0, $dims, 0.0);
+    $v[$hotIndex] = 1.0;
+
+    return $v;
+}
+
+function mockGemini(?array $queryVector, string $chatReply = 'Here are the ATV activities I found in Boracay!'): void
+{
+    $mock = Mockery::mock(GeminiService::class)->makePartial();
+    $mock->shouldReceive('generateEmbedding')->andReturn($queryVector);
+    $mock->shouldReceive('generateChatResponse')->andReturn($chatReply);
+    app()->instance(GeminiService::class, $mock);
 }

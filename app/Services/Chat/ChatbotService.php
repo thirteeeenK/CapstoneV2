@@ -3,6 +3,7 @@
 namespace App\Services\Chat;
 
 use App\Models\ActivityModel;
+use App\Models\AddOnModel;
 use App\Models\Booking;
 use App\Models\ChatbotAbuseReport;
 use App\Models\ChatMessage;
@@ -977,6 +978,9 @@ class ChatbotService
         if ($notice = $this->budgetNotice($scored, $constraints)) {
             $reply = $notice."\n\n".$reply;
         }
+        if ($unmatched = $this->unmatchedNotice($query, $scored, $constraints, 'rooms')) {
+            $reply = $unmatched."\n\n".$reply;
+        }
         // Visible filter badge when destination was inherited for a bare amenity refinement
         $hadExplicitDest = (bool) $this->intentRouter->extractDestinationName($query);
         if (! $hadExplicitDest && ! empty($constraints['destination_name'])) {
@@ -1009,6 +1013,9 @@ class ChatbotService
         $reply = $this->stripRankLineIfSingle($this->geminiChatResponse($prompt, $session), $scored);
         if ($notice = $this->budgetNotice($scored, $constraints)) {
             $reply = $notice."\n\n".$reply;
+        }
+        if ($unmatched = $this->unmatchedNotice($query, $scored, $constraints, 'addons')) {
+            $reply = $unmatched."\n\n".$reply;
         }
 
         return [
@@ -1204,6 +1211,9 @@ class ChatbotService
         }
         if ($notice = $this->budgetNotice($scored, $constraints)) {
             $reply = $notice."\n\n".$reply;
+        }
+        if ($unmatched = $this->unmatchedNotice($query, $scored, $constraints, 'hotels')) {
+            $reply = $unmatched."\n\n".$reply;
         }
         $hadExplicitDest = (bool) $this->intentRouter->extractDestinationName($query);
         if (! $hadExplicitDest && ! empty($constraints['destination_name'])) {
@@ -2166,6 +2176,9 @@ class ChatbotService
         if ($priceNotice) {
             $reply = $priceNotice."\n\n".$reply;
         }
+        if ($unmatched = $this->unmatchedNotice($query, $scored, $constraints, 'activities')) {
+            $reply = $unmatched."\n\n".$reply;
+        }
 
         return [
             'reply' => $reply,
@@ -2321,6 +2334,9 @@ class ChatbotService
         $reply = $this->stripRankLineIfSingle($this->geminiChatResponse($prompt, $session), $scored);
         if ($notice = $this->budgetNotice($scored, $constraints)) {
             $reply = $notice."\n\n".$reply;
+        }
+        if ($unmatched = $this->unmatchedNotice($query, $scored, $constraints, 'packages')) {
+            $reply = $unmatched."\n\n".$reply;
         }
 
         return [
@@ -3710,6 +3726,176 @@ class ChatbotService
         }
 
         return null;
+    }
+
+    /**
+     * "Not in our catalog" notice: when the user names a specific thing
+     * (jetski, skydive, villa) and none of the returned items lexically
+     * matches it, say so up front instead of silently presenting
+     * alternatives as matches. Null when something shown matches, when the
+     * query has no salient thing-word (generic "hotels in Boracay"), or
+     * when the thing exists in the same scope but was not shown (budget
+     * and ordering notices already cover those). Pure string matching —
+     * no embedding calls.
+     */
+    protected function unmatchedNotice(string $query, array $scored, array $constraints, string $catalog): ?string
+    {
+        if (empty($scored)) {
+            return null;
+        }
+        $tokens = $this->salientQueryTokens($query);
+        if (empty($tokens)) {
+            return null;
+        }
+        $config = [
+            'rooms' => ['label' => 'rooms', 'name' => 'room_name', 'text' => 'description'],
+            'hotels' => ['label' => 'hotels', 'name' => 'hotel_name', 'text' => 'hotel_description'],
+            'activities' => ['label' => 'activities', 'name' => 'activity_name', 'text' => 'description'],
+            'packages' => ['label' => 'packages', 'name' => 'name', 'text' => null],
+            'addons' => ['label' => 'add-ons', 'name' => 'name', 'text' => 'description'],
+        ][$catalog] ?? null;
+        if (! $config) {
+            return null;
+        }
+
+        // Anything shown matching any salient token counts as a hit —
+        // names and blurbs both count so amenity queries ("pool") match.
+        foreach ($scored as $entry) {
+            $haystack = $this->normalizeToken((string) ($entry['item']->{$config['name']} ?? ''));
+            if ($config['text']) {
+                $haystack .= ' '.$this->normalizeToken((string) ($entry['item']->{$config['text']} ?? ''));
+            }
+            foreach ($tokens as $token) {
+                if ($token !== '' && str_contains($haystack, $token)) {
+                    return null;
+                }
+            }
+        }
+
+        // ponytail: single-token global lookup on the longest token; upgrade
+        // to multi-token OR queries if users report misses on compound names.
+        $thing = collect($tokens)->sortByDesc(fn ($t) => strlen($t))->first();
+        $scopeName = $constraints['destination_name'] ?? null;
+        $scopeId = $constraints['destination_id'] ?? null;
+        $elsewhere = $this->findCatalogItemElsewhere($catalog, $config, (string) $thing, $scopeId);
+
+        if ($elsewhere === null) {
+            return "I couldn't find {$thing} in our catalog — here are the closest alternatives instead:";
+        }
+
+        // Same-scope-but-unshown means filters (budget, top-N) hid it, not
+        // absence — the budget/ordering notices already speak for those.
+        if ($scopeName && $elsewhere['destination'] === $scopeName) {
+            return null;
+        }
+
+        $tail = $scopeName ? "closest {$scopeName} alternatives" : 'closest alternatives';
+
+        return "Just so you know, **{$elsewhere['name']}** is a {$elsewhere['destination']} offering — here are the {$tail}:";
+    }
+
+    /**
+     * Thing-words from a query: destination names, catalog words, intent
+     * words, amenity/vibe descriptors, numbers, and filler stripped;
+     * tokens of 3+ chars kept.
+     *
+     * @return string[]
+     */
+    protected function salientQueryTokens(string $query): array
+    {
+        $text = ' '.strtolower($query).' ';
+        foreach (DestinationModel::pluck('name')->all() as $name) {
+            $text = str_ireplace($name, ' ', $text);
+        }
+        $stop = ['hotel', 'hotels', 'room', 'rooms', 'activity', 'activities', 'package', 'packages', 'addon', 'addons', 'add-on', 'add-ons', 'tour', 'tours', 'price', 'prices', 'pricing', 'cost', 'costs', 'cheap', 'cheapest', 'expensive', 'best', 'top', 'list', 'show', 'find', 'search', 'available', 'availability', 'book', 'booking', 'recommend', 'recommended', 'affordable', 'luxury', 'deal', 'deals', 'promo', 'budget', 'with', 'for', 'from', 'near', 'our', 'trip', 'trips', 'the', 'and', 'per', 'hour', 'hours', 'day', 'days', 'night', 'nights', 'person', 'pax', 'under', 'about', 'any', 'there', 'what', 'which', 'want', 'need', 'looking', 'like', 'some', 'give', 'tell', 'know', 'how', 'much', 'here', 'in', 'on', 'is', 'are', 'an', 'a', 'of', 'to', 'me', 'my', 'do', 'does',
+            // Amenity / vibe descriptors, not nameable things: "beachfront",
+            // "pool", "spa" describe attributes no catalog name need contain.
+            // Category/medium words ("water", "sea", "land") and request verbs
+            // ("recommend", "suggest") are equally unnameable on their own.
+            'water', 'waters', 'sea', 'seas', 'land', 'lands', 'aerial', 'marine', 'recommend', 'recommends', 'recommendation', 'recommendations', 'suggest', 'suggests', 'suggested', 'suggestion', 'suggestions',             'have', 'has', 'had', 'having', 'get', 'gets', 'getting', 'got', 'offer', 'offers', 'offered', 'offering',             'you', 'your', 'yours', 'we', 'they', 'them', 'their', 'theirs', 'pull', 'pulls', 'pulled', 'pulling', 'fly', 'flies', 'flying', 'flown',
+            'beachfront', 'beachside', 'seaside', 'oceanfront', 'lakeside', 'riverside', 'hillside', 'overwater', 'beach', 'pool', 'poolside', 'wifi', 'spa', 'sauna', 'gym', 'bathtub', 'balcony', 'kitchen', 'parking', 'breakfast', 'garden', 'mountain', 'boutique', 'cozy', 'spacious', 'modern', 'private', 'quiet', 'family', 'romantic', 'honeymoon', 'relaxing', 'nightlife', 'party'];
+        $text = ' '.preg_replace('/[^a-z0-9\s]/', ' ', $text).' ';
+        foreach ($stop as $word) {
+            $text = str_ireplace(' '.$word.' ', ' ', $text);
+        }
+        $tokens = array_values(array_filter(
+            preg_split('/\s+/', strtolower(trim($text))) ?: [],
+            // Pure numbers are prices/pax/durations, never thing-words.
+            // Fuzzy stopword guard: typos ("recommendaition") must not slip
+            // through exact matching and fire a bogus not-in-catalog notice.
+            // Length ≥6 keeps short real words ("atv") safe from distance-2 noise.
+            fn ($t) => strlen($t) > 2
+                && ! is_numeric($t)
+                && ! (strlen($t) >= 6 && $this->nearAnyStopword($t, $stop))
+        ));
+
+        return array_values(array_unique($tokens));
+    }
+
+    /**
+     * True when a token is within edit distance 2 of any stopword.
+     *
+     * @param  string[]  $stop
+     */
+    protected function nearAnyStopword(string $token, array $stop): bool
+    {
+        foreach ($stop as $word) {
+            if (levenshtein($token, $word) <= 2) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    protected function normalizeToken(string $value): string
+    {
+        return (string) preg_replace('/[^a-z0-9]/', '', strtolower($value));
+    }
+
+    /**
+     * Global (unscoped) name lookup for a thing-word, excluding the current
+     * scope when known. Normalized comparison so "jetski" matches "Jet Ski".
+     */
+    protected function findCatalogItemElsewhere(string $catalog, array $config, string $thing, ?int $scopeId): ?array
+    {
+        $models = [
+            'rooms' => RoomType::class,
+            'hotels' => HotelModel::class,
+            'activities' => ActivityModel::class,
+            'packages' => Package::class,
+            'addons' => AddOnModel::class,
+        ];
+        $model = $models[$catalog] ?? null;
+        if (! $model || $thing === '') {
+            return null;
+        }
+
+        $nameColumn = $config['name'];
+        $pattern = '%'.$thing.'%';
+        if ($catalog === 'rooms') {
+            $item = $model::with('hotel.destination')
+                ->where('is_shown', true)
+                ->when($scopeId, fn ($q) => $q->whereHas('hotel', fn ($h) => $h->where('destination_id', '!=', $scopeId)))
+                ->whereRaw("regexp_replace(lower({$nameColumn}), '[^a-z0-9]', '', 'g') LIKE ?", [$pattern])
+                ->first();
+            if (! $item) {
+                return null;
+            }
+
+            return ['name' => $item->{$nameColumn}, 'destination' => $item->hotel?->destination?->name ?? 'another destination'];
+        }
+
+        $item = $model::with('destination')
+            ->when($catalog === 'packages', fn ($q) => $q->where('is_active', true), fn ($q) => $q->where('is_shown', true))
+            ->when($scopeId, fn ($q) => $q->where('destination_id', '!=', $scopeId))
+            ->whereRaw("regexp_replace(lower({$nameColumn}), '[^a-z0-9]', '', 'g') LIKE ?", [$pattern])
+            ->first();
+        if (! $item) {
+            return null;
+        }
+
+        return ['name' => $item->{$nameColumn}, 'destination' => $item->destination?->name ?? 'another destination'];
     }
 
     /**

@@ -2,6 +2,7 @@
 
 use App\Models\ActivityModel;
 use App\Models\DestinationModel;
+use App\Models\HotelModel;
 use App\Services\Chat\IntentRouter;
 use Carbon\Carbon;
 
@@ -205,4 +206,25 @@ test('activity location queries include the activity as a place', function () {
     expect($places)->toHaveCount(1);
     expect($places[0]['type'])->toBe('activity');
     expect($places[0]['name'])->toBe('Banana Boat');
+});
+
+test('scenery words do not pin a hotel by single token', function () {
+    HotelModel::factory()->create(['hotel_name' => 'Sea Wind Resort']);
+
+    // "sea" is scenery, not a hotel reference — the paraphrase must not
+    // resolve a hotel or classify as a hotel search.
+    expect($this->router->extractHotelName('I want to fly above the sea pulled by a boat, what do you suggest in Boracay?'))->toBeNull();
+    expect($this->router->classify('I want to fly above the sea pulled by a boat, what do you suggest in Boracay?'))->not->toBe(IntentRouter::HOTEL_SEARCH);
+});
+
+test('paraphrase probe extracts no entities', function () {
+    HotelModel::factory()->create(['hotel_name' => 'Seda Lio']);
+    ActivityModel::factory()->create(['activity_name' => 'Jet Ski (30 mins)']);
+    ActivityModel::factory()->create(['activity_name' => 'Parasailing']);
+
+    $c = $this->router->extractConstraints('I want to fly above the sea pulled by a boat, what do you suggest in Boracay?');
+
+    expect($c['hotel_name'])->toBeNull();
+    expect($c['activity_name'])->toBeNull();
+    expect($c['destination_name'])->toBe('Boracay');
 });
