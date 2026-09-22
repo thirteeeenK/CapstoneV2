@@ -235,16 +235,12 @@ class ChatbotService
 
         // Semantic catalog routing: keyword misses (e.g. a new offering with no
         // keyword yet) fall back to embeddings instead of defaulting to rooms.
-        // Keyword hits and named hotels/rooms always keep their intent.
+        // Weak keyword hits (catalog intent, no resolved entity) get one
+        // embedding-based vote too — a confident semantic winner may overturn
+        // them. Strong hits (named entity resolved) always keep their intent.
         // GENERAL_TALK gets one embedding-based chance at a catalog search
         // (typos like "parawsailing", novel phrasings) before general chat.
-        if (
-            ($intent === IntentRouter::ROOM_SEARCH
-            && ! $this->intentRouter->hasExplicitCatalogIntent($message)
-            && empty($constraints['hotel_id']) && empty($constraints['hotel_name'])
-            && empty($constraints['room_id']) && empty($constraints['room_name']))
-            || ($intent === IntentRouter::GENERAL_TALK && ! $this->isGeneralKnowledgeQuery($message))
-        ) {
+        if ($this->shouldAttemptSemanticRouting($intent, $message, $constraints)) {
             if ($intent === IntentRouter::GENERAL_TALK) {
                 $constraints = $this->intentRouter->extractConstraints($message);
                 $generalScope = $this->hasExplicitScope($constraints);
@@ -3160,6 +3156,36 @@ class ChatbotService
         }
 
         return implode(' or ', $names);
+    }
+
+    /**
+     * Whether the turn is ambiguous enough for one embedding-based catalog
+     * vote. Covers vague room defaults, entity-less catalog keyword hits,
+     * and non-knowledge general talk. Deterministic intents, strong
+     * (entity-resolved) hits, and world-knowledge questions never qualify.
+     */
+    protected function shouldAttemptSemanticRouting(string $intent, string $message, array $constraints): bool
+    {
+        if ($intent === IntentRouter::ROOM_SEARCH
+            && ! $this->intentRouter->hasExplicitCatalogIntent($message)
+            && empty($constraints['hotel_id']) && empty($constraints['hotel_name'])
+            && empty($constraints['room_id']) && empty($constraints['room_name'])) {
+            return true;
+        }
+
+        if ($intent === IntentRouter::GENERAL_TALK && ! $this->isGeneralKnowledgeQuery($message)) {
+            return true;
+        }
+
+        if (in_array($intent, [IntentRouter::HOTEL_SEARCH, IntentRouter::ACTIVITY_SEARCH, IntentRouter::PACKAGE_SEARCH, IntentRouter::ADDON_SEARCH], true)
+            && empty($constraints['hotel_id']) && empty($constraints['hotel_name'])
+            && empty($constraints['room_id']) && empty($constraints['room_name'])
+            && empty($constraints['addon_id']) && empty($constraints['addon_name'])
+            && empty($constraints['package_name']) && empty($constraints['activity_name'])) {
+            return true;
+        }
+
+        return false;
     }
 
     /**

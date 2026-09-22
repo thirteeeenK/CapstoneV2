@@ -423,3 +423,50 @@ test('human handoff request offers a one-tap handoff action', function () {
     expect($response->json('suggested_actions.0.handoff'))->toBeTrue();
     expect($response->json('suggested_actions.0.label'))->toContain('human');
 });
+
+test('weak hotel keyword without entity reroutes to activities on confident vote', function () {
+    mockGemini(unitVector(0));
+
+    // "hotel" classifies HOTEL_SEARCH but resolves no hotel entity — the
+    // widened fallback gives embeddings one vote, which lands on activities.
+    $response = $this->postJson('/chat', [
+        'message' => 'hotel for our trip in Boracay',
+    ]);
+
+    $response->assertOk()->assertJsonPath('status', 'success');
+    $activities = $response->json('retrieved_activities') ?? [];
+    expect($activities)->not->toBeEmpty();
+    expect(collect($activities)->pluck('activity_name')->implode(' '))->toContain('ATV Adventure Ride');
+    expect($response->json('retrieved_hotels') ?? [])->toBeEmpty();
+});
+
+test('named hotel keeps hotel intent despite activity-affine embedding', function () {
+    mockGemini(unitVector(0));
+
+    // Strong hit: hotel name resolves to an entity, so semantic never runs.
+    $response = $this->postJson('/chat', [
+        'message' => 'Tell me about Test Beach Resort hotel in Boracay',
+    ]);
+
+    $response->assertOk()->assertJsonPath('status', 'success');
+    $hotels = $response->json('retrieved_hotels') ?? [];
+    expect($hotels)->not->toBeEmpty();
+    expect(collect($hotels)->pluck('hotel_name')->implode(' '))->toContain('Test Beach Resort');
+    expect($response->json('retrieved_activities') ?? [])->toBeEmpty();
+});
+
+test('weak hotel keyword with embedding failure keeps hotel search', function () {
+    mockGemini(null);
+
+    // Exact-match shortcut needs no embeddings: the named hotel is returned
+    // even when the embedding backend is down.
+    $response = $this->postJson('/chat', [
+        'message' => 'Tell me about Test Beach Resort hotel in Boracay',
+    ]);
+
+    $response->assertOk()->assertJsonPath('status', 'success');
+    $hotels = $response->json('retrieved_hotels') ?? [];
+    expect($hotels)->not->toBeEmpty();
+    expect(collect($hotels)->pluck('hotel_name')->implode(' '))->toContain('Test Beach Resort');
+    expect($response->json('retrieved_activities') ?? [])->toBeEmpty();
+});
