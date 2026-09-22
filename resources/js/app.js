@@ -32,7 +32,8 @@ Alpine.data('dateRangePicker', (config = {}) => ({
 
             this.picker = flatpickr(this.$refs.datepicker, {
                 mode: 'range',
-                minDate: 'today',
+                // Same-day stays are blocked: earliest bookable check-in is tomorrow.
+                minDate: new Date().fp_incr(1),
                 dateFormat: 'Y-m-d',
                 showMonths: 1,
                 onChange: (selectedDates, dateStr, instance) => {

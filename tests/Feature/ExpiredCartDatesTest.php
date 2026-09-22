@@ -39,7 +39,7 @@ it('rejects adding a room with a past check-in date via cart API', function () {
     Carbon::setTestNow();
 });
 
-it('allows adding a room with check_in equal to today', function () {
+it('rejects adding a room with check_in equal to today', function () {
     Carbon::setTestNow('2026-08-31 10:00:00');
 
     $response = $this->actingAs($this->user)->postJson(route('cart.add'), [
@@ -51,8 +51,11 @@ it('allows adding a room with check_in equal to today', function () {
         'check_out_date' => '2026-09-01',
     ]);
 
-    $response->assertOk()->assertJson(['success' => true]);
-    expect(CartItem::count())->toBe(1);
+    // Same-day stays are blocked: earliest bookable check-in is tomorrow (after:today)
+    $response->assertStatus(422);
+    $response->assertJsonValidationErrors(['check_in_date']);
+
+    expect(CartItem::count())->toBe(0);
 
     Carbon::setTestNow();
 });
@@ -245,7 +248,7 @@ it('exposes is_expired flag in cart data endpoint', function () {
     Carbon::setTestNow();
 });
 
-it('CartItem isExpired returns true only for past room check_in', function () {
+it('CartItem isExpired returns true for past and same-day room check_in', function () {
     Carbon::setTestNow('2026-08-31');
 
     $expired = CartItem::factory()->make([
@@ -260,7 +263,7 @@ it('CartItem isExpired returns true only for past room check_in', function () {
         'check_in_date' => '2026-08-31',
         'check_out_date' => '2026-09-01',
     ]);
-    expect($today->isExpired())->toBeFalse();
+    expect($today->isExpired())->toBeTrue();
 
     $future = CartItem::factory()->make([
         'item_type' => 'room',

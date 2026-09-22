@@ -160,7 +160,7 @@
                             <span class="material-symbols-outlined text-[15px] text-ocean-600">today</span>
                             <span>Start Date</span>
                         </label>
-                        <input id="lucky-date" type="date" x-model="filters.start_date"
+                        <input id="lucky-date" type="date" x-model="filters.start_date" :min="tomorrowStr"
                             class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3 text-xs font-medium text-slate-800 focus:bg-white focus:border-ocean-500 focus:outline-none transition-all">
                     </div>
                 </div>
@@ -418,6 +418,14 @@
                 accepting: false,
                 error: null,
                 itinerary: null,
+
+                // Earliest bookable start is tomorrow — same-day stays are blocked.
+                get tomorrowStr() {
+                    const d = new Date();
+                    d.setDate(d.getDate() + 1);
+
+                    return d.toISOString().split('T')[0];
+                },
 
                 async shuffle() {
                     this.loading = true;

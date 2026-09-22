@@ -39,7 +39,7 @@ class LuckyItineraryController extends Controller
             'pax' => 'nullable|integer|min:1|max:4',
             'activity_level' => 'nullable|string|max:50',
             'activity_category' => 'nullable|string|max:50',
-            'start_date' => 'nullable|date|after_or_equal:today',
+            'start_date' => 'nullable|date|after:today',
         ]);
 
         $result = $this->luckyService->generate($validated);
@@ -66,7 +66,7 @@ class LuckyItineraryController extends Controller
             'pax' => 'required|integer|min:1|max:4',
             'max_budget' => 'required|numeric|min:1',
             'budget_exceeded' => 'nullable|boolean',
-            'check_in_date' => 'required|date|after_or_equal:today',
+            'check_in_date' => 'required|date|after:today',
             'check_out_date' => 'required|date|after:check_in_date',
         ]);
 

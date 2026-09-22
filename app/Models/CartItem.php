@@ -374,7 +374,8 @@ class CartItem extends Model
     }
 
     /**
-     * Whether this cart item's check-in date is in the past (Option A: check_in < today).
+     * Whether this cart item's check-in date has passed or is today (Option A: check_in <= today).
+     * Same-day stays cannot be booked: earliest bookable check-in is tomorrow.
      * Only room items with dates can expire; other types return false.
      */
     public function isExpired(): bool
@@ -383,7 +384,7 @@ class CartItem extends Model
             return false;
         }
 
-        return Carbon::parse($this->check_in_date)->lt(Carbon::today());
+        return Carbon::parse($this->check_in_date)->lte(Carbon::today());
     }
 
     public function getIsExpiredAttribute(): bool

@@ -212,7 +212,7 @@ class CartController extends Controller
                 'item_id' => 'required|integer',
                 'quantity' => 'nullable|integer|min:1',
                 'selected_pax' => 'nullable|integer|min:1',
-                'check_in_date' => 'nullable|date|after_or_equal:today',
+                'check_in_date' => 'nullable|date|after:today',
                 'check_out_date' => 'nullable|date|after:check_in_date',
                 'room_option' => 'nullable|string|in:shared,separate',
                 'notes' => 'nullable|string',
@@ -374,7 +374,7 @@ class CartController extends Controller
             $validated = $request->validate([
                 'quantity' => 'nullable|integer|min:1',
                 'selected_pax' => 'nullable|integer|min:1',
-                'check_in_date' => 'nullable|date|after_or_equal:today',
+                'check_in_date' => 'nullable|date|after:today',
                 'check_out_date' => 'nullable|date|after:check_in_date',
                 'is_selected' => 'nullable|boolean',
                 'room_option' => 'nullable|string|in:shared,separate',
