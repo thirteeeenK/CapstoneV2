@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ChatFeedback;
 use App\Models\ChatSession;
 use App\Models\SupportInquiry;
 use App\Services\Chat\ChatbotService;
@@ -124,6 +125,30 @@ class ChatbotController extends Controller
             'handoff_status' => $inquiry->status,
             'ticket_number' => $inquiry->ticket_number,
         ]);
+    }
+
+    public function feedback(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'trace_id' => 'required|string|max:255',
+            'helpful' => 'required|boolean',
+            'expected_answer' => 'nullable|string|max:2000',
+            'session_token' => 'nullable|string|max:255',
+        ]);
+
+        $session = null;
+        if (! empty($validated['session_token'])) {
+            $session = $this->conversation->resolveSession($validated['session_token'], $request->user());
+        }
+
+        $feedback = ChatFeedback::create([
+            'trace_id' => $validated['trace_id'],
+            'chat_session_id' => $session?->id,
+            'helpful' => $validated['helpful'],
+            'expected_answer' => $validated['expected_answer'] ?? null,
+        ]);
+
+        return response()->json(['status' => 'success', 'id' => $feedback->id], 201);
     }
 
     public function history(Request $request): JsonResponse

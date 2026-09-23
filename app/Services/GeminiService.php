@@ -15,6 +15,8 @@ use App\Models\Review;
 use App\Models\ReviewSummary;
 use App\Models\RoomType;
 use App\Models\User;
+use Carbon\Carbon;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\File;
@@ -23,8 +25,77 @@ use Illuminate\Support\Facades\Log;
 
 class GeminiService
 {
+    public function __construct(protected RoomAvailabilityService $availability) {}
+
     /** @var array<string, array<int, float>|null> */
     protected array $requestEmbeddingCache = [];
+
+    /** @var array<string, float> Sorted per-catalog scores from the last resolveSemanticCatalog call. */
+    public array $lastRoutingScores = [];
+
+    /**
+     * How the last catalog retrieval ran: 'semantic' (embedding ranked),
+     * 'lexical' (embedding failed, plain DB listing), or 'constraint_only'
+     * (no retrieval query — constraints/exact-match only). Copied into the
+     * chat trace as retrieval_mode.
+     */
+    public string $lastRetrievalMode = 'semantic';
+
+    /**
+     * Every ₱ amount (string and float forms) seen in the last built
+     * retrieval context. The chat layer rejects generated replies that
+     * mention a price outside this set.
+     *
+     * @var array<int, string|float>
+     */
+    public array $lastContextPrices = [];
+
+    /**
+     * Diagnostics from the last generateChatResponse call, copied into the
+     * chat trace. Reset at the start of every call so a skipped generation
+     * path never reports a previous turn's numbers.
+     */
+    public ?string $lastFinishReason = null;
+
+    public ?int $lastCandidateCount = null;
+
+    /** @var array<string, int>|null */
+    public ?array $lastTokenUsage = null;
+
+    public ?int $lastLatencyMs = null;
+
+    public ?string $lastPromptHash = null;
+
+    /**
+     * All peso amounts in a text, as comparable string + float forms
+     * ('3,000.00' → '3000.00' and 3000.0, so both '₱3,000' and
+     * '₱3,000.00' in a reply match '₱3,000.00' in the context).
+     *
+     * @return array<int, string|float>
+     */
+    public static function extractPesoAmounts(string $text): array
+    {
+        preg_match_all('/₱\s*([0-9,]+(?:\.\d{2})?)/', $text, $m);
+        $out = [];
+        foreach ($m[1] as $raw) {
+            $norm = str_replace(',', '', $raw);
+            $out[] = $norm;
+            $out[] = (float) $norm;
+        }
+
+        return array_values(array_unique($out, SORT_REGULAR));
+    }
+
+    /**
+     * Record the peso amounts of a just-built context string for later
+     * grounding validation. Returns the input unchanged for inline use.
+     */
+    public function captureContextPrices(string $context): string
+    {
+        $this->lastContextPrices = self::extractPesoAmounts($context);
+
+        return $context;
+    }
 
     /**
      * Builds structured, semantically optimized text for ActivityModel embedding generation.
@@ -587,6 +658,9 @@ class GeminiService
      * typos/paraphrases scored 0.649–0.761, 10 greetings/off-topic scored
      * 0.548–0.614). Floor sits in that gap; the margin gate rejects the one
      * high-scoring greeting ("what can you do", 0.614).
+     * Re-evaluated 2026-09-24 via chatbot:eval harness (28 cases, intent_acc=0.958,
+     * recall@5=0.842, MRR=0.816). No change justified — eval harness is now
+     * the source of truth for floor calibration.
      */
     public const SEMANTIC_ROUTE_FLOOR = 0.60;
 
@@ -595,6 +669,12 @@ class GeminiService
      */
     public const SEMANTIC_ROUTE_MARGIN = 0.03;
 
+    /**
+     * Per-catalog retrieval floors (cosine). Evaluated 2026-09-24 via
+     * chatbot:eval harness (28 cases, recall@5=0.842, wrong_dest=0.105,
+     * no_result=0.322). No change justified — eval harness is now
+     * the source of truth for floor calibration.
+     */
     public const RETRIEVAL_FLOOR_ROOMS = 0.55;
 
     public const RETRIEVAL_FLOOR_HOTELS = 0.60;
@@ -830,6 +910,8 @@ class GeminiService
      */
     public function resolveSemanticCatalog(string $query, ?int $destinationId = null): ?string
     {
+        $this->lastRoutingScores = [];
+
         $queryVector = $this->generateEmbedding($query, 'RETRIEVAL_QUERY');
         if (! $queryVector) {
             return null;
@@ -859,6 +941,7 @@ class GeminiService
             'addons' => $this->topCatalogScore(AddOnModel::with('destination')
                 ->where('is_shown', true)
                 ->whereNotNull('embedding')
+                ->when($destinationId, fn ($q) => $q->where('destination_id', $destinationId))
                 ->get(), $queryVector),
         ];
 
@@ -867,6 +950,7 @@ class GeminiService
             return null;
         }
         arsort($scores);
+        $this->lastRoutingScores = $scores;
         $keys = array_keys($scores);
         $top = $scores[$keys[0]];
         if ($top < self::SEMANTIC_ROUTE_FLOOR) {
@@ -894,6 +978,10 @@ class GeminiService
 
     public function extractPricingContext($contextText, $userQuery)
     {
+        // Final context (with any computed hints below) is what the model
+        // sees, so its prices are the grounding allow-list.
+        $this->lastContextPrices = self::extractPesoAmounts($contextText);
+
         $paxCount = null;
         if (preg_match('/(\d+)\s*(?:pax|persons?|people|tao|katao|miyembro|guests?)/i', $userQuery, $paxMatch)) {
             $paxCount = (int) $paxMatch[1];
@@ -952,7 +1040,7 @@ class GeminiService
         }
         $calcHint .= "---\n";
 
-        return $contextText.$calcHint;
+        return $this->captureContextPrices($contextText.$calcHint);
     }
 
     // =========================================================================
@@ -974,13 +1062,15 @@ class GeminiService
         if (! $queryVector) {
             Log::warning('searchHotels: Failed to generate query embedding.', ['query' => $query]);
 
-            return [];
+            return $this->hotelLexicalFallback($limit, $destinationId, $constraints);
         }
 
         $vector = $this->formatVectorForDb($queryVector);
         if (! $vector) {
-            return [];
+            return $this->hotelLexicalFallback($limit, $destinationId, $constraints);
         }
+
+        $this->lastRetrievalMode = 'semantic';
 
         $maxPrice = isset($constraints['max_price']) ? (float) $constraints['max_price'] : null;
         $pax = isset($constraints['pax']) ? (int) $constraints['pax'] : null;
@@ -1028,6 +1118,26 @@ class GeminiService
     }
 
     /**
+     * Embedding-outage fallback for hotels: visibility + destination-scoped
+     * plain listing ordered by name, all scores zeroed.
+     *
+     * @param  array  $constraints  Reserved for budget/pax filters (unused — lexical listing ignores them).
+     * @return array Scored results: [['item' => HotelModel, 'score' => 0.0], ...]
+     */
+    protected function hotelLexicalFallback(int $limit, ?int $destinationId, array $constraints = []): array
+    {
+        $this->lastRetrievalMode = 'lexical';
+        $rows = HotelModel::with('destination')
+            ->where('is_shown', true)
+            ->when($destinationId, fn ($q) => $q->where('destination_id', $destinationId))
+            ->orderBy('hotel_name')
+            ->limit(max($limit * 2, 10))
+            ->get();
+
+        return $rows->map(fn ($h) => ['item' => $h, 'score' => 0.0])->all();
+    }
+
+    /**
      * Formats scored hotel results into structured context text for RAG injection
      * into the Gemini chat prompt. Each hotel block includes all semantically
      * relevant fields so the LLM can reason about them accurately.
@@ -1053,6 +1163,25 @@ class GeminiService
         }
 
         return $rank === 1 ? "Rank #{$rank} — BEST MATCH (relevance: {$score})" : "Rank #{$rank} — Alternative (relevance: {$score})";
+    }
+
+    /**
+     * Escape untrusted catalog text so it cannot break out of its
+     * <record> wrapper. Prices (peso sign), newlines, and em-dashes
+     * survive; markup does not.
+     */
+    public function sanitizePromptField(?string $value): string
+    {
+        return htmlspecialchars((string) $value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    }
+
+    /**
+     * Wrap one catalog item's context block as an explicitly untrusted
+     * record. The LLM must treat the contents as data, never directives.
+     */
+    public function wrapRecord(string $type, int|string $id, string $body): string
+    {
+        return "<record type=\"{$type}\" id=\"{$id}\" trusted=\"false\">\n".$this->sanitizePromptField($body)."\n</record>";
     }
 
     public function resultsHeader(int $count, ?string $ordering = null): string
@@ -1119,6 +1248,8 @@ class GeminiService
             $rankLabel = $this->rankLabel($rank, $score, $ordering);
             $lines = array_filter([
                 "--- Hotel {$rankLabel} ---",
+                "HOTEL[id={$hotel->id}].name = {$hotel->hotel_name}",
+                $minPrice !== null ? 'HOTEL[id='.$hotel->id.'].minimum_room_price = '.((float) $minPrice) : null,
                 "Name: {$hotel->hotel_name}",
                 "Destination: {$destName}",
                 "Category: {$typeLabel}",
@@ -1133,12 +1264,12 @@ class GeminiService
                 $desc ? "Description: {$desc}" : null,
             ]);
 
-            $blocks[] = implode("\n", $lines);
+            $blocks[] = $this->wrapRecord('hotel', $hotel->id, implode("\n", $lines));
         }
 
         $header = $this->resultsHeader(count($scoredHotels), $ordering);
 
-        return "=== HOTEL DATABASE RESULTS ===\n\n".$header.implode("\n\n", $blocks)."\n\n=== END HOTEL RESULTS ===";
+        return $this->captureContextPrices("=== HOTEL DATABASE RESULTS ===\n\n".$header.implode("\n\n", $blocks)."\n\n=== END HOTEL RESULTS ===");
     }
 
     /**
@@ -1293,6 +1424,8 @@ class GeminiService
             $priceDate = $priceDates[$room->id] ?? $room->updated_at?->format('M d, Y');
             $lines = array_filter([
                 "--- Room {$rankLabel} ---",
+                "ROOM[id={$room->id}].name = {$room->room_name}",
+                'ROOM[id='.$room->id.'].base_price = '.((float) $room->base_price),
                 "Room Name: {$room->room_name}",
                 "Hotel: {$hotelName}",
                 "Destination: {$destName}",
@@ -1312,12 +1445,12 @@ class GeminiService
                 $desc ? "Description: {$desc}" : null,
             ]);
 
-            $blocks[] = implode("\n", $lines);
+            $blocks[] = $this->wrapRecord('room', $room->id, implode("\n", $lines));
         }
 
         $header = $this->resultsHeader(count($scoredRooms), $ordering);
 
-        return "=== ROOM DATABASE RESULTS ===\n\n".$header.implode("\n\n", $blocks)."\n\n=== END ROOM RESULTS ===";
+        return $this->captureContextPrices("=== ROOM DATABASE RESULTS ===\n\n".$header.implode("\n\n", $blocks)."\n\n=== END ROOM RESULTS ===");
     }
 
     /**
@@ -1361,13 +1494,15 @@ class GeminiService
         if (! $queryVector) {
             Log::warning('searchActivities: Failed to generate query embedding.', ['query' => $query]);
 
-            return [];
+            return $this->activityLexicalFallback($limit, $destinationId, $constraints);
         }
 
         $vector = $this->formatVectorForDb($queryVector);
         if (! $vector) {
-            return [];
+            return $this->activityLexicalFallback($limit, $destinationId, $constraints);
         }
+
+        $this->lastRetrievalMode = 'semantic';
 
         $maxPrice = isset($constraints['max_price']) ? (float) $constraints['max_price'] : null;
         $pax = $constraints['pax'] ?? $this->extractPaxFromQuery($query);
@@ -1401,6 +1536,26 @@ class GeminiService
         }
 
         return array_slice(array_values($scored), 0, $limit);
+    }
+
+    /**
+     * Embedding-outage fallback for activities: visibility + destination-scoped
+     * plain listing ordered by name, all scores zeroed.
+     *
+     * @param  array  $constraints  Reserved for budget/pax filters (unused — lexical listing ignores them).
+     * @return array Scored results: [['item' => ActivityModel, 'score' => 0.0], ...]
+     */
+    protected function activityLexicalFallback(int $limit, ?int $destinationId, array $constraints = []): array
+    {
+        $this->lastRetrievalMode = 'lexical';
+        $rows = ActivityModel::with('destination')
+            ->where('is_shown', true)
+            ->when($destinationId, fn ($q) => $q->where('destination_id', $destinationId))
+            ->orderBy('activity_name')
+            ->limit(max($limit * 2, 10))
+            ->get();
+
+        return $rows->map(fn ($a) => ['item' => $a, 'score' => 0.0])->all();
     }
 
     protected function extractPaxFromQuery(string $query): ?int
@@ -1494,6 +1649,8 @@ class GeminiService
             $priceDate = $priceDates[$activity->id] ?? $activity->updated_at?->format('M d, Y');
             $lines = array_filter([
                 "--- Activity {$rankLabel} ---",
+                "ACTIVITY[id={$activity->id}].name = {$activity->activity_name}",
+                $activity->duration ? "ACTIVITY[id={$activity->id}].duration = {$activity->duration}" : null,
                 "Activity Name: {$activity->activity_name}",
                 "Destination: {$destName}",
                 $activity->specific_address ? "Specific Address: {$activity->specific_address}" : null,
@@ -1514,12 +1671,12 @@ class GeminiService
                 $desc ? "Description: {$desc}" : null,
             ]);
 
-            $blocks[] = implode("\n", $lines);
+            $blocks[] = $this->wrapRecord('activity', $activity->id, implode("\n", $lines));
         }
 
         $header = $this->resultsHeader(count($scoredActivities), $ordering);
 
-        return "=== ACTIVITY & TOUR DATABASE RESULTS ===\n\n".$header.implode("\n\n", $blocks)."\n\n=== END ACTIVITY RESULTS ===";
+        return $this->captureContextPrices("=== ACTIVITY & TOUR DATABASE RESULTS ===\n\n".$header.implode("\n\n", $blocks)."\n\n=== END ACTIVITY RESULTS ===");
     }
 
     /**
@@ -1557,13 +1714,15 @@ class GeminiService
         if (! $queryVector) {
             Log::warning('searchPackages: Failed to generate query embedding.', ['query' => $query]);
 
-            return [];
+            return $this->packageLexicalFallback($limit, $destinationId, $constraints);
         }
 
         $vectorStr = $this->formatVectorForDb($queryVector);
         if (! $vectorStr) {
-            return [];
+            return $this->packageLexicalFallback($limit, $destinationId, $constraints);
         }
+
+        $this->lastRetrievalMode = 'semantic';
 
         $maxPrice = isset($constraints['max_price']) ? (float) $constraints['max_price'] : null;
         $pax = isset($constraints['pax']) ? (int) $constraints['pax'] : null;
@@ -1599,7 +1758,27 @@ class GeminiService
     }
 
     /**
-     * Semantic search over FAQs using pgvector cosine distance (<=>).
+     * Embedding-outage fallback for packages: active + destination-scoped
+     * plain listing ordered by name, all scores zeroed.
+     *
+     * @param  array  $constraints  Reserved for budget/pax filters (unused — lexical listing ignores them).
+     * @return array Scored results: [['item' => Package, 'score' => 0.0], ...]
+     */
+    protected function packageLexicalFallback(int $limit, ?int $destinationId, array $constraints = []): array
+    {
+        $this->lastRetrievalMode = 'lexical';
+        $rows = Package::with('destination')
+            ->where('is_active', true)
+            ->when($destinationId, fn ($q) => $q->where('destination_id', $destinationId))
+            ->orderBy('name')
+            ->limit(max($limit * 2, 10))
+            ->get();
+
+        return $rows->map(fn ($p) => ['item' => $p, 'score' => 0.0])->all();
+    }
+
+    /**
+     * Semantic search over FAQs using pgvector cosine distance (&lt;=&gt;).
      */
     public function searchFaqs(string $query, int $limit = 3): array
     {
@@ -1696,6 +1875,8 @@ class GeminiService
             $priceDate = $priceDates[$package->id] ?? $package->updated_at?->format('M d, Y');
             $lines = array_filter([
                 "--- Package {$rankLabel} ---",
+                "PACKAGE[id={$package->id}].name = {$package->name}",
+                'PACKAGE[id='.$package->id.'].price = '.((float) $package->price),
                 "Package Name: {$package->name}",
                 "Destination: {$destName}",
                 'Type: '.($package->type ?: 'Standard Tour Promo'),
@@ -1712,12 +1893,12 @@ class GeminiService
                 $inclusions ? "Inclusions: {$inclusions}" : null,
             ]);
 
-            $blocks[] = implode("\n", $lines);
+            $blocks[] = $this->wrapRecord('package', $package->id, implode("\n", $lines));
         }
 
         $header = $this->resultsHeader(count($scoredPackages), $ordering);
 
-        return "=== PACKAGE DATABASE RESULTS ===\n\n".$header.implode("\n\n", $blocks)."\n\n=== END PACKAGE RESULTS ===";
+        return $this->captureContextPrices("=== PACKAGE DATABASE RESULTS ===\n\n".$header.implode("\n\n", $blocks)."\n\n=== END PACKAGE RESULTS ===");
     }
 
     /**
@@ -1729,13 +1910,15 @@ class GeminiService
         if (! $queryVector) {
             Log::warning('searchAddOns: Failed to generate query embedding.', ['query' => $query]);
 
-            return [];
+            return $this->addOnLexicalFallback($limit, $destinationId, $constraints);
         }
 
         $vector = $this->formatVectorForDb($queryVector);
         if (! $vector) {
-            return [];
+            return $this->addOnLexicalFallback($limit, $destinationId, $constraints);
         }
+
+        $this->lastRetrievalMode = 'semantic';
 
         $maxPrice = isset($constraints['max_price']) ? (float) $constraints['max_price'] : null;
         $pax = isset($constraints['pax']) ? (int) $constraints['pax'] : null;
@@ -1768,6 +1951,26 @@ class GeminiService
         }
 
         return array_slice(array_values($scored), 0, $limit);
+    }
+
+    /**
+     * Embedding-outage fallback for add-ons: visibility + destination-scoped
+     * plain listing ordered by name, all scores zeroed.
+     *
+     * @param  array  $constraints  Reserved for budget/pax filters (unused — lexical listing ignores them).
+     * @return array Scored results: [['item' => AddOnModel, 'score' => 0.0], ...]
+     */
+    protected function addOnLexicalFallback(int $limit, ?int $destinationId, array $constraints = []): array
+    {
+        $this->lastRetrievalMode = 'lexical';
+        $rows = AddOnModel::with('destination')
+            ->where('is_shown', true)
+            ->when($destinationId, fn ($q) => $q->where('destination_id', $destinationId))
+            ->orderBy('name')
+            ->limit(max($limit * 2, 10))
+            ->get();
+
+        return $rows->map(fn ($a) => ['item' => $a, 'score' => 0.0])->all();
     }
 
     /**
@@ -1818,6 +2021,8 @@ class GeminiService
             $priceDate = $priceDates[$addon->id] ?? $addon->updated_at?->format('M d, Y');
             $lines = array_filter([
                 "--- AddOn {$rankLabel} ---",
+                "ADDON[id={$addon->id}].name = {$addon->name}",
+                "ADDON[id={$addon->id}].type = {$addon->type}",
                 "AddOn Name: {$addon->name}",
                 "Type: {$addon->type}",
                 "Destination: {$destName}",
@@ -1828,12 +2033,12 @@ class GeminiService
                 $desc ? "Description: {$desc}" : null,
             ]);
 
-            $blocks[] = implode("\n", $lines);
+            $blocks[] = $this->wrapRecord('addon', $addon->id, implode("\n", $lines));
         }
 
         $header = $this->resultsHeader(count($scoredAddOns), $ordering);
 
-        return "=== ADDON DATABASE RESULTS ===\n\n".$header.implode("\n\n", $blocks)."\n\n=== END ADDON RESULTS ===";
+        return $this->captureContextPrices("=== ADDON DATABASE RESULTS ===\n\n".$header.implode("\n\n", $blocks)."\n\n=== END ADDON RESULTS ===");
     }
 
     // =========================================================================
@@ -2596,6 +2801,7 @@ class GeminiService
         if (! $queryVector) {
             Log::warning('searchRoomsHybrid: query embedding failed, fallback to price-only', ['query' => $query, 'constraints' => $constraints]);
 
+            $this->lastRetrievalMode = 'lexical';
             $fallback = RoomType::with('hotel.destination')
                 ->where('is_shown', true)
                 ->whereNotNull('embedding')
@@ -2644,6 +2850,8 @@ class GeminiService
 
             return array_slice(array_values($scored), 0, $limit);
         }
+
+        $this->lastRetrievalMode = 'semantic';
 
         $roomsQuery = RoomType::with('hotel.destination')
             ->where('is_shown', true)
@@ -2841,6 +3049,12 @@ class GeminiService
 
     public function generateChatResponse(string $systemInstruction, array $history, string $userPrompt, bool $conversational = false): ?string
     {
+        $this->lastPromptHash = hash('sha256', $systemInstruction."\n".$userPrompt);
+        $this->lastFinishReason = null;
+        $this->lastCandidateCount = null;
+        $this->lastTokenUsage = null;
+        $this->lastLatencyMs = null;
+
         $apiKey = config('services.gemini.api_key');
         if (! $apiKey) {
             Log::warning('Gemini API key is not configured.');
@@ -2864,6 +3078,8 @@ class GeminiService
         $useCache = $cacheName !== null;
         $cacheKey = 'gemini:chat_cache:'.md5($modelName.'|'.$systemInstruction);
         $response = null;
+        $sawSuccessfulEmpty = false;
+        $startedAt = (int) (microtime(true) * 1000);
 
         for ($attempt = 0; $attempt < 2; $attempt++) {
             $settings = $this->chatGenerationSettings($conversational);
@@ -2892,12 +3108,37 @@ class GeminiService
                 if ($response->successful()) {
                     $text = $response->json('candidates.0.content.parts.0.text');
                     if (is_string($text) && trim($text) !== '') {
+                        $finishReason = $response->json('candidates.0.finishReason');
+                        $this->lastFinishReason = $finishReason === 'SAFETY' ? 'safety' : $finishReason;
+                        $this->lastCandidateCount = is_array($response->json('candidates')) ? count($response->json('candidates')) : null;
+                        $usage = $response->json('usageMetadata');
+                        $this->lastTokenUsage = is_array($usage) ? array_filter([
+                            'prompt' => $usage['promptTokenCount'] ?? null,
+                            'candidates' => $usage['candidatesTokenCount'] ?? null,
+                            'total' => $usage['totalTokenCount'] ?? null,
+                        ]) : null;
+                        $this->lastLatencyMs = (int) (microtime(true) * 1000) - $startedAt;
+                        Log::info('Gemini ChatResponse succeeded.', [
+                            'finish_reason' => $this->lastFinishReason,
+                            'latency_ms' => $this->lastLatencyMs,
+                            'cached' => $useCache,
+                        ]);
+
                         return trim($text);
                     }
+                    $sawSuccessfulEmpty = true;
                 }
 
                 $isCacheRelated = $useCache && in_array($response->status(), [400, 404], true);
+            } catch (ConnectionException $e) {
+                $this->lastFinishReason = 'timeout';
+                $this->lastLatencyMs = (int) (microtime(true) * 1000) - $startedAt;
+                Log::error('Gemini ChatResponse timeout: '.$e->getMessage());
+
+                return null;
             } catch (\Exception $e) {
+                $this->lastFinishReason = 'error';
+                $this->lastLatencyMs = (int) (microtime(true) * 1000) - $startedAt;
                 Log::error('Gemini ChatResponse Exception: '.$e->getMessage());
             }
 
@@ -2913,6 +3154,15 @@ class GeminiService
             }
             $useCache = false;
         }
+
+        if ($response && $response->status() === 429) {
+            $this->lastFinishReason = 'rate_limit';
+        } elseif ($sawSuccessfulEmpty) {
+            $this->lastFinishReason = 'empty';
+        } elseif ($this->lastFinishReason === null) {
+            $this->lastFinishReason = 'error';
+        }
+        $this->lastLatencyMs ??= (int) (microtime(true) * 1000) - $startedAt;
 
         Log::error('Gemini ChatResponse Failed: ', ['response' => $response ? $response->body() : 'no response']);
 
@@ -2932,7 +3182,7 @@ class GeminiService
      *
      * @return array{success: bool, context?: string, data?: array, message?: string}
      */
-    public function buildItineraryContext(string $query, array $constraints, int $pax, int $nights, float $maxBudget): array
+    public function buildItineraryContext(string $query, array $constraints, int $pax, int $nights, float $maxBudget, ?string $checkIn = null, ?string $checkOut = null): array
     {
         $destinationId = $constraints['destination_id'] ?? null;
         if (! $destinationId) {
@@ -2944,7 +3194,10 @@ class GeminiService
             return ['success' => false, 'message' => 'I could not find that destination.'];
         }
 
-        $selection = $this->selectItineraryHotelAndRoom((int) $destinationId, $pax, $nights, $maxBudget);
+        $checkInDate = $this->parseItineraryDate($checkIn);
+        $checkOutDate = $this->parseItineraryDate($checkOut);
+
+        $selection = $this->selectItineraryHotelAndRoom((int) $destinationId, $pax, $nights, $maxBudget, $checkInDate, $checkOutDate);
         if (! $selection) {
             return ['success' => false, 'message' => "I could not find any available rooms in {$destination->name} for {$pax} guests."];
         }
@@ -2987,7 +3240,9 @@ class GeminiService
             $nights,
             $pax,
             $grandTotal,
-            $maxBudget
+            $maxBudget,
+            $selection['available'] ?? true,
+            $selection['over_budget'] ?? false
         );
 
         return [
@@ -2998,11 +3253,16 @@ class GeminiService
     }
 
     /**
-     * Select suitable hotel and room for itinerary.
+     * Select suitable hotel and room for itinerary. Every candidate is
+     * scored deterministically: live availability dominates (+100), then
+     * room-total budget tiers (<=50% budget +40, <=budget +20). The winner
+     * is the top score, then cheapest total, then lowest hotel id. When
+     * nothing fits the budget, the cheapest candidate wins flagged
+     * over_budget so the caller can say so deterministically.
      *
-     * @return array{hotel: HotelModel, room: RoomType}|null
+     * @return array{hotel: HotelModel, room: RoomType, available: bool, over_budget: bool}|null
      */
-    private function selectItineraryHotelAndRoom(int $destinationId, int $pax, int $nights, float $maxBudget): ?array
+    private function selectItineraryHotelAndRoom(int $destinationId, int $pax, int $nights, float $maxBudget, ?Carbon $checkIn = null, ?Carbon $checkOut = null): ?array
     {
         $hotels = HotelModel::where('destination_id', $destinationId)
             ->where('is_shown', true)
@@ -3010,31 +3270,69 @@ class GeminiService
             ->get()
             ->filter(fn ($h) => $h->rooms->isNotEmpty());
 
+        $candidates = [];
         foreach ($hotels as $hotel) {
             foreach ($hotel->rooms as $room) {
                 $nightlyRate = $room->calculateNightlyRate($pax);
                 $roomTotal = $nightlyRate * $nights;
+                $available = ($checkIn && $checkOut)
+                    ? (bool) ($this->availability->check($room, $checkIn, $checkOut)['available'] ?? false)
+                    : true;
 
+                $score = $available ? 100 : 0;
                 if ($roomTotal <= $maxBudget * 0.5) {
-                    return ['hotel' => $hotel, 'room' => $room];
+                    $score += 40;
+                } elseif ($roomTotal <= $maxBudget) {
+                    $score += 20;
                 }
+
+                $candidates[] = [
+                    'hotel' => $hotel,
+                    'room' => $room,
+                    'room_total' => $roomTotal,
+                    'available' => $available,
+                    'over_budget' => $roomTotal > $maxBudget,
+                    'score' => $score,
+                ];
             }
         }
 
-        foreach ($hotels as $hotel) {
-            $best = $hotel->rooms->sortBy(fn ($r) => $r->calculateNightlyRate($pax))->first();
-            if ($best) {
-                return ['hotel' => $hotel, 'room' => $best];
-            }
+        if ($candidates === []) {
+            return null;
         }
 
-        return null;
+        usort($candidates, static fn ($a, $b) => [$b['score'], $a['room_total'], $a['hotel']->id]
+            <=> [$a['score'], $b['room_total'], $b['hotel']->id]);
+
+        $winner = $candidates[0];
+
+        return [
+            'hotel' => $winner['hotel'],
+            'room' => $winner['room'],
+            'available' => $winner['available'],
+            'over_budget' => $winner['over_budget'],
+        ];
+    }
+
+    private function parseItineraryDate(?string $date): ?Carbon
+    {
+        if (! $date) {
+            return null;
+        }
+
+        try {
+            return Carbon::parse($date)->startOfDay();
+        } catch (\Throwable $e) {
+            return null;
+        }
     }
 
     /**
-     * Select suitable activities for itinerary.
-     * If a specific activity was requested and belongs to this destination,
-     * it is included first before filling the remaining cheapest slots.
+     * Select suitable activities for itinerary. Deterministic: the
+     * requested activity (if it belongs to this destination) is always
+     * first, then one cheapest pick per remaining category (diversity),
+     * then the cheapest leftovers — all within the 80% activity budget
+     * slice, ties broken by duration then id.
      */
     private function selectItineraryActivities(int $destinationId, int $pax, int $nights, float $budgetForActivities, ?string $requestedActivityName = null): Collection
     {
@@ -3067,14 +3365,44 @@ class GeminiService
                 return $activity;
             })
             ->filter(fn ($a) => $a->_computed_cost <= $budgetForActivities * 0.8)
-            ->sortBy('_computed_cost');
+            ->sortBy([['_computed_cost', 'asc'], ['duration', 'asc'], ['id', 'asc']])
+            ->values();
 
+        $picked = collect();
         if ($requested) {
-            // Always honor the requested activity — show it first even if over budget slice
-            return collect([$requested])->concat($candidates->take($activityCount - 1))->take($activityCount)->values();
+            $picked->push($requested);
         }
 
-        return $candidates->take($activityCount)->values();
+        // Diversity pass: cheapest pick per category first.
+        $seenCategories = $picked->map(fn ($a) => $a->category)->filter()->all();
+        foreach ($candidates as $candidate) {
+            if ($picked->count() >= $activityCount) {
+                break;
+            }
+            if ($picked->contains(fn ($a) => $a->id === $candidate->id)) {
+                continue;
+            }
+            if ($candidate->category && in_array($candidate->category, $seenCategories, true)) {
+                continue;
+            }
+            $picked->push($candidate);
+            if ($candidate->category) {
+                $seenCategories[] = $candidate->category;
+            }
+        }
+
+        // Fill pass: cheapest remaining regardless of category.
+        foreach ($candidates as $candidate) {
+            if ($picked->count() >= $activityCount) {
+                break;
+            }
+            if ($picked->contains(fn ($a) => $a->id === $candidate->id)) {
+                continue;
+            }
+            $picked->push($candidate);
+        }
+
+        return $picked->take($activityCount)->values();
     }
 
     private function formatItineraryContextText(
@@ -3123,7 +3451,9 @@ class GeminiService
         int $nights,
         int $pax,
         float $grandTotal,
-        float $maxBudget
+        float $maxBudget,
+        bool $available = true,
+        bool $overBudget = false
     ): array {
         return [
             'destination' => ['id' => $destination->id, 'name' => $destination->name],
@@ -3150,6 +3480,8 @@ class GeminiService
             'formatted_grand_total' => '₱'.number_format($grandTotal, 2),
             'budget' => $maxBudget,
             'within_budget' => $grandTotal <= $maxBudget,
+            'available' => $available,
+            'over_budget' => $overBudget,
         ];
     }
 }

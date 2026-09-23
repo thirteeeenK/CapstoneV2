@@ -55,11 +55,12 @@ test('jetski price query in El Nido discloses the Boracay-only Jet Ski', functio
     expect($response->json('retrieved_activities') ?? [])->not->toBeEmpty();
 });
 
-test('named activity returns the item itself cross-scope with no notice', function () {
+test('named activity with wrong destination returns scoped alternatives with disclosure', function () {
     mockGemini(unitVector(0));
 
-    // "jetski" fuzzy-matches the Boracay Jet Ski name, so the exact-match
-    // shortcut returns the item itself — nothing unmatched to disclose.
+    // The Jet Ski lives only in Boracay; destination-scoped exact match
+    // must not return it. Semantic search yields El Nido alternatives
+    // and the cross-scope disclosure fires (same as the sibling test).
     $response = $this->postJson('/chat', [
         'message' => 'jetski in El Nido',
     ]);
@@ -67,8 +68,9 @@ test('named activity returns the item itself cross-scope with no notice', functi
     $response->assertOk()->assertJsonPath('status', 'success');
     $activities = $response->json('retrieved_activities') ?? [];
     expect($activities)->not->toBeEmpty();
-    expect(collect($activities)->pluck('activity_name')->implode(' '))->toContain('Jet Ski');
-    expect($response->json('reply'))->not->toContain('Heads up');
+    expect(collect($activities)->pluck('activity_name')->implode(' '))->toContain('Kayak');
+    expect($response->json('reply'))->toContain('Just so you know');
+    expect($response->json('reply'))->toContain('Boracay');
 });
 
 test('unknown thing reports not in catalog with alternatives', function () {

@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\ActivityModel;
+use App\Models\AddOnModel;
 use App\Models\DestinationModel;
 use App\Models\HotelModel;
 use App\Models\Package;
@@ -185,6 +186,38 @@ test('keyword-less typo routes to activity search via general-talk fallback', fu
     $activities = $response->json('retrieved_activities') ?? [];
     expect($activities)->not->toBeEmpty();
     expect(collect($activities)->pluck('activity_name')->implode(' '))->toContain('Jet Ski (30 mins)');
+});
+
+test('add-on routing is destination-scoped and routing scores surface in trace', function () {
+    $cebu = DestinationModel::factory()->create([
+        'name' => 'Cebu',
+        'description' => 'Queen of the South',
+        'latitude' => 10.3157,
+        'longitude' => 123.8854,
+    ]);
+
+    // Perfect semantic match on axis e4 — but the add-on lives in Cebu while
+    // the conversation is scoped to Boracay, so routing must never pick it.
+    AddOnModel::factory()->create([
+        'destination_id' => $cebu->id,
+        'name' => 'Canyoneering Adventure Fee',
+        'embedding' => unitVectorString(4),
+    ]);
+
+    mockGemini(unitVector(4), 'Here is what I found.');
+
+    $response = $this->postJson('/chat', [
+        'message' => 'May bago ba kayo sa Boracay trips?',
+    ]);
+
+    $response->assertOk()->assertJsonPath('status', 'success');
+    expect($response->json('trace.intent'))->not->toBe('ADDON_SEARCH');
+    expect($response->json('retrieved_addons') ?? [])->toBeEmpty();
+
+    $scores = $response->json('trace.routing_scores');
+    expect($scores)->toBeArray()
+        ->not->toHaveKey('addons')
+        ->toHaveKeys(['activities', 'rooms']);
 });
 
 test('greeting with no catalog affinity stays in general chat', function () {

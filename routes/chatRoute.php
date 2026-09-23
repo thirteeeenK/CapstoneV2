@@ -8,6 +8,10 @@ Route::post('/chat', [ChatbotController::class, 'chat'])
     ->name('chat.send')
     ->middleware(['throttle:ai', EnforceGuestChatLimits::class]);
 
+Route::post('/chat/feedback', [ChatbotController::class, 'feedback'])
+    ->name('chat.feedback')
+    ->middleware(['throttle:ai']);
+
 Route::get('/chat/history', [ChatbotController::class, 'history'])
     ->name('chat.history')
     ->middleware(['throttle:chat-poll']);

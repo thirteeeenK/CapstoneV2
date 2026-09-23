@@ -1,0 +1,264 @@
+[
+    {
+        "id": "hotel-dest-boracay",
+        "query": "show me hotels in Eval Boracay",
+        "expect_intent": "HOTEL_SEARCH",
+        "expect_destination": "Eval Boracay",
+        "expect_result_names_any": ["Eval Palm Resort", "Eval Bay Hotel"],
+        "expect_forbid_names": ["Eval Hidden Resort"],
+        "required_facts": ["Eval Palm Resort", "Eval Boracay"]
+    },
+    {
+        "id": "hotel-dest-elnido-scope",
+        "query": "hotels in Eval El Nido",
+        "expect_intent": "HOTEL_SEARCH",
+        "expect_destination": "Eval El Nido",
+        "expect_result_names_any": ["Eval Cliff Lodge"],
+        "expect_forbid_names": ["Eval Palm Resort"],
+        "required_facts": ["Eval Cliff Lodge"]
+    },
+    {
+        "id": "hotel-price-filter",
+        "query": "cheap hotels in Eval Boracay under 5000",
+        "expect_intent": "HOTEL_SEARCH",
+        "expect_destination": "Eval Boracay",
+        "expect_result_names_any": ["Eval Palm Resort"],
+        "expect_forbid_names": [],
+        "required_facts": ["Eval Palm Resort"]
+    },
+    {
+        "id": "hotel-hidden-exclusion",
+        "query": "show me hotels in Eval Boracay",
+        "expect_intent": "HOTEL_SEARCH",
+        "expect_destination": "Eval Boracay",
+        "expect_result_names_any": ["Eval Palm Resort"],
+        "expect_forbid_names": ["Eval Hidden Resort"],
+        "required_facts": []
+    },
+    {
+        "id": "room-pax-search",
+        "query": "find rooms for 2 pax in Eval Boracay",
+        "expect_intent": "ROOM_SEARCH",
+        "expect_destination": "Eval Boracay",
+        "expect_result_names_any": ["Eval Standard Room"],
+        "expect_forbid_names": [],
+        "required_facts": ["Eval Standard Room"]
+    },
+    {
+        "id": "room-pax-4",
+        "query": "find rooms for 4 pax in Eval Boracay",
+        "expect_intent": "ROOM_SEARCH",
+        "expect_destination": "Eval Boracay",
+        "expect_result_names_any": ["Eval Family Suite"],
+        "expect_forbid_names": ["Eval Standard Room"],
+        "required_facts": ["Eval Family Suite"]
+    },
+    {
+        "id": "room-null-occupancy",
+        "query": "find rooms for 3 pax in Eval Boracay",
+        "expect_intent": "ROOM_SEARCH",
+        "expect_destination": "Eval Boracay",
+        "expect_result_names_any": ["Eval Flexible Room"],
+        "expect_forbid_names": ["Eval Standard Room"],
+        "required_facts": ["Eval Flexible Room"]
+    },
+    {
+        "id": "activity-dest-scope",
+        "query": "water activities in Eval Boracay",
+        "expect_intent": "ACTIVITY_SEARCH",
+        "expect_destination": "Eval Boracay",
+        "expect_result_names_any": ["Eval Paddle Tour"],
+        "expect_forbid_names": ["Eval Cliff Dive"],
+        "required_facts": ["Eval Paddle Tour"]
+    },
+    {
+        "id": "activity-exact-name",
+        "query": "Tell me about Eval Paddle Tour",
+        "expect_intent": "ACTIVITY_SEARCH",
+        "expect_destination": "Eval Boracay",
+        "expect_result_names_any": ["Eval Paddle Tour"],
+        "expect_forbid_names": ["Eval Cliff Dive"],
+        "required_facts": ["Eval Paddle Tour"]
+    },
+    {
+        "id": "package-search",
+        "query": "show me Eval Boracay packages",
+        "expect_intent": "PACKAGE_SEARCH",
+        "expect_destination": "Eval Boracay",
+        "expect_result_names_any": ["Eval Weekend Escape"],
+        "expect_forbid_names": [],
+        "required_facts": ["Eval Weekend Escape"]
+    },
+    {
+        "id": "package-budget",
+        "query": "Eval Boracay packages under 15000",
+        "expect_intent": "PACKAGE_SEARCH",
+        "expect_destination": "Eval Boracay",
+        "expect_result_names_any": ["Eval Weekend Escape"],
+        "expect_forbid_names": [],
+        "required_facts": []
+    },
+    {
+        "id": "package-exact-name",
+        "query": "Tell me about Eval Weekend Escape",
+        "expect_intent": "PACKAGE_SEARCH",
+        "expect_destination": "Eval Boracay",
+        "expect_result_names_any": ["Eval Weekend Escape"],
+        "expect_forbid_names": [],
+        "required_facts": ["Eval Weekend Escape"]
+    },
+    {
+        "id": "addon-search",
+        "query": "airport transfer add-ons in Eval Boracay",
+        "expect_intent": "ADDON_SEARCH",
+        "expect_destination": "Eval Boracay",
+        "expect_result_names_any": ["Eval Airport Transfer"],
+        "expect_forbid_names": [],
+        "required_facts": ["Eval Airport Transfer"]
+    },
+    {
+        "id": "addon-exact-name",
+        "query": "Tell me about Eval Airport Transfer",
+        "expect_intent": "ADDON_SEARCH",
+        "expect_destination": "Eval Boracay",
+        "expect_result_names_any": ["Eval Airport Transfer"],
+        "expect_forbid_names": [],
+        "required_facts": ["Eval Airport Transfer"]
+    },
+    {
+        "id": "addon-dest-scope",
+        "query": "add-ons in Eval El Nido",
+        "expect_intent": "ADDON_SEARCH",
+        "expect_destination": "Eval El Nido",
+        "expect_result_names_any": [],
+        "expect_forbid_names": ["Eval Airport Transfer"],
+        "required_facts": []
+    },
+    {
+        "id": "itinerary-query",
+        "query": "Plan a 2-day itinerary in Eval Boracay for 2 pax under 20000",
+        "expect_intent": "ITINERARY_QUERY",
+        "expect_destination": "Eval Boracay",
+        "expect_result_names_any": [],
+        "expect_forbid_names": [],
+        "required_facts": ["Eval Palm Resort"]
+    },
+    {
+        "id": "faq-payment",
+        "query": "What payment methods do you accept?",
+        "expect_intent": null,
+        "expect_destination": null,
+        "expect_result_names_any": [],
+        "expect_forbid_names": [],
+        "required_facts": ["GCash"]
+    },
+    {
+        "id": "faq-payment-paraphrase",
+        "query": "How can I settle my bill?",
+        "expect_intent": null,
+        "expect_destination": null,
+        "expect_result_names_any": [],
+        "expect_forbid_names": [],
+        "required_facts": ["GCash"]
+    },
+    {
+        "id": "exact-hotel-name",
+        "query": "Tell me about Eval Palm Resort",
+        "expect_intent": "HOTEL_SEARCH",
+        "expect_destination": "Eval Boracay",
+        "expect_result_names_any": ["Eval Palm Resort"],
+        "expect_forbid_names": ["Eval Cliff Lodge"],
+        "required_facts": ["Eval Palm Resort"]
+    },
+    {
+        "id": "ordinal-hotel-second",
+        "query": "tell me more about the second hotel",
+        "expect_intent": "HOTEL_SEARCH",
+        "expect_destination": "Eval Boracay",
+        "expect_result_names_any": ["Eval Bay Hotel"],
+        "expect_forbid_names": [],
+        "required_facts": ["Eval Bay Hotel"],
+        "setup": {
+            "prior_message": "show me hotels in Eval Boracay"
+        }
+    },
+    {
+        "id": "ordinal-hotel-first",
+        "query": "tell me more about the first hotel",
+        "expect_intent": "HOTEL_SEARCH",
+        "expect_destination": "Eval Boracay",
+        "expect_result_names_any": ["Eval Palm Resort"],
+        "expect_forbid_names": [],
+        "required_facts": ["Eval Palm Resort"],
+        "setup": {
+            "prior_message": "show me hotels in Eval Boracay"
+        }
+    },
+    {
+        "id": "ordinal-room-second",
+      "query": "tell me more about the second room",
+      "expect_intent": null,
+        "expect_destination": "Eval Boracay",
+        "expect_result_names_any": ["Eval Family Suite"],
+        "expect_forbid_names": [],
+        "required_facts": ["Eval Family Suite"],
+        "setup": {
+            "prior_message": "find rooms in Eval Boracay"
+        }
+    },
+    {
+        "id": "wrong-dest-exclusion",
+        "query": "show me hotels in Eval Cebu",
+        "expect_intent": "HOTEL_SEARCH",
+        "expect_destination": "Eval Cebu",
+        "expect_result_names_any": [],
+        "expect_forbid_names": ["Eval Palm Resort", "Eval Bay Hotel", "Eval Cliff Lodge"],
+        "required_facts": []
+    },
+    {
+        "id": "personalized-rerank",
+        "query": "suggest hotels in Eval Boracay",
+        "expect_intent": "HOTEL_SEARCH",
+        "expect_destination": "Eval Boracay",
+        "expect_result_names_any": ["Eval Palm Resort"],
+        "expect_forbid_names": [],
+        "required_facts": [],
+        "auth": "personalized"
+    },
+    {
+        "id": "destinations-overview",
+        "query": "What destinations do you offer?",
+        "expect_intent": "DESTINATIONS_OVERVIEW",
+        "expect_destination": null,
+        "expect_result_names_any": [],
+        "expect_forbid_names": [],
+        "required_facts": []
+    },
+    {
+        "id": "general-talk",
+        "query": "hello",
+        "expect_intent": "GENERAL_TALK",
+        "expect_destination": null,
+        "expect_result_names_any": [],
+        "expect_forbid_names": [],
+        "required_facts": []
+    },
+    {
+        "id": "legal-query",
+      "query": "What is your cancellation policy?",
+      "expect_intent": null,
+        "expect_destination": null,
+        "expect_result_names_any": [],
+        "expect_forbid_names": [],
+        "required_facts": []
+    },
+    {
+        "id": "support-handoff",
+        "query": "talk to a human",
+        "expect_intent": "SUPPORT_AGENT",
+        "expect_destination": null,
+        "expect_result_names_any": [],
+        "expect_forbid_names": [],
+        "required_facts": []
+    }
+]

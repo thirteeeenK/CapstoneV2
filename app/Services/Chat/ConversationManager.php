@@ -133,8 +133,22 @@ class ConversationManager
     }
 
     /**
-     * Store only the compact, structured parts of the latest retrieval turn.
-     * This avoids repeatedly inferring conversational scope from rendered prose.
+     * The structured frame of the latest retrieval turn, or [] when the
+     * session has no stored frame yet.
+     *
+     * @return array<string, mixed>
+     */
+    public function currentFrame(ChatSession $session): array
+    {
+        $frame = $session->metadata['retrieval_state'] ?? [];
+
+        return is_array($frame) ? $frame : [];
+    }
+
+    /**
+     * Store the compact, structured parts of the latest retrieval turn in
+     * displayed order. This avoids repeatedly inferring conversational scope
+     * from rendered prose.
      *
      * @param  array<string, mixed>  $contextData
      */
@@ -145,25 +159,44 @@ class ConversationManager
             'retrieved_hotels' => 'hotel',
             'retrieved_activities' => 'activity',
             'retrieved_packages' => 'package',
+            'retrieved_addons' => 'addon',
         ];
 
+        $traceConstraints = $contextData['trace']['constraints'] ?? [];
+
         foreach ($resultGroups as $key => $type) {
-            $result = $contextData[$key][0] ?? null;
-            if (! is_array($result)) {
+            $results = $contextData[$key] ?? null;
+            if (! is_array($results) || $results === []) {
                 continue;
+            }
+            $first = $results[0];
+            if (! is_array($first)) {
+                continue;
+            }
+
+            $ids = [];
+            foreach ($results as $row) {
+                if (is_array($row) && isset($row['id'])) {
+                    $ids[] = (int) $row['id'];
+                }
             }
 
             $metadata = $session->metadata ?? [];
             $metadata['retrieval_state'] = array_filter([
                 'type' => $type,
-                'entity_id' => isset($result['id']) ? (int) $result['id'] : null,
-                'hotel_id' => isset($result['hotel_id']) ? (int) $result['hotel_id'] : null,
-                'destination_id' => isset($result['destination_id']) ? (int) $result['destination_id'] : null,
-                'destination_name' => $result['destination'] ?? null,
-                'check_in_date' => $result['check_in_date'] ?? null,
-                'check_out_date' => $result['check_out_date'] ?? null,
-                'pax' => isset($result['pax']) ? (int) $result['pax'] : null,
-            ], static fn (mixed $value): bool => $value !== null && $value !== '');
+                'entity_id' => isset($first['id']) ? (int) $first['id'] : null,
+                'result_ids' => $ids !== [] ? $ids : null,
+                'hotel_id' => isset($first['hotel_id']) ? (int) $first['hotel_id'] : null,
+                'destination_id' => isset($first['destination_id']) ? (int) $first['destination_id'] : null,
+                'destination_name' => $first['destination'] ?? null,
+                'check_in_date' => $first['check_in_date'] ?? null,
+                'check_out_date' => $first['check_out_date'] ?? null,
+                'pax' => isset($first['pax']) ? (int) $first['pax'] : null,
+                'max_price' => isset($traceConstraints['max_price']) ? (int) $traceConstraints['max_price'] : null,
+                'intent' => $contextData['trace']['intent'] ?? $contextData['intent'] ?? null,
+                'explicit_constraints' => $contextData['explicit_constraints'] ?? [],
+                'source_turn' => $contextData['trace']['trace_id'] ?? null,
+            ], static fn (mixed $value): bool => $value !== null && $value !== '' && $value !== []);
             $session->update(['metadata' => $metadata]);
 
             return;

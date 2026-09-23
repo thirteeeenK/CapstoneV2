@@ -1,7 +1,9 @@
 <?php
 
 use App\Services\GeminiService;
+use App\Services\RoomAvailabilityService;
 use Illuminate\Support\Facades\Cache;
+use Mockery;
 use Tests\TestCase;
 
 uses(TestCase::class);
@@ -9,7 +11,10 @@ uses(TestCase::class);
 test('loadSystemPrompt returns file content and caches it', function () {
     Cache::flush();
 
-    $service = new class extends GeminiService
+    $availability = Mockery::mock(RoomAvailabilityService::class);
+    $availability->shouldReceive('check')->andReturn(['available' => true]);
+
+    $service = new class($availability) extends GeminiService
     {
         public function loadPublic(string $f): string
         {
@@ -27,7 +32,10 @@ test('loadSystemPrompt falls back to disk when cache read fails', function () {
         ->with('gemini:system_prompt:sentiment-analysis-prompt.md')
         ->andThrow(new RuntimeException('cache down'));
 
-    $service = new class extends GeminiService
+    $availability = Mockery::mock(RoomAvailabilityService::class);
+    $availability->shouldReceive('check')->andReturn(['available' => true]);
+
+    $service = new class($availability) extends GeminiService
     {
         public function loadPublic(string $f): string
         {
@@ -47,7 +55,10 @@ test('loadSystemPrompt returns content even when cache write fails', function ()
         ->once()
         ->andThrow(new RuntimeException('cache down'));
 
-    $service = new class extends GeminiService
+    $availability = Mockery::mock(RoomAvailabilityService::class);
+    $availability->shouldReceive('check')->andReturn(['available' => true]);
+
+    $service = new class($availability) extends GeminiService
     {
         public function loadPublic(string $f): string
         {

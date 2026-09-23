@@ -2,6 +2,7 @@
 
 use App\Models\Faq;
 use App\Services\Chat\FaqService;
+use App\Services\Chat\IntentRouter;
 use App\Services\GeminiService;
 
 beforeEach(function () {
@@ -29,7 +30,7 @@ test('short conversational queries never match an FAQ even when semantically clo
     expect($service->findBestMatch('how much are they?'))->toBeNull();
 });
 
-test('semantic FAQ match requires a shared token', function () {
+test('semantic FAQ match needs score and margin, not a shared token', function () {
     $gemini = $this->mock(GeminiService::class);
     $gemini->shouldReceive('searchFaqs')->andReturn([[
         'item' => Faq::first(),
@@ -40,5 +41,25 @@ test('semantic FAQ match requires a shared token', function () {
 
     expect($service->findBestMatch('do you book plane tickets?'))->not->toBeNull();
 
-    expect($service->findBestMatch('refund my money now'))->toBeNull();
+    // No shared tokens: with the token-overlap veto gone, the service
+    // trusts the embedding score instead of second-guessing it.
+    expect($service->findBestMatch('refund my money now'))->not->toBeNull();
+});
+
+test('tied semantic FAQ winners stay silent', function () {
+    $gemini = $this->mock(GeminiService::class);
+    $faq = Faq::first();
+    $gemini->shouldReceive('searchFaqs')->andReturn([
+        ['item' => $faq, 'score' => 0.9],
+        ['item' => $faq, 'score' => 0.88],
+    ]);
+
+    expect((new FaqService($gemini))->findBestMatch('book plane tickets'))->toBeNull();
+});
+
+test('non-general-talk intents skip FAQs without searching', function () {
+    // No searchFaqs stub: any embedding call would fail the mock.
+    $gemini = $this->mock(GeminiService::class);
+
+    expect((new FaqService($gemini))->findBestMatch('show me hotels', IntentRouter::HOTEL_SEARCH))->toBeNull();
 });

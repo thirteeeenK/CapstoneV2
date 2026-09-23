@@ -14,11 +14,33 @@ class FaqService
     /**
      * Find the best matching active FAQ for a user query.
      * Hybrid: keyword/lexical first, then embedding fallback.
+     * Catalog searches keep their intent: only GENERAL_TALK queries are
+     * FAQ-eligible. The semantic winner needs score >= 0.7 with a >= 0.05
+     * margin over the runner-up when competing FAQs exist. The old
+     * token-overlap veto is gone: genuine paraphrases ("settle my bill"
+     * for a payment FAQ) share no tokens yet are the same question.
      */
-    public function findBestMatch(string $query): ?Faq
+    public function findBestMatch(string $query, ?string $eligibleIntent = null): ?Faq
     {
         $query = $this->normalize($query);
         if ($query === '') {
+            return null;
+        }
+
+        $faqs = Faq::where('is_active', true)->get();
+        if ($faqs->isEmpty()) {
+            return null;
+        }
+
+        // A verbatim known question is always answerable, whatever the
+        // keyword classifier says ("Does SunnyTrips support airline ticket
+        // booking?" classifies ROOM_SEARCH, but the user asked an FAQ).
+        // This is not hijack: the user typed the question itself.
+        if ($exact = $faqs->first(fn ($faq) => $this->normalize($faq->question) === $query)) {
+            return $exact;
+        }
+
+        if ($eligibleIntent !== null && $eligibleIntent !== IntentRouter::GENERAL_TALK) {
             return null;
         }
 
@@ -36,17 +58,12 @@ class FaqService
             return null;
         }
 
-        $faqs = Faq::where('is_active', true)->get();
-        if ($faqs->isEmpty()) {
-            return null;
-        }
-
         $best = $this->bestLexicalMatch($query, $faqs, $queryTokens);
         if ($best && $best['score'] >= 0.5) {
             return $best['faq'];
         }
 
-        $semantic = $this->bestSemanticMatch($query, $faqs, $queryTokens);
+        $semantic = $this->bestSemanticMatch($query, $faqs);
         if ($semantic && $semantic['score'] >= 0.7) {
             return $semantic['faq'];
         }
@@ -91,7 +108,7 @@ class FaqService
      * Requires a meaningful token overlap with the FAQ so an unrelated
      * query can never latch onto the closest embedded FAQ.
      */
-    protected function bestSemanticMatch(string $query, $faqs, $queryTokens): ?array
+    protected function bestSemanticMatch(string $query, $faqs): ?array
     {
         if ($faqs->whereNotNull('embedding')->isEmpty()) {
             return null;
@@ -108,14 +125,14 @@ class FaqService
                 return null;
             }
 
-            $faq = $top['item'];
-            $haystackTokens = $this->tokenize($faq->question.' '.($faq->keywords ?? ''));
-            if ($haystackTokens->intersect($queryTokens)->isEmpty()) {
+            // Ambiguous winners stay silent: require a margin over the
+            // runner-up when competing embedded FAQs exist.
+            if (count($scored) >= 2 && ($top['score'] - $scored[1]['score']) < 0.05) {
                 return null;
             }
 
             return [
-                'faq' => $faq,
+                'faq' => $top['item'],
                 'score' => $top['score'],
             ];
         } catch (\Exception $e) {

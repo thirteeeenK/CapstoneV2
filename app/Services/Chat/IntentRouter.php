@@ -504,7 +504,10 @@ class IntentRouter
 
         $constraints['addon_name'] = $this->extractAddOnName($query);
         if ($constraints['addon_name']) {
-            $constraints['addon_id'] = AddOnModel::where('name', 'ILIKE', $constraints['addon_name'])->value('id');
+            $constraints['addon_id'] = AddOnModel::where('name', 'ILIKE', $constraints['addon_name'])
+                ->where('is_shown', true)
+                ->when($constraints['destination_id'] ?? null, fn ($q) => $q->where('destination_id', $constraints['destination_id']))
+                ->value('id');
         }
 
         $constraints['package_name'] = $this->extractPackageName($query);
@@ -645,7 +648,13 @@ class IntentRouter
         }
 
         // Typo tolerance ("happines" → "Happiness Beach Resort").
+        // Skip names whose only distinctive tokens are generic/destination words.
         foreach ($hotels as $name) {
+            $tokens = preg_split('/\s+/', mb_strtolower((string) $name));
+            $meaningful = array_filter($tokens, fn ($t) => strlen($t) >= 3 && ! in_array($t, $genericWords, true) && ! in_array($t, $destinationTokens, true));
+            if ($meaningful === []) {
+                continue;
+            }
             if ($this->fuzzyContains($query, (string) $name)) {
                 return (string) $name;
             }
