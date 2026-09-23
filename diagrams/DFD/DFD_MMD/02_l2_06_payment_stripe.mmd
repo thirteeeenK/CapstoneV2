@@ -1,0 +1,30 @@
+flowchart TB
+    CUST["Customer"]
+    STRIPE["Stripe Payment Gateway"]
+    P7["7.0 Booking Lifecycle Admin and Expiry"]
+    P12["12.0 Notifications and Reports"]
+
+    P61("6.1 Create Checkout Session")
+    P62("6.2 Payment Simulator or QR Ph Flow")
+    P63("6.3 Handle Stripe Webhook")
+    P64("6.4 Mark Booking Paid")
+
+    D5[("D5 Bookings and Manifests")]
+
+    CUST -- "pay booking by reference" --> P61
+    D5 -- "unpaid booking total" --> P61
+    P61 -- "create checkout session" --> STRIPE
+    STRIPE -- "checkout URL" --> P61
+    P61 -- "payment URL" --> CUST
+    CUST -- "redirect return" --> P61
+    P61 -- "fallback simulator or QR Ph" --> P62
+    CUST -- "simulator confirm / QR Ph confirm" --> P62
+    P62 -- "write gateway reference and payment status" --> D5
+
+    STRIPE -- "webhook charge.succeeded or checkout.session.completed" --> P63
+    P63 -- "verify signature and match booking" --> D5
+    P63 -- "payment captured event" --> P64
+    P64 -- "update payment_status paid and paid_at" --> D5
+    P64 -- "status paid" --> P7
+    P64 -- "receipt / confirmation trigger" --> P12
+    P64 -- "payment result" --> CUST

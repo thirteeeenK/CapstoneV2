@@ -1,0 +1,29 @@
+flowchart TB
+    GUEST["Guest Visitor"]
+    CUST["Customer"]
+
+    P21("2.1 Destination and Listing Pages")
+    P22("2.2 Keyword and Filter Search")
+    P23("2.3 Item Detail Render")
+
+    D2[("D2 Catalog Inventory")]
+    D3[("D3 Vector Embeddings")]
+    D9[("D9 Reviews and Summaries")]
+
+    GUEST -- "open landing / destination / package pages" --> P21
+    CUST -- "search query + filters" --> P22
+    P21 -- "read visible catalog rows" --> D2
+    P22 -- "filter by name / price / vibe / capacity" --> D2
+    P22 -- "optional semantic query embed" --> D3
+    D3 -- "nearby catalog ids" --> P22
+    D2 -- "listing cards" --> P21
+    D2 -- "search hits" --> P22
+    P21 -- "catalog pages" --> GUEST
+    P22 -- "search results" --> CUST
+
+    GUEST -- "open hotel / room / activity / package detail" --> P23
+    CUST -- "open detail page" --> P23
+    P23 -- "load item + relations" --> D2
+    D9 -- "average rating badge" --> P23
+    P23 -- "detail view" --> GUEST
+    P23 -- "detail view" --> CUST

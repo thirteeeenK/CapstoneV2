@@ -1,0 +1,35 @@
+# DFD Level 0 — Context Diagram
+
+System boundary as a single process. External entities only.
+
+```mermaid
+flowchart TB
+    GUEST["Guest Visitor"]
+    CUST["Customer"]
+    ADMIN["Admin"]
+    GEMINI["Google Gemini API"]
+    STRIPE["Stripe Payment Gateway"]
+    OWM["OpenWeatherMap API"]
+    SMTP["SMTP Mail Server"]
+    SYS("0.0 SunnyTrips Travel Booking and AI DSS")
+
+    GUEST -- "browse catalog / chat / guest cart" --> SYS
+    SYS -- "pages / chat replies" --> GUEST
+
+    CUST -- "register / preferences / cart / checkout / pay / reviews" --> SYS
+    SYS -- "recommendations / confirmations / booking status" --> CUST
+
+    ADMIN -- "catalog CRUD / booking decisions / support / moderation" --> SYS
+    SYS -- "dashboard / tickets / reports" --> ADMIN
+
+    SYS -- "embedding and content generation" --> GEMINI
+    GEMINI -- "vectors / AI responses" --> SYS
+
+    SYS -- "create / verify checkout session" --> STRIPE
+    STRIPE -- "checkout URL / webhook event" --> SYS
+
+    SYS -- "weather query by lat, lng" --> OWM
+    OWM -- "forecast payload" --> SYS
+
+    SYS -- "notification emails" --> SMTP
+```

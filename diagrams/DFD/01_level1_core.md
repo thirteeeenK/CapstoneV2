@@ -1,0 +1,101 @@
+# DFD Level 1 — Critical Core (paper / print)
+
+Readable subset of Level 1: booking-system spine only (processes 1.0–8.0 + 10.0 Reviews). Full 12-process overview stays in `01_level1_overview.md`. Stores D1–D7 + D9; entities OWM/SMTP and stores D8, D10, D11 are out of critical path.
+
+```mermaid
+flowchart TB
+    %% External entities
+    GUEST["Guest Visitor"]
+    CUST["Customer"]
+    ADMIN["Admin"]
+    GEMINI["Google Gemini API"]
+    STRIPE["Stripe Payment Gateway"]
+
+    %% Critical processes 1.0 - 8.0
+    P1("1.0 Accounts and Onboarding")
+    P2("2.0 Catalog Browse and Search")
+    P3("3.0 Recommendations DSS")
+    P4("4.0 Cart and Lucky Itinerary")
+    P5("5.0 Checkout and Booking Request")
+    P6("6.0 Payment Processing")
+    P7("7.0 Booking Lifecycle")
+    P8("8.0 Chatbot and Human Support")
+    P10("10.0 Reviews and Sentiment")
+
+    %% Data stores
+    D1[("D1 Users and Notifications")]
+    D2[("D2 Catalog Inventory")]
+    D3[("D3 Vector Embeddings")]
+    D4[("D4 Cart and Lucky Bundles")]
+    D5[("D5 Bookings and Manifests")]
+    D6[("D6 Chat Sessions")]
+    D7[("D7 Support Inquiries")]
+    D9[("D9 Reviews and Summaries")]
+
+    %% Boundary flows
+    GUEST -- "register / login" --> P1
+    GUEST -- "browse / chat" --> P2
+    GUEST --> P8
+    CUST -- "preferences" --> P1
+    CUST -- "search" --> P2
+    CUST -- "view picks" --> P3
+    CUST -- "cart ops" --> P4
+    CUST -- "checkout" --> P5
+    CUST -- "pay / cancel / rebook" --> P6
+    CUST -- "review submission" --> P10
+    P3 -- "ranked cards" --> CUST
+    P5 -- "booking ref" --> CUST
+    P6 -- "payment result" --> CUST
+    P7 -- "booking status" --> CUST
+    P10 -- "published reviews" --> CUST
+    ADMIN -- "claim / reply" --> P8
+    ADMIN -- "approve / reject" --> P7
+    P8 -- "tickets" --> ADMIN
+    P7 -- "booking queue" --> ADMIN
+
+    %% Internal critical path
+    P1 -- "user vector" --> P3
+    P2 -- "catalog" --> P3
+    P4 -- "priced cart" --> P5
+    P5 -- "payment intent" --> P6
+    P6 -- "confirmed" --> P7
+    P8 -- "add to basket" --> P4
+    D5 -- "verified purchase" --> P10
+
+    %% External systems
+    P1 -- "embed prefs" --> GEMINI
+    GEMINI --> P1
+    P3 -- "embed / rank" --> GEMINI
+    GEMINI --> P3
+    P8 -- "LLM reply" --> GEMINI
+    GEMINI --> P8
+    P10 -- "sentiment analysis" --> GEMINI
+    GEMINI --> P10
+    P6 -- "checkout session" --> STRIPE
+    STRIPE -- "URL / webhook" --> P6
+
+    %% Store writes / reads
+    P1 --> D1
+    P2 --> D2
+    P3 --> D3
+    P4 --> D4
+    P5 --> D5
+    P6 --> D5
+    P7 --> D5
+    P8 --> D6
+    P8 --> D7
+    P10 --> D9
+
+    D1 --> P3
+    D1 --> P4
+    D2 --> P2
+    D2 --> P3
+    D2 --> P4
+    D3 --> P3
+    D3 --> P4
+    D3 --> P8
+    D4 --> P5
+    D5 --> P5
+    D6 --> P8
+    D7 --> P8
+```

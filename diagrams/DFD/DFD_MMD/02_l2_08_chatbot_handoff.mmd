@@ -1,0 +1,75 @@
+flowchart TB
+    GUEST["Guest Visitor"]
+    CUST["Customer"]
+    ADMIN["Admin"]
+    GEMINI["Google Gemini API"]
+    OWM["OpenWeatherMap API"]
+
+    P81("8.1 Guest Rate Limit and Abuse Guard")
+    P82("8.2 Support State Gatekeeper")
+    P83("8.3 Intent Router and Constraint Extractor")
+    P84("8.4 Hybrid RAG Retrieval")
+    P85("8.5 Gemini Response Synthesis")
+    P86("8.6 Persist Session and History")
+    P87("8.7 Human Handoff Queue")
+    P88("8.8 Admin Claim and Relay")
+
+    D1[("D1 Users Admins Notifications")]
+    D2[("D2 Catalog Inventory")]
+    D3[("D3 Vector Embeddings")]
+    D4[("D4 Cart and Lucky Bundles")]
+    D6[("D6 Chat Sessions and Messages")]
+    D7[("D7 Support Inquiries")]
+    D8[("D8 Abuse and Moderation Logs")]
+    D10[("D10 FAQs Legal and Rules")]
+    D11[("D11 Weather Cache")]
+
+    GUEST -- "chat message" --> P81
+    CUST -- "chat message" --> P81
+    P81 -- "read IP / user flag and ban status" --> D8
+    D8 -- "over limit or banned" --> P81
+    P81 -- "block response" --> GUEST
+    P81 -- "block response" --> CUST
+    P81 -- "passed gate" --> P82
+
+    P82 -- "read active support status" --> D7
+    D7 -- "human agent active: bypass bot" --> P87
+    P82 -- "AI active: continue pipeline" --> P83
+    D6 -- "6-turn conversation window" --> P83
+    P83 -- "classify intent 1-9 + extract constraints" --> P84
+
+    P84 -- "pgvector cosine + metadata filters" --> D3
+    D3 -- "neighbor ids" --> P84
+    P84 -- "hydrate inventory cards" --> D2
+    P84 -- "FAQ grounding" --> D10
+    P84 -- "embed query if needed" --> GEMINI
+    GEMINI -- "query embedding" --> P84
+    P84 -- "weather intent: read cache" --> D11
+    D11 -- "cache miss" --> P84
+    P84 -- "fetch forecast" --> OWM
+    OWM -- "forecast" --> P84
+    P84 -- "refresh cache" --> D11
+    P84 -- "retrieved context pack" --> P85
+
+    P85 -- "system prompt + context + window" --> GEMINI
+    GEMINI -- "answer + action metadata" --> P85
+    P85 -- "reply payload" --> P86
+    P86 -- "write chat_messages and session" --> D6
+    P86 -- "chat reply" --> GUEST
+    P86 -- "chat reply" --> CUST
+    P85 -- "card add action" --> D4
+
+    CUST -- "request human agent" --> P87
+    GUEST -- "request human agent" --> P87
+    P87 -- "set session in_support" --> D6
+    P87 -- "create support_inquiry" --> D7
+    D7 -- "pending tickets" --> P88
+    ADMIN -- "claim ticket" --> P88
+    P88 -- "atomic claim assign admin" --> D7
+    P88 -- "assign session admin" --> D6
+    ADMIN -- "agent message / resolve / return to bot" --> P88
+    P88 -- "write admin message" --> D6
+    P88 -- "update ticket status" --> D7
+    D6 -- "live messages" --> GUEST
+    D6 -- "live messages" --> CUST
+    D7 -- "ticket inbox" --> ADMIN

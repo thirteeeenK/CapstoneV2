@@ -1,0 +1,35 @@
+flowchart TB
+    CUST["Customer"]
+    ADMIN["Admin"]
+    P12["12.0 Notifications and Reports"]
+
+    P71("7.1 Approve Reject or Cancel")
+    P72("7.2 Admin Price Adjustment")
+    P73("7.3 Expiry Sweep booking:expire")
+    P74("7.4 Cancel Withdraw and Rebook")
+    P75("7.5 Write Status History")
+
+    D5[("D5 Bookings and Manifests")]
+
+    ADMIN -- "approve / reject / complete booking" --> P71
+    P71 -- "update booking_status and timestamps" --> D5
+    P71 -- "audit trail" --> P75
+
+    ADMIN -- "discount or surcharge input" --> P72
+    P72 -- "update admin adjustment and net total" --> D5
+    P72 -- "audit trail" --> P75
+
+    P73 -- "cron: expire bookings past payment_deadline" --> D5
+    D5 -- "pending bookings past deadline" --> P73
+    P73 -- "set status expired" --> D5
+    P73 -- "audit trail" --> P75
+
+    CUST -- "cancel / withdraw cancellation / rebook" --> P74
+    P74 -- "update status and deadline fields" --> D5
+    P74 -- "audit trail" --> P75
+
+    P75 -- "append booking_status_histories row" --> D5
+    P71 -- "status change event" --> P12
+    P73 -- "expiry event" --> P12
+    D5 -- "booking status views" --> ADMIN
+    D5 -- "my bookings status" --> CUST

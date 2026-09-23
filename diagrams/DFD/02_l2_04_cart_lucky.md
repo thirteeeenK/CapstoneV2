@@ -1,0 +1,45 @@
+# DFD Level 2 — Process 4.0 Cart and Lucky Itinerary
+
+Parent: Level 1 process `4.0`. Trip basket CRUD plus I'm Feeling Lucky bundle generator.
+
+```mermaid
+flowchart TB
+    GUEST["Guest Visitor"]
+    CUST["Customer"]
+    P8["8.0 Chatbot and Human Support"]
+    GEMINI["Google Gemini API"]
+
+    P41("4.1 Add Item to Trip Basket")
+    P42("4.2 Update Toggle and Remove Cart Lines")
+    P43("4.3 Lucky Generate Constraints")
+    P44("4.4 Score and Bundle Inventory")
+    P45("4.5 Accept Lucky Bundle into Cart")
+
+    D1[("D1 Users Admins Notifications")]
+    D2[("D2 Catalog Inventory")]
+    D3[("D3 Vector Embeddings")]
+    D4[("D4 Cart and Lucky Bundles")]
+
+    GUEST -- "add room / activity / package / add-on" --> P41
+    CUST -- "add item" --> P41
+    P8 -- "chat card add-to-basket" --> P41
+    P41 -- "serialize polymorphic itemable + dates + price" --> D4
+    D4 -- "cart snapshot" --> P42
+    CUST -- "update qty / toggle select / remove / clear" --> P42
+    P42 --> D4
+    D4 -- "current basket" --> GUEST
+    D4 -- "current basket" --> CUST
+
+    CUST -- "destination / budget / days / pax" --> P43
+    P43 -- "read preference vector" --> D1
+    P43 -- "fetch destination inventory" --> D2
+    P43 -- "embed constraints (optional)" --> GEMINI
+    GEMINI -- "constraint embedding" --> P43
+    P43 -- "constraint set" --> P44
+    D2 -- "candidate hotels and activities" --> P44
+    D3 -- "item embeddings for cosine score" --> P44
+    P44 -- "ranked combo within budget and duration" --> P45
+    CUST -- "accept generated itinerary" --> P45
+    P45 -- "write cart_items with lucky_group_id" --> D4
+    D4 -- "bundled basket state" --> CUST
+```
