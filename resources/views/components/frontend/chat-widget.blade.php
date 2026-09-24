@@ -847,7 +847,7 @@
                     }
 
                     if (res.status === 403 && data.status === 'blocked') {
-                        this.showLockPanel(data.reply || 'Your message was blocked by our safety system.');
+                        this.addMessage('bot', data.reply || 'Your message was blocked by our safety system.', {});
                         return;
                     }
 

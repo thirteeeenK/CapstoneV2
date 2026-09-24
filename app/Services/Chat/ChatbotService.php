@@ -661,110 +661,14 @@ class ChatbotService
             return $this->gemini->detectAbuseAndGuard($user, $message);
         }
 
-        $lower = mb_strtolower($message);
-        $bannedPatterns = [
-            // --- 1. EXISTING PATTERNS ---
-            'nsfw',
-            'porn',
-            'naked',
-            'nude',
-            'sexual',
-            'sex',
-            'strip',
-            'erotic',
-            'suicide',
-            'bomb',
-            'terrorist',
-            'hack bank',
-            'credit card fraud',
-            'illegal drugs',
-            'kill',
-            'murder',
-            'ignore previous instructions',
-            'ignore all rules',
-            'system prompt',
-            'you are now DAN',
-            'bypass restriction',
+        $match = ChatbotModerationPolicy::match($message);
+        if ($match) {
+            Log::info('Chatbot guest abuse blocked', ['keyword' => $match['term'], 'category' => $match['category']]);
 
-            // --- 2. HATE SPEECH & PROFANITY (Tagalog & English) ---
-            'putangina',
-            'gago',
-            'bobo',
-            'tanga',
-            'ulol',
-            'inamo',
-            'hayop ka',
-            'tarantado',
-            'fuck',
-            'shit',
-            'bitch',
-            'asshole',
-            'cunt',
-            'retard',
-            'bastard',
-
-            // --- 3. NSFW & EXPLICIT CONTENT (Tagalog & Extra English) ---
-            'bold',
-            'hubad',
-            'bastos',
-            'kantot',
-            'iyot',
-            'pepe',
-            'titi',
-            'pokpok',
-            'escort',
-            'prostitute',
-            'onlyfans',
-            'sugar daddy',
-            'sugar baby',
-
-            // --- 4. HARM, VIOLENCE & ILLEGAL ACTS (Tagalog & Extra English) ---
-            'magpakamatay',
-            'patayin',
-            'saksak',
-            'baril',
-            'droga',
-            'shabu',
-            'adik',
-            'weapon',
-            'shoot',
-            'self-harm',
-            'cut myself',
-            'rape',
-
-            // --- 5. ADVANCED PROMPT INJECTION & AI MANIPULATION ---
-            'developer mode',
-            'forget everything',
-            'act as a developer',
-            'print prompt',
-            'output your instructions',
-            'jailbreak',
-            'do anything now',
-            'system message',
-            'admin mode',
-            'override commands',
-
-            // --- 6. TRAVEL-SPECIFIC ABUSE & SCAMS ---
-            'human trafficking',
-            'smuggle',
-            'fake passport',
-            'fake visa',
-            'bypass immigration',
-            'tnt',
-            'tago ng tago',
-            'peke na ticket',
-            'scam',
-            'money laundering',
-        ];
-        foreach ($bannedPatterns as $kw) {
-            if (str_contains($lower, $kw)) {
-                Log::info('Chatbot guest abuse blocked', ['message' => $message, 'keyword' => $kw]);
-
-                return [
-                    'blocked' => true,
-                    'response' => 'Your message contains content that violates our community guidelines. Please log in to continue chatting.',
-                ];
-            }
+            return [
+                'blocked' => true,
+                'response' => 'Your message contains content that violates our community guidelines. Please refrain from using profanity/sensitive words.',
+            ];
         }
 
         return null;

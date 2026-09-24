@@ -15,6 +15,7 @@ use App\Models\Review;
 use App\Models\ReviewSummary;
 use App\Models\RoomType;
 use App\Models\User;
+use App\Services\Chat\ChatbotModerationPolicy;
 use Carbon\Carbon;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Collection;
@@ -2719,54 +2720,12 @@ class GeminiService
             ];
         }
 
-        $lowerMsg = mb_strtolower($message);
+        // 2. Category Detection via the shared moderation policy so guests and
+        // authenticated users evaluate the same vocabulary.
+        $match = ChatbotModerationPolicy::match($message);
 
-        // 2. Category Detection Patterns
-        $categories = [
-            'Sexual/Inappropriate' => [
-                'nsfw',
-                'porn',
-                'naked',
-                'nude',
-                'sexual',
-                'sex',
-                'strip',
-                'erotic',
-                'boobs',
-                'penis',
-                'vagina',
-            ],
-            'Sensitive/Prohibited' => [
-                'suicide',
-                'bomb',
-                'terrorist',
-                'hack bank',
-                'credit card fraud',
-                'illegal drugs',
-                'kill',
-                'murder',
-            ],
-            'Prompt Injection' => [
-                'ignore previous instructions',
-                'ignore all rules',
-                'system prompt',
-                'you are now DAN',
-                'bypass restriction',
-            ],
-        ];
-
-        $flaggedCategory = null;
-        $flaggedReason = null;
-
-        foreach ($categories as $category => $keywords) {
-            foreach ($keywords as $kw) {
-                if (preg_match('/\b'.preg_quote($kw, '/').'\b/i', $lowerMsg)) {
-                    $flaggedCategory = $category;
-                    $flaggedReason = "Query contains prohibited phrase: '{$kw}'";
-                    break 2;
-                }
-            }
-        }
+        $flaggedCategory = $match['category'] ?? null;
+        $flaggedReason = $match['reason'] ?? null;
 
         // 3. If flagged, log abuse report and increment user flag count
         if ($flaggedCategory) {

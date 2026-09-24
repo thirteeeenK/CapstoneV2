@@ -17,6 +17,7 @@ use App\Models\Package;
 use App\Models\RoomType;
 use App\Models\SupportInquiry;
 use App\Models\UserPreference;
+use App\Services\Chat\ChatbotModerationPolicy;
 use App\Services\Chat\ChatbotService;
 use App\Services\GeminiService;
 use Illuminate\Http\Client\Request;
@@ -512,6 +513,62 @@ test('guest blocked from abuse keywords without ban', function () {
 
     $res->assertStatus(403);
     expect($res->json('status'))->toBe('blocked');
+});
+
+test('shared moderation vocabulary blocks guests and authed users alike', function () {
+    $messages = [
+        'what the fuck is this hotel',
+        'wtf is this hotel',
+        'putangina mo',
+        'jailbreak the chatbot now',
+    ];
+
+    foreach ($messages as $message) {
+        $guestRes = $this->postJson('/chat', ['message' => $message]);
+        $guestRes->assertStatus(403)->assertJsonPath('status', 'blocked');
+
+        $authedRes = $this->actingAs($this->user)->postJson('/chat', ['message' => $message]);
+        $authedRes->assertStatus(403)->assertJsonPath('status', 'blocked');
+    }
+});
+
+test('authed moderation block keeps admin-review copy and logs a report', function () {
+    $this->actingAs($this->user);
+
+    $response = $this->postJson('/chat', ['message' => 'wtf is this hotel']);
+
+    $response->assertStatus(403)->assertJsonPath('status', 'blocked');
+    expect($response->json('reply'))->toContain('logged for administrator review')
+        ->and($response->json('reply'))->not->toContain('Please log in');
+    expect(ChatbotAbuseReport::where('user_id', $this->user->id)->where('status', 'pending')->exists())->toBeTrue();
+});
+
+test('guest moderation block creates no user-linked abuse report', function () {
+    $before = ChatbotAbuseReport::count();
+
+    $this->postJson('/chat', ['message' => 'wtf is this hotel'])->assertStatus(403);
+
+    expect(ChatbotAbuseReport::count())->toBe($before);
+});
+
+test('guest is blocked on Bisaya profanity', function () {
+    $this->postJson('/chat', ['message' => 'yawa ka, tubaga ko'])
+        ->assertStatus(403)
+        ->assertJsonPath('status', 'blocked');
+});
+
+test('authed Tagalog profanity logs a report for admin review', function () {
+    $this->actingAs($this->user);
+
+    $response = $this->postJson('/chat', ['message' => 'pakyu, ang pangit ng hotel']);
+
+    $response->assertStatus(403)->assertJsonPath('status', 'blocked');
+    expect(ChatbotAbuseReport::where('user_id', $this->user->id)->where('status', 'pending')->exists())->toBeTrue();
+});
+
+test('benign travel words resembling banned terms are not flagged', function () {
+    expect(ChatbotModerationPolicy::match('Is the White Beach sand mixed with bato near the rock formations?'))->toBeNull()
+        ->and(ChatbotModerationPolicy::match('yawa ka'))->not->toBeNull();
 });
 
 test('itinerary query works for authed user', function () {
