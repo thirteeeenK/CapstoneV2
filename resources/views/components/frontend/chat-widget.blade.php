@@ -96,9 +96,9 @@
                             <img src="{{ asset('images/favicon-sun.png') }}" alt="SunnyBot"
                                 class="w-10 h-10 object-cover">
                         </div>
-                        <p class="text-slate-800 text-xs font-bold font-headline">Meet SunnyBot AI!</p>
-                        <p class="text-slate-500 text-[11px] font-body leading-relaxed">Your smart island guide for
-                            Philippine getaways. Here's what I can do:</p>
+                        <p class="text-slate-800 text-xs font-bold font-headline">Mabuhay! I'm SunnyBot, your travel assistant.</p>
+                        <p class="text-slate-500 text-[11px] font-body leading-relaxed">How can I help you today?
+                            Here's what I can do:</p>
                     </div>
                     <ul class="px-4 pb-3 space-y-1.5 text-left">
                         <li class="flex items-center gap-2 text-[11px] text-slate-600 font-body">
@@ -145,9 +145,9 @@
                         class="w-10 h-10 rounded-2xl bg-white mx-auto flex items-center justify-center border border-ocean-100 overflow-hidden">
                         <img src="{{ asset('images/favicon-sun.png') }}" alt="SunnyBot" class="w-10 h-10 object-cover">
                     </div>
-                    <p class="text-slate-800 text-xs font-bold font-headline">Welcome to SunnyBot AI!</p>
-                    <p class="text-slate-500 text-[11px] font-body leading-relaxed">Ask me about sanctuary hotels,
-                        island activities, room rates, or custom itineraries in the Philippines.</p>
+                    <p class="text-slate-800 text-xs font-bold font-headline">Mabuhay! I'm SunnyBot, your travel assistant.</p>
+                    <p class="text-slate-500 text-[11px] font-body leading-relaxed">How can I help you today? Ask me about
+                        hotels, island activities, room rates, or custom itineraries.</p>
                     <div class="flex flex-wrap gap-2 justify-center pt-2">
                         <button @click='input = "Where to stay in Boracay?"; send()'
                             class="px-3 py-1.5 rounded-full bg-ocean-50 hover:bg-ocean-100 text-ocean-700 text-[11px] font-bold border border-ocean-200 transition-colors cursor-pointer">Where
