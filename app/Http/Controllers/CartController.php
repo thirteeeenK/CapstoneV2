@@ -13,6 +13,7 @@ use App\Services\CartService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class CartController extends Controller
@@ -127,10 +128,13 @@ class CartController extends Controller
             $titleParts = array_filter([$destinationName, $nights ? $nights.'N' : null]);
             $selectedItems = $groupItems->where('is_selected', true);
             $subtotal = $selectedItems->sum(fn ($item) => $item->subtotal);
+            $isChat = str_starts_with((string) $groupId, 'ch');
 
             $groups[] = [
                 'id' => $groupId,
-                'title' => implode(' — ', $titleParts).' Surprise Itinerary',
+                'title' => implode(' — ', $titleParts).($isChat ? ' Itinerary' : ' Surprise Itinerary'),
+                'label' => $isChat ? 'Chat Itinerary' : "I'm Feeling Lucky",
+                'icon' => $isChat ? 'route' : 'casino',
                 'destination_name' => $destinationName,
                 'nights' => $nights,
                 'item_count' => $groupItems->count(),
@@ -279,6 +283,53 @@ class CartController extends Controller
 
             return redirect()->back()->with('error', 'Could not add item to cart.');
         }
+    }
+
+    /**
+     * Add a whole chat itinerary (room + activities) to the cart as one group.
+     */
+    public function addItinerary(Request $request)
+    {
+        $validated = $request->validate([
+            'room_id' => 'required|integer|exists:rooms,id',
+            'activity_ids' => 'nullable|array',
+            'activity_ids.*' => 'integer|exists:activities,id',
+            'pax' => 'required|integer|min:1|max:20',
+            'check_in_date' => 'required|date|after:today',
+            'check_out_date' => 'required|date|after:check_in_date',
+        ]);
+
+        // 'ch' + hex-uuid (34 chars) fits lucky_group_id varchar(36); 'h' is not a hex digit, so dashed UUIDs never collide.
+        $groupId = 'ch'.str_replace('-', '', (string) Str::uuid());
+
+        try {
+            $this->cartService->add($request, [
+                'item_type' => 'room',
+                'item_id' => $validated['room_id'],
+                'quantity' => 1,
+                'selected_pax' => $validated['pax'],
+                'check_in_date' => $validated['check_in_date'],
+                'check_out_date' => $validated['check_out_date'],
+            ], $groupId);
+
+            foreach (array_values(array_unique($validated['activity_ids'] ?? [])) as $activityId) {
+                $this->cartService->add($request, [
+                    'item_type' => 'activity',
+                    'item_id' => $activityId,
+                    'quantity' => 1,
+                    'selected_pax' => $validated['pax'],
+                ], $groupId);
+            }
+        } catch (\RuntimeException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Your itinerary is in your Trip Basket!',
+            'group_id' => $groupId,
+            'cart_count' => $this->getCartQuery($request)->count(),
+        ]);
     }
 
     /**

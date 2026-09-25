@@ -23,7 +23,7 @@
             }
             return true;
         }
-    }" class="pt-20 sm:pt-28 pb-12 bg-sand-50/70 text-slate-900 min-h-screen relative overflow-hidden">
+    }" class="{{ Auth::check() ? 'py-12' : 'pt-20 sm:pt-28 pb-12' }} bg-sand-50/70 text-slate-900 min-h-screen relative overflow-hidden">
         
         {{-- Background Soft Ambient Mesh Glows --}}
         <div class="absolute top-10 left-1/3 w-[500px] h-[300px] bg-sky-200/40 blur-3xl rounded-full pointer-events-none"></div>
@@ -159,7 +159,7 @@
                             $vibeTagsStr
                         ]);
 
-                        $actPayload = app(App\Services\Preview\ActivityPreviewService::class)->build($act);
+                        $actPayload = app(App\Services\Preview\ActivityPreviewService::class)->build($act, $priceChanges[$act->id] ?? null);
                     @endphp
 
                     <div x-show="matchesActivity('{{ $act->destination_id }}', '{{ addslashes($act->activity_level ?? '') }}', {{ json_encode($searchablePayload) }})"
@@ -184,8 +184,9 @@
 
                                 {{-- Price Badge --}}
                                 @if($act->rate)
-                                    <div class="absolute top-3 right-3 bg-slate-900/90 text-emerald-400 font-extrabold text-xs px-2.5 py-0.5 rounded-lg border border-white/10">
-                                        {{ $formattedRate }}
+                                    <div class="absolute top-3 right-3 bg-slate-900/90 text-emerald-400 font-extrabold text-xs px-2.5 py-0.5 rounded-lg border border-white/10 flex items-center gap-1.5">
+                                        <span>{{ $formattedRate }}</span>
+                                        <x-frontend.price-change-badge :change="$priceChanges[$act->id] ?? null" />
                                     </div>
                                 @endif
 

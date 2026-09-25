@@ -110,8 +110,8 @@
                                    class="w-4 h-4 rounded bg-white accent-ocean-700 border-white/50 focus:ring-white cursor-pointer shrink-0">
                             <div class="flex-1 min-w-0">
                                 <span class="inline-flex items-center gap-1 rounded-full bg-white/20 text-white border border-white/30 px-2 py-0.5 text-[10px] font-bold tracking-wide uppercase">
-                                    <span class="material-symbols-outlined text-[12px]">casino</span>
-                                    I'm Feeling Lucky
+                                    <span class="material-symbols-outlined text-[12px]" x-text="group.icon || 'casino'"></span>
+                                    <span x-text="group.label || 'I\'m Feeling Lucky'"></span>
                                 </span>
                                 <h4 class="text-xs font-bold text-white leading-snug mt-1 truncate" x-text="group.title"></h4>
                                 <p class="text-[11px] text-white/80 truncate">

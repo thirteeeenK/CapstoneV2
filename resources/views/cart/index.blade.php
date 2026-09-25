@@ -172,8 +172,8 @@
                                 <div class="flex-1 min-w-0">
                                     <div class="flex flex-wrap items-center gap-2">
                                         <span class="inline-flex items-center gap-1 rounded-full bg-white/20 text-white border border-white/30 px-2.5 py-0.5 text-[11px] font-bold tracking-wide uppercase">
-                                            <span class="material-symbols-outlined text-[13px]">casino</span>
-                                            I'm Feeling Lucky
+                                            <span class="material-symbols-outlined text-[13px]" x-text="group.icon || 'casino'"></span>
+                                            <span x-text="group.label || 'I\'m Feeling Lucky'"></span>
                                         </span>
                                         <span class="inline-flex items-center gap-1 text-xs text-white/90">
                                             <span class="material-symbols-outlined text-sm">location_on</span>

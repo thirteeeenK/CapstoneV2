@@ -13,7 +13,7 @@ class ActivityPreviewService
      * Build the JSON payload shared by the activity preview modal (activity
      * catalog, destination page, hotel page, chat widget).
      */
-    public function build(ActivityModel $activity): array
+    public function build(ActivityModel $activity, ?array $priceChange = null): array
     {
         $imagesRaw = is_array($activity->images) ? $activity->images : (is_string($activity->images) ? (json_decode($activity->images, true) ?: []) : []);
         $actImg = self::resolveActivityImage($imagesRaw[0] ?? null, $activity->activity_name, $activity->category);
@@ -31,6 +31,7 @@ class ActivityPreviewService
             'category' => $activity->category,
             'category_icon' => self::getCategoryIcon($activity->category),
             'rate' => self::formatRate($activity->rate),
+            'price_change' => $priceChange,
             'duration' => $activity->duration,
             'activity_level' => $activity->activity_level,
             'capacity' => $activity->capacity,

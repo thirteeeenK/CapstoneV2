@@ -150,6 +150,22 @@ class ActivityModel extends Model
         return true;
     }
 
+    public function pricingBasis(): string
+    {
+        $rate = mb_strtolower((string) $this->rate);
+        if (str_contains($rate, '/hour') || str_contains($rate, 'per hour') || str_contains($rate, 'hourly')) {
+            return 'per_hour';
+        }
+        if (str_contains($rate, 'per group') || str_contains($rate, 'group rate') || str_contains($rate, 'private')) {
+            return 'per_group';
+        }
+        if (str_contains($rate, 'per unit') || str_contains($rate, '/unit') || str_contains($rate, 'per van') || str_contains($rate, 'per boat') || str_contains($rate, 'per trip') || str_contains($rate, 'per booking') || str_contains($rate, 'per session')) {
+            return 'per_unit';
+        }
+
+        return 'per_person';
+    }
+
     /**
      * Get maximum allowable capacity integer from capacity string.
      */

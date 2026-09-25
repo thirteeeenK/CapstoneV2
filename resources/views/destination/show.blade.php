@@ -269,7 +269,7 @@
                                     implode(' ', $vibeTagsRaw)
                                 ]);
 
-                                $actPayload = app(App\Services\Preview\ActivityPreviewService::class)->build($activity);
+                                $actPayload = app(App\Services\Preview\ActivityPreviewService::class)->build($activity, $priceChanges[$activity->id] ?? null);
                             @endphp
                             <div x-show="matchesActivity('{{ addslashes($activity->activity_level ?? '') }}', {{ json_encode($searchablePayload) }})"
                                 class="bg-white rounded-3xl border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between group hover:-translate-y-1">
@@ -286,8 +286,9 @@
                                         @endif
                                         @if($activity->rate)
                                             <div
-                                                class="absolute top-3 right-3 bg-slate-950/80 backdrop-blur-md text-emerald-400 font-extrabold text-xs px-2.5 py-1 rounded-lg border border-white/20">
+                                                class="absolute top-3 right-3 bg-slate-950/80 backdrop-blur-md text-emerald-400 font-extrabold text-xs px-2.5 py-1 rounded-lg border border-white/20 flex items-center gap-1.5">
                                                 {{ $formattedActRate }}
+                                                <x-frontend.price-change-badge :change="$priceChanges[$activity->id] ?? null" />
                                             </div>
                                         @endif
                                     </div>

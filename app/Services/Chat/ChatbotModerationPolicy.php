@@ -73,6 +73,10 @@ class ChatbotModerationPolicy
                 'cunt',
                 'retard',
                 'bastard',
+                'stupid',
+                'idiot',
+                'bullshit',
+                'bull****',
                 'pakyu',
                 'leche',
                 'lintik',
@@ -169,7 +173,7 @@ class ChatbotModerationPolicy
 
         foreach (self::categories() as $category => $terms) {
             foreach ($terms as $term) {
-                $pattern = '/\b' . preg_quote(mb_strtolower($term), '/') . '\b/i';
+                $pattern = '/\b'.preg_quote(mb_strtolower($term), '/').'\b/i';
 
                 if (preg_match($pattern, $normalized)) {
                     return [

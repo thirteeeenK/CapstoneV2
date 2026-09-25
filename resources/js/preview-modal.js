@@ -7,14 +7,17 @@ import Alpine from 'alpinejs';
 Alpine.store('preview', {
     room: null,
     activity: null,
+    package: null,
     roomImgIndex: 0,
     actImgIndex: 0,
+    pkgImgIndex: 0,
     pax: 1,
     activityPax: 1,
     roomDates: { checkIn: '', checkOut: '', nights: 0, available: true, availabilityMessage: '', subtotal: 0 },
     pickerEpoch: 0,
     loading: false,
     loadingActivity: false,
+    loadingPackage: false,
 
     get computedNightlyRate() {
         const target = this.room;
@@ -112,5 +115,37 @@ Alpine.store('preview', {
             window.addToCart('activity', act.id, { selected_pax: this.activityPax });
         }
         this.closeActivity();
+    },
+
+    openPackage(payload) {
+        this.package = payload;
+        this.pkgImgIndex = 0;
+    },
+
+    closePackage() {
+        this.package = null;
+    },
+
+    async openPackageById(id) {
+        this.loadingPackage = true;
+        try {
+            const res = await fetch(`/packages/${id}/preview`, { headers: { 'Accept': 'application/json' } });
+            if (!res.ok) throw new Error('package not found');
+            const data = await res.json();
+            this.openPackage(data);
+        } catch (err) {
+            alert('This package is no longer available.');
+        } finally {
+            this.loadingPackage = false;
+        }
+    },
+
+    addPackageToCart() {
+        const pkg = this.package;
+        if (!pkg) return;
+        if (typeof window.addToCart === 'function') {
+            window.addToCart('package', pkg.id, { quantity: pkg.min_pax || 2, selected_pax: pkg.min_pax || 2 });
+        }
+        this.closePackage();
     },
 });

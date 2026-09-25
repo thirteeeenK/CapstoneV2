@@ -1,7 +1,7 @@
 <x-frontend.layout title="Transfers & Travel Add-ons — SunnyTrips">
 
     <div x-data="{ activeDestId: '{{ request('destination_id') ?: 'all' }}', previewAddon: null, modalPax: 1 }"
-        class="py-12 bg-sand-50/70 text-slate-900 min-h-screen relative overflow-hidden">
+        class="{{ Auth::check() ? 'py-12' : 'pt-20 sm:pt-28 pb-12' }} bg-sand-50/70 text-slate-900 min-h-screen relative overflow-hidden">
 
         {{-- Background Soft Ambient Mesh Glows --}}
         <div
@@ -276,18 +276,24 @@
                     </template>
 
                     {{-- Pax Selector Control --}}
-                    <div class="flex items-center justify-between p-3.5 bg-sky-50/80 rounded-2xl border border-sky-200/80">
+                    <div
+                        class="flex items-center justify-between p-3.5 bg-sky-50/80 rounded-2xl border border-sky-200/80">
                         <div class="flex items-center gap-2">
                             <span class="material-symbols-outlined text-sky-600">group</span>
                             <div>
                                 <span class="text-xs font-bold text-slate-800 block">Passenger / Traveler Count</span>
-                                <span class="text-[11px] text-slate-500">Tier rate updates automatically for selected pax</span>
+                                <span class="text-[11px] text-slate-500">Tier rate updates automatically for selected
+                                    pax</span>
                             </div>
                         </div>
-                        <div class="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-2xs">
-                            <button type="button" @click="modalPax = Math.max(1, modalPax - 1)" :disabled="modalPax <= 1" class="text-slate-600 font-bold hover:text-sky-600 disabled:opacity-40 cursor-pointer">-</button>
+                        <div
+                            class="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-2xs">
+                            <button type="button" @click="modalPax = Math.max(1, modalPax - 1)"
+                                :disabled="modalPax <= 1"
+                                class="text-slate-600 font-bold hover:text-sky-600 disabled:opacity-40 cursor-pointer">-</button>
                             <span class="text-xs font-black text-slate-900 w-6 text-center" x-text="modalPax"></span>
-                            <button type="button" @click="modalPax += 1" class="text-slate-600 font-bold hover:text-sky-600 cursor-pointer">+</button>
+                            <button type="button" @click="modalPax += 1"
+                                class="text-slate-600 font-bold hover:text-sky-600 cursor-pointer">+</button>
                         </div>
                     </div>
 
@@ -318,7 +324,8 @@
                         Close Details
                     </button>
 
-                    <button type="button" @click="window.addToCart('addon', previewAddon.id, { selected_pax: modalPax }); previewAddon = null;"
+                    <button type="button"
+                        @click="window.addToCart('addon', previewAddon.id, { selected_pax: modalPax }); previewAddon = null;"
                         class="px-6 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs shadow-md transition-colors flex items-center gap-1.5 cursor-pointer">
                         <span class="material-symbols-outlined text-sm">shopping_cart</span>
                         <span>Add to Trip Basket</span>

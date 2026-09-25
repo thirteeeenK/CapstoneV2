@@ -343,7 +343,7 @@ class IntentRouter
      * within $maxDistance levenshtein edits per token (typos like
      * "borakay" → "boracay"). Bounded: tokens < 4 chars require exact.
      */
-    protected function fuzzyContains(string $haystack, string $needle, int $maxDistance = 2): bool
+    protected function fuzzyContains(string $haystack, string $needle, int $maxDistance = 2, int $minimumHaystackTokenLength = 4): bool
     {
         $needle = $this->normalizeText($needle);
         $haystack = $this->normalizeText($haystack);
@@ -385,7 +385,7 @@ class IntentRouter
                 // Mirror the needle guard: 1-3 char query words ("in",
                 // "sea", "to") otherwise align to any short name fragment
                 // ("mins", "seda") and pin entities from thin air.
-                if (strlen($ht) < 4 || abs(strlen($ht) - strlen($nt)) > $maxDistance) {
+                if (strlen($ht) < $minimumHaystackTokenLength || abs(strlen($ht) - strlen($nt)) > $maxDistance) {
                     continue;
                 }
                 if (levenshtein($ht, $nt) <= $maxDistance) {
@@ -455,10 +455,10 @@ class IntentRouter
             $constraints['max_price'] = (int) ((float) $m[1] * 1000);
         }
 
-        if (preg_match('/(\d+)\s*(?:nights?|gabi)\b/i', $query, $m)) {
+        if (preg_match('/(\d+)[-\s]*(?:nights?|gabi)\b/i', $query, $m)) {
             $constraints['nights'] = (int) $m[1];
         }
-        if (preg_match('/(\d+)\s*(?:days?|araw)\b/i', $query, $m) && ! $constraints['nights']) {
+        if (preg_match('/(\d+)[-\s]*(?:days?|araw)\b/i', $query, $m) && ! $constraints['nights']) {
             $constraints['days'] = (int) $m[1];
             $constraints['nights'] = max(0, $constraints['days'] - 1);
         }
@@ -762,7 +762,7 @@ class IntentRouter
                 if (empty($distinctive)) {
                     continue;
                 }
-                if ($this->fuzzyContains($query, implode(' ', $distinctive))) {
+                if ($this->fuzzyContains($query, implode(' ', $distinctive), minimumHaystackTokenLength: 5)) {
                     return (string) $name;
                 }
                 // Concatenated typing ("jetski" → "Jet Ski (30 mins)"): a
@@ -870,7 +870,7 @@ class IntentRouter
         if (preg_match('/\bnot\s+included\b|\bexclu|\bhindi\s+kasama\b|\bnot\s+part\s+of\b/i', $lower)) {
             return 'exclusions';
         }
-        if (preg_match('/\binclud|\bkasama\b|\bcomes?\s+with\b|\bwhat\s+do\s+(i|we)\s+get\b/i', $lower)) {
+        if (preg_match('/\binclud|\binclusion|\bkasama\b|\bcomes?\s+with\b|\bwhat\s+do\s+(i|we)\s+get\b/i', $lower)) {
             return 'inclusions';
         }
         if (preg_match('/\bhow\s+much\b|\bmagkano\b|\bpresyo\b|\bprices?\b|\bcosts?\b|\brates?\b/i', $lower)) {
@@ -884,6 +884,9 @@ class IntentRouter
         }
         if (preg_match('/\brequirements?\b|\bbring\b|\bdadalhin\b|\brestrictions?\b|\bage\s+limit\b|\bbawal\b/i', $lower)) {
             return 'requirements';
+        }
+        if (preg_match('/\bamenit|\bfacilit|\bswimming\s+pool\b|\bpool\b|\bwifi\b|\bgym\b|\bspa\b|\bpasilidad\b/i', $lower)) {
+            return 'amenities';
         }
         if (preg_match('/\bwhere\s+is\b/i', $lower)) {
             return 'location';
@@ -1254,7 +1257,7 @@ class IntentRouter
                 return true;
             }
         }
-        if (preg_match('/(\d+)\s*(?:day|araw)\s*(?:itinerary|plan|trip|itiniraryo)/i', $lower)) {
+        if (preg_match('/(\d+)[-\s]*(?:day|araw)\s*(?:itinerary|plan|trip|itiniraryo)/i', $lower)) {
             return true;
         }
 
@@ -1269,7 +1272,7 @@ class IntentRouter
         if (preg_match('/\b(couple|couples|solo|alone)\b/i', $lower)) {
             return true;
         }
-        if (preg_match('/\d+\s*(?:nights?|gabi|days?|araw)\b/i', $query)) {
+        if (preg_match('/\d+[-\s]*(?:nights?|gabi|days?|araw)\b/i', $query)) {
             return true;
         }
         if (preg_match('/(?:₱|php|peso|budget)\b/i', $lower)) {
@@ -1284,7 +1287,7 @@ class IntentRouter
         if (preg_match('/\b(plan\s+(a|my|our|an?)\s+(trip|vacation|holiday|bakasyon)|trip\s*plan|travel\s*plan|suggest an itinerary|build an itinerary|travel schedule|daily schedule)\b/i', $lower)) {
             return true;
         }
-        if (preg_match('/(\d+)\s*(?:day|araw)\s*(?:itinerary|plan|trip|itiniraryo)/i', $lower)) {
+        if (preg_match('/(\d+)[-\s]*(?:day|araw)\s*(?:itinerary|plan|trip|itiniraryo)/i', $lower)) {
             return true;
         }
 

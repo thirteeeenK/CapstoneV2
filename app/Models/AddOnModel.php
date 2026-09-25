@@ -81,6 +81,20 @@ class AddOnModel extends Model
         return 0.00;
     }
 
+    /** @return array<string, mixed>|null */
+    public function pricingTierForPax(int $pax = 1): ?array
+    {
+        $pax = max(1, $pax);
+        $tiers = array_values(array_filter((array) $this->pricing_tiers, 'is_array'));
+        foreach ($tiers as $tier) {
+            if ($pax >= (int) ($tier['min_pax'] ?? 1) && $pax <= (int) ($tier['max_pax'] ?? PHP_INT_MAX)) {
+                return $tier;
+            }
+        }
+
+        return $tiers === [] ? null : $tiers[array_key_last($tiers)];
+    }
+
     /**
      * Get maximum passenger capacity configured in pricing tiers.
      */

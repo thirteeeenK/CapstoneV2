@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\ActivityModel;
+use App\Models\AddOnModel;
 use App\Models\DestinationModel;
 use App\Models\HotelModel;
 use App\Models\RoomType;
@@ -182,4 +183,93 @@ test('cross-scope notice names the scope plainly', function () {
 
     $response->assertOk()->assertJsonPath('status', 'success');
     expect($response->json('reply'))->toContain('closest El Nido alternatives');
+});
+
+test('Taglish price questions disclose alternatives without treating request words as offerings', function (string $query) {
+    ActivityModel::where('activity_name', 'Jet Ski (30 mins)')->update(['is_shown' => false]);
+    mockGemini(unitVector(0), "I can't seem to find jet ski rentals in our database. Try asking about hotels instead.");
+
+    $response = $this->postJson('/chat', ['message' => $query]);
+
+    $response->assertOk();
+    expect($response->json('retrieved_activities'))->not->toBeEmpty();
+    expect($response->json('reply'))
+        ->toContain("I couldn't find a confirmed match")
+        ->toContain('Clear Kayak')
+        ->not->toContain('find magkano')
+        ->not->toContain('find presyo')
+        ->not->toContain('Prices are shown on each card')
+        ->not->toContain("I can't seem")
+        ->not->toContain('Try asking about hotels');
+})->with(['magkano ang jet ski', 'ano po ang presyo ng jet ski sa El Nido']);
+
+test('a partial compound offering match does not count as a confirmed match', function () {
+    ActivityModel::factory()->create([
+        'destination_id' => $this->elnido->id,
+        'activity_name' => 'Jet Boat',
+        'description' => 'A powered boat excursion.',
+        'embedding' => unitVectorString(0),
+    ]);
+    mockGemini(unitVector(0));
+
+    $response = $this->postJson('/chat', ['message' => 'magkano ang jet ski sa El Nido']);
+
+    $response->assertOk();
+    expect($response->json('reply'))->toContain('Just so you know')
+        ->toContain('Jet Ski (30 mins)')
+        ->toContain('Boracay');
+});
+
+test('an existing jet ski answers a Taglish price question without an absence notice', function () {
+    mockGemini(unitVector(0));
+
+    $response = $this->postJson('/chat', ['message' => 'magkano ang jet ski sa Boracay']);
+
+    $response->assertOk();
+    expect($response->json('reply'))->toContain('Jet Ski (30 mins)')
+        ->not->toContain("couldn't find")
+        ->not->toContain('alternatives instead');
+});
+
+test('add-on mismatches use the same single fallback answer', function () {
+    AddOnModel::factory()->create([
+        'destination_id' => $this->elnido->id,
+        'name' => 'Shared Airport Transfer',
+        'description' => 'Shared van transfer.',
+        'is_shown' => true,
+        'embedding' => unitVectorString(0),
+    ]);
+    mockGemini(unitVector(0), 'Unverified helicopter transfer is available.');
+
+    $response = $this->postJson('/chat', ['message' => 'magkano helicopter add-on sa El Nido']);
+
+    $response->assertOk();
+    expect($response->json('retrieved_addons'))->not->toBeEmpty();
+    expect($response->json('reply'))->toContain("I couldn't find a confirmed match")
+        ->toContain('Shared Airport Transfer')
+        ->not->toContain('find magkano')
+        ->not->toContain('Unverified helicopter');
+});
+
+test('traveler preferences do not produce an activity absence notice', function () {
+    mockGemini(unitVector(0), 'These are the available activities.');
+
+    $response = $this->postJson('/chat', ['message' => 'activities good for backpackers in El Nido']);
+
+    $response->assertOk();
+    expect($response->json('retrieved_activities'))->not->toBeEmpty();
+    expect($response->json('reply'))->not->toContain("couldn't find")
+        ->not->toContain('not a confirmed match');
+});
+
+test('resolved activity detail questions retain the field answer', function () {
+    ActivityModel::where('activity_name', 'Jet Ski (30 mins)')->update(['duration' => '30 minutes']);
+    mockGemini(unitVector(0), 'The activity lasts 30 minutes.');
+
+    $response = $this->postJson('/chat', ['message' => 'Jet Ski (30 mins) duration in Boracay']);
+
+    $response->assertOk();
+    expect($response->json('reply'))->toContain('30 minutes')
+        ->not->toContain("couldn't find")
+        ->not->toContain('Other options:');
 });

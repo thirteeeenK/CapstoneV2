@@ -63,6 +63,7 @@ class ChatbotService
         protected WeatherService $weather,
         protected DistanceService $distance,
         protected FaqService $faq,
+        protected CatalogPriceQuote $priceQuotes,
     ) {}
 
     public function handle(ChatSession $session, ?User $user, string $message, ?float $userLat = null, ?float $userLng = null): array
@@ -121,6 +122,19 @@ class ChatbotService
             $reply = $this->finalizeBotReply($session, $text, $reply, IntentRouter::AVAILABILITY_QUERY, 'grounded', $constraints, false, $traceId);
 
             return array_merge($aiBase, ['reply' => $text], $reply);
+        }
+
+        if ($lastBot && ($lastBot->context_data['retrieval_outcome']['reason'] ?? null) === 'missing_dates') {
+            $constraints = $this->intentRouter->extractConstraints($message);
+            if (! empty($constraints['check_in_date']) && ! empty($constraints['check_out_date'])) {
+                $constraints = $this->inheritPendingAvailabilityScope($constraints, $session);
+                $constraints = $this->inheritRoomContext($constraints, $session);
+                $reply = $this->handleAvailabilityQuery($message, $constraints, $user, $session);
+                $text = $reply['reply'] ?? 'Sorry, I could not process that request. Please try again.';
+                $reply = $this->finalizeBotReply($session, $text, $reply, IntentRouter::AVAILABILITY_QUERY, 'grounded', $constraints, false, $traceId);
+
+                return array_merge($aiBase, ['reply' => $text], $reply);
+            }
         }
 
         // "Check alternatives" pill/typed follow-up after an unavailable exact
@@ -204,6 +218,13 @@ class ChatbotService
         $constraints = in_array($intent, [IntentRouter::GENERAL_TALK, IntentRouter::DESTINATIONS_OVERVIEW, IntentRouter::BOOKING_STATUS, IntentRouter::LEGAL_QUERY], true)
             ? []
             : $this->intentRouter->extractConstraints($message);
+        if ($unsupportedDestination = $this->unsupportedDestinationName($message, $intent, $constraints)) {
+            $reply = $this->unsupportedDestinationPayload($unsupportedDestination, $intent);
+            $reply['intent_initial'] = $intent;
+            $reply = $this->finalizeBotReply($session, $reply['reply'], $reply, $intent, 'grounded', [], false, $traceId);
+
+            return array_merge($aiBase, $reply);
+        }
         // Pre-resolution snapshot: personalization labeling is decided from
         // what the user actually typed, not from inherited/profile state.
         // Bare amenity refinements ("luxury quiet pool") often token-match a
@@ -258,6 +279,8 @@ class ChatbotService
             };
         }
 
+        $constraints = $this->sanitizeConstraintsForIntent($constraints, $intent);
+
         // Positional reference ("the second one") against the stored turn
         // frame resolves to entity constraints before dispatch.
         $constraints = $this->applyOrdinalReference($message, $constraints, $session);
@@ -287,7 +310,8 @@ class ChatbotService
             [$reply, $mode] = $this->decorateRecommendationReply($reply, $intent, $rawConstraints, $user);
             $text = $reply['reply'] ?? $text;
         }
-        $reply['explicit_constraints'] = $this->explicitScopeKeys($rawConstraints);
+        $explicitConstraints = $this->sanitizeConstraintsForIntent($rawConstraints, $intent);
+        $reply['explicit_constraints'] = $this->explicitScopeKeys($explicitConstraints);
         $reply['intent_initial'] = $intentInitial;
         $reply = $this->finalizeBotReply($session, $text, $reply, $intent, $mode, $constraints, $historyUsed, $traceId);
 
@@ -566,6 +590,10 @@ class ChatbotService
             }
         }
 
+        if ($this->replyHasRetrievedCards($carry)) {
+            $reply = $this->validateGroundedReply($reply, $carry);
+        }
+
         return array_merge(['reply' => $reply], $carry);
     }
 
@@ -613,14 +641,15 @@ class ChatbotService
 
         if (! empty($data['retrieved_activities'])) {
             foreach ($data['retrieved_activities'] as $a) {
-                $rate = isset($a['rate']) ? '₱'.number_format((float) $a['rate'], 2) : 'n/a';
+                $rate = $a['price_quote']['display'] ?? ($a['rate'] ?? 'n/a');
                 $blocks[] = "- Activity: {$a['activity_name']} — {$rate}";
             }
         }
 
         if (! empty($data['retrieved_packages'])) {
             foreach ($data['retrieved_packages'] as $p) {
-                $blocks[] = "- Package: {$p['name']} — ₱".number_format((float) $p['price'], 2)." ({$p['days']}D/{$p['nights']}N)";
+                $price = $p['price_quote']['display'] ?? '₱'.number_format((float) $p['price'], 2).' per pax';
+                $blocks[] = "- Package: {$p['name']} — {$price} ({$p['days']}D/{$p['nights']}N)";
             }
         }
 
@@ -649,10 +678,7 @@ class ChatbotService
             $blocks[] = '- (The previous reply did not include specific recommendations.)';
         }
 
-        $text = $lastBot->message ? trim($lastBot->message) : '';
-        $prefix = $text !== '' ? "Previous reply: \"{$text}\"\n\n" : '';
-
-        return $prefix.implode("\n", $blocks);
+        return implode("\n", $blocks);
     }
 
     protected function checkAbuse(?User $user, string $message): ?array
@@ -667,7 +693,9 @@ class ChatbotService
 
             return [
                 'blocked' => true,
-                'response' => 'Your message contains content that violates our community guidelines. Please refrain from using profanity/sensitive words.',
+                'response' => $match['category'] === 'Prompt Injection'
+                    ? 'I cannot follow requests to override, reveal, or bypass the chatbot instructions. Please ask a SunnyTrips travel question instead.'
+                    : 'Your message contains abusive or prohibited content. Please rephrase it respectfully so I can help with your trip.',
             ];
         }
 
@@ -790,10 +818,10 @@ class ChatbotService
         unset($entry);
         $ordering = $this->resultOrdering($priceIntent, $scored, $constraints, 'room_name', 'room_id');
         $fieldIntent = $constraints['field_intent'] ?? $this->intentRouter->detectFieldIntent($query);
-        $context = $this->gemini->getRoomContext($scored, $ordering);
+        $context = $this->gemini->getRoomContext($scored, $ordering, $constraints['pax'] ?? null, $constraints['nights'] ?? null);
 
         if (empty(trim($context))) {
-            return ['reply' => $this->noResultsReply('rooms', $constraints)];
+            return $this->noResultsPayload('rooms', $constraints);
         }
 
         // Pax-aware extra-person hint for queries like "for 3 pax" or "additional per head"
@@ -845,10 +873,10 @@ class ChatbotService
 
         $context = $this->gemini->extractPricingContext($context, $query);
         $prompt = $this->buildPrompt('room-search', $context, $query, $user, $this->promptOptions($ordering, $scored, $constraints, $fieldIntent, 'room_name', 'room_id'));
-        $cards = $this->formatRoomResults($scored);
+        $cards = $this->formatRoomResults($scored, $constraints['pax'] ?? null, $constraints['nights'] ?? null);
         $reply = $this->stripRankFootnote($this->geminiChatResponse($prompt, $session));
         $reply = $this->validateGroundedReply($reply, ['retrieved_rooms' => $cards]);
-        if ($lead = $this->fieldLead($fieldIntent, $scored)) {
+        if ($lead = $this->fieldLead($fieldIntent, $scored) ?? $this->fieldMissingLead($fieldIntent, $scored)) {
             $reply = $lead."\n\n".$reply;
         }
         if ($notice = $this->budgetNotice($scored, $constraints)) {
@@ -880,10 +908,10 @@ class ChatbotService
         $constraints = $this->resolveDefaultDestination($constraints, $user);
         $scored = $this->gemini->searchAddOns($query, 10, $constraints['destination_id'] ?? null, $constraints);
         $scored = $this->rerankWithPreferences($user, $query, $scored, $explicitScope, 5);
-        $context = $this->gemini->getAddOnContext($scored);
+        $context = $this->gemini->getAddOnContext($scored, null, $constraints['pax'] ?? null);
 
         if (empty(trim($context))) {
-            return ['reply' => $this->noResultsReply('add-ons', $constraints)];
+            return $this->noResultsPayload('add-ons', $constraints);
         }
 
         $context = $this->gemini->extractPricingContext($context, $query);
@@ -897,14 +925,17 @@ class ChatbotService
             'over_budget' => ! empty($e['over_budget']),
             'over_by' => isset($e['over_by']) ? round((float) $e['over_by'], 2) : null,
             'fallback' => ! empty($e['fallback']),
+            'price_quote' => $this->priceQuotes->for($e['item'], $constraints['pax'] ?? null),
         ], $scored);
-        $reply = $this->stripRankFootnote($this->geminiChatResponse($prompt, $session));
-        $reply = $this->validateGroundedReply($reply, ['retrieved_addons' => $cards]);
+        $unmatched = $this->unmatchedNotice($query, $scored, $constraints, 'addons');
+        if ($unmatched !== null) {
+            $reply = $this->alternativeCardsReply($unmatched, ['retrieved_addons' => $cards]);
+        } else {
+            $reply = $this->stripRankFootnote($this->geminiChatResponse($prompt, $session));
+            $reply = $this->validateGroundedReply($reply, ['retrieved_addons' => $cards]);
+        }
         if ($notice = $this->budgetNotice($scored, $constraints)) {
             $reply = $notice."\n\n".$reply;
-        }
-        if ($unmatched = $this->unmatchedNotice($query, $scored, $constraints, 'addons')) {
-            $reply = $unmatched."\n\n".$reply;
         }
 
         return [
@@ -1225,14 +1256,14 @@ class ChatbotService
         $context = $this->gemini->getHotelContext($scored, $ordering);
 
         if (empty(trim($context))) {
-            return ['reply' => $this->noResultsReply('hotels', $constraints)];
+            return $this->noResultsPayload('hotels', $constraints);
         }
 
         $prompt = $this->buildPrompt('hotel-search', $context, $query, $user, $this->promptOptions($ordering, $scored, $constraints, $fieldIntent, 'hotel_name', 'hotel_id'));
         $cards = $this->formatHotelResults($scored);
         $reply = $this->stripRankFootnote($this->geminiChatResponse($prompt, $session));
         $reply = $this->validateGroundedReply($reply, ['retrieved_hotels' => $cards]);
-        if ($lead = $this->fieldLead($fieldIntent, $scored)) {
+        if ($lead = $this->fieldLead($fieldIntent, $scored) ?? $this->fieldMissingLead($fieldIntent, $scored)) {
             $reply = $lead."\n\n".$reply;
         }
         if ($notice = $this->budgetNotice($scored, $constraints)) {
@@ -1511,6 +1542,23 @@ class ChatbotService
         return "Here are the {$noun} for each matching result:\n".implode("\n", $lines);
     }
 
+    /**
+     * Explicit no-data statement for a confidently resolved single record
+     * whose stored attribute is empty. Single-entity only — a broad search
+     * must never claim the catalog lacks the detail.
+     */
+    protected function fieldMissingLead(?string $field, array $scored): ?string
+    {
+        if (! $field || count($scored) !== 1) {
+            return null;
+        }
+        if ($this->fieldValue($field, $scored[0]['item']) !== null) {
+            return null;
+        }
+
+        return 'The catalog does not list '.$field.' for '.$this->fieldItemName($scored[0]['item']).'.';
+    }
+
     protected function fieldVerb(string $field): string
     {
         return match ($field) {
@@ -1522,6 +1570,7 @@ class ChatbotService
             'requirements' => 'requires',
             'location' => 'is located in',
             'itinerary' => 'itinerary:',
+            'amenities' => 'amenities',
             default => 'details:',
         };
     }
@@ -1544,9 +1593,19 @@ class ChatbotService
                 'price' => $item->base_price !== null ? '₱'.number_format((float) $item->base_price, 2).' per night' : null,
                 'capacity' => $item->max_occupancy ? ((int) $item->max_occupancy).' pax max' : null,
                 'location' => $this->clean($item->hotel?->hotel_name),
+                'amenities' => $this->joinList($item->room_amenities),
                 default => null,
             },
             $item instanceof HotelModel => match ($field) {
+                'location' => $this->clean($item->destination?->name),
+                'amenities' => $this->joinList($item->featured_amenities),
+                default => null,
+            },
+            $item instanceof Package => match ($field) {
+                'inclusions' => $this->joinList($item->generic_inclusions),
+                'price' => $item->price !== null ? '₱'.number_format((float) $item->price, 2).' per pax' : null,
+                'duration' => $this->packageDuration($item),
+                'capacity' => $item->min_pax ? 'minimum '.((int) $item->min_pax).' pax' : null,
                 'location' => $this->clean($item->destination?->name),
                 default => null,
             },
@@ -1562,8 +1621,22 @@ class ChatbotService
             $item instanceof ActivityModel => (string) $item->activity_name,
             $item instanceof RoomType => (string) $item->room_name,
             $item instanceof HotelModel => (string) $item->hotel_name,
+            $item instanceof Package => (string) $item->name,
             default => 'This result',
         };
+    }
+
+    protected function packageDuration(Package $package): ?string
+    {
+        $parts = [];
+        if ($package->days !== null) {
+            $parts[] = ((int) $package->days).' day'.((int) $package->days === 1 ? '' : 's');
+        }
+        if ($package->nights !== null) {
+            $parts[] = ((int) $package->nights).' night'.((int) $package->nights === 1 ? '' : 's');
+        }
+
+        return $parts === [] ? null : implode(' / ', $parts);
     }
 
     protected function joinList(mixed $value, string $separator = ', '): ?string
@@ -1709,7 +1782,10 @@ class ChatbotService
             return $constraints;
         }
         try {
-            $state = $session->metadata['retrieval_state'] ?? [];
+            $state = $this->conversation->activeSearch($session);
+            if ($state === []) {
+                $state = $session->metadata['retrieval_state'] ?? [];
+            }
             if (! empty($state['destination_id'])) {
                 $constraints['destination_id'] = (int) $state['destination_id'];
                 $constraints['destination_name'] = $state['destination_name'] ?? null;
@@ -1742,13 +1818,6 @@ class ChatbotService
                     $candidates[] = $dest;
                 }
             }
-            // Also check recent bot text for destination name (fallback)
-            if ($lastBot && $lastBot->message) {
-                $dest = $this->intentRouter->extractDestinationName($lastBot->message);
-                if ($dest) {
-                    $candidates[] = $dest;
-                }
-            }
             foreach ($candidates as $destName) {
                 $destName = trim((string) $destName);
                 if ($destName === '') {
@@ -1763,6 +1832,98 @@ class ChatbotService
             }
         } catch (\Throwable $e) {
             Log::debug('resolveConversationalDestination failed: '.$e->getMessage());
+        }
+
+        return $constraints;
+    }
+
+    protected function inheritPendingAvailabilityScope(array $constraints, ChatSession $session): array
+    {
+        $active = $this->conversation->activeSearch($session);
+        foreach (['destination_id', 'destination_name', 'hotel_id', 'room_id', 'pax', 'max_price'] as $key) {
+            if (empty($constraints[$key]) && ! empty($active[$key])) {
+                $constraints[$key] = $active[$key];
+            }
+        }
+        if (! empty($constraints['hotel_id']) && empty($constraints['hotel_name'])) {
+            $constraints['hotel_name'] = HotelModel::whereKey($constraints['hotel_id'])->value('hotel_name');
+        }
+
+        return $constraints;
+    }
+
+    protected function unsupportedDestinationName(string $message, string $intent, array $constraints): ?string
+    {
+        if (! in_array($intent, [IntentRouter::ROOM_SEARCH, IntentRouter::HOTEL_SEARCH, IntentRouter::ACTIVITY_SEARCH, IntentRouter::PACKAGE_SEARCH, IntentRouter::ADDON_SEARCH, IntentRouter::AVAILABILITY_QUERY, IntentRouter::ITINERARY_QUERY], true)
+            || ! empty($constraints['destination_id'])
+            || ! empty($constraints['hotel_id'])
+            || ! empty($constraints['room_id'])
+            || ! empty($constraints['activity_name'])
+            || ! empty($constraints['package_name'])
+            || ! empty($constraints['addon_id'])) {
+            return null;
+        }
+        if (! preg_match('/\b(?:in|near)\s+(.+?)(?=\s+(?:under|below|for|with|within|on|from)\b|[,.!?]|$)/iu', $message, $match)) {
+            return null;
+        }
+        $candidate = trim($match[1], " \t\n\r\0\x0B\"'");
+        if ($candidate === '' || in_array(mb_strtolower($candidate), ['there', 'the same place', 'another destination'], true)) {
+            return null;
+        }
+
+        return $candidate;
+    }
+
+    protected function unsupportedDestinationPayload(string $destination, string $intent): array
+    {
+        $catalog = match ($intent) {
+            IntentRouter::HOTEL_SEARCH => 'hotels',
+            IntentRouter::ACTIVITY_SEARCH => 'activities',
+            IntentRouter::PACKAGE_SEARCH => 'packages',
+            IntentRouter::ADDON_SEARCH => 'add-ons',
+            default => 'rooms',
+        };
+
+        return [
+            'reply' => "SunnyTrips does not currently have {$catalog} for {$destination}. Try a supported destination such as Boracay or El Nido.",
+            'retrieval_outcome' => RetrievalOutcome::make(
+                RetrievalOutcome::NoMatch,
+                'unsupported_destination',
+                [],
+                [['id' => 'supported-destinations', 'label' => 'Show supported destinations', 'prompt' => 'Which destinations do you support?']]
+            ),
+        ];
+    }
+
+    protected function sanitizeConstraintsForIntent(array $constraints, string $intent): array
+    {
+        $allowedEntityTypes = match ($intent) {
+            IntentRouter::HOTEL_SEARCH => ['destination', 'hotel'],
+            IntentRouter::ROOM_SEARCH, IntentRouter::AVAILABILITY_QUERY => ['destination', 'hotel', 'room'],
+            IntentRouter::ACTIVITY_SEARCH => ['destination', 'activity'],
+            IntentRouter::PACKAGE_SEARCH => ['destination', 'package'],
+            IntentRouter::ADDON_SEARCH => ['destination', 'addon'],
+            default => ['destination', 'hotel', 'room', 'activity', 'package', 'addon'],
+        };
+        $entityKeys = [
+            'hotel' => ['hotel_id', 'hotel_name'],
+            'room' => ['room_id', 'room_name'],
+            'activity' => ['activity_name'],
+            'package' => ['package_name'],
+            'addon' => ['addon_id', 'addon_name'],
+        ];
+        foreach ($entityKeys as $type => $keys) {
+            if (! in_array($type, $allowedEntityTypes, true)) {
+                foreach ($keys as $key) {
+                    unset($constraints[$key]);
+                }
+            }
+        }
+        if (! empty($constraints['place_names'])) {
+            $constraints['place_names'] = array_values(array_filter(
+                $constraints['place_names'],
+                fn ($place) => is_array($place) && in_array($place['type'] ?? null, $allowedEntityTypes, true)
+            ));
         }
 
         return $constraints;
@@ -1876,7 +2037,22 @@ class ChatbotService
             }
         }
         if (! $prior) {
-            return $constraints;
+            $active = $this->conversation->activeSearch($session);
+            $activeRoomId = $roomId ?? ($active['room_id'] ?? null);
+            $room = $activeRoomId ? RoomType::with('hotel.destination')->find($activeRoomId) : null;
+            if (! $room) {
+                return $constraints;
+            }
+            $prior = [
+                'id' => $room->id,
+                'room_name' => $room->room_name,
+                'hotel_id' => $room->hotel_id,
+                'hotel_name' => $room->hotel?->hotel_name,
+                'destination' => $room->hotel?->destination?->name,
+                'check_in_date' => $active['check_in_date'] ?? null,
+                'check_out_date' => $active['check_out_date'] ?? null,
+                'pax' => $active['pax'] ?? null,
+            ];
         }
 
         if (empty($constraints['room_id'])) {
@@ -1948,8 +2124,9 @@ class ChatbotService
      */
     protected function inheritConversationalConstraints(string $message, array $constraints, ChatSession $session, ?bool $explicitScope = null): array
     {
-        $keys = ['pax', 'max_price', 'destination_id', 'destination_name', 'check_in_date', 'check_out_date', 'nights'];
+        $keys = ['pax', 'max_price', 'destination_id', 'destination_name', 'hotel_id', 'hotel_name', 'room_id', 'room_name', 'check_in_date', 'check_out_date', 'nights'];
         try {
+            $session->refresh();
             $lastBot = $session->messages()->where('sender', 'bot')->latest('id')->first();
             $isContinuation = $lastBot && ($this->isFollowUpQuery($message, $lastBot)
                 || $this->isFilterRefinementQuery($message, $lastBot)
@@ -1959,9 +2136,15 @@ class ChatbotService
 
             $metadata = $session->metadata ?? [];
             $state = $metadata['constraint_state'] ?? [];
+            $hasNewDestination = $this->intentRouter->extractDestinationName($message) !== null;
 
-            if ($isContinuation && ! ($explicitScope ?? $this->hasExplicitScope($constraints))) {
+            $isAnaphoricCatalogSwitch = (bool) preg_match('/\b(there|same place|same destination|doon|diyan|roon)\b/i', $message);
+
+            if ($isContinuation || $isAnaphoricCatalogSwitch) {
                 foreach ($keys as $key) {
+                    if ($hasNewDestination && in_array($key, ['hotel_id', 'hotel_name', 'room_id', 'room_name'], true)) {
+                        continue;
+                    }
                     if (empty($constraints[$key]) && ! empty($state[$key])) {
                         $constraints[$key] = $state[$key];
                     }
@@ -2209,24 +2392,26 @@ class ChatbotService
 
         $ordering = $this->resultOrdering($priceIntent, $scored, $constraints, 'activity_name', 'activity_id');
         $fieldIntent = $constraints['field_intent'] ?? $this->intentRouter->detectFieldIntent($query);
-        $context = $this->gemini->getActivityContext($scored, $ordering);
+        $context = $this->gemini->getActivityContext($scored, $ordering, $constraints['pax'] ?? null);
 
         if (empty(trim($context))) {
-            return ['reply' => $this->noResultsReply('activities', $constraints)];
+            return $this->noResultsPayload('activities', $constraints);
         }
 
         $prompt = $this->buildPrompt('activity-search', $context, $query, $user, $this->promptOptions($ordering, $scored, $constraints, $fieldIntent, 'activity_name', 'activity_id'));
-        $cards = $this->formatActivityResults($scored);
-        $reply = $this->stripRankFootnote($this->geminiChatResponse($prompt, $session));
-        $reply = $this->validateGroundedReply($reply, ['retrieved_activities' => $cards]);
-        if ($lead = $this->fieldLead($fieldIntent, $scored)) {
-            $reply = $lead."\n\n".$reply;
+        $cards = $this->formatActivityResults($scored, $constraints['pax'] ?? null);
+        $unmatched = $this->unmatchedNotice($query, $scored, $constraints, 'activities');
+        if ($unmatched !== null) {
+            $reply = $this->alternativeCardsReply($unmatched, ['retrieved_activities' => $cards]);
+        } else {
+            $reply = $this->stripRankFootnote($this->geminiChatResponse($prompt, $session));
+            $reply = $this->validateGroundedReply($reply, ['retrieved_activities' => $cards]);
+            if ($lead = $this->fieldLead($fieldIntent, $scored) ?? $this->fieldMissingLead($fieldIntent, $scored)) {
+                $reply = $lead."\n\n".$reply;
+            }
         }
         if ($priceNotice) {
             $reply = $priceNotice."\n\n".$reply;
-        }
-        if ($unmatched = $this->unmatchedNotice($query, $scored, $constraints, 'activities')) {
-            $reply = $unmatched."\n\n".$reply;
         }
 
         return [
@@ -2357,17 +2542,21 @@ class ChatbotService
         });
         $scored = array_values($scored);
 
-        $context = $this->gemini->getPackageContext($scored);
+        $context = $this->gemini->getPackageContext($scored, null, $constraints['pax'] ?? null);
 
         if (empty(trim($context))) {
-            return ['reply' => $this->noResultsReply('packages', $constraints)];
+            return $this->noResultsPayload('packages', $constraints);
         }
 
         $context = $this->gemini->extractPricingContext($context, $query);
-        $prompt = $this->buildPrompt('package-search', $context, $query, $user, ['explicit_scope' => $this->hasExplicitScope($constraints)]);
-        $cards = $this->formatPackageResults($scored);
+        $fieldIntent = $constraints['field_intent'] ?? $this->intentRouter->detectFieldIntent($query);
+        $prompt = $this->buildPrompt('package-search', $context, $query, $user, $this->promptOptions(null, $scored, $constraints, $fieldIntent, 'package_name', 'package_id'));
+        $cards = $this->formatPackageResults($scored, $constraints['pax'] ?? null);
         $reply = $this->stripRankFootnote($this->geminiChatResponse($prompt, $session));
         $reply = $this->validateGroundedReply($reply, ['retrieved_packages' => $cards]);
+        if ($lead = $this->fieldLead($fieldIntent, $scored) ?? $this->fieldMissingLead($fieldIntent, $scored)) {
+            $reply = $lead."\n\n".$reply;
+        }
         if ($notice = $this->budgetNotice($scored, $constraints)) {
             $reply = $notice."\n\n".$reply;
         }
@@ -2429,18 +2618,28 @@ class ChatbotService
         ];
     }
 
-    protected function handleAvailabilityQuery(string $query, array $constraints, ?User $user, ChatSession $session): array
+    protected function handleAvailabilityQuery(string $query, array &$constraints, ?User $user, ChatSession $session): array
     {
+        $activeSearch = $this->conversation->activeSearch($session);
+        $frame = $this->conversation->currentFrame($session);
+        $activeRoomId = $activeSearch['room_id'] ?? (($frame['type'] ?? null) === 'room' ? ($frame['entity_id'] ?? null) : null);
+        $sameDestination = empty($constraints['destination_id'])
+            || empty($activeSearch['destination_id'])
+            || (int) $constraints['destination_id'] === (int) $activeSearch['destination_id'];
+        if (empty($constraints['room_id']) && $activeRoomId && $sameDestination) {
+            $constraints = $this->inheritRoomContext($constraints, $session, (int) $activeRoomId);
+        }
+
         // Merge previous hotel/destination/room when follow-up has no explicit hotel (e.g., "yes check availabilith" after Lazy Dog)
         $lastBot = $session->messages()->where('sender', 'bot')->latest('id')->first();
         $data = $lastBot?->context_data ?: [];
-        if (empty($constraints['hotel_id']) && empty($constraints['room_id']) && empty($constraints['room_name'])) {
+        if (empty($constraints['destination_id']) && empty($constraints['hotel_id']) && empty($constraints['room_id']) && empty($constraints['room_name'])) {
             $prevRoomId = $data['retrieved_rooms'][0]['id'] ?? null;
             if ($prevRoomId) {
                 $constraints = $this->inheritRoomContext($constraints, $session, (int) $prevRoomId);
             }
         }
-        if (empty($constraints['hotel_id']) && empty($constraints['room_id'])) {
+        if (empty($constraints['destination_id']) && empty($constraints['hotel_id']) && empty($constraints['room_id'])) {
             $prevHotelId = $data['retrieved_hotels'][0]['id'] ?? $data['retrieved_rooms'][0]['hotel_id'] ?? null;
             if ($prevHotelId) {
                 $constraints['hotel_id'] = (int) $prevHotelId;
@@ -2464,22 +2663,31 @@ class ChatbotService
             }
         }
 
+        if (empty($constraints['check_in_date']) || empty($constraints['check_out_date'])) {
+            return [
+                'reply' => 'What check-in and check-out dates should I use to verify live room availability?',
+                'retrieval_outcome' => RetrievalOutcome::make(
+                    RetrievalOutcome::NeedsClarification,
+                    'missing_dates',
+                    [],
+                    [['id' => 'provide-dates', 'label' => 'Provide travel dates', 'prompt' => 'Check room availability from ']]
+                ),
+            ];
+        }
+
         $pax = $constraints['pax'] ?? 2;
-        $checkIn = $constraints['check_in_date']
-            ? Carbon::parse($constraints['check_in_date'])->startOfDay()
-            : Carbon::now()->addDays(7)->startOfDay();
-        $checkOut = $constraints['check_out_date']
-            ? Carbon::parse($constraints['check_out_date'])->startOfDay()
-            : $checkIn->copy()->addDays(2);
+        $checkIn = Carbon::parse($constraints['check_in_date'])->startOfDay();
+        $checkOut = Carbon::parse($constraints['check_out_date'])->startOfDay();
         $nights = max(1, $checkIn->diffInDays($checkOut));
 
-        $rooms = $this->gemini->searchRoomsHybrid($query, $constraints, 8);
+        $rooms = $this->availabilityCandidates($constraints, $pax);
 
         if (empty($rooms)) {
             $destName = $constraints['destination_name'] ?? 'your request';
 
             return [
                 'reply' => "I could not find any rooms matching \"{$destName}\" for {$nights} night(s) from {$checkIn->format('M d')} to {$checkOut->format('M d')}. Try a different destination or date range.",
+                'retrieval_outcome' => RetrievalOutcome::make(RetrievalOutcome::NoMatch, 'no_eligible_inventory'),
             ];
         }
 
@@ -2561,6 +2769,7 @@ class ChatbotService
 
             return [
                 'reply' => "All rooms matching \"{$destName2}\" are fully booked from {$checkIn->format('M d')} to {$checkOut->format('M d')}. Would you like me to check different dates?",
+                'retrieval_outcome' => RetrievalOutcome::make(RetrievalOutcome::NoMatch, 'verified_scope_fully_booked'),
             ];
         }
 
@@ -2681,11 +2890,48 @@ class ChatbotService
             ];
         }, array_slice($available, 0, 5));
 
+        $availabilitySummary = array_map(function ($entry) use ($checkIn, $checkOut): array {
+            /** @var RoomType $room */
+            $room = $entry['item'];
+
+            return [
+                'room_id' => (int) $room->id,
+                'available' => (bool) ($entry['availability']['available'] ?? false),
+                'remaining' => (int) ($entry['availability']['remaining'] ?? 0),
+                'total_rooms' => (int) ($entry['availability']['total_rooms'] ?? 0),
+                'check_in_date' => $checkIn->format('Y-m-d'),
+                'check_out_date' => $checkOut->format('Y-m-d'),
+                'total_stay' => (float) ($entry['total_stay'] ?? 0),
+            ];
+        }, array_slice($available, 0, 5));
+
         return [
             'reply' => $reply,
-            'availability' => array_values(array_slice($available, 0, 5)),
+            'availability' => $availabilitySummary,
             'retrieved_rooms' => $formattedRooms,
+            'retrieval_outcome' => RetrievalOutcome::make(RetrievalOutcome::Matched, 'available_inventory_found'),
         ];
+    }
+
+    /**
+     * Availability is an inventory query, so inspect every eligible room in
+     * the requested scope. Semantic similarity ranks recommendations but must
+     * never define what "all rooms" means.
+     */
+    protected function availabilityCandidates(array $constraints, int $pax): array
+    {
+        return RoomType::with('hotel.destination')
+            ->where('is_shown', true)
+            ->whereRaw('COALESCE(max_occupancy, base_occupancy, 2) >= ?', [$pax])
+            ->when(! empty($constraints['destination_id']), fn ($query) => $query->whereHas('hotel', fn ($hotel) => $hotel->where('destination_id', $constraints['destination_id'])))
+            ->when(! empty($constraints['hotel_id']), fn ($query) => $query->where('hotel_id', $constraints['hotel_id']))
+            ->when(! empty($constraints['room_id']), fn ($query) => $query->whereKey($constraints['room_id']))
+            ->when(empty($constraints['room_id']) && ! empty($constraints['room_name']), fn ($query) => $query->where('room_name', 'ILIKE', $constraints['room_name']))
+            ->orderBy('base_price')
+            ->orderBy('id')
+            ->get()
+            ->map(fn (RoomType $room): array => ['item' => $room, 'score' => ! empty($constraints['room_id']) ? 1.0 : 0.0])
+            ->all();
     }
 
     protected function handleMapQuery(string $query, array $constraints, ChatSession $session, ?float $userLat = null, ?float $userLng = null): array
@@ -3299,6 +3545,15 @@ class ChatbotService
         $wantsContact = (bool) preg_match('/\bcontact\b|\be-?mail\b|\bhotline\b|\btelephone\b|\bcellphone\b|\bphone\s+number\b|\bcontact\s+number\b|\baddress\b|\blocated\b|\blocation\b|\boffice\b|\breach\b/', $lower);
 
         if ($wantsContact) {
+            $hotelName = $this->intentRouter->extractHotelName($message);
+            if ($hotelName) {
+                return [
+                    'reply' => "Our catalog does not list the owner or direct contact details for {$hotelName}. The following details belong to SUNNYTRIPS TRAVEL SERVICES, which can help verify supplier information: sunnytrips01@gmail.com or 09682447153. Address: Pili, Camarines Sur.",
+                    'legal' => ['topic' => 'supplier_contact_unavailable'],
+                    'retrieval_outcome' => RetrievalOutcome::make(RetrievalOutcome::NoMatch, 'supplier_contact_unavailable'),
+                ];
+            }
+
             return [
                 'reply' => "You can reach SUNNYTRIPS TRAVEL SERVICES at sunnytrips01@gmail.com or 09682447153. Address: Pili, Camarines Sur.\n\nFor data requests, see our [Privacy Policy](/privacy-policy).",
                 'legal' => ['topic' => 'contact'],
@@ -3637,6 +3892,7 @@ class ChatbotService
             'prompt_hash' => $this->gemini->lastPromptHash,
             'model' => config('services.gemini.chat_model'),
             'temperature' => $settings['temperature'],
+            'retrieval_outcome' => $reply['retrieval_outcome'] ?? null,
         ];
     }
 
@@ -3646,6 +3902,9 @@ class ChatbotService
      */
     protected function finalizeBotReply(ChatSession $session, string $text, array $reply, ?string $intent, string $mode, array $constraints, bool $historyUsed, string $traceId): array
     {
+        if (! isset($reply['retrieval_outcome']) && ($this->replyHasRetrievedCards($reply) || ! empty($reply['itinerary']) || ! empty($reply['weather']) || ! empty($reply['faq']))) {
+            $reply['retrieval_outcome'] = RetrievalOutcome::make(RetrievalOutcome::Matched, 'verified_result_found');
+        }
         $reply['trace'] = $this->buildTrace($traceId, $intent, $mode, $constraints, $reply, $historyUsed);
         $this->conversation->persist($session, 'bot', $text, $reply);
 
@@ -3690,12 +3949,14 @@ class ChatbotService
     protected function dialogueStateBlock(ChatSession $session): string
     {
         $frame = $this->conversation->currentFrame($session);
-        if ($frame === []) {
+        $active = $this->conversation->activeSearch($session);
+        if ($frame === [] && $active === []) {
             return '';
         }
         $lines = ['=== DIALOGUE STATE (structured, not user text) ==='];
-        $lines[] = 'catalog: '.($frame['type'] ?? 'unknown');
-        $lines[] = 'active_destination: '.($frame['destination_name'] ?? 'unset');
+        $lines[] = 'catalog: '.($active['intent'] ?? $frame['type'] ?? 'unknown');
+        $lines[] = 'active_destination: '.($active['destination_name'] ?? $frame['destination_name'] ?? 'unset');
+        $lines[] = 'retrieval_outcome: '.($active['outcome'] ?? 'unknown');
         $lines[] = 'result_ids: '.implode(',', $frame['result_ids'] ?? []);
         $lines[] = 'selected_entity_id: '.($frame['entity_id'] ?? 'none');
         $lines[] = 'pax: '.($frame['pax'] ?? 'unset');
@@ -3802,7 +4063,38 @@ class ChatbotService
             }
         }
 
-        return "I could not find any {$type} matching your request{$scope}. Try raising your budget or lowering the group size, or ask me about a specific destination like {$examples}!";
+        $next = match (true) {
+            ! empty($constraints['max_price']) && ! empty($constraints['pax']) => 'I can show the closest verified options above that budget, or search for a smaller group.',
+            ! empty($constraints['max_price']) => 'I can show the closest verified options above that budget.',
+            ! empty($constraints['pax']) => 'I can look for a multi-room option or search for a smaller group.',
+            ! empty($constraints['destination_name']) => "I can search another supported destination, such as {$examples}.",
+            default => "Try naming a destination such as {$examples}, or ask for hotels, rooms, activities, packages, or add-ons.",
+        };
+
+        return "I could not find any {$type} matching your request{$scope}. {$next}";
+    }
+
+    protected function noResultsPayload(string $type, array $constraints = []): array
+    {
+        $reason = match (true) {
+            ! empty($constraints['max_price']) => 'no_results_within_budget',
+            ! empty($constraints['pax']) => 'no_results_for_group_size',
+            ! empty($constraints['destination_id']) => 'no_results_in_destination',
+            default => 'no_relevant_catalog_match',
+        };
+        $actions = [];
+        if (! empty($constraints['max_price'])) {
+            $actions[] = ['id' => 'raise-budget', 'label' => 'Show closest above budget', 'prompt' => "Show the closest {$type} above my budget"];
+        }
+        if (! empty($constraints['destination_name'])) {
+            $actions[] = ['id' => 'change-destination', 'label' => 'Try another destination', 'prompt' => "Show {$type} in another destination"];
+        }
+
+        return [
+            'reply' => $this->noResultsReply($type, $constraints),
+            'retrieval_outcome' => RetrievalOutcome::make(RetrievalOutcome::NoMatch, $reason, [], $actions),
+            'suggested_actions' => $actions,
+        ];
     }
 
     /**
@@ -3957,7 +4249,9 @@ class ChatbotService
                     continue;
                 }
                 $line = '- **'.($card[$config['name']] ?? 'Option').'**';
-                if ($config['price'] && isset($card[$config['price']])) {
+                if (! empty($card['price_quote']['display'])) {
+                    $line .= ' — '.$card['price_quote']['display'];
+                } elseif ($config['price'] && isset($card[$config['price']])) {
                     $price = $key === 'retrieved_activities'
                         ? trim((string) $card[$config['price']])
                         : '₱'.number_format((float) $card[$config['price']], 2).$config['suffix'];
@@ -3973,16 +4267,26 @@ class ChatbotService
     }
 
     /**
-     * "Not in our catalog" notice is reserved for activities and add-ons,
+     * Unconfirmed-offering notices are reserved for activities and add-ons,
      * where a user commonly requests a specific offering (for example, Jet
      * Ski or airport transfer). Hotel, room, and package terms are commonly
      * preferences or traveler profiles, so an exact-token miss must not
-     * contradict semantically relevant results.
+     * contradict semantically relevant results. A lexical miss is not proof
+     * of catalog absence; name another destination only from a stored record.
      */
     protected function unmatchedNotice(string $query, array $scored, array $constraints, string $catalog): ?string
     {
         if (empty($scored) || ! in_array($catalog, ['activities', 'addons'], true)) {
             return null;
+        }
+        $resolvedName = $constraints[$catalog === 'activities' ? 'activity_name' : 'addon_name'] ?? null;
+        $nameField = $catalog === 'activities' ? 'activity_name' : 'name';
+        if ($resolvedName) {
+            foreach ($scored as $entry) {
+                if ($this->normalizeToken((string) $entry['item']->{$nameField}) === $this->normalizeToken($resolvedName)) {
+                    return null;
+                }
+            }
         }
         $tokens = $this->salientQueryTokens($query);
         if (empty($tokens)) {
@@ -3999,29 +4303,26 @@ class ChatbotService
             return null;
         }
 
-        // Anything shown matching any salient token counts as a hit —
-        // names and blurbs both count so amenity queries ("pool") match.
+        // Preserve compound requests: "jet boat" does not verify "jet ski".
+        // Residual text is only a matching hint, never an asserted entity name.
+        $thing = $this->normalizeToken(implode(' ', $tokens));
         foreach ($scored as $entry) {
             $haystack = $this->normalizeToken((string) ($entry['item']->{$config['name']} ?? ''));
             if ($config['text']) {
                 $haystack .= ' '.$this->normalizeToken((string) ($entry['item']->{$config['text']} ?? ''));
             }
-            foreach ($tokens as $token) {
-                if ($token !== '' && str_contains($haystack, $token)) {
-                    return null;
-                }
+            if (str_contains($haystack, $thing)) {
+                return null;
             }
         }
 
-        // ponytail: single-token global lookup on the longest token; upgrade
-        // to multi-token OR queries if users report misses on compound names.
-        $thing = collect($tokens)->sortByDesc(fn ($t) => strlen($t))->first();
         $scopeName = $constraints['destination_name'] ?? null;
-        $scopeId = $constraints['destination_id'] ?? null;
-        $elsewhere = $this->findCatalogItemElsewhere($catalog, $config, (string) $thing, $scopeId);
+        $elsewhere = $this->findCatalogItemElsewhere($catalog, $config, $thing, null);
 
         if ($elsewhere === null) {
-            return "I couldn't find {$thing} in our catalog — here are the closest alternatives instead:";
+            $scope = $scopeName ? " in {$scopeName}" : '';
+
+            return "I couldn't find a confirmed match for your request{$scope}. These are other options to consider; they are not a confirmed match for the requested offering.";
         }
 
         // Same-scope-but-unshown means filters (budget, top-N) hid it, not
@@ -4033,6 +4334,19 @@ class ChatbotService
         $tail = $scopeName ? "closest {$scopeName} alternatives" : 'closest alternatives';
 
         return "Just so you know, **{$elsewhere['name']}** is a {$elsewhere['destination']} offering — here are the {$tail}:";
+    }
+
+    /**
+     * One evidence-based answer owns the mismatch and the alternative list.
+     * Generated prose must not claim that these are the requested offering.
+     *
+     * @param  array<string, mixed>  $cards
+     */
+    protected function alternativeCardsReply(string $notice, array $cards): string
+    {
+        $list = str_replace('Here are the options I found:', 'Other options:', $this->deterministicCardsReply($cards));
+
+        return $notice."\n\n".$list."\n\nAsk about one of these options, or tell me which destination you would like to search.";
     }
 
     /**
@@ -4049,6 +4363,9 @@ class ChatbotService
             $text = str_ireplace($name, ' ', $text);
         }
         $stop = ['hotel', 'hotels', 'room', 'rooms', 'activity', 'activities', 'package', 'packages', 'addon', 'addons', 'add-on', 'add-ons', 'tour', 'tours', 'price', 'prices', 'pricing', 'cost', 'costs', 'cheap', 'cheapest', 'expensive', 'best', 'top', 'list', 'show', 'find', 'search', 'available', 'availability', 'book', 'booking', 'recommend', 'recommended', 'affordable', 'luxury', 'deal', 'deals', 'promo', 'budget', 'with', 'for', 'from', 'near', 'our', 'trip', 'trips', 'the', 'and', 'per', 'hour', 'hours', 'day', 'days', 'night', 'nights', 'person', 'pax', 'under', 'about', 'any', 'there', 'what', 'which', 'want', 'need', 'looking', 'like', 'some', 'give', 'tell', 'know', 'how', 'much', 'here', 'in', 'on', 'is', 'are', 'an', 'a', 'of', 'to', 'me', 'my', 'do', 'does',
+            'magkano', 'presyo', 'halaga', 'ano', 'ang', 'ng', 'mga', 'sa', 'po', 'ba', 'may', 'meron', 'bang', 'naman', 'please', 'rate', 'rates', 'rental', 'rentals',
+            'good', 'suitable', 'backpacker', 'backpackers', 'couple', 'couples', 'friendly', 'solo',
+            'inclusion', 'inclusions', 'included', 'includes', 'exclusion', 'exclusions', 'duration', 'capacity', 'requirements', 'restrictions', 'details', 'information', 'location', 'amenities', 'kasama', 'dadalhin',
             // Amenity / vibe descriptors, not nameable things: "beachfront",
             // "pool", "spa" describe attributes no catalog name need contain.
             // Category/medium words ("water", "sea", "land") and request verbs
@@ -4189,7 +4506,7 @@ class ChatbotService
         return $header."\n\n".implode("\n\n", $blocks);
     }
 
-    protected function formatRoomResults(array $scored): array
+    protected function formatRoomResults(array $scored, ?int $pax = null, ?int $nights = null): array
     {
         return array_map(fn ($e) => [
             'id' => $e['item']->id,
@@ -4216,6 +4533,7 @@ class ChatbotService
             'combo_total' => isset($e['combo_total']) ? round((float) $e['combo_total'], 2) : null,
             'combo_with' => $e['combo_with'] ?? null,
             'combo_pax' => isset($e['combo_pax']) ? (int) $e['combo_pax'] : null,
+            'price_quote' => $this->priceQuotes->for($e['item'], $pax, $nights),
         ], $scored);
     }
 
@@ -4236,7 +4554,7 @@ class ChatbotService
         ], $scored);
     }
 
-    protected function formatActivityResults(array $scored): array
+    protected function formatActivityResults(array $scored, ?int $pax = null): array
     {
         return array_map(fn ($e) => [
             'id' => $e['item']->id,
@@ -4251,10 +4569,11 @@ class ChatbotService
             'over_budget' => ! empty($e['over_budget']),
             'over_by' => isset($e['over_by']) ? round((float) $e['over_by'], 2) : null,
             'fallback' => ! empty($e['fallback']),
+            'price_quote' => $this->priceQuotes->for($e['item'], $pax),
         ], $scored);
     }
 
-    protected function formatPackageResults(array $scored): array
+    protected function formatPackageResults(array $scored, ?int $pax = null): array
     {
         return array_map(fn ($e) => [
             'id' => $e['item']->id,
@@ -4273,6 +4592,7 @@ class ChatbotService
             'over_budget' => ! empty($e['over_budget']),
             'over_by' => isset($e['over_by']) ? round((float) $e['over_by'], 2) : null,
             'fallback' => ! empty($e['fallback']),
+            'price_quote' => $this->priceQuotes->for($e['item'], $pax),
         ], $scored);
     }
 

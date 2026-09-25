@@ -343,7 +343,7 @@
                                 }
                                 $roomImg = $resolvedRoomImages[0];
 
-                                $roomPayload = app(App\Services\Preview\RoomPreviewService::class)->build($room, $heroImage);
+                                $roomPayload = app(App\Services\Preview\RoomPreviewService::class)->build($room, $heroImage, $priceChanges[$room->id] ?? null);
                             @endphp
                             <div id="room-card-{{ $room->id }}"
                                 class="bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-xs hover:shadow-md transition-all duration-300 flex flex-col justify-between group">
@@ -369,8 +369,9 @@
                                         @endif
 
                                         <div
-                                            class="absolute top-3 right-3 bg-slate-950/80 backdrop-blur-md text-emerald-400 font-extrabold text-xs px-2.5 py-1 rounded-lg border border-white/20">
+                                            class="absolute top-3 right-3 bg-slate-950/80 backdrop-blur-md text-emerald-400 font-extrabold text-xs px-2.5 py-1 rounded-lg border border-white/20 flex items-center gap-1.5">
                                             ₱{{ number_format($room->base_price, 2) }} / night
+                                            <x-frontend.price-change-badge :change="$priceChanges[$room->id] ?? null" />
                                         </div>
                                         @if($room->view_type)
                                             <div
@@ -624,7 +625,7 @@
                                                     @endif
                                                     @if($actModel)
                                                         @php
-                                                            $actPayload = app(App\Services\Preview\ActivityPreviewService::class)->build($actModel);
+                                                            $actPayload = app(App\Services\Preview\ActivityPreviewService::class)->build($actModel, $activityPriceChanges[$actModel->id] ?? null);
                                                         @endphp
                                                         <button type="button"
                                                             @click="$store.preview.openActivity({{ json_encode($actPayload) }})"

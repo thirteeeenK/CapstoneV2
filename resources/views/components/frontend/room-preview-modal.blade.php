@@ -34,6 +34,14 @@
                     ₱<span x-text="Number($store.preview.computedNightlyRate).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})"></span>
                 </span>
                 <span class="text-xs text-slate-300 font-medium">/ night</span>
+                <span x-show="$store.preview.room?.price_change" x-cloak
+                    class="inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-[10px] font-extrabold border"
+                    :class="$store.preview.room?.price_change?.dir === 'up' ? 'bg-red-50 text-red-600 border-red-200' : 'bg-emerald-50 text-emerald-600 border-emerald-200'"
+                    :title="$store.preview.room?.price_change ? 'Was ₱' + Number($store.preview.room.price_change.old).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' on ' + $store.preview.room.price_change.date : ''"
+                    :aria-label="$store.preview.room?.price_change ? ($store.preview.room.price_change.dir === 'up' ? 'Price increased from ₱' : 'Price decreased from ₱') + Number($store.preview.room.price_change.old).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' on ' + $store.preview.room.price_change.date : ''">
+                    <span class="material-symbols-outlined text-[13px] leading-none" x-text="$store.preview.room?.price_change ? ($store.preview.room.price_change.dir === 'up' ? 'trending_up' : 'trending_down') : ''"></span>
+                    <span class="sr-only" x-text="$store.preview.room?.price_change ? ($store.preview.room.price_change.dir === 'up' ? 'Price up' : 'Price down') : ''"></span>
+                </span>
                 <span x-show="($store.preview.room?.max_occupancy || $store.preview.room?.occupancy || 4) > ($store.preview.room?.base_occupancy || 2) && ($store.preview.room?.extra_person_fee || 0) > 0" class="text-[10px] font-bold bg-amber-400 text-slate-950 px-2 py-0.5 rounded-full ml-2" x-cloak>
                     +₱<span x-text="($store.preview.room?.extra_person_fee || 0).toLocaleString('en-US')"></span> / guest Extra Fee
                 </span>

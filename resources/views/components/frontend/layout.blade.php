@@ -145,5 +145,6 @@
     <x-frontend.chat-widget />
     <x-frontend.room-preview-modal />
     <x-frontend.activity-preview-modal />
+    <x-frontend.package-preview-modal />
 </body>
 </html>

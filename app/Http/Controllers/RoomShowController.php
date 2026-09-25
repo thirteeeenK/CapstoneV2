@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AdminAuditLog;
 use App\Models\DestinationModel;
 use App\Models\RoomType;
 use App\Services\Preview\RoomPreviewService;
@@ -27,7 +28,9 @@ class RoomShowController extends Controller
 
         $rooms = $query->orderBy('room_name', 'asc')->get();
 
-        return view('room.index', compact('rooms', 'destinations'));
+        $priceChanges = AdminAuditLog::recentPriceChanges('room', $rooms->pluck('id')->all(), 'base_price');
+
+        return view('room.index', compact('rooms', 'destinations', 'priceChanges'));
     }
 
     /**
@@ -41,6 +44,8 @@ class RoomShowController extends Controller
             abort(404);
         }
 
-        return response()->json($service->build($room));
+        $change = AdminAuditLog::recentPriceChanges('room', [$room->id], 'base_price');
+
+        return response()->json($service->build($room, null, $change[$room->id] ?? null));
     }
 }

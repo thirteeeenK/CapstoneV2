@@ -178,6 +178,11 @@ class ChatbotEvalCommand extends Command
             'expect_destination' => $case['expect_destination'] ?? null,
             'fact_hits' => $factHits,
             'fact_total' => count((array) ($case['required_facts'] ?? [])),
+            'constraint_compliant' => empty(array_intersect($retrievedIds, $forbidIds)),
+            'claims_grounded' => $factHits === count((array) ($case['required_facts'] ?? [])),
+            'expect_abstention' => $case['expect_abstention'] ?? null,
+            'abstained' => in_array($reply['retrieval_outcome']['status'] ?? null, ['no_match', 'needs_clarification', 'temporarily_unavailable'], true),
+            'scope_consistent' => $case['scope_consistent'] ?? null,
             'latency_ms' => $latencyMs,
         ];
     }
@@ -219,6 +224,10 @@ class ChatbotEvalCommand extends Command
             'no_result_rate' => $metrics::noResultRate($rows),
             'forbid_hit_rate' => $forbidScoped === [] ? null : $forbidHits / count($forbidScoped),
             'facts_hit_rate' => $factTotal === 0 ? null : $factHits / $factTotal,
+            'constraint_violation_rate' => $metrics::constraintViolationRate($rows),
+            'unsupported_claim_rate' => $metrics::unsupportedClaimRate($rows),
+            'valid_abstention_rate' => $metrics::validAbstentionRate($rows),
+            'multi_turn_consistency_rate' => $metrics::multiTurnConsistencyRate($rows),
             'latency_p50_ms' => $metrics::latencyP50($rows),
             'latency_p95_ms' => $metrics::latencyP95($rows),
         ];
@@ -227,8 +236,8 @@ class ChatbotEvalCommand extends Command
     /** @return string[] */
     private function compare(array $metrics, array $baseline): array
     {
-        $higherBetter = ['intent_accuracy', 'recall_at_3', 'recall_at_5', 'mrr', 'destination_match_rate', 'facts_hit_rate'];
-        $lowerBetter = ['wrong_destination_rate', 'no_result_rate', 'forbid_hit_rate'];
+        $higherBetter = ['intent_accuracy', 'recall_at_3', 'recall_at_5', 'mrr', 'destination_match_rate', 'facts_hit_rate', 'valid_abstention_rate', 'multi_turn_consistency_rate'];
+        $lowerBetter = ['wrong_destination_rate', 'no_result_rate', 'forbid_hit_rate', 'constraint_violation_rate', 'unsupported_claim_rate'];
         $regressions = [];
 
         foreach ($higherBetter as $key) {

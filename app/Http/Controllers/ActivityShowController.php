@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Concerns\ResolvesImages;
 use App\Models\ActivityModel;
+use App\Models\AdminAuditLog;
 use App\Models\DestinationModel;
 use App\Services\Preview\ActivityPreviewService;
 use Illuminate\Http\Request;
@@ -31,7 +32,9 @@ class ActivityShowController extends Controller
 
         $activities = $query->orderBy('activity_name', 'asc')->get();
 
-        return view('activity.index', compact('activities', 'destinations'));
+        $priceChanges = AdminAuditLog::recentPriceChanges('activity', $activities->pluck('id')->all(), 'rate');
+
+        return view('activity.index', compact('activities', 'destinations', 'priceChanges'));
     }
 
     /**
@@ -45,6 +48,8 @@ class ActivityShowController extends Controller
             abort(404);
         }
 
-        return response()->json($service->build($activity));
+        $change = AdminAuditLog::recentPriceChanges('activity', [$activity->id], 'rate');
+
+        return response()->json($service->build($activity, $change[$activity->id] ?? null));
     }
 }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Concerns\ResolvesImages;
+use App\Models\AdminAuditLog;
 use App\Models\DestinationModel;
 
 class DestinationShowController extends Controller
@@ -40,6 +41,8 @@ class DestinationShowController extends Controller
             },
         ])->findOrFail($id);
 
-        return view('destination.show', compact('destination'));
+        $priceChanges = AdminAuditLog::recentPriceChanges('activity', $destination->activities->pluck('id')->all(), 'rate');
+
+        return view('destination.show', compact('destination', 'priceChanges'));
     }
 }

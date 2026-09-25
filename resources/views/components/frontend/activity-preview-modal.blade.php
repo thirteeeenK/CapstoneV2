@@ -35,6 +35,14 @@
                 <span class="text-xl sm:text-2xl font-black text-emerald-400 font-headline"
                     x-text="$store.preview.activity?.rate"></span>
                 <span class="text-xs text-slate-400 font-medium">/ person</span>
+                <span x-show="$store.preview.activity?.price_change" x-cloak
+                    class="inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-[10px] font-extrabold border"
+                    :class="$store.preview.activity?.price_change?.dir === 'up' ? 'bg-red-50 text-red-600 border-red-200' : 'bg-emerald-50 text-emerald-600 border-emerald-200'"
+                    :title="$store.preview.activity?.price_change ? 'Was ₱' + Number($store.preview.activity.price_change.old).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' on ' + $store.preview.activity.price_change.date : ''"
+                    :aria-label="$store.preview.activity?.price_change ? ($store.preview.activity.price_change.dir === 'up' ? 'Price increased from ₱' : 'Price decreased from ₱') + Number($store.preview.activity.price_change.old).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' on ' + $store.preview.activity.price_change.date : ''">
+                    <span class="material-symbols-outlined text-[13px] leading-none" x-text="$store.preview.activity?.price_change ? ($store.preview.activity.price_change.dir === 'up' ? 'trending_up' : 'trending_down') : ''"></span>
+                    <span class="sr-only" x-text="$store.preview.activity?.price_change ? ($store.preview.activity.price_change.dir === 'up' ? 'Price up' : 'Price down') : ''"></span>
+                </span>
             </div>
         </div>
 

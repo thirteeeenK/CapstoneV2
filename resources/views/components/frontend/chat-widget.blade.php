@@ -287,6 +287,9 @@
                                                     <span
                                                         class="text-[10px] font-bold text-slate-500 bg-white px-2 py-0.5 rounded-md border border-slate-200 capitalize"
                                                         x-text="hotel.type"></span>
+                                                    <span x-show="hotel.price_from !== null && hotel.price_from !== undefined"
+                                                        class="text-[11px] font-black text-ocean-700"
+                                                        x-text="'From ₱' + new Intl.NumberFormat().format(hotel.price_from) + '/night'"></span>
                                                 </div>
                                                 <a :href="'/hotels/' + hotel.id"
                                                     class="mt-1.5 block text-center text-[11px] bg-ocean-600 text-white font-bold px-2 py-1.5 rounded-lg hover:bg-ocean-700 transition-colors font-headline cursor-pointer">View
@@ -318,10 +321,14 @@
                                                         class="text-[10px] font-bold text-slate-500 bg-white px-2 py-0.5 rounded-md border border-slate-200"
                                                         x-text="pkg.days + 'D/' + pkg.nights + 'N'"></span>
                                                 </div>
-                                                <button
-                                                    @click="addToBasket('package', pkg.id, { quantity: pkg.min_pax || 2, selected_pax: pkg.min_pax || 2 })"
-                                                    class="mt-1.5 w-full text-[11px] bg-amber-500 text-slate-950 font-bold px-2 py-1.5 rounded-lg hover:bg-amber-600 transition-colors font-headline cursor-pointer">+
-                                                    Add to Trip Basket</button>
+                                                <div class="flex gap-1.5 pt-1">
+                                                    <button @click="$store.preview.openPackageById(pkg.id)"
+                                                        class="flex-1 text-[11px] bg-white border border-slate-200 text-slate-700 font-bold px-2 py-1.5 rounded-lg hover:bg-slate-100 transition-colors font-headline cursor-pointer">Preview</button>
+                                                    <button
+                                                        @click="addToBasket('package', pkg.id, { quantity: pkg.min_pax || 2, selected_pax: pkg.min_pax || 2 })"
+                                                        class="flex-1 text-[11px] bg-amber-500 text-slate-950 font-bold px-2 py-1.5 rounded-lg hover:bg-amber-600 transition-colors font-headline cursor-pointer">+
+                                                        Add to Trip Basket</button>
+                                                </div>
                                             </div>
                                         </template>
                                     </div>
@@ -331,8 +338,12 @@
                                 <template x-if="msg.itinerary">
                                     <div
                                         class="mt-3 bg-slate-50 rounded-xl p-2.5 border border-slate-200/80 text-xs space-y-1.5">
-                                        <p class="font-bold text-slate-900 font-headline"
-                                            x-text="msg.itinerary.destination.name"></p>
+                                        <p class="font-bold text-slate-900 font-headline flex items-center gap-1.5">
+                                            <span x-text="msg.itinerary.destination.name"></span>
+                                            <span x-show="msg.itinerary.days"
+                                                class="text-[10px] font-body font-bold px-1.5 py-0.5 rounded bg-ocean-100 text-ocean-700"
+                                                x-text="msg.itinerary.days + 'D/' + msg.itinerary.nights + 'N'"></span>
+                                        </p>
                                         <p class="text-slate-600"><span x-text="msg.itinerary.room.room_name"></span>
                                             &mdash; <span x-text="msg.itinerary.room.formatted_total"></span></p>
                                         <template x-for="act in msg.itinerary.activities">
@@ -342,14 +353,18 @@
                                         </template>
                                         <p class="font-black text-ocean-600 font-headline text-xs pt-1 border-t border-slate-200"
                                             x-text="'Total: ' + msg.itinerary.formatted_grand_total"></p>
-                                        <div class="flex gap-1.5 pt-1">
+                                        <div class="grid grid-cols-2 gap-1.5 pt-1">
+                                            <button type="button" @click="addItineraryToBasket(msg.itinerary)"
+                                                class="col-span-2 bg-slate-900 text-white font-bold px-2 py-1.5 rounded-lg hover:bg-slate-800 transition-colors text-[11px] font-headline cursor-pointer flex items-center justify-center gap-1">
+                                                <span class="material-symbols-outlined text-[14px]">add_shopping_cart</span>
+                                                Add Whole Itinerary to Trip Basket</button>
                                             <button
                                                 @click="addToBasket('room', msg.itinerary.room.id, { check_in_date: msg.itinerary.check_in_date || null, check_out_date: msg.itinerary.check_out_date || null, selected_pax: 1 })"
-                                                class="flex-1 bg-ocean-600 text-white font-bold px-2 py-1.5 rounded-lg hover:bg-ocean-700 transition-colors text-[11px] font-headline cursor-pointer">+
+                                                class="bg-ocean-600 text-white font-bold px-2 py-1.5 rounded-lg hover:bg-ocean-700 transition-colors text-[11px] font-headline cursor-pointer">+
                                                 Room</button>
                                             <template x-for="act in msg.itinerary.activities">
                                                 <button @click="addToBasket('activity', act.id, {})"
-                                                    class="flex-1 bg-emerald-600 text-white font-bold px-2 py-1.5 rounded-lg hover:bg-emerald-700 transition-colors text-[11px] font-headline cursor-pointer">+
+                                                    class="bg-emerald-600 text-white font-bold px-2 py-1.5 rounded-lg hover:bg-emerald-700 transition-colors text-[11px] font-headline cursor-pointer">+
                                                     <span x-text="act.activity_name.substring(0,12)"></span></button>
                                             </template>
                                         </div>
@@ -925,6 +940,47 @@
             addToBasket(type, id, opts) {
                 if (typeof window.addToCart === 'function') {
                     window.addToCart(type, id, opts);
+                }
+            },
+
+            async addItineraryToBasket(itin) {
+                if (!itin || !itin.room || !itin.check_in_date || !itin.check_out_date) {
+                    alert('This itinerary is missing stay dates. Please ask for a new itinerary.');
+                    return;
+                }
+                try {
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+                    const res = await fetch('/cart/add-itinerary', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken,
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: JSON.stringify({
+                            room_id: itin.room.id,
+                            activity_ids: (itin.activities || []).map(a => a.id),
+                            pax: itin.pax || 2,
+                            check_in_date: itin.check_in_date,
+                            check_out_date: itin.check_out_date,
+                        })
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        window.dispatchEvent(new CustomEvent('cart-updated'));
+                        window.dispatchEvent(new CustomEvent('show-cart-modal', {
+                            detail: {
+                                message: data.message || 'Your itinerary is in your Trip Basket!',
+                                cartCount: data.cart_count,
+                            }
+                        }));
+                    } else {
+                        alert(data.message || 'Could not add the itinerary to your basket.');
+                    }
+                } catch (err) {
+                    console.error('Error adding itinerary:', err);
+                    alert('Could not add the itinerary to your basket. Please try again.');
                 }
             },
 

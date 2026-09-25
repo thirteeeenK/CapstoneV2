@@ -7,8 +7,6 @@
     <div x-data="{
         activeDestId: '{{ $selectedDestId ?: 'all' }}',
         searchQuery: @js($searchQuery ?? ''),
-        previewPackage: null,
-        activeImgIdx: 0,
         packageIndex: @js($packages->map(fn($p) => ['dest' => (string) $p->destination_id, 'name' => $p->name, 'type' => $p->type ?? ''])),
         matchesPackage(destId, pkgName = '', pkgType = '') {
             if (this.activeDestId !== 'all' && String(this.activeDestId) !== String(destId)) {
@@ -24,7 +22,7 @@
         get anyVisiblePackage() {
             return this.packageIndex.some(p => this.matchesPackage(p.dest, p.name, p.type));
         }
-    }" class="pt-20 sm:pt-28 pb-12 bg-sand-50/70 text-slate-900 min-h-screen relative overflow-hidden">
+    }" class="{{ Auth::check() ? 'py-12' : 'pt-20 sm:pt-28 pb-12' }} bg-sand-50/70 text-slate-900 min-h-screen relative overflow-hidden">
 
         {{-- Background Soft Ambient Mesh Glows --}}
         <div
@@ -139,26 +137,6 @@
                             $coverImg = $resolvedImages[0];
 
                             $inclusionsRaw = is_array($pkg->generic_inclusions) ? $pkg->generic_inclusions : (is_string($pkg->generic_inclusions) ? array_filter(array_map('trim', explode(',', $pkg->generic_inclusions))) : []);
-
-                            $pkgPayload = [
-                                'id' => $pkg->id,
-                                'name' => $pkg->name,
-                                'type' => $pkg->type,
-                                'price' => '₱' . number_format((float) $pkg->price, 2),
-                                'days' => $pkg->days,
-                                'nights' => $pkg->nights,
-                                'min_pax' => $pkg->min_pax,
-                                'destination_name' => $destName,
-                                'destination_id' => $pkg->destination_id,
-                                'images' => $resolvedImages,
-                                'generic_inclusions' => array_values($inclusionsRaw),
-                                'hotels' => $pkg->hotels->map(fn($h) => ['id' => $h->id, 'name' => $h->hotel_name])->toArray(),
-                                'rooms' => $pkg->rooms->map(fn($r) => ['id' => $r->id, 'name' => $r->room_name])->toArray(),
-                                'activities' => $pkg->activities->map(fn($a) => ['id' => $a->id, 'name' => $a->activity_name])->toArray(),
-                                'add_ons' => $pkg->addOns->map(fn($a) => ['id' => $a->id, 'name' => $a->name])->toArray(),
-                                'valid_from' => $pkg->valid_from ? $pkg->valid_from->format('M d, Y') : null,
-                                'valid_to' => $pkg->valid_to ? $pkg->valid_to->format('M d, Y') : null,
-                            ];
                         @endphp
 
                         <div x-show="matchesPackage('{{ $pkg->destination_id }}', @js($pkg->name), @js($pkg->type ?? ''))"
@@ -175,9 +153,10 @@
 
                                     {{-- Price Badge --}}
                                     <div
-                                        class="absolute top-3 right-3 bg-slate-950/90 text-emerald-400 font-extrabold text-xs px-3 py-1 rounded-xl border border-white/10 shadow-xs z-10">
-                                        ₱{{ number_format((float) $pkg->price, 2) }} <span
-                                            class="text-[10px] font-normal text-slate-300">/ pax</span>
+                                        class="absolute top-3 right-3 bg-slate-950/90 text-emerald-400 font-extrabold text-xs px-3 py-1 rounded-xl border border-white/10 shadow-xs z-10 flex items-center gap-1.5">
+                                        <span>₱{{ number_format((float) $pkg->price, 2) }} <span
+                                                class="text-[10px] font-normal text-slate-300">/ pax</span></span>
+                                        <x-frontend.price-change-badge :change="$priceChanges[$pkg->id] ?? null" />
                                     </div>
 
                                     {{-- Destination & Duration Badge --}}
@@ -247,7 +226,7 @@
                             {{-- Card Footer --}}
                             <div class="p-4 sm:p-5 pt-0 grid grid-cols-2 gap-2">
                                 <button type="button"
-                                    @click="previewPackage = {{ json_encode($pkgPayload) }}; activeImgIdx = 0;"
+                                    @click="$store.preview.openPackageById({{ $pkg->id }})"
                                     class="w-full py-2.5 px-2 sm:px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-colors flex items-center justify-center gap-1 cursor-pointer">
                                     <span class="material-symbols-outlined text-[16px] text-slate-500">visibility</span>
                                     <span>Details</span>
@@ -267,149 +246,6 @@
 
         </div>
 
-        {{-- Dynamic Package Preview Modal --}}
-        <div x-show="previewPackage" x-transition.opacity @keydown.escape.window="previewPackage = null"
-            class="fixed inset-0 z-[110] flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-md overflow-y-auto"
-            x-cloak style="display: none;">
-
-            <div @click.away="previewPackage = null"
-                class="bg-white border border-slate-200 rounded-3xl max-w-2xl w-full max-h-[92vh] flex flex-col overflow-hidden shadow-2xl relative my-auto">
-
-                {{-- Modal Header --}}
-                <div
-                    class="relative bg-slate-900 text-white p-5 sm:p-7 shrink-0 overflow-hidden">
-                    <div class="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
-
-                    <button @click="previewPackage = null"
-                        aria-label="Close Package Details"
-                        class="absolute top-4 right-4 text-slate-400 hover:text-white bg-white/10 hover:bg-white/20 p-2 rounded-full transition-colors cursor-pointer z-10">
-                        <span class="material-symbols-outlined text-[20px]">close</span>
-                    </button>
-
-                    <div class="flex flex-wrap items-center gap-2 mb-2 pr-10">
-                        <span class="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-bold uppercase tracking-wider border border-amber-400/30 flex items-center gap-1">
-                            <span class="material-symbols-outlined text-[13px]">card_travel</span>
-                            <span x-text="previewPackage?.type || 'Tour Package'"></span>
-                        </span>
-                        <template x-if="previewPackage?.destination_name">
-                            <span class="px-2.5 py-0.5 rounded-full bg-white/10 text-slate-200 text-[10px] font-medium flex items-center gap-1 border border-white/10">
-                                <span class="material-symbols-outlined text-[12px] text-amber-400">location_on</span>
-                                <span x-text="previewPackage.destination_name"></span>
-                            </span>
-                        </template>
-                    </div>
-
-                    <h2 class="text-xl sm:text-2xl font-black text-white font-headline tracking-tight leading-snug" x-text="previewPackage?.name"></h2>
-
-                    <div class="mt-2.5 flex items-baseline gap-2">
-                        <span class="text-xl sm:text-2xl font-black text-emerald-400 font-headline"
-                            x-text="previewPackage?.price"></span>
-                        <span class="text-xs text-slate-400 font-medium">/ person</span>
-                    </div>
-                </div>
-
-                {{-- Modal Scrollable Body --}}
-                <div class="p-4 sm:p-7 space-y-5 flex-1 overflow-y-auto overscroll-contain text-xs sm:text-sm text-slate-700">
-                    <div class="flex flex-wrap items-center gap-2 text-xs text-slate-600 bg-slate-50 p-3 rounded-2xl border border-slate-200/80">
-                        <span class="font-bold text-slate-800 flex items-center gap-1">
-                            <span class="material-symbols-outlined text-[15px] text-amber-600">schedule</span>
-                            <span x-text="previewPackage?.days + ' Days / ' + previewPackage?.nights + ' Nights'"></span>
-                        </span>
-                        <span>•</span>
-                        <span class="font-bold text-slate-800 flex items-center gap-1">
-                            <span class="material-symbols-outlined text-[15px] text-amber-600">group</span>
-                            <span x-text="'Min ' + previewPackage?.min_pax + ' Passengers'"></span>
-                        </span>
-                        <template x-if="previewPackage?.valid_from">
-                            <span class="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full" x-text="'Valid: ' + previewPackage.valid_from + (previewPackage.valid_to ? ' → ' + previewPackage.valid_to : '')"></span>
-                        </template>
-                    </div>
-
-                    {{-- Image Showcase & Gallery --}}
-                    <template x-if="previewPackage?.images && previewPackage.images.length > 0">
-                        <div class="space-y-2.5">
-                            <div class="relative h-48 sm:h-64 rounded-2xl overflow-hidden bg-slate-900 group border border-slate-200/80 shadow-xs">
-                                <img :src="previewPackage.images[activeImgIdx]" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-                                <div class="absolute bottom-2.5 right-2.5 bg-slate-950/75 backdrop-blur-md text-white text-[11px] font-bold px-2.5 py-0.5 rounded-lg border border-white/20">
-                                    <span x-text="activeImgIdx + 1"></span> / <span x-text="previewPackage.images.length"></span>
-                                </div>
-                            </div>
-                        </div>
-                    </template>
-
-                    {{-- Inclusions --}}
-                    <template x-if="previewPackage?.generic_inclusions && previewPackage.generic_inclusions.length > 0">
-                        <div class="space-y-2">
-                            <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
-                                <span class="material-symbols-outlined text-[16px] text-emerald-600">checklist</span>
-                                <span>Complete Package Inclusions</span>
-                            </h3>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                <template x-for="(inc, idx) in previewPackage.generic_inclusions" :key="idx">
-                                    <div
-                                        class="flex items-center gap-2 text-xs text-slate-700 bg-emerald-50/40 px-3 py-2.5 rounded-xl border border-emerald-200/60">
-                                        <span
-                                            class="material-symbols-outlined text-[16px] text-emerald-600 shrink-0">check_circle</span>
-                                        <span x-text="inc"></span>
-                                    </div>
-                                </template>
-                            </div>
-                        </div>
-                    </template>
-
-                    {{-- Linked stay, experiences & extras --}}
-                    <template x-if="previewPackage && (previewPackage.hotels?.length || previewPackage.rooms?.length || previewPackage.activities?.length || previewPackage.add_ons?.length)">
-                        <div class="space-y-2">
-                            <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-900 flex items-center gap-1.5">
-                                <span class="material-symbols-outlined text-[16px] text-sky-600">link</span>
-                                <span>Stay, Experiences & Extras</span>
-                            </h3>
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                <template x-for="hotel in (previewPackage.hotels || [])" :key="'h'+hotel.id">
-                                    <div class="flex items-center gap-2 text-xs text-slate-700 bg-sky-50/60 px-3 py-2.5 rounded-xl border border-sky-200/60">
-                                        <span class="material-symbols-outlined text-[16px] text-sky-600 shrink-0">hotel</span>
-                                        <span x-text="hotel.name"></span>
-                                    </div>
-                                </template>
-                                <template x-for="room in (previewPackage.rooms || [])" :key="'r'+room.id">
-                                    <div class="flex items-center gap-2 text-xs text-slate-700 bg-sky-50/60 px-3 py-2.5 rounded-xl border border-sky-200/60">
-                                        <span class="material-symbols-outlined text-[16px] text-sky-600 shrink-0">bed</span>
-                                        <span x-text="room.name"></span>
-                                    </div>
-                                </template>
-                                <template x-for="activity in (previewPackage.activities || [])" :key="'a'+activity.id">
-                                    <div class="flex items-center gap-2 text-xs text-slate-700 bg-violet-50/60 px-3 py-2.5 rounded-xl border border-violet-200/60">
-                                        <span class="material-symbols-outlined text-[16px] text-violet-600 shrink-0">kayaking</span>
-                                        <span x-text="activity.name"></span>
-                                    </div>
-                                </template>
-                                <template x-for="addon in (previewPackage.add_ons || [])" :key="'x'+addon.id">
-                                    <div class="flex items-center gap-2 text-xs text-slate-700 bg-amber-50/60 px-3 py-2.5 rounded-xl border border-amber-200/60">
-                                        <span class="material-symbols-outlined text-[16px] text-amber-600 shrink-0">add_circle</span>
-                                        <span x-text="addon.name"></span>
-                                    </div>
-                                </template>
-                            </div>
-                        </div>
-                    </template>
-
-                {{-- Pinned Modal Footer --}}
-                <div
-                    class="bg-white p-3.5 sm:p-5 border-t border-slate-200/80 flex items-center gap-2.5 shrink-0 shadow-xs">
-                    <button @click="previewPackage = null"
-                        class="px-4 sm:px-5 py-2.5 rounded-2xl border border-slate-200 text-slate-700 font-bold text-xs hover:bg-slate-100 transition-colors cursor-pointer shrink-0">
-                        Close
-                    </button>
-
-                    <button type="button" @click="window.addToCart('package', previewPackage.id, { quantity: previewPackage.min_pax || 2, selected_pax: previewPackage.min_pax || 2 }); previewPackage = null;"
-                        class="flex-1 py-2.5 px-4 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs sm:text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer">
-                        <span class="material-symbols-outlined text-[17px]">shopping_cart</span>
-                        <span>Add Package to Trip Basket</span>
-                    </button>
-                </div>
-
-            </div>
-        </div>
 
     </div>
 </x-frontend.layout>

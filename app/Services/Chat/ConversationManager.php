@@ -126,6 +126,8 @@ class ConversationManager
         ]);
 
         if ($sender === 'bot' && $contextData) {
+            $this->rememberActiveSearch($session, $contextData);
+            $session->refresh();
             $this->rememberRetrievalState($session, $contextData);
         }
 
@@ -143,6 +145,51 @@ class ConversationManager
         $frame = $session->metadata['retrieval_state'] ?? [];
 
         return is_array($frame) ? $frame : [];
+    }
+
+    /** @return array<string, mixed> */
+    public function activeSearch(ChatSession $session): array
+    {
+        $state = $session->metadata['active_search_state'] ?? [];
+
+        return is_array($state) ? $state : [];
+    }
+
+    protected function rememberActiveSearch(ChatSession $session, array $contextData): void
+    {
+        $trace = $contextData['trace'] ?? [];
+        $constraints = $trace['constraints'] ?? [];
+        if (! is_array($constraints)) {
+            return;
+        }
+
+        $metadata = $session->metadata ?? [];
+        $metadata['active_search_state'] = array_filter([
+            'intent' => $trace['intent'] ?? null,
+            'destination_id' => $constraints['destination_id'] ?? null,
+            'destination_name' => $constraints['destination_name'] ?? null,
+            'hotel_id' => $constraints['hotel_id'] ?? null,
+            'room_id' => $constraints['room_id'] ?? null,
+            'pax' => $constraints['pax'] ?? null,
+            'max_price' => $constraints['max_price'] ?? null,
+            'check_in_date' => $constraints['check_in_date'] ?? null,
+            'check_out_date' => $constraints['check_out_date'] ?? null,
+            'outcome' => $contextData['retrieval_outcome']['status'] ?? ($this->hasRetrievalResults($contextData) ? RetrievalOutcome::Matched : null),
+            'reason' => $contextData['retrieval_outcome']['reason'] ?? null,
+            'source_turn' => $trace['trace_id'] ?? null,
+        ], static fn (mixed $value): bool => $value !== null && $value !== '' && $value !== []);
+        $session->update(['metadata' => $metadata]);
+    }
+
+    protected function hasRetrievalResults(array $contextData): bool
+    {
+        foreach (['retrieved_rooms', 'retrieved_hotels', 'retrieved_activities', 'retrieved_packages', 'retrieved_addons'] as $key) {
+            if (! empty($contextData[$key])) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

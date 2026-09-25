@@ -23,7 +23,7 @@
             if (this.priceFilter === 'luxury' && numRate < 6000) return false;
             return true;
         }
-    }" class="py-12 bg-sand-50/70 text-slate-900 min-h-screen relative overflow-hidden">
+    }" class="{{ Auth::check() ? 'py-12' : 'pt-20 sm:pt-28 pb-12' }} bg-sand-50/70 text-slate-900 min-h-screen relative overflow-hidden">
         
         {{-- Background Soft Ambient Mesh Glows --}}
         <div class="absolute top-10 left-1/3 w-[500px] h-[300px] bg-sky-200/40 blur-3xl rounded-full pointer-events-none"></div>
@@ -188,8 +188,9 @@
                                 @endif
 
                                 @if($rate > 0)
-                                    <div class="absolute bottom-3 right-3 bg-slate-900/90 text-emerald-400 font-extrabold text-xs px-2.5 py-0.5 rounded-lg border border-white/10">
-                                        ₱{{ number_format($rate, 2) }} <span class="text-[10px] font-normal text-slate-400">/ night</span>
+                                    <div class="absolute bottom-3 right-3 bg-slate-900/90 text-emerald-400 font-extrabold text-xs px-2.5 py-0.5 rounded-lg border border-white/10 flex items-center gap-1.5">
+                                        <span>₱{{ number_format($rate, 2) }} <span class="text-[10px] font-normal text-slate-400">/ night</span></span>
+                                        <x-frontend.price-change-badge :change="$priceChanges[$room->id] ?? null" />
                                     </div>
                                 @endif
                             </div>

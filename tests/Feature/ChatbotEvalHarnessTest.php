@@ -48,6 +48,18 @@ test('eval metrics match hand-computed values on synthetic rows', function () {
         ->and(ChatEvalMetrics::latencyP95($results))->toBe(300.0);
 });
 
+test('eval metrics measure grounding constraints abstention and multi turn consistency', function () {
+    $results = [
+        ['constraint_compliant' => true, 'claims_grounded' => true, 'expect_abstention' => true, 'abstained' => true, 'scope_consistent' => true],
+        ['constraint_compliant' => false, 'claims_grounded' => false, 'expect_abstention' => false, 'abstained' => true, 'scope_consistent' => false],
+    ];
+
+    expect(ChatEvalMetrics::constraintViolationRate($results))->toBe(0.5)
+        ->and(ChatEvalMetrics::unsupportedClaimRate($results))->toBe(0.5)
+        ->and(ChatEvalMetrics::validAbstentionRate($results))->toBe(0.5)
+        ->and(ChatEvalMetrics::multiTurnConsistencyRate($results))->toBe(0.5);
+});
+
 test('eval metrics return null when no case carries the expectation', function () {
     $results = [[
         'expect_intent' => null,

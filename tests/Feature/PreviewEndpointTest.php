@@ -3,6 +3,7 @@
 use App\Models\ActivityModel;
 use App\Models\DestinationModel;
 use App\Models\HotelModel;
+use App\Models\Package;
 use App\Models\RoomType;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -124,5 +125,60 @@ test('activity preview returns 404 for hidden activities when not an admin', fun
 
 test('activity preview returns 404 for a nonexistent activity', function () {
     $this->getJson('/activities/999999/preview')
+        ->assertNotFound();
+});
+
+test('package preview endpoint returns the shared payload shape', function () {
+    $package = Package::factory()->create([
+        'destination_id' => $this->destination->id,
+        'name' => 'Palawan Getaway',
+        'price' => 5000.00,
+        'generic_inclusions' => ['Hotel', 'Island hopping'],
+    ]);
+
+    $response = $this->getJson("/packages/{$package->id}/preview");
+
+    $response->assertOk()
+        ->assertJsonStructure([
+            'id',
+            'name',
+            'type',
+            'price',
+            'days',
+            'nights',
+            'min_pax',
+            'destination_name',
+            'images',
+            'generic_inclusions',
+            'hotels',
+            'rooms',
+            'activities',
+            'add_ons',
+            'price_change',
+        ])
+        ->assertJson([
+            'id' => $package->id,
+            'name' => 'Palawan Getaway',
+            'destination_name' => 'Test Island',
+        ]);
+
+    expect($response->json('price'))->toBe('₱5,000.00')
+        ->and($response->json('generic_inclusions'))->toEqual(['Hotel', 'Island hopping'])
+        ->and($response->json('images'))->toBeArray()
+        ->and($response->json('hotels'))->toBeArray();
+});
+
+test('package preview returns 404 for inactive packages when not an admin', function () {
+    $package = Package::factory()->create([
+        'destination_id' => $this->destination->id,
+        'is_active' => false,
+    ]);
+
+    $this->getJson("/packages/{$package->id}/preview")
+        ->assertNotFound();
+});
+
+test('package preview returns 404 for a nonexistent package', function () {
+    $this->getJson('/packages/999999/preview')
         ->assertNotFound();
 });

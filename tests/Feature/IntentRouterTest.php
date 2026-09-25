@@ -97,6 +97,16 @@ test('extracts nights from query', function () {
     expect($c2['nights'])->toBe(3);
 });
 
+test('extracts hyphenated durations like 5-day and 3-night', function () {
+    $c = $this->router->extractConstraints('Plan a 5-day itinerary in Boracay');
+    expect($c['days'])->toBe(5)->and($c['nights'])->toBe(4);
+
+    $c2 = $this->router->extractConstraints('3-night stay in El Nido');
+    expect($c2['nights'])->toBe(3);
+
+    expect($this->router->classify('Plan a 5-day trip to Palawan'))->toBe(IntentRouter::ITINERARY_QUERY);
+});
+
 test('extracts weekend date range', function () {
     $c = $this->router->extractConstraints('Room this weekend in Boracay');
     expect($c['check_in_date'])->not->toBeNull();
@@ -140,6 +150,12 @@ test('extracts partial activity names by token coverage', function () {
     expect($this->router->extractActivityName('scuba diving inclusions'))->toBe('Scuba Diving');
     expect($this->router->extractActivityName('el nido tour b itinerary'))->toBe('El Nido Tour B (Caves & Coves)');
     expect($this->router->extractActivityName('atv and zipline combo, is it offered?'))->toBeNull();
+});
+
+test('does not resolve an activity from short fuzzy collisions in a hotel amenities question', function () {
+    ActivityModel::factory()->create(['activity_name' => 'El Nido Tour B (Caves & Coves)']);
+
+    expect($this->router->extractActivityName('what amenities does My Station Hotel have?'))->toBeNull();
 });
 
 test('named tour itinerary routes to activity search not itinerary planner', function () {
@@ -227,4 +243,11 @@ test('paraphrase probe extracts no entities', function () {
     expect($c['hotel_name'])->toBeNull();
     expect($c['activity_name'])->toBeNull();
     expect($c['destination_name'])->toBe('Boracay');
+});
+
+test('detects amenities field intent without disturbing exclusions precedence', function () {
+    expect($this->router->detectFieldIntent('My Station Hotel amenities'))->toBe('amenities');
+    expect($this->router->detectFieldIntent('does it have a pool and wifi facilities?'))->toBe('amenities');
+    expect($this->router->detectFieldIntent('what is not included?'))->toBe('exclusions');
+    expect($this->router->detectFieldIntent('show me beachfront rooms in El Nido'))->toBeNull();
 });

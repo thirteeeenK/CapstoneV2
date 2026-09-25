@@ -13,7 +13,7 @@ class RoomPreviewService
      * Build the JSON payload shared by the room preview modal (hotel page,
      * chat widget, room catalog). Mirrors the hotel/show inline payload.
      */
-    public function build(RoomType $room, ?string $fallbackImage = null): array
+    public function build(RoomType $room, ?string $fallbackImage = null, ?array $priceChange = null): array
     {
         $roomImagesRaw = is_array($room->images) ? $room->images : (is_string($room->images) ? (json_decode($room->images, true) ?: []) : []);
         $resolvedRoomImages = array_map(
@@ -53,6 +53,7 @@ class RoomPreviewService
             'base_occupancy' => $room->base_occupancy,
             'max_occupancy' => $room->max_occupancy,
             'extra_person_fee' => (float) ($room->extra_person_fee ?: 0),
+            'price_change' => $priceChange,
             'bed_configuration' => $room->bed_configuration,
             'room_size' => $room->room_size,
             'view_type' => $room->view_type,

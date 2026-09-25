@@ -97,6 +97,37 @@ class ChatEvalMetrics
         return $empty / count($results);
     }
 
+    public static function constraintViolationRate(array $results): ?float
+    {
+        return self::booleanFailureRate($results, 'constraint_compliant');
+    }
+
+    public static function unsupportedClaimRate(array $results): ?float
+    {
+        return self::booleanFailureRate($results, 'claims_grounded');
+    }
+
+    public static function validAbstentionRate(array $results): ?float
+    {
+        $scoped = array_values(array_filter($results, fn ($row) => ($row['expect_abstention'] ?? null) !== null));
+        if ($scoped === []) {
+            return null;
+        }
+        $hits = count(array_filter($scoped, fn ($row) => (bool) ($row['abstained'] ?? false) === (bool) $row['expect_abstention']));
+
+        return $hits / count($scoped);
+    }
+
+    public static function multiTurnConsistencyRate(array $results): ?float
+    {
+        $scoped = array_values(array_filter($results, fn ($row) => ($row['scope_consistent'] ?? null) !== null));
+        if ($scoped === []) {
+            return null;
+        }
+
+        return count(array_filter($scoped, fn ($row) => $row['scope_consistent'] === true)) / count($scoped);
+    }
+
     public static function latencyP50(array $results): ?float
     {
         return self::percentile(array_values(array_filter(array_column($results, 'latency_ms'), fn ($v) => $v !== null)), 50);
@@ -116,5 +147,15 @@ class ChatEvalMetrics
         $index = (int) ceil($p / 100 * count($values)) - 1;
 
         return (float) $values[max(0, min($index, count($values) - 1))];
+    }
+
+    protected static function booleanFailureRate(array $results, string $field): ?float
+    {
+        $scoped = array_values(array_filter($results, fn ($row) => array_key_exists($field, $row)));
+        if ($scoped === []) {
+            return null;
+        }
+
+        return count(array_filter($scoped, fn ($row) => $row[$field] === false)) / count($scoped);
     }
 }

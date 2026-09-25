@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Concerns\ResolvesImages;
+use App\Models\AdminAuditLog;
 use App\Models\DestinationModel;
 use App\Models\HotelModel;
 use App\Services\MapService;
@@ -66,6 +67,13 @@ class HotelShowController extends Controller
             ? $weather->summaryForDestination($hotel->destination)
             : null;
 
-        return view('hotel.show', compact('hotel', 'isAdminPreview', 'mapContext', 'weatherSummary'));
+        $priceChanges = AdminAuditLog::recentPriceChanges('room', $hotel->rooms->pluck('id')->all(), 'base_price');
+        $activityPriceChanges = AdminAuditLog::recentPriceChanges(
+            'activity',
+            array_map(fn ($m) => $m->id, $mapContext['activityModels'] ?? []),
+            'rate'
+        );
+
+        return view('hotel.show', compact('hotel', 'isAdminPreview', 'mapContext', 'weatherSummary', 'priceChanges', 'activityPriceChanges'));
     }
 }

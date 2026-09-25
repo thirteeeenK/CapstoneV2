@@ -7,6 +7,7 @@ use App\Models\DestinationModel;
 use App\Models\HotelModel;
 use App\Models\RoomType;
 use App\Models\User;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Http;
 
 function blockRoomFully(RoomType $room, string $in, string $out): void
@@ -133,4 +134,20 @@ test('explicit check-in dates reach availability selection', function () {
 
     $response->assertOk()->assertJsonPath('status', 'success');
     expect($response->json('itinerary.hotel.name'))->toBe('Open Expensive Inn');
+});
+
+test('5-day prompt adapts itinerary duration and includes stay dates', function () {
+    itineraryHotel($this->destination->id, 'Duration Hotel', 1500);
+
+    $response = $this->postJson('/chat', [
+        'message' => 'Plan a 5-day itinerary in Boracay for 2 pax under 20000',
+    ]);
+
+    $response->assertOk()->assertJsonPath('status', 'success');
+    $itin = $response->json('itinerary');
+    expect($itin['nights'])->toBe(4)
+        ->and($itin['days'])->toBe(5)
+        ->and($itin['check_in_date'])->not->toBeNull()
+        ->and($itin['check_out_date'])->not->toBeNull()
+        ->and((int) Carbon::parse($itin['check_in_date'])->diffInDays(Carbon::parse($itin['check_out_date'])))->toBe(4);
 });
