@@ -12,6 +12,8 @@ use App\Services\Support\SupportQueueService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class RegisteredUserController extends Controller
 {
@@ -122,11 +124,19 @@ class RegisteredUserController extends Controller
         $user->save();
         AdminAuditService::log($user, $oldValues);
 
-        $user->notify(new AccountModerationNotice(
-            $request->ban_level,
-            $user->ban_reason,
-            $user->ban_expires_at?->format('M d, Y'),
-        ));
+        try {
+            $user->notify(new AccountModerationNotice(
+                $request->ban_level,
+                $user->ban_reason,
+                $user->ban_expires_at?->format('M d, Y'),
+            ));
+        } catch (Throwable $e) {
+            Log::warning('moderation mail dispatch failed', [
+                'user_id' => $user->getKey(),
+                'ban_level' => $request->ban_level,
+                'exception' => $e->getMessage(),
+            ]);
+        }
 
         if ($request->boolean('also_ban_ip')) {
             $targetIp = $user->consent_ip_address
@@ -180,7 +190,15 @@ class RegisteredUserController extends Controller
         AdminAuditService::log($user, $oldValues);
 
         if ($oldValues['ban_level'] ?? null) {
-            $user->notify(new AccountModerationNotice('restored'));
+            try {
+                $user->notify(new AccountModerationNotice('restored'));
+            } catch (Throwable $e) {
+                Log::warning('moderation mail dispatch failed', [
+                    'user_id' => $user->getKey(),
+                    'ban_level' => 'restored',
+                    'exception' => $e->getMessage(),
+                ]);
+            }
         }
 
         if ($targetIp) {
