@@ -3388,7 +3388,7 @@ class ChatbotService
             return 'A single exact database match was provided (EXACT MATCH). Do NOT use ranked-list language ("best match", "Rank #1", alternatives, footnotes). Answer the user\'s question directly from that block.';
         }
 
-        return 'In DATABASE RESULTS, Rank #1 is the system\'s best AI match (highest relevance score) for the query; Rank #2+ are next-best alternatives. Do NOT list the items in prose — the app renders each result as a card below your reply with its own Best Match badge. Write a short verdict only: one sentence why Rank #1 is the top pick (use Vibe/Category/Featured Amenities/Price Range/Guest Rating from that block), plus one short line pointing at the other cards (e.g. "The other cards below are close alternatives worth a look."). Do NOT add any "Ranked by system" footnote and do not itemize alternatives beyond that pointer line. Do not show raw relevance numbers unless helpful.';
+        return 'In DATABASE RESULTS, Rank #1 is the system\'s best AI match (highest relevance score) for the query; Rank #2+ are next-best alternatives. Do NOT list the items in prose — the app renders each result as a card below your reply with its own Best Match badge. Write a short, warm, friendly verdict only: 1-2 sentences saying why Rank #1 fits the user\'s request, naming it EXACTLY as written in its block and using ONLY facts from that block (Vibe/Category/Featured Amenities/Price Range/Guest Rating). Speak to the user directly ("you"), keep it simple, no jargon. Then one short line pointing at the other cards (e.g. "The other cards below are close alternatives worth a look."). Do NOT add any "Ranked by system" footnote and do not itemize alternatives beyond that pointer line. Do not show raw relevance numbers unless helpful. NEVER invent names, prices, or attributes not in the blocks.';
     }
 
     protected function buildPrompt(string $stage, string $context, string $query, ?User $user, array $options = []): string
@@ -3831,10 +3831,12 @@ class ChatbotService
 
     /**
      * Catalog records are the authority for customer-visible catalog facts.
-     * Gemini may help retrieve and rank candidates, but its prose is never
-     * accepted for a reply that names or describes a retrieved catalog item.
-     * This prevents altered names and unsupported attributes from reaching the
-     * customer even when a model ignores grounding instructions.
+     * The item list is always rendered deterministically from verified card
+     * records (never model prose). A short AI-written explanation is allowed
+     * through only when every checkable fact in it grounds out: peso amounts
+     * must have appeared in the retrieval context, bolded names must match
+     * retrieved records, and at most two records may be named (more reads as
+     * an unverified list). Anything unverifiable falls back to the list alone.
      *
      * @param  array<string, mixed>  $reply  must carry retrieved_* card lists
      */
@@ -3844,9 +3846,92 @@ class ChatbotService
             return $text;
         }
 
-        Log::debug('catalog_reply_rendered_from_verified_records');
+        $list = $this->deterministicCardsReply($reply);
+        $explanation = $this->groundedExplanation($text, $reply);
+        if ($explanation === null) {
+            Log::debug('catalog_reply_rendered_from_verified_records');
 
-        return $this->deterministicCardsReply($reply);
+            return $list;
+        }
+
+        Log::debug('catalog_reply_with_grounded_ai_explanation');
+
+        return $explanation."\n\n".$list;
+    }
+
+    /**
+     * Short AI explanation passthrough with grounding checks. Null when the
+     * prose cannot be verified (empty, too long, unknown price, unknown
+     * name, or more named records than an explanation should carry).
+     *
+     * @param  array<string, mixed>  $reply
+     */
+    protected function groundedExplanation(string $text, array $reply): ?string
+    {
+        $candidate = trim($text);
+        if ($candidate === '') {
+            return null;
+        }
+        // Simple explanation only: first 3 sentences, 500 chars max.
+        $sentences = preg_split('/(?<=[.!?])\s+/', $candidate) ?: [];
+        $candidate = trim(implode(' ', array_slice($sentences, 0, 3)));
+        if ($candidate === '') {
+            return null;
+        }
+        if (mb_strlen($candidate) > 500) {
+            $candidate = trim(mb_substr($candidate, 0, 500)).'…';
+        }
+
+        // Every peso amount must have appeared in the retrieval context.
+        // Non-strict on purpose: extractPesoAmounts returns string + float
+        // forms so '₱5,200' matches a '₱5,200.00' context amount.
+        foreach (GeminiService::extractPesoAmounts($candidate) as $amount) {
+            if (! in_array($amount, $this->gemini->lastContextPrices)) {
+                return null;
+            }
+        }
+
+        // Every bolded name must match a retrieved record (card or
+        // destination name); generic labels are skipped.
+        $allowedNames = [];
+        foreach (['retrieved_rooms' => 'room_name', 'retrieved_hotels' => 'hotel_name', 'retrieved_activities' => 'activity_name', 'retrieved_packages' => 'name', 'retrieved_addons' => 'name'] as $key => $field) {
+            foreach ($reply[$key] ?? [] as $card) {
+                if (! is_array($card)) {
+                    continue;
+                }
+                if (! empty($card[$field])) {
+                    $allowedNames[] = (string) $card[$field];
+                }
+                if (! empty($card['destination'])) {
+                    $allowedNames[] = (string) $card['destination'];
+                }
+            }
+        }
+        preg_match_all('/\*\*(.+?)\*\*/', $candidate, $matches);
+        $named = 0;
+        foreach ($matches[1] ?? [] as $span) {
+            $needle = $this->normalizeToken($span);
+            if ($needle === '' || in_array($needle, ['bestmatch', 'toppick', 'toppicks', 'whythisfits', 'goodtoknow', 'worthalook', 'closealternatives'], true)) {
+                continue;
+            }
+            $known = false;
+            foreach ($allowedNames as $name) {
+                $haystack = $this->normalizeToken($name);
+                if ($haystack !== '' && (str_contains($haystack, $needle) || str_contains($needle, $haystack))) {
+                    $known = true;
+                    break;
+                }
+            }
+            if (! $known) {
+                return null;
+            }
+            $named++;
+        }
+        if ($named > 2) {
+            return null;
+        }
+
+        return $candidate;
     }
 
     /**
@@ -3888,18 +3973,15 @@ class ChatbotService
     }
 
     /**
-     * "Not in our catalog" notice: when the user names a specific thing
-     * (jetski, skydive, villa) and none of the returned items lexically
-     * matches it, say so up front instead of silently presenting
-     * alternatives as matches. Null when something shown matches, when the
-     * query has no salient thing-word (generic "hotels in Boracay"), or
-     * when the thing exists in the same scope but was not shown (budget
-     * and ordering notices already cover those). Pure string matching —
-     * no embedding calls.
+     * "Not in our catalog" notice is reserved for activities and add-ons,
+     * where a user commonly requests a specific offering (for example, Jet
+     * Ski or airport transfer). Hotel, room, and package terms are commonly
+     * preferences or traveler profiles, so an exact-token miss must not
+     * contradict semantically relevant results.
      */
     protected function unmatchedNotice(string $query, array $scored, array $constraints, string $catalog): ?string
     {
-        if (empty($scored)) {
+        if (empty($scored) || ! in_array($catalog, ['activities', 'addons'], true)) {
             return null;
         }
         $tokens = $this->salientQueryTokens($query);

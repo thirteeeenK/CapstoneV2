@@ -2,6 +2,8 @@
 
 use App\Models\ActivityModel;
 use App\Models\DestinationModel;
+use App\Models\HotelModel;
+use App\Models\RoomType;
 
 beforeEach(function () {
     $this->boracay = DestinationModel::factory()->create([
@@ -83,6 +85,30 @@ test('unknown thing reports not in catalog with alternatives', function () {
     $response->assertOk()->assertJsonPath('status', 'success');
     expect($response->json('reply'))->toContain("couldn't find");
     expect($response->json('retrieved_activities') ?? [])->not->toBeEmpty();
+});
+
+test('traveler profiles do not produce a contradictory hotel absence notice', function () {
+    mockGemini(unitVector(0));
+
+    $hotel = HotelModel::factory()->create([
+        'hotel_name' => 'Spin Designer Hostel',
+        'destination_id' => $this->elnido->id,
+        'embedding' => unitVectorString(0),
+    ]);
+    RoomType::factory()->create([
+        'hotel_id' => $hotel->id,
+        'room_name' => 'Shared Dorm Bed',
+        'base_price' => 1900,
+        'embedding' => unitVectorString(0),
+    ]);
+
+    $response = $this->postJson('/chat', [
+        'message' => 'hotels good for backpackers',
+    ]);
+
+    $response->assertOk()->assertJsonPath('status', 'success');
+    expect($response->json('reply'))->toContain('Spin Designer Hostel')
+        ->and($response->json('reply'))->not->toContain("couldn't find backpackers");
 });
 
 test('misspelled stopword shows no notice', function () {

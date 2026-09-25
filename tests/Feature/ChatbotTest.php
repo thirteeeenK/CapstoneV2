@@ -114,6 +114,61 @@ test('catalog replies use verified room names when Gemini invents a room', funct
         ->and($response->json('reply'))->not->toContain('Invented Royal Suite');
 });
 
+test('grounded AI hotel explanation passes through with the verified list', function () {
+    $boracay = DestinationModel::factory()->create(['name' => 'Boracay']);
+    $hotel = HotelModel::factory()->create([
+        'hotel_name' => 'Canyon Hotels & Resorts Boracay',
+        'destination_id' => $boracay->id,
+        'vibe_tags' => ['romantic', 'beachfront'],
+        'embedding' => unitVectorString(0),
+    ]);
+    RoomType::factory()->create([
+        'hotel_id' => $hotel->id,
+        'room_name' => 'Couple Suite',
+        'base_price' => 5200.00,
+    ]);
+
+    // NOTE: Http::fake stubs merge first-match-wins, so the beforeEach
+    // default would shadow an in-test re-fake. mockGemini swaps the whole
+    // service instance instead (same pattern as ChatbotUnmatchedNoticeTest).
+    mockGemini(unitVector(0), '**Canyon Hotels & Resorts Boracay** is a lovely pick for you two with its romantic, beachfront vibe, from ₱5,200.00/night. The other cards below are close alternatives worth a look.');
+
+    $response = $this->postJson('/chat', [
+        'message' => 'hotels good for couples',
+    ]);
+
+    $response->assertOk();
+    expect($response->json('reply'))->toContain('romantic')
+        ->and($response->json('reply'))->toContain('Canyon Hotels & Resorts Boracay')
+        ->and($response->json('reply'))->toContain('Here are the options I found');
+});
+
+test('ungrounded AI hotel explanation is dropped but the verified list survives', function () {
+    $boracay = DestinationModel::factory()->create(['name' => 'Boracay']);
+    $hotel = HotelModel::factory()->create([
+        'hotel_name' => 'Canyon Hotels & Resorts Boracay',
+        'destination_id' => $boracay->id,
+        'embedding' => unitVectorString(0),
+    ]);
+    RoomType::factory()->create([
+        'hotel_id' => $hotel->id,
+        'room_name' => 'Couple Suite',
+        'base_price' => 5200.00,
+    ]);
+
+    // NOTE: see sibling test — mockGemini, not an in-test Http::fake.
+    mockGemini(unitVector(0), '**Imaginary Palace Resort** is perfect for you at only ₱99,999.00/night. The other cards below are worth a look.');
+
+    $response = $this->postJson('/chat', [
+        'message' => 'hotels good for couples',
+    ]);
+
+    $response->assertOk();
+    expect($response->json('reply'))->toContain('Canyon Hotels & Resorts Boracay')
+        ->and($response->json('reply'))->not->toContain('Imaginary Palace Resort')
+        ->and($response->json('reply'))->not->toContain('99,999');
+});
+
 test('destination details do not use Gemini to invent hotels', function () {
     Http::fake([
         '*embedContent*' => Http::response([
