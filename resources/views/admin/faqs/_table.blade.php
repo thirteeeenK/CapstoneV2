@@ -48,6 +48,11 @@
                                     <span class="px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-wider border {{ $faq->is_active ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200' }}">
                                         {{ $faq->is_active ? 'Visible' : 'Hidden' }}
                                     </span>
+                                    @if($faq->is_active && !$faq->show_on_landing)
+                                        <span class="ml-1 px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-wider border bg-sky-50 text-sky-700 border-sky-200">
+                                            Chatbot only
+                                        </span>
+                                    @endif
                                 </td>
                                 <td class="py-4 px-6">
                                     <div class="flex items-center justify-end gap-2">

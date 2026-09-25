@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Model;
     'category',
     'sort_order',
     'is_active',
+    'show_on_landing',
 ])]
 class Faq extends Model
 {
@@ -21,6 +22,7 @@ class Faq extends Model
 
     protected $casts = [
         'is_active' => 'boolean',
+        'show_on_landing' => 'boolean',
         'sort_order' => 'integer',
     ];
 

@@ -45,6 +45,22 @@ it('hides inactive FAQs from the landing page', function () {
         ->assertDontSee('Hidden FAQ should not appear', false);
 });
 
+it('hides chatbot-only FAQs from the landing page', function () {
+    Faq::create([
+        'question' => 'Chatbot-only FAQ should not appear',
+        'answer' => 'Only SunnyBot knows this.',
+        'keywords' => 'chatbot-only',
+        'category' => 'General',
+        'sort_order' => 21,
+        'is_active' => true,
+        'show_on_landing' => false,
+    ]);
+
+    $this->get(route('landing'))
+        ->assertOk()
+        ->assertDontSee('Chatbot-only FAQ should not appear', false);
+});
+
 it('does not render the FAQ section when there are no active FAQs', function () {
     // No FAQs created
     $this->get(route('landing'))

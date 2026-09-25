@@ -77,6 +77,7 @@ class AdminFaqController extends Controller
             'category' => 'nullable|string|max:100',
             'sort_order' => 'nullable|integer|min:0',
             'is_active' => 'required|boolean',
+            'show_on_landing' => 'sometimes|boolean',
         ]);
 
         $faq = Faq::create([
@@ -86,6 +87,7 @@ class AdminFaqController extends Controller
             'category' => $validated['category'] ?? null,
             'sort_order' => $validated['sort_order'] ?? 0,
             'is_active' => (bool) $validated['is_active'],
+            'show_on_landing' => (bool) ($validated['show_on_landing'] ?? true),
         ]);
 
         AdminAuditService::log($faq);
@@ -120,6 +122,7 @@ class AdminFaqController extends Controller
             'category' => 'nullable|string|max:100',
             'sort_order' => 'nullable|integer|min:0',
             'is_active' => 'required|boolean',
+            'show_on_landing' => 'sometimes|boolean',
         ]);
 
         $faq->update([
@@ -129,6 +132,7 @@ class AdminFaqController extends Controller
             'category' => $validated['category'] ?? null,
             'sort_order' => $validated['sort_order'] ?? $faq->sort_order,
             'is_active' => (bool) $validated['is_active'],
+            'show_on_landing' => (bool) ($validated['show_on_landing'] ?? $faq->show_on_landing),
         ]);
 
         AdminAuditService::log($faq, $oldValues);

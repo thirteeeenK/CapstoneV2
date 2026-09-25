@@ -66,6 +66,15 @@
                 </div>
             </div>
 
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Show on landing page</label>
+                <select name="show_on_landing" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-bold text-slate-900 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 bg-white">
+                    <option value="1" {{ old('show_on_landing', true) ? 'selected' : '' }}>Show on FAQ page</option>
+                    <option value="0" {{ !old('show_on_landing', true) ? 'selected' : '' }}>Chatbot only (hide from FAQ page)</option>
+                </select>
+                <p class="text-[11px] text-slate-400 mt-1">Chatbot-only entries stay queryable by SunnyBot via RAG but never appear on the landing page.</p>
+            </div>
+
             <div class="flex items-center justify-end gap-3 pt-2 border-t border-slate-100">
                 <a href="{{ route('admin.faqs.index') }}" class="px-5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition">Cancel</a>
                 <button type="submit" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-sky-600 to-sky-700 hover:from-sky-500 hover:to-sky-600 text-white font-bold text-xs shadow-md shadow-sky-600/20 transition">Save FAQ</button>

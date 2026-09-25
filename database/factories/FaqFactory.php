@@ -21,6 +21,7 @@ class FaqFactory extends Factory
             'category' => fake()->randomElement(['Services', 'Booking', 'Policies']),
             'sort_order' => 0,
             'is_active' => true,
+            'show_on_landing' => true,
         ];
     }
 }

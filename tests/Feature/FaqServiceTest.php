@@ -57,6 +57,23 @@ test('tied semantic FAQ winners stay silent', function () {
     expect((new FaqService($gemini))->findBestMatch('book plane tickets'))->toBeNull();
 });
 
+test('chatbot-only FAQs still match for SunnyBot', function () {
+    Faq::create([
+        'question' => 'What is the secret internal refund hotline?',
+        'answer' => 'Call extension 999.',
+        'keywords' => 'secret internal refund hotline',
+        'category' => 'Policies',
+        'sort_order' => 99,
+        'is_active' => true,
+        'show_on_landing' => false,
+    ]);
+
+    $gemini = $this->mock(GeminiService::class);
+
+    expect((new FaqService($gemini))->findBestMatch('what is the secret internal refund hotline'))->not->toBeNull()
+        ->and((new FaqService($gemini))->findBestMatch('what is the secret internal refund hotline')->answer)->toBe('Call extension 999.');
+});
+
 test('non-general-talk intents skip FAQs without searching', function () {
     // No searchFaqs stub: any embedding call would fail the mock.
     $gemini = $this->mock(GeminiService::class);

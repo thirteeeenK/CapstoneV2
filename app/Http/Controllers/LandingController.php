@@ -26,6 +26,7 @@ class LandingController extends Controller
             ->get();
 
         $faqGroups = Faq::where('is_active', true)
+            ->where('show_on_landing', true)
             ->orderBy('sort_order')
             ->orderBy('id')
             ->get()
