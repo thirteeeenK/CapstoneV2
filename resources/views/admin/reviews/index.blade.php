@@ -100,7 +100,7 @@
                 </div>
             </section>
 
-            {{-- Keyword treemap --}}
+            {{-- Keyword treemap (hidden) --
             <section class="lg:col-span-3 bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6">
                 <h2 class="font-headline text-sm font-bold text-slate-900 mb-1 flex items-center gap-2">
                     <span class="w-7 h-7 rounded-lg bg-sand-100 text-slate-600 border border-sand-200 flex items-center justify-center">
@@ -115,6 +115,7 @@
                     <div id="chart-keyword-treemap" class="min-h-[260px]"></div>
                 @endif
             </section>
+            --}}
         </div>
 
         {{-- Recent reviews table --}}
