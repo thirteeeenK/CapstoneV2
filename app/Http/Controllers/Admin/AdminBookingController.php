@@ -785,7 +785,16 @@ class AdminBookingController extends Controller
             return back()->with('error', 'No registered account found with email "'.$booking->contact_email.'". The guest has not been registered yet.');
         }
 
-        $status = Password::broker()->sendResetLink(['email' => $user->email]);
+        try {
+            $status = Password::broker()->sendResetLink(['email' => $user->email]);
+        } catch (\Throwable $e) {
+            Log::warning('booking password reset dispatch failed', [
+                'user_id' => $user->getKey(),
+                'exception' => $e->getMessage(),
+            ]);
+
+            return back()->with('error', 'We could not send the reset link right now. Please try again in a moment.');
+        }
 
         if ($status === Password::RESET_LINK_SENT) {
             return back()->with('success', 'A password reset link has been emailed to '.$user->email.'.');

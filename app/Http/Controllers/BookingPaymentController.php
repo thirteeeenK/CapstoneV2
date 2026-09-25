@@ -12,6 +12,7 @@ use App\Services\BookingRequestService;
 use App\Services\Payment\Drivers\QrphDriver;
 use App\Services\Payment\PaymentService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class BookingPaymentController extends Controller
 {
@@ -327,6 +328,10 @@ class BookingPaymentController extends Controller
             }
         } catch (\Throwable $e) {
             // Admin notification failure should not block the request.
+            Log::warning('cancellation-request admin notify dispatch failed', [
+                'booking_id' => $booking->getKey(),
+                'exception' => $e->getMessage(),
+            ]);
         }
 
         return redirect()->route('booking.show', $booking->booking_code)
