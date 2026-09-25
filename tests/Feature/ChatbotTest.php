@@ -91,6 +91,53 @@ test('guest can send a chat message and get a response', function () {
         ->assertJson(['status' => 'success']);
 });
 
+test('catalog replies use verified room names when Gemini invents a room', function () {
+    Http::fake([
+        '*embedContent*' => Http::response([
+            'embedding' => ['values' => array_fill(0, 3072, 0.01)],
+        ]),
+        '*generateContent*' => Http::response([
+            'candidates' => [[
+                'content' => ['parts' => [[
+                    'text' => '**Invented Royal Suite** at Test Beach Resort costs ₱2,500 per night.',
+                ]]],
+            ]],
+        ]),
+    ]);
+
+    $response = $this->postJson('/chat', [
+        'message' => 'Find rooms in Boracay',
+    ]);
+
+    $response->assertOk();
+    expect($response->json('reply'))->toContain('Deluxe Ocean View')
+        ->and($response->json('reply'))->not->toContain('Invented Royal Suite');
+});
+
+test('destination details do not use Gemini to invent hotels', function () {
+    Http::fake([
+        '*embedContent*' => Http::response([
+            'embedding' => ['values' => array_fill(0, 3072, 0.01)],
+        ]),
+        '*generateContent*' => Http::response([
+            'candidates' => [[
+                'content' => ['parts' => [[
+                    'text' => '**Imaginary Palace Resort** has a private beach.',
+                ]]],
+            ]],
+        ]),
+    ]);
+
+    $response = $this->postJson('/chat', [
+        'message' => 'Tell me about Boracay',
+    ]);
+
+    $response->assertOk();
+    expect($response->json('reply'))->toContain('White beach')
+        ->and($response->json('reply'))->not->toContain('Imaginary Palace Resort');
+    Http::assertNotSent(fn (Request $request) => str_contains($request->url(), 'generateContent'));
+});
+
 test('legal queries get deterministic replies with page links', function () {
     $privacy = $this->postJson('/chat', ['message' => 'What is your privacy policy?']);
     $privacy->assertOk()->assertJson(['status' => 'success']);
@@ -926,7 +973,7 @@ test('travel queries are not hijacked by FAQs', function () {
 
     $response->assertOk()->assertJsonPath('status', 'success');
     expect($response->json('faq'))->toBeNull();
-    expect($response->json('reply'))->toBe('Here is a recommendation for you!');
+    expect($response->json('reply'))->toContain('Deluxe Ocean View');
 });
 
 test('inactive FAQ does not match', function () {

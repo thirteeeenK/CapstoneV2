@@ -847,7 +847,7 @@ class ChatbotService
         $prompt = $this->buildPrompt('room-search', $context, $query, $user, $this->promptOptions($ordering, $scored, $constraints, $fieldIntent, 'room_name', 'room_id'));
         $cards = $this->formatRoomResults($scored);
         $reply = $this->stripRankFootnote($this->geminiChatResponse($prompt, $session));
-        $reply = $this->validateGroundedReply($reply, ['retrieved_rooms' => $cards], $this->gemini->lastContextPrices);
+        $reply = $this->validateGroundedReply($reply, ['retrieved_rooms' => $cards]);
         if ($lead = $this->fieldLead($fieldIntent, $scored)) {
             $reply = $lead."\n\n".$reply;
         }
@@ -899,7 +899,7 @@ class ChatbotService
             'fallback' => ! empty($e['fallback']),
         ], $scored);
         $reply = $this->stripRankFootnote($this->geminiChatResponse($prompt, $session));
-        $reply = $this->validateGroundedReply($reply, ['retrieved_addons' => $cards], $this->gemini->lastContextPrices);
+        $reply = $this->validateGroundedReply($reply, ['retrieved_addons' => $cards]);
         if ($notice = $this->budgetNotice($scored, $constraints)) {
             $reply = $notice."\n\n".$reply;
         }
@@ -1231,7 +1231,7 @@ class ChatbotService
         $prompt = $this->buildPrompt('hotel-search', $context, $query, $user, $this->promptOptions($ordering, $scored, $constraints, $fieldIntent, 'hotel_name', 'hotel_id'));
         $cards = $this->formatHotelResults($scored);
         $reply = $this->stripRankFootnote($this->geminiChatResponse($prompt, $session));
-        $reply = $this->validateGroundedReply($reply, ['retrieved_hotels' => $cards], $this->gemini->lastContextPrices);
+        $reply = $this->validateGroundedReply($reply, ['retrieved_hotels' => $cards]);
         if ($lead = $this->fieldLead($fieldIntent, $scored)) {
             $reply = $lead."\n\n".$reply;
         }
@@ -2218,7 +2218,7 @@ class ChatbotService
         $prompt = $this->buildPrompt('activity-search', $context, $query, $user, $this->promptOptions($ordering, $scored, $constraints, $fieldIntent, 'activity_name', 'activity_id'));
         $cards = $this->formatActivityResults($scored);
         $reply = $this->stripRankFootnote($this->geminiChatResponse($prompt, $session));
-        $reply = $this->validateGroundedReply($reply, ['retrieved_activities' => $cards], $this->gemini->lastContextPrices);
+        $reply = $this->validateGroundedReply($reply, ['retrieved_activities' => $cards]);
         if ($lead = $this->fieldLead($fieldIntent, $scored)) {
             $reply = $lead."\n\n".$reply;
         }
@@ -2284,7 +2284,7 @@ class ChatbotService
 
         $prompt = $this->buildPrompt('activity-compare', $context, $query, $user, ['explicit_scope' => true]);
         $reply = $this->geminiChatResponse($prompt, $session);
-        $reply = $this->validateGroundedReply($reply, ['retrieved_activities' => $this->formatActivityResults($scored)], $this->gemini->lastContextPrices);
+        $reply = $this->validateGroundedReply($reply, ['retrieved_activities' => $this->formatActivityResults($scored)]);
 
         return [
             'reply' => $reply,
@@ -2367,7 +2367,7 @@ class ChatbotService
         $prompt = $this->buildPrompt('package-search', $context, $query, $user, ['explicit_scope' => $this->hasExplicitScope($constraints)]);
         $cards = $this->formatPackageResults($scored);
         $reply = $this->stripRankFootnote($this->geminiChatResponse($prompt, $session));
-        $reply = $this->validateGroundedReply($reply, ['retrieved_packages' => $cards], $this->gemini->lastContextPrices);
+        $reply = $this->validateGroundedReply($reply, ['retrieved_packages' => $cards]);
         if ($notice = $this->budgetNotice($scored, $constraints)) {
             $reply = $notice."\n\n".$reply;
         }
@@ -3332,6 +3332,19 @@ class ChatbotService
 
     protected function handleGeneralChat(string $query, ChatSession $session): array
     {
+        $destinationName = $this->intentRouter->extractDestinationName($query);
+        if ($destinationName && preg_match('/\b(tell me about|about|describe)\b/i', $query)) {
+            $destination = DestinationModel::where('name', 'ILIKE', $destinationName)->first();
+            if ($destination) {
+                $description = $this->clean($destination->description);
+                $reply = "### **{$destination->name}**\n\n";
+                $reply .= $description ?: "{$destination->name} is available in our database.";
+                $reply .= "\n\nAsk me to find hotels, rooms, or activities in **{$destination->name}**.";
+
+                return ['reply' => $reply];
+            }
+        }
+
         $destNames = DestinationModel::orderBy('name')->pluck('name')->all();
         $grounding = '';
 
@@ -3817,35 +3830,23 @@ class ChatbotService
     }
 
     /**
-     * Post-generation grounding check: every peso amount in the model text
-     * must appear in the retrieval context it was given. A foreign price is
-     * a hallucination — log it and fall back to deterministic cards text
-     * (the clickable cards in the payload are untouched). Replies without
-     * retrieved cards, or without any peso amount, pass through.
+     * Catalog records are the authority for customer-visible catalog facts.
+     * Gemini may help retrieve and rank candidates, but its prose is never
+     * accepted for a reply that names or describes a retrieved catalog item.
+     * This prevents altered names and unsupported attributes from reaching the
+     * customer even when a model ignores grounding instructions.
      *
      * @param  array<string, mixed>  $reply  must carry retrieved_* card lists
-     * @param  array<int, string|float>  $allowedPrices
      */
-    protected function validateGroundedReply(string $text, array $reply, array $allowedPrices): string
+    protected function validateGroundedReply(string $text, array $reply): string
     {
-        if ($allowedPrices === [] || ! $this->replyHasRetrievedCards($reply)) {
+        if (! $this->replyHasRetrievedCards($reply)) {
             return $text;
         }
 
-        foreach (GeminiService::extractPesoAmounts($text) as $i => $amount) {
-            // extractPesoAmounts emits string+float pairs; check each once.
-            if ($i % 2 === 1) {
-                continue;
-            }
-            $norm = str_replace(',', '', (string) $amount);
-            if (! in_array($norm, $allowedPrices, true) && ! in_array((float) $norm, $allowedPrices, true)) {
-                Log::warning('grounding_price_mismatch', ['mentioned' => $norm]);
+        Log::debug('catalog_reply_rendered_from_verified_records');
 
-                return $this->deterministicCardsReply($reply);
-            }
-        }
-
-        return $text;
+        return $this->deterministicCardsReply($reply);
     }
 
     /**
@@ -3872,7 +3873,12 @@ class ChatbotService
                 }
                 $line = '- **'.($card[$config['name']] ?? 'Option').'**';
                 if ($config['price'] && isset($card[$config['price']])) {
-                    $line .= ' — ₱'.number_format((float) $card[$config['price']], 2).$config['suffix'];
+                    $price = $key === 'retrieved_activities'
+                        ? trim((string) $card[$config['price']])
+                        : '₱'.number_format((float) $card[$config['price']], 2).$config['suffix'];
+                    if ($price !== '') {
+                        $line .= ' — '.$price;
+                    }
                 }
                 $lines[] = $line;
             }
