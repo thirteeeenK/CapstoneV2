@@ -846,7 +846,7 @@ class ChatbotService
         $context = $this->gemini->extractPricingContext($context, $query);
         $prompt = $this->buildPrompt('room-search', $context, $query, $user, $this->promptOptions($ordering, $scored, $constraints, $fieldIntent, 'room_name', 'room_id'));
         $cards = $this->formatRoomResults($scored);
-        $reply = $this->stripRankLineIfSingle($this->geminiChatResponse($prompt, $session), $scored);
+        $reply = $this->stripRankFootnote($this->geminiChatResponse($prompt, $session));
         $reply = $this->validateGroundedReply($reply, ['retrieved_rooms' => $cards], $this->gemini->lastContextPrices);
         if ($lead = $this->fieldLead($fieldIntent, $scored)) {
             $reply = $lead."\n\n".$reply;
@@ -898,7 +898,7 @@ class ChatbotService
             'over_by' => isset($e['over_by']) ? round((float) $e['over_by'], 2) : null,
             'fallback' => ! empty($e['fallback']),
         ], $scored);
-        $reply = $this->stripRankLineIfSingle($this->geminiChatResponse($prompt, $session), $scored);
+        $reply = $this->stripRankFootnote($this->geminiChatResponse($prompt, $session));
         $reply = $this->validateGroundedReply($reply, ['retrieved_addons' => $cards], $this->gemini->lastContextPrices);
         if ($notice = $this->budgetNotice($scored, $constraints)) {
             $reply = $notice."\n\n".$reply;
@@ -1230,7 +1230,7 @@ class ChatbotService
 
         $prompt = $this->buildPrompt('hotel-search', $context, $query, $user, $this->promptOptions($ordering, $scored, $constraints, $fieldIntent, 'hotel_name', 'hotel_id'));
         $cards = $this->formatHotelResults($scored);
-        $reply = $this->stripRankLineIfSingle($this->geminiChatResponse($prompt, $session), $scored);
+        $reply = $this->stripRankFootnote($this->geminiChatResponse($prompt, $session));
         $reply = $this->validateGroundedReply($reply, ['retrieved_hotels' => $cards], $this->gemini->lastContextPrices);
         if ($lead = $this->fieldLead($fieldIntent, $scored)) {
             $reply = $lead."\n\n".$reply;
@@ -1490,6 +1490,10 @@ class ChatbotService
             }
 
             return $this->fieldItemName($scored[0]['item']).' '.$this->fieldVerb($field).': '.$value;
+        }
+        if ($field === 'price') {
+            // ponytail: cards already list per-item prices; framing line only, no prose list duplicating them.
+            return 'Prices are shown on each card below.';
         }
         $lines = [];
         foreach ($scored as $entry) {
@@ -2213,7 +2217,7 @@ class ChatbotService
 
         $prompt = $this->buildPrompt('activity-search', $context, $query, $user, $this->promptOptions($ordering, $scored, $constraints, $fieldIntent, 'activity_name', 'activity_id'));
         $cards = $this->formatActivityResults($scored);
-        $reply = $this->stripRankLineIfSingle($this->geminiChatResponse($prompt, $session), $scored);
+        $reply = $this->stripRankFootnote($this->geminiChatResponse($prompt, $session));
         $reply = $this->validateGroundedReply($reply, ['retrieved_activities' => $cards], $this->gemini->lastContextPrices);
         if ($lead = $this->fieldLead($fieldIntent, $scored)) {
             $reply = $lead."\n\n".$reply;
@@ -2362,7 +2366,7 @@ class ChatbotService
         $context = $this->gemini->extractPricingContext($context, $query);
         $prompt = $this->buildPrompt('package-search', $context, $query, $user, ['explicit_scope' => $this->hasExplicitScope($constraints)]);
         $cards = $this->formatPackageResults($scored);
-        $reply = $this->stripRankLineIfSingle($this->geminiChatResponse($prompt, $session), $scored);
+        $reply = $this->stripRankFootnote($this->geminiChatResponse($prompt, $session));
         $reply = $this->validateGroundedReply($reply, ['retrieved_packages' => $cards], $this->gemini->lastContextPrices);
         if ($notice = $this->budgetNotice($scored, $constraints)) {
             $reply = $notice."\n\n".$reply;
@@ -3354,27 +3358,24 @@ class ChatbotService
     }
 
     /**
-     * Ordering-aware ranked-list rule: price-ordered sets must never be
-     * described as AI best-match, and single exact hits get no rank
-     * language at all.
+     * Ordering-aware verdict rule: the app renders every retrieved item as
+     * a card with its own rank badge, so Gemini must NOT repeat the item
+     * list in prose. Verdict only, no rank footnotes, no restated notices.
      */
     protected function rankRule(array $options): string
     {
         $ordering = $options['ordering'] ?? null;
-        $count = (int) ($options['result_count'] ?? 0);
         if ($ordering === 'price-asc' || $ordering === 'price-desc') {
             $asc = $ordering === 'price-asc';
             $extreme = $asc ? 'lowest price' : 'highest price';
-            $heading = $asc ? 'Lowest Price' : 'Highest Price';
-            $footnote = $count >= 2 ? " If 2 or more Ranks were provided, add one short line \"Ordered by price: #1 is the {$extreme}.\" as the FINAL line of your response (bottom footnote, not at the top). If only Rank #1 was provided, do NOT add any ordered/ranked line and do not mention alternatives." : ' Do NOT add any ordered/ranked line and do not mention alternatives.';
 
-            return "In DATABASE RESULTS, results are ordered by price, NOT by AI relevance. Rank #1 is the {$extreme} option and Rank #2+ follow in price order. You must list every Rank provided — Rank #1 under ### {$heading} with one sentence why it costs least (use the rate/price fields from that block), and Rank #2+ under ### Other Options each one bullet (name — price — one key amenity). Do not omit alternatives to stay concise; this ranked-list rule overrides the concise 3-paragraph limit.{$footnote} Do not show raw relevance numbers.";
+            return "In DATABASE RESULTS, results are ordered by price, NOT by AI relevance. Rank #1 is the {$extreme} option and Rank #2+ follow in price order. Do NOT list the items in prose — the app renders each result as a card below your reply. Write a short verdict only: one sentence why Rank #1 (use the rate/price fields from that block) is the {$extreme} pick, plus one short line pointing at the other cards. Do NOT add any ordered/ranked footnote line. Do not show raw relevance numbers. This verdict-only rule overrides the concise 3-paragraph limit.";
         }
         if ($ordering === 'exact') {
             return 'A single exact database match was provided (EXACT MATCH). Do NOT use ranked-list language ("best match", "Rank #1", alternatives, footnotes). Answer the user\'s question directly from that block.';
         }
 
-        return 'In DATABASE RESULTS, Rank #1 is the system\'s best AI match (highest relevance score) for the query; Rank #2+ are next-best alternatives. You must list every Rank provided (up to 5 hotels/rooms/activities/packages where provided, e.g., top 5) — Rank #1 under ### Best Match with one sentence why #1 is top (use Vibe/Category/Featured Amenities/Price Range/Guest Rating from that block), and Rank #2+ under ### Other Options each one bullet (name — Price Range — one key amenity). Do not omit alternatives to stay concise; this ranked-list rule overrides the concise 3-paragraph limit. If 2 or more Ranks were provided, add one short line "Ranked by system: #1 is best match, #2+ are close alternatives." as the FINAL line of your response (bottom footnote, not at the top). If only Rank #1 was provided, do NOT add any ranked/“best match” line and do not mention alternatives. Do not show raw relevance numbers unless helpful.';
+        return 'In DATABASE RESULTS, Rank #1 is the system\'s best AI match (highest relevance score) for the query; Rank #2+ are next-best alternatives. Do NOT list the items in prose — the app renders each result as a card below your reply with its own Best Match badge. Write a short verdict only: one sentence why Rank #1 is the top pick (use Vibe/Category/Featured Amenities/Price Range/Guest Rating from that block), plus one short line pointing at the other cards (e.g. "The other cards below are close alternatives worth a look."). Do NOT add any "Ranked by system" footnote and do not itemize alternatives beyond that pointer line. Do not show raw relevance numbers unless helpful.';
     }
 
     protected function buildPrompt(string $stage, string $context, string $query, ?User $user, array $options = []): string
@@ -3400,6 +3401,7 @@ class ChatbotService
             'Never invent prices, availability, names, durations, or other factual details.',
             'Never present "Total Physical Rooms" as live availability.',
             $this->rankRule($options),
+            'A short deterministic notice (matching-result prices, a budget note, or a "couldn\'t find X" note) is displayed directly above your reply — do NOT restate, paraphrase, or apologize for the same fact. Start directly with your verdict on what is shown.',
             'Never add airports, ferry terminals, boats, vans, transfers, beaches, landmarks, restaurants, shops, fees, or food and drink estimates unless the exact fact appears in the database results.',
             'If information is unavailable, say it is not in our database instead of filling the gap with general travel knowledge.',
             'Use **bold** for short labels, ### for section headings, and - for bullet lists. Do not output HTML.',
@@ -4050,16 +4052,12 @@ class ChatbotService
     }
 
     /**
-     * Gemini sometimes emits the "Ranked by system: #1 is best match, #2+ are
-     * close alternatives" line even when only one result was retrieved.
-     * Strip it deterministically when there are no alternatives to mention.
+     * The widget renders every retrieved item as a card with its own rank
+     * badge, so any "Ranked by system / Ordered by price" footnote Gemini
+     * emits is redundant meta-language. Strip it deterministically.
      */
-    protected function stripRankLineIfSingle(string $reply, array $scored): string
+    protected function stripRankFootnote(string $reply): string
     {
-        if (count($scored) >= 2) {
-            return $reply;
-        }
-
         $cleaned = (string) preg_replace('/^[^\n]*(Ranked by (system|AI semantic relevance)|Ordered by price)[^\n]*\n?/mi', '', $reply);
 
         return trim((string) preg_replace("/\n{3,}/", "\n\n", $cleaned));

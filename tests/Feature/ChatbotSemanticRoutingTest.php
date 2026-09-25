@@ -6,6 +6,7 @@ use App\Models\DestinationModel;
 use App\Models\HotelModel;
 use App\Models\Package;
 use App\Models\RoomType;
+use App\Services\Chat\ChatbotService;
 
 beforeEach(function () {
     $this->destination = DestinationModel::factory()->create([
@@ -265,7 +266,7 @@ test('single package result strips the ranked-by-system line', function () {
         ->and($reply)->not->toContain('close alternatives');
 });
 
-test('multiple package results keep the ranked-by-system line', function () {
+test('multiple package results strip the ranked-by-system footnote', function () {
     Package::factory()->create([
         'destination_id' => $this->destination->id,
         'name' => 'Boracay Sulit Deal',
@@ -288,7 +289,8 @@ test('multiple package results keep the ranked-by-system line', function () {
 
     $response->assertOk()->assertJsonPath('status', 'success');
     expect($response->json('retrieved_packages') ?? [])->toHaveCount(2);
-    expect($response->json('reply'))->toContain('close alternatives');
+    expect($response->json('reply'))->toContain('Best match first!')
+        ->and($response->json('reply'))->not->toContain('close alternatives');
 });
 
 test('activity budget filter keeps only activities within the price ceiling', function () {
@@ -477,4 +479,26 @@ test('weak hotel keyword with embedding failure keeps hotel search', function ()
     expect($hotels)->not->toBeEmpty();
     expect(collect($hotels)->pluck('hotel_name')->implode(' '))->toContain('Test Beach Resort');
     expect($response->json('retrieved_activities') ?? [])->toBeEmpty();
+});
+
+test('rank rule is verdict-only with no prose list or footnote', function () {
+    $service = (new ReflectionClass(ChatbotService::class))->newInstanceWithoutConstructor();
+    $method = new ReflectionMethod($service, 'rankRule');
+
+    foreach ([null, 'price-asc', 'price-desc'] as $ordering) {
+        $rule = $method->invoke($service, ['ordering' => $ordering, 'result_count' => 3]);
+        expect($rule)->not->toContain('### Best Match')
+            ->and($rule)->not->toContain('Other Options')
+            ->and($rule)->not->toContain('Ranked by system: #1 is best match')
+            ->and($rule)->not->toContain('Ordered by price:')
+            ->and($rule)->toContain('Do NOT list');
+    }
+});
+
+test('search prompt tells the model not to restate shown notices', function () {
+    $service = (new ReflectionClass(ChatbotService::class))->newInstanceWithoutConstructor();
+    $method = new ReflectionMethod($service, 'buildPrompt');
+
+    $prompt = $method->invoke($service, 'activity-search', '=== DATABASE RESULTS ===', 'surfing price', null, ['ordering' => null, 'result_count' => 3]);
+    expect($prompt)->toContain('do NOT restate');
 });

@@ -96,14 +96,15 @@
                             <img src="{{ asset('images/favicon-sun.png') }}" alt="SunnyBot"
                                 class="w-10 h-10 object-cover">
                         </div>
-                        <p class="text-slate-800 text-xs font-bold font-headline">Mabuhay! I'm SunnyBot, your travel assistant.</p>
+                        <p class="text-slate-800 text-xs font-bold font-headline">Mabuhay! I'm SunnyBot, your travel
+                            assistant.</p>
                         <p class="text-slate-500 text-[11px] font-body leading-relaxed">How can I help you today?
                             Here's what I can do:</p>
                     </div>
                     <ul class="px-4 pb-3 space-y-1.5 text-left">
                         <li class="flex items-center gap-2 text-[11px] text-slate-600 font-body">
                             <span class="material-symbols-outlined text-[15px] text-ocean-500">hotel</span>
-                            Find sanctuary hotels and compare where to stay
+                            Find sanctuary hotel and rooms to stay
                         </li>
                         <li class="flex items-center gap-2 text-[11px] text-slate-600 font-body">
                             <span class="material-symbols-outlined text-[15px] text-ocean-500">king_bed</span>
@@ -111,7 +112,7 @@
                         </li>
                         <li class="flex items-center gap-2 text-[11px] text-slate-600 font-body">
                             <span class="material-symbols-outlined text-[15px] text-ocean-500">explore</span>
-                            Recommend activities, packages, and custom itineraries
+                            Recommend activities and packages
                         </li>
                         <li class="flex items-center gap-2 text-[11px] text-slate-600 font-body">
                             <span class="material-symbols-outlined text-[15px] text-ocean-500">headset_mic</span>
@@ -145,11 +146,13 @@
                         class="w-10 h-10 rounded-2xl bg-white mx-auto flex items-center justify-center border border-ocean-100 overflow-hidden">
                         <img src="{{ asset('images/favicon-sun.png') }}" alt="SunnyBot" class="w-10 h-10 object-cover">
                     </div>
-                    <p class="text-slate-800 text-xs font-bold font-headline">Mabuhay! I'm SunnyBot, your travel assistant.</p>
-                    <p class="text-slate-500 text-[11px] font-body leading-relaxed">How can I help you today? Ask me about
+                    <p class="text-slate-800 text-xs font-bold font-headline">Mabuhay! I'm SunnyBot, your travel
+                        assistant.</p>
+                    <p class="text-slate-500 text-[11px] font-body leading-relaxed">How can I help you today? Ask me
+                        about
                         hotels, island activities, room rates, or custom itineraries.</p>
                     <div class="flex flex-wrap gap-2 justify-center pt-2">
-                        <button @click='input = "Where to stay in Boracay?"; send()'
+                        <!-- <button @click='input = "Where to stay in Boracay?"; send()'
                             class="px-3 py-1.5 rounded-full bg-ocean-50 hover:bg-ocean-100 text-ocean-700 text-[11px] font-bold border border-ocean-200 transition-colors cursor-pointer">Where
                             to stay in Boracay?</button>
                         <button @click='input = "Budget-friendly hotels in Boracay?"; send()'
@@ -160,7 +163,7 @@
                             to stay in El Nido?</button>
                         <button @click='input = "Best activities in El Nido?"; send()'
                             class="px-3 py-1.5 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-700 text-[11px] font-bold border border-amber-200 transition-colors cursor-pointer">Best
-                            activities in El Nido?</button>
+                            activities in El Nido?</button> -->
                     </div>
                 </div>
             </template>

@@ -229,8 +229,11 @@ test('cheapest room price query leads with the database price', function () {
 
     $response->assertOk();
     $reply = $response->json('reply');
-    expect($reply)->toContain('Room Tier 2')
-        ->and($reply)->toContain('₱1,500.00');
+    $rooms = $response->json('retrieved_rooms') ?? [];
+    // Cards carry the per-item list: prose only frames, names/prices live on the cards.
+    expect($reply)->toContain('Prices are shown on each card below.')
+        ->and(collect($rooms)->pluck('room_name')->all())->toContain('Room Tier 2')
+        ->and(collect($rooms)->pluck('base_price')->map(fn ($p) => (int) $p)->all())->toContain(1500);
 });
 
 test('offer-phrased destination questions classify as overview', function () {
