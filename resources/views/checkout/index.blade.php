@@ -112,7 +112,7 @@
 <x-frontend.layout :title="'Checkout & Passenger Manifest — SunnyTrips'">
     <div x-data="checkoutEngine({{ (float) $totalAmount }}, {{ json_encode($roomInstances) }}, {{ json_encode($categoryRules) }})"
         @manifest-pricing-updated.window="updateManifestPricing($event.detail)"
-        class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 sm:pt-28 pb-32 sm:pb-16 font-body">
+        class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 {{ Auth::check() ? 'pt-5 sm:pt-8 lg:pt-10' : 'pt-20 sm:pt-28' }} pb-32 sm:pb-16 font-body">
 
         {{-- Breadcrumb & Title Header --}}
         <div class="mb-4 sm:mb-6">

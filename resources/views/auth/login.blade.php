@@ -12,17 +12,17 @@
     @endsession
 
     {{-- Page heading --}}
-    <div class="mb-8">
-        <h1 class="font-headline text-[1.875rem] font-semibold text-ink-900 leading-tight">
+    <div class="mb-6">
+        <h1 class="font-headline text-[1.625rem] font-semibold text-ink-900 leading-tight">
             Welcome back.
         </h1>
-        <p class="mt-2 text-sm text-ink-500 leading-relaxed">
+        <p class="mt-1.5 text-[13px] text-ink-500 leading-relaxed">
             Sign in to continue planning your next escape.
         </p>
     </div>
 
     {{-- ── Login Form ── --}}
-    <form method="POST" action="{{ route('login') }}" class="space-y-5" novalidate>
+    <form method="POST" action="{{ route('login') }}" class="space-y-4" novalidate>
         @csrf
 
         {{-- Email --}}
@@ -87,7 +87,7 @@
                 name="remember"
                 class="h-4 w-4 rounded border-ink-300 text-ocean-500 focus:ring-ocean-400/30 focus:ring-offset-0 cursor-pointer"
             >
-            <label for="remember_me" class="text-sm text-ink-600 cursor-pointer select-none">
+            <label for="remember_me" class="text-[13px] text-ink-600 cursor-pointer select-none">
                 Keep me signed in
             </label>
         </div>
@@ -110,7 +110,7 @@
         </div>
 
         {{-- Register link --}}
-        <p class="text-center text-sm text-ink-500">
+        <p class="text-center text-[13px] text-ink-500">
             Don't have an account?
             <a href="{{ route('register') }}" class="font-semibold text-ocean-600 hover:text-ocean-700 transition-colors ml-1">
                 Create one

@@ -5,7 +5,7 @@
     x-transition:enter-end="opacity-100 scale-100 translate-y-0" x-transition:leave="transition ease-in duration-150"
     x-transition:leave-start="opacity-100 scale-100 translate-y-0"
     x-transition:leave-end="opacity-0 scale-90 translate-y-2"
-    class="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-3" x-trap="open">
+    class="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 flex flex-col items-end gap-3" x-trap="open">
     {{-- Floating bubble button --}}
     <button @click="toggle()"
         class="relative w-14 h-14 rounded-full flex items-center justify-center transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ocean-400 focus:ring-offset-2 hover:scale-105 active:scale-95 cursor-pointer"
@@ -26,7 +26,7 @@
     <div x-show="open" x-transition:enter="transition ease-out duration-200"
         x-transition:enter-start="opacity-0 translate-y-4 scale-95"
         x-transition:enter-end="opacity-100 translate-y-0 scale-100"
-        class="w-[calc(100vw-2.5rem)] max-w-sm sm:w-[410px] h-[520px] sm:h-[570px] bg-white rounded-3xl shadow-2xl border border-slate-200/90 flex flex-col overflow-hidden"
+        class="w-[calc(100vw-2rem)] max-w-sm sm:w-[410px] h-[min(520px,calc(100dvh-6rem))] sm:h-[min(570px,calc(100dvh-6rem))] bg-white rounded-3xl shadow-2xl border border-slate-200/90 flex flex-col overflow-hidden"
         @click.outside="close()">
         {{-- Header --}}
         <div

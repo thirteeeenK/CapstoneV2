@@ -20,8 +20,8 @@
                 class="px-4 lg:px-5 py-2 text-slate-600 hover:bg-white/60 hover:text-sky-700 rounded-full font-semibold text-sm transition-all duration-200 {{ request()->routeIs('activities.*') ? 'nav-active' : '' }}">Experiences</a>
             <a href="{{ route('packages.index') }}"
                 class="px-4 lg:px-5 py-2 text-slate-600 hover:bg-white/60 hover:text-sky-700 rounded-full font-semibold text-sm transition-all duration-200 {{ request()->routeIs('packages.*') ? 'nav-active' : '' }}">Packages</a>
-            <a href="/#brand-story" data-nav-target="brand-story"
-                class="px-4 lg:px-5 py-2 text-slate-600 hover:bg-white/60 hover:text-sky-700 rounded-full font-semibold text-sm transition-all duration-200">Journals</a>
+            <a href="/#testimonials" data-nav-target="testimonials"
+                class="px-4 lg:px-5 py-2 text-slate-600 hover:bg-white/60 hover:text-sky-700 rounded-full font-semibold text-sm transition-all duration-200">Stories &amp; Reviews</a>
         </div>
 
         <!-- Right Cluster: Cart, Auth Buttons & Mobile Hamburger -->
@@ -67,7 +67,7 @@
         x-transition:leave="transition ease-in duration-150"
         x-transition:leave-start="opacity-100 translate-y-0 scale-100"
         x-transition:leave-end="opacity-0 -translate-y-3 scale-[0.98]"
-        class="md:hidden mt-2 mx-auto max-w-7xl bg-white/80 backdrop-blur-xl border border-white/60 shadow-xl shadow-sky-900/10 rounded-2xl sm:rounded-3xl p-4 sm:p-5 space-y-4">
+        class="md:hidden mt-2 mx-auto max-w-7xl max-h-[calc(100dvh-5rem)] overflow-y-auto bg-white/80 backdrop-blur-xl border border-white/60 shadow-xl shadow-sky-900/10 rounded-2xl sm:rounded-3xl p-4 sm:p-5 space-y-4">
 
         <!-- Navigation Links List -->
         <div class="space-y-1">
@@ -89,10 +89,10 @@
                 <span>Tour Packages</span>
             </a>
 
-            <a href="/#brand-story" @click="mobileMenuOpen = false"
+            <a href="/#testimonials" @click="mobileMenuOpen = false"
                 class="flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-slate-700 hover:text-sky-700 hover:bg-white/60 font-bold text-sm transition-colors">
                 <span class="material-symbols-outlined text-[20px] text-sky-600">auto_stories</span>
-                <span>Journals & Story</span>
+                <span>Stories &amp; Reviews</span>
             </a>
 
             <a href="{{ route('lucky.index') }}" @click="mobileMenuOpen = false"

@@ -1,4 +1,4 @@
-<div class="bg-white rounded-2xl border p-3.5 sm:p-5 flex gap-3 sm:gap-4 items-start transition-all duration-200 hover:shadow-md hover:shadow-ocean-900/5"
+<div class="bg-white rounded-2xl border p-3 sm:p-4 flex gap-2.5 sm:gap-3.5 items-start transition-all duration-200 hover:shadow-md hover:shadow-ocean-900/5"
      :class="[item.is_selected ? '' : 'opacity-60', item.is_expired ? 'border-rose-300 bg-rose-50/40 hover:border-rose-400' : 'border-sand-200/90 hover:border-ocean-300']">
 
     {{-- Checkbox --}}
@@ -11,14 +11,14 @@
     </div>
 
     {{-- Image Thumbnail --}}
-    <div class="w-20 h-20 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-xl sm:rounded-2xl overflow-hidden bg-slate-100 border border-sand-200/80 shrink-0">
+    <div class="w-16 h-16 sm:w-24 sm:h-24 rounded-xl sm:rounded-2xl overflow-hidden bg-slate-100 border border-sand-200/80 shrink-0">
         <img :src="item.image" :alt="item.title"
              class="w-full h-full object-cover"
              onerror="this.style.display='none'">
     </div>
 
     {{-- Details & Content --}}
-    <div class="flex-1 min-w-0 flex flex-col justify-between min-h-[5rem] sm:min-h-[7rem]">
+    <div class="flex-1 min-w-0 flex flex-col justify-between">
         <div>
             <div class="flex items-start justify-between gap-2">
                 <div class="min-w-0 flex-1">
@@ -56,28 +56,28 @@
             {{-- Feature Badges & Specs --}}
             <div class="flex flex-wrap gap-1 mt-1.5">
                 <template x-if="item.item_type === 'room' && item.base_occupancy">
-                    <span class="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-medium text-ink-600 bg-sand-100 px-2 py-0.5 rounded-md border border-sand-200">
+                    <span class="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-medium text-ink-600 bg-sand-100 px-1.5 py-0.5 rounded-md border border-sand-200">
                         <span class="material-symbols-outlined text-[12px] text-ink-400">group</span>
                         <span x-text="'Base ' + item.base_occupancy + ' • Max ' + item.max_occupancy + ' Pax'"></span>
                     </span>
                 </template>
 
                 <template x-if="item.bed_configuration">
-                    <span class="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-medium text-ink-600 bg-sand-100 px-2 py-0.5 rounded-md border border-sand-200">
+                    <span class="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-medium text-ink-600 bg-sand-100 px-1.5 py-0.5 rounded-md border border-sand-200">
                         <span class="material-symbols-outlined text-[12px] text-ink-400">king_bed</span>
                         <span x-text="item.bed_configuration"></span>
                     </span>
                 </template>
 
                 <template x-if="item.date_details">
-                    <span class="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-medium px-2 py-0.5 rounded-md border"
+                    <span                           class="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-medium px-1.5 py-0.5 rounded-md border"
                           :class="item.is_expired ? 'text-rose-800 bg-rose-50 border-rose-200' : 'text-ocean-800 bg-ocean-50 border-ocean-100'">
                         <span class="material-symbols-outlined text-[12px]" :class="item.is_expired ? 'text-rose-600' : 'text-ocean-600'">calendar_month</span>
                         <span x-text="item.date_details"></span>
                     </span>
                 </template>
                 <template x-if="item.is_expired">
-                    <span class="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200">
+                    <span class="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-bold text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded-md border border-rose-200">
                         <span class="material-symbols-outlined text-[12px] text-rose-600">warning</span>
                         <span>Expired — update dates or deselect</span>
                     </span>
@@ -92,7 +92,7 @@
         </div>
 
         {{-- Controls and Price Bar --}}
-        <div class="mt-3 pt-2 border-t border-sand-100 flex flex-wrap items-center justify-between gap-2">
+        <div class="mt-2 pt-2 border-t border-sand-100 flex flex-wrap items-center justify-between gap-2">
             {{-- Steppers: Pax for Activities/Transfers/Addons/Packages, Qty for Rooms --}}
             <template x-if="item.item_type === 'addon' || item.item_type === 'activity' || item.item_type === 'package'">
                 <div class="flex items-center gap-1.5 flex-wrap">

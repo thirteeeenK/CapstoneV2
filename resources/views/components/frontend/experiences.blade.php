@@ -1,5 +1,5 @@
 <section
-    class="py-24 bg-gradient-to-b from-sand-50/70 via-sand-100/40 to-sand-50/70 border-y border-slate-200/60 overflow-hidden relative"
+    class="py-12 sm:py-16 lg:py-24 bg-gradient-to-b from-sand-50/70 via-sand-100/40 to-sand-50/70 border-y border-slate-200/60 overflow-hidden relative"
     id="experiences" x-data="{
         activeTab: 'all',
         levelFilter: 'all',
@@ -27,7 +27,7 @@
 
     {{-- Decorative Background Mesh/Glow --}}
     <div
-        class="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-sky-500/5 blur-3xl rounded-full pointer-events-none">
+        class="absolute top-1/4 left-1/2 -translate-x-1/2 w-[min(800px,100vw)] max-w-[100vw] h-[400px] bg-sky-500/5 blur-3xl rounded-full pointer-events-none">
     </div>
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 relative z-10">
@@ -36,10 +36,10 @@
         <div class="flex flex-col md:flex-row justify-between items-center md:items-end text-center md:text-left gap-6 reveal-on-scroll">
             <div class="max-w-2xl space-y-3 mx-auto md:mx-0">
                 <h2
-                    class="font-headline text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900 leading-tight">
+                    class="font-headline text-2xl sm:text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900 leading-tight">
                     Unforgettable Island Adventures
                 </h2>
-                <p class="text-slate-600 text-xs md:text-sm leading-relaxed max-w-xl font-body mx-auto md:mx-0">
+                <p class="text-slate-600 text-[11px] sm:text-xs md:text-sm leading-relaxed max-w-xl font-body mx-auto md:mx-0">
                     Immerse yourself in authentic local activities across our island sanctuaries—from scuba diving in
                     crystal reefs to sunset sailing and mountain treks.
                 </p>
@@ -48,11 +48,11 @@
             {{-- Location Filter Tabs --}}
             @if($destinations->isNotEmpty())
                 <div
-                    class="flex flex-wrap items-center justify-center md:justify-start gap-1.5 sm:gap-2 max-w-full p-1.5 bg-white/80 backdrop-blur-md rounded-2xl border border-slate-200/80 shadow-xs">
+                    class="flex overflow-x-auto hide-scrollbar snap-x scroll-px-4 md:flex-wrap items-center justify-start gap-1 max-w-full p-1 bg-white/80 backdrop-blur-md rounded-xl border border-slate-200/80 shadow-xs">
                     <button @click="activeTab = 'all'; showAll = false"
                         :class="activeTab === 'all' ? 'bg-gradient-to-r from-sky-600 to-sky-700 text-white font-bold shadow-md shadow-sky-500/25' : 'text-slate-600 hover:bg-slate-100 font-medium'"
-                        class="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs transition-all duration-200 flex items-center gap-1.5 cursor-pointer">
-                        <span class="material-symbols-outlined text-[15px]">explore</span>
+                        class="px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-xl text-[11px] sm:text-xs transition-all duration-200 flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0">
+                        <span class="material-symbols-outlined text-[13px]">explore</span>
                         <span>All Locations</span>
                         <span class="px-1.5 py-0.5 rounded-full text-[10px]"
                             :class="activeTab === 'all' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'">
@@ -63,8 +63,8 @@
                     @foreach($destinations as $dest)
                         <button @click="activeTab = '{{ $dest->id }}'; showAll = false"
                             :class="activeTab === '{{ $dest->id }}' ? 'bg-gradient-to-r from-sky-600 to-sky-700 text-white font-bold shadow-md shadow-sky-500/25' : 'text-slate-600 hover:bg-slate-100 font-medium'"
-                            class="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs transition-all duration-200 flex items-center gap-1.5 cursor-pointer">
-                            <span class="material-symbols-outlined text-[15px]">location_on</span>
+                            class="px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-xl text-[11px] sm:text-xs transition-all duration-200 flex items-center gap-1.5 cursor-pointer whitespace-nowrap shrink-0">
+                            <span class="material-symbols-outlined text-[13px]">location_on</span>
                             <span>{{ $dest->name }}</span>
                             <span class="px-1.5 py-0.5 rounded-full text-[10px]"
                                 :class="activeTab === '{{ $dest->id }}' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'">
@@ -77,34 +77,34 @@
         </div>
 
         {{-- Interactive Toolbar: Search & 5 Activity Level Filters --}}
-        <div class="bg-white/90 backdrop-blur-md border border-slate-200/80 rounded-3xl p-4 sm:p-5 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
+        <div class="bg-white/90 backdrop-blur-md border border-slate-200/80 rounded-2xl sm:rounded-3xl p-3 sm:p-5 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
             {{-- Search Bar --}}
             <div class="relative w-full md:w-80 shrink-0">
                 <span class="material-symbols-outlined absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">search</span>
-                <input type="text" x-model="searchQuery" placeholder="Search activity, level, tags, or inclusions..."
-                    class="w-full bg-slate-50 border border-slate-200 focus:border-sky-500 focus:bg-white rounded-2xl py-2 pl-10 pr-8 text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none transition-all shadow-xs" />
+                <input type="text" x-model="searchQuery" placeholder="Search activities..."
+                    class="w-full bg-slate-50 border border-slate-200 focus:border-sky-500 focus:bg-white rounded-2xl py-2.5 pl-10 pr-8 text-base sm:text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none transition-all shadow-xs" />
                 <button x-show="searchQuery" @click="searchQuery = ''" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer">
                     <span class="material-symbols-outlined text-sm">cancel</span>
                 </button>
             </div>
 
             {{-- 5 Activity Level Filter Pills --}}
-            <div class="flex flex-wrap items-center gap-1.5 overflow-x-auto w-full md:w-auto justify-start md:justify-end">
-                <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1 shrink-0 mr-1">
+            <div class="flex flex-wrap items-center gap-1.5 w-full md:w-auto justify-start md:justify-end">
+                <span class="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1 shrink-0 mr-1">
                     <span class="material-symbols-outlined text-[15px] text-sky-600">signal_cellular_alt</span>
                     <span>Level:</span>
                 </span>
 
                 <button type="button" @click="levelFilter = 'all'"
                     :class="levelFilter === 'all' ? 'bg-sky-600 text-white font-extrabold shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 font-semibold'"
-                    class="px-3 py-1.5 rounded-xl text-xs transition-all cursor-pointer shrink-0">
+                    class="px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl text-[11px] sm:text-xs transition-all cursor-pointer shrink-0">
                     All Levels
                 </button>
 
                 @foreach(['Relaxing' => '🧘', 'Sightseeing' => '🗺️', 'Adventure' => '🏔️', 'Extreme' => '⚡', 'Underwater' => '🤿'] as $lvl => $icon)
                     <button type="button" @click="levelFilter = '{{ $lvl }}'"
                         :class="levelFilter === '{{ $lvl }}' ? 'bg-sky-600 text-white font-extrabold shadow-xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200 font-medium'"
-                        class="px-3 py-1.5 rounded-xl text-xs transition-all cursor-pointer shrink-0 flex items-center gap-1">
+                        class="px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl text-[11px] sm:text-xs transition-all cursor-pointer shrink-0 flex items-center gap-1">
                         <span>{{ $icon }}</span>
                         <span>{{ $lvl }}</span>
                     </button>
@@ -112,7 +112,7 @@
 
                 <button x-show="searchQuery || levelFilter !== 'all' || activeTab !== 'all'"
                     @click="searchQuery = ''; levelFilter = 'all'; activeTab = 'all'; showAll = false;"
-                    class="text-[11px] font-bold text-rose-600 hover:text-rose-700 ml-2 flex items-center gap-1 cursor-pointer shrink-0">
+                    class="text-[10px] sm:text-[11px] font-bold text-rose-600 hover:text-rose-700 ml-2 flex items-center gap-1 cursor-pointer shrink-0">
                     <span class="material-symbols-outlined text-[14px]">restart_alt</span>
                     <span>Reset</span>
                 </button>
@@ -136,7 +136,7 @@
                     default => 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3',
                 };
             @endphp
-            <div class="grid {{ $actGridClass }} gap-8">
+            <div class="grid {{ $actGridClass }} gap-5 sm:gap-6 lg:gap-8">
                 @foreach($activities as $index => $act)
                     @php
                         $destPos[$act->destination_id] = ($destPos[$act->destination_id] ?? 0) + 1;
@@ -197,7 +197,7 @@
                         class="group relative flex flex-col bg-white border border-slate-200/90 rounded-3xl overflow-hidden shadow-xs hover:shadow-2xl transition-all duration-500 hover:-translate-y-1.5 reveal-on-scroll">
 
                         {{-- Activity Photo --}}
-                        <div class="relative h-64 w-full overflow-hidden bg-slate-950">
+                        <div class="relative h-52 sm:h-64 w-full overflow-hidden bg-slate-950">
                             <img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                                 src="{{ $actImg }}" alt="{{ $act->activity_name }}" />
 

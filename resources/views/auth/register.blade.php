@@ -1,21 +1,21 @@
 <x-guest-layout>
 
     {{-- Page heading --}}
-    <div class="mb-8">
-        <h1 class="font-headline text-[1.875rem] font-semibold text-ink-900 leading-tight">
+    <div class="mb-6">
+        <h1 class="font-headline text-[1.625rem] font-semibold text-ink-900 leading-tight">
             Create your account.
         </h1>
-        <p class="mt-2 text-sm text-ink-500 leading-relaxed">
+        <p class="mt-1.5 text-[13px] text-ink-500 leading-relaxed">
             Join thousands of travelers discovering the Philippines.
         </p>
     </div>
 
     {{-- ── Register Form ── --}}
-    <form id="register-form" method="POST" action="{{ route('register') }}" class="space-y-5" novalidate>
+    <form id="register-form" method="POST" action="{{ route('register') }}" class="space-y-4" novalidate>
         @csrf
 
         {{-- Name & Email — side by side on sm+ --}}
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
 
             <div>
                 <x-input-label for="name" :value="__('Full name')" />
@@ -51,7 +51,7 @@
         </div>
 
         {{-- Password & Confirm — side by side on sm+ --}}
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
 
             <div>
                 <x-input-label for="password" :value="__('Password')" />
@@ -103,7 +103,7 @@
         </div>
 
         {{-- Login link --}}
-        <p class="text-center text-sm text-ink-500">
+        <p class="text-center text-[13px] text-ink-500">
             Already have an account?
             <a href="{{ route('login') }}"
                 class="font-semibold text-ocean-600 hover:text-ocean-700 transition-colors ml-1">
@@ -166,8 +166,8 @@
     </script>
 
     {{-- Consent + confirmation modal (declared first so detail modals can stack above it) --}}
-    <x-modal name="confirm-submit-modal" :show="false" maxWidth="2xl" align="right">
-        <div class="p-6 sm:p-8">
+    <x-modal name="confirm-submit-modal" :show="false" maxWidth="xl" align="right">
+        <div class="p-5 sm:p-6 max-h-[calc(100dvh-4rem)] overflow-y-auto">
 
             {{-- Header --}}
             <div class="flex items-start justify-between gap-4">
@@ -175,22 +175,22 @@
                     <p class="font-label text-xs font-bold uppercase tracking-[0.2em] text-ocean-600">
                         Confirm your agreements
                     </p>
-                    <h2 class="mt-2 font-headline text-xl font-bold text-ink-900 tracking-tight">
+                    <h2 class="mt-1.5 font-headline text-lg font-bold text-ink-900 tracking-tight">
                         One last step before we set sail.
                     </h2>
-                    <p class="mt-2 text-sm font-body text-ink-500 leading-relaxed">
+                    <p class="mt-1.5 text-[13px] font-body text-ink-500 leading-relaxed">
                         To create your account, please confirm the details below. These keep your experience safe, transparent, and fair.
                     </p>
                 </div>
                 <button type="button" x-on:click="$dispatch('close')"
-                    class="shrink-0 -mr-1 -mt-1 inline-flex h-9 w-9 items-center justify-center rounded-lg text-ink-400 transition-colors hover:bg-ink-100 hover:text-ink-700 focus:outline-none focus:ring-2 focus:ring-ocean-400/40 cursor-pointer"
+                    class="shrink-0 -mr-1 -mt-1 inline-flex h-8 w-8 items-center justify-center rounded-lg text-ink-400 transition-colors hover:bg-ink-100 hover:text-ink-700 focus:outline-none focus:ring-2 focus:ring-ocean-400/40 cursor-pointer"
                     aria-label="Close">
-                    <span class="material-symbols-outlined text-[22px]">close</span>
+                    <span class="material-symbols-outlined text-[20px]">close</span>
                 </button>
             </div>
 
             {{-- Progress hint --}}
-            <div class="mt-5 flex items-center gap-3">
+            <div class="mt-4 flex items-center gap-3">
                 <div class="h-1.5 flex-1 overflow-hidden rounded-full bg-ink-100">
                     <div id="consent-progress" class="h-full w-0 rounded-full bg-ocean-500 transition-all duration-300"></div>
                 </div>
@@ -200,16 +200,16 @@
             </div>
 
             {{-- Consent cards --}}
-            <div class="mt-5 space-y-3">
+            <div class="mt-4 space-y-2.5">
 
                 {{-- Age confirmation --}}
-                <label class="group flex cursor-pointer items-start gap-3 sm:gap-4 rounded-xl border border-ink-200 bg-white p-3.5 sm:p-4 transition-all duration-150 hover:border-ocean-300 hover:bg-ocean-50/40 has-[:checked]:border-ocean-500 has-[:checked]:bg-ocean-50/60 has-[:checked]:shadow-sm">
-                    <span class="mt-0.5 inline-flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-lg bg-ocean-50 text-ocean-600 ring-1 ring-ocean-100 transition-colors group-has-[:checked]:bg-ocean-500 group-has-[:checked]:text-white">
+                <label class="group flex cursor-pointer items-start gap-3 sm:gap-3.5 rounded-xl border border-ink-200 bg-white p-3 sm:p-3.5 transition-all duration-150 hover:border-ocean-300 hover:bg-ocean-50/40 has-[:checked]:border-ocean-500 has-[:checked]:bg-ocean-50/60 has-[:checked]:shadow-sm">
+                    <span class="mt-0.5 inline-flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg bg-ocean-50 text-ocean-600 ring-1 ring-ocean-100 transition-colors group-has-[:checked]:bg-ocean-500 group-has-[:checked]:text-white">
                         <span class="material-symbols-outlined text-[20px]">verified_user</span>
                     </span>
                     <span class="min-w-0 flex-1">
-                        <span class="block font-headline text-sm font-bold text-ink-900">Age confirmation</span>
-                        <span class="mt-0.5 block text-sm font-body text-ink-500 leading-relaxed">
+                        <span class="block font-headline text-[13px] font-bold text-ink-900">Age confirmation</span>
+                        <span class="mt-0.5 block text-[13px] font-body text-ink-500 leading-relaxed">
                             I confirm that I am at least 18 years old and legally capable of entering into contracts.
                         </span>
                     </span>
@@ -227,13 +227,13 @@
                 </div>
 
                 {{-- Terms and Conditions --}}
-                <label class="group flex cursor-pointer items-start gap-3 sm:gap-4 rounded-xl border border-ink-200 bg-white p-3.5 sm:p-4 transition-all duration-150 hover:border-ocean-300 hover:bg-ocean-50/40 has-[:checked]:border-ocean-500 has-[:checked]:bg-ocean-50/60 has-[:checked]:shadow-sm">
-                    <span class="mt-0.5 inline-flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-lg bg-ocean-50 text-ocean-600 ring-1 ring-ocean-100 transition-colors group-has-[:checked]:bg-ocean-500 group-has-[:checked]:text-white">
+                <label class="group flex cursor-pointer items-start gap-3 sm:gap-3.5 rounded-xl border border-ink-200 bg-white p-3 sm:p-3.5 transition-all duration-150 hover:border-ocean-300 hover:bg-ocean-50/40 has-[:checked]:border-ocean-500 has-[:checked]:bg-ocean-50/60 has-[:checked]:shadow-sm">
+                    <span class="mt-0.5 inline-flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg bg-ocean-50 text-ocean-600 ring-1 ring-ocean-100 transition-colors group-has-[:checked]:bg-ocean-500 group-has-[:checked]:text-white">
                         <span class="material-symbols-outlined text-[20px]">description</span>
                     </span>
                     <span class="min-w-0 flex-1">
-                        <span class="block font-headline text-sm font-bold text-ink-900">Terms &amp; Conditions</span>
-                        <span class="mt-0.5 block text-sm font-body text-ink-500 leading-relaxed">
+                        <span class="block font-headline text-[13px] font-bold text-ink-900">Terms &amp; Conditions</span>
+                        <span class="mt-0.5 block text-[13px] font-body text-ink-500 leading-relaxed">
                             I agree to the
                             <a href="{{ route('terms') }}" target="_blank"
                                 class="font-semibold text-ocean-600 hover:underline">Terms and Conditions</a>,
@@ -254,13 +254,13 @@
                 </div>
 
                 {{-- Privacy Policy --}}
-                <label class="group flex cursor-pointer items-start gap-3 sm:gap-4 rounded-xl border border-ink-200 bg-white p-3.5 sm:p-4 transition-all duration-150 hover:border-ocean-300 hover:bg-ocean-50/40 has-[:checked]:border-ocean-500 has-[:checked]:bg-ocean-50/60 has-[:checked]:shadow-sm">
-                    <span class="mt-0.5 inline-flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-lg bg-ocean-50 text-ocean-600 ring-1 ring-ocean-100 transition-colors group-has-[:checked]:bg-ocean-500 group-has-[:checked]:text-white">
+                <label class="group flex cursor-pointer items-start gap-3 sm:gap-3.5 rounded-xl border border-ink-200 bg-white p-3 sm:p-3.5 transition-all duration-150 hover:border-ocean-300 hover:bg-ocean-50/40 has-[:checked]:border-ocean-500 has-[:checked]:bg-ocean-50/60 has-[:checked]:shadow-sm">
+                    <span class="mt-0.5 inline-flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg bg-ocean-50 text-ocean-600 ring-1 ring-ocean-100 transition-colors group-has-[:checked]:bg-ocean-500 group-has-[:checked]:text-white">
                         <span class="material-symbols-outlined text-[20px]">shield</span>
                     </span>
                     <span class="min-w-0 flex-1">
-                        <span class="block font-headline text-sm font-bold text-ink-900">Privacy &amp; Data</span>
-                        <span class="mt-0.5 block text-sm font-body text-ink-500 leading-relaxed">
+                        <span class="block font-headline text-[13px] font-bold text-ink-900">Privacy &amp; Data</span>
+                        <span class="mt-0.5 block text-[13px] font-body text-ink-500 leading-relaxed">
                             I agree to the
                             <a href="{{ route('privacy-policy') }}" target="_blank"
                                 class="font-semibold text-ocean-600 hover:underline">Privacy Policy</a>
@@ -281,13 +281,13 @@
                 </div>
 
                 {{-- AI Disclosure --}}
-                <label class="group flex cursor-pointer items-start gap-3 sm:gap-4 rounded-xl border border-ink-200 bg-white p-3.5 sm:p-4 transition-all duration-150 hover:border-ocean-300 hover:bg-ocean-50/40 has-[:checked]:border-ocean-500 has-[:checked]:bg-ocean-50/60 has-[:checked]:shadow-sm">
-                    <span class="mt-0.5 inline-flex h-9 w-9 sm:h-10 sm:w-10 shrink-0 items-center justify-center rounded-lg bg-ocean-50 text-ocean-600 ring-1 ring-ocean-100 transition-colors group-has-[:checked]:bg-ocean-500 group-has-[:checked]:text-white">
+                <label class="group flex cursor-pointer items-start gap-3 sm:gap-3.5 rounded-xl border border-ink-200 bg-white p-3 sm:p-3.5 transition-all duration-150 hover:border-ocean-300 hover:bg-ocean-50/40 has-[:checked]:border-ocean-500 has-[:checked]:bg-ocean-50/60 has-[:checked]:shadow-sm">
+                    <span class="mt-0.5 inline-flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg bg-ocean-50 text-ocean-600 ring-1 ring-ocean-100 transition-colors group-has-[:checked]:bg-ocean-500 group-has-[:checked]:text-white">
                         <span class="material-symbols-outlined text-[20px]">smart_toy</span>
                     </span>
                     <span class="min-w-0 flex-1">
-                        <span class="block font-headline text-sm font-bold text-ink-900">AI Usage Disclosure</span>
-                        <span class="mt-0.5 block text-sm font-body text-ink-500 leading-relaxed">
+                        <span class="block font-headline text-[13px] font-bold text-ink-900">AI Usage Disclosure</span>
+                        <span class="mt-0.5 block text-[13px] font-body text-ink-500 leading-relaxed">
                             I acknowledge the
                             <a href="{{ route('ai-disclosure') }}" target="_blank"
                                 class="font-semibold text-ocean-600 hover:underline">AI Usage Disclosure</a>
@@ -309,9 +309,9 @@
             </div>
 
             {{-- Footer --}}
-            <div class="mt-7 border-t border-ink-100 pt-5 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div class="mt-5 border-t border-ink-100 pt-4 flex flex-col-reverse gap-2.5 sm:flex-row sm:items-center sm:justify-between">
                 <button type="button" x-on:click="$dispatch('close')"
-                    class="inline-flex items-center justify-center rounded-lg border border-sand-200 bg-white px-5 py-3 text-sm font-semibold text-ink-600 transition-all duration-150 hover:bg-sand-50 focus:outline-none focus:ring-2 focus:ring-ocean-400/40 cursor-pointer">
+                    class="inline-flex items-center justify-center rounded-lg border border-sand-200 bg-white px-5 py-2.5 text-sm font-semibold text-ink-600 transition-all duration-150 hover:bg-sand-50 focus:outline-none focus:ring-2 focus:ring-ocean-400/40 cursor-pointer">
                     Cancel
                 </button>
                 <x-primary-button id="modal-create-account-btn" form="register-form" disabled class="sm:min-w-[12rem]">

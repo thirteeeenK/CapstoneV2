@@ -1,4 +1,4 @@
-<x-frontend.layout title="Personalize Your Escape — SunnyTrips" :hide-nav-footer="true">
+<x-frontend.layout title="Personalize Your Escape — SunnyTrips" :hide-nav-footer="true" :hide-chat-widget="true">
     <div x-data="{
         step: 1,
         maxStep: 1,
@@ -126,7 +126,7 @@
             ];
         @endphp
 
-        <div class="max-w-4xl w-full mx-auto px-4 sm:px-6 relative z-10 space-y-4 pb-40 sm:pb-12">
+        <div class="max-w-4xl w-full mx-auto px-4 sm:px-6 relative z-10 space-y-4 pb-8 sm:pb-12">
 
             {{-- Registration success flash (new accounts land here via CheckUserOnboarding) --}}
             @if(session('success'))
@@ -146,8 +146,6 @@
                     <span class="font-headline font-black text-xl text-ink-900 tracking-tight">Sunny<span class="text-ocean-600">Trips</span></span>
                 </a>
                 <div class="flex items-center gap-2 text-xs font-label font-bold text-ink-500">
-                    <span x-text="`Step ${step} of 5`">Step 1 of 5</span>
-                    <span class="hidden sm:inline text-ink-300">•</span>
                     <span class="hidden sm:inline">~90 sec</span>
                 </div>
             </div>
@@ -156,35 +154,30 @@
             <div class="bg-white border border-sand-200 rounded-3xl p-5 sm:p-10 shadow-sm space-y-6 sm:space-y-8">
 
                 {{-- Header & Interactive Milestone Tracker --}}
-                <div class="space-y-4 text-center">
-                    <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-ocean-50 border border-ocean-100 text-ocean-700 text-xs font-bold uppercase tracking-widest font-label">
-                        <span class="material-symbols-outlined text-[16px] text-ocean-600">auto_awesome</span>
-                        <span>AI Travel Personalization</span>
-                    </div>
-
-                    <h1 class="text-2xl sm:text-4xl font-black text-ink-900 font-headline tracking-tight">
+                <div class="space-y-3 sm:space-y-4 text-center">
+                    <h1 class="text-xl sm:text-4xl font-black text-ink-900 font-headline tracking-tight">
                         Craft Your Ideal Island Escape
                     </h1>
-                    <p class="text-sm sm:text-sm text-ink-500 max-w-lg mx-auto leading-relaxed font-body">
+                    <p class="text-[13px] sm:text-sm text-ink-500 max-w-lg mx-auto leading-relaxed font-body">
                         Answer a few quick questions so our AI can match you with perfect stays and experiences.
                     </p>
 
                     {{-- Milestones: icon-only on phones, labeled on sm+ --}}
                     <div class="pt-1">
-                        <div class="flex items-center gap-1 sm:gap-2 overflow-x-auto pb-1 -mx-1 px-1" role="list" aria-label="Onboarding progress">
+                        <div class="flex items-center gap-1 sm:gap-2" role="list" aria-label="Onboarding progress">
                             @foreach($milestones as $m)
                                 <button type="button" role="listitem" @click="goToStep({{ $m['n'] }})"
                                     :aria-current="step === {{ $m['n'] }} ? 'step' : 'false'"
                                     :aria-disabled="{{ $m['n'] }} > maxStep"
                                     :class="{{ $m['n'] }} > maxStep ? 'opacity-50' : ''"
-                                    class="flex-1 min-w-[52px] sm:min-w-0 flex flex-col sm:flex-row items-center justify-center gap-1 rounded-xl px-1.5 sm:px-2 py-2 text-[10px] sm:text-[11px] font-bold transition-colors min-h-[44px]"
+                                    class="flex-1 min-w-0 flex flex-col sm:flex-row items-center justify-center gap-1 rounded-xl px-1 sm:px-2 py-2 text-[10px] sm:text-[11px] font-bold transition-colors min-h-[44px]"
                                     :class="step === {{ $m['n'] }} ? 'bg-ocean-600 text-white shadow-sm' : ({{ $m['n'] }} < step ? 'bg-ocean-50 text-ocean-700' : 'bg-sand-100 text-ink-500')">
                                     <span class="material-symbols-outlined text-[18px]" x-text="({{ $m['n'] }} < step) ? 'check_circle' : '{{ $m['icon'] }}'">{{ $m['icon'] }}</span>
                                     <span class="hidden sm:inline whitespace-nowrap">{{ $m['label'] }}</span>
                                     <span class="sm:hidden font-label">{{ $m['n'] }}</span>
                                 </button>
                                 @if(!$loop->last)
-                                    <div class="w-2 sm:w-3 h-0.5 rounded-full shrink-0" :class="{{ $m['n'] }} < step ? 'bg-ocean-500' : 'bg-sand-200'"></div>
+                                    <div class="hidden sm:block w-3 h-0.5 rounded-full shrink-0" :class="{{ $m['n'] }} < step ? 'bg-ocean-500' : 'bg-sand-200'"></div>
                                 @endif
                             @endforeach
                         </div>
@@ -229,7 +222,7 @@
                             <span class="material-symbols-outlined text-[14px] text-coral-500">auto_awesome</span>
                             <span>Your Trip DNA</span>
                         </div>
-                        <div class="flex gap-1.5 overflow-x-auto pb-0.5 -mx-1 px-1">
+                        <div class="flex flex-wrap gap-1.5">
                             <template x-if="destination">
                                 <span class="inline-flex shrink-0 items-center gap-1 pl-2.5 pr-1 py-1 rounded-full bg-white border border-ocean-200 text-ocean-700 text-xs font-bold">
                                     <span class="material-symbols-outlined text-[14px]">location_on</span>
@@ -274,7 +267,7 @@
                     ══════════════════════════════════════════ --}}
                     <div x-show="step === 1" x-transition:enter="transition ease-out duration-300 transform" x-transition:enter-start="opacity-0 translate-x-4" class="space-y-5 sm:space-y-6">
                         <div class="space-y-1">
-                            <p class="text-[11px] font-label font-bold uppercase tracking-widest text-ocean-600">Step 1 of 5 • Destination</p>
+                            <p class="text-[11px] font-label font-bold uppercase tracking-widest text-ocean-600">Destination</p>
                             <h2 class="text-lg sm:text-xl font-bold text-ink-900 font-headline flex items-center gap-2">
                                 <span class="material-symbols-outlined text-ocean-600">location_on</span>
                                 <span>Where to next?</span>
@@ -282,11 +275,11 @@
                             <p class="text-sm text-ink-500 font-body">Where would you love to spend your next vacation?</p>
                         </div>
 
-                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-3">
                             {{-- Open to Anywhere: full-width passport banner on phones --}}
                             <button type="button" @click="destination = 'Open to Any Destination'; errorMessage = ''; nextStep(1);"
                                 :class="destination === 'Open to Any Destination' ? 'ring-2 ring-ocean-500 ring-offset-2' : ''"
-                                class="col-span-2 sm:col-span-1 relative overflow-hidden rounded-2xl border border-sand-200 transition-all duration-300 cursor-pointer bg-gradient-to-br from-sand-100 via-sand-50 to-ocean-50 min-h-[88px] sm:min-h-0 sm:aspect-[4/3] flex sm:flex-col flex-row items-center gap-3 p-4 sm:p-0 text-left">
+                                class="col-span-1 relative overflow-hidden rounded-2xl border border-sand-200 transition-all duration-300 cursor-pointer bg-gradient-to-br from-sand-100 via-sand-50 to-ocean-50 min-h-[88px] sm:min-h-0 sm:aspect-[4/3] flex sm:flex-col flex-row items-center gap-3 p-4 sm:p-0 text-left">
                                 <div class="sm:absolute sm:inset-0 flex items-center justify-center shrink-0 w-12 h-12 sm:w-auto sm:h-auto rounded-full sm:rounded-none bg-ocean-600/10">
                                     <span class="material-symbols-outlined text-3xl text-ocean-600">travel_explore</span>
                                 </div>
@@ -302,7 +295,7 @@
                             @foreach($destinationCards as $dest)
                                 <button type="button" @click="destination = @js($dest['name']); errorMessage = '';"
                                     :class="destination === @js($dest['name']) ? 'ring-2 ring-ocean-500 ring-offset-2 scale-[1.02] shadow-md shadow-ocean-500/20' : ''"
-                                    class="relative overflow-hidden rounded-2xl border border-sand-200 transition-all duration-300 cursor-pointer bg-white aspect-[4/3] flex flex-col min-h-[132px]">
+                                    class="relative overflow-hidden rounded-2xl border border-sand-200 transition-all duration-300 cursor-pointer bg-white aspect-[16/9] sm:aspect-[4/3] flex flex-col min-h-[132px]">
                                     <div class="relative flex-1 overflow-hidden">
                                         <img :src="@js($dest['image'])" :alt="@js($dest['name'])"
                                              class="w-full h-full object-cover transition-transform duration-300"
@@ -318,7 +311,7 @@
                                     </div>
                                     <div class="absolute bottom-0 left-0 right-0 p-2.5 sm:p-3 text-white text-left">
                                         <div class="font-bold text-xs sm:text-sm font-headline leading-tight">{{ $dest['name'] }}</div>
-                                        <div class="text-[10px] sm:text-[11px] text-slate-200 line-clamp-1 font-body">{{ $dest['desc'] }}</div>
+                                        <div class="text-[11px] sm:text-[11px] text-slate-200 line-clamp-2 font-body">{{ $dest['desc'] }}</div>
                                     </div>
                                 </button>
                             @endforeach
@@ -330,7 +323,7 @@
                     ══════════════════════════════════════════ --}}
                     <div x-show="step === 2" x-transition:enter="transition ease-out duration-300 transform" x-transition:enter-start="opacity-0 translate-x-4" class="space-y-5 sm:space-y-6" style="display: none;">
                         <div class="space-y-1">
-                            <p class="text-[11px] font-label font-bold uppercase tracking-widest text-ocean-600">Step 2 of 5 • Travel Party</p>
+                            <p class="text-[11px] font-label font-bold uppercase tracking-widest text-ocean-600">Travel Party</p>
                             <h2 class="text-lg sm:text-xl font-bold text-ink-900 font-headline flex items-center gap-2">
                                 <span class="material-symbols-outlined text-ocean-600">group</span>
                                 <span>Who's coming along?</span>
@@ -338,11 +331,11 @@
                             <p class="text-sm text-ink-500 font-body">Helps us match room sizes and activities to your group.</p>
                         </div>
 
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
                             @foreach($groupTypes as $gt)
                                 <button type="button" @click="travelerType = @js($gt['name']); errorMessage = '';"
                                     :class="travelerType === @js($gt['name']) ? 'ring-2 ring-ocean-500 ring-offset-2 scale-[1.02] shadow-md shadow-ocean-500/20' : ''"
-                                    class="relative overflow-hidden rounded-2xl border border-sand-200 transition-all duration-300 cursor-pointer bg-white aspect-[4/3] flex flex-col min-h-[132px]">
+                                    class="relative overflow-hidden rounded-2xl border border-sand-200 transition-all duration-300 cursor-pointer bg-white aspect-[16/9] sm:aspect-[4/3] flex flex-col min-h-[132px]">
                                     <div class="relative flex-1 overflow-hidden">
                                         <img :src="@js($gt['image'] ?? '')" :alt="@js($gt['name'])"
                                              class="w-full h-full object-cover transition-transform duration-300"
@@ -358,7 +351,7 @@
                                     </div>
                                     <div class="absolute bottom-0 left-0 right-0 p-2.5 sm:p-3 text-white text-left">
                                         <div class="font-bold text-xs sm:text-sm font-headline leading-tight">{{ $gt['name'] }}</div>
-                                        <div class="text-[10px] sm:text-[11px] text-slate-200 line-clamp-1 font-body">{{ $gt['desc'] }}</div>
+                                        <div class="text-[11px] sm:text-[11px] text-slate-200 line-clamp-2 font-body">{{ $gt['desc'] }}</div>
                                     </div>
                                 </button>
                             @endforeach
@@ -370,7 +363,7 @@
                     ══════════════════════════════════════════ --}}
                     <div x-show="step === 3" x-transition:enter="transition ease-out duration-300 transform" x-transition:enter-start="opacity-0 translate-x-4" class="space-y-5 sm:space-y-6" style="display: none;">
                         <div class="space-y-1">
-                            <p class="text-[11px] font-label font-bold uppercase tracking-widest text-ocean-600">Step 3 of 5 • Atmosphere & Mood</p>
+                            <p class="text-[11px] font-label font-bold uppercase tracking-widest text-ocean-600">Atmosphere &amp; Mood</p>
                             <h2 class="text-lg sm:text-xl font-bold text-ink-900 font-headline flex items-center gap-2">
                                 <span class="material-symbols-outlined text-ocean-600">palette</span>
                                 <span>What vibes define your getaway?</span>
@@ -383,11 +376,11 @@
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 sm:gap-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3">
                             @foreach($vibeOptions as $vibe)
                                 <button type="button" @click="toggleVibe(@js($vibe['name']))"
                                     :class="vibes.includes(@js($vibe['name'])) ? 'ring-2 ring-ocean-500 ring-offset-2 scale-[1.02] shadow-md shadow-ocean-500/20' : ''"
-                                    class="relative overflow-hidden rounded-2xl border border-sand-200 transition-all duration-300 cursor-pointer bg-white aspect-[4/3] flex flex-col min-h-[132px]">
+                                    class="relative overflow-hidden rounded-2xl border border-sand-200 transition-all duration-300 cursor-pointer bg-white aspect-[16/9] sm:aspect-[4/3] flex flex-col min-h-[132px]">
                                     <div class="relative flex-1 overflow-hidden">
                                         <img :src="@js($vibe['image'] ?? '')" :alt="@js($vibe['name'])"
                                              class="w-full h-full object-cover transition-transform duration-300"
@@ -403,7 +396,7 @@
                                     </div>
                                     <div class="absolute bottom-0 left-0 right-0 p-2.5 sm:p-3 text-white text-left">
                                         <div class="font-bold text-xs sm:text-sm font-headline leading-tight">{{ $vibe['name'] }}</div>
-                                        <div class="text-[10px] sm:text-[11px] text-slate-200 leading-tight mt-0.5 line-clamp-2 font-body">{{ $vibe['desc'] }}</div>
+                                        <div class="text-[11px] sm:text-[11px] text-slate-200 leading-tight mt-0.5 line-clamp-2 font-body">{{ $vibe['desc'] }}</div>
                                     </div>
                                 </button>
                             @endforeach
@@ -415,7 +408,7 @@
                     ══════════════════════════════════════════ --}}
                     <div x-show="step === 4" x-transition:enter="transition ease-out duration-300 transform" x-transition:enter-start="opacity-0 translate-x-4" class="space-y-5 sm:space-y-6" style="display: none;">
                         <div class="space-y-1">
-                            <p class="text-[11px] font-label font-bold uppercase tracking-widest text-ocean-600">Step 4 of 5 • Experiences</p>
+                            <p class="text-[11px] font-label font-bold uppercase tracking-widest text-ocean-600">Experiences</p>
                             <h2 class="text-lg sm:text-xl font-bold text-ink-900 font-headline flex items-center gap-2">
                                 <span class="material-symbols-outlined text-ocean-600">explore</span>
                                 <span>What experiences excite you?</span>
@@ -428,11 +421,11 @@
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5 sm:gap-3">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3">
                             @foreach($activityOptions as $act)
                                 <button type="button" @click="toggleActivity(@js($act['name']))"
                                     :class="activities.includes(@js($act['name'])) ? 'ring-2 ring-ocean-500 ring-offset-2 scale-[1.02] shadow-md shadow-ocean-500/20' : ''"
-                                    class="relative overflow-hidden rounded-2xl border border-sand-200 transition-all duration-300 cursor-pointer bg-white aspect-[4/3] flex flex-col min-h-[132px]">
+                                    class="relative overflow-hidden rounded-2xl border border-sand-200 transition-all duration-300 cursor-pointer bg-white aspect-[16/9] sm:aspect-[4/3] flex flex-col min-h-[132px]">
                                     <div class="relative flex-1 overflow-hidden">
                                         <img :src="@js($act['image'] ?? '')" :alt="@js($act['name'])"
                                              class="w-full h-full object-cover transition-transform duration-300"
@@ -459,7 +452,7 @@
                     ══════════════════════════════════════════ --}}
                     <div x-show="step === 5" x-transition:enter="transition ease-out duration-300 transform" x-transition:enter-start="opacity-0 translate-x-4" class="space-y-5 sm:space-y-6" style="display: none;">
                         <div class="space-y-1">
-                            <p class="text-[11px] font-label font-bold uppercase tracking-widest text-ocean-600">Step 5 of 5 • Comforts</p>
+                            <p class="text-[11px] font-label font-bold uppercase tracking-widest text-ocean-600">Comforts</p>
                             <h2 class="text-lg sm:text-xl font-bold text-ink-900 font-headline flex items-center gap-2">
                                 <span class="material-symbols-outlined text-ocean-600">tune</span>
                                 <span>Must-have comforts?</span>
@@ -489,7 +482,7 @@
                             <label for="onboarding-notes" class="text-sm font-bold text-ink-700 font-body block">Any special requests for your stay? <span class="font-normal text-ink-500">(Optional)</span></label>
                             <textarea id="onboarding-notes" x-model="notes" rows="3" placeholder="e.g. Quiet beachfront room with sunset views..."
                                 class="w-full bg-sand-50 border border-sand-200 rounded-xl px-3.5 py-3 text-base sm:text-sm text-ink-900 placeholder-ink-400 focus:outline-none focus:border-ocean-500 focus:bg-white transition-colors font-body"></textarea>
-                            <div class="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
+                            <div class="flex flex-wrap gap-1.5">
                                 <template x-for="chip in ['Quiet room', 'Sunset view', 'Near diving spots', 'High floor', 'Family-friendly']" :key="chip">
                                     <button type="button" @click="appendNote(chip)"
                                         class="shrink-0 min-h-[36px] px-3 rounded-full bg-ocean-50 border border-ocean-100 text-ocean-700 text-xs font-bold hover:bg-ocean-100 transition-colors font-body"
@@ -503,34 +496,35 @@
                     UNIFIED BOTTOM NAVIGATION DOCK (inside form)
                     ══════════════════════════════════════════ --}}
                     <div class="sticky bottom-0 -mx-5 sm:-mx-10 px-5 sm:px-10 pt-3 bg-white/95 backdrop-blur border-t border-sand-200 mt-8" style="padding-bottom: max(0.75rem, env(safe-area-inset-bottom));">
-                        <div class="flex items-center gap-2">
+                        <div class="flex flex-wrap items-center gap-2">
                             {{-- Back (hidden on step 1) --}}
                             <button type="button" x-show="step > 1" x-cloak @click="goToStep(step - 1)"
-                                class="min-h-[44px] min-w-[44px] sm:min-w-0 sm:px-4 py-3 rounded-xl border border-sand-200 text-ink-700 hover:bg-sand-100 font-bold text-xs transition-colors flex items-center justify-center gap-1 cursor-pointer font-body" aria-label="Previous step">
+                                class="min-h-[44px] min-w-[44px] sm:min-w-0 sm:px-4 px-2.5 py-3 rounded-xl border border-sand-200 text-ink-700 hover:bg-sand-100 font-bold text-xs transition-colors flex items-center justify-center gap-1 cursor-pointer font-body whitespace-nowrap" aria-label="Previous step">
                                 <span class="material-symbols-outlined text-[18px]">arrow_back</span>
-                                <span class="hidden sm:inline">Back</span>
+                                <span>Back</span>
                             </button>
 
                             @if($canSkip)
                                 <a href="{{ route('onboarding.skip') }}"
-                                    class="min-h-[44px] px-3 sm:px-4 py-3 rounded-xl border border-sand-200 text-ink-500 hover:text-ink-900 hover:bg-sand-100 font-bold text-xs transition-colors flex items-center gap-1.5 cursor-pointer font-body">
+                                    class="min-h-[44px] px-2.5 sm:px-4 py-3 rounded-xl border border-sand-200 text-ink-500 hover:text-ink-900 hover:bg-sand-100 font-bold text-xs transition-colors flex items-center gap-1.5 cursor-pointer font-body whitespace-nowrap">
                                     <span class="material-symbols-outlined text-[16px]">fast_forward</span>
+                                    <span class="sm:hidden">Skip</span>
                                     <span class="hidden sm:inline">Skip for now</span>
                                 </a>
                             @else
                                 <a href="{{ route('dashboard') }}"
-                                    class="min-h-[44px] px-3 sm:px-4 py-3 rounded-xl border border-sand-200 text-ink-500 hover:text-ink-900 hover:bg-sand-100 font-bold text-xs transition-colors flex items-center gap-1.5 cursor-pointer font-body">
+                                    class="min-h-[44px] px-2.5 sm:px-4 py-3 rounded-xl border border-sand-200 text-ink-500 hover:text-ink-900 hover:bg-sand-100 font-bold text-xs transition-colors flex items-center gap-1.5 cursor-pointer font-body whitespace-nowrap">
                                     <span class="material-symbols-outlined text-[16px]">close</span>
-                                    <span class="hidden sm:inline">Cancel</span>
+                                    <span>Cancel</span>
                                 </a>
                             @endif
 
-                            <div class="flex-1"></div>
+                            <div class="hidden sm:block flex-1"></div>
 
                             {{-- Continue (steps 1-4) --}}
                             <template x-if="step < 5">
                                 <button type="button" @click="nextStep(step)"
-                                    class="flex-1 sm:flex-none min-h-[44px] px-5 sm:px-6 py-3 rounded-xl bg-gradient-to-r from-ocean-500 to-ocean-600 hover:from-ocean-600 hover:to-ocean-700 text-white font-bold text-sm shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer font-body">
+                                    class="flex-1 min-w-[140px] sm:flex-none sm:min-w-0 min-h-[44px] px-3 sm:px-6 py-3 rounded-xl bg-gradient-to-r from-ocean-500 to-ocean-600 hover:from-ocean-600 hover:to-ocean-700 text-white font-bold text-[13px] sm:text-sm shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer font-body whitespace-nowrap">
                                     <span x-text="step === 1 ? 'Find my style' : (step === 2 ? 'Pick my vibes' : (step === 3 ? 'See activities' : 'Pick comforts'))">Continue</span>
                                     <span class="material-symbols-outlined text-[18px]">arrow_forward</span>
                                 </button>
@@ -539,17 +533,19 @@
                             {{-- Submit (step 5) --}}
                             <template x-if="step === 5">
                                 <button type="submit" :disabled="isSubmitting"
-                                    class="flex-1 sm:flex-none min-h-[44px] px-5 sm:px-8 py-3.5 rounded-xl bg-gradient-to-r from-ocean-600 to-teal-600 hover:from-ocean-700 hover:to-teal-700 text-white font-extrabold text-sm shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 font-body">
+                                    class="flex-1 min-w-[140px] sm:flex-none sm:min-w-0 min-h-[44px] px-3 sm:px-8 py-3.5 rounded-xl bg-gradient-to-r from-ocean-600 to-teal-600 hover:from-ocean-700 hover:to-teal-700 text-white font-extrabold text-[13px] sm:text-sm shadow-sm transition-all flex items-center justify-center gap-1.5 sm:gap-2 cursor-pointer disabled:opacity-50 font-body whitespace-nowrap">
                                     <template x-if="!isSubmitting">
-                                        <span class="flex items-center gap-1.5">
+                                        <span class="flex items-center gap-1.5 sm:gap-2">
                                             <span class="material-symbols-outlined text-[18px]">auto_awesome</span>
-                                            <span>Build My Travel Profile</span>
+                                            <span class="sm:hidden">Build My Profile</span>
+                                            <span class="hidden sm:inline">Build My Travel Profile</span>
                                         </span>
                                     </template>
                                     <template x-if="isSubmitting">
-                                        <span class="flex items-center gap-2">
+                                        <span class="flex items-center gap-1.5 sm:gap-2">
                                             <x-thinking-orb state="working" :size="16" light />
-                                            <span>Creating your profile…</span>
+                                            <span class="sm:hidden">Creating…</span>
+                                            <span class="hidden sm:inline">Creating your profile…</span>
                                         </span>
                                     </template>
                                 </button>

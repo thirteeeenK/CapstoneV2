@@ -1,4 +1,4 @@
-<x-frontend.layout title="Finding Your Matches — SunnyTrips" :hide-nav-footer="true">
+<x-frontend.layout title="Finding Your Matches — SunnyTrips" :hide-nav-footer="true" :hide-chat-widget="true">
     {{-- Meta refresh fallback: 6s → dashboard --}}
     @push('head')
         <meta http-equiv="refresh" content="6;url={{ route('dashboard') }}">

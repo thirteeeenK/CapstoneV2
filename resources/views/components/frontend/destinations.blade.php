@@ -1,7 +1,7 @@
-<section class="py-24 bg-sand-50/50 border-t border-slate-200/60 overflow-hidden relative" id="destinations">
+<section class="py-12 sm:py-16 lg:py-24 bg-sand-50/50 border-t border-slate-200/60 overflow-hidden relative" id="destinations">
 
     {{-- Decorative Mesh Background Glow --}}
-    <div class="absolute top-1/3 left-1/4 w-[600px] h-[350px] bg-sky-400/5 blur-3xl rounded-full pointer-events-none">
+    <div class="absolute top-1/3 left-1/4 w-[min(600px,100vw)] max-w-[100vw] h-[350px] bg-sky-400/5 blur-3xl rounded-full pointer-events-none">
     </div>
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12 relative z-10">
@@ -38,7 +38,7 @@
                 default => 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3',
             };
         @endphp
-        <div class="grid {{ $destGridClass }} gap-8">
+        <div class="grid {{ $destGridClass }} gap-5 sm:gap-6 lg:gap-8">
 
             @foreach($destinations as $index => $dest)
                 @php
@@ -50,7 +50,7 @@
                     style="transition-delay: {{ ($index % 3) * 100 }}ms;">
 
                     {{-- Destination Photo & Floating Glass Badges --}}
-                    <div class="relative aspect-[4/3] w-full overflow-hidden bg-slate-950">
+                    <div class="relative aspect-video md:aspect-[4/3] w-full overflow-hidden bg-slate-950">
                         <img class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                             src="{{ $imgSrc }}" alt="{{ $dest->name }}" />
 
@@ -83,7 +83,7 @@
                     </div>
 
                     {{-- Destination Content --}}
-                    <div class="p-6 flex flex-col flex-grow space-y-4">
+                    <div class="p-4 sm:p-5 md:p-6 flex flex-col flex-grow space-y-3 md:space-y-4">
                         <div class="space-y-1.5">
                             <h3
                                 class="font-headline text-xl font-bold text-slate-900 group-hover:text-sky-600 transition-colors">

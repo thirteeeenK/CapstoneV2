@@ -3,17 +3,17 @@
 
         {{-- Background Soft Ambient Mesh Glows --}}
         <div
-            class="absolute top-10 left-1/3 w-[500px] h-[300px] bg-sky-200/40 blur-3xl rounded-full pointer-events-none">
+            class="absolute top-10 left-1/3 w-[min(500px,100vw)] max-w-[100vw] h-[300px] bg-sky-200/40 blur-3xl rounded-full pointer-events-none">
         </div>
         <div
-            class="absolute bottom-10 right-1/3 w-[400px] h-[300px] bg-indigo-200/30 blur-3xl rounded-full pointer-events-none">
+            class="absolute bottom-10 right-1/3 w-[min(400px,100vw)] max-w-[100vw] h-[300px] bg-indigo-200/30 blur-3xl rounded-full pointer-events-none">
         </div>
 
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6 sm:space-y-8 relative z-10">
 
             {{-- Dashboard User Header Banner (Light Mode Theme) --}}
             <div
-                class="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                class="bg-white border border-slate-200 rounded-3xl p-5 sm:p-8 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                 <div class="space-y-2">
                     <div class="flex flex-wrap items-center gap-2">
                         @if($isPersonalized)

@@ -25,8 +25,8 @@
 @endphp
 
 @if ($items->isNotEmpty())
-    <section class="py-24 bg-white" id="testimonials">
-        <div class="max-w-7xl mx-auto px-8">
+    <section class="py-12 sm:py-16 lg:py-24 bg-white" id="testimonials">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {{-- Header --}}
             <div class="text-center max-w-2xl mx-auto mb-10 reveal-on-scroll">
                 <span class="font-label text-primary font-bold tracking-[0.2em] text-xs uppercase mb-3 block">GUEST
@@ -71,7 +71,7 @@
             @endif
 
             {{-- Featured reviews grid --}}
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6 lg:gap-8">
                 @foreach ($items as $index => $review)
                     <div class="bg-slate-50 border border-slate-200/60 rounded-2xl p-8 shadow-sm flex flex-col relative reveal-on-scroll"
                         @if ($index > 0) style="transition-delay: {{ $index * 100 }}ms;" @endif>

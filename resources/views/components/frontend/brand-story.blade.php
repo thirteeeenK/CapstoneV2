@@ -1,6 +1,6 @@
-<section id="brand-story" class="bg-sand-50/70 py-24 border-y border-slate-200/50">
-    <div class="max-w-7xl mx-auto px-8">
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
+<section id="brand-story" class="bg-sand-50/70 py-12 sm:py-16 lg:py-24 border-y border-slate-200/50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-12 lg:gap-16 items-center">
             
             {{-- Left Column: Brand Philosophy & Image --}}
             <div class="lg:col-span-5 space-y-8 reveal-on-scroll">

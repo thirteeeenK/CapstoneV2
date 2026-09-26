@@ -64,9 +64,9 @@
     })->values();
 @endphp
 
-<x-frontend.layout title="Trip Basket | SunnyTrips">
+<x-frontend.layout title="Trip Basket | SunnyTrips" :hide-chat-widget="true">
     <div x-data="cartPageManager({{ json_encode($initialItems) }}, {{ json_encode($groups) }})" class="min-h-screen bg-sand-50/70 font-body">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 sm:pt-28 pb-10 sm:pb-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 {{ Auth::check() ? 'pt-5 sm:pt-8 lg:pt-10' : 'pt-20 sm:pt-28' }} pb-24 lg:pb-16">
             @if(session('error'))
                 <div class="mb-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3.5 flex items-start gap-3 text-sm text-rose-800 shadow-2xs">
                     <span class="material-symbols-outlined text-rose-600 text-xl shrink-0 mt-0.5">error</span>
@@ -84,7 +84,7 @@
             <div class="mb-5 sm:mb-8 flex flex-wrap items-end justify-between gap-3 sm:gap-4">
                 <div>
                     <nav class="flex items-center gap-1.5 text-xs sm:text-sm text-ink-400 mb-1.5 sm:mb-2" aria-label="Breadcrumb">
-                        <a href="/" class="hover:text-ocean-600 transition">Home</a>
+                        <a href="{{ Auth::check() ? route('dashboard') : '/' }}" class="hover:text-ocean-600 transition">Home</a>
                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                         </svg>
@@ -99,12 +99,12 @@
                     </p>
                 </div>
 
-                <a href="{{ route('destinations.index') }}"
+                <a href="{{ Auth::check() ? route('dashboard') : route('destinations.index') }}"
                    class="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-ocean-700 hover:text-ocean-900 transition group">
                     <svg class="w-4 h-4 transition-transform group-hover:-translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
                     </svg>
-                    <span>Continue exploring</span>
+                    <span>{{ Auth::check() ? 'Back to dashboard' : 'Continue exploring' }}</span>
                 </a>
             </div>
 
@@ -141,7 +141,7 @@
                 <div class="lg:col-span-2 space-y-4 sm:space-y-5">
 
                     {{-- Select All / Bulk Action Toolbar --}}
-                    <div class="bg-white rounded-2xl p-3.5 sm:p-4 border border-sand-200 shadow-xs flex flex-wrap items-center justify-between gap-3 select-none">
+                    <div class="bg-white rounded-2xl p-3 sm:p-3.5 border border-sand-200 shadow-xs flex flex-wrap items-center justify-between gap-3 select-none">
                         <label class="flex items-center gap-2.5 cursor-pointer">
                             <input type="checkbox"
                                    :checked="isAllSelected"
@@ -163,7 +163,7 @@
                     {{-- "I'm Feeling Lucky" Itinerary Groups --}}
                     <template x-for="group in displayGroups" :key="group.id">
                         <section class="overflow-hidden rounded-2xl bg-white ring-1 ring-ocean-200 shadow-sm shadow-ocean-900/5">
-                            <div class="bg-gradient-to-r from-ocean-700 to-sky-500 px-5 sm:px-6 py-4 flex flex-wrap items-center gap-4">
+                            <div class="bg-gradient-to-r from-ocean-700 to-sky-500 px-4 sm:px-6 py-3 sm:py-4 flex flex-wrap items-center gap-3 sm:gap-4">
                                 <input type="checkbox"
                                        :checked="group.is_selected"
                                        @change="toggleGroup(group.id)"
@@ -171,7 +171,7 @@
                                        class="w-5 h-5 rounded bg-white accent-ocean-700 border-white/50 focus:ring-white cursor-pointer">
                                 <div class="flex-1 min-w-0">
                                     <div class="flex flex-wrap items-center gap-2">
-                                        <span class="inline-flex items-center gap-1 rounded-full bg-white/20 text-white border border-white/30 px-2.5 py-0.5 text-[11px] font-bold tracking-wide uppercase">
+                                        <span class="inline-flex items-center gap-1 rounded-full bg-white/20 text-white border border-white/30 px-2 py-0.5 text-[10px] sm:text-[11px] font-bold tracking-wide uppercase">
                                             <span class="material-symbols-outlined text-[13px]" x-text="group.icon || 'casino'"></span>
                                             <span x-text="group.label || 'I\'m Feeling Lucky'"></span>
                                         </span>
@@ -180,7 +180,7 @@
                                             <span x-text="group.destination_name"></span>
                                         </span>
                                     </div>
-                                    <h3 class="font-display text-base sm:text-lg font-bold text-white mt-1.5" x-text="group.title"></h3>
+                                    <h3 class="font-display text-[15px] sm:text-lg font-bold text-white mt-1" x-text="group.title"></h3>
                                     <p class="text-xs text-white/80 mt-0.5">
                                         <span x-text="group.item_count + ' ' + (group.item_count === 1 ? 'item' : 'items')"></span>
                                         <span x-text="group.selected_count === group.item_count ? ' • fully selected' : ''"></span>
@@ -207,7 +207,7 @@
 
                 {{-- Right 1 Column: Summary Card --}}
                 <div class="lg:sticky lg:top-8">
-                    <div class="bg-white rounded-2xl shadow-md shadow-ocean-900/5 p-6 sm:p-7 space-y-5">
+                    <div id="cart-summary" class="bg-white rounded-2xl shadow-md shadow-ocean-900/5 p-5 sm:p-6 space-y-5 scroll-mt-24 lg:scroll-mt-8">
 
                         <h2 class="font-display text-lg font-bold text-ink-900">Booking Summary</h2>
 
@@ -245,6 +245,26 @@
                     </div>
                 </div>
 
+            </div>
+
+            {{-- Mobile checkout bar: keeps the total + CTA reachable without scrolling the whole basket --}}
+            <div class="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t border-sand-200 bg-white/95 backdrop-blur px-4 py-3 shadow-[0_-4px_16px_rgba(15,23,42,0.06)]"
+                 x-show="items.length > 0" x-cloak>
+                <div class="flex items-center gap-3">
+                    <a href="#cart-summary" class="flex-1 min-w-0 text-left">
+                        <span class="block text-[11px] font-semibold text-ink-500">
+                            <span x-text="selectedCount"></span> of <span x-text="totalCount"></span> selected
+                        </span>
+                        <span class="block font-display text-lg font-bold text-ocean-700 truncate" x-text="formattedSelectedSubtotal"></span>
+                    </a>
+                    <a href="{{ route('checkout.index') }}" @click.prevent="proceedToCheckout()"
+                       class="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-ocean-600 hover:bg-ocean-500 active:bg-ocean-700 text-white text-sm font-semibold px-5 py-3 shadow-sm shadow-ocean-600/25 transition cursor-pointer">
+                        <span>Checkout</span>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                        </svg>
+                    </a>
+                </div>
             </div>
 
         </div>

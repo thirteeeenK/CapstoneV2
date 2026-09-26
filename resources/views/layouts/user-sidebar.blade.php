@@ -3,7 +3,6 @@
     <header class="md:hidden sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 py-3 flex items-center justify-between shadow-xs transition-colors">
         <a href="{{ route('dashboard') }}" class="flex items-center gap-2">
             <span class="font-headline font-black text-lg text-slate-900 tracking-tight">Sunny<span class="text-ocean-600">Trips</span></span>
-            <span class="text-[10px] font-extrabold uppercase tracking-widest text-ocean-700 bg-ocean-50 px-2 py-0.5 rounded-lg border border-ocean-200">Traveler</span>
         </a>
 
         <div class="flex items-center gap-1.5 sm:gap-2">

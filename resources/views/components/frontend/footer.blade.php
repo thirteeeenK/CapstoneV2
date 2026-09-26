@@ -1,6 +1,6 @@
 <footer class="w-full pt-12 sm:pt-16 lg:pt-20 pb-8 sm:pb-12 px-4 sm:px-6 lg:px-8 bg-sand-50/80 border-t border-slate-200/80 font-body relative overflow-hidden">
     {{-- Soft Ambient Glow --}}
-    <div class="absolute bottom-0 right-0 w-96 h-96 bg-ocean-500/5 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute bottom-0 right-0 w-96 max-w-[100vw] h-96 bg-ocean-500/5 rounded-full blur-3xl pointer-events-none"></div>
 
     <div class="max-w-7xl mx-auto relative z-10 space-y-10 sm:space-y-12">
         <div class="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-12">

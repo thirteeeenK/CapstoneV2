@@ -142,7 +142,9 @@
     
     <x-frontend.cart-drawer />
     <x-frontend.cart-success-modal />
-    <x-frontend.chat-widget />
+    @unless($hideChatWidget ?? false)
+        <x-frontend.chat-widget />
+    @endunless
     <x-frontend.room-preview-modal />
     <x-frontend.activity-preview-modal />
     <x-frontend.package-preview-modal />
