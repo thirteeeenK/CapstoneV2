@@ -44,7 +44,7 @@
         <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
                 <h1 class="text-xl sm:text-2xl font-bold text-slate-900 font-headline">FAQ Manager</h1>
-                <p class="text-xs sm:text-sm text-slate-500 mt-1">Store common questions and predefined answers so SunnyBot can answer them instantly and consistently.</p>
+                <p class="text-xs sm:text-sm text-slate-500 mt-1">Manage answers and choose independently whether each one appears in SunnyBot, on the FAQ page, or both.</p>
             </div>
 
             <a href="{{ route('admin.faqs.create') }}"
@@ -63,7 +63,7 @@
         @endif
 
         {{-- Stats Cards --}}
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
             <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-4">
                 <div class="w-12 h-12 rounded-xl bg-sky-50 text-sky-600 border border-sky-200 flex items-center justify-center shrink-0">
                     <span class="material-symbols-outlined text-2xl">quiz</span>
@@ -79,8 +79,18 @@
                     <span class="material-symbols-outlined text-2xl">visibility</span>
                 </div>
                 <div>
-                    <span class="text-xs text-slate-400 font-medium uppercase tracking-wider">Publicly Visible</span>
-                    <h3 class="text-2xl font-black text-emerald-700">{{ $stats['visible'] }}</h3>
+                    <span class="text-xs text-slate-400 font-medium uppercase tracking-wider">SunnyBot Enabled</span>
+                    <h3 class="text-2xl font-black text-emerald-700">{{ $stats['sunnybot'] }}</h3>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-sky-50 text-sky-600 border border-sky-200 flex items-center justify-center shrink-0">
+                    <span class="material-symbols-outlined text-2xl">help_center</span>
+                </div>
+                <div>
+                    <span class="text-xs text-slate-400 font-medium uppercase tracking-wider">FAQ Page Visible</span>
+                    <h3 class="text-2xl font-black text-sky-700">{{ $stats['faq_page'] }}</h3>
                 </div>
             </div>
 
@@ -89,7 +99,7 @@
                     <span class="material-symbols-outlined text-2xl">visibility_off</span>
                 </div>
                 <div>
-                    <span class="text-xs text-slate-400 font-medium uppercase tracking-wider">Hidden from Public</span>
+                    <span class="text-xs text-slate-400 font-medium uppercase tracking-wider">Hidden from Both</span>
                     <h3 class="text-2xl font-black text-amber-700">{{ $stats['hidden'] }}</h3>
                 </div>
             </div>
@@ -118,8 +128,10 @@
 
                 <select name="visibility" x-model="visibility" @change="fetchResults()" class="px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 bg-white">
                     <option value="">All Statuses</option>
-                    <option value="visible">Visible Only</option>
-                    <option value="hidden">Hidden Only</option>
+                    <option value="both">Visible to Both</option>
+                    <option value="chatbot_only">SunnyBot Only</option>
+                    <option value="faq_only">FAQ Page Only</option>
+                    <option value="hidden">Hidden from Both</option>
                 </select>
 
                 <a href="{{ route('admin.faqs.index') }}" @click.prevent="search = ''; category = ''; visibility = ''; fetchResults()" x-show="search || category || visibility" class="text-xs font-bold text-rose-600 hover:underline px-2">Clear Filters</a>

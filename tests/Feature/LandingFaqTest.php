@@ -30,7 +30,7 @@ it('shows active FAQs grouped by category on the landing page', function () {
         ->assertSee('Payments', false);
 });
 
-it('hides inactive FAQs from the landing page', function () {
+it('shows FAQ-page-only entries even when SunnyBot visibility is disabled', function () {
     Faq::create([
         'question' => 'Hidden FAQ should not appear',
         'answer' => 'This is hidden.',
@@ -38,11 +38,12 @@ it('hides inactive FAQs from the landing page', function () {
         'category' => 'General',
         'sort_order' => 20,
         'is_active' => false,
+        'show_on_landing' => true,
     ]);
 
     $this->get(route('landing'))
         ->assertOk()
-        ->assertDontSee('Hidden FAQ should not appear', false);
+        ->assertSee('Hidden FAQ should not appear', false);
 });
 
 it('hides chatbot-only FAQs from the landing page', function () {
@@ -61,8 +62,12 @@ it('hides chatbot-only FAQs from the landing page', function () {
         ->assertDontSee('Chatbot-only FAQ should not appear', false);
 });
 
-it('does not render the FAQ section when there are no active FAQs', function () {
-    // No FAQs created
+it('does not render the FAQ section when there are no page-visible FAQs', function () {
+    Faq::factory()->create([
+        'is_active' => true,
+        'show_on_landing' => false,
+    ]);
+
     $this->get(route('landing'))
         ->assertOk()
         ->assertDontSee('Frequently Asked Questions', false);

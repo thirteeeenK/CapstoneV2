@@ -80,12 +80,29 @@ it('toggles FAQ visibility', function () {
         'answer' => 'Answer.',
         'sort_order' => 0,
         'is_active' => true,
+        'show_on_landing' => true,
     ]);
 
     $this->actingAs($this->admin, 'admin')
         ->post(route('admin.faqs.toggle-visibility', $faq->id));
 
-    expect($faq->refresh()->is_active)->toBeFalse();
+    $faq->refresh();
+    expect($faq->is_active)->toBeFalse()
+        ->and($faq->show_on_landing)->toBeTrue();
+});
+
+it('toggles FAQ page visibility without changing SunnyBot visibility', function () {
+    $faq = Faq::factory()->create([
+        'is_active' => true,
+        'show_on_landing' => true,
+    ]);
+
+    $this->actingAs($this->admin, 'admin')
+        ->post(route('admin.faqs.toggle-page-visibility', $faq->id));
+
+    $faq->refresh();
+    expect($faq->is_active)->toBeTrue()
+        ->and($faq->show_on_landing)->toBeFalse();
 });
 
 it('deletes an FAQ', function () {
@@ -111,4 +128,66 @@ it('rejects an FAQ without a question', function () {
             'is_active' => 1,
         ])
         ->assertSessionHasErrors('question');
+});
+
+it('stores each independent FAQ visibility combination', function (string $label, bool $isActive, bool $showOnLanding) {
+    $this->actingAs($this->admin, 'admin')
+        ->post(route('admin.faqs.store'), [
+            'question' => "Audience {$label}?",
+            'answer' => 'Audience answer.',
+            'is_active' => (int) $isActive,
+            'show_on_landing' => (int) $showOnLanding,
+        ])
+        ->assertRedirect(route('admin.faqs.index'));
+
+    $this->assertDatabaseHas('faqs', [
+        'question' => "Audience {$label}?",
+        'is_active' => $isActive,
+        'show_on_landing' => $showOnLanding,
+    ]);
+})->with([
+    'both' => ['both', true, true],
+    'SunnyBot only' => ['chatbot_only', true, false],
+    'FAQ page only' => ['faq_only', false, true],
+    'hidden from both' => ['hidden', false, false],
+]);
+
+it('shows clear channel indicators and all four filters', function () {
+    Faq::factory()->create(['is_active' => true, 'show_on_landing' => true]);
+    Faq::factory()->create(['is_active' => false, 'show_on_landing' => true]);
+
+    $this->actingAs($this->admin, 'admin')
+        ->get(route('admin.faqs.index'))
+        ->assertOk()
+        ->assertSee('SunnyBot Enabled')
+        ->assertSee('FAQ Page Visible')
+        ->assertSee('SunnyBot: On')
+        ->assertSee('FAQ Page: On')
+        ->assertSee('FAQ Page Only')
+        ->assertSee('Hidden from Both');
+});
+
+it('filters the FAQ-page-only visibility combination precisely', function () {
+    Faq::factory()->create([
+        'question' => 'Visible in both channels?',
+        'is_active' => true,
+        'show_on_landing' => true,
+    ]);
+    Faq::factory()->create([
+        'question' => 'Visible only on the FAQ page?',
+        'is_active' => false,
+        'show_on_landing' => true,
+    ]);
+    Faq::factory()->create([
+        'question' => 'Hidden from both channels?',
+        'is_active' => false,
+        'show_on_landing' => false,
+    ]);
+
+    $this->actingAs($this->admin, 'admin')
+        ->get(route('admin.faqs.index', ['visibility' => 'faq_only']))
+        ->assertOk()
+        ->assertSee('Visible only on the FAQ page?')
+        ->assertDontSee('Visible in both channels?')
+        ->assertDontSee('Hidden from both channels?');
 });

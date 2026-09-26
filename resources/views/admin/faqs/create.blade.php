@@ -57,23 +57,30 @@
                     <p class="text-[11px] text-slate-400 mt-1">Lower numbers appear first.</p>
                 </div>
 
-                <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Visibility</label>
-                    <select name="is_active" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-bold text-slate-900 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 bg-white">
-                        <option value="1" {{ old('is_active', true) ? 'selected' : '' }}>Visible to SunnyBot</option>
-                        <option value="0" {{ !old('is_active', true) ? 'selected' : '' }}>Hidden</option>
-                    </select>
-                </div>
             </div>
 
-            <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Show on landing page</label>
-                <select name="show_on_landing" class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm font-bold text-slate-900 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 bg-white">
-                    <option value="1" {{ old('show_on_landing', true) ? 'selected' : '' }}>Show on FAQ page</option>
-                    <option value="0" {{ !old('show_on_landing', true) ? 'selected' : '' }}>Chatbot only (hide from FAQ page)</option>
-                </select>
-                <p class="text-[11px] text-slate-400 mt-1">Chatbot-only entries stay queryable by SunnyBot via RAG but never appear on the landing page.</p>
-            </div>
+            <fieldset>
+                <legend class="text-xs font-bold uppercase tracking-wider text-slate-700">Visibility channels</legend>
+                <p class="mt-1 text-[11px] text-slate-500">These settings are independent. Enable either channel, both, or neither.</p>
+                <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <label for="is_active" class="flex min-h-24 items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50/60 p-4 cursor-pointer transition hover:border-sky-300 focus-within:ring-2 focus-within:ring-sky-500/30">
+                        <input type="hidden" name="is_active" value="0">
+                        <input id="is_active" type="checkbox" name="is_active" value="1" @checked((bool) old('is_active', true)) class="mt-0.5 h-5 w-5 rounded border-slate-300 text-sky-600 focus:ring-sky-500">
+                        <span>
+                            <span class="flex items-center gap-1.5 text-sm font-bold text-slate-900"><span class="material-symbols-outlined text-[18px] text-sky-600" aria-hidden="true">smart_toy</span>Show to SunnyBot</span>
+                            <span class="mt-1 block text-xs leading-5 text-slate-500">Allows the chatbot to match and return this answer.</span>
+                        </span>
+                    </label>
+                    <label for="show_on_landing" class="flex min-h-24 items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50/60 p-4 cursor-pointer transition hover:border-emerald-300 focus-within:ring-2 focus-within:ring-emerald-500/30">
+                        <input type="hidden" name="show_on_landing" value="0">
+                        <input id="show_on_landing" type="checkbox" name="show_on_landing" value="1" @checked((bool) old('show_on_landing', true)) class="mt-0.5 h-5 w-5 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
+                        <span>
+                            <span class="flex items-center gap-1.5 text-sm font-bold text-slate-900"><span class="material-symbols-outlined text-[18px] text-emerald-600" aria-hidden="true">help_center</span>Show on FAQ page</span>
+                            <span class="mt-1 block text-xs leading-5 text-slate-500">Displays this answer in the public FAQ section.</span>
+                        </span>
+                    </label>
+                </div>
+            </fieldset>
 
             <div class="flex items-center justify-end gap-3 pt-2 border-t border-slate-100">
                 <a href="{{ route('admin.faqs.index') }}" class="px-5 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-50 transition">Cancel</a>

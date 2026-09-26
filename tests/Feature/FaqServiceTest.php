@@ -74,6 +74,22 @@ test('chatbot-only FAQs still match for SunnyBot', function () {
         ->and((new FaqService($gemini))->findBestMatch('what is the secret internal refund hotline')->answer)->toBe('Call extension 999.');
 });
 
+test('FAQ-page-only entries are unavailable to SunnyBot', function () {
+    Faq::create([
+        'question' => 'What is the page-only answer?',
+        'answer' => 'This should stay on the public page.',
+        'keywords' => 'page only answer',
+        'category' => 'Policies',
+        'sort_order' => 100,
+        'is_active' => false,
+        'show_on_landing' => true,
+    ]);
+
+    $gemini = $this->mock(GeminiService::class);
+
+    expect((new FaqService($gemini))->findBestMatch('what is the page-only answer'))->toBeNull();
+});
+
 test('non-general-talk intents skip FAQs without searching', function () {
     // No searchFaqs stub: any embedding call would fail the mock.
     $gemini = $this->mock(GeminiService::class);

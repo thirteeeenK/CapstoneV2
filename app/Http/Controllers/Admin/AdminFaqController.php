@@ -18,7 +18,7 @@ class AdminFaqController extends Controller
     {
         $search = $request->query('search');
         $category = $request->query('category');
-        $visibility = $request->query('visibility'); // 'visible', 'hidden'
+        $visibility = $request->query('visibility');
 
         $categories = Faq::whereNotNull('category')->where('category', '!=', '')->distinct()->orderBy('category')->pluck('category');
 
@@ -36,18 +36,23 @@ class AdminFaqController extends Controller
             $query->where('category', $category);
         }
 
-        if ($visibility === 'visible') {
-            $query->where('is_active', true);
+        if ($visibility === 'both') {
+            $query->where('is_active', true)->where('show_on_landing', true);
+        } elseif ($visibility === 'chatbot_only') {
+            $query->where('is_active', true)->where('show_on_landing', false);
+        } elseif ($visibility === 'faq_only') {
+            $query->where('is_active', false)->where('show_on_landing', true);
         } elseif ($visibility === 'hidden') {
-            $query->where('is_active', false);
+            $query->where('is_active', false)->where('show_on_landing', false);
         }
 
         $faqs = $query->orderBy('sort_order', 'asc')->orderBy('id', 'desc')->paginate(15);
 
         $stats = [
             'total' => Faq::count(),
-            'visible' => Faq::where('is_active', true)->count(),
-            'hidden' => Faq::where('is_active', false)->count(),
+            'sunnybot' => Faq::where('is_active', true)->count(),
+            'faq_page' => Faq::where('show_on_landing', true)->count(),
+            'hidden' => Faq::where('is_active', false)->where('show_on_landing', false)->count(),
         ];
 
         if ($request->ajax()) {
@@ -143,7 +148,7 @@ class AdminFaqController extends Controller
     }
 
     /**
-     * Instant toggle visibility (is_active).
+     * Toggle whether SunnyBot can use this FAQ.
      */
     public function toggleVisibility(Request $request, $id)
     {
@@ -158,11 +163,39 @@ class AdminFaqController extends Controller
             return response()->json([
                 'success' => true,
                 'is_active' => $faq->is_active,
-                'message' => "FAQ '{$faq->question}' is now ".($faq->is_active ? 'Visible' : 'Hidden').'.',
+                'message' => "FAQ '{$faq->question}' is now ".($faq->is_active ? 'available to SunnyBot' : 'hidden from SunnyBot').'.',
             ]);
         }
 
-        return redirect()->back()->with('success', "FAQ '{$faq->question}' visibility toggled.");
+        $state = $faq->is_active ? 'available to SunnyBot' : 'hidden from SunnyBot';
+
+        return redirect()->back()->with('success', "FAQ '{$faq->question}' is now {$state}.");
+    }
+
+    /**
+     * Toggle whether this FAQ appears on the public FAQ page.
+     */
+    public function togglePageVisibility(Request $request, $id)
+    {
+        $faq = Faq::findOrFail($id);
+        $oldValues = ['show_on_landing' => $faq->show_on_landing];
+        $faq->show_on_landing = ! $faq->show_on_landing;
+        $faq->save();
+
+        AdminAuditService::log($faq, $oldValues);
+
+        $state = $faq->show_on_landing ? 'visible on the FAQ page' : 'hidden from the FAQ page';
+        $message = "FAQ '{$faq->question}' is now {$state}.";
+
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'show_on_landing' => $faq->show_on_landing,
+                'message' => $message,
+            ]);
+        }
+
+        return redirect()->back()->with('success', $message);
     }
 
     /**

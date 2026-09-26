@@ -11,6 +11,7 @@ Route::prefix('admin')->group(function () {
         Route::get('/faqs/{id}/edit', [AdminFaqController::class, 'edit'])->name('admin.faqs.edit');
         Route::put('/faqs/{id}', [AdminFaqController::class, 'update'])->name('admin.faqs.update');
         Route::post('/faqs/{id}/toggle-visibility', [AdminFaqController::class, 'toggleVisibility'])->name('admin.faqs.toggle-visibility');
+        Route::post('/faqs/{id}/toggle-page-visibility', [AdminFaqController::class, 'togglePageVisibility'])->name('admin.faqs.toggle-page-visibility');
         Route::delete('/faqs/{id}', [AdminFaqController::class, 'destroy'])->name('admin.faqs.destroy');
     });
 });
