@@ -18,7 +18,7 @@
                     }
                 }, 1000);
                 setInterval(() => {
-                    this.stepIndex = (this.stepIndex + 1) % this.steps.length;
+                    if (this.stepIndex < this.steps.length - 1) this.stepIndex++;
                 }, 1400);
             }
         }"
