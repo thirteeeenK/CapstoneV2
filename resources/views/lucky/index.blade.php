@@ -1,13 +1,13 @@
 <x-frontend.layout title="I'm Feeling Lucky | SunnyTrips">
     <div x-data="luckyManager()"
-        class="min-h-screen bg-sand-50/70 text-slate-900 font-body py-10 sm:py-16 relative overflow-hidden">
+        class="min-h-screen bg-sand-50/70 text-slate-900 font-body py-5 sm:py-8 lg:py-10 relative overflow-hidden">
 
         {{-- Background Soft Ambient Mesh Glows --}}
         <div
-            class="absolute top-12 left-1/4 w-[500px] h-[300px] bg-ocean-200/40 blur-3xl rounded-full pointer-events-none">
+            class="absolute top-12 left-1/4 w-[500px] max-w-full h-[300px] bg-ocean-200/40 blur-3xl rounded-full pointer-events-none">
         </div>
         <div
-            class="absolute bottom-20 right-1/4 w-[450px] h-[350px] bg-sky-200/30 blur-3xl rounded-full pointer-events-none">
+            class="absolute bottom-20 right-1/4 w-[450px] max-w-full h-[350px] bg-sky-200/30 blur-3xl rounded-full pointer-events-none">
         </div>
 
         <div id="lucky-root" class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10 relative z-10">
@@ -28,26 +28,28 @@
                 </p>
             </div>
 
-            {{-- Filter Control Bar --}}
-            <div class="bg-white rounded-3xl border border-slate-200/80 shadow-sm p-6 sm:p-8 space-y-6">
-                <div class="flex items-center gap-2 border-b border-slate-100 pb-4">
+            {{-- Filter Control Bar — collapses itself once an itinerary exists so the result is what you land on --}}
+            <details x-bind:open="!itinerary" class="group bg-white rounded-3xl border border-slate-200/80 shadow-sm p-4 sm:p-6">
+                <summary class="flex items-center gap-2 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
                     <span class="w-1.5 h-5 bg-ocean-600 rounded-full"></span>
                     <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500 font-headline">
-                        Trip Preferences & Budget Limits
+                        Trip Preferences &amp; Budget Limits
                     </h2>
-                </div>
+                    <span class="ml-auto material-symbols-outlined text-[18px] text-slate-400 transition-transform group-open:rotate-180">expand_more</span>
+                </summary>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
+                <div class="mt-4 sm:mt-5">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 text-xs">
 
                     {{-- Destination --}}
                     <div>
                         <label for="lucky-destination"
-                            class="block font-bold text-slate-700 mb-1.5 flex items-center gap-1">
+                            class="block font-bold text-slate-700 mb-1 flex items-center gap-1">
                             <span class="material-symbols-outlined text-[15px] text-ocean-600">location_on</span>
                             <span>Destination</span>
                         </label>
                         <select id="lucky-destination" x-model="filters.destination_id"
-                            class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3 text-xs font-medium text-slate-800 focus:bg-white focus:border-ocean-500 focus:outline-none transition-all cursor-pointer">
+                            class="w-full bg-slate-50 border border-slate-200 rounded-xl py-1.5 sm:py-2.5 px-3 text-base sm:text-xs font-medium text-slate-800 focus:bg-white focus:border-ocean-500 focus:outline-none transition-all cursor-pointer">
                             <option value="">Any Island</option>
                             @foreach($destinations as $destination)
                                 <option value="{{ $destination->id }}">{{ $destination->name }}</option>
@@ -57,7 +59,7 @@
 
                     {{-- Max Budget --}}
                     <div>
-                        <label for="lucky-budget" class="block font-bold text-slate-700 mb-1.5 flex items-center gap-1">
+                        <label for="lucky-budget" class="block font-bold text-slate-700 mb-1 flex items-center gap-1">
                             <span class="material-symbols-outlined text-[15px] text-ocean-600">payments</span>
                             <span>Max Budget</span>
                         </label>
@@ -66,18 +68,18 @@
                                 class="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">₱</span>
                             <input id="lucky-budget" type="number" min="500" step="500"
                                 x-model.number="filters.max_budget"
-                                class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-7 pr-3 text-xs font-medium text-slate-800 focus:bg-white focus:border-ocean-500 focus:outline-none transition-all">
+                                class="w-full bg-slate-50 border border-slate-200 rounded-xl py-1.5 sm:py-2.5 pl-7 pr-3 text-base sm:text-xs font-medium text-slate-800 focus:bg-white focus:border-ocean-500 focus:outline-none transition-all">
                         </div>
                     </div>
 
                     {{-- Trip Duration --}}
                     <div>
-                        <label for="lucky-nights" class="block font-bold text-slate-700 mb-1.5 flex items-center gap-1">
+                        <label for="lucky-nights" class="block font-bold text-slate-700 mb-1 flex items-center gap-1">
                             <span class="material-symbols-outlined text-[15px] text-ocean-600">calendar_month</span>
                             <span>Trip Duration</span>
                         </label>
                         <select id="lucky-nights" x-model.number="filters.nights"
-                            class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3 text-xs font-medium text-slate-800 focus:bg-white focus:border-ocean-500 focus:outline-none transition-all cursor-pointer">
+                            class="w-full bg-slate-50 border border-slate-200 rounded-xl py-1.5 sm:py-2.5 px-3 text-base sm:text-xs font-medium text-slate-800 focus:bg-white focus:border-ocean-500 focus:outline-none transition-all cursor-pointer">
                             <option value="1">1 night</option>
                             <option value="2">2 nights</option>
                             <option value="3">3 nights</option>
@@ -90,12 +92,12 @@
 
                     {{-- Travelers --}}
                     <div>
-                        <label for="lucky-pax" class="block font-bold text-slate-700 mb-1.5 flex items-center gap-1">
+                        <label for="lucky-pax" class="block font-bold text-slate-700 mb-1 flex items-center gap-1">
                             <span class="material-symbols-outlined text-[15px] text-ocean-600">group</span>
                             <span>Travelers</span>
                         </label>
                         <select id="lucky-pax" x-model.number="filters.pax"
-                            class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3 text-xs font-medium text-slate-800 focus:bg-white focus:border-ocean-500 focus:outline-none transition-all cursor-pointer">
+                            class="w-full bg-slate-50 border border-slate-200 rounded-xl py-1.5 sm:py-2.5 px-3 text-base sm:text-xs font-medium text-slate-800 focus:bg-white focus:border-ocean-500 focus:outline-none transition-all cursor-pointer">
                             <option value="1">1 traveler</option>
                             <option value="2">2 travelers</option>
                             <option value="3">3 travelers</option>
@@ -106,12 +108,12 @@
                     {{-- Hotel Category --}}
                     <div>
                         <label for="lucky-category"
-                            class="block font-bold text-slate-700 mb-1.5 flex items-center gap-1">
+                            class="block font-bold text-slate-700 mb-1 flex items-center gap-1">
                             <span class="material-symbols-outlined text-[15px] text-ocean-600">hotel</span>
                             <span>Hotel Style</span>
                         </label>
                         <select id="lucky-category" x-model="filters.hotel_category"
-                            class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3 text-xs font-medium text-slate-800 focus:bg-white focus:border-ocean-500 focus:outline-none transition-all cursor-pointer">
+                            class="w-full bg-slate-50 border border-slate-200 rounded-xl py-1.5 sm:py-2.5 px-3 text-base sm:text-xs font-medium text-slate-800 focus:bg-white focus:border-ocean-500 focus:outline-none transition-all cursor-pointer">
                             <option value="">Any Category</option>
                             <option value="budget">Budget (≤ ₱2,500/night)</option>
                             <option value="mid">Mid-range (₱2,500–₱6,000)</option>
@@ -122,13 +124,13 @@
                     {{-- Activity Count --}}
                     <div>
                         <label for="lucky-activities"
-                            class="block font-bold text-slate-700 mb-1.5 flex items-center gap-1">
+                            class="block font-bold text-slate-700 mb-1 flex items-center gap-1">
                             <span
                                 class="material-symbols-outlined text-[15px] text-ocean-600">format_list_bulleted</span>
                             <span>Activities Count</span>
                         </label>
                         <select id="lucky-activities" x-model.number="filters.activity_count"
-                            class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3 text-xs font-medium text-slate-800 focus:bg-white focus:border-ocean-500 focus:outline-none transition-all cursor-pointer">
+                            class="w-full bg-slate-50 border border-slate-200 rounded-xl py-1.5 sm:py-2.5 px-3 text-base sm:text-xs font-medium text-slate-800 focus:bg-white focus:border-ocean-500 focus:outline-none transition-all cursor-pointer">
                             <option value="1">1 Experience</option>
                             <option value="2">2 Experiences</option>
                             <option value="3">3 Experiences</option>
@@ -139,12 +141,12 @@
 
                     {{-- Activity Vibe --}}
                     <div>
-                        <label for="lucky-level" class="block font-bold text-slate-700 mb-1.5 flex items-center gap-1">
+                        <label for="lucky-level" class="block font-bold text-slate-700 mb-1 flex items-center gap-1">
                             <span class="material-symbols-outlined text-[15px] text-ocean-600">hiking</span>
                             <span>Activity Vibe</span>
                         </label>
                         <select id="lucky-level" x-model="filters.activity_level"
-                            class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3 text-xs font-medium text-slate-800 focus:bg-white focus:border-ocean-500 focus:outline-none transition-all cursor-pointer">
+                            class="w-full bg-slate-50 border border-slate-200 rounded-xl py-1.5 sm:py-2.5 px-3 text-base sm:text-xs font-medium text-slate-800 focus:bg-white focus:border-ocean-500 focus:outline-none transition-all cursor-pointer">
                             <option value="">Any Vibe</option>
                             <option value="Relaxing">Relaxing</option>
                             <option value="Sightseeing">Sightseeing</option>
@@ -156,20 +158,21 @@
 
                     {{-- Start Date --}}
                     <div>
-                        <label for="lucky-date" class="block font-bold text-slate-700 mb-1.5 flex items-center gap-1">
+                        <label for="lucky-date" class="block font-bold text-slate-700 mb-1 flex items-center gap-1">
                             <span class="material-symbols-outlined text-[15px] text-ocean-600">today</span>
                             <span>Start Date</span>
                         </label>
                         <input id="lucky-date" type="date" x-model="filters.start_date" :min="tomorrowStr"
-                            class="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 px-3 text-xs font-medium text-slate-800 focus:bg-white focus:border-ocean-500 focus:outline-none transition-all">
+                            class="w-full bg-slate-50 border border-slate-200 rounded-xl py-1.5 sm:py-2.5 px-3 text-base sm:text-xs font-medium text-slate-800 focus:bg-white focus:border-ocean-500 focus:outline-none transition-all">
                     </div>
                 </div>
-            </div>
+                </div>
+            </details>
 
             {{-- Shuffle Button CTA --}}
             <div class="text-center">
                 <button type="button" @click="shuffle()" :disabled="loading || accepting"
-                    class="inline-flex items-center gap-2.5 px-8 sm:px-12 py-3.5 rounded-2xl bg-ocean-600 hover:bg-ocean-700 text-white font-headline font-bold text-sm sm:text-base shadow-md shadow-ocean-600/20 hover:shadow-lg transition-all duration-200 cursor-pointer disabled:opacity-60 disabled:cursor-wait">
+                    class="inline-flex items-center gap-2.5 px-5 sm:px-12 py-3.5 rounded-2xl bg-ocean-600 hover:bg-ocean-700 text-white font-headline font-bold text-sm sm:text-base shadow-md shadow-ocean-600/20 hover:shadow-lg transition-all duration-200 cursor-pointer whitespace-nowrap disabled:opacity-60 disabled:cursor-wait">
                     <template x-if="loading">
                         <span class="w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin"></span>
                     </template>
@@ -189,9 +192,14 @@
                 </template>
             </div>
 
+            {{-- Live region lives OUTSIDE the x-if on purpose: a live region inserted together with its own content is never announced. --}}
+            <p class="sr-only" role="status" aria-live="polite"
+                x-text="itinerary ? 'Surprise itinerary generated for ' + itinerary.destination.name + '.' : ''"></p>
+
             {{-- Generated Itinerary Result --}}
             <template x-if="itinerary">
-                <div class="bg-white rounded-3xl border border-slate-200/80 shadow-md overflow-hidden animate-fade-up">
+                <div id="lucky-result"
+                    class="scroll-mt-16 sm:scroll-mt-8 bg-white rounded-3xl border border-slate-200/80 shadow-md overflow-hidden animate-fade-up">
 
                     {{-- Destination Header --}}
                     <div class="relative bg-slate-900 text-white p-6 sm:p-8 overflow-hidden">
@@ -377,12 +385,12 @@
                             </div>
                             <div class="flex flex-wrap justify-center gap-3">
                                 <button type="button" @click="shuffle()" :disabled="loading || accepting"
-                                    class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition cursor-pointer disabled:opacity-60">
+                                    class="inline-flex items-center gap-2 px-4 sm:px-5 py-3.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition cursor-pointer disabled:opacity-60">
                                     <span class="material-symbols-outlined text-[16px]">shuffle</span>
                                     <span>Shuffle Again</span>
                                 </button>
                                 <button type="button" @click="acceptItinerary()" :disabled="loading || accepting"
-                                    class="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-ocean-600 hover:bg-ocean-500 text-white font-bold text-xs shadow-md shadow-ocean-600/30 transition cursor-pointer disabled:opacity-60">
+                                    class="inline-flex items-center gap-2 px-5 sm:px-6 py-3.5 rounded-xl bg-ocean-600 hover:bg-ocean-500 text-white font-bold text-xs shadow-md shadow-ocean-600/30 transition cursor-pointer disabled:opacity-60">
                                     <template x-if="accepting">
                                         <span
                                             class="w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin"></span>
@@ -445,7 +453,10 @@
                         const data = await res.json();
                         if (data.success && data.itinerary) {
                             this.itinerary = data.itinerary;
-                            document.querySelector('#lucky-root')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            this.$nextTick(() => {
+                                document.getElementById('lucky-result')
+                                    ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            });
                         } else {
                             this.error = data.message || 'Could not generate an itinerary. Please adjust your filters.';
                         }

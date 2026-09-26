@@ -39,43 +39,43 @@
      class="space-y-6 font-body">
 
     {{-- SECTION 1: Lead Guest Contact Information --}}
-    <div class="bg-white rounded-2xl sm:rounded-3xl p-4.5 sm:p-7 border border-slate-200/80 shadow-xs space-y-4 sm:space-y-5">
-        <div class="flex items-center justify-between gap-2.5 sm:gap-3 border-b border-slate-100 pb-3.5">
+    <div class="bg-white rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 border border-slate-200/80 shadow-xs space-y-3 sm:space-y-3.5">
+        <div class="flex items-center justify-between gap-2.5 sm:gap-3 border-b border-slate-100 pb-2.5">
             <div class="flex items-center gap-2.5 sm:gap-3">
-                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-sky-50 text-sky-600 border border-sky-200 flex items-center justify-center font-bold shrink-0">
-                    <span class="material-symbols-outlined text-lg sm:text-xl">contact_mail</span>
+                <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl sm:rounded-2xl bg-sky-50 text-sky-600 border border-sky-200 flex items-center justify-center font-bold shrink-0">
+                    <span class="material-symbols-outlined text-base sm:text-lg">contact_mail</span>
                 </div>
                 <div>
-                    <h3 class="text-sm sm:text-base font-bold text-slate-900 font-headline">Lead Guest Contact Details</h3>
-                    <p class="text-[11px] sm:text-xs text-slate-500">We will send your voucher, payment updates, and itinerary here.</p>
+                    <h3 class="text-[13px] sm:text-[15px] font-bold text-slate-900 font-headline">Lead Guest Contact Details</h3>
+                    <p class="text-[10px] sm:text-[11px] text-slate-500">We will send your voucher, payment updates, and itinerary here.</p>
                 </div>
             </div>
-            <span class="text-[11px] font-bold text-sky-700 bg-sky-50 px-2.5 py-0.5 rounded-full border border-sky-100 shrink-0">Primary</span>
+            <span class="text-[10px] font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded-full border border-sky-100 shrink-0">Primary</span>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-            <div class="sm:col-span-2">
-                <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Lead Traveler Full Name *</label>
+        <div class="grid grid-cols-1 min-[360px]:grid-cols-2 gap-2.5 sm:gap-3.5">
+            <div class="col-span-1 min-[360px]:col-span-2">
+                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-0.5">Lead Traveler Full Name *</label>
                 <input type="text" 
                        name="contact_name" 
                        x-model="leadName" 
                        required 
                        placeholder="e.g. Juan Dela Cruz" 
-                       class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm font-semibold text-slate-900 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 bg-slate-50/50">
+                       class="w-full px-3.5 py-2.5 sm:py-2 rounded-xl border border-slate-200 text-base sm:text-sm font-semibold text-slate-900 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 bg-slate-50/50">
             </div>
 
             <div>
-                <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Email Address *</label>
+                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-0.5">Email Address *</label>
                 <input type="email" 
                        name="contact_email" 
                        x-model="leadEmail" 
                        required 
                        placeholder="e.g. juan@example.com" 
-                       class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm font-semibold text-slate-900 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 bg-slate-50/50">
+                       class="w-full px-3.5 py-2.5 sm:py-2 rounded-xl border border-slate-200 text-base sm:text-sm font-semibold text-slate-900 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 bg-slate-50/50">
             </div>
 
             <div>
-                <label class="block text-[11px] font-bold uppercase tracking-wider text-slate-600 mb-1">Mobile Phone Number *</label>
+                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-0.5">Mobile Phone Number *</label>
                 <input type="tel" 
                        name="contact_phone" 
                        x-model="leadPhone" 
@@ -84,34 +84,34 @@
                        maxlength="11" inputmode="numeric" pattern="[0-9]{11}"
                        title="Enter exactly 11 digits"
                        @input="leadPhone = leadPhone.replace(/\D/g, '').slice(0, 11)" 
-                       class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm font-semibold text-slate-900 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 bg-slate-50/50">
+                       class="w-full px-3.5 py-2.5 sm:py-2 rounded-xl border border-slate-200 text-base sm:text-sm font-semibold text-slate-900 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 bg-slate-50/50">
             </div>
         </div>
     </div>
 
     {{-- SECTION 2: Dynamic Accompanying Guests Array Builder --}}
-    <div class="bg-white rounded-2xl sm:rounded-3xl p-4.5 sm:p-7 border border-slate-200/80 shadow-xs space-y-4 sm:space-y-5">
+    <div class="bg-white rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 border border-slate-200/80 shadow-xs space-y-3 sm:space-y-3.5">
         
         {{-- Header --}}
-        <div class="flex items-center justify-between gap-2.5 sm:gap-3 border-b border-slate-100 pb-3.5">
+        <div class="flex items-center justify-between gap-2.5 sm:gap-3 border-b border-slate-100 pb-2.5">
             <div class="flex items-center gap-2.5 sm:gap-3">
-                <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl sm:rounded-2xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center font-bold shrink-0">
-                    <span class="material-symbols-outlined text-lg sm:text-xl">badge</span>
+                <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl sm:rounded-2xl bg-amber-50 text-amber-600 border border-amber-200 flex items-center justify-center font-bold shrink-0">
+                    <span class="material-symbols-outlined text-base sm:text-lg">badge</span>
                 </div>
                 <div>
-                    <h3 class="text-sm sm:text-base font-bold text-slate-900 font-headline">Hotel Guest Manifest</h3>
-                    <p class="text-[11px] sm:text-xs text-slate-500">Provide full names and categories for all guests staying in this Hotel and Room.</p>
+                    <h3 class="text-[13px] sm:text-[15px] font-bold text-slate-900 font-headline">Hotel Guest Manifest</h3>
+                    <p class="text-[10px] sm:text-[11px] text-slate-500">Provide full names and categories for all guests staying in this Hotel and Room.</p>
                 </div>
             </div>
         </div>
 
         {{-- Dynamic Guest List Array --}}
-        <div class="space-y-3 sm:space-y-4">
+        <div class="space-y-2.5 sm:space-y-3">
             <template x-for="(guest, index) in guests" :key="index">
-                <div class="bg-slate-50/80 p-3.5 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-200/70 relative transition duration-200 hover:border-slate-300">
+                <div class="bg-slate-50/80 p-3 sm:p-3.5 rounded-xl sm:rounded-2xl border border-slate-200/70 relative transition duration-200 hover:border-slate-300">
                     
                     {{-- Row Header & Actions --}}
-                    <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center justify-between mb-2.5">
                         <span class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
                             <span class="material-symbols-outlined text-[16px] text-sky-600">person</span>
                             <span x-text="guest.is_lead ? 'Lead Traveler' : 'Accompanying Guest ' + (index + 1)"></span>
@@ -129,23 +129,23 @@
                     </div>
 
                     {{-- Form Fields --}}
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div class="grid grid-cols-1 min-[360px]:grid-cols-2 xl:grid-cols-3 gap-2.5 sm:gap-3">
                         {{-- Name --}}
-                        <div class="sm:col-span-1">
-                            <label class="block text-[11px] font-bold text-slate-600 mb-1 uppercase tracking-wider">Full Name *</label>
+                        <div class="col-span-1 min-[360px]:col-span-2 xl:col-span-1">
+                            <label class="block text-[10px] font-bold text-slate-600 mb-0.5 uppercase tracking-wider">Full Name *</label>
                             <input type="text" 
                                    x-model="guest.full_name" 
                                    required 
                                    placeholder="Full Name as in ID" 
-                                   class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">
+                                   class="w-full px-3.5 py-2.5 sm:py-1.5 rounded-xl border border-slate-200 text-base sm:text-sm font-bold text-slate-800 bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">
                         </div>
 
                         {{-- Dynamic DB Category Select --}}
                         <div>
-                            <label class="block text-[11px] font-bold text-slate-600 mb-1 uppercase tracking-wider">Passenger Category *</label>
+                            <label class="block text-[10px] font-bold text-slate-600 mb-0.5 uppercase tracking-wider">Passenger Category *</label>
                             <select x-model="guest.category" 
                                     @change="notifyManifestChange()"
-                                    class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-800 bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">
+                                    class="w-full px-3.5 py-2.5 sm:py-1.5 rounded-xl border border-slate-200 text-base sm:text-sm font-bold text-slate-800 bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">
                                 @foreach($categoryRules as $rule)
                                     @php
                                         $rObj = is_array($rule) ? (object)$rule : $rule;
@@ -167,12 +167,12 @@
                         </div>
 
                         {{-- Special Notes --}}
-                        <div>
-                            <label class="block text-[11px] font-bold text-slate-600 mb-1 uppercase tracking-wider">Dietary / Notes</label>
+                        <div class="col-span-1 min-[360px]:col-span-2 xl:col-span-1">
+                            <label class="block text-[10px] font-bold text-slate-600 mb-0.5 uppercase tracking-wider">Dietary / Notes</label>
                             <input type="text" 
                                    x-model="guest.special_notes" 
                                    placeholder="e.g. Senior ID #, Vegetarian" 
-                                   class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-xs font-medium text-slate-700 bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">
+                                   class="w-full px-3.5 py-2.5 sm:py-1.5 rounded-xl border border-slate-200 text-base sm:text-sm font-medium text-slate-700 bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">
                         </div>
                     </div>
                 </div>
@@ -180,17 +180,17 @@
         </div>
 
         {{-- + Add Accompanying Guest Action Button (Restricted by maxGuests capacity) --}}
-        <div class="pt-2 flex items-center justify-between">
+        <div class="pt-2 flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-between">
             <button type="button" 
                     @click="addGuest()" 
                     :disabled="guests.length >= maxGuests"
                     :class="guests.length >= maxGuests ? 'opacity-50 cursor-not-allowed bg-slate-100 text-slate-400 border-slate-200' : 'bg-sky-50 hover:bg-sky-100 text-sky-700 border-sky-200 hover:border-sky-300 cursor-pointer'"
-                    class="px-5 py-2.5 rounded-xl border font-bold text-xs flex items-center justify-center gap-2 shadow-2xs transition">
+                    class="w-full sm:w-auto px-5 py-2.5 rounded-xl border font-bold text-xs flex items-center justify-center gap-2 shadow-2xs transition">
                 <span class="material-symbols-outlined text-[18px]">person_add</span>
                 <span x-text="guests.length >= maxGuests ? 'Max Occupancy Limit Reached (' + maxGuests + ' Guests)' : '+ Add Accompanying Guest'"></span>
             </button>
             <template x-if="maxGuests && maxGuests < 99">
-                <span class="text-[11px] font-semibold text-slate-500">
+                <span class="text-[10px] font-semibold text-slate-500">
                     Base capacity: <strong class="text-slate-800" x-text="baseGuests + ' Guest' + (baseGuests > 1 ? 's' : '')"></strong>
                     · Max capacity: <strong class="text-slate-800" x-text="maxGuests + ' Guest' + (maxGuests > 1 ? 's' : '')"></strong>
                 </span>

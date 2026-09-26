@@ -109,7 +109,7 @@
     $firstRoomBasePax = $firstRoomBasePax ?? 2;
 @endphp
 
-<x-frontend.layout :title="'Checkout & Passenger Manifest — SunnyTrips'">
+<x-frontend.layout :title="'Checkout & Passenger Manifest — SunnyTrips'" :hide-chat-widget="true">
     <div x-data="checkoutEngine({{ (float) $totalAmount }}, {{ json_encode($roomInstances) }}, {{ json_encode($categoryRules) }})"
         @manifest-pricing-updated.window="updateManifestPricing($event.detail)"
         class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 {{ Auth::check() ? 'pt-5 sm:pt-8 lg:pt-10' : 'pt-20 sm:pt-28' }} pb-32 sm:pb-16 font-body">
@@ -163,13 +163,13 @@
                             <div class="sm:col-span-2">
                                 <label class="block text-[10.5px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Lead Traveler Full Name *</label>
                                 <input type="text" name="contact_name" value="{{ Auth::user()->name ?? '' }}" required
-                                    class="w-full px-3.5 py-2 sm:py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm font-semibold text-slate-900 bg-slate-50/50 focus:bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition">
+                                    class="w-full px-3.5 py-3 sm:py-2.5 rounded-xl border border-slate-200 text-base sm:text-sm font-semibold text-slate-900 bg-slate-50/50 focus:bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition">
                             </div>
                             <div>
                                 <label class="block text-[10.5px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Email Address *</label>
                                 <input type="email" name="contact_email" value="{{ Auth::user()->email ?? '' }}" required
                                     placeholder="e.g. name@example.com"
-                                    class="w-full px-3.5 py-2 sm:py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm font-semibold text-slate-900 bg-slate-50/50 focus:bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition">
+                                    class="w-full px-3.5 py-3 sm:py-2.5 rounded-xl border border-slate-200 text-base sm:text-sm font-semibold text-slate-900 bg-slate-50/50 focus:bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition">
                             </div>
                             <div>
                                 <label class="block text-[10.5px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Mobile Phone Number *</label>
@@ -178,7 +178,7 @@
                                     placeholder="e.g. 09171234567" maxlength="11" inputmode="numeric" pattern="[0-9]{11}"
                                     title="Enter exactly 11 digits"
                                     oninput="this.value = this.value.replace(/\D/g, '').slice(0, 11)"
-                                    class="w-full px-3.5 py-2 sm:py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm font-semibold text-slate-900 bg-slate-50/50 focus:bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition">
+                                    class="w-full px-3.5 py-3 sm:py-2.5 rounded-xl border border-slate-200 text-base sm:text-sm font-semibold text-slate-900 bg-slate-50/50 focus:bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition">
                             </div>
                         </div>
                     </div>
@@ -196,18 +196,18 @@
                                     initialName: '{{ addslashes($manifest['initial_name'] ?? '') }}',
                                     rules: {{ json_encode($categoryRules) }}
                                  })"
-                        class="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-slate-200/80 shadow-xs space-y-3 sm:space-y-4 font-body">
+                        class="bg-white rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 border border-slate-200/80 shadow-xs space-y-2.5 sm:space-y-3 font-body">
 
                         {{-- Header --}}
-                        <div class="flex items-center gap-2.5 sm:gap-3 border-b border-slate-100 pb-3">
+                        <div class="flex items-center gap-2.5 sm:gap-3 border-b border-slate-100 pb-2.5">
                             <div
-                                class="w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl {{ $manifest['type'] === 'package' ? 'bg-amber-50 text-amber-700 border-amber-200' : ($manifest['type'] === 'addon' ? 'bg-violet-50 text-violet-600 border-violet-200' : ($manifest['type'] === 'room' ? 'bg-amber-50 text-amber-600 border-amber-200' : 'bg-teal-50 text-teal-600 border-teal-200')) }} border flex items-center justify-center font-bold shrink-0">
-                                <span class="material-symbols-outlined text-base sm:text-lg">{{ $manifest['icon'] }}</span>
+                                class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl {{ $manifest['type'] === 'package' ? 'bg-amber-50 text-amber-700 border-amber-200' : ($manifest['type'] === 'addon' ? 'bg-violet-50 text-violet-600 border-violet-200' : ($manifest['type'] === 'room' ? 'bg-amber-50 text-amber-600 border-amber-200' : 'bg-teal-50 text-teal-600 border-teal-200')) }} border flex items-center justify-center font-bold shrink-0">
+                                <span class="material-symbols-outlined text-[15px] sm:text-base">{{ $manifest['icon'] }}</span>
                             </div>
                             <div class="flex-1 min-w-0">
                                 @if($manifest['type'] === 'package')
                                     <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                                        <h3 class="text-sm sm:text-base font-bold text-slate-900 font-headline">
+                                        <h3 class="text-[13px] sm:text-[15px] font-bold text-slate-900 font-headline">
                                             Package {{ $manifest['package_slot'] }}
                                         </h3>
                                         @if($manifest['is_lead'])
@@ -217,15 +217,15 @@
                                         <span class="text-[10px] text-slate-400 font-semibold">of
                                             {{ $manifest['total_pax'] }}</span>
                                     </div>
-                                    <p class="text-[11px] sm:text-xs text-slate-500 mt-0.5 truncate">
+                                    <p class="text-[10px] sm:text-[11px] text-slate-500 mt-0.5 truncate">
                                         <span class="font-semibold text-amber-800">{{ $manifest['label'] }}</span>
                                         — full name as on ID
                                     </p>
                                 @else
-                                    <h3 class="text-sm sm:text-base font-bold text-slate-900 font-headline">
+                                    <h3 class="text-[13px] sm:text-[15px] font-bold text-slate-900 font-headline">
                                         {{ $manifest['type'] === 'room' ? 'Hotel Guest Manifest' : 'Passenger Manifest' }}
                                     </h3>
-                                    <p class="text-[11px] sm:text-xs text-slate-500">
+                                    <p class="text-[10px] sm:text-[11px] text-slate-500">
                                         <span
                                             class="font-semibold {{ $manifest['type'] === 'addon' ? 'text-violet-700' : ($manifest['type'] === 'room' ? 'text-amber-800' : 'text-teal-700') }}">{{ $manifest['label'] }}</span>
                                     </p>
@@ -236,9 +236,9 @@
                         {{-- Room preference (package slot 1 only, no price effect — ops instruction for partner hotels) --}}
                         @if($manifest['type'] === 'package' && ($manifest['package_slot'] ?? 0) === 1 && ! empty($manifest['has_linked_rooms']))
                             <div x-data="{ choice: '{{ $manifest['room_option'] ?? 'shared' }}' }"
-                                class="bg-sky-50/60 border border-sky-200/70 rounded-xl px-3 py-2.5">
-                                <p class="text-[10.5px] font-bold text-slate-500 uppercase tracking-wider mb-1.5 flex items-center gap-1">
-                                    <span class="material-symbols-outlined text-[15px] text-sky-600">bed</span>
+                                class="bg-sky-50/60 border border-sky-200/70 rounded-xl px-2.5 py-2">
+                                <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-[14px] text-sky-600">bed</span>
                                     Room Arrangement
                                 </p>
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -253,7 +253,7 @@
                                         <span class="font-bold">Separate rooms</span>
                                     </label>
                                 </div>
-                                <p class="text-[10px] text-slate-400 mt-1.5">No extra charge — same price per person. We relay this to the hotel.</p>
+                                <p class="text-[10px] text-slate-400 mt-1">No extra charge — same price per person. We relay this to the hotel.</p>
                             </div>
                         @endif
 
@@ -265,18 +265,18 @@
                                     <template x-if="manifestType === 'package'">
                                         <div>
                                             <label
-                                                class="block text-[10.5px] font-bold text-slate-500 mb-1 uppercase tracking-wider">
+                                                class="block text-[10px] font-bold text-slate-500 mb-0.5 uppercase tracking-wider">
                                                 Traveler Full Name *
                                             </label>
                                             <input type="text" x-model="p.full_name" @input="notifyManifestChange()"
                                                 placeholder="Full name as on valid ID"
-                                                class="w-full px-3.5 py-2 sm:py-2.5 rounded-xl border border-slate-200 text-xs sm:text-sm font-semibold text-slate-900 bg-slate-50/50 focus:bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition">
+                                                class="w-full px-3.5 py-2.5 sm:py-2 rounded-xl border border-slate-200 text-base sm:text-sm font-semibold text-slate-900 bg-slate-50/50 focus:bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition">
                                         </div>
                                     </template>
 
                                     {{-- For Hotel Rooms / Multi-Guest Items: Grouped Box with Category --}}
                                     <template x-if="manifestType !== 'package'">
-                                        <div class="bg-slate-50/80 p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-slate-200/70 space-y-2 transition duration-200 hover:border-slate-300">
+                                        <div class="bg-slate-50/80 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border border-slate-200/70 space-y-2 transition duration-200 hover:border-slate-300">
                                             <div class="flex items-center justify-between">
                                                 <span class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
                                                     <span
@@ -292,19 +292,19 @@
                                                 </button>
                                             </div>
 
-                                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
+                                            <div class="grid grid-cols-1 min-[360px]:grid-cols-2 gap-2 sm:gap-3">
                                                 <div>
                                                     <label
-                                                        class="block text-[10.5px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Full Name *</label>
+                                                        class="block text-[10px] font-bold text-slate-500 mb-0.5 uppercase tracking-wider">Full Name *</label>
                                                     <input type="text" x-model="p.full_name" @input="notifyManifestChange()"
                                                         :placeholder="i === 0 ? 'Lead traveler name' : 'Full Name as in ID'"
-                                                        class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-900 bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">
+                                                        class="w-full px-3.5 py-2.5 sm:py-1.5 rounded-xl border border-slate-200 text-base sm:text-sm font-semibold text-slate-900 bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">
                                                 </div>
                                                 <div>
                                                     <label
-                                                        class="block text-[10.5px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Passenger Category *</label>
+                                                        class="block text-[10px] font-bold text-slate-500 mb-0.5 uppercase tracking-wider">Passenger Category *</label>
                                                     <select x-model="p.category" @change="notifyManifestChange()"
-                                                        class="w-full px-3.5 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-900 bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">
+                                                        class="w-full px-3.5 py-2.5 sm:py-1.5 rounded-xl border border-slate-200 text-base sm:text-sm font-semibold text-slate-900 bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">
                                                         @foreach($categoryRules as $rule)
                                                             @php
                                                                 $rObj = is_array($rule) ? (object) $rule : $rule;
@@ -333,15 +333,15 @@
 
                         {{-- Add / capacity row --}}
                         <div x-show="manifestType !== 'package' && maxPax > 1"
-                            class="pt-1 flex items-center justify-between">
+                            class="pt-1 flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-between">
                             <button type="button" @click="addPassenger()" :disabled="passengers.length >= maxPax"
                                 :class="passengers.length >= maxPax ? 'opacity-50 cursor-not-allowed bg-slate-100 text-slate-400 border-slate-200' : 'bg-sky-50 hover:bg-sky-100 text-sky-700 border-sky-200 hover:border-sky-300 cursor-pointer'"
-                                class="px-4 py-2 rounded-xl border font-bold text-xs flex items-center justify-center gap-2 shadow-2xs transition">
+                                class="w-full sm:w-auto px-4 py-2 rounded-xl border font-bold text-xs flex items-center justify-center gap-2 shadow-2xs transition">
                                 <span class="material-symbols-outlined text-[16px]">person_add</span>
                                 <span
                                     x-text="passengers.length >= maxPax ? 'Max Occupancy Limit Reached (' + maxPax + ' Guests)' : '+ Add Accompanying Guest'"></span>
                             </button>
-                            <span class="text-[10.5px] font-semibold text-slate-500">
+                            <span class="text-[10px] font-semibold text-slate-500">
                                 <template x-if="basePax > 0">
                                     <span>Base: <strong class="text-slate-800" x-text="basePax + ' Pax'"></strong> · </span>
                                 </template>
@@ -443,7 +443,7 @@
 
             {{-- RIGHT COLUMN: Sticky Itinerary Summary (1/3) --}}
             <div class="space-y-3.5 sm:space-y-5">
-                <div class="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-5 border border-slate-200/80 shadow-md lg:sticky lg:top-28 space-y-3.5 sm:space-y-4 font-body">
+                <div class="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-5 border border-slate-200/80 shadow-md lg:sticky lg:top-5 xl:top-8 space-y-3.5 sm:space-y-4 font-body">
                     <h3
                         class="text-xs sm:text-sm font-bold text-slate-900 border-b border-slate-100 pb-2.5 font-headline flex items-center gap-1.5">
                         <span class="material-symbols-outlined text-sky-600 text-base">receipt_long</span>
@@ -539,7 +539,7 @@
                     {{-- Submit Button --}}
                     <button type="submit" :disabled="isSubmitting"
                         :class="isSubmitting ? 'opacity-50 cursor-wait' : 'hover:from-sky-500 hover:to-sky-600 cursor-pointer shadow-md shadow-sky-600/25'"
-                        class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-sky-600 to-sky-700 text-white font-extrabold text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5">
+                        class="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-sky-600 to-sky-700 text-white font-extrabold text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 whitespace-nowrap">
                         <span class="material-symbols-outlined text-[16px]" x-show="!isSubmitting">verified</span>
                         <span class="material-symbols-outlined text-[16px] animate-spin" x-show="isSubmitting"
                             x-cloak>progress_activity</span>
@@ -550,6 +550,23 @@
                         By confirming, you agree to SunnyTrips terms, cancellation policies, and traveler guidelines.
                     </p>
                 </div>
+            </div>
+
+            {{-- Mobile sticky submit bar — keeps the total + CTA reachable without scrolling the whole manifest --}}
+            <div class="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t border-slate-200 bg-white/95 backdrop-blur px-4 py-3 shadow-[0_-4px_16px_rgba(15,23,42,0.06)] flex items-center gap-3 font-body">
+                <div class="flex-1 min-w-0">
+                    <p class="text-[10.5px] font-bold uppercase tracking-wider text-slate-500">Total Net Amount</p>
+                    <p class="font-display text-lg font-bold text-sky-900 truncate"
+                        x-text="formattedTotalNet">₱{{ number_format($totalAmount, 2) }}</p>
+                </div>
+                <button type="submit" :disabled="isSubmitting"
+                    :class="isSubmitting ? 'opacity-50 cursor-wait' : 'hover:from-sky-500 hover:to-sky-600 cursor-pointer shadow-md shadow-sky-600/25'"
+                    class="shrink-0 inline-flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-sky-600 to-sky-700 text-white font-extrabold text-sm px-5 py-3.5 whitespace-nowrap">
+                    <span class="material-symbols-outlined text-[16px]" x-show="!isSubmitting">verified</span>
+                    <span class="material-symbols-outlined text-[16px] animate-spin" x-show="isSubmitting"
+                        x-cloak>progress_activity</span>
+                    <span x-text="isSubmitting ? 'Submitting...' : 'Submit Request'">Submit Request</span>
+                </button>
             </div>
 
         </form>
