@@ -80,6 +80,66 @@ test('exact activity match skips hidden activities', function () {
         ->not->toContain('Hidden Falls Adventure');
 });
 
+test('exact activity details are rendered from any matching catalog record', function () {
+    $activity = ActivityModel::factory()->create([
+        'activity_name' => 'Future Lagoon Ecology Tour',
+        'destination_id' => $this->boracay->id,
+        'description' => 'Explore a protected lagoon with a local ecology guide.',
+        'category' => 'Nature Tour',
+        'activity_level' => 'Moderate',
+        'duration' => '4 Hours',
+        'capacity' => 'Maximum 12 guests',
+        'rate' => '₱1,450/person',
+        'ideal_for' => 'Nature lovers and families',
+        'vibe_tags' => ['Educational', 'Scenic'],
+        'requirements' => 'Bring reef-safe sunscreen.',
+        'inclusions' => ['Guide', 'Safety equipment'],
+        'exclusions' => ['Lunch'],
+        'itinerary' => [
+            ['title' => 'Safety briefing', 'duration' => '20 mins'],
+            ['title' => 'Guided lagoon tour', 'duration' => '3 hours'],
+        ],
+        'notes' => 'Subject to suitable weather conditions.',
+    ]);
+
+    $result = $this->service->handle($this->session, null, 'Future Lagoon Ecology Tour details');
+
+    expect($result['reply'])
+        ->toContain('### Future Lagoon Ecology Tour')
+        ->toContain('Explore a protected lagoon with a local ecology guide.')
+        ->toContain('**Duration:** 4 Hours')
+        ->toContain('**Inclusions:** Guide, Safety equipment')
+        ->toContain('**Exclusions:** Lunch')
+        ->toContain('**Requirements:** Bring reef-safe sunscreen.')
+        ->toContain('Safety briefing (20 mins) → Guided lagoon tour (3 hours)')
+        ->toContain('Subject to suitable weather conditions.')
+        ->not->toContain('Here are the options I found:')
+        ->and($result['retrieved_activities'])->toHaveCount(1)
+        ->and($result['retrieved_activities'][0]['id'])->toBe($activity->id);
+});
+
+test('bare exact activity names receive database-backed details without optional fields', function () {
+    $activity = ActivityModel::factory()->create([
+        'activity_name' => 'New Catalog Sunset Paddle',
+        'destination_id' => $this->cebu->id,
+        'description' => 'A quiet paddle scheduled around sunset.',
+        'requirements' => null,
+        'inclusions' => [],
+        'exclusions' => [],
+        'itinerary' => [],
+        'notes' => null,
+    ]);
+
+    $result = $this->service->handle($this->session, null, 'New Catalog Sunset Paddle');
+
+    expect($result['reply'])
+        ->toContain('### New Catalog Sunset Paddle')
+        ->toContain('A quiet paddle scheduled around sunset.')
+        ->not->toContain('**Requirements:**')
+        ->not->toContain('**Inclusions:**')
+        ->and($result['retrieved_activities'][0]['id'])->toBe($activity->id);
+});
+
 test('exact package match skips inactive packages', function () {
     Package::factory()->create([
         'name' => 'Island Getaway Escape Deal',

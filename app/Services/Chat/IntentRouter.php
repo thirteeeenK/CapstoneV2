@@ -292,6 +292,12 @@ class IntentRouter
             return self::ACTIVITY_SEARCH;
         }
 
+        // Catalog names are data, not a fixed keyword list. This keeps newly
+        // added activities searchable even when their names use new wording.
+        if ($this->extractActivityName($query)) {
+            return self::ACTIVITY_SEARCH;
+        }
+
         // Bare hotel/room name without explicit keyword (e.g., "how about for happiness?") — treat as room/hotel search
         if ($this->extractHotelName($query) || $this->extractRoomName($query)) {
             if (preg_match('/\b(max|occupancy|occupants|pax|guests|extra|per head|base|price|how many)\b/i', $lower)) {

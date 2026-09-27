@@ -2403,6 +2403,8 @@ class ChatbotService
         $unmatched = $this->unmatchedNotice($query, $scored, $constraints, 'activities');
         if ($unmatched !== null) {
             $reply = $this->alternativeCardsReply($unmatched, ['retrieved_activities' => $cards]);
+        } elseif ($ordering === 'exact' && count($scored) === 1 && $fieldIntent === null) {
+            $reply = $this->activityDetailReply($scored[0]['item'], $constraints['pax'] ?? null);
         } else {
             $reply = $this->stripRankFootnote($this->geminiChatResponse($prompt, $session));
             $reply = $this->validateGroundedReply($reply, ['retrieved_activities' => $cards]);
@@ -2419,6 +2421,105 @@ class ChatbotService
             'retrieved_activities' => $cards,
             'result_ordering' => $ordering,
         ];
+    }
+
+    /**
+     * Render an exact activity match from catalog fields so detail responses
+     * remain useful even when generated prose is unavailable or rejected.
+     */
+    protected function activityDetailReply(ActivityModel $activity, ?int $pax = null): string
+    {
+        $name = $this->catalogText($activity->activity_name) ?? 'Activity details';
+        $description = $this->catalogText($activity->description);
+        $itinerary = $this->activityItineraryText($activity->itinerary);
+        $price = $pax === null
+            ? $this->catalogText($activity->rate)
+            : $this->catalogText($this->priceQuotes->for($activity, $pax)['display'] ?? null);
+
+        $facts = array_filter([
+            'Destination' => $this->catalogText($activity->destination?->name),
+            'Location' => $this->catalogText($activity->specific_address),
+            'Category' => $this->catalogText($activity->category),
+            'Activity level' => $this->catalogText($activity->activity_level),
+            'Duration' => $this->catalogText($activity->duration),
+            'Capacity' => $this->catalogText($activity->capacity),
+            'Price' => $price,
+            'Ideal for' => $this->catalogText($activity->ideal_for),
+            'Vibes' => $this->catalogListText($activity->vibe_tags),
+            'Requirements' => $this->catalogText($activity->requirements),
+            'Inclusions' => $this->catalogListText($activity->inclusions),
+            'Exclusions' => $this->catalogListText($activity->exclusions),
+            'Itinerary' => $itinerary,
+            'Additional notes' => $this->catalogText($activity->notes),
+        ], static fn (?string $value): bool => $value !== null && $value !== '');
+
+        $lines = ['### '.$name];
+        if ($description !== null) {
+            $lines[] = '';
+            $lines[] = $description;
+        }
+        if ($facts !== []) {
+            $lines[] = '';
+            foreach ($facts as $label => $value) {
+                $lines[] = "- **{$label}:** {$value}";
+            }
+        }
+
+        return implode("\n", $lines);
+    }
+
+    protected function activityItineraryText(mixed $itinerary): ?string
+    {
+        if (! is_array($itinerary)) {
+            return $this->catalogText($itinerary);
+        }
+
+        $steps = [];
+        foreach ($itinerary as $step) {
+            if (is_string($step)) {
+                $text = $this->catalogText($step);
+            } elseif (is_array($step)) {
+                $title = $this->catalogText($step['title'] ?? $step['name'] ?? null);
+                $duration = $this->catalogText($step['duration'] ?? null);
+                $text = $title === null ? null : $title.($duration === null ? '' : " ({$duration})");
+            } else {
+                $text = null;
+            }
+
+            if ($text !== null) {
+                $steps[] = $text;
+            }
+        }
+
+        return $steps === [] ? null : implode(' → ', $steps);
+    }
+
+    protected function catalogListText(mixed $value): ?string
+    {
+        if (is_string($value)) {
+            return $this->catalogText($value);
+        }
+        if (! is_array($value)) {
+            return null;
+        }
+
+        $items = array_values(array_filter(array_map(
+            fn (mixed $item): ?string => $this->catalogText($item),
+            $value
+        )));
+
+        return $items === [] ? null : implode(', ', $items);
+    }
+
+    protected function catalogText(mixed $value): ?string
+    {
+        if (! is_string($value)) {
+            return null;
+        }
+
+        $value = trim((string) preg_replace('/\s+/', ' ', strip_tags($value)));
+
+        return $value === '' ? null : $value;
     }
 
     /**
