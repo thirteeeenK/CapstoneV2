@@ -109,17 +109,12 @@ class QrphDriver implements PaymentDriver
 
         $type = $event['type'] ?? ($event['data']['attributes']['type'] ?? null);
 
-        // PayMongo sends `payment.paid` for GCash, and `source.chargeable` after redirect.
         $isPaid = $type === 'payment.paid';
-        $isChargeable = $type === 'source.chargeable';
 
-        if (! $isPaid && ! $isChargeable) {
-            // Fall back: some payloads nest type inside data.attributes
+        if (! $isPaid) {
             $attrType = $event['data']['attributes']['type'] ?? null;
             $status = $event['data']['attributes']['status'] ?? null;
-            if ($attrType === 'gcash' && $status === 'chargeable') {
-                $isChargeable = true;
-            } elseif ($status === 'paid' && $attrType === 'gcash') {
+            if ($status === 'paid' && in_array($attrType, ['gcash', 'qrph'], true)) {
                 $isPaid = true;
             } else {
                 return false;
@@ -141,11 +136,6 @@ class QrphDriver implements PaymentDriver
             ?? $event['metadata']['booking_code']
             ?? null;
 
-        // For source.chargeable, metadata is on the source itself
-        if (! $bookingCode) {
-            $bookingCode = $attributes['metadata']['booking_code'] ?? null;
-        }
-
         $reference = $attributes['source']['id'] ?? $attributes['id'] ?? $data['id'] ?? null;
         $eventId = $event['id'] ?? $event['data']['id'] ?? null;
 
@@ -153,6 +143,8 @@ class QrphDriver implements PaymentDriver
             'event_id' => $eventId,
             'reference' => $reference,
             'booking_code' => $bookingCode,
+            'amount' => $attributes['amount'] ?? null,
+            'currency' => isset($attributes['currency']) ? strtoupper((string) $attributes['currency']) : null,
         ];
 
         return $bookingCode !== null;

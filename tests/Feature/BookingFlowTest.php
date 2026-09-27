@@ -111,7 +111,7 @@ it('admin can approve a pending booking opening a 48-hour payment window', funct
     Notification::assertSentTo($this->user, BookingApproved::class);
 });
 
-it('supports partial approval excluding unavailable items and recomputing totals', function () {
+it('leaves a pending booking unchanged when approval excludes every item', function () {
     addRoomToCart($this->user, $this->room);
     $this->actingAs($this->user)->post(route('checkout.process'), [
         'contact_name' => 'Juan Dela Cruz',
@@ -132,10 +132,73 @@ it('supports partial approval excluding unavailable items and recomputing totals
     $booking->refresh();
     $item->refresh();
 
-    expect($item->availability_status)->toBe('unavailable')
-        ->and($item->admin_note)->toBe('Sold out for these dates')
-        ->and((float) $booking->total_amount)->toBe(0.00)
-        ->and((float) $booking->net_amount)->toBe(0.00);
+    expect($booking->status)->toBe(Booking::STATUS_PENDING)
+        ->and($item->availability_status)->toBe('pending')
+        ->and($item->admin_note)->toBeNull()
+        ->and((float) $booking->total_amount)->toBe(6000.00)
+        ->and((float) $booking->net_amount)->toBe(6000.00);
+});
+
+it('prevents one user from modifying another users cart item', function () {
+    $victimItem = addRoomToCart($this->user, $this->room);
+    $attacker = onboardedUser();
+
+    $this->actingAs($attacker)->patchJson(route('cart.update', $victimItem->id), [
+        'quantity' => 4,
+    ])->assertNotFound();
+
+    $this->actingAs($attacker)->postJson(route('cart.toggle', $victimItem->id))->assertOk();
+    $this->actingAs($attacker)->deleteJson(route('cart.remove', $victimItem->id))->assertOk();
+
+    expect($victimItem->fresh())->not->toBeNull()
+        ->and($victimItem->fresh()->quantity)->toBe(1)
+        ->and($victimItem->fresh()->is_selected)->toBeTrue();
+});
+
+it('rejects checkout when another held booking exhausts enclosing room dates', function () {
+    $this->room->update(['total_rooms' => 1]);
+    addRoomToCart($this->user, $this->room);
+
+    $heldBooking = Booking::factory()->create(['status' => Booking::STATUS_PENDING]);
+    $heldBooking->items()->create([
+        'item_type' => 'room',
+        'item_id' => $this->room->id,
+        'item_title' => $this->room->room_name,
+        'unit_price' => 2000,
+        'quantity' => 1,
+        'selected_pax' => 2,
+        'check_in_date' => '2026-11-30',
+        'check_out_date' => '2026-12-05',
+        'nights' => 5,
+        'subtotal' => 10000,
+    ]);
+
+    $this->actingAs($this->user)->postJson(route('checkout.process'), [
+        'contact_name' => 'Juan Dela Cruz',
+        'contact_email' => $this->user->email,
+        'contact_phone' => '09171234567',
+    ])->assertUnprocessable();
+
+    expect(Booking::where('user_id', $this->user->id)->count())->toBe(0)
+        ->and(CartItem::where('user_id', $this->user->id)->count())->toBe(1);
+});
+
+it('rejects a room manifest that exceeds the rooms maximum occupancy', function () {
+    addRoomToCart($this->user, $this->room);
+    $manifest = collect(range(1, 5))->map(fn (int $number) => [
+        'full_name' => "Guest {$number}",
+        'category' => 'Adult',
+        'special_notes' => '',
+    ])->all();
+
+    $this->actingAs($this->user)->postJson(route('checkout.process'), [
+        'contact_name' => 'Juan Dela Cruz',
+        'contact_email' => $this->user->email,
+        'contact_phone' => '09171234567',
+        'guest_manifest' => json_encode($manifest),
+    ])->assertJsonValidationErrors('guest_manifest');
+
+    expect(Booking::count())->toBe(0);
 });
 
 it('rejects a pending booking with a required reason', function () {

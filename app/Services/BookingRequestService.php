@@ -6,6 +6,7 @@ use App\Models\Booking;
 use App\Models\BookingItem;
 use App\Models\CartItem;
 use App\Models\PassengerCategoryRule;
+use App\Models\RoomType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -13,6 +14,8 @@ use Illuminate\Validation\ValidationException;
 
 class BookingRequestService
 {
+    public function __construct(private readonly RoomAvailabilityService $roomAvailabilityService) {}
+
     /**
      * Get the active (selected) cart query for the user/session.
      */
@@ -65,54 +68,34 @@ class BookingRequestService
         }
 
         $rulesMap = PassengerCategoryRule::getActiveRulesMap();
+        $allowedCategories = ['Adult'];
+        foreach ($rulesMap as $category => $rule) {
+            $allowedCategories[] = (string) $category;
+        }
 
         $guestManifest = [];
         $discountAmount = 0.00;
         $surchargeAmount = 0.00;
-
-        if (! empty($validated['guest_manifest'])) {
-            $decoded = json_decode($validated['guest_manifest'], true);
-            if (is_array($decoded)) {
-                foreach ($decoded as $g) {
-                    if (! empty($g['full_name'])) {
-                        $guestManifest[] = $g;
-                        $cat = $g['category'] ?? 'Adult';
-
-                        if (isset($rulesMap[$cat])) {
-                            $rule = $rulesMap[$cat];
-                            if ($rule->adjustment_type === 'discount') {
-                                $discountAmount += (float) $rule->amount;
-                            } elseif ($rule->adjustment_type === 'surcharge') {
-                                $surchargeAmount += (float) $rule->amount;
-                            }
-                        }
-                    }
-                }
+        $manifestLimits = $this->manifestLimits($cartItems);
+        $manifestPayloads = ['guest_manifest' => $validated['guest_manifest'] ?? null];
+        foreach (array_keys($manifestLimits) as $field) {
+            if ($field !== 'guest_manifest') {
+                $manifestPayloads[$field] = $request->input($field);
             }
         }
 
-        // Process any itemized manifests (room, package, activity, addon)
-        foreach ($request->all() as $reqKey => $reqVal) {
-            if (str_starts_with($reqKey, 'package_manifest_') || str_starts_with($reqKey, 'room_manifest_')) {
-                if (is_string($reqVal) && ! empty($reqVal)) {
-                    $decoded = json_decode($reqVal, true);
-                    if (is_array($decoded)) {
-                        foreach ($decoded as $g) {
-                            if (! empty($g['full_name'])) {
-                                $guestManifest[] = $g;
-                                $cat = $g['category'] ?? 'Adult';
+        foreach ($manifestPayloads as $field => $payload) {
+            if (! is_string($payload) || $payload === '') {
+                continue;
+            }
 
-                                if (isset($rulesMap[$cat])) {
-                                    $rule = $rulesMap[$cat];
-                                    if ($rule->adjustment_type === 'discount') {
-                                        $discountAmount += (float) $rule->amount;
-                                    } elseif ($rule->adjustment_type === 'surcharge') {
-                                        $surchargeAmount += (float) $rule->amount;
-                                    }
-                                }
-                            }
-                        }
-                    }
+            foreach ($this->parseManifest($payload, $field, $manifestLimits[$field] ?? 20, $allowedCategories) as $guest) {
+                $guestManifest[] = $guest;
+                $rule = $rulesMap[$guest['category']] ?? null;
+                if ($rule?->adjustment_type === 'discount') {
+                    $discountAmount += (float) $rule->amount;
+                } elseif ($rule?->adjustment_type === 'surcharge') {
+                    $surchargeAmount += (float) $rule->amount;
                 }
             }
         }
@@ -165,6 +148,45 @@ class BookingRequestService
         $netAmount = max(0.00, $totalAmount - $discountAmount + $surchargeAmount - (float) ($validated['admin_discount_amount'] ?? 0) + (float) ($validated['admin_surcharge_amount'] ?? 0));
 
         return DB::transaction(function () use ($validated, $cartItems, $calculatedItemSubtotals, $bookingCode, $guestManifest, $totalAmount, $discountAmount, $surchargeAmount, $netAmount) {
+            $lockedCartItemCount = CartItem::query()
+                ->whereIn('id', $cartItems->modelKeys())
+                ->lockForUpdate()
+                ->get(['id'])
+                ->count();
+
+            if ($lockedCartItemCount !== $cartItems->count()) {
+                throw ValidationException::withMessages([
+                    'cart' => ['Your Trip Basket changed while checkout was processing. Please review it and try again.'],
+                ]);
+            }
+
+            foreach ($cartItems->where('item_type', 'room')->sortBy('item_id') as $item) {
+                if (! $item->check_in_date || ! $item->check_out_date) {
+                    throw ValidationException::withMessages([
+                        'cart' => ["{$item->item_title} requires valid check-in and check-out dates."],
+                    ]);
+                }
+
+                $room = RoomType::query()->lockForUpdate()->find($item->item_id);
+                if (! $room) {
+                    throw ValidationException::withMessages([
+                        'cart' => ["{$item->item_title} is no longer available."],
+                    ]);
+                }
+
+                $availability = $this->roomAvailabilityService->check(
+                    $room,
+                    $item->check_in_date->copy()->startOfDay(),
+                    $item->check_out_date->copy()->startOfDay()
+                );
+
+                if ($availability['remaining'] < $item->quantity) {
+                    throw ValidationException::withMessages([
+                        'cart' => ["{$item->item_title} no longer has enough rooms available for your dates."],
+                    ]);
+                }
+            }
+
             $booking = Booking::create([
                 'booking_code' => $bookingCode,
                 'user_id' => auth()->id(),
@@ -220,6 +242,90 @@ class BookingRequestService
     }
 
     /**
+     * Build the exact manifest field allow-list and passenger limit for each cart item.
+     *
+     * @return array<string, int>
+     */
+    private function manifestLimits($cartItems): array
+    {
+        $limits = ['guest_manifest' => 20];
+        $isFirstRoomItem = true;
+
+        foreach ($cartItems as $item) {
+            if ($item->item_type === 'room' && $item->itemable) {
+                $quantity = max(1, (int) $item->quantity);
+                $maxOccupancy = max(1, (int) ($item->itemable->max_occupancy ?: ($item->itemable->occupancy ?: 4)));
+                $firstInstance = $isFirstRoomItem ? 2 : 1;
+
+                if ($isFirstRoomItem) {
+                    $limits['guest_manifest'] = $maxOccupancy;
+                    $isFirstRoomItem = false;
+                }
+
+                for ($instance = $firstInstance; $instance <= $quantity; $instance++) {
+                    $limits["room_manifest_{$item->id}_{$instance}"] = $maxOccupancy;
+                }
+            } elseif ($item->item_type === 'package') {
+                $passengers = max(1, (int) $item->selected_pax, (int) $item->quantity);
+                for ($passenger = 1; $passenger <= $passengers; $passenger++) {
+                    $limits["package_manifest_{$item->id}_{$passenger}"] = 1;
+                }
+            }
+        }
+
+        return $limits;
+    }
+
+    /**
+     * Parse one client manifest into bounded, normalized passenger data.
+     *
+     * @param  array<int, string>  $allowedCategories
+     * @return array<int, array{full_name: string, category: string, special_notes: string}>
+     */
+    private function parseManifest(string $payload, string $field, int $maximumPassengers, array $allowedCategories): array
+    {
+        if (strlen($payload) > 50000) {
+            throw ValidationException::withMessages([$field => ['The passenger manifest is too large.']]);
+        }
+
+        $decoded = json_decode($payload, true);
+        if (! is_array($decoded)) {
+            throw ValidationException::withMessages([$field => ['The passenger manifest is invalid.']]);
+        }
+
+        $passengers = [];
+        foreach ($decoded as $guest) {
+            if (! is_array($guest) || trim((string) ($guest['full_name'] ?? '')) === '') {
+                continue;
+            }
+
+            $fullName = trim((string) $guest['full_name']);
+            $category = (string) ($guest['category'] ?? 'Adult');
+            $specialNotes = trim((string) ($guest['special_notes'] ?? ''));
+
+            if (mb_strlen($fullName) > 150 || mb_strlen($specialNotes) > 500) {
+                throw ValidationException::withMessages([$field => ['Passenger names and notes must stay within the allowed length.']]);
+            }
+
+            if (! in_array($category, $allowedCategories, true)) {
+                throw ValidationException::withMessages([$field => ['A passenger category is invalid or inactive.']]);
+            }
+
+            $passengers[] = [
+                'full_name' => $fullName,
+                'category' => $category,
+                'special_notes' => $specialNotes,
+            ];
+        }
+
+        if (count($passengers) > $maximumPassengers) {
+            throw ValidationException::withMessages([$field => ["This manifest allows at most {$maximumPassengers} passenger(s)."]]);
+        }
+
+        return $passengers;
+    }
+
+    /**
      * Count passengers with a filled name inside a serialized manifest payload.
      */
     private function countManifestPax(string $raw): int
@@ -240,6 +346,19 @@ class BookingRequestService
      */
     public function repriceForApproval(Booking $booking, array $adjustments): array
     {
+        $included = $booking->items->filter(function (BookingItem $item) use ($adjustments) {
+            return ! empty($adjustments[$item->id]['include']);
+        })->count();
+
+        if ($included === 0) {
+            return [
+                'total' => (float) $booking->total_amount,
+                'net' => (float) $booking->net_amount,
+                'included' => 0,
+                'excluded' => $booking->items->count(),
+            ];
+        }
+
         $total = 0.00;
         $included = 0;
         $excluded = 0;

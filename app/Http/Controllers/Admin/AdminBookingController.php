@@ -499,44 +499,87 @@ class AdminBookingController extends Controller
             }
         }
 
-        $totals = $this->bookingRequestService->repriceForApproval($booking, $adjustments);
+        [$totals, $updated] = DB::transaction(function () use ($booking, $adjustments, $validated) {
+            $lockedBooking = Booking::query()->whereKey($booking->id)->lockForUpdate()->firstOrFail();
+            if ($lockedBooking->status !== Booking::STATUS_PENDING) {
+                throw ValidationException::withMessages([
+                    'booking' => ['Only pending bookings can be approved.'],
+                ]);
+            }
+
+            foreach ($booking->items->where('item_type', 'room')->sortBy('item_id') as $item) {
+                $adjustment = $adjustments[$item->id] ?? null;
+                if (empty($adjustment['include'])) {
+                    continue;
+                }
+
+                $room = RoomType::query()->lockForUpdate()->find($item->item_id);
+                if (! $room || ! $item->check_in_date || ! $item->check_out_date) {
+                    throw ValidationException::withMessages([
+                        'items' => ["Room '{$item->item_title}' is no longer available."],
+                    ]);
+                }
+
+                $availability = $this->availabilityService->check(
+                    $room,
+                    $item->check_in_date->copy()->startOfDay(),
+                    $item->check_out_date->copy()->startOfDay(),
+                    $booking->id
+                );
+                $requestedQuantity = max(1, (int) ($adjustment['quantity'] ?? $item->quantity));
+
+                if ($availability['remaining'] < $requestedQuantity) {
+                    throw ValidationException::withMessages([
+                        'items' => ["Room '{$item->item_title}' only has {$availability['remaining']} unit(s) available for the selected dates."],
+                    ]);
+                }
+            }
+
+            $totals = $this->bookingRequestService->repriceForApproval($booking, $adjustments);
+
+            if ($totals['included'] === 0) {
+                return [$totals, false];
+            }
+
+            $approvalNote = sprintf(
+                'Approved with %d item(s) available%s.',
+                $totals['included'],
+                $totals['excluded'] > 0 ? ", {$totals['excluded']} unavailable" : ''
+            );
+
+            if ($booking->admin_discount_amount > 0 || $booking->admin_surcharge_amount > 0) {
+                $approvalNote .= ' Admin price adjustment applied';
+                if ($booking->admin_discount_amount > 0) {
+                    $approvalNote .= ' (-₱'.number_format((float) $booking->admin_discount_amount, 2).')';
+                }
+                if ($booking->admin_surcharge_amount > 0) {
+                    $approvalNote .= ' (+₱'.number_format((float) $booking->admin_surcharge_amount, 2).')';
+                }
+                $approvalNote .= ': '.$booking->price_adjustment_reason;
+            }
+
+            $updated = $booking->transitionTo(
+                Booking::STATUS_APPROVED,
+                [Booking::STATUS_PENDING],
+                [
+                    'admin_discount_amount' => $booking->admin_discount_amount,
+                    'admin_surcharge_amount' => $booking->admin_surcharge_amount,
+                    'price_adjustment_reason' => $booking->price_adjustment_reason,
+                    'price_adjusted_at' => $booking->price_adjusted_at,
+                    'approved_at' => now(),
+                    'payment_deadline' => now()->addHours(48),
+                    'reviewed_by_admin_id' => auth('admin')->id(),
+                    'admin_notes' => $validated['admin_notes'] ?? null,
+                ],
+                $approvalNote
+            );
+
+            return [$totals, $updated];
+        });
 
         if ($totals['included'] === 0) {
             return back()->with('error', 'Cannot approve a booking with no available items. Reject it instead.');
         }
-
-        $approvalNote = sprintf(
-            'Approved with %d item(s) available%s.',
-            $totals['included'],
-            $totals['excluded'] > 0 ? ", {$totals['excluded']} unavailable" : ''
-        );
-
-        if ($booking->admin_discount_amount > 0 || $booking->admin_surcharge_amount > 0) {
-            $approvalNote .= ' Admin price adjustment applied';
-            if ($booking->admin_discount_amount > 0) {
-                $approvalNote .= ' (-₱'.number_format((float) $booking->admin_discount_amount, 2).')';
-            }
-            if ($booking->admin_surcharge_amount > 0) {
-                $approvalNote .= ' (+₱'.number_format((float) $booking->admin_surcharge_amount, 2).')';
-            }
-            $approvalNote .= ': '.$booking->price_adjustment_reason;
-        }
-
-        $updated = $booking->transitionTo(
-            Booking::STATUS_APPROVED,
-            [Booking::STATUS_PENDING],
-            [
-                'admin_discount_amount' => $booking->admin_discount_amount,
-                'admin_surcharge_amount' => $booking->admin_surcharge_amount,
-                'price_adjustment_reason' => $booking->price_adjustment_reason,
-                'price_adjusted_at' => $booking->price_adjusted_at,
-                'approved_at' => now(),
-                'payment_deadline' => now()->addHours(48),
-                'reviewed_by_admin_id' => auth('admin')->id(),
-                'admin_notes' => $validated['admin_notes'] ?? null,
-            ],
-            $approvalNote
-        );
 
         if ($updated) {
             AdminAuditService::log($booking, $oldValues);

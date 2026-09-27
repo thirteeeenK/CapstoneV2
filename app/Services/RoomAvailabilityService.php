@@ -23,12 +23,8 @@ class RoomAvailabilityService
                 $q->whereIn('status', Booking::HOLD_STATUSES);
             })
             ->where(function ($q) use ($checkIn, $checkOut) {
-                $q->whereBetween('check_in_date', [$checkIn, $checkOut->copy()->subDay()])
-                    ->orWhereBetween('check_out_date', [$checkIn->copy()->addDay(), $checkOut])
-                    ->orWhere(function ($sub) use ($checkIn, $checkOut) {
-                        $sub->where('check_in_date', '<=', $checkIn)
-                            ->where('check_out_date', '>=', $checkOut);
-                    });
+                $q->where('check_in_date', '<', $checkOut)
+                    ->where('check_out_date', '>', $checkIn);
             })
             ->sum('quantity');
 

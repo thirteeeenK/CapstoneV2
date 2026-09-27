@@ -4,6 +4,7 @@ use App\Models\Booking;
 use App\Models\RoomType;
 use App\Notifications\BookingPaid;
 use App\Services\Payment\Drivers\QrphDriver;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
@@ -112,6 +113,32 @@ it('rejects QRPH confirm when booking is not approved', function () {
         ->assertSessionHas('error');
 
     expect($booking->fresh()->status)->toBe('pending');
+});
+
+it('does not treat a PayMongo source chargeable webhook as a completed payment', function () {
+    $secret = 'whsec_test_source_chargeable';
+    config()->set('services.qrph.webhook_secret', $secret);
+
+    $payload = json_encode([
+        'id' => 'evt_source_chargeable',
+        'type' => 'source.chargeable',
+        'data' => [
+            'id' => 'src_test',
+            'attributes' => [
+                'status' => 'chargeable',
+                'type' => 'gcash',
+                'metadata' => ['booking_code' => 'ST-2026-TEST1'],
+            ],
+        ],
+    ], JSON_THROW_ON_ERROR);
+    $timestamp = time();
+    $signature = hash_hmac('sha256', $timestamp.'.'.$payload, $secret);
+    $request = Request::create('/webhook/payment/qrph', 'POST', [], [], [], [
+        'HTTP_PAYMONGO_SIGNATURE' => "t={$timestamp},v1={$signature}",
+    ], $payload);
+    $eventData = [];
+
+    expect((new QrphDriver)->verifyWebhook($payload, $request, $eventData))->toBeFalse();
 });
 
 it('exposes the QR content amount correctly for the actual booking total', function () {

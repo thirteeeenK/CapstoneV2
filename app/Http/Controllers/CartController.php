@@ -84,8 +84,8 @@ class CartController extends Controller
                 ->where('item_id', $room->id)
                 ->whereHas('booking', fn ($q) => $q->whereIn('status', Booking::HOLD_STATUSES))
                 ->where(function ($q) use ($checkIn, $checkOut) {
-                    $q->whereBetween('check_in_date', [$checkIn, $checkOut->copy()->subDay()])
-                        ->orWhereBetween('check_out_date', [$checkIn->copy()->addDay(), $checkOut]);
+                    $q->where('check_in_date', '<', $checkOut)
+                        ->where('check_out_date', '>', $checkIn);
                 })
                 ->sum('quantity');
         }
@@ -214,8 +214,8 @@ class CartController extends Controller
             $validated = $request->validate([
                 'item_type' => 'required|string|in:room,activity,addon,package',
                 'item_id' => 'required|integer',
-                'quantity' => 'nullable|integer|min:1',
-                'selected_pax' => 'nullable|integer|min:1',
+                'quantity' => 'nullable|integer|min:1|max:50',
+                'selected_pax' => 'nullable|integer|min:1|max:50',
                 'check_in_date' => 'nullable|date|after:today',
                 'check_out_date' => 'nullable|date|after:check_in_date',
                 'room_option' => 'nullable|string|in:shared,separate',
@@ -399,10 +399,6 @@ class CartController extends Controller
             })
             ->first();
 
-        if (! $item) {
-            $item = CartItem::find($id);
-        }
-
         if ($item && $userId && ! $item->user_id) {
             $item->user_id = $userId;
             $item->save();
@@ -423,8 +419,8 @@ class CartController extends Controller
             }
 
             $validated = $request->validate([
-                'quantity' => 'nullable|integer|min:1',
-                'selected_pax' => 'nullable|integer|min:1',
+                'quantity' => 'nullable|integer|min:1|max:50',
+                'selected_pax' => 'nullable|integer|min:1|max:50',
                 'check_in_date' => 'nullable|date|after:today',
                 'check_out_date' => 'nullable|date|after:check_in_date',
                 'is_selected' => 'nullable|boolean',
@@ -447,8 +443,8 @@ class CartController extends Controller
                             ->where('item_id', $room->id)
                             ->whereHas('booking', fn ($q) => $q->whereIn('status', Booking::HOLD_STATUSES))
                             ->where(function ($q) use ($checkIn, $checkOut) {
-                                $q->whereBetween('check_in_date', [$checkIn, $checkOut->copy()->subDay()])
-                                    ->orWhereBetween('check_out_date', [$checkIn->copy()->addDay(), $checkOut]);
+                                $q->where('check_in_date', '<', $checkOut)
+                                    ->where('check_out_date', '>', $checkIn);
                             })
                             ->sum('quantity');
                     }

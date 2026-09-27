@@ -11,6 +11,7 @@ use App\Notifications\BookingNotification;
 use App\Notifications\BookingRequestReceived;
 use App\Services\BookingRequestService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 
 class CheckoutController extends Controller
@@ -113,7 +114,7 @@ class CheckoutController extends Controller
             'contact_email' => 'required|email|max:150',
             'contact_phone' => 'required|string|regex:/^\d{11}$/|max:30',
             'special_requests' => 'nullable|string|max:1000',
-            'guest_manifest' => 'nullable|string',
+            'guest_manifest' => 'nullable|string|max:50000',
         ], [
             'contact_phone.regex' => 'The mobile phone number must be exactly 11 digits.',
         ]);
@@ -160,9 +161,14 @@ class CheckoutController extends Controller
         } catch (ValidationException $e) {
             throw $e;
         } catch (\Exception $e) {
+            Log::error('Booking checkout failed.', [
+                'user_id' => $request->user()?->id,
+                'exception' => $e,
+            ]);
+
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to submit booking request: '.$e->getMessage(),
+                'message' => 'Failed to submit booking request. Please try again.',
             ], 500);
         }
     }

@@ -10,6 +10,7 @@ use App\Services\Payment\PaymentService;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Log;
 
 class PaymentWebhookController extends Controller
 {
@@ -60,6 +61,24 @@ class PaymentWebhookController extends Controller
         $booking = Booking::where('booking_code', $bookingCode)->first();
 
         if (! $booking) {
+            return response('not actionable', Response::HTTP_OK);
+        }
+
+        $expectedAmount = (int) round((float) $booking->net_amount * 100);
+        $amountMatches = ! isset($event['amount']) || (int) $event['amount'] === $expectedAmount;
+        $currencyMatches = ! isset($event['currency']) || strtoupper((string) $event['currency']) === 'PHP';
+        $gatewayMatches = $booking->gateway === $gateway;
+        $referenceMatches = $gateway !== 'stripe'
+            || ! isset($event['reference'])
+            || hash_equals((string) $booking->gateway_reference, (string) $event['reference']);
+
+        if (! $gatewayMatches || ! $referenceMatches || ! $amountMatches || ! $currencyMatches) {
+            Log::warning('Verified payment webhook did not match the booking payment session.', [
+                'booking_id' => $booking->id,
+                'gateway' => $gateway,
+                'event_id' => $eventId,
+            ]);
+
             return response('not actionable', Response::HTTP_OK);
         }
 

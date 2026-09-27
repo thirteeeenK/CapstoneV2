@@ -85,6 +85,8 @@ class StripeDriver implements PaymentDriver
             'event_id' => $event['id'] ?? null,
             'reference' => $session['id'] ?? null,
             'booking_code' => $session['client_reference_id'] ?? ($session['metadata']['booking_code'] ?? null),
+            'amount' => $session['amount_total'] ?? null,
+            'currency' => isset($session['currency']) ? strtoupper((string) $session['currency']) : null,
         ];
 
         return true;

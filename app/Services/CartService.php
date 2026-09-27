@@ -95,8 +95,8 @@ class CartService
                     ->where('item_id', $room->id)
                     ->whereHas('booking', fn ($q) => $q->whereIn('status', Booking::HOLD_STATUSES))
                     ->where(function ($q) use ($checkInDate, $checkOutDate) {
-                        $q->whereBetween('check_in_date', [$checkInDate, $checkOutDate->copy()->subDay()])
-                            ->orWhereBetween('check_out_date', [$checkInDate->copy()->addDay(), $checkOutDate]);
+                        $q->where('check_in_date', '<', $checkOutDate)
+                            ->where('check_out_date', '>', $checkInDate);
                     })
                     ->sum('quantity');
 
