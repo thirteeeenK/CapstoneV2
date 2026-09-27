@@ -2,6 +2,7 @@
 
 use App\Models\AdminModel;
 use App\Models\Faq;
+use App\Services\GeminiService;
 
 beforeEach(function () {
     $this->admin = AdminModel::create([
@@ -44,6 +45,68 @@ it('creates a new FAQ', function () {
         'question' => 'What payment methods do you accept?',
         'answer' => 'We accept credit cards, GCash, and bank transfers.',
         'is_active' => true,
+    ]);
+});
+
+it('stores FAQ keywords at the supported 500 character boundary', function () {
+    $keywords = str_repeat('k', 500);
+
+    $this->actingAs($this->admin, 'admin')
+        ->post(route('admin.faqs.store'), [
+            'question' => 'Can this FAQ use a complete keyword list?',
+            'answer' => 'Yes, up to 500 characters are supported.',
+            'keywords' => $keywords,
+            'category' => 'Services',
+            'sort_order' => 1,
+            'is_active' => 1,
+            'show_on_landing' => 1,
+        ])
+        ->assertRedirect(route('admin.faqs.index'))
+        ->assertSessionHasNoErrors();
+
+    $this->assertDatabaseHas('faqs', [
+        'question' => 'Can this FAQ use a complete keyword list?',
+        'keywords' => $keywords,
+    ]);
+});
+
+it('rejects FAQ keywords beyond the supported boundary', function () {
+    $this->actingAs($this->admin, 'admin')
+        ->from(route('admin.faqs.create'))
+        ->post(route('admin.faqs.store'), [
+            'question' => 'Can this FAQ use too many keywords?',
+            'answer' => 'No.',
+            'keywords' => str_repeat('k', 501),
+            'is_active' => 1,
+        ])
+        ->assertRedirect(route('admin.faqs.create'))
+        ->assertSessionHasErrors('keywords');
+
+    $this->assertDatabaseMissing('faqs', [
+        'question' => 'Can this FAQ use too many keywords?',
+    ]);
+});
+
+it('keeps a successful FAQ save when embedding generation throws an error', function () {
+    $this->partialMock(GeminiService::class, function ($mock) {
+        $mock->shouldReceive('generateEmbedding')
+            ->once()
+            ->andThrow(new Error('Simulated embedding failure.'));
+    });
+
+    $this->actingAs($this->admin, 'admin')
+        ->post(route('admin.faqs.store'), [
+            'question' => 'Does an embedding outage block FAQ creation?',
+            'answer' => 'No, the FAQ remains saved.',
+            'is_active' => 1,
+            'show_on_landing' => 1,
+        ])
+        ->assertRedirect(route('admin.faqs.index'))
+        ->assertSessionHas('success');
+
+    $this->assertDatabaseHas('faqs', [
+        'question' => 'Does an embedding outage block FAQ creation?',
+        'answer' => 'No, the FAQ remains saved.',
     ]);
 });
 

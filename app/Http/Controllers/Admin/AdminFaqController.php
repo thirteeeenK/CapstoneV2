@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\SaveFaqRequest;
 use App\Models\Faq;
 use App\Services\AdminAuditService;
 use App\Services\GeminiService;
@@ -73,17 +74,9 @@ class AdminFaqController extends Controller
     /**
      * Store a new FAQ in the database.
      */
-    public function store(Request $request)
+    public function store(SaveFaqRequest $request)
     {
-        $validated = $request->validate([
-            'question' => 'required|string|max:255',
-            'answer' => 'required|string|max:5000',
-            'keywords' => 'nullable|string|max:500',
-            'category' => 'nullable|string|max:100',
-            'sort_order' => 'nullable|integer|min:0',
-            'is_active' => 'required|boolean',
-            'show_on_landing' => 'sometimes|boolean',
-        ]);
+        $validated = $request->validated();
 
         $faq = Faq::create([
             'question' => $validated['question'],
@@ -115,20 +108,12 @@ class AdminFaqController extends Controller
     /**
      * Update an existing FAQ.
      */
-    public function update(Request $request, $id)
+    public function update(SaveFaqRequest $request, $id)
     {
         $faq = Faq::findOrFail($id);
         $oldValues = $faq->getOriginal();
 
-        $validated = $request->validate([
-            'question' => 'required|string|max:255',
-            'answer' => 'required|string|max:5000',
-            'keywords' => 'nullable|string|max:500',
-            'category' => 'nullable|string|max:100',
-            'sort_order' => 'nullable|integer|min:0',
-            'is_active' => 'required|boolean',
-            'show_on_landing' => 'sometimes|boolean',
-        ]);
+        $validated = $request->validated();
 
         $faq->update([
             'question' => $validated['question'],
@@ -226,8 +211,12 @@ class AdminFaqController extends Controller
                 $faq->embedding = $geminiService->formatVectorForDb($vector);
                 $faq->save();
             }
-        } catch (\Exception $e) {
-            Log::warning('FAQ embedding generation skipped: '.$e->getMessage());
+        } catch (\Throwable $e) {
+            Log::warning('FAQ embedding generation skipped.', [
+                'faq_id' => $faq->id,
+                'exception' => $e::class,
+                'message' => $e->getMessage(),
+            ]);
         }
     }
 }
