@@ -4,6 +4,7 @@ use App\Models\Booking;
 use App\Models\RoomType;
 use App\Models\User;
 use App\Services\DemoSeedBookingService;
+use App\Services\ReviewService;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Notification;
 
@@ -28,7 +29,7 @@ test('registration creates no seed bookings when demo mode off', function () {
         ->and($user->bookings()->count())->toBe(0);
 });
 
-test('service seeds one real and one demo approved booking', function () {
+test('service seeds one approved and one completed reviewable booking', function () {
     Notification::fake();
     Config::set('app.demo_mode', true);
 
@@ -48,19 +49,33 @@ test('service seeds one real and one demo approved booking', function () {
     $bookings = $user->bookings()->orderBy('id')->get();
     expect($bookings)->toHaveCount(2);
 
-    foreach ($bookings as $booking) {
-        expect($booking->status)->toBe(Booking::STATUS_APPROVED)
-            ->and($booking->payment_status)->toBe(Booking::PAYMENT_UNPAID)
-            ->and($booking->booking_source)->toBe('demo_seed')
-            ->and($booking->payment_deadline->greaterThan(now()->addDays(29)))->toBeTrue()
-            ->and($booking->booking_code)->toMatch('/^ST-\d{4}-[A-Z0-9]{5}$/');
-        expect($booking->history()->where('from_status', 'pending')->where('to_status', 'approved')->exists())->toBeTrue();
-    }
+    [$approved, $completed] = [$bookings[0], $bookings[1]];
 
-    expect($bookings[0]->items)->toHaveCount(1)
-        ->and($bookings[0]->net_amount)->toBe('5000.00');
-    expect($bookings[1]->items->first()->item_title)->toStartWith('TEST')
-        ->and($bookings[1]->net_amount)->toBe('1.00');
+    expect($approved->status)->toBe(Booking::STATUS_APPROVED)
+        ->and($approved->payment_status)->toBe(Booking::PAYMENT_UNPAID)
+        ->and($approved->booking_source)->toBe('demo_seed')
+        ->and($approved->payment_deadline->greaterThan(now()->addDays(29)))->toBeTrue()
+        ->and($approved->booking_code)->toMatch('/^ST-\d{4}-[A-Z0-9]{5}$/');
+    expect($approved->history()->where('from_status', 'pending')->where('to_status', 'approved')->exists())->toBeTrue();
+
+    expect($approved->items)->toHaveCount(1)
+        ->and($approved->net_amount)->toBe('5000.00');
+
+    expect($completed->status)->toBe(Booking::STATUS_COMPLETED)
+        ->and($completed->payment_status)->toBe(Booking::PAYMENT_PAID)
+        ->and($completed->booking_source)->toBe('demo_seed')
+        ->and($completed->paid_at)->not->toBeNull()
+        ->and($completed->booking_code)->toMatch('/^ST-\d{4}-[A-Z0-9]{5}$/');
+    expect($completed->history()->where('from_status', 'pending')->where('to_status', 'approved')->exists())->toBeTrue();
+    expect($completed->history()->where('from_status', 'approved')->where('to_status', 'paid')->exists())->toBeTrue();
+    expect($completed->history()->where('from_status', 'paid')->where('to_status', 'completed')->exists())->toBeTrue();
+
+    expect($completed->items->first()->item_title)->toStartWith('TEST')
+        ->and($completed->net_amount)->toBe('1.00');
+
+    $eligible = app(ReviewService::class)->eligibleBookings($user);
+    expect($eligible->pluck('booking_id'))->toContain($completed->id)
+        ->and($eligible->pluck('booking_id'))->not->toContain($approved->id);
 
     Notification::assertNothingSent();
 });
@@ -77,7 +92,7 @@ test('service is idempotent', function () {
     expect($user->bookings()->count())->toBe(2);
 });
 
-test('new signup owns two payable approved bookings when demo mode on', function () {
+test('new signup owns one payable approved booking and one reviewable completed booking when demo mode on', function () {
     Notification::fake();
     Config::set('app.demo_mode', true);
     RoomType::factory()->create(['base_price' => 2000.00, 'base_occupancy' => 2, 'is_shown' => true]);
@@ -98,12 +113,19 @@ test('new signup owns two payable approved bookings when demo mode on', function
     $response->assertRedirect(route('onboarding.index', absolute: false));
 
     $user = User::where('email', 'demotester@example.com')->first();
-    $bookings = $user->bookings()->where('status', Booking::STATUS_APPROVED)->get();
-    expect($bookings)->toHaveCount(2);
+    $approved = $user->bookings()->where('status', Booking::STATUS_APPROVED)->get();
+    expect($approved)->toHaveCount(1);
 
-    foreach ($bookings as $booking) {
+    foreach ($approved as $booking) {
         expect($booking->isPaymentDeadlinePassed())->toBeFalse();
     }
+
+    $completed = $user->bookings()->where('status', Booking::STATUS_COMPLETED)->get();
+    expect($completed)->toHaveCount(1)
+        ->and($completed->first()->payment_status)->toBe(Booking::PAYMENT_PAID);
+
+    $eligible = app(ReviewService::class)->eligibleBookings($user);
+    expect($eligible->pluck('booking_id'))->toContain($completed->first()->id);
 
     Notification::assertNothingSent();
 });
