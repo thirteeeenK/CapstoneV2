@@ -10,6 +10,10 @@ class SummaryJudgeService
 {
     public const DIMENSIONS = ['faithfulness', 'coverage', 'conciseness'];
 
+    public const MIN_SCORE = 1;
+
+    public const MAX_SCORE = 4;
+
     public function __construct(protected GeminiService $gemini) {}
 
     /**
@@ -77,7 +81,7 @@ class SummaryJudgeService
             return null;
         }
         foreach (self::DIMENSIONS as $dim) {
-            if (! isset($decoded[$dim]) || ! is_int($decoded[$dim]) || $decoded[$dim] < 1 || $decoded[$dim] > 5) {
+            if (! isset($decoded[$dim]) || ! is_int($decoded[$dim]) || $decoded[$dim] < self::MIN_SCORE || $decoded[$dim] > self::MAX_SCORE) {
                 return null;
             }
         }

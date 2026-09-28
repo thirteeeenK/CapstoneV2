@@ -187,7 +187,7 @@
             @endif
         </div>
 
-        {{-- Chatbot --}}
+        <!-- {{-- Chatbot --}}
         <div class="bg-white rounded-3xl border border-slate-200/80 shadow-xs p-6">
             <h2 class="text-base font-bold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-3 mb-4">
                 <span class="material-symbols-outlined text-sky-600">smart_toy</span>
@@ -215,6 +215,66 @@
                 @if($chatbot['latestFile'])
                     <p class="text-[11px] text-slate-400 font-medium mt-3">Latest run: {{ $chatbot['latestFile'] }} · {{ $chatbot['latestAt'] }}</p>
                 @endif
+            @endif
+        </div> -->
+
+        {{-- Chatbot LLM judge --}}
+        <div class="bg-white rounded-3xl border border-slate-200/80 shadow-xs p-6">
+            <h2 class="text-base font-bold text-slate-900 flex items-center gap-2 border-b border-slate-100 pb-3 mb-4">
+                <span class="material-symbols-outlined text-violet-600">grading</span>
+                Chatbot LLM judge (faithfulness · relevancy · correctness)
+            </h2>
+            @if(!$judge['macro'])
+                <p class="text-xs text-slate-400 font-medium">No judge run yet — run on server: <span class="font-mono">php artisan chatbot:judge</span>. Costs real Gemini calls (one per case), so it never runs per-request.</p>
+            @else
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
+                    @foreach([
+                        ['label' => 'Faithfulness', 'value' => $judge['macro']['faithfulness'], 'n' => $judge['macro']['n'], 'hint' => 'claims traceable to retrieved records'],
+                        ['label' => 'Answer relevancy', 'value' => $judge['macro']['answer_relevancy'], 'n' => $judge['macro']['n'], 'hint' => 'addresses the question asked'],
+                        ['label' => 'Answer correctness', 'value' => $judge['macro']['answer_correctness'], 'n' => $judge['macro']['correctness_n'], 'hint' => 'matches the reference answer'],
+                    ] as $card)
+                        <div class="rounded-2xl bg-slate-50/80 border border-slate-100 p-4">
+                            <p class="text-xs font-bold text-slate-500 uppercase tracking-wide">{{ $card['label'] }}</p>
+                            <p class="text-2xl font-black text-slate-900 mt-1">{{ $card['value'] === null ? '—' : number_format((float) $card['value'], 2).'/4' }}</p>
+                            <p class="text-[11px] text-slate-500 mt-1">n = {{ $card['n'] }} · {{ $card['hint'] }}</p>
+                        </div>
+                    @endforeach
+                </div>
+
+                <p class="text-[11px] text-slate-500 mb-3">
+                    Correctness is scored only on cases with a reference answer; abstention cases are skipped, not failed.
+                    @if($judge['model'])<span class="ml-1">Judge model: <span class="font-mono">{{ $judge['model'] }}</span>.</span>@endif
+                </p>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs text-slate-700">
+                        <thead class="bg-slate-100/70 uppercase text-[10px] font-extrabold text-slate-500 border-b border-slate-200">
+                            <tr>
+                                <th class="py-3 px-4">Case</th>
+                                <th class="py-3 px-4 text-center">Faith.</th>
+                                <th class="py-3 px-4 text-center">Relev.</th>
+                                <th class="py-3 px-4 text-center">Correct.</th>
+                                <th class="py-3 px-4">Judge reasoning</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            @foreach($judge['rows'] as $row)
+                                <tr class="hover:bg-slate-50/80 transition align-top">
+                                    <td class="py-3 px-4 font-mono text-[11px] whitespace-nowrap">{{ $row['id'] }}</td>
+                                    <td class="py-3 px-4 text-center font-bold">{{ $row['faithfulness'] }}</td>
+                                    <td class="py-3 px-4 text-center font-bold">{{ $row['answer_relevancy'] }}</td>
+                                    <td class="py-3 px-4 text-center font-bold">{{ $row['answer_correctness'] ?? 'n/a' }}</td>
+                                    <td class="py-3 px-4 text-slate-600">{{ $row['reasoning'] }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+
+                @if($judge['skipped'])
+                    <p class="text-[11px] text-amber-600 font-medium mt-3">Skipped: {{ implode(' · ', $judge['skipped']) }}</p>
+                @endif
+                <p class="text-[11px] text-slate-400 font-medium mt-3">Latest run: {{ $judge['latestFile'] }} · {{ $judge['latestAt'] }}</p>
             @endif
         </div>
     </div>

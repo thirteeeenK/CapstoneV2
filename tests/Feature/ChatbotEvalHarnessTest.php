@@ -1,6 +1,8 @@
 <?php
 
-use Tests\Support\ChatEvalMetrics;
+use App\Models\User;
+use App\Services\Chat\ChatEvalHarness;
+use App\Services\Chat\ChatEvalMetrics;
 
 test('eval metrics match hand-computed values on synthetic rows', function () {
     $results = [
@@ -50,14 +52,48 @@ test('eval metrics match hand-computed values on synthetic rows', function () {
 
 test('eval metrics measure grounding constraints abstention and multi turn consistency', function () {
     $results = [
-        ['constraint_compliant' => true, 'claims_grounded' => true, 'expect_abstention' => true, 'abstained' => true, 'scope_consistent' => true],
-        ['constraint_compliant' => false, 'claims_grounded' => false, 'expect_abstention' => false, 'abstained' => true, 'scope_consistent' => false],
+        // Multi-turn follow-up that stayed inside the scoped destination and entity.
+        [
+            'constraint_compliant' => true, 'claims_grounded' => true,
+            'expect_abstention' => true, 'abstained' => true,
+            'is_multi_turn' => true, 'expect_destination' => 'Boracay',
+            'expect_ids' => [12], 'retrieved_ids' => [12], 'destinations' => ['Boracay'],
+        ],
+        // Multi-turn follow-up that leaked to another destination and missed the entity.
+        [
+            'constraint_compliant' => false, 'claims_grounded' => false,
+            'expect_abstention' => false, 'abstained' => true,
+            'is_multi_turn' => true, 'expect_destination' => 'Boracay',
+            'expect_ids' => [7], 'retrieved_ids' => [3], 'destinations' => ['Cebu'],
+        ],
     ];
 
     expect(ChatEvalMetrics::constraintViolationRate($results))->toBe(0.5)
         ->and(ChatEvalMetrics::unsupportedClaimRate($results))->toBe(0.5)
         ->and(ChatEvalMetrics::validAbstentionRate($results))->toBe(0.5)
         ->and(ChatEvalMetrics::multiTurnConsistencyRate($results))->toBe(0.5);
+});
+
+test('multi turn consistency is derived from retrieval and ignores single turn rows', function () {
+    $results = [
+        [
+            'is_multi_turn' => true, 'expect_destination' => 'Boracay',
+            'expect_ids' => [12], 'retrieved_ids' => [12], 'destinations' => ['Boracay'],
+        ],
+        // Single-turn row: excluded from the denominator even though it retrieved nothing.
+        [
+            'is_multi_turn' => false, 'expect_destination' => 'Boracay',
+            'expect_ids' => [3], 'retrieved_ids' => [], 'destinations' => [],
+        ],
+    ];
+
+    expect(ChatEvalMetrics::multiTurnConsistencyRate($results))->toBe(1.0)
+        ->and(ChatEvalMetrics::multiTurnConsistencyRate([$results[1]]))->toBeNull()
+        // A fixture-supplied flag must not be able to stand in for a real measurement.
+        ->and(ChatEvalMetrics::multiTurnConsistencyRate([
+            ['is_multi_turn' => true, 'expect_destination' => 'Boracay', 'expect_ids' => [3],
+                'retrieved_ids' => [], 'destinations' => [], 'scope_consistent' => true],
+        ]))->toBe(0.0);
 });
 
 test('eval metrics return null when no case carries the expectation', function () {
@@ -79,4 +115,32 @@ test('eval metrics return null when no case carries the expectation', function (
         ->and(ChatEvalMetrics::wrongDestinationRate($results))->toBeNull()
         ->and(ChatEvalMetrics::latencyP50($results))->toBeNull()
         ->and(ChatEvalMetrics::noResultRate($results))->toBe(1.0);
+});
+
+test('the eval harness creates its personalized account only when a personalized case runs', function () {
+    mockGemini(unitVector(0), 'Eval reply.');
+    $harness = new ChatEvalHarness;
+
+    try {
+        $harness->seed();
+
+        expect(User::where('email', 'eval-harness@example.com')->exists())->toBeFalse();
+
+        $harness->ask([
+            'auth' => 'personalized',
+            'query' => 'show me hotels in Eval Boracay',
+        ]);
+
+        expect(User::where('email', 'eval-harness@example.com')->exists())->toBeTrue();
+    } finally {
+        $harness->cleanup();
+    }
+});
+
+test('the full evaluation fixture retains fifty cases and limits the judge to retrieval-grounded cases', function () {
+    $cases = json_decode((string) file_get_contents(base_path('tests/Fixtures/chatbot_eval_v1.json')), true);
+    $judgeEligible = array_filter($cases, fn (array $case): bool => ($case['judge_eligible'] ?? true) !== false);
+
+    expect($cases)->toHaveCount(50)
+        ->and($judgeEligible)->toHaveCount(33);
 });

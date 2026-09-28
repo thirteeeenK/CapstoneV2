@@ -26,6 +26,7 @@ class AdminEvaluationController extends Controller
             'sentiment' => $sentiment->metrics(),
             'rouge' => $this->rougeData($summary),
             'chatbot' => $this->chatbotData(),
+            'judge' => $this->chatbotJudgeData(),
         ]);
     }
 
@@ -204,6 +205,37 @@ class AdminEvaluationController extends Controller
             'latest' => is_array($latest) ? $latest : null,
             'latestFile' => $latestFile,
             'latestAt' => $latestAt,
+        ];
+    }
+
+    /**
+     * Latest `chatbot:judge` run: macro judge scores plus per-case detail.
+     * Read-only, same as chatbotData() — never re-runs, never spends API calls.
+     *
+     * @return array{model: string|null, macro: array|null, rows: array, skipped: array, latestFile: string|null, latestAt: string|null}
+     */
+    protected function chatbotJudgeData(): array
+    {
+        $empty = ['model' => null, 'macro' => null, 'rows' => [], 'skipped' => [], 'latestFile' => null, 'latestAt' => null];
+
+        $files = glob(storage_path('app/eval/chatbot-judge-*.json')) ?: [];
+        if ($files === []) {
+            return $empty;
+        }
+        usort($files, fn ($a, $b) => filemtime($b) <=> filemtime($a));
+
+        $decoded = json_decode((string) File::get($files[0]), true);
+        if (! is_array($decoded)) {
+            return $empty;
+        }
+
+        return [
+            'model' => $decoded['model'] ?? null,
+            'macro' => $decoded['macro'] ?? null,
+            'rows' => $decoded['cases'] ?? [],
+            'skipped' => $decoded['skipped'] ?? [],
+            'latestFile' => basename($files[0]),
+            'latestAt' => date('Y-m-d H:i', (int) filemtime($files[0])),
         ];
     }
 }

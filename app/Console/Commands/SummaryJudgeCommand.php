@@ -13,7 +13,7 @@ class SummaryJudgeCommand extends Command
         {--references=Evaluations/human_labeled_reviews.md : Hotel list source (## headings, relative to project root)}
         {--export= : Write per-hotel judge CSV to path (relative to project root)}';
 
-    protected $description = 'LLM-as-Judge (strong model, reference-free): faithfulness/coverage/conciseness 1-5 of stored AI hotel summaries vs source reviews';
+    protected $description = 'LLM-as-Judge (strong model, reference-free): faithfulness/coverage/conciseness 1-4 of stored AI hotel summaries vs source reviews';
 
     public function handle(SummaryJudgeService $judge, SummaryEvaluationService $rouge): int
     {
@@ -34,6 +34,8 @@ class SummaryJudgeCommand extends Command
 
             return self::SUCCESS;
         }
+
+        $this->line('Reference headings select hotels only; human-written summary bullets are not sent to the judge.');
 
         $rows = [];
         $scored = [];

@@ -5,13 +5,35 @@ namespace App\Jobs;
 use App\Models\Review;
 use App\Models\ReviewSummary;
 use App\Services\GeminiService;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\DB;
 
-class UpdateEntityReviewSummaryJob implements ShouldQueue
+class UpdateEntityReviewSummaryJob implements ShouldBeUnique, ShouldQueue
 {
     use Queueable;
+
+    /**
+     * Limit retries because each attempt can call Gemini.
+     */
+    public int $tries = 2;
+
+    /**
+     * Keep this below the database queue retry_after value.
+     */
+    public int $timeout = 45;
+
+    /**
+     * @var array<int, int>
+     */
+    public array $backoff = [5];
+
+    /**
+     * Prevent overlapping summary requests for the same entity.
+     */
+    public int $uniqueFor = 120;
 
     public function __construct(
         public string $entityType,
@@ -19,6 +41,11 @@ class UpdateEntityReviewSummaryJob implements ShouldQueue
         public string $entityLabel,
         public bool $force = false
     ) {}
+
+    public function uniqueId(): string
+    {
+        return $this->entityType.':'.($this->entityId ?? 'platform');
+    }
 
     public function handle(GeminiService $gemini): void
     {
@@ -116,11 +143,13 @@ class UpdateEntityReviewSummaryJob implements ShouldQueue
             return 'SunnyTrips Overall Platform';
         }
 
-        if (! class_exists($entityType)) {
+        $entityClass = Relation::getMorphedModel($entityType) ?? $entityType;
+
+        if (! class_exists($entityClass)) {
             return "{$entityType} #{$entityId}";
         }
 
-        $instance = $entityType::find($entityId);
+        $instance = $entityClass::find($entityId);
 
         if ($instance) {
             return $instance->hotel_name

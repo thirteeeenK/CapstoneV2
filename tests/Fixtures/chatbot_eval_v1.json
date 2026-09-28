@@ -141,7 +141,8 @@
         "expect_destination": "Eval Boracay",
         "expect_result_names_any": [],
         "expect_forbid_names": [],
-        "required_facts": ["Eval Palm Resort"]
+        "required_facts": ["Eval Palm Resort"],
+        "judge_eligible": false
     },
     {
         "id": "faq-payment",
@@ -150,7 +151,8 @@
         "expect_destination": null,
         "expect_result_names_any": [],
         "expect_forbid_names": [],
-        "required_facts": ["GCash"]
+        "required_facts": ["GCash"],
+        "judge_eligible": false
     },
     {
         "id": "faq-payment-paraphrase",
@@ -159,7 +161,8 @@
         "expect_destination": null,
         "expect_result_names_any": [],
         "expect_forbid_names": [],
-        "required_facts": ["GCash"]
+        "required_facts": ["GCash"],
+        "judge_eligible": false
     },
     {
         "id": "exact-hotel-name",
@@ -196,8 +199,8 @@
     },
     {
         "id": "ordinal-room-second",
-      "query": "tell me more about the second room",
-      "expect_intent": null,
+        "query": "tell me more about the second room",
+        "expect_intent": null,
         "expect_destination": "Eval Boracay",
         "expect_result_names_any": ["Eval Family Suite"],
         "expect_forbid_names": [],
@@ -212,7 +215,11 @@
         "expect_intent": "HOTEL_SEARCH",
         "expect_destination": "Eval Cebu",
         "expect_result_names_any": [],
-        "expect_forbid_names": ["Eval Palm Resort", "Eval Bay Hotel", "Eval Cliff Lodge"],
+        "expect_forbid_names": [
+            "Eval Palm Resort",
+            "Eval Bay Hotel",
+            "Eval Cliff Lodge"
+        ],
         "required_facts": []
     },
     {
@@ -232,7 +239,8 @@
         "expect_destination": null,
         "expect_result_names_any": [],
         "expect_forbid_names": [],
-        "required_facts": []
+        "required_facts": [],
+        "judge_eligible": false
     },
     {
         "id": "general-talk",
@@ -241,16 +249,18 @@
         "expect_destination": null,
         "expect_result_names_any": [],
         "expect_forbid_names": [],
-        "required_facts": []
+        "required_facts": [],
+        "judge_eligible": false
     },
     {
         "id": "legal-query",
-      "query": "What is your cancellation policy?",
-      "expect_intent": null,
+        "query": "What is your cancellation policy?",
+        "expect_intent": null,
         "expect_destination": null,
         "expect_result_names_any": [],
         "expect_forbid_names": [],
-        "required_facts": []
+        "required_facts": [],
+        "judge_eligible": false
     },
     {
         "id": "support-handoff",
@@ -258,6 +268,247 @@
         "expect_intent": "SUPPORT_AGENT",
         "expect_destination": null,
         "expect_result_names_any": [],
+        "expect_forbid_names": [],
+        "required_facts": [],
+        "judge_eligible": false
+    },
+    {
+        "id": "cebu-hotel-empty",
+        "query": "show me hotels in Eval Cebu",
+        "expect_intent": "HOTEL_SEARCH",
+        "expect_destination": null,
+        "expect_result_names_any": [],
+        "expect_forbid_names": [
+            "Eval Palm Resort",
+            "Eval Bay Hotel",
+            "Eval Dunes Lodge",
+            "Eval Cliff Lodge"
+        ],
+        "required_facts": [],
+        "expect_abstention": true
+    },
+    {
+        "id": "cebu-room-empty",
+        "query": "find rooms in Eval Cebu",
+        "expect_intent": "ROOM_SEARCH",
+        "expect_destination": null,
+        "expect_result_names_any": [],
+        "expect_forbid_names": [
+            "Eval Standard Room",
+            "Eval Family Suite",
+            "Eval Flexible Room"
+        ],
+        "required_facts": [],
+        "expect_abstention": true
+    },
+    {
+        "id": "cebu-activity-empty",
+        "query": "water activities in Eval Cebu",
+        "expect_intent": "ACTIVITY_SEARCH",
+        "expect_destination": null,
+        "expect_result_names_any": [],
+        "expect_forbid_names": ["Eval Paddle Tour", "Eval Cliff Dive"],
+        "required_facts": [],
+        "expect_abstention": true
+    },
+    {
+        "id": "cebu-package-empty",
+        "query": "Eval Cebu packages",
+        "expect_intent": "PACKAGE_SEARCH",
+        "expect_destination": null,
+        "expect_result_names_any": [],
+        "expect_forbid_names": ["Eval Weekend Escape"],
+        "required_facts": [],
+        "expect_abstention": true
+    },
+    {
+        "id": "cebu-addon-empty",
+        "query": "add-ons in Eval Cebu",
+        "expect_intent": "ADDON_SEARCH",
+        "expect_destination": null,
+        "expect_result_names_any": [],
+        "expect_forbid_names": ["Eval Airport Transfer"],
+        "required_facts": [],
+        "expect_abstention": true
+    },
+    {
+        "id": "availability-hotel",
+        "query": "is Eval Palm Resort available?",
+        "expect_intent": "AVAILABILITY_QUERY",
+        "expect_destination": null,
+        "expect_result_names_any": [],
+        "expect_forbid_names": [],
+        "required_facts": [],
+        "judge_eligible": false
+    },
+    {
+        "id": "availability-rooms-dates",
+        "query": "any free rooms in Eval Boracay from 12 to 15 December?",
+        "expect_intent": "AVAILABILITY_QUERY",
+        "expect_destination": null,
+        "expect_result_names_any": [],
+        "expect_forbid_names": [],
+        "required_facts": [],
+        "judge_eligible": false
+    },
+    {
+        "id": "map-destination",
+        "query": "how do I get to Eval El Nido?",
+        "expect_intent": "MAP_QUERY",
+        "expect_destination": null,
+        "expect_result_names_any": [],
+        "expect_forbid_names": [],
+        "required_facts": [],
+        "judge_eligible": false
+    },
+    {
+        "id": "map-hotel",
+        "query": "where is Eval Cliff Lodge located?",
+        "expect_intent": "MAP_QUERY",
+        "expect_destination": null,
+        "expect_result_names_any": [],
+        "expect_forbid_names": [],
+        "required_facts": [],
+        "judge_eligible": false
+    },
+    {
+        "id": "weather-destination",
+        "query": "what's the weather in Eval Boracay?",
+        "expect_intent": "WEATHER_QUERY",
+        "expect_destination": null,
+        "expect_result_names_any": [],
+        "expect_forbid_names": [],
+        "required_facts": [],
+        "judge_eligible": false
+    },
+    {
+        "id": "weather-month",
+        "query": "is it hot in Eval El Nido in April?",
+        "expect_intent": "WEATHER_QUERY",
+        "expect_destination": null,
+        "expect_result_names_any": [],
+        "expect_forbid_names": [],
+        "required_facts": [],
+        "judge_eligible": false
+    },
+    {
+        "id": "discount-query",
+        "query": "do you have any promos or discounts?",
+        "expect_intent": "DISCOUNT_QUERY",
+        "expect_destination": null,
+        "expect_result_names_any": [],
+        "expect_forbid_names": [],
+        "required_facts": [],
+        "judge_eligible": false
+    },
+    {
+        "id": "legal-cancellation",
+        "query": "can I cancel my reservation and get a refund?",
+        "expect_intent": null,
+        "expect_destination": null,
+        "expect_result_names_any": [],
+        "expect_forbid_names": [],
+        "required_facts": [],
+        "judge_eligible": false
+    },
+    {
+        "id": "legal-checkin-time",
+        "query": "what time is check-in?",
+        "expect_intent": "LEGAL_QUERY",
+        "expect_destination": null,
+        "expect_result_names_any": [],
+        "expect_forbid_names": [],
+        "required_facts": [],
+        "judge_eligible": false
+    },
+    {
+        "id": "booking-status-empty",
+        "query": "what's the status of my booking?",
+        "expect_intent": "BOOKING_STATUS",
+        "expect_destination": null,
+        "expect_result_names_any": [],
+        "expect_forbid_names": [],
+        "required_facts": [],
+        "auth": "personalized",
+        "judge_eligible": false
+    },
+    {
+        "id": "scope-switch-destination",
+        "query": "actually show me hotels in Eval El Nido",
+        "expect_intent": "HOTEL_SEARCH",
+        "expect_destination": "Eval El Nido",
+        "expect_result_names_any": ["Eval Cliff Lodge"],
+        "expect_forbid_names": [
+            "Eval Palm Resort",
+            "Eval Bay Hotel",
+            "Eval Dunes Lodge"
+        ],
+        "required_facts": ["Eval Cliff Lodge"],
+        "setup": {
+            "prior_message": "show me hotels in Eval Boracay"
+        }
+    },
+    {
+        "id": "scope-third-room",
+        "query": "tell me about the third one",
+        "expect_intent": null,
+        "expect_destination": "Eval Boracay",
+        "expect_result_names_any": ["Eval Flexible Room"],
+        "expect_forbid_names": [],
+        "required_facts": ["Eval Flexible Room"],
+        "setup": {
+            "prior_message": "show me rooms in Eval Boracay"
+        }
+    },
+    {
+        "id": "scope-price-carryover",
+        "query": "which ones are under 4000?",
+        "expect_intent": "ROOM_SEARCH",
+        "expect_destination": "Eval Boracay",
+        "expect_result_names_any": ["Eval Standard Room", "Eval Flexible Room"],
+        "expect_forbid_names": ["Eval Family Suite"],
+        "required_facts": [],
+        "setup": {
+            "prior_message": "show me rooms in Eval Boracay"
+        }
+    },
+    {
+        "id": "scope-second-hotel-price",
+        "query": "how much is the second hotel?",
+        "expect_intent": "HOTEL_SEARCH",
+        "expect_destination": "Eval Boracay",
+        "expect_result_names_any": ["Eval Bay Hotel"],
+        "expect_forbid_names": [],
+        "required_facts": ["Eval Bay Hotel"],
+        "setup": {
+            "prior_message": "show me hotels in Eval Boracay"
+        }
+    },
+    {
+        "id": "room-price-filter",
+        "query": "rooms in Eval Boracay under 4000",
+        "expect_intent": "ROOM_SEARCH",
+        "expect_destination": "Eval Boracay",
+        "expect_result_names_any": ["Eval Standard Room", "Eval Flexible Room"],
+        "expect_forbid_names": ["Eval Family Suite"],
+        "required_facts": []
+    },
+    {
+        "id": "package-elnido-empty",
+        "query": "packages in Eval El Nido",
+        "expect_intent": "PACKAGE_SEARCH",
+        "expect_destination": null,
+        "expect_result_names_any": [],
+        "expect_forbid_names": ["Eval Weekend Escape"],
+        "required_facts": [],
+        "expect_abstention": true
+    },
+    {
+        "id": "vague-hotel-request",
+        "query": "I need somewhere to stay in Eval Boracay",
+        "expect_intent": null,
+        "expect_destination": "Eval Boracay",
+        "expect_result_names_any": ["Eval Palm Resort"],
         "expect_forbid_names": [],
         "required_facts": []
     }

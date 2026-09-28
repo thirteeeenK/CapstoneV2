@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Support;
+namespace App\Services\Chat;
 
 /**
  * Pure metric functions for the offline chatbot eval harness.
@@ -118,14 +118,43 @@ class ChatEvalMetrics
         return $hits / count($scoped);
     }
 
+    /**
+     * Fraction of multi-turn cases whose follow-up stayed inside the scope it
+     * was asked about. Derived from what was actually retrieved, never from a
+     * fixture flag — a fixture flag here would just restate the expectation.
+     */
     public static function multiTurnConsistencyRate(array $results): ?float
     {
-        $scoped = array_values(array_filter($results, fn ($row) => ($row['scope_consistent'] ?? null) !== null));
+        $scoped = array_values(array_filter($results, fn ($row) => ($row['is_multi_turn'] ?? false) === true));
         if ($scoped === []) {
             return null;
         }
 
-        return count(array_filter($scoped, fn ($row) => $row['scope_consistent'] === true)) / count($scoped);
+        $hits = count(array_filter($scoped, function (array $row): bool {
+            $expected = trim((string) ($row['expect_destination'] ?? ''));
+            $retrieved = (array) ($row['destinations'] ?? []);
+
+            if ($expected !== '') {
+                if ($retrieved === []) {
+                    return false;
+                }
+                foreach ($retrieved as $destination) {
+                    if (mb_strtolower(trim((string) $destination)) !== mb_strtolower($expected)) {
+                        return false;
+                    }
+                }
+            }
+
+            foreach ((array) ($row['expect_ids'] ?? []) as $id) {
+                if (! in_array($id, (array) ($row['retrieved_ids'] ?? []), true)) {
+                    return false;
+                }
+            }
+
+            return true;
+        }));
+
+        return $hits / count($scoped);
     }
 
     public static function latencyP50(array $results): ?float

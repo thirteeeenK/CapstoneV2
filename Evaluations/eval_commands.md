@@ -25,3 +25,11 @@ Here are your eval/report commands (all read-only — safe to run anytime):
     php artisan sentiment:export-template --path=sentiment_eval_100_template.csv
     php artisan sentiment:import-ground-truth <file>.csv
     Suggested order right now: summary:evaluate → summary:judge (fresh summaries), then sentiment:evaluate --export=... to archive the 295 matrix. Say the word if you want me to run them.
+
+php artisan chatbot:judge --export=Evaluations\chatbot_judge_4point.csv --no-interaction
+
+php artisan chatbot:eval
+
+php artisan summary:generate
+
+php artisan summary:evaluate
