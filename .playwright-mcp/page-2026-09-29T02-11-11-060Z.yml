@@ -1,0 +1,22 @@
+- generic [ref=f1e2]:
+  - generic [ref=f1e3]:
+    - img "El Nido, Palawan — Philippines" [ref=f1e4]
+    - generic [ref=f1e6]:
+      - paragraph [ref=f1e7]:
+        - text: "\"Discover the Islands"
+        - emphasis [ref=f1e8]: Worth Getting Lost In."
+      - paragraph [ref=f1e11]: El Nido, Palawan · Philippines
+  - generic [ref=f1e13]:
+    - link "SunnyTrips — Go to homepage" [ref=f1e14] [cursor=pointer]:
+      - /url: /
+      - generic [aria-hidden] [ref=f1e15]: wb_sunny
+      - generic [ref=f1e16]: SunnyTrips
+    - generic [ref=f1e17]:
+      - generic [ref=f1e18]: Forgot your password? No problem. Just let us know your email address and we will email you a password reset link that will allow you to choose a new one.
+      - generic [ref=f1e19]:
+        - generic [ref=f1e20]:
+          - generic [ref=f1e21]: Email
+          - textbox "Email" [active] [ref=f1e22]: johnkenlypamor13@gmail.com
+          - list [ref=f1e23]:
+            - listitem [ref=f1e24]: We could not send the reset link right now. Please try again in a moment.
+        - button "Email Password Reset Link" [ref=f1e26] [cursor=pointer]
