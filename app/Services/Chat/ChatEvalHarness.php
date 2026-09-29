@@ -42,65 +42,110 @@ class ChatEvalHarness
     {
         $this->purgeLeftovers();
 
-        $boracay = $this->track(DestinationModel::factory()->create(['name' => 'Eval Boracay']));
-        $elnido = $this->track(DestinationModel::factory()->create(['name' => 'Eval El Nido']));
-        $this->track(DestinationModel::factory()->create(['name' => 'Eval Cebu']));
+        $boracay = $this->track(DestinationModel::factory()->create([
+            'name' => 'Eval Boracay',
+            'description' => 'Evaluation destination for deterministic chatbot retrieval.',
+            'region' => 'Evaluation Region',
+        ]));
+        $elnido = $this->track(DestinationModel::factory()->create([
+            'name' => 'Eval El Nido',
+            'description' => 'Evaluation destination for deterministic chatbot retrieval.',
+            'region' => 'Evaluation Region',
+        ]));
+        $this->track(DestinationModel::factory()->create([
+            'name' => 'Eval Cebu',
+            'description' => 'Evaluation destination with intentionally zero inventory.',
+            'region' => 'Evaluation Region',
+        ]));
 
         $palm = $this->track(HotelModel::factory()->create([
             'hotel_name' => 'Eval Palm Resort', 'destination_id' => $boracay->id,
+            'type' => 'Resort', 'hotel_description' => 'Beachfront evaluation resort with family facilities.',
+            'specific_address' => '1 Evaluation Beach Road', 'featured_amenities' => ['Pool', 'WiFi'],
             'is_shown' => true, 'embedding' => $this->vectorString(0),
         ]), 'Eval Palm Resort');
         $this->track(HotelModel::factory()->create([
             'hotel_name' => 'Eval Bay Hotel', 'destination_id' => $boracay->id,
+            'type' => 'Hotel', 'hotel_description' => 'Central evaluation hotel near local dining.',
+            'specific_address' => '2 Evaluation Bay Road', 'featured_amenities' => ['WiFi'],
             'is_shown' => true, 'embedding' => $this->gradedVectorString(0.8),
         ]), 'Eval Bay Hotel');
         $this->track(HotelModel::factory()->create([
             'hotel_name' => 'Eval Dunes Lodge', 'destination_id' => $boracay->id,
+            'type' => 'Lodge', 'hotel_description' => 'Quiet evaluation lodge with garden views.',
+            'specific_address' => '3 Evaluation Dunes Road', 'featured_amenities' => ['Garden'],
             'is_shown' => true, 'embedding' => $this->gradedVectorString(0.65),
         ]), 'Eval Dunes Lodge');
         $this->track(HotelModel::factory()->create([
             'hotel_name' => 'Eval Cliff Lodge', 'destination_id' => $elnido->id,
+            'type' => 'Lodge', 'hotel_description' => 'Evaluation cliff lodge for destination-scoping checks.',
+            'specific_address' => '4 Evaluation Cliff Road', 'featured_amenities' => ['View Deck'],
             'is_shown' => true, 'embedding' => $this->vectorString(0),
         ]), 'Eval Cliff Lodge');
         $this->track(HotelModel::factory()->create([
             'hotel_name' => 'Eval Hidden Resort', 'destination_id' => $boracay->id,
+            'type' => 'Resort', 'hotel_description' => 'Hidden evaluation property.',
+            'specific_address' => '5 Evaluation Hidden Road', 'featured_amenities' => ['Pool'],
             'is_shown' => false, 'embedding' => $this->vectorString(0),
         ]), 'Eval Hidden Resort');
 
         $this->track(RoomType::factory()->create([
             'hotel_id' => $palm->id, 'room_name' => 'Eval Standard Room',
             'base_price' => 3000, 'base_occupancy' => 2, 'max_occupancy' => 2,
+            'extra_person_fee' => 0, 'total_rooms' => 8, 'room_amenities' => ['WiFi', 'Air Conditioning'],
+            'bed_configuration' => '1 Queen Bed', 'room_size' => '28 sqm',
+            'description' => 'Standard evaluation room for up to two guests.', 'view_type' => 'Garden View',
             'is_shown' => true, 'embedding' => $this->vectorString(0),
         ]), 'Eval Standard Room');
         $this->track(RoomType::factory()->create([
             'hotel_id' => $palm->id, 'room_name' => 'Eval Family Suite',
             'base_price' => 4500, 'base_occupancy' => 2, 'max_occupancy' => 4,
+            'extra_person_fee' => 500, 'total_rooms' => 4, 'room_amenities' => ['WiFi', 'Air Conditioning', 'Sofa Bed'],
+            'bed_configuration' => '1 King Bed and 1 Sofa Bed', 'room_size' => '45 sqm',
+            'description' => 'Family evaluation suite for up to four guests.', 'view_type' => 'Ocean View',
             'is_shown' => true, 'embedding' => $this->gradedVectorString(0.8),
         ]), 'Eval Family Suite');
         $this->track(RoomType::factory()->create([
             'hotel_id' => $palm->id, 'room_name' => 'Eval Flexible Room',
             'base_price' => 3500, 'base_occupancy' => 4, 'max_occupancy' => null,
+            'extra_person_fee' => 0, 'total_rooms' => 3, 'room_amenities' => ['WiFi', 'Air Conditioning'],
+            'bed_configuration' => '2 Double Beds', 'room_size' => '38 sqm',
+            'description' => 'Flexible evaluation room with four included guests.', 'view_type' => 'Pool View',
             'is_shown' => true, 'embedding' => $this->gradedVectorString(0.65),
         ]), 'Eval Flexible Room');
 
         $this->track(ActivityModel::factory()->create([
             'activity_name' => 'Eval Paddle Tour', 'destination_id' => $boracay->id,
-            'rate' => '500', 'is_shown' => true, 'embedding' => $this->vectorString(0),
+            'category' => 'Water Activity', 'activity_level' => 'Relaxing', 'rate' => '₱500/person',
+            'duration' => '3 Hours', 'capacity' => 'Up to 10 guests', 'requirements' => 'Basic swimming ability.',
+            'ideal_for' => 'Families', 'vibe_tags' => ['Water', 'Relaxing'],
+            'description' => 'Guided evaluation paddle tour.', 'inclusions' => ['Guide', 'Life vest'],
+            'exclusions' => [], 'itinerary' => [], 'notes' => 'Weather dependent.',
+            'is_shown' => true, 'embedding' => $this->vectorString(0),
         ]), 'Eval Paddle Tour');
         $this->track(ActivityModel::factory()->create([
             'activity_name' => 'Eval Cliff Dive', 'destination_id' => $elnido->id,
-            'rate' => '800', 'is_shown' => true, 'embedding' => $this->vectorString(0),
+            'category' => 'Adventure', 'activity_level' => 'Adventure', 'rate' => '₱800/person',
+            'duration' => 'Half Day', 'capacity' => 'Up to 8 guests', 'requirements' => 'Minimum age 12.',
+            'ideal_for' => 'Adventure travelers', 'vibe_tags' => ['Adventure'],
+            'description' => 'Guided evaluation cliff dive activity.', 'inclusions' => ['Guide', 'Safety gear'],
+            'exclusions' => [], 'itinerary' => [], 'notes' => 'Weather dependent.',
+            'is_shown' => true, 'embedding' => $this->vectorString(0),
         ]), 'Eval Cliff Dive');
 
         $this->track(Package::factory()->create([
             'name' => 'Eval Weekend Escape', 'destination_id' => $boracay->id,
-            'price' => 12000, 'is_active' => true,
+            'type' => 'Tour Package', 'price' => 12000, 'days' => 3, 'nights' => 2, 'min_pax' => 2,
+            'generic_inclusions' => ['Hotel', 'Tour'], 'is_active' => true,
             'embedding' => $this->vectorString(0),
         ]), 'Eval Weekend Escape');
 
         $this->track(AddOnModel::factory()->create([
             'name' => 'Eval Airport Transfer', 'destination_id' => $boracay->id,
-            'embedding' => $this->vectorString(0),
+            'type' => 'Transfer', 'description' => 'Private evaluation airport transfer.',
+            'inclusions' => ['Driver', 'Luggage assistance'],
+            'pricing_tiers' => [['min_pax' => 1, 'max_pax' => 1, 'rate' => 1850], ['min_pax' => 2, 'max_pax' => 4, 'rate' => 1450]],
+            'surcharges' => [], 'is_shown' => true, 'embedding' => $this->vectorString(0),
         ]), 'Eval Airport Transfer');
 
         $faq = Faq::create([

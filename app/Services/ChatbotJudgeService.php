@@ -69,7 +69,7 @@ class ChatbotJudgeService
         if (! is_string($raw) || trim($raw) === '') {
             return null;
         }
-        $decoded = json_decode(trim($raw), true);
+        $decoded = $this->decodeJsonObject(trim($raw));
         if (! is_array($decoded)) {
             return null;
         }
@@ -97,6 +97,63 @@ class ChatbotJudgeService
         $scores['reasoning'] = trim($decoded['reasoning']);
 
         return $scores;
+    }
+
+    /**
+     * Gemini occasionally adds prose around an otherwise valid JSON object.
+     * Extract one balanced object without relaxing the score schema below.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function decodeJsonObject(string $raw): ?array
+    {
+        $decoded = json_decode($raw, true);
+        if (is_array($decoded)) {
+            return $decoded;
+        }
+
+        $length = strlen($raw);
+        for ($start = 0; $start < $length; $start++) {
+            if ($raw[$start] !== '{') {
+                continue;
+            }
+
+            $depth = 0;
+            $inString = false;
+            $escaped = false;
+            for ($index = $start; $index < $length; $index++) {
+                $character = $raw[$index];
+                if ($inString) {
+                    if ($escaped) {
+                        $escaped = false;
+                    } elseif ($character === '\\') {
+                        $escaped = true;
+                    } elseif ($character === '"') {
+                        $inString = false;
+                    }
+
+                    continue;
+                }
+
+                if ($character === '"') {
+                    $inString = true;
+                } elseif ($character === '{') {
+                    $depth++;
+                } elseif ($character === '}') {
+                    $depth--;
+                    if ($depth === 0) {
+                        $candidate = json_decode(substr($raw, $start, $index - $start + 1), true);
+                        if (is_array($candidate)) {
+                            return $candidate;
+                        }
+
+                        break;
+                    }
+                }
+            }
+        }
+
+        return null;
     }
 
     /**

@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Services\Chat\ChatEvalHarness;
+use App\Services\Chat\ChatJudgeEvidenceContext;
 use App\Services\ChatbotJudgeService;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
@@ -15,24 +16,7 @@ use Symfony\Component\Console\Helper\Table;
 #[Description('LLM-as-judge (RAGAS-style, Gemini): faithfulness/answer-relevancy/answer-correctness 1-4 over the chatbot eval fixtures. Needs GEMINI_API_KEY and real API calls.')]
 class ChatbotJudgeCommand extends Command
 {
-    /** reply key => the card field holding its display name */
-    private const CARD_NAME_FIELDS = [
-        'retrieved_rooms' => 'room_name',
-        'retrieved_hotels' => 'hotel_name',
-        'retrieved_activities' => 'activity_name',
-        'retrieved_packages' => 'name',
-        'retrieved_addons' => 'name',
-    ];
-
-    private const CARD_LABELS = [
-        'retrieved_rooms' => 'Room',
-        'retrieved_hotels' => 'Hotel',
-        'retrieved_activities' => 'Activity',
-        'retrieved_packages' => 'Package',
-        'retrieved_addons' => 'Add-on',
-    ];
-
-    public function handle(ChatbotJudgeService $judge): int
+    public function handle(ChatbotJudgeService $judge, ChatJudgeEvidenceContext $evidence): int
     {
         if (! config('services.gemini.api_key')) {
             $this->error('GEMINI_API_KEY is not set — chatbot:judge needs real Gemini calls. Add it to .env and retry.');
@@ -82,7 +66,7 @@ class ChatbotJudgeCommand extends Command
                     $id,
                     (string) $case['query'],
                     $this->answerText($reply),
-                    $this->retrievedContext($reply),
+                    $evidence->build($reply),
                     $this->reference($case),
                 );
 
@@ -177,43 +161,6 @@ class ChatbotJudgeCommand extends Command
         }
 
         return $text;
-    }
-
-    /**
-     * The retrieval layer's actual output, rendered as the closed set of facts
-     * the judge is allowed to treat as grounded.
-     */
-    private function retrievedContext(array $reply): string
-    {
-        $lines = [];
-        foreach (self::CARD_NAME_FIELDS as $key => $nameField) {
-            foreach ((array) ($reply[$key] ?? []) as $card) {
-                if (! is_array($card)) {
-                    continue;
-                }
-                $bits = [(string) ($card[$nameField] ?? '(unnamed)')];
-                if (! empty($card['destination'])) {
-                    $bits[] = 'destination: '.$card['destination'];
-                }
-                foreach (['price_from', 'base_price', 'rate', 'price'] as $priceField) {
-                    if (isset($card[$priceField]) && $card[$priceField] !== '') {
-                        $bits[] = $priceField.': '.$card[$priceField];
-                    }
-                }
-                foreach (['rating', 'address', 'description', 'amenities'] as $extra) {
-                    if (! empty($card[$extra])) {
-                        $bits[] = $extra.': '.(is_scalar($card[$extra]) ? $card[$extra] : json_encode($card[$extra]));
-                    }
-                }
-                $lines[] = '- ['.self::CARD_LABELS[$key].'] '.implode(' | ', $bits);
-            }
-        }
-
-        if ($lines === []) {
-            return '(no records were retrieved for this query)';
-        }
-
-        return implode("\n", $lines);
     }
 
     /**

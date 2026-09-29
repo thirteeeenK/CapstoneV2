@@ -67,6 +67,31 @@ test('it rejects a five point score and retries once', function () {
         ->and($result['answer_correctness'])->toBe(4);
 });
 
+test('it accepts a strict JSON response wrapped in a markdown fence', function () {
+    judgeMock(
+        "Q:q\nC:ctx\nA:a\nR:ref",
+        "```json\n{\"faithfulness\":4,\"answer_relevancy\":4,\"answer_correctness\":4,\"reasoning\":\"All claims are supported.\"}\n```"
+    );
+
+    $result = app(ChatbotJudgeService::class)->scoreCase('c', 'q', 'a', 'ctx', 'ref');
+
+    expect($result['faithfulness'])->toBe(4)
+        ->and($result['answer_correctness'])->toBe(4);
+});
+
+test('it accepts valid judge JSON surrounded by explanatory prose', function () {
+    judgeMock(
+        "Q:q\nC:ctx\nA:a\nR:ref",
+        "Evaluation complete.\n{\"faithfulness\":4,\"answer_relevancy\":3,\"answer_correctness\":4,\"reasoning\":\"The response is supported by the retrieved record.\"}\nEnd of evaluation."
+    );
+
+    $result = app(ChatbotJudgeService::class)->scoreCase('c', 'q', 'a', 'ctx', 'ref');
+
+    expect($result['faithfulness'])->toBe(4)
+        ->and($result['answer_relevancy'])->toBe(3)
+        ->and($result['answer_correctness'])->toBe(4);
+});
+
 test('it gives up after two invalid judge responses', function () {
     judgeMock(
         "Q:q\nC:ctx\nA:a\nR:ref",

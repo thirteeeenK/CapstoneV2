@@ -3,6 +3,7 @@
 use App\Models\ActivityModel;
 use App\Models\DestinationModel;
 use App\Models\HotelModel;
+use App\Models\Package;
 use App\Services\Chat\IntentRouter;
 use Carbon\Carbon;
 
@@ -35,6 +36,13 @@ test('classifies activity search correctly', function () {
     expect($this->router->classify('What tours are available in El Nido?'))->toBe(IntentRouter::ACTIVITY_SEARCH);
     expect($this->router->classify('island hopping activities'))->toBe(IntentRouter::ACTIVITY_SEARCH);
     expect($this->router->classify('things to do in Boracay'))->toBe(IntentRouter::ACTIVITY_SEARCH);
+});
+
+test('classifies a bare exact package name as a package search', function () {
+    Package::factory()->create(['name' => 'Weekend Escape Deal']);
+
+    expect($this->router->classify('Tell me about Weekend Escape Deal'))
+        ->toBe(IntentRouter::PACKAGE_SEARCH);
 });
 
 test('classifies itinerary query', function () {
