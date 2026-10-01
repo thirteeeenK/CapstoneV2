@@ -17,6 +17,7 @@ use App\Models\RoomType;
 use App\Models\User;
 use App\Services\Chat\CatalogPriceQuote;
 use App\Services\Chat\ChatbotModerationPolicy;
+use App\Services\Chat\GroqChatService;
 use Carbon\Carbon;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Collection;
@@ -3045,7 +3046,7 @@ class GeminiService
         if (! $apiKey) {
             Log::warning('Gemini API key is not configured.');
 
-            return null;
+            return $this->fallbackToGroq($systemInstruction, $history, $userPrompt, $conversational, $startedAt ?? (int) (microtime(true) * 1000));
         }
 
         $modelName = config('services.gemini.chat_model') ?? 'models/gemini-2.5-flash-lite';
@@ -3121,7 +3122,7 @@ class GeminiService
                 $this->lastLatencyMs = (int) (microtime(true) * 1000) - $startedAt;
                 Log::error('Gemini ChatResponse timeout: '.$e->getMessage());
 
-                return null;
+                return $this->fallbackToGroq($systemInstruction, $history, $userPrompt, $conversational, $startedAt);
             } catch (\Exception $e) {
                 $this->lastFinishReason = 'error';
                 $this->lastLatencyMs = (int) (microtime(true) * 1000) - $startedAt;
@@ -3152,7 +3153,29 @@ class GeminiService
 
         Log::error('Gemini ChatResponse Failed: ', ['response' => $response ? $response->body() : 'no response']);
 
-        return null;
+        return $this->fallbackToGroq($systemInstruction, $history, $userPrompt, $conversational, $startedAt);
+    }
+
+    /**
+     * OpenAI-compatible fallback (chat replies only): single attempt, no
+     * retry storm. GroqChatService never throws; null means the caller falls
+     * through to the deterministic apology/cards.
+     */
+    protected function fallbackToGroq(string $systemInstruction, array $history, string $userPrompt, bool $conversational, int $startedAt): ?string
+    {
+        if (! config('services.groq.key')) {
+            return null;
+        }
+
+        $fallback = app(GroqChatService::class)->chat($systemInstruction, $history, $userPrompt, $conversational);
+        if (! is_string($fallback) || trim($fallback) === '') {
+            return null;
+        }
+
+        $this->lastFinishReason = 'groq_fallback';
+        $this->lastLatencyMs = (int) (microtime(true) * 1000) - $startedAt;
+
+        return trim($fallback);
     }
 
     /**
