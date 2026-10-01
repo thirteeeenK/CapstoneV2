@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\AdminAuth;
 
 use App\Http\Controllers\Controller;
+use App\Models\AdminModel;
 use App\Models\FailedLoginAttempt;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
@@ -48,7 +50,9 @@ class AdminAuth extends Controller
             ]);
         }
 
-        if (! Auth::guard('admin')->attempt($credentials, $request->boolean('remember'))) {
+        $admin = AdminModel::where('email', $credentials['email'])->first();
+
+        if (! $admin instanceof AdminModel || ! Hash::check($credentials['password'], $admin->password)) {
             RateLimiter::hit($throttleKey);
 
             Log::warning('auth.failed', [
@@ -71,6 +75,17 @@ class AdminAuth extends Controller
         }
 
         RateLimiter::clear($throttleKey);
+
+        if ($admin->hasEnabledTwoFactor()) {
+            $request->session()->put('admin_2fa_pending', $admin->getKey());
+            $request->session()->put('admin_2fa_remember', $request->boolean('remember'));
+            $request->session()->put('admin_2fa_pending_at', now()->timestamp);
+            $request->session()->regenerate();
+
+            return redirect()->route('admin.two-factor.challenge');
+        }
+
+        Auth::guard('admin')->login($admin, $request->boolean('remember'));
 
         $request->session()->regenerate();
 
@@ -103,6 +118,7 @@ class AdminAuth extends Controller
     {
         Auth::guard('admin')->logout();
 
+        $request->session()->forget(['admin_2fa_pending', 'admin_2fa_remember', 'admin_2fa_setup_secret', 'admin_2fa_codes']);
         $request->session()->invalidate();
 
         $request->session()->regenerateToken();
