@@ -15,7 +15,29 @@
 @endphp
 
 <div class="relative">
-    <div id="{{ $mapId }}" class="{{ $height }} w-full rounded-2xl border border-sand-200 shadow-sm" style="z-index: 1;"></div>
+    <div id="{{ $mapId }}" class="{{ $height }} w-full rounded-2xl border border-sand-200 shadow-sm"
+        style="z-index: 1;"></div>
+
+    <div id="{{ $mapId }}-fallback" style="display: none;"
+        class="{{ $height }} w-full rounded-2xl border border-dashed border-slate-300 bg-slate-50 flex-col items-center justify-center gap-2 p-6 text-center">
+        <span class="material-symbols-outlined text-[28px] text-slate-400">map_off</span>
+        <p class="text-sm font-bold text-slate-600 font-headline">Interactive map is unavailable right now.</p>
+        <p class="text-xs text-slate-500 font-body">The map service could not load. Your listings are still available
+            below.</p>
+        <button type="button" onclick="window.location.reload()"
+            class="mt-1 inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-4 py-2 text-xs font-bold text-white transition hover:bg-slate-800 cursor-pointer">
+            <span class="material-symbols-outlined text-[16px]">refresh</span>
+            <span>Retry</span>
+        </button>
+    </div>
+
+    <div id="{{ $mapId }}-tiles-banner" style="display: none;"
+        class="absolute top-3 left-1/2 -translate-x-1/2 z-10 inline-flex items-center gap-2 rounded-full bg-amber-50 border border-amber-200 px-3 py-1.5 text-[11px] font-bold text-amber-800 shadow-sm">
+        <span class="material-symbols-outlined text-[14px]">warning</span>
+        <span>Map tiles unavailable — markers may not display.</span>
+        <button type="button" onclick="window.location.reload()"
+            class="underline hover:no-underline cursor-pointer">Retry</button>
+    </div>
 
     @if ($showDistance)
         <button type="button" onclick="window['{{ $mapId }}']?.locate()"
@@ -25,12 +47,21 @@
         </button>
     @endif
 
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <script>
         (function () {
             const container = document.getElementById('{{ $mapId }}');
+            const fallback = document.getElementById('{{ $mapId }}-fallback');
+            const tilesBanner = document.getElementById('{{ $mapId }}-tiles-banner');
+            function showFallback() {
+                if (container) container.style.display = 'none';
+                if (fallback) {
+                    fallback.style.display = 'flex';
+                    fallback.classList.add('flex');
+                }
+            }
             if (!container || container._leaflet_id) return;
             if (window._sunnytripLeafletLoaded && window.L) {
                 initMap();
@@ -40,22 +71,39 @@
                 if (window.L) {
                     window._sunnytripLeafletLoaded = true;
                     clearInterval(check);
+                    clearTimeout(loadTimer);
                     initMap();
                 }
             }, 100);
+            // CDN blocked / offline: stop polling after 8s and show the fallback
+            // message instead of a blank map div.
+            const loadTimer = setTimeout(() => {
+                if (!window.L) {
+                    clearInterval(check);
+                    showFallback();
+                }
+            }, 8000);
 
             function initMap() {
                 const routeMode = {{ $routeMode ? 'true' : 'false' }};
                 const center = @json($center);
                 const markers = @json($markers);
+                if (!Array.isArray(markers) || markers.length === 0) {
+                    showFallback();
+                    return;
+                }
                 const map = L.map('{{ $mapId }}', {
                     scrollWheelZoom: false,
                 }).setView([center.lat, center.lng], {{ $zoom }});
 
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                const tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     maxZoom: 19,
                     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-                }).addTo(map);
+                });
+                tiles.on('tileerror', () => {
+                    if (tilesBanner) tilesBanner.style.display = 'inline-flex';
+                });
+                tiles.addTo(map);
 
                 const hotelIcon = L.divIcon({
                     className: 'leaflet-div-icon',
@@ -93,7 +141,7 @@
                     if (m.rating) popup += `<small>★ ${Number(m.rating).toFixed(1)} (${m.review_count})</small>`;
                     popup += distance;
                     @if($routeMode)
-                    if (m.url) popup += `<br/><a href="${m.url}">View details →</a>`;
+                        if (m.url) popup += `<br/><a href="${m.url}">View details →</a>`;
                     @endif
                     return popup;
                 }
@@ -115,42 +163,42 @@
                 function iconFor(m) {
                     return m.type === 'hotel' ? hotelIcon
                         : m.type === 'activity' ? activityIcon
-                        : destinationIcon;
+                            : destinationIcon;
                 }
 
                 let selectedId = null;
-                function setSelected(marker){
+                function setSelected(marker) {
                     selectedId = marker ? `${marker.type}-${marker.id}` : null;
-                    markerLayers.forEach(l=>{
+                    markerLayers.forEach(l => {
                         const key = `${l.originalMarker.type}-${l.originalMarker.id}`;
                         const active = key === selectedId;
                         l.setZIndexOffset(active ? 1000 : 0);
                         l.getElement()?.classList.toggle('map-pin-active', active);
                     });
                 }
-                function highlight(id, on){
-                    if(routeMode) return;
-                    const layer = markerLayers.find(l=> `${l.originalMarker.type}-${l.originalMarker.id}`===id);
-                    if(layer){ layer.setZIndexOffset(on?900:0); layer.getElement()?.classList.toggle('map-pin-hover', on); }
+                function highlight(id, on) {
+                    if (routeMode) return;
+                    const layer = markerLayers.find(l => `${l.originalMarker.type}-${l.originalMarker.id}` === id);
+                    if (layer) { layer.setZIndexOffset(on ? 900 : 0); layer.getElement()?.classList.toggle('map-pin-hover', on); }
                 }
-                function setFilter(type){
-                    if(routeMode) return;
-                    markerLayers.forEach((l,i)=>{
-                        const show = type==='all' || l.originalMarker.type===type;
-                        const el = l.getElement(); if(!el) return;
-                        el.style.transition = `opacity 240ms ease-out ${i*18}ms, transform 240ms ease-out ${i*18}ms`;
+                function setFilter(type) {
+                    if (routeMode) return;
+                    markerLayers.forEach((l, i) => {
+                        const show = type === 'all' || l.originalMarker.type === type;
+                        const el = l.getElement(); if (!el) return;
+                        el.style.transition = `opacity 240ms ease-out ${i * 18}ms, transform 240ms ease-out ${i * 18}ms`;
                         el.style.opacity = show ? '1' : '0.14';
                         el.style.transform = show ? 'scale(1)' : 'scale(0.82)';
                         el.style.pointerEvents = show ? 'auto' : 'none';
                     });
                 }
-                function select(marker){
-                    if(routeMode) return;
+                function select(marker) {
+                    if (routeMode) return;
                     setSelected(marker);
-                    if(marker && marker.lat && marker.lng){
-                        map.flyTo([marker.lat, marker.lng], Math.max(map.getZoom(), 12), {animate: !window.matchMedia('(prefers-reduced-motion: reduce)').matches});
+                    if (marker && marker.lat && marker.lng) {
+                        map.flyTo([marker.lat, marker.lng], Math.max(map.getZoom(), 12), { animate: !window.matchMedia('(prefers-reduced-motion: reduce)').matches });
                     }
-                    window.dispatchEvent(new CustomEvent('sunnytrip:map-select',{detail: marker}));
+                    window.dispatchEvent(new CustomEvent('sunnytrip:map-select', { detail: marker }));
                 }
 
                 const markerLayers = [];
@@ -166,13 +214,13 @@
                     if (routeMode) {
                         layer.bindPopup(buildPopupHtml(m));
                     } else {
-                        layer.bindTooltip(buildTooltipHtml(m), {direction:'top'});
+                        layer.bindTooltip(buildTooltipHtml(m), { direction: 'top' });
                         layer.on('click', () => {
                             setSelected(m);
-                            window.dispatchEvent(new CustomEvent('sunnytrip:map-select',{detail: m}));
+                            window.dispatchEvent(new CustomEvent('sunnytrip:map-select', { detail: m }));
                         });
-                        layer.on('mouseover', () => window.dispatchEvent(new CustomEvent('sunnytrip:map-hover',{detail:{marker:m,on:true}})));
-                        layer.on('mouseout', () => window.dispatchEvent(new CustomEvent('sunnytrip:map-hover',{detail:{marker:m,on:false}})));
+                        layer.on('mouseover', () => window.dispatchEvent(new CustomEvent('sunnytrip:map-hover', { detail: { marker: m, on: true } })));
+                        layer.on('mouseout', () => window.dispatchEvent(new CustomEvent('sunnytrip:map-hover', { detail: { marker: m, on: false } })));
                     }
                     layer.addTo(map);
                     markerLayers.push(layer);
@@ -339,13 +387,13 @@
                     if (routeMode) {
                         layer.bindPopup(buildPopupHtml(m));
                     } else {
-                        layer.bindTooltip(buildTooltipHtml(m), {direction:'top'});
+                        layer.bindTooltip(buildTooltipHtml(m), { direction: 'top' });
                         layer.on('click', () => {
                             setSelected(m);
-                            window.dispatchEvent(new CustomEvent('sunnytrip:map-select',{detail: m}));
+                            window.dispatchEvent(new CustomEvent('sunnytrip:map-select', { detail: m }));
                         });
-                        layer.on('mouseover', () => window.dispatchEvent(new CustomEvent('sunnytrip:map-hover',{detail:{marker:m,on:true}})));
-                        layer.on('mouseout', () => window.dispatchEvent(new CustomEvent('sunnytrip:map-hover',{detail:{marker:m,on:false}})));
+                        layer.on('mouseover', () => window.dispatchEvent(new CustomEvent('sunnytrip:map-hover', { detail: { marker: m, on: true } })));
+                        layer.on('mouseout', () => window.dispatchEvent(new CustomEvent('sunnytrip:map-hover', { detail: { marker: m, on: false } })));
                     }
                     layer.addTo(map);
                     markerLayers.push(layer);
@@ -446,11 +494,32 @@
     </script>
     <style>
         @keyframes stping {
-            0% { transform: scale(0.6); opacity: 1; }
-            100% { transform: scale(2.2); opacity: 0; }
+            0% {
+                transform: scale(0.6);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(2.2);
+                opacity: 0;
+            }
         }
-        .map-pin-active div{ box-shadow:0 0 0 4px rgba(14,165,233,0.35), 0 4px 14px rgba(0,0,0,0.25) !important; transform: rotate(-45deg) scale(1.12); }
-        .map-pin-hover div{ box-shadow:0 0 0 3px rgba(14,165,233,0.25) !important; }
-        @media (prefers-reduced-motion: reduce){ .map-pin-active div,.map-pin-hover div{ transition:none !important; } }
+
+        .map-pin-active div {
+            box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.35), 0 4px 14px rgba(0, 0, 0, 0.25) !important;
+            transform: rotate(-45deg) scale(1.12);
+        }
+
+        .map-pin-hover div {
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.25) !important;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+
+            .map-pin-active div,
+            .map-pin-hover div {
+                transition: none !important;
+            }
+        }
     </style>
 </div>

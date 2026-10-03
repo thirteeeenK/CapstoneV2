@@ -184,6 +184,12 @@
                                 <div class="text-xs sm:text-sm text-slate-800 font-body leading-relaxed space-y-2"
                                     x-html="renderMarkdown(msg.text)"></div>
 
+                                {{-- AI fallback notice (Gemini → Groq failover) --}}
+                                <template x-if="msg.ai_notice">
+                                    <p class="mt-2 text-[10px] leading-relaxed text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1.5"
+                                        x-text="msg.ai_notice"></p>
+                                </template>
+
                                 {{-- Room cards --}}
                                 <template x-if="msg.rooms">
                                     <div class="mt-3 space-y-2">
@@ -651,6 +657,7 @@
                         if (ctx.result_ordering) extras.ordering = ctx.result_ordering;
                         if (ctx.itinerary) extras.itinerary = ctx.itinerary;
                         if (ctx.map) extras.map = ctx.map;
+                        if (ctx.ai_notice) extras.ai_notice = ctx.ai_notice;
                         if (ctx.suggested_actions?.length) extras.suggested_actions = ctx.suggested_actions;
                         if (ctx.location_request) {
                             extras.location_request = true;
@@ -911,6 +918,7 @@
                     if (data.retrieved_packages) extras.packages = data.retrieved_packages;
                     if (data.result_ordering) extras.ordering = data.result_ordering;
                     if (data.map) extras.map = data.map;
+                    if (data.ai_notice) extras.ai_notice = data.ai_notice;
                     if (data.suggested_actions?.length) extras.suggested_actions = data.suggested_actions;
                     if (data.location_request) {
                         extras.location_request = true;

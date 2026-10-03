@@ -1,0 +1,452 @@
+- generic [active] [ref=f9e1]:
+  - complementary [ref=f9e2]:
+    - generic [ref=f9e4]:
+      - link "SunnyTrips" [ref=f9e5] [cursor=pointer]:
+        - /url: http://localhost:8000/dashboard
+      - paragraph [ref=f9e7]:
+        - generic [ref=f9e9]: Traveler Portal
+    - generic [ref=f9e10]:
+      - generic [ref=f9e11]: T
+      - generic [ref=f9e12]:
+        - paragraph [ref=f9e13]: Test User
+        - paragraph [ref=f9e14]: test@example.com
+    - navigation [ref=f9e15]:
+      - generic [ref=f9e16]:
+        - heading "Main Navigation" [level=2] [ref=f9e17]
+        - generic [ref=f9e18]:
+          - link "space_dashboard Dashboard" [ref=f9e19] [cursor=pointer]:
+            - /url: http://localhost:8000/dashboard
+            - generic [ref=f9e20]: space_dashboard
+            - generic [ref=f9e21]: Dashboard
+          - link "casino I'm Feeling Lucky" [ref=f9e22] [cursor=pointer]:
+            - /url: http://localhost:8000/lucky
+            - generic [ref=f9e23]: casino
+            - generic [ref=f9e24]: I'm Feeling Lucky
+          - link "shopping_basket My Trip Basket" [ref=f9e25] [cursor=pointer]:
+            - /url: http://localhost:8000/cart
+            - generic [ref=f9e26]: shopping_basket
+            - generic [ref=f9e27]: My Trip Basket
+          - link "auto_stories My Bookings" [ref=f9e28] [cursor=pointer]:
+            - /url: http://localhost:8000/bookings
+            - generic [ref=f9e29]: auto_stories
+            - generic [ref=f9e30]: My Bookings
+          - link "reviews Guest Reviews" [ref=f9e31] [cursor=pointer]:
+            - /url: http://localhost:8000/reviews
+            - generic [ref=f9e32]: reviews
+            - generic [ref=f9e33]: Guest Reviews
+      - generic [ref=f9e34]:
+        - heading "Explore Catalog" [level=2] [ref=f9e35]
+        - generic [ref=f9e36]:
+          - link "location_on Island Destinations" [ref=f9e37] [cursor=pointer]:
+            - /url: http://localhost:8000/destinations
+            - generic [ref=f9e38]: location_on
+            - generic [ref=f9e39]: Island Destinations
+          - link "hotel Hotels & Sanctuaries" [ref=f9e40] [cursor=pointer]:
+            - /url: http://localhost:8000/hotels
+            - generic [ref=f9e41]: hotel
+            - generic [ref=f9e42]: Hotels & Sanctuaries
+          - link "king_bed Rooms & Stays" [ref=f9e43] [cursor=pointer]:
+            - /url: http://localhost:8000/rooms
+            - generic [ref=f9e44]: king_bed
+            - generic [ref=f9e45]: Rooms & Stays
+          - link "explore Activities & Tours" [ref=f9e46] [cursor=pointer]:
+            - /url: http://localhost:8000/activities
+            - generic [ref=f9e47]: explore
+            - generic [ref=f9e48]: Activities & Tours
+          - link "extension Transfers & Add-ons" [ref=f9e49] [cursor=pointer]:
+            - /url: http://localhost:8000/addons
+            - generic [ref=f9e50]: extension
+            - generic [ref=f9e51]: Transfers & Add-ons
+          - link "card_travel Tour Packages & Promos" [ref=f9e52] [cursor=pointer]:
+            - /url: http://localhost:8000/packages
+            - generic [ref=f9e53]: card_travel
+            - generic [ref=f9e54]: Tour Packages & Promos
+      - generic [ref=f9e55]:
+        - heading "Account" [level=2] [ref=f9e56]
+        - link "manage_accounts Account Profile" [ref=f9e58] [cursor=pointer]:
+          - /url: http://localhost:8000/profile
+          - generic [ref=f9e59]: manage_accounts
+          - generic [ref=f9e60]: Account Profile
+    - button "logout Log Out" [ref=f9e63] [cursor=pointer]:
+      - generic [ref=f9e64]: logout
+      - generic [ref=f9e65]: Log Out
+  - main [ref=f9e66]:
+    - generic [ref=f9e68]:
+      - generic [ref=f9e69]:
+        - img "Canyon Hotels & Resorts Boracay" [ref=f9e70]
+        - generic [ref=f9e72]:
+          - generic [ref=f9e73]:
+            - generic [ref=f9e74]: High End Luxury Hotels
+            - generic [ref=f9e75]:
+              - generic [ref=f9e76]: location_on
+              - text: Boracay
+          - heading "Canyon Hotels & Resorts Boracay" [level=1] [ref=f9e77]
+          - paragraph [ref=f9e78]:
+            - generic [ref=f9e79]: pin_drop
+            - text: Station 2 (Near D'Mall)
+          - generic [ref=f9e80]:
+            - generic [ref=f9e81]: "#Boutique Luxury"
+            - generic [ref=f9e82]: "#Quiet & Cozy"
+            - generic [ref=f9e83]: "#Modern Elegance"
+            - generic [ref=f9e84]: "#Family Friendly"
+      - generic [ref=f9e85]:
+        - generic [ref=f9e86]:
+          - generic [ref=f9e87]:
+            - heading "Hotel Description" [level=2] [ref=f9e88]
+            - paragraph [ref=f9e90]: Canyon is nestled in Station 2, just a short walk from White Beach and D'Mall. This boutique hotel offers cozy, well-appointed rooms and a peaceful atmosphere. With its quiet location yet easy access to shops and restaurants, it's great for couples and families seeking a balance of relaxation and convenience.
+          - generic [ref=f9e91]:
+            - heading "Exclusive Amenities & Services" [level=3] [ref=f9e94]
+            - generic [ref=f9e95]:
+              - generic [ref=f9e96]:
+                - generic [ref=f9e97]: pool
+                - generic [ref=f9e99]: Swimming Pool
+              - generic [ref=f9e100]:
+                - generic [ref=f9e101]: chair
+                - generic [ref=f9e103]: Boutique Lounge
+              - generic [ref=f9e104]:
+                - generic [ref=f9e105]: star
+                - generic [ref=f9e107]: Free Shuttle
+              - generic [ref=f9e108]:
+                - generic [ref=f9e109]: restaurant
+                - generic [ref=f9e111]: In-house Restaurant
+        - generic [ref=f9e114]:
+          - generic [ref=f9e115]: king_bed
+          - generic [ref=f9e117]:
+            - heading "Select a Room" [level=3] [ref=f9e118]
+            - paragraph [ref=f9e119]: Choose your preferred room type from the gallery below to view live pricing and details.
+          - link "Browse Available Rooms arrow_downward" [ref=f9e120] [cursor=pointer]:
+            - /url: "#room-gallery"
+            - generic [ref=f9e121]: Browse Available Rooms
+            - generic [ref=f9e122]: arrow_downward
+      - generic [ref=f9e123]:
+        - generic [ref=f9e124]:
+          - generic [ref=f9e125]:
+            - heading "Available Room Types" [level=2] [ref=f9e126]
+            - paragraph [ref=f9e127]: Explore available suites & rooms at Canyon Hotels & Resorts Boracay
+          - generic [ref=f9e128]: 1 Room Type
+        - generic [ref=f9e130]:
+          - generic [ref=f9e131]:
+            - generic [ref=f9e132] [cursor=pointer]:
+              - img "Deluxe Suite" [ref=f9e133]
+              - generic [ref=f9e135]:
+                - generic [ref=f9e136]: visibility
+                - text: Quick Preview
+              - generic [ref=f9e137]: ₱5,200.00 / night
+              - generic [ref=f9e138]:
+                - generic [ref=f9e139]: visibility
+                - text: Garden View
+            - generic [ref=f9e140]:
+              - heading "Deluxe Suite" [level=3] [ref=f9e142] [cursor=pointer]
+              - paragraph [ref=f9e143]: Cozy modern suite featuring warm wooden finishes, plush bedding, and proximity to D'Mall shopping district. Quiet and serene atmosphere.
+              - generic [ref=f9e144]:
+                - generic [ref=f9e145]:
+                  - generic [ref=f9e146]: bed
+                  - text: 1 Queen Bed
+                - generic [ref=f9e147]:
+                  - generic [ref=f9e148]: group
+                  - text: "Base: 2 • Max: 2 Guests"
+                - generic [ref=f9e149]:
+                  - generic [ref=f9e150]: aspect_ratio
+                  - text: 32 sq.m
+          - generic [ref=f9e151]:
+            - button "visibility Preview" [ref=f9e152] [cursor=pointer]:
+              - generic [ref=f9e153]: visibility
+              - generic [ref=f9e154]: Preview
+            - button "touch_app Select" [ref=f9e155] [cursor=pointer]:
+              - generic [ref=f9e156]: touch_app
+              - generic [ref=f9e157]: Select
+      - generic [ref=f9e158]:
+        - generic [ref=f9e159]:
+          - heading "Hotel Photo Gallery" [level=2] [ref=f9e160]
+          - paragraph [ref=f9e161]: Immerse yourself in the atmosphere of Canyon Hotels & Resorts Boracay
+        - generic [ref=f9e162]:
+          - generic [ref=f9e163] [cursor=pointer]:
+            - img "Hotel photo 1" [ref=f9e164]
+            - generic [ref=f9e165]: zoom_in
+          - generic [ref=f9e167] [cursor=pointer]:
+            - img "Hotel photo 2" [ref=f9e168]
+            - generic [ref=f9e169]: zoom_in
+      - generic [ref=f9e171]:
+        - generic [ref=f9e172]:
+          - generic [ref=f9e173]:
+            - heading "Location & Weather" [level=2] [ref=f9e174]
+            - paragraph [ref=f9e175]: Where you'll be staying and what to expect
+          - generic [ref=f9e177]:
+            - paragraph [ref=f9e178]: 29°C
+            - paragraph [ref=f9e179]: broken clouds
+        - generic [ref=f9e180]:
+          - generic [ref=f9e181]:
+            - generic [ref=f9e183]:
+              - generic [ref=f9e184]:
+                - button [ref=f9e185] [cursor=pointer]
+                - generic:
+                  - generic [ref=f9e187]:
+                    - button "Zoom in" [ref=f9e188] [cursor=pointer]: +
+                    - button "Zoom out" [ref=f9e189] [cursor=pointer]: −
+                  - generic [ref=f9e190]:
+                    - link "Leaflet" [ref=f9e191] [cursor=pointer]:
+                      - /url: https://leafletjs.com
+                    - text: "| ©"
+                    - link "OpenStreetMap" [ref=f9e196] [cursor=pointer]:
+                      - /url: https://www.openstreetmap.org/copyright
+                    - text: contributors
+              - button "my_location Calculate Distance" [ref=f9e197] [cursor=pointer]:
+                - generic [ref=f9e198]: my_location
+                - generic [ref=f9e199]: Calculate Distance
+            - generic [ref=f9e200]:
+              - generic [ref=f9e202]:
+                - generic [ref=f9e203]: route
+                - heading "Trip Distance Estimator" [level=3] [ref=f9e204]
+                - generic [ref=f9e205]: Approximate Direct
+              - generic [ref=f9e206]:
+                - generic [ref=f9e207]: touch_app
+                - generic [ref=f9e208]:
+                  - text: Click
+                  - strong [ref=f9e209]: Distance
+                  - text: on any nearby experience to view estimated travel distances from Canyon Hotels & Resorts Boracay.
+              - generic [ref=f9e210]:
+                - generic [ref=f9e211]: info
+                - generic [ref=f9e212]:
+                  - strong [ref=f9e213]: "Note:"
+                  - text: Distances shown are approximate straight-line (Haversine) estimates. Actual travel distance and duration may vary based on island terrain, road networks, or boat transport.
+          - generic [ref=f9e214]:
+            - generic [ref=f9e215]:
+              - heading "Boracay Forecast" [level=3] [ref=f9e216]
+              - generic [ref=f9e217]:
+                - generic [ref=f9e218]:
+                  - generic [ref=f9e219]:
+                    - img "broken clouds" [ref=f9e220]
+                    - generic [ref=f9e221]:
+                      - paragraph [ref=f9e222]: 29°C
+                      - paragraph [ref=f9e223]: broken clouds
+                  - generic [ref=f9e224]: ☔ 2% rain
+                - generic [ref=f9e225]:
+                  - generic [ref=f9e226]:
+                    - paragraph [ref=f9e227]: Feels like
+                    - paragraph [ref=f9e228]: 32°C
+                  - generic [ref=f9e229]:
+                    - paragraph [ref=f9e230]: Humidity
+                    - paragraph [ref=f9e231]: 71%
+                  - generic [ref=f9e232]:
+                    - paragraph [ref=f9e233]: High / Low
+                    - paragraph [ref=f9e234]: 29° / 29°
+                - generic [ref=f9e235]:
+                  - generic [ref=f9e236]:
+                    - paragraph [ref=f9e237]: Sat
+                    - paragraph [ref=f9e238]: 29°
+                  - generic [ref=f9e239]:
+                    - paragraph [ref=f9e240]: Sun
+                    - paragraph [ref=f9e241]: 29°
+                  - generic [ref=f9e242]:
+                    - paragraph [ref=f9e243]: Mon
+                    - paragraph [ref=f9e244]: 29°
+                  - generic [ref=f9e245]:
+                    - paragraph [ref=f9e246]: Tue
+                    - paragraph [ref=f9e247]: 29°
+                  - generic [ref=f9e248]:
+                    - paragraph [ref=f9e249]: Wed
+                    - paragraph [ref=f9e250]: 28°
+            - generic [ref=f9e251]:
+              - heading "Nearby Experiences" [level=3] [ref=f9e252]
+              - list [ref=f9e253]:
+                - listitem [ref=f9e254]:
+                  - generic [ref=f9e256]:
+                    - paragraph [ref=f9e257]: Party Yacht
+                    - paragraph [ref=f9e258]: Boracay
+                  - generic [ref=f9e259]:
+                    - button "my_location Distance" [ref=f9e260] [cursor=pointer]:
+                      - generic [ref=f9e261]: my_location
+                      - text: Distance
+                    - button "visibility Preview" [ref=f9e262] [cursor=pointer]:
+                      - generic [ref=f9e263]: visibility
+                      - text: Preview
+                - listitem [ref=f9e264]:
+                  - generic [ref=f9e266]:
+                    - paragraph [ref=f9e267]: Party Boat
+                    - paragraph [ref=f9e268]: Boracay
+                  - generic [ref=f9e269]:
+                    - button "my_location Distance" [ref=f9e270] [cursor=pointer]:
+                      - generic [ref=f9e271]: my_location
+                      - text: Distance
+                    - button "visibility Preview" [ref=f9e272] [cursor=pointer]:
+                      - generic [ref=f9e273]: visibility
+                      - text: Preview
+                - listitem [ref=f9e274]:
+                  - generic [ref=f9e276]:
+                    - paragraph [ref=f9e277]: Crystal Kayak - Boracay
+                    - paragraph [ref=f9e278]: Boracay
+                  - generic [ref=f9e279]:
+                    - button "my_location Distance" [ref=f9e280] [cursor=pointer]:
+                      - generic [ref=f9e281]: my_location
+                      - text: Distance
+                    - button "visibility Preview" [ref=f9e282] [cursor=pointer]:
+                      - generic [ref=f9e283]: visibility
+                      - text: Preview
+                - listitem [ref=f9e284]:
+                  - generic [ref=f9e286]:
+                    - paragraph [ref=f9e287]: 6–7 Destinations (Aircon Van)
+                    - paragraph [ref=f9e288]: Boracay
+                  - generic [ref=f9e289]:
+                    - button "my_location Distance" [ref=f9e290] [cursor=pointer]:
+                      - generic [ref=f9e291]: my_location
+                      - text: Distance
+                    - button "visibility Preview" [ref=f9e292] [cursor=pointer]:
+                      - generic [ref=f9e293]: visibility
+                      - text: Preview
+                - listitem [ref=f9e294]:
+                  - generic [ref=f9e296]:
+                    - paragraph [ref=f9e297]: Banana Boat
+                    - paragraph [ref=f9e298]: Boracay
+                  - generic [ref=f9e299]:
+                    - button "my_location Distance" [ref=f9e300] [cursor=pointer]:
+                      - generic [ref=f9e301]: my_location
+                      - text: Distance
+                    - button "visibility Preview" [ref=f9e302] [cursor=pointer]:
+                      - generic [ref=f9e303]: visibility
+                      - text: Preview
+                - listitem [ref=f9e304]:
+                  - generic [ref=f9e306]:
+                    - paragraph [ref=f9e307]: Paraw Sailing (Private)
+                    - paragraph [ref=f9e308]: Boracay
+                  - generic [ref=f9e309]:
+                    - button "my_location Distance" [ref=f9e310] [cursor=pointer]:
+                      - generic [ref=f9e311]: my_location
+                      - text: Distance
+                    - button "visibility Preview" [ref=f9e312] [cursor=pointer]:
+                      - generic [ref=f9e313]: visibility
+                      - text: Preview
+      - generic [ref=f9e314]:
+        - heading "reviews Guest Reviews & Sentiment" [level=2] [ref=f9e316]:
+          - generic [ref=f9e317]: reviews
+          - text: Guest Reviews & Sentiment
+        - generic [ref=f9e319]:
+          - generic [ref=f9e320]:
+            - generic [ref=f9e321]:
+              - paragraph [ref=f9e322]: "3.8"
+              - generic "3.83 out of 5 stars" [ref=f9e324]:
+                - generic [ref=f9e325]: star
+                - generic [ref=f9e326]: star
+                - generic [ref=f9e327]: star
+                - generic [ref=f9e328]: star
+                - generic [ref=f9e329]: star
+            - generic [ref=f9e330]:
+              - generic [ref=f9e331]:
+                - generic [ref=f9e332]: sentiment_satisfied
+                - text: 67% Positive
+              - generic [ref=f9e333]:
+                - generic [ref=f9e334]: sentiment_neutral
+                - text: 6% Neutral
+              - generic [ref=f9e335]:
+                - generic [ref=f9e336]: sentiment_dissatisfied
+                - text: 28% Negative
+          - generic [ref=f9e337]:
+            - paragraph [ref=f9e338]:
+              - generic [ref=f9e339]: smart_toy
+              - text: AI Summary Consensus
+            - list [ref=f9e340]:
+              - listitem [ref=f9e341]:
+                - generic [ref=f9e343]: Guests consistently praise the hotel's exceptionally polite, friendly, and accommodating staff who enhance the overall comfort and professionalism of the stay.
+              - listitem [ref=f9e344]:
+                - generic [ref=f9e346]: The hotel is frequently commended for its cleanliness, with rooms described as spotless, neat, and new, contributing to a relaxing atmosphere.
+              - listitem [ref=f9e347]:
+                - generic [ref=f9e349]: Many reviewers highlight the excellent value for money, prime location (especially its proximity to Robinson Mall and shuttle service to Station 2), and reliable facilities like Wi-Fi and hot water.
+              - listitem [ref=f9e350]:
+                - generic [ref=f9e352]: However, a significant number of negative reviews point to outdated rooms and facilities needing refurbishment, poor breakfast options, noise disturbances, and inefficient or unwelcoming check-in processes, leading some to feel it doesn't meet 4-star expectations.
+      - generic [ref=f9e353]:
+        - article [ref=f9e354]:
+          - generic [ref=f9e355]:
+            - generic [ref=f9e356]:
+              - generic [ref=f9e357]: J
+              - generic [ref=f9e358]:
+                - paragraph [ref=f9e359]: John P.
+                - generic [ref=f9e360]: Jul 16, 2026
+            - generic [ref=f9e361]:
+              - generic [ref=f9e362]:
+                - generic [ref=f9e363]: star
+                - generic [ref=f9e364]: star
+                - generic [ref=f9e365]: star
+                - generic [ref=f9e366]: star
+                - generic [ref=f9e367]: star
+              - generic [ref=f9e368]:
+                - generic [ref=f9e369]: sentiment_satisfied
+                - text: Positive
+          - paragraph [ref=f9e370]: The hotel is next to Robinson Mall. The hotel is very clean and the staff is kind. It operates a free shuttle bus, so it's convenient to go to Station 2.
+          - generic [ref=f9e371]:
+            - generic [ref=f9e372]: "#location"
+            - generic [ref=f9e373]: "#clean"
+            - generic [ref=f9e374]: "#staff"
+            - generic [ref=f9e375]: "#shuttle bus"
+            - generic [ref=f9e376]: "#convenient"
+        - article [ref=f9e377]:
+          - generic [ref=f9e378]:
+            - generic [ref=f9e379]:
+              - generic [ref=f9e380]: B
+              - generic [ref=f9e381]:
+                - paragraph [ref=f9e382]: Bien B.
+                - generic [ref=f9e383]: Jul 15, 2026
+            - generic [ref=f9e384]:
+              - generic [ref=f9e385]:
+                - generic [ref=f9e386]: star
+                - generic [ref=f9e387]: star
+                - generic [ref=f9e388]: star
+                - generic [ref=f9e389]: star
+                - generic [ref=f9e390]: star
+              - generic [ref=f9e391]:
+                - generic [ref=f9e392]: sentiment_satisfied
+                - text: Positive
+          - paragraph [ref=f9e393]: The place offers excellent value with prime location. Staff is attentive and accommodating. They have a pool and reliable wifi. They also have free shuttle.
+          - generic [ref=f9e394]:
+            - generic [ref=f9e395]: "#excellent value"
+            - generic [ref=f9e396]: "#prime location"
+            - generic [ref=f9e397]: "#attentive staff"
+            - generic [ref=f9e398]: "#reliable wifi"
+            - generic [ref=f9e399]: "#free shuttle"
+        - article [ref=f9e400]:
+          - generic [ref=f9e401]:
+            - generic [ref=f9e402]:
+              - generic [ref=f9e403]: E
+              - generic [ref=f9e404]:
+                - paragraph [ref=f9e405]: Erica B.
+                - generic [ref=f9e406]: Jul 15, 2026
+            - generic [ref=f9e407]:
+              - generic [ref=f9e408]:
+                - generic [ref=f9e409]: star
+                - generic [ref=f9e410]: star
+                - generic [ref=f9e411]: star
+                - generic [ref=f9e412]: star
+                - generic [ref=f9e413]: star
+              - generic [ref=f9e414]:
+                - generic [ref=f9e415]: sentiment_satisfied
+                - text: Positive
+          - paragraph [ref=f9e416]: We're completely impressed with their professionalism and customer service. The hotel room was clean, nice and spacious. The staff were friendly and helpful.
+          - generic [ref=f9e417]:
+            - generic [ref=f9e418]: "#professionalism"
+            - generic [ref=f9e419]: "#customer service"
+            - generic [ref=f9e420]: "#clean room"
+            - generic [ref=f9e421]: "#spacious room"
+            - generic [ref=f9e422]: "#friendly staff"
+        - article [ref=f9e423]:
+          - generic [ref=f9e424]:
+            - generic [ref=f9e425]:
+              - generic [ref=f9e426]: J
+              - generic [ref=f9e427]:
+                - paragraph [ref=f9e428]: John C.
+                - generic [ref=f9e429]: Jul 12, 2026
+            - generic [ref=f9e430]:
+              - generic [ref=f9e431]:
+                - generic [ref=f9e432]: star
+                - generic [ref=f9e433]: star
+                - generic [ref=f9e434]: star
+                - generic [ref=f9e435]: star
+                - generic [ref=f9e436]: star
+              - generic [ref=f9e437]:
+                - generic [ref=f9e438]: sentiment_satisfied
+                - text: Positive
+          - paragraph [ref=f9e439]: The value for money is good, you get what you paid for. The cleanliness is superb, everything is neat and new.
+          - generic [ref=f9e440]:
+            - generic [ref=f9e441]: "#value for money"
+            - generic [ref=f9e442]: "#cleanliness"
+            - generic [ref=f9e443]: "#neat"
+            - generic [ref=f9e444]: "#new"
+  - button "Chat with SunnyTrips AI" [ref=f9e446] [cursor=pointer]:
+    - img "Chat with SunnyBot" [ref=f9e447]

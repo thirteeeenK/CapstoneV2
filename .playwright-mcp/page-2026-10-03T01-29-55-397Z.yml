@@ -1,0 +1,269 @@
+- generic [active] [ref=f2e1]:
+  - complementary [ref=f2e2]:
+    - generic [ref=f2e4]:
+      - link "SunnyTrips" [ref=f2e5] [cursor=pointer]:
+        - /url: http://localhost:8000/dashboard
+      - paragraph [ref=f2e7]:
+        - generic [ref=f2e9]: Traveler Portal
+    - generic [ref=f2e10]:
+      - generic [ref=f2e11]: T
+      - generic [ref=f2e12]:
+        - paragraph [ref=f2e13]: Test User
+        - paragraph [ref=f2e14]: test@example.com
+    - navigation [ref=f2e15]:
+      - generic [ref=f2e16]:
+        - heading "Main Navigation" [level=2] [ref=f2e17]
+        - generic [ref=f2e18]:
+          - link "space_dashboard Dashboard" [ref=f2e19] [cursor=pointer]:
+            - /url: http://localhost:8000/dashboard
+            - generic [ref=f2e20]: space_dashboard
+            - generic [ref=f2e21]: Dashboard
+          - link "casino I'm Feeling Lucky" [ref=f2e22] [cursor=pointer]:
+            - /url: http://localhost:8000/lucky
+            - generic [ref=f2e23]: casino
+            - generic [ref=f2e24]: I'm Feeling Lucky
+          - link "shopping_basket My Trip Basket" [ref=f2e25] [cursor=pointer]:
+            - /url: http://localhost:8000/cart
+            - generic [ref=f2e26]: shopping_basket
+            - generic [ref=f2e27]: My Trip Basket
+          - link "auto_stories My Bookings" [ref=f2e28] [cursor=pointer]:
+            - /url: http://localhost:8000/bookings
+            - generic [ref=f2e29]: auto_stories
+            - generic [ref=f2e30]: My Bookings
+          - link "reviews Guest Reviews" [ref=f2e31] [cursor=pointer]:
+            - /url: http://localhost:8000/reviews
+            - generic [ref=f2e32]: reviews
+            - generic [ref=f2e33]: Guest Reviews
+      - generic [ref=f2e34]:
+        - heading "Explore Catalog" [level=2] [ref=f2e35]
+        - generic [ref=f2e36]:
+          - link "location_on Island Destinations" [ref=f2e37] [cursor=pointer]:
+            - /url: http://localhost:8000/destinations
+            - generic [ref=f2e38]: location_on
+            - generic [ref=f2e39]: Island Destinations
+          - link "hotel Hotels & Sanctuaries" [ref=f2e40] [cursor=pointer]:
+            - /url: http://localhost:8000/hotels
+            - generic [ref=f2e41]: hotel
+            - generic [ref=f2e42]: Hotels & Sanctuaries
+          - link "king_bed Rooms & Stays" [ref=f2e43] [cursor=pointer]:
+            - /url: http://localhost:8000/rooms
+            - generic [ref=f2e44]: king_bed
+            - generic [ref=f2e45]: Rooms & Stays
+          - link "explore Activities & Tours" [ref=f2e46] [cursor=pointer]:
+            - /url: http://localhost:8000/activities
+            - generic [ref=f2e47]: explore
+            - generic [ref=f2e48]: Activities & Tours
+          - link "extension Transfers & Add-ons" [ref=f2e49] [cursor=pointer]:
+            - /url: http://localhost:8000/addons
+            - generic [ref=f2e50]: extension
+            - generic [ref=f2e51]: Transfers & Add-ons
+          - link "card_travel Tour Packages & Promos" [ref=f2e52] [cursor=pointer]:
+            - /url: http://localhost:8000/packages
+            - generic [ref=f2e53]: card_travel
+            - generic [ref=f2e54]: Tour Packages & Promos
+      - generic [ref=f2e55]:
+        - heading "Account" [level=2] [ref=f2e56]
+        - link "manage_accounts Account Profile" [ref=f2e58] [cursor=pointer]:
+          - /url: http://localhost:8000/profile
+          - generic [ref=f2e59]: manage_accounts
+          - generic [ref=f2e60]: Account Profile
+    - button "logout Log Out" [ref=f2e63] [cursor=pointer]:
+      - generic [ref=f2e64]: logout
+      - generic [ref=f2e65]: Log Out
+  - main [ref=f2e66]:
+    - generic [ref=f2e68]:
+      - generic [ref=f2e70]:
+        - generic [ref=f2e72]:
+          - generic [ref=f2e73]: auto_awesome
+          - generic [ref=f2e74]: Recommendation Active
+        - heading "Welcome back, Test User!" [level=1] [ref=f2e75]
+        - paragraph [ref=f2e76]: Logged in as test@example.com. Explore your island recommendations below.
+      - generic [ref=f2e78]:
+        - generic [ref=f2e79]:
+          - generic [ref=f2e80]:
+            - generic [ref=f2e81]:
+              - button "auto_awesome AI Recommendations" [ref=f2e82] [cursor=pointer]:
+                - generic [ref=f2e83]: auto_awesome
+                - generic [ref=f2e84]: AI Recommendations
+              - button "travel_explore Default Listings" [ref=f2e86] [cursor=pointer]:
+                - generic [ref=f2e87]: travel_explore
+                - generic [ref=f2e88]: Default Listings
+              - button "card_travel Tour Packages" [ref=f2e89] [cursor=pointer]:
+                - generic [ref=f2e90]: card_travel
+                - generic [ref=f2e91]: Tour Packages
+            - paragraph [ref=f2e92]:
+              - generic [ref=f2e93]: Top 5 sanctuary stays and top 5 experiences matched to your preference profile.
+          - generic [ref=f2e94]:
+            - link "tune Reset Preferences" [ref=f2e95] [cursor=pointer]:
+              - /url: http://localhost:8000/onboarding/reset
+              - generic [ref=f2e96]: tune
+              - generic [ref=f2e97]: Reset Preferences
+            - generic [ref=f2e99]:
+              - generic [ref=f2e100]:
+                - generic [ref=f2e101]: filter_alt
+                - generic [ref=f2e102]: "Sanctuary:"
+              - button "location_on Boracay" [ref=f2e103] [cursor=pointer]:
+                - generic [ref=f2e104]: location_on
+                - generic [ref=f2e105]: Boracay
+              - button "location_on El Nido" [ref=f2e106] [cursor=pointer]:
+                - generic [ref=f2e107]: location_on
+                - generic [ref=f2e108]: El Nido
+        - generic [ref=f2e110]:
+          - generic [ref=f2e111]:
+            - generic [ref=f2e112]:
+              - generic [ref=f2e113]:
+                - generic [ref=f2e114]: hotel
+                - heading "Top 5 Recommended Sanctuary Stays in Boracay" [level=3] [ref=f2e115]
+              - generic [ref=f2e116]: Ranked by AI Match
+            - paragraph [ref=f2e117]:
+              - generic [ref=f2e118]: auto_awesome
+              - generic [ref=f2e119]:
+                - strong [ref=f2e120]: "Why these were picked:"
+                - text: Based on your Friends Group trip to Boracay with Nightlife & Party vibes, these hotels offer a lively atmosphere. Frendz Resort & Hostel is a top pick for its Social & Vibrant scene and Pool Parties. Perfect if you want to be close to the action and meet new people.
+            - generic [ref=f2e121]:
+              - link "Frendz Resort & Hostel Mid Affordable Hotels Frendz Resort & Hostel Found in Station 1, Frendz is a popular social spot for travelers. It's about a 5-minute walk to White Beach and has a pool and a common area that often hosts events. It's close to bars and restaurants but still maintains a laid-back vibe. View Sanctuary arrow_forward" [ref=f2e122] [cursor=pointer]:
+                - /url: http://localhost:8000/hotels/6
+                - generic [ref=f2e123]:
+                  - generic [ref=f2e124]:
+                    - img "Frendz Resort & Hostel" [ref=f2e125]
+                    - generic [ref=f2e127]: Mid Affordable Hotels
+                  - generic [ref=f2e128]:
+                    - heading "Frendz Resort & Hostel" [level=4] [ref=f2e129]
+                    - paragraph [ref=f2e130]: Found in Station 1, Frendz is a popular social spot for travelers. It's about a 5-minute walk to White Beach and has a pool and a common area that often hosts events. It's close to bars and restaurants but still maintains a laid-back vibe.
+                - generic [ref=f2e132]:
+                  - generic [ref=f2e133]: View Sanctuary
+                  - generic [ref=f2e134]: arrow_forward
+              - link "Happiness Hostel Mid Affordable Hotels Happiness Hostel Near Bulabog Beach in Station 2, Happiness Hostel offers a bohemian vibe with both dorms and private rooms. It's a 2-minute walk to Bulabog and around 10 minutes to White Beach. The property has a small pool and an in-house restaurant with communal areas for socializing. View Sanctuary arrow_forward" [ref=f2e135] [cursor=pointer]:
+                - /url: http://localhost:8000/hotels/8
+                - generic [ref=f2e136]:
+                  - generic [ref=f2e137]:
+                    - img "Happiness Hostel" [ref=f2e138]
+                    - generic [ref=f2e140]: Mid Affordable Hotels
+                  - generic [ref=f2e141]:
+                    - heading "Happiness Hostel" [level=4] [ref=f2e142]
+                    - paragraph [ref=f2e143]: Near Bulabog Beach in Station 2, Happiness Hostel offers a bohemian vibe with both dorms and private rooms. It's a 2-minute walk to Bulabog and around 10 minutes to White Beach. The property has a small pool and an in-house restaurant with communal areas for socializing.
+                - generic [ref=f2e145]:
+                  - generic [ref=f2e146]: View Sanctuary
+                  - generic [ref=f2e147]: arrow_forward
+              - link "Lazy Dog Bed & Breakfast Mid Affordable Hotels Lazy Dog Bed & Breakfast Located near Bulabog Beach, Lazy Dog provides a cozy environment with both private rooms and dormitories. It's about a 2-minute walk to Bulabog Beach and 10 minutes to White Beach Station 2. There's no swimming pool, but the area is peaceful and just a short walk to D'Mall and various restaurants. View Sanctuary arrow_forward" [ref=f2e148] [cursor=pointer]:
+                - /url: http://localhost:8000/hotels/7
+                - generic [ref=f2e149]:
+                  - generic [ref=f2e150]:
+                    - img "Lazy Dog Bed & Breakfast" [ref=f2e151]
+                    - generic [ref=f2e153]: Mid Affordable Hotels
+                  - generic [ref=f2e154]:
+                    - heading "Lazy Dog Bed & Breakfast" [level=4] [ref=f2e155]
+                    - paragraph [ref=f2e156]: Located near Bulabog Beach, Lazy Dog provides a cozy environment with both private rooms and dormitories. It's about a 2-minute walk to Bulabog Beach and 10 minutes to White Beach Station 2. There's no swimming pool, but the area is peaceful and just a short walk to D'Mall and various restaurants.
+                - generic [ref=f2e158]:
+                  - generic [ref=f2e159]: View Sanctuary
+                  - generic [ref=f2e160]: arrow_forward
+              - link "Boracay Ocean Club Beach Resort High End Luxury Hotels Boracay Ocean Club Beach Resort Boracay Ocean Club is located in Station 3, right along White Beach with direct beachfront access. The resort features a beachfront pool, spa services, and dive center, making it ideal for adventure seekers and beach lovers. With ocean-view rooms and a quieter location, it's perfect for travelers who want a more laid-back Boracay experience. View Sanctuary arrow_forward" [ref=f2e161] [cursor=pointer]:
+                - /url: http://localhost:8000/hotels/3
+                - generic [ref=f2e162]:
+                  - generic [ref=f2e163]:
+                    - img "Boracay Ocean Club Beach Resort" [ref=f2e164]
+                    - generic [ref=f2e166]: High End Luxury Hotels
+                  - generic [ref=f2e167]:
+                    - heading "Boracay Ocean Club Beach Resort" [level=4] [ref=f2e168]
+                    - paragraph [ref=f2e169]: Boracay Ocean Club is located in Station 3, right along White Beach with direct beachfront access. The resort features a beachfront pool, spa services, and dive center, making it ideal for adventure seekers and beach lovers. With ocean-view rooms and a quieter location, it's perfect for travelers who want a more laid-back Boracay experience.
+                - generic [ref=f2e171]:
+                  - generic [ref=f2e172]: View Sanctuary
+                  - generic [ref=f2e173]: arrow_forward
+              - link "My Station Hotel Mid Affordable Hotels My Station Hotel Located in Station 1, My Station Hotel is just a short walk from the pristine White Beach. With modern, comfortable rooms and a welcoming atmosphere, this hotel offers a relaxing stay while being close to local attractions. Guests can enjoy easy access to restaurants, shopping, and the island's nightlife, making it perfect for both relaxation and adventure seekers. View Sanctuary arrow_forward" [ref=f2e174] [cursor=pointer]:
+                - /url: http://localhost:8000/hotels/5
+                - generic [ref=f2e175]:
+                  - generic [ref=f2e176]:
+                    - img "My Station Hotel" [ref=f2e177]
+                    - generic [ref=f2e179]: Mid Affordable Hotels
+                  - generic [ref=f2e180]:
+                    - heading "My Station Hotel" [level=4] [ref=f2e181]
+                    - paragraph [ref=f2e182]: Located in Station 1, My Station Hotel is just a short walk from the pristine White Beach. With modern, comfortable rooms and a welcoming atmosphere, this hotel offers a relaxing stay while being close to local attractions. Guests can enjoy easy access to restaurants, shopping, and the island's nightlife, making it perfect for both relaxation and adventure seekers.
+                - generic [ref=f2e184]:
+                  - generic [ref=f2e185]: View Sanctuary
+                  - generic [ref=f2e186]: arrow_forward
+          - generic [ref=f2e187]:
+            - generic [ref=f2e188]:
+              - generic [ref=f2e189]:
+                - generic [ref=f2e190]: explore
+                - heading "Top 5 Must-Try Experiences in Boracay" [level=3] [ref=f2e191]
+              - generic [ref=f2e192]: Curated AI Matches
+            - paragraph [ref=f2e193]:
+              - generic [ref=f2e194]: auto_awesome
+              - generic [ref=f2e195]:
+                - strong [ref=f2e196]: "Why these were picked:"
+                - text: Given your Friends Group trip to Boracay and love for Nightlife & Party, these activities promise fun. The Party Boat offers a sunset cruise with music and water slides. Ideal for enjoying the vibrant Boracay nightlife with your friends.
+            - generic [ref=f2e197]:
+              - generic [ref=f2e198]:
+                - generic [ref=f2e199]:
+                  - generic [ref=f2e200]:
+                    - img "Scuba Diving" [ref=f2e201]
+                    - generic [ref=f2e203]: ₱1,350/person
+                  - generic [ref=f2e204]:
+                    - heading "Scuba Diving" [level=4] [ref=f2e205]
+                    - paragraph [ref=f2e206]: Discover Scuba Diving for beginners with PADI certified divemasters. Dive into coral reefs, interact with marine life, and experience weightless underwater flight.
+                - button "View Experience arrow_forward" [ref=f2e208] [cursor=pointer]:
+                  - generic [ref=f2e209]: View Experience
+                  - generic [ref=f2e210]: arrow_forward
+              - generic [ref=f2e211]:
+                - generic [ref=f2e212]:
+                  - generic [ref=f2e213]:
+                    - img "Party Boat" [ref=f2e214]
+                    - generic [ref=f2e216]: ₱800/person
+                  - generic [ref=f2e217]:
+                    - heading "Party Boat" [level=4] [ref=f2e218]
+                    - paragraph [ref=f2e219]: Join fellow fun-loving travelers on a lively ocean party cruise featuring music, water slides, paddleboards, and sunset golden hour vibes.
+                - button "View Experience arrow_forward" [ref=f2e221] [cursor=pointer]:
+                  - generic [ref=f2e222]: View Experience
+                  - generic [ref=f2e223]: arrow_forward
+              - generic [ref=f2e224]:
+                - generic [ref=f2e225]:
+                  - generic [ref=f2e226]:
+                    - img "Party Yacht" [ref=f2e227]
+                    - generic [ref=f2e229]: ₱1,300/person
+                  - generic [ref=f2e230]:
+                    - heading "Party Yacht" [level=4] [ref=f2e231]
+                    - paragraph [ref=f2e232]: Set sail on a stylish multi-deck catamaran yacht. Dance to DJ music, enjoy drinks & appetizers, swim off the stern, and watch Boracay's legendary sunset from the deck.
+                - button "View Experience arrow_forward" [ref=f2e234] [cursor=pointer]:
+                  - generic [ref=f2e235]: View Experience
+                  - generic [ref=f2e236]: arrow_forward
+              - generic [ref=f2e237]:
+                - generic [ref=f2e238]:
+                  - generic [ref=f2e239]:
+                    - img "Banana Boat" [ref=f2e240]
+                    - generic [ref=f2e242]: ₱450/person
+                  - generic [ref=f2e243]:
+                    - heading "Banana Boat" [level=4] [ref=f2e244]
+                    - paragraph [ref=f2e245]: Hold on tight as a high-speed speedboat pulls your giant yellow inflatable boat across waves. Bumpy, splashy, and laughter-filled fun!
+                - button "View Experience arrow_forward" [ref=f2e247] [cursor=pointer]:
+                  - generic [ref=f2e248]: View Experience
+                  - generic [ref=f2e249]: arrow_forward
+              - generic [ref=f2e250]:
+                - generic [ref=f2e251]:
+                  - generic [ref=f2e252]:
+                    - img "Zipline" [ref=f2e253]
+                    - generic [ref=f2e255]: ₱750/person
+                  - generic [ref=f2e256]:
+                    - heading "Zipline" [level=4] [ref=f2e257]
+                    - paragraph [ref=f2e258]: Fly superman-style across a 600-meter cable line high above the trees with stunning coastline views.
+                - button "View Experience arrow_forward" [ref=f2e260] [cursor=pointer]:
+                  - generic [ref=f2e261]: View Experience
+                  - generic [ref=f2e262]: arrow_forward
+      - generic [ref=f2e263]:
+        - generic [ref=f2e264]:
+          - generic [ref=f2e265]:
+            - generic [ref=f2e266]:
+              - generic [ref=f2e267]: map
+              - generic [ref=f2e268]: Interactive Map Explorer
+            - heading "Explore Destinations Across the Philippines" [level=2] [ref=f2e269]
+            - paragraph [ref=f2e270]: Tap markers on the map to explore sanctuary hotels and local experiences across all partner islands.
+          - link "explore Open Full Explorer Map" [ref=f2e271] [cursor=pointer]:
+            - /url: http://localhost:8000/explore
+            - generic [ref=f2e272]: explore
+            - generic [ref=f2e273]: Open Full Explorer Map
+        - generic [ref=f2e275]:
+          - button "my_location Distance from me" [ref=f2e279] [cursor=pointer]:
+            - generic [ref=f2e280]: my_location
+            - generic [ref=f2e281]: Distance from me
+          - generic [ref=f2e282]: Tap a destination pin on the map to preview its sanctuary stays and local experiences.
+  - button "Chat with SunnyTrips AI" [ref=f2e285] [cursor=pointer]:
+    - img "Chat with SunnyBot" [ref=f2e286]
