@@ -63,3 +63,4 @@ rag_pipeline_simple_B.png
 
 .gitignore
 .playwright
+.playwright-mcp
