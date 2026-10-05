@@ -11,8 +11,8 @@
         class="relative w-14 h-14 rounded-full flex items-center justify-center transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-ocean-400 focus:ring-offset-2 hover:scale-105 active:scale-95 cursor-pointer"
         :class="open ? 'rotate-90 scale-95 bg-slate-900 text-white shadow-xl shadow-slate-900/30' : 'bg-transparent'"
         aria-label="Chat with SunnyTrips AI">
-        <img x-show="!open" src="{{ asset('images/favicon-sun.png') }}" alt="Chat with SunnyBot"
-            class="w-14 h-14 rounded-full object-cover shadow-xl shadow-ocean-600/20">
+        <img x-show="!open" src="{{ asset('images/sun-chat-dots.svg') }}" alt="Chat with SunnyBot"
+            class="w-14 h-14 rounded-full bg-white p-1 shadow-xl shadow-ocean-600/20">
         <svg x-show="open" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
         </svg>
@@ -38,7 +38,7 @@
                 <div class="relative">
                     <div
                         class="w-9 h-9 rounded-2xl bg-white flex items-center justify-center shadow-xs overflow-hidden">
-                        <img src="{{ asset('images/favicon-sun.png') }}" alt="SunnyBot" class="w-9 h-9 object-cover">
+                        <img src="{{ asset('images/sun-chat-bot.svg') }}" alt="SunnyBot" class="w-9 h-9 object-contain">
                     </div>
                     <span
                         class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 border-2 border-slate-900"></span>
@@ -93,8 +93,8 @@
                     <div class="px-4 pt-4 pb-3 text-center space-y-2">
                         <div
                             class="w-10 h-10 rounded-2xl bg-white mx-auto flex items-center justify-center border border-ocean-100 overflow-hidden">
-                            <img src="{{ asset('images/favicon-sun.png') }}" alt="SunnyBot"
-                                class="w-10 h-10 object-cover">
+                            <img src="{{ asset('images/sun-chat-dots.svg') }}" alt="SunnyBot"
+                                class="w-10 h-10 object-contain">
                         </div>
                         <p class="text-slate-800 text-xs font-bold font-headline">Mabuhay! I'm SunnyBot, your travel
                             assistant.</p>
@@ -144,7 +144,8 @@
                 <div class="text-center py-6 px-4 bg-white rounded-2xl border border-slate-200/80 shadow-xs space-y-2">
                     <div
                         class="w-10 h-10 rounded-2xl bg-white mx-auto flex items-center justify-center border border-ocean-100 overflow-hidden">
-                        <img src="{{ asset('images/favicon-sun.png') }}" alt="SunnyBot" class="w-10 h-10 object-cover">
+                        <img src="{{ asset('images/sun-chat-dots.svg') }}" alt="SunnyBot"
+                            class="w-10 h-10 object-contain">
                     </div>
                     <p class="text-slate-800 text-xs font-bold font-headline">Mabuhay! I'm SunnyBot, your travel
                         assistant.</p>
@@ -176,13 +177,19 @@
                         <div class="flex gap-2.5 items-start" data-bot-bubble>
                             <div
                                 class="w-7 h-7 rounded-xl bg-white flex items-center justify-center shrink-0 shadow-xs mt-0.5 overflow-hidden border border-amber-100">
-                                <img src="{{ asset('images/favicon-sun.png') }}" alt="SunnyBot"
-                                    class="w-7 h-7 object-cover">
+                                <img src="{{ asset('images/sun-chat-dots.svg') }}" alt="SunnyBot"
+                                    class="w-7 h-7 object-contain">
                             </div>
                             <div
                                 class="bg-white rounded-2xl rounded-tl-xs px-3.5 py-3 shadow-xs border border-slate-200/80 max-w-[85%]">
                                 <div class="text-xs sm:text-sm text-slate-800 font-body leading-relaxed space-y-2"
                                     x-html="renderMarkdown(msg.text)"></div>
+
+                                {{-- AI fallback notice (Gemini → Groq failover) --}}
+                                <template x-if="msg.ai_notice">
+                                    <p class="mt-2 text-[10px] leading-relaxed text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1.5"
+                                        x-text="msg.ai_notice"></p>
+                                </template>
 
                                 {{-- Room cards --}}
                                 <template x-if="msg.rooms">
@@ -287,7 +294,8 @@
                                                     <span
                                                         class="text-[10px] font-bold text-slate-500 bg-white px-2 py-0.5 rounded-md border border-slate-200 capitalize"
                                                         x-text="hotel.type"></span>
-                                                    <span x-show="hotel.price_from !== null && hotel.price_from !== undefined"
+                                                    <span
+                                                        x-show="hotel.price_from !== null && hotel.price_from !== undefined"
                                                         class="text-[11px] font-black text-ocean-700"
                                                         x-text="'From ₱' + new Intl.NumberFormat().format(hotel.price_from) + '/night'"></span>
                                                 </div>
@@ -356,7 +364,8 @@
                                         <div class="grid grid-cols-2 gap-1.5 pt-1">
                                             <button type="button" @click="addItineraryToBasket(msg.itinerary)"
                                                 class="col-span-2 bg-slate-900 text-white font-bold px-2 py-1.5 rounded-lg hover:bg-slate-800 transition-colors text-[11px] font-headline cursor-pointer flex items-center justify-center gap-1">
-                                                <span class="material-symbols-outlined text-[14px]">add_shopping_cart</span>
+                                                <span
+                                                    class="material-symbols-outlined text-[14px]">add_shopping_cart</span>
                                                 Add Whole Itinerary to Trip Basket</button>
                                             <button
                                                 @click="addToBasket('room', msg.itinerary.room.id, { check_in_date: msg.itinerary.check_in_date || null, check_out_date: msg.itinerary.check_out_date || null, selected_pax: 1 })"
@@ -459,7 +468,7 @@
             <div x-show="sending" class="flex gap-2.5 items-start pl-1 py-1">
                 <div
                     class="w-7 h-7 rounded-xl bg-white flex items-center justify-center shrink-0 shadow-xs overflow-hidden border border-amber-100">
-                    <img src="{{ asset('images/favicon-sun.png') }}" alt="SunnyBot" class="w-7 h-7 object-cover">
+                    <img src="{{ asset('images/sun-chat-dots.svg') }}" alt="SunnyBot" class="w-7 h-7 object-contain">
                 </div>
                 <div class="bg-white rounded-2xl rounded-tl-xs px-4 py-3 shadow-xs border border-slate-200/80">
                     <x-thinking-orb state="composing" :size="18" />
@@ -651,6 +660,7 @@
                         if (ctx.result_ordering) extras.ordering = ctx.result_ordering;
                         if (ctx.itinerary) extras.itinerary = ctx.itinerary;
                         if (ctx.map) extras.map = ctx.map;
+                        if (ctx.ai_notice) extras.ai_notice = ctx.ai_notice;
                         if (ctx.suggested_actions?.length) extras.suggested_actions = ctx.suggested_actions;
                         if (ctx.location_request) {
                             extras.location_request = true;
@@ -911,6 +921,7 @@
                     if (data.retrieved_packages) extras.packages = data.retrieved_packages;
                     if (data.result_ordering) extras.ordering = data.result_ordering;
                     if (data.map) extras.map = data.map;
+                    if (data.ai_notice) extras.ai_notice = data.ai_notice;
                     if (data.suggested_actions?.length) extras.suggested_actions = data.suggested_actions;
                     if (data.location_request) {
                         extras.location_request = true;

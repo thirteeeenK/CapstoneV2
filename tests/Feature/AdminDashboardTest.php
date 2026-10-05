@@ -2,16 +2,23 @@
 
 use App\Models\AdminModel;
 use App\Models\Booking;
+use App\Services\AdminTwoFactorService;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 
 beforeEach(function () {
     Cache::flush();
 
+    $twoFactor = app(AdminTwoFactorService::class);
+    $secret = $twoFactor->generateSecret();
+
     $this->admin = AdminModel::create([
         'name' => 'Test Admin',
         'email' => 'dashboard-admin@sunnytripstest.com',
         'password' => 'password',
+        'two_factor_secret' => $twoFactor->encryptSecret($secret),
+        'two_factor_recovery_codes' => $twoFactor->encryptHashedCodes($twoFactor->generateRecoveryCodes()),
+        'two_factor_confirmed_at' => now(),
     ]);
 });
 

@@ -1,0 +1,139 @@
+- generic [active] [ref=f1e1]:
+  - complementary [ref=f1e2]:
+    - generic [ref=f1e4]:
+      - link "SunnyTrips" [ref=f1e5] [cursor=pointer]:
+        - /url: http://localhost:8000/dashboard
+      - paragraph [ref=f1e7]:
+        - generic [ref=f1e9]: Traveler Portal
+    - generic [ref=f1e10]:
+      - generic [ref=f1e11]: T
+      - generic [ref=f1e12]:
+        - paragraph [ref=f1e13]: Test User
+        - paragraph [ref=f1e14]: test@example.com
+    - navigation [ref=f1e15]:
+      - generic [ref=f1e16]:
+        - heading "Main Navigation" [level=2] [ref=f1e17]
+        - generic [ref=f1e18]:
+          - link "space_dashboard Dashboard" [ref=f1e19] [cursor=pointer]:
+            - /url: http://localhost:8000/dashboard
+            - generic [ref=f1e20]: space_dashboard
+            - generic [ref=f1e21]: Dashboard
+          - link "casino I'm Feeling Lucky" [ref=f1e22] [cursor=pointer]:
+            - /url: http://localhost:8000/lucky
+            - generic [ref=f1e23]: casino
+            - generic [ref=f1e24]: I'm Feeling Lucky
+          - link "shopping_basket My Trip Basket" [ref=f1e25] [cursor=pointer]:
+            - /url: http://localhost:8000/cart
+            - generic [ref=f1e26]: shopping_basket
+            - generic [ref=f1e27]: My Trip Basket
+          - link "auto_stories My Bookings" [ref=f1e28] [cursor=pointer]:
+            - /url: http://localhost:8000/bookings
+            - generic [ref=f1e29]: auto_stories
+            - generic [ref=f1e30]: My Bookings
+          - link "reviews Guest Reviews" [ref=f1e31] [cursor=pointer]:
+            - /url: http://localhost:8000/reviews
+            - generic [ref=f1e32]: reviews
+            - generic [ref=f1e33]: Guest Reviews
+      - generic [ref=f1e34]:
+        - heading "Explore Catalog" [level=2] [ref=f1e35]
+        - generic [ref=f1e36]:
+          - link "location_on Island Destinations" [ref=f1e37] [cursor=pointer]:
+            - /url: http://localhost:8000/destinations
+            - generic [ref=f1e38]: location_on
+            - generic [ref=f1e39]: Island Destinations
+          - link "hotel Hotels & Sanctuaries" [ref=f1e40] [cursor=pointer]:
+            - /url: http://localhost:8000/hotels
+            - generic [ref=f1e41]: hotel
+            - generic [ref=f1e42]: Hotels & Sanctuaries
+          - link "king_bed Rooms & Stays" [ref=f1e43] [cursor=pointer]:
+            - /url: http://localhost:8000/rooms
+            - generic [ref=f1e44]: king_bed
+            - generic [ref=f1e45]: Rooms & Stays
+          - link "explore Activities & Tours" [ref=f1e46] [cursor=pointer]:
+            - /url: http://localhost:8000/activities
+            - generic [ref=f1e47]: explore
+            - generic [ref=f1e48]: Activities & Tours
+          - link "extension Transfers & Add-ons" [ref=f1e49] [cursor=pointer]:
+            - /url: http://localhost:8000/addons
+            - generic [ref=f1e50]: extension
+            - generic [ref=f1e51]: Transfers & Add-ons
+          - link "card_travel Tour Packages & Promos" [ref=f1e52] [cursor=pointer]:
+            - /url: http://localhost:8000/packages
+            - generic [ref=f1e53]: card_travel
+            - generic [ref=f1e54]: Tour Packages & Promos
+      - generic [ref=f1e55]:
+        - heading "Account" [level=2] [ref=f1e56]
+        - link "manage_accounts Account Profile" [ref=f1e58] [cursor=pointer]:
+          - /url: http://localhost:8000/profile
+          - generic [ref=f1e59]: manage_accounts
+          - generic [ref=f1e60]: Account Profile
+    - button "logout Log Out" [ref=f1e63] [cursor=pointer]:
+      - generic [ref=f1e64]: logout
+      - generic [ref=f1e65]: Log Out
+  - main [ref=f1e66]:
+    - generic [ref=f1e68]:
+      - generic [ref=f1e69]:
+        - generic [ref=f1e70]:
+          - heading "Explore the Islands" [level=1] [ref=f1e71]
+          - paragraph [ref=f1e72]: Every hotel, experience and destination across the Philippines — in one interactive view.
+        - generic [ref=f1e73]:
+          - button "All" [ref=f1e74] [cursor=pointer]
+          - button "Hotels" [ref=f1e75] [cursor=pointer]
+          - button "Activities" [ref=f1e76] [cursor=pointer]
+      - generic [ref=f1e77]:
+        - generic [ref=f1e79]:
+          - generic:
+            - generic:
+              - button [ref=f1e80] [cursor=pointer]
+              - button [ref=f1e82] [cursor=pointer]
+              - button [ref=f1e84] [cursor=pointer]
+              - button [ref=f1e86] [cursor=pointer]
+              - button [ref=f1e88] [cursor=pointer]
+              - button [ref=f1e90] [cursor=pointer]
+              - button [ref=f1e92] [cursor=pointer]
+              - button [ref=f1e94] [cursor=pointer]
+              - button [ref=f1e96] [cursor=pointer]
+              - button [ref=f1e98] [cursor=pointer]
+              - button [ref=f1e100] [cursor=pointer]
+              - button [ref=f1e102] [cursor=pointer]
+              - button [ref=f1e104] [cursor=pointer]
+              - button [ref=f1e106] [cursor=pointer]
+              - button [ref=f1e108] [cursor=pointer]
+              - button [ref=f1e110] [cursor=pointer]
+              - button [ref=f1e112] [cursor=pointer]
+              - button [ref=f1e114] [cursor=pointer]
+              - button [ref=f1e116] [cursor=pointer]
+              - button [ref=f1e118] [cursor=pointer]
+              - button [ref=f1e120] [cursor=pointer]
+              - button [ref=f1e122] [cursor=pointer]
+              - button [ref=f1e124] [cursor=pointer]
+              - button [ref=f1e126] [cursor=pointer]
+              - button [ref=f1e128] [cursor=pointer]
+              - button [ref=f1e130] [cursor=pointer]
+              - button [ref=f1e132] [cursor=pointer]
+              - button [ref=f1e134] [cursor=pointer]
+              - button [ref=f1e136] [cursor=pointer]
+              - button [ref=f1e138] [cursor=pointer]
+              - button [ref=f1e140] [cursor=pointer]
+              - button [ref=f1e142] [cursor=pointer]
+              - button [ref=f1e144] [cursor=pointer]
+              - button [ref=f1e146] [cursor=pointer]
+              - button [ref=f1e148] [cursor=pointer]
+              - button [ref=f1e150] [cursor=pointer]
+              - button [ref=f1e152] [cursor=pointer]
+              - button [ref=f1e154] [cursor=pointer]
+          - generic:
+            - generic [ref=f1e156]:
+              - button "Zoom in" [ref=f1e157] [cursor=pointer]: +
+              - button "Zoom out" [ref=f1e158] [cursor=pointer]: −
+            - generic [ref=f1e159]:
+              - link "Leaflet" [ref=f1e160] [cursor=pointer]:
+                - /url: https://leafletjs.com
+              - text: "| © OpenStreetMap contributors"
+        - complementary [ref=f1e165]:
+          - button "my_location Show distance from me" [ref=f1e166] [cursor=pointer]:
+            - generic [ref=f1e167]: my_location
+            - generic [ref=f1e168]: Show distance from me
+          - generic [ref=f1e169]: Tap a marker on the map to see its details here.
+  - button "Chat with SunnyTrips AI" [ref=f1e171] [cursor=pointer]:
+    - img "Chat with SunnyBot" [ref=f1e172]

@@ -1,0 +1,1314 @@
+- generic [ref=f10e1]:
+  - complementary [ref=f10e2]:
+    - generic [ref=f10e4]:
+      - link "SunnyTrips" [ref=f10e5] [cursor=pointer]:
+        - /url: http://localhost:8000/dashboard
+      - paragraph [ref=f10e7]:
+        - generic [ref=f10e9]: Traveler Portal
+    - generic [ref=f10e10]:
+      - generic [ref=f10e11]: T
+      - generic [ref=f10e12]:
+        - paragraph [ref=f10e13]: Test User
+        - paragraph [ref=f10e14]: test@example.com
+    - navigation [ref=f10e15]:
+      - generic [ref=f10e16]:
+        - heading "Main Navigation" [level=2] [ref=f10e17]
+        - generic [ref=f10e18]:
+          - link "space_dashboard Dashboard" [ref=f10e19] [cursor=pointer]:
+            - /url: http://localhost:8000/dashboard
+            - generic [ref=f10e20]: space_dashboard
+            - generic [ref=f10e21]: Dashboard
+          - link "casino I'm Feeling Lucky" [ref=f10e22] [cursor=pointer]:
+            - /url: http://localhost:8000/lucky
+            - generic [ref=f10e23]: casino
+            - generic [ref=f10e24]: I'm Feeling Lucky
+          - link "shopping_basket My Trip Basket" [ref=f10e25] [cursor=pointer]:
+            - /url: http://localhost:8000/cart
+            - generic [ref=f10e26]: shopping_basket
+            - generic [ref=f10e27]: My Trip Basket
+          - link "auto_stories My Bookings" [ref=f10e28] [cursor=pointer]:
+            - /url: http://localhost:8000/bookings
+            - generic [ref=f10e29]: auto_stories
+            - generic [ref=f10e30]: My Bookings
+          - link "reviews Guest Reviews" [ref=f10e31] [cursor=pointer]:
+            - /url: http://localhost:8000/reviews
+            - generic [ref=f10e32]: reviews
+            - generic [ref=f10e33]: Guest Reviews
+      - generic [ref=f10e34]:
+        - heading "Explore Catalog" [level=2] [ref=f10e35]
+        - generic [ref=f10e36]:
+          - link "location_on Island Destinations" [ref=f10e37] [cursor=pointer]:
+            - /url: http://localhost:8000/destinations
+            - generic [ref=f10e38]: location_on
+            - generic [ref=f10e39]: Island Destinations
+          - link "hotel Hotels & Sanctuaries" [ref=f10e40] [cursor=pointer]:
+            - /url: http://localhost:8000/hotels
+            - generic [ref=f10e41]: hotel
+            - generic [ref=f10e42]: Hotels & Sanctuaries
+          - link "king_bed Rooms & Stays" [ref=f10e43] [cursor=pointer]:
+            - /url: http://localhost:8000/rooms
+            - generic [ref=f10e44]: king_bed
+            - generic [ref=f10e45]: Rooms & Stays
+          - link "explore Activities & Tours" [ref=f10e46] [cursor=pointer]:
+            - /url: http://localhost:8000/activities
+            - generic [ref=f10e47]: explore
+            - generic [ref=f10e48]: Activities & Tours
+          - link "extension Transfers & Add-ons" [ref=f10e49] [cursor=pointer]:
+            - /url: http://localhost:8000/addons
+            - generic [ref=f10e50]: extension
+            - generic [ref=f10e51]: Transfers & Add-ons
+          - link "card_travel Tour Packages & Promos" [ref=f10e52] [cursor=pointer]:
+            - /url: http://localhost:8000/packages
+            - generic [ref=f10e53]: card_travel
+            - generic [ref=f10e54]: Tour Packages & Promos
+      - generic [ref=f10e55]:
+        - heading "Account" [level=2] [ref=f10e56]
+        - link "manage_accounts Account Profile" [ref=f10e58] [cursor=pointer]:
+          - /url: http://localhost:8000/profile
+          - generic [ref=f10e59]: manage_accounts
+          - generic [ref=f10e60]: Account Profile
+    - button "logout Log Out" [ref=f10e63] [cursor=pointer]:
+      - generic [ref=f10e64]: logout
+      - generic [ref=f10e65]: Log Out
+  - main [ref=f10e66]:
+    - generic [ref=f10e68]:
+      - generic [ref=f10e70]:
+        - generic [ref=f10e72]:
+          - generic [ref=f10e73]: auto_awesome
+          - generic [ref=f10e74]: Recommendation Active
+        - heading "Welcome back, Test User!" [level=1] [ref=f10e75]
+        - paragraph [ref=f10e76]: Logged in as test@example.com. Explore your island recommendations below.
+      - generic [ref=f10e78]:
+        - generic [ref=f10e79]:
+          - generic [ref=f10e80]:
+            - generic [ref=f10e81]:
+              - button "auto_awesome AI Recommendations" [ref=f10e82] [cursor=pointer]:
+                - generic [ref=f10e83]: auto_awesome
+                - generic [ref=f10e84]: AI Recommendations
+              - button "travel_explore Default Listings" [ref=f10e86] [cursor=pointer]:
+                - generic [ref=f10e87]: travel_explore
+                - generic [ref=f10e88]: Default Listings
+              - button "card_travel Tour Packages" [ref=f10e89] [cursor=pointer]:
+                - generic [ref=f10e90]: card_travel
+                - generic [ref=f10e91]: Tour Packages
+            - paragraph [ref=f10e92]:
+              - generic [ref=f10e93]: Top 5 sanctuary stays and top 5 experiences matched to your preference profile.
+          - generic [ref=f10e94]:
+            - link "tune Reset Preferences" [ref=f10e95] [cursor=pointer]:
+              - /url: http://localhost:8000/onboarding/reset
+              - generic [ref=f10e96]: tune
+              - generic [ref=f10e97]: Reset Preferences
+            - generic [ref=f10e99]:
+              - generic [ref=f10e100]:
+                - generic [ref=f10e101]: filter_alt
+                - generic [ref=f10e102]: "Sanctuary:"
+              - button "location_on Boracay" [ref=f10e103] [cursor=pointer]:
+                - generic [ref=f10e104]: location_on
+                - generic [ref=f10e105]: Boracay
+              - button "location_on El Nido" [ref=f10e106] [cursor=pointer]:
+                - generic [ref=f10e107]: location_on
+                - generic [ref=f10e108]: El Nido
+        - generic [ref=f10e110]:
+          - generic [ref=f10e111]:
+            - generic [ref=f10e112]:
+              - generic [ref=f10e113]:
+                - generic [ref=f10e114]: hotel
+                - heading "Top 5 Recommended Sanctuary Stays in Boracay" [level=3] [ref=f10e115]
+              - generic [ref=f10e116]: Ranked by AI Match
+            - paragraph [ref=f10e117]:
+              - generic [ref=f10e118]: auto_awesome
+              - generic [ref=f10e119]:
+                - strong [ref=f10e120]: "Why these were picked:"
+                - text: Based on your Friends Group trip to Boracay with Nightlife & Party vibes, these hotels offer a lively atmosphere. Frendz Resort & Hostel is a top pick for its Social & Vibrant scene and Pool Parties. Perfect if you want to be close to the action and meet new people.
+            - generic [ref=f10e121]:
+              - link "Frendz Resort & Hostel Mid Affordable Hotels Frendz Resort & Hostel Found in Station 1, Frendz is a popular social spot for travelers. It's about a 5-minute walk to White Beach and has a pool and a common area that often hosts events. It's close to bars and restaurants but still maintains a laid-back vibe. View Sanctuary arrow_forward" [ref=f10e122] [cursor=pointer]:
+                - /url: http://localhost:8000/hotels/6
+                - generic [ref=f10e123]:
+                  - generic [ref=f10e124]:
+                    - img "Frendz Resort & Hostel" [ref=f10e125]
+                    - generic [ref=f10e127]: Mid Affordable Hotels
+                  - generic [ref=f10e128]:
+                    - heading "Frendz Resort & Hostel" [level=4] [ref=f10e129]
+                    - paragraph [ref=f10e130]: Found in Station 1, Frendz is a popular social spot for travelers. It's about a 5-minute walk to White Beach and has a pool and a common area that often hosts events. It's close to bars and restaurants but still maintains a laid-back vibe.
+                - generic [ref=f10e132]:
+                  - generic [ref=f10e133]: View Sanctuary
+                  - generic [ref=f10e134]: arrow_forward
+              - link "Happiness Hostel Mid Affordable Hotels Happiness Hostel Near Bulabog Beach in Station 2, Happiness Hostel offers a bohemian vibe with both dorms and private rooms. It's a 2-minute walk to Bulabog and around 10 minutes to White Beach. The property has a small pool and an in-house restaurant with communal areas for socializing. View Sanctuary arrow_forward" [ref=f10e135] [cursor=pointer]:
+                - /url: http://localhost:8000/hotels/8
+                - generic [ref=f10e136]:
+                  - generic [ref=f10e137]:
+                    - img "Happiness Hostel" [ref=f10e138]
+                    - generic [ref=f10e140]: Mid Affordable Hotels
+                  - generic [ref=f10e141]:
+                    - heading "Happiness Hostel" [level=4] [ref=f10e142]
+                    - paragraph [ref=f10e143]: Near Bulabog Beach in Station 2, Happiness Hostel offers a bohemian vibe with both dorms and private rooms. It's a 2-minute walk to Bulabog and around 10 minutes to White Beach. The property has a small pool and an in-house restaurant with communal areas for socializing.
+                - generic [ref=f10e145]:
+                  - generic [ref=f10e146]: View Sanctuary
+                  - generic [ref=f10e147]: arrow_forward
+              - link "Lazy Dog Bed & Breakfast Mid Affordable Hotels Lazy Dog Bed & Breakfast Located near Bulabog Beach, Lazy Dog provides a cozy environment with both private rooms and dormitories. It's about a 2-minute walk to Bulabog Beach and 10 minutes to White Beach Station 2. There's no swimming pool, but the area is peaceful and just a short walk to D'Mall and various restaurants. View Sanctuary arrow_forward" [ref=f10e148] [cursor=pointer]:
+                - /url: http://localhost:8000/hotels/7
+                - generic [ref=f10e149]:
+                  - generic [ref=f10e150]:
+                    - img "Lazy Dog Bed & Breakfast" [ref=f10e151]
+                    - generic [ref=f10e153]: Mid Affordable Hotels
+                  - generic [ref=f10e154]:
+                    - heading "Lazy Dog Bed & Breakfast" [level=4] [ref=f10e155]
+                    - paragraph [ref=f10e156]: Located near Bulabog Beach, Lazy Dog provides a cozy environment with both private rooms and dormitories. It's about a 2-minute walk to Bulabog Beach and 10 minutes to White Beach Station 2. There's no swimming pool, but the area is peaceful and just a short walk to D'Mall and various restaurants.
+                - generic [ref=f10e158]:
+                  - generic [ref=f10e159]: View Sanctuary
+                  - generic [ref=f10e160]: arrow_forward
+              - link "Boracay Ocean Club Beach Resort High End Luxury Hotels Boracay Ocean Club Beach Resort Boracay Ocean Club is located in Station 3, right along White Beach with direct beachfront access. The resort features a beachfront pool, spa services, and dive center, making it ideal for adventure seekers and beach lovers. With ocean-view rooms and a quieter location, it's perfect for travelers who want a more laid-back Boracay experience. View Sanctuary arrow_forward" [ref=f10e161] [cursor=pointer]:
+                - /url: http://localhost:8000/hotels/3
+                - generic [ref=f10e162]:
+                  - generic [ref=f10e163]:
+                    - img "Boracay Ocean Club Beach Resort" [ref=f10e164]
+                    - generic [ref=f10e166]: High End Luxury Hotels
+                  - generic [ref=f10e167]:
+                    - heading "Boracay Ocean Club Beach Resort" [level=4] [ref=f10e168]
+                    - paragraph [ref=f10e169]: Boracay Ocean Club is located in Station 3, right along White Beach with direct beachfront access. The resort features a beachfront pool, spa services, and dive center, making it ideal for adventure seekers and beach lovers. With ocean-view rooms and a quieter location, it's perfect for travelers who want a more laid-back Boracay experience.
+                - generic [ref=f10e171]:
+                  - generic [ref=f10e172]: View Sanctuary
+                  - generic [ref=f10e173]: arrow_forward
+              - link "My Station Hotel Mid Affordable Hotels My Station Hotel Located in Station 1, My Station Hotel is just a short walk from the pristine White Beach. With modern, comfortable rooms and a welcoming atmosphere, this hotel offers a relaxing stay while being close to local attractions. Guests can enjoy easy access to restaurants, shopping, and the island's nightlife, making it perfect for both relaxation and adventure seekers. View Sanctuary arrow_forward" [ref=f10e174] [cursor=pointer]:
+                - /url: http://localhost:8000/hotels/5
+                - generic [ref=f10e175]:
+                  - generic [ref=f10e176]:
+                    - img "My Station Hotel" [ref=f10e177]
+                    - generic [ref=f10e179]: Mid Affordable Hotels
+                  - generic [ref=f10e180]:
+                    - heading "My Station Hotel" [level=4] [ref=f10e181]
+                    - paragraph [ref=f10e182]: Located in Station 1, My Station Hotel is just a short walk from the pristine White Beach. With modern, comfortable rooms and a welcoming atmosphere, this hotel offers a relaxing stay while being close to local attractions. Guests can enjoy easy access to restaurants, shopping, and the island's nightlife, making it perfect for both relaxation and adventure seekers.
+                - generic [ref=f10e184]:
+                  - generic [ref=f10e185]: View Sanctuary
+                  - generic [ref=f10e186]: arrow_forward
+          - generic [ref=f10e187]:
+            - generic [ref=f10e188]:
+              - generic [ref=f10e189]:
+                - generic [ref=f10e190]: explore
+                - heading "Top 5 Must-Try Experiences in Boracay" [level=3] [ref=f10e191]
+              - generic [ref=f10e192]: Curated AI Matches
+            - paragraph [ref=f10e193]:
+              - generic [ref=f10e194]: auto_awesome
+              - generic [ref=f10e195]:
+                - strong [ref=f10e196]: "Why these were picked:"
+                - text: Given your Friends Group trip to Boracay and love for Nightlife & Party, these activities promise fun. The Party Boat offers a sunset cruise with music and water slides. Ideal for enjoying the vibrant Boracay nightlife with your friends.
+            - generic [ref=f10e197]:
+              - generic [ref=f10e198]:
+                - generic [ref=f10e199]:
+                  - generic [ref=f10e200]:
+                    - img "Scuba Diving" [ref=f10e201]
+                    - generic [ref=f10e203]: ₱1,350/person
+                  - generic [ref=f10e204]:
+                    - heading "Scuba Diving" [level=4] [ref=f10e205]
+                    - paragraph [ref=f10e206]: Discover Scuba Diving for beginners with PADI certified divemasters. Dive into coral reefs, interact with marine life, and experience weightless underwater flight.
+                - button "View Experience arrow_forward" [ref=f10e208] [cursor=pointer]:
+                  - generic [ref=f10e209]: View Experience
+                  - generic [ref=f10e210]: arrow_forward
+              - generic [ref=f10e211]:
+                - generic [ref=f10e212]:
+                  - generic [ref=f10e213]:
+                    - img "Party Boat" [ref=f10e214]
+                    - generic [ref=f10e216]: ₱800/person
+                  - generic [ref=f10e217]:
+                    - heading "Party Boat" [level=4] [ref=f10e218]
+                    - paragraph [ref=f10e219]: Join fellow fun-loving travelers on a lively ocean party cruise featuring music, water slides, paddleboards, and sunset golden hour vibes.
+                - button "View Experience arrow_forward" [ref=f10e221] [cursor=pointer]:
+                  - generic [ref=f10e222]: View Experience
+                  - generic [ref=f10e223]: arrow_forward
+              - generic [ref=f10e224]:
+                - generic [ref=f10e225]:
+                  - generic [ref=f10e226]:
+                    - img "Party Yacht" [ref=f10e227]
+                    - generic [ref=f10e229]: ₱1,300/person
+                  - generic [ref=f10e230]:
+                    - heading "Party Yacht" [level=4] [ref=f10e231]
+                    - paragraph [ref=f10e232]: Set sail on a stylish multi-deck catamaran yacht. Dance to DJ music, enjoy drinks & appetizers, swim off the stern, and watch Boracay's legendary sunset from the deck.
+                - button "View Experience arrow_forward" [ref=f10e234] [cursor=pointer]:
+                  - generic [ref=f10e235]: View Experience
+                  - generic [ref=f10e236]: arrow_forward
+              - generic [ref=f10e237]:
+                - generic [ref=f10e238]:
+                  - generic [ref=f10e239]:
+                    - img "Banana Boat" [ref=f10e240]
+                    - generic [ref=f10e242]: ₱450/person
+                  - generic [ref=f10e243]:
+                    - heading "Banana Boat" [level=4] [ref=f10e244]
+                    - paragraph [ref=f10e245]: Hold on tight as a high-speed speedboat pulls your giant yellow inflatable boat across waves. Bumpy, splashy, and laughter-filled fun!
+                - button "View Experience arrow_forward" [ref=f10e247] [cursor=pointer]:
+                  - generic [ref=f10e248]: View Experience
+                  - generic [ref=f10e249]: arrow_forward
+              - generic [ref=f10e250]:
+                - generic [ref=f10e251]:
+                  - generic [ref=f10e252]:
+                    - img "Zipline" [ref=f10e253]
+                    - generic [ref=f10e255]: ₱750/person
+                  - generic [ref=f10e256]:
+                    - heading "Zipline" [level=4] [ref=f10e257]
+                    - paragraph [ref=f10e258]: Fly superman-style across a 600-meter cable line high above the trees with stunning coastline views.
+                - button "View Experience arrow_forward" [ref=f10e260] [cursor=pointer]:
+                  - generic [ref=f10e261]: View Experience
+                  - generic [ref=f10e262]: arrow_forward
+      - generic [ref=f10e263]:
+        - generic [ref=f10e264]:
+          - generic [ref=f10e265]:
+            - generic [ref=f10e266]:
+              - generic [ref=f10e267]: map
+              - generic [ref=f10e268]: Interactive Map Explorer
+            - heading "Explore Destinations Across the Philippines" [level=2] [ref=f10e269]
+            - paragraph [ref=f10e270]: Tap markers on the map to explore sanctuary hotels and local experiences across all partner islands.
+          - link "explore Open Full Explorer Map" [ref=f10e271] [cursor=pointer]:
+            - /url: http://localhost:8000/explore
+            - generic [ref=f10e272]: explore
+            - generic [ref=f10e273]: Open Full Explorer Map
+        - generic [ref=f10e275]:
+          - generic [ref=f10e277]:
+            - generic [ref=f10e278]:
+              - generic:
+                - generic:
+                  - button [ref=f10e279] [cursor=pointer]
+                  - button [ref=f10e281] [cursor=pointer]
+              - generic:
+                - generic [ref=f10e283]:
+                  - button "Zoom in" [ref=f10e284] [cursor=pointer]: +
+                  - button "Zoom out" [ref=f10e285] [cursor=pointer]: −
+                - generic [ref=f10e286]:
+                  - link "Leaflet" [ref=f10e287] [cursor=pointer]:
+                    - /url: https://leafletjs.com
+                  - text: "| ©"
+                  - link "OpenStreetMap" [ref=f10e292] [cursor=pointer]:
+                    - /url: https://www.openstreetmap.org/copyright
+                  - text: contributors
+            - button "my_location Distance from me" [ref=f10e293] [cursor=pointer]:
+              - generic [ref=f10e294]: my_location
+              - generic [ref=f10e295]: Distance from me
+          - generic [ref=f10e296]: Tap a destination pin on the map to preview its sanctuary stays and local experiences.
+  - generic [ref=f10e298]:
+    - button "Chat with SunnyTrips AI" [ref=f10e299] [cursor=pointer]
+    - generic [ref=f10e303]:
+      - generic [ref=f10e304]:
+        - generic [ref=f10e305]:
+          - img "SunnyBot" [ref=f10e308]
+          - heading "SunnyBot AI" [level=3] [ref=f10e311]
+        - button "headset_mic Talk to Admin" [ref=f10e313] [cursor=pointer]:
+          - generic [ref=f10e314]: headset_mic
+          - generic [ref=f10e315]: Talk to Admin
+      - generic [ref=f10e316]:
+        - paragraph [ref=f10e320]: payment number
+        - generic [ref=f10e322]:
+          - img "SunnyBot" [ref=f10e324]
+          - paragraph [ref=f10e327]: We accept major Philippine payment channels (cards, e-wallets, and bank transfer — depending on the supplier). After checkout your booking is held under a payment deadline shown on the confirmation page; if payment is not completed in time the booking expires automatically.
+        - paragraph [ref=f10e331]: cancellation and refund policy
+        - generic [ref=f10e333]:
+          - img "SunnyBot" [ref=f10e335]
+          - paragraph [ref=f10e338]: Cancellation and refund terms depend on the hotel, activity, or package supplier. You can request cancellation from your bookings page before the supplier deadline; our team will confirm eligibility and any applicable fees. Review the supplier terms shown at checkout for specifics.
+        - paragraph [ref=f10e342]: destinations offered
+        - generic [ref=f10e344]:
+          - img "SunnyBot" [ref=f10e346]
+          - paragraph [ref=f10e349]:
+            - text: SunnyTrips focuses on Philippine destinations — currently
+            - strong [ref=f10e350]: 2 destinations
+            - text: "powered by our AI recommendations:"
+            - strong [ref=f10e351]: Boracay
+            - text: and
+            - strong [ref=f10e352]: El Nido
+            - text: . Each destination page highlights curated stays and experiences. Ask me about a specific one like "Tell me about Boracay" to see hotels, rooms, and things to do!
+        - paragraph [ref=f10e356]: package inclusions
+        - generic [ref=f10e358]:
+          - img "SunnyBot" [ref=f10e360]
+          - paragraph [ref=f10e363]: Packages bundle selected hotels and activities per destination for a fixed number of days and nights. Inclusions, exclusions, and the detailed itinerary are listed on each package page; generic inclusions such as transfers or meals are shown separately when provided by the supplier.
+        - paragraph [ref=f10e367]: boracay packages
+        - generic [ref=f10e369]:
+          - img "SunnyBot" [ref=f10e371]
+          - generic [ref=f10e372]:
+            - generic [ref=f10e373]:
+              - paragraph [ref=f10e374]:
+                - text: The
+                - strong [ref=f10e375]: Boracay Best Deal
+                - text: package is a great fit for you, offering a comprehensive 3D/2N trip with flights, hotel, transfers, and island hopping with parasailing and a banana boat ride for ₱9,999.00 per pax, valid until September 30, 2026. The other cards below are close alternatives worth a look.
+              - paragraph [ref=f10e376]: "Here are the options I found:"
+              - list [ref=f10e377]:
+                - listitem [ref=f10e378]:
+                  - strong [ref=f10e379]: Boracay Best Deal
+                  - text: — ₱9,999.00 per pax — ₱9,999.00 total for 1 pax
+                - listitem [ref=f10e380]:
+                  - strong [ref=f10e381]: Boracay Tipid Deal
+                  - text: — ₱6,999.00 per pax — ₱6,999.00 total for 1 pax
+                - listitem [ref=f10e382]:
+                  - strong [ref=f10e383]: Boracay Sulit Deal
+                  - text: — ₱8,699.00 per pax — ₱8,699.00 total for 1 pax
+            - generic [ref=f10e384]:
+              - generic [ref=f10e385]:
+                - generic [ref=f10e386]: Best Match
+                - paragraph [ref=f10e387]: Boracay Best Deal
+                - paragraph [ref=f10e388]: Boracay
+                - generic [ref=f10e389]:
+                  - generic [ref=f10e390]: ₱9,999
+                  - generic [ref=f10e391]: 3D/2N
+                - generic [ref=f10e392]:
+                  - button "Preview" [ref=f10e393] [cursor=pointer]
+                  - button "+ Add to Trip Basket" [ref=f10e394] [cursor=pointer]
+              - generic [ref=f10e395]:
+                - paragraph [ref=f10e396]: Boracay Tipid Deal
+                - paragraph [ref=f10e397]: Boracay
+                - generic [ref=f10e398]:
+                  - generic [ref=f10e399]: ₱6,999
+                  - generic [ref=f10e400]: 3D/2N
+                - generic [ref=f10e401]:
+                  - button "Preview" [ref=f10e402] [cursor=pointer]
+                  - button "+ Add to Trip Basket" [ref=f10e403] [cursor=pointer]
+              - generic [ref=f10e404]:
+                - paragraph [ref=f10e405]: Boracay Sulit Deal
+                - paragraph [ref=f10e406]: Boracay
+                - generic [ref=f10e407]:
+                  - generic [ref=f10e408]: ₱8,699
+                  - generic [ref=f10e409]: 3D/2N
+                - generic [ref=f10e410]:
+                  - button "Preview" [ref=f10e411] [cursor=pointer]
+                  - button "+ Add to Trip Basket" [ref=f10e412] [cursor=pointer]
+        - paragraph [ref=f10e416]: does boracay best deal include airline ticket
+        - generic [ref=f10e418]:
+          - img "SunnyBot" [ref=f10e420]
+          - generic [ref=f10e421]:
+            - generic [ref=f10e422]:
+              - paragraph [ref=f10e423]: "Boracay Best Deal includes: Roundtrip Airfare, Roundtrip Transfer, 2 Nights Hotel Accommodation (My Station Hotel), Van and Boat Transfer, Island Hopping w/ Lunch Buffet & Kawa Bath, Terminal Fee, Environmental Fee, Taxes and Permits, Travel Coordinator, Travel Requirements Assistance"
+              - paragraph [ref=f10e424]:
+                - text: The
+                - strong [ref=f10e425]: Boracay Best Deal
+                - text: package includes "Roundtrip Airfare, Roundtrip Transfer, 2 Nights Hotel Accommodation (My Station Hotel), Van and Boat Transfer, Island Hopping w/ Lunch Buffet & Kawa Bath, Terminal Fee, Environmental Fee, Taxes and Permits, Travel Coordinator, Travel Requirements Assistance". Yes, it does include your airline ticket! The other cards below are close alternatives worth a look.
+              - paragraph [ref=f10e426]: "Here are the options I found:"
+              - list [ref=f10e427]:
+                - listitem [ref=f10e428]:
+                  - strong [ref=f10e429]: Boracay Best Deal
+                  - text: — ₱9,999.00 per pax — ₱9,999.00 total for 1 pax
+            - generic [ref=f10e431]:
+              - generic [ref=f10e432]: Best Match
+              - paragraph [ref=f10e433]: Boracay Best Deal
+              - paragraph [ref=f10e434]: Boracay
+              - generic [ref=f10e435]:
+                - generic [ref=f10e436]: ₱9,999
+                - generic [ref=f10e437]: 3D/2N
+              - generic [ref=f10e438]:
+                - button "Preview" [ref=f10e439] [cursor=pointer]
+                - button "+ Add to Trip Basket" [ref=f10e440] [cursor=pointer]
+        - paragraph [ref=f10e444]: foreign
+        - generic [ref=f10e446]:
+          - img "SunnyBot" [ref=f10e448]
+          - paragraph [ref=f10e451]: I can't seem to help you with that, but I can help you with travel planning! Are you thinking of Boracay or El Nido?
+        - paragraph [ref=f10e455]: foreign offerings
+        - generic [ref=f10e457]:
+          - img "SunnyBot" [ref=f10e459]
+          - paragraph [ref=f10e462]: I can't seem to help you with that, but I can help you with travel planning! Are you thinking of Boracay or El Nido?
+        - paragraph [ref=f10e466]: international or foreign offerings
+        - generic [ref=f10e468]:
+          - img "SunnyBot" [ref=f10e470]
+          - paragraph [ref=f10e473]:
+            - text: I can't seem to help you with that, as international destinations are not in our database yet. But I can help you with travel planning within the Philippines! Are you thinking of
+            - strong [ref=f10e474]: Boracay
+            - text: or
+            - strong [ref=f10e475]: El Nido
+            - text: "?"
+        - paragraph [ref=f10e479]: does boracay best deal include airline ticket
+        - generic [ref=f10e481]:
+          - img "SunnyBot" [ref=f10e483]
+          - generic [ref=f10e484]:
+            - generic [ref=f10e485]:
+              - paragraph [ref=f10e486]: "Boracay Best Deal includes: Roundtrip Airfare, Roundtrip Transfer, 2 Nights Hotel Accommodation (My Station Hotel), Van and Boat Transfer, Island Hopping w/ Lunch Buffet & Kawa Bath, Terminal Fee, Environmental Fee, Taxes and Permits, Travel Coordinator, Travel Requirements Assistance"
+              - paragraph [ref=f10e487]:
+                - text: The
+                - strong [ref=f10e488]: Boracay Best Deal
+                - text: package includes roundtrip airfare, roundtrip transfers, 2 nights hotel accommodation at My Station Hotel, van and boat transfers, island hopping with lunch buffet and kawa bath, terminal fee, environmental fee, taxes and permits, a travel coordinator, and assistance with travel requirements. The other cards below are close alternatives worth a look.
+              - paragraph [ref=f10e489]: "Here are the options I found:"
+              - list [ref=f10e490]:
+                - listitem [ref=f10e491]:
+                  - strong [ref=f10e492]: Boracay Best Deal
+                  - text: — ₱9,999.00 per pax — ₱9,999.00 total for 1 pax
+              - paragraph [ref=f10e493]: You're chatting as a guest — log in or register for the full experience, or contact SUNNYTRIPS TRAVEL SERVICES at 09682447153 for more inquiries.
+            - generic [ref=f10e495]:
+              - generic [ref=f10e496]: Best Match
+              - paragraph [ref=f10e497]: Boracay Best Deal
+              - paragraph [ref=f10e498]: Boracay
+              - generic [ref=f10e499]:
+                - generic [ref=f10e500]: ₱9,999
+                - generic [ref=f10e501]: 3D/2N
+              - generic [ref=f10e502]:
+                - button "Preview" [ref=f10e503] [cursor=pointer]
+                - button "+ Add to Trip Basket" [ref=f10e504] [cursor=pointer]
+        - paragraph [ref=f10e508]: jet ski inclusions
+        - generic [ref=f10e510]:
+          - img "SunnyBot" [ref=f10e512]
+          - generic [ref=f10e513]:
+            - generic [ref=f10e514]:
+              - paragraph [ref=f10e515]: The catalog does not list inclusions for Jet Ski (30 mins).
+              - paragraph [ref=f10e516]: The Jet Ski (30 mins) package includes the use of an Insta360 camera. It's ₱3,800 per person and is great for motorsports fans and adventure seekers!
+              - paragraph [ref=f10e517]: "Here are the options I found:"
+              - list [ref=f10e518]:
+                - listitem [ref=f10e519]:
+                  - strong [ref=f10e520]: Jet Ski (30 mins)
+                  - text: — ₱3,800.00 per person — ₱3,800.00 total for 1 pax
+              - paragraph [ref=f10e521]: You're chatting as a guest — log in or register for the full experience, or contact SUNNYTRIPS TRAVEL SERVICES at 09682447153 for more inquiries.
+            - generic [ref=f10e523]:
+              - generic [ref=f10e524]: Exact Match
+              - paragraph [ref=f10e525]: Jet Ski (30 mins)
+              - paragraph [ref=f10e526]: Boracay
+              - generic [ref=f10e527]:
+                - generic [ref=f10e528]: ₱3,800/person
+                - generic [ref=f10e529]: Water Activity
+              - generic [ref=f10e530]:
+                - button "Preview" [ref=f10e531] [cursor=pointer]
+                - button "+ Trip Basket" [ref=f10e532] [cursor=pointer]
+        - paragraph [ref=f10e536]: scuba diving inclusions
+        - generic [ref=f10e538]:
+          - img "SunnyBot" [ref=f10e540]
+          - generic [ref=f10e541]:
+            - generic [ref=f10e542]:
+              - paragraph [ref=f10e543]: The catalog does not list inclusions for Scuba Diving.
+              - paragraph [ref=f10e544]:
+                - text: The inclusions for
+                - strong [ref=f10e545]: Scuba Diving
+                - text: "are: underwater diving experience. This activity is perfect for ocean enthusiasts and adventure lovers looking for a PADI-guided dive into coral reefs and to see marine life. It costs ₱1,350 per person, with the price last updated on Sep 22, 2026."
+              - paragraph [ref=f10e546]: "Here are the options I found:"
+              - list [ref=f10e547]:
+                - listitem [ref=f10e548]:
+                  - strong [ref=f10e549]: Scuba Diving
+                  - text: — ₱1,350.00 per person — ₱1,350.00 total for 1 pax
+              - paragraph [ref=f10e550]: You're chatting as a guest — log in or register for the full experience, or contact SUNNYTRIPS TRAVEL SERVICES at 09682447153 for more inquiries.
+            - generic [ref=f10e552]:
+              - generic [ref=f10e553]: Exact Match
+              - paragraph [ref=f10e554]: Scuba Diving
+              - paragraph [ref=f10e555]: Boracay
+              - generic [ref=f10e556]:
+                - generic [ref=f10e557]: ₱1,350/person
+                - generic [ref=f10e558]: Diving
+              - generic [ref=f10e559]:
+                - button "Preview" [ref=f10e560] [cursor=pointer]
+                - button "+ Trip Basket" [ref=f10e561] [cursor=pointer]
+        - paragraph [ref=f10e565]: scuba diving price for 5
+        - generic [ref=f10e567]:
+          - img "SunnyBot" [ref=f10e569]
+          - generic [ref=f10e570]:
+            - generic [ref=f10e571]:
+              - paragraph [ref=f10e572]: "Scuba Diving costs: ₱1,350/person"
+              - paragraph [ref=f10e573]: The price for Scuba Diving is ₱1,350 per person. The verified quote for 5 people is ₱6,750.00.
+              - paragraph [ref=f10e574]: "Here are the options I found:"
+              - list [ref=f10e575]:
+                - listitem [ref=f10e576]:
+                  - strong [ref=f10e577]: Scuba Diving
+                  - text: — ₱1,350.00 per person — ₱6,750.00 total for 5 pax
+              - paragraph [ref=f10e578]: You're chatting as a guest — log in or register for the full experience, or contact SUNNYTRIPS TRAVEL SERVICES at 09682447153 for more inquiries.
+            - generic [ref=f10e580]:
+              - generic [ref=f10e581]: Exact Match
+              - paragraph [ref=f10e582]: Scuba Diving
+              - paragraph [ref=f10e583]: Boracay
+              - generic [ref=f10e584]:
+                - generic [ref=f10e585]: ₱1,350/person
+                - generic [ref=f10e586]: Diving
+              - generic [ref=f10e587]:
+                - button "Preview" [ref=f10e588] [cursor=pointer]
+                - button "+ Trip Basket" [ref=f10e589] [cursor=pointer]
+        - paragraph [ref=f10e593]: does boracay best deal include airline ticket
+        - generic [ref=f10e595]:
+          - img "SunnyBot" [ref=f10e597]
+          - generic [ref=f10e598]:
+            - generic [ref=f10e599]:
+              - paragraph [ref=f10e600]: "Boracay Best Deal includes: Roundtrip Airfare, Roundtrip Transfer, 2 Nights Hotel Accommodation (My Station Hotel), Van and Boat Transfer, Island Hopping w/ Lunch Buffet & Kawa Bath, Terminal Fee, Environmental Fee, Taxes and Permits, Travel Coordinator, Travel Requirements Assistance"
+              - paragraph [ref=f10e601]: "Here are the options I found:"
+              - list [ref=f10e602]:
+                - listitem [ref=f10e603]:
+                  - strong [ref=f10e604]: Boracay Best Deal
+                  - text: — ₱9,999.00 per pax — ₱9,999.00 total for 1 pax
+              - paragraph [ref=f10e605]: You're chatting as a guest — log in or register for the full experience, or contact SUNNYTRIPS TRAVEL SERVICES at 09682447153 for more inquiries.
+            - generic [ref=f10e607]:
+              - generic [ref=f10e608]: Exact Match
+              - paragraph [ref=f10e609]: Boracay Best Deal
+              - paragraph [ref=f10e610]: Boracay
+              - generic [ref=f10e611]:
+                - generic [ref=f10e612]: ₱9,999
+                - generic [ref=f10e613]: 3D/2N
+              - generic [ref=f10e614]:
+                - button "Preview" [ref=f10e615] [cursor=pointer]
+                - button "+ Add to Trip Basket" [ref=f10e616] [cursor=pointer]
+        - generic [ref=f10e618]:
+          - img "SunnyBot" [ref=f10e620]
+          - generic [ref=f10e621]:
+            - generic [ref=f10e622]:
+              - paragraph [ref=f10e623]: "Scuba Diving includes: Underwater diving experience"
+              - paragraph [ref=f10e624]: "Here are the options I found:"
+              - list [ref=f10e625]:
+                - listitem [ref=f10e626]:
+                  - strong [ref=f10e627]: Scuba Diving
+                  - text: — ₱1,350.00 per person — ₱1,350.00 total for 1 pax
+              - paragraph [ref=f10e628]: You're chatting as a guest — log in or register for the full experience, or contact SUNNYTRIPS TRAVEL SERVICES at 09682447153 for more inquiries.
+            - generic [ref=f10e630]:
+              - generic [ref=f10e631]: Exact Match
+              - paragraph [ref=f10e632]: Scuba Diving
+              - paragraph [ref=f10e633]: Boracay
+              - generic [ref=f10e634]:
+                - generic [ref=f10e635]: ₱1,350/person
+                - generic [ref=f10e636]: Diving
+              - generic [ref=f10e637]:
+                - button "Preview" [ref=f10e638] [cursor=pointer]
+                - button "+ Trip Basket" [ref=f10e639] [cursor=pointer]
+        - paragraph [ref=f10e643]: scuba diving inclusions
+        - paragraph [ref=f10e647]: boracay packages o
+        - generic [ref=f10e649]:
+          - img "SunnyBot" [ref=f10e651]
+          - generic [ref=f10e652]:
+            - generic [ref=f10e653]:
+              - paragraph [ref=f10e654]:
+                - text: The
+                - strong [ref=f10e655]: Boracay Best Deal
+                - text: package is a great match for you, offering a 3D/2N trip with flights, hotel, transfers, and island hopping for ₱9,999 per pax, valid until September 30, 2026. The other cards below are close alternatives worth a look.
+              - paragraph [ref=f10e656]: "Here are the options I found:"
+              - list [ref=f10e657]:
+                - listitem [ref=f10e658]:
+                  - strong [ref=f10e659]: Boracay Best Deal
+                  - text: — ₱9,999.00 per pax — ₱9,999.00 total for 1 pax
+                - listitem [ref=f10e660]:
+                  - strong [ref=f10e661]: Boracay Tipid Deal
+                  - text: — ₱6,999.00 per pax — ₱6,999.00 total for 1 pax
+                - listitem [ref=f10e662]:
+                  - strong [ref=f10e663]: Boracay Sulit Deal
+                  - text: — ₱8,699.00 per pax — ₱8,699.00 total for 1 pax
+              - paragraph [ref=f10e664]: You're chatting as a guest — log in or register for the full experience, or contact SUNNYTRIPS TRAVEL SERVICES at 09682447153 for more inquiries.
+            - generic [ref=f10e665]:
+              - generic [ref=f10e666]:
+                - generic [ref=f10e667]: Best Match
+                - paragraph [ref=f10e668]: Boracay Best Deal
+                - paragraph [ref=f10e669]: Boracay
+                - generic [ref=f10e670]:
+                  - generic [ref=f10e671]: ₱9,999
+                  - generic [ref=f10e672]: 3D/2N
+                - generic [ref=f10e673]:
+                  - button "Preview" [ref=f10e674] [cursor=pointer]
+                  - button "+ Add to Trip Basket" [ref=f10e675] [cursor=pointer]
+              - generic [ref=f10e676]:
+                - paragraph [ref=f10e677]: Boracay Tipid Deal
+                - paragraph [ref=f10e678]: Boracay
+                - generic [ref=f10e679]:
+                  - generic [ref=f10e680]: ₱6,999
+                  - generic [ref=f10e681]: 3D/2N
+                - generic [ref=f10e682]:
+                  - button "Preview" [ref=f10e683] [cursor=pointer]
+                  - button "+ Add to Trip Basket" [ref=f10e684] [cursor=pointer]
+              - generic [ref=f10e685]:
+                - paragraph [ref=f10e686]: Boracay Sulit Deal
+                - paragraph [ref=f10e687]: Boracay
+                - generic [ref=f10e688]:
+                  - generic [ref=f10e689]: ₱8,699
+                  - generic [ref=f10e690]: 3D/2N
+                - generic [ref=f10e691]:
+                  - button "Preview" [ref=f10e692] [cursor=pointer]
+                  - button "+ Add to Trip Basket" [ref=f10e693] [cursor=pointer]
+        - paragraph [ref=f10e697]: does boracay best deal include airline ticket
+        - generic [ref=f10e699]:
+          - img "SunnyBot" [ref=f10e701]
+          - generic [ref=f10e702]:
+            - generic [ref=f10e703]:
+              - paragraph [ref=f10e704]: "Boracay Best Deal includes: Roundtrip Airfare, Roundtrip Transfer, 2 Nights Hotel Accommodation (My Station Hotel), Van and Boat Transfer, Island Hopping w/ Lunch Buffet & Kawa Bath, Terminal Fee, Environmental Fee, Taxes and Permits, Travel Coordinator, Travel Requirements Assistance"
+              - paragraph [ref=f10e705]: "Here are the options I found:"
+              - list [ref=f10e706]:
+                - listitem [ref=f10e707]:
+                  - strong [ref=f10e708]: Boracay Best Deal
+                  - text: — ₱9,999.00 per pax — ₱9,999.00 total for 1 pax
+              - paragraph [ref=f10e709]: You're chatting as a guest — log in or register for the full experience, or contact SUNNYTRIPS TRAVEL SERVICES at 09682447153 for more inquiries.
+            - generic [ref=f10e711]:
+              - generic [ref=f10e712]: Exact Match
+              - paragraph [ref=f10e713]: Boracay Best Deal
+              - paragraph [ref=f10e714]: Boracay
+              - generic [ref=f10e715]:
+                - generic [ref=f10e716]: ₱9,999
+                - generic [ref=f10e717]: 3D/2N
+              - generic [ref=f10e718]:
+                - button "Preview" [ref=f10e719] [cursor=pointer]
+                - button "+ Add to Trip Basket" [ref=f10e720] [cursor=pointer]
+        - generic [ref=f10e722]:
+          - img "SunnyBot" [ref=f10e724]
+          - generic [ref=f10e725]:
+            - generic [ref=f10e726]:
+              - paragraph [ref=f10e727]: "Jet Ski (30 mins) includes: Free Insta360 camera use"
+              - paragraph [ref=f10e728]: "Here are the options I found:"
+              - list [ref=f10e729]:
+                - listitem [ref=f10e730]:
+                  - strong [ref=f10e731]: Jet Ski (30 mins)
+                  - text: — ₱3,800.00 per person — ₱3,800.00 total for 1 pax
+              - paragraph [ref=f10e732]: You're chatting as a guest — log in or register for the full experience, or contact SUNNYTRIPS TRAVEL SERVICES at 09682447153 for more inquiries.
+            - generic [ref=f10e734]:
+              - generic [ref=f10e735]: Exact Match
+              - paragraph [ref=f10e736]: Jet Ski (30 mins)
+              - paragraph [ref=f10e737]: Boracay
+              - generic [ref=f10e738]:
+                - generic [ref=f10e739]: ₱3,800/person
+                - generic [ref=f10e740]: Water Activity
+              - generic [ref=f10e741]:
+                - button "Preview" [ref=f10e742] [cursor=pointer]
+                - button "+ Trip Basket" [ref=f10e743] [cursor=pointer]
+        - paragraph [ref=f10e747]: jet ski inclusions
+        - paragraph [ref=f10e751]: jetski price for 3
+        - generic [ref=f10e753]:
+          - img "SunnyBot" [ref=f10e755]
+          - generic [ref=f10e756]:
+            - generic [ref=f10e757]:
+              - paragraph [ref=f10e758]: Prices are shown on each card below.
+              - paragraph [ref=f10e759]: "Here are the options I found:"
+              - list [ref=f10e760]:
+                - listitem [ref=f10e761]:
+                  - strong [ref=f10e762]: Jet Ski (30 mins)
+                  - text: — ₱3,800.00 per person — ₱11,400.00 total for 3 pax
+                - listitem [ref=f10e763]:
+                  - strong [ref=f10e764]: UFO Ride
+                  - text: — ₱650.00 per person — ₱1,950.00 total for 3 pax
+                - listitem [ref=f10e765]:
+                  - strong [ref=f10e766]: Banana Boat
+                  - text: — ₱450.00 per person — ₱1,350.00 total for 3 pax
+              - paragraph [ref=f10e767]: You're chatting as a guest — log in or register for the full experience, or contact SUNNYTRIPS TRAVEL SERVICES at 09682447153 for more inquiries.
+            - generic [ref=f10e768]:
+              - generic [ref=f10e769]:
+                - generic [ref=f10e770]: Best Match
+                - paragraph [ref=f10e771]: Jet Ski (30 mins)
+                - paragraph [ref=f10e772]: Boracay
+                - generic [ref=f10e773]:
+                  - generic [ref=f10e774]: ₱3,800/person
+                  - generic [ref=f10e775]: Water Activity
+                - generic [ref=f10e776]:
+                  - button "Preview" [ref=f10e777] [cursor=pointer]
+                  - button "+ Trip Basket" [ref=f10e778] [cursor=pointer]
+              - generic [ref=f10e779]:
+                - paragraph [ref=f10e780]: UFO Ride
+                - paragraph [ref=f10e781]: Boracay
+                - generic [ref=f10e782]:
+                  - generic [ref=f10e783]: ₱650/person
+                  - generic [ref=f10e784]: Water Activity
+                - generic [ref=f10e785]:
+                  - button "Preview" [ref=f10e786] [cursor=pointer]
+                  - button "+ Trip Basket" [ref=f10e787] [cursor=pointer]
+              - generic [ref=f10e788]:
+                - paragraph [ref=f10e789]: Banana Boat
+                - paragraph [ref=f10e790]: Boracay
+                - generic [ref=f10e791]:
+                  - generic [ref=f10e792]: ₱450/person
+                  - generic [ref=f10e793]: Water Activity
+                - generic [ref=f10e794]:
+                  - button "Preview" [ref=f10e795] [cursor=pointer]
+                  - button "+ Trip Basket" [ref=f10e796] [cursor=pointer]
+        - paragraph [ref=f10e800]: scuba diving inclusions
+        - generic [ref=f10e802]:
+          - img "SunnyBot" [ref=f10e804]
+          - generic [ref=f10e805]:
+            - generic [ref=f10e806]:
+              - paragraph [ref=f10e807]: "Scuba Diving includes: Underwater diving experience"
+              - paragraph [ref=f10e808]: "Here are the options I found:"
+              - list [ref=f10e809]:
+                - listitem [ref=f10e810]:
+                  - strong [ref=f10e811]: Scuba Diving
+                  - text: — ₱1,350.00 per person — ₱1,350.00 total for 1 pax
+              - paragraph [ref=f10e812]: You're chatting as a guest — log in or register for the full experience, or contact SUNNYTRIPS TRAVEL SERVICES at 09682447153 for more inquiries.
+            - generic [ref=f10e814]:
+              - generic [ref=f10e815]: Exact Match
+              - paragraph [ref=f10e816]: Scuba Diving
+              - paragraph [ref=f10e817]: Boracay
+              - generic [ref=f10e818]:
+                - generic [ref=f10e819]: ₱1,350/person
+                - generic [ref=f10e820]: Diving
+              - generic [ref=f10e821]:
+                - button "Preview" [ref=f10e822] [cursor=pointer]
+                - button "+ Trip Basket" [ref=f10e823] [cursor=pointer]
+        - paragraph [ref=f10e827]: hotel recommendation for 5k
+        - generic [ref=f10e829]:
+          - img "SunnyBot" [ref=f10e831]
+          - generic [ref=f10e832]:
+            - generic [ref=f10e833]:
+              - paragraph [ref=f10e834]:
+                - strong [ref=f10e835]: Frendz Resort & Hostel
+                - text: seems like a great fit for you! It's a social and vibrant spot in Station 1, perfect for backpackers and those looking for nightlife access, with prices starting at ₱850/night. The other cards below are close alternatives worth a look.
+              - paragraph [ref=f10e836]: "Here are the options I found:"
+              - list [ref=f10e837]:
+                - listitem [ref=f10e838]:
+                  - strong [ref=f10e839]: Frendz Resort & Hostel
+                  - text: — ₱850.00/night
+                - listitem [ref=f10e840]:
+                  - strong [ref=f10e841]: My Station Hotel
+                  - text: — ₱2,200.00/night
+                - listitem [ref=f10e842]:
+                  - strong [ref=f10e843]: Lazy Dog Bed & Breakfast
+                  - text: — ₱2,800.00/night
+                - listitem [ref=f10e844]:
+                  - strong [ref=f10e845]: The Muse Hotel
+                  - text: — ₱4,900.00/night
+                - listitem [ref=f10e846]:
+                  - strong [ref=f10e847]: Happiness Hostel
+                  - text: — ₱3,200.00/night
+              - paragraph [ref=f10e848]: You're chatting as a guest — log in or register for the full experience, or contact SUNNYTRIPS TRAVEL SERVICES at 09682447153 for more inquiries.
+            - generic [ref=f10e849]:
+              - generic [ref=f10e850]:
+                - generic [ref=f10e851]: Best Match
+                - paragraph [ref=f10e852]: Frendz Resort & Hostel
+                - paragraph [ref=f10e853]: Boracay
+                - generic [ref=f10e854]:
+                  - generic [ref=f10e855]: mid-affordable-hotels
+                  - generic [ref=f10e856]: From ₱850/night
+                - link "View Hotel" [ref=f10e857] [cursor=pointer]:
+                  - /url: /hotels/6
+              - generic [ref=f10e858]:
+                - paragraph [ref=f10e859]: My Station Hotel
+                - paragraph [ref=f10e860]: Boracay
+                - generic [ref=f10e861]:
+                  - generic [ref=f10e862]: mid-affordable-hotels
+                  - generic [ref=f10e863]: From ₱2,200/night
+                - link "View Hotel" [ref=f10e864] [cursor=pointer]:
+                  - /url: /hotels/5
+              - generic [ref=f10e865]:
+                - paragraph [ref=f10e866]: Lazy Dog Bed & Breakfast
+                - paragraph [ref=f10e867]: Boracay
+                - generic [ref=f10e868]:
+                  - generic [ref=f10e869]: mid-affordable-hotels
+                  - generic [ref=f10e870]: From ₱2,800/night
+                - link "View Hotel" [ref=f10e871] [cursor=pointer]:
+                  - /url: /hotels/7
+              - generic [ref=f10e872]:
+                - paragraph [ref=f10e873]: The Muse Hotel
+                - paragraph [ref=f10e874]: Boracay
+                - generic [ref=f10e875]:
+                  - generic [ref=f10e876]: mid-affordable-hotels
+                  - generic [ref=f10e877]: From ₱4,900/night
+                - link "View Hotel" [ref=f10e878] [cursor=pointer]:
+                  - /url: /hotels/9
+              - generic [ref=f10e879]:
+                - paragraph [ref=f10e880]: Happiness Hostel
+                - paragraph [ref=f10e881]: Boracay
+                - generic [ref=f10e882]:
+                  - generic [ref=f10e883]: mid-affordable-hotels
+                  - generic [ref=f10e884]: From ₱3,200/night
+                - link "View Hotel" [ref=f10e885] [cursor=pointer]:
+                  - /url: /hotels/8
+        - paragraph [ref=f10e889]: hotel recommendation for 5 pax and 10k budget
+        - generic [ref=f10e891]:
+          - img "SunnyBot" [ref=f10e893]
+          - generic [ref=f10e894]:
+            - generic [ref=f10e895]:
+              - paragraph [ref=f10e896]:
+                - text: Filtered for
+                - strong [ref=f10e897]: Boracay
+                - text: ": hotel recommendation for 5 pax and 10k budget"
+              - paragraph [ref=f10e898]:
+                - text: The lowest price pick is
+                - strong [ref=f10e899]: Frendz Resort & Hostel
+                - text: at ₱850/night. You can also check out the other options listed below!
+              - paragraph [ref=f10e900]: "Here are the options I found:"
+              - list [ref=f10e901]:
+                - listitem [ref=f10e902]:
+                  - strong [ref=f10e903]: Frendz Resort & Hostel
+                  - text: — ₱850.00/night
+                - listitem [ref=f10e904]:
+                  - strong [ref=f10e905]: My Station Hotel
+                  - text: — ₱2,200.00/night
+                - listitem [ref=f10e906]:
+                  - strong [ref=f10e907]: Lazy Dog Bed & Breakfast
+                  - text: — ₱2,800.00/night
+                - listitem [ref=f10e908]:
+                  - strong [ref=f10e909]: Happiness Hostel
+                  - text: — ₱3,200.00/night
+                - listitem [ref=f10e910]:
+                  - strong [ref=f10e911]: The Muse Hotel
+                  - text: — ₱4,900.00/night
+              - paragraph [ref=f10e912]: You're chatting as a guest — log in or register for the full experience, or contact SUNNYTRIPS TRAVEL SERVICES at 09682447153 for more inquiries.
+            - generic [ref=f10e913]:
+              - generic [ref=f10e914]:
+                - generic [ref=f10e915]: Lowest Price
+                - paragraph [ref=f10e916]: Frendz Resort & Hostel
+                - paragraph [ref=f10e917]: Boracay
+                - generic [ref=f10e918]:
+                  - generic [ref=f10e919]: mid-affordable-hotels
+                  - generic [ref=f10e920]: From ₱850/night
+                - link "View Hotel" [ref=f10e921] [cursor=pointer]:
+                  - /url: /hotels/6
+              - generic [ref=f10e922]:
+                - paragraph [ref=f10e923]: My Station Hotel
+                - paragraph [ref=f10e924]: Boracay
+                - generic [ref=f10e925]:
+                  - generic [ref=f10e926]: mid-affordable-hotels
+                  - generic [ref=f10e927]: From ₱2,200/night
+                - link "View Hotel" [ref=f10e928] [cursor=pointer]:
+                  - /url: /hotels/5
+              - generic [ref=f10e929]:
+                - paragraph [ref=f10e930]: Lazy Dog Bed & Breakfast
+                - paragraph [ref=f10e931]: Boracay
+                - generic [ref=f10e932]:
+                  - generic [ref=f10e933]: mid-affordable-hotels
+                  - generic [ref=f10e934]: From ₱2,800/night
+                - link "View Hotel" [ref=f10e935] [cursor=pointer]:
+                  - /url: /hotels/7
+              - generic [ref=f10e936]:
+                - paragraph [ref=f10e937]: Happiness Hostel
+                - paragraph [ref=f10e938]: Boracay
+                - generic [ref=f10e939]:
+                  - generic [ref=f10e940]: mid-affordable-hotels
+                  - generic [ref=f10e941]: From ₱3,200/night
+                - link "View Hotel" [ref=f10e942] [cursor=pointer]:
+                  - /url: /hotels/8
+              - generic [ref=f10e943]:
+                - paragraph [ref=f10e944]: The Muse Hotel
+                - paragraph [ref=f10e945]: Boracay
+                - generic [ref=f10e946]:
+                  - generic [ref=f10e947]: mid-affordable-hotels
+                  - generic [ref=f10e948]: From ₱4,900/night
+                - link "View Hotel" [ref=f10e949] [cursor=pointer]:
+                  - /url: /hotels/9
+        - paragraph [ref=f10e953]: why frendz resort and hostel?
+        - generic [ref=f10e955]:
+          - img "SunnyBot" [ref=f10e957]
+          - generic [ref=f10e958]:
+            - generic [ref=f10e959]:
+              - paragraph [ref=f10e960]: "Here are the options I found:"
+              - list [ref=f10e961]:
+                - listitem [ref=f10e962]:
+                  - strong [ref=f10e963]: Frendz Resort & Hostel
+                  - text: — ₱850.00/night
+              - paragraph [ref=f10e964]: You're chatting as a guest — log in or register for the full experience, or contact SUNNYTRIPS TRAVEL SERVICES at 09682447153 for more inquiries.
+            - generic [ref=f10e966]:
+              - generic [ref=f10e967]: Best Match
+              - paragraph [ref=f10e968]: Frendz Resort & Hostel
+              - paragraph [ref=f10e969]: Boracay
+              - generic [ref=f10e970]:
+                - generic [ref=f10e971]: mid-affordable-hotels
+                - generic [ref=f10e972]: From ₱850/night
+              - link "View Hotel" [ref=f10e973] [cursor=pointer]:
+                - /url: /hotels/6
+        - generic [ref=f10e975]:
+          - img "SunnyBot" [ref=f10e977]
+          - generic [ref=f10e978]:
+            - generic [ref=f10e979]:
+              - heading "El Nido Island Hopping A" [level=4] [ref=f10e980]
+              - list [ref=f10e981]:
+                - listitem [ref=f10e982]:
+                  - strong [ref=f10e983]: "Destination:"
+                  - text: El Nido
+                - listitem [ref=f10e984]:
+                  - strong [ref=f10e985]: "Category:"
+                  - text: Island Hopping
+                - listitem [ref=f10e986]:
+                  - strong [ref=f10e987]: "Activity level:"
+                  - text: Relaxing
+                - listitem [ref=f10e988]:
+                  - strong [ref=f10e989]: "Duration:"
+                  - text: Full Day
+                - listitem [ref=f10e990]:
+                  - strong [ref=f10e991]: "Capacity:"
+                  - text: Up to 10
+                - listitem [ref=f10e992]:
+                  - strong [ref=f10e993]: "Price:"
+                  - text: ₱1000/person
+                - listitem [ref=f10e994]:
+                  - strong [ref=f10e995]: "Ideal for:"
+                  - text: Everyone
+              - paragraph [ref=f10e996]: You're chatting as a guest — log in or register for the full experience, or contact SUNNYTRIPS TRAVEL SERVICES at 09682447153 for more inquiries.
+            - generic [ref=f10e998]:
+              - generic [ref=f10e999]: Exact Match
+              - paragraph [ref=f10e1000]: El Nido Island Hopping A
+              - paragraph [ref=f10e1001]: El Nido
+              - generic [ref=f10e1002]:
+                - generic [ref=f10e1003]: ₱1000/person
+                - generic [ref=f10e1004]: Island Hopping
+              - generic [ref=f10e1005]:
+                - button "Preview" [ref=f10e1006] [cursor=pointer]
+                - button "+ Trip Basket" [ref=f10e1007] [cursor=pointer]
+        - paragraph [ref=f10e1011]: joiners island hopping details
+        - paragraph [ref=f10e1015]: jet ski details
+        - generic [ref=f10e1017]:
+          - img "SunnyBot" [ref=f10e1019]
+          - generic [ref=f10e1020]:
+            - generic [ref=f10e1021]:
+              - heading "Jet Ski (30 mins)" [level=4] [ref=f10e1022]
+              - paragraph [ref=f10e1023]: Double the time, double the adrenaline! 30 full minutes of high-speed jet ski action with plenty of time to explore the coast.
+              - list [ref=f10e1024]:
+                - listitem [ref=f10e1025]:
+                  - strong [ref=f10e1026]: "Destination:"
+                  - text: Boracay
+                - listitem [ref=f10e1027]:
+                  - strong [ref=f10e1028]: "Category:"
+                  - text: Water Activity
+                - listitem [ref=f10e1029]:
+                  - strong [ref=f10e1030]: "Activity level:"
+                  - text: Extreme
+                - listitem [ref=f10e1031]:
+                  - strong [ref=f10e1032]: "Price:"
+                  - text: ₱3,800/person
+                - listitem [ref=f10e1033]:
+                  - strong [ref=f10e1034]: "Ideal for:"
+                  - text: Motorsports Fans, Couples, Adventure Seekers
+                - listitem [ref=f10e1035]:
+                  - strong [ref=f10e1036]: "Vibes:"
+                  - text: Extended High Speed, Wave Racing, Water Motorsport, Insta360 Action
+                - listitem [ref=f10e1037]:
+                  - strong [ref=f10e1038]: "Inclusions:"
+                  - text: Free Insta360 camera use
+                - listitem [ref=f10e1039]:
+                  - strong [ref=f10e1040]: "Additional notes:"
+                  - text: 1 unit for 2–3 persons (take turns driving)
+              - paragraph [ref=f10e1041]: You're chatting as a guest — log in or register for the full experience, or contact SUNNYTRIPS TRAVEL SERVICES at 09682447153 for more inquiries.
+            - generic [ref=f10e1043]:
+              - generic [ref=f10e1044]: Exact Match
+              - paragraph [ref=f10e1045]: Jet Ski (30 mins)
+              - paragraph [ref=f10e1046]: Boracay
+              - generic [ref=f10e1047]:
+                - generic [ref=f10e1048]: ₱3,800/person
+                - generic [ref=f10e1049]: Water Activity
+              - generic [ref=f10e1050]:
+                - button "Preview" [ref=f10e1051] [cursor=pointer]
+                - button "+ Trip Basket" [ref=f10e1052] [cursor=pointer]
+        - paragraph [ref=f10e1056]: haloooo
+        - generic [ref=f10e1058]:
+          - img "SunnyBot" [ref=f10e1060]
+          - generic [ref=f10e1062]:
+            - paragraph [ref=f10e1063]:
+              - text: Mabuhay! How can I help you plan your trip today? Are you thinking of
+              - strong [ref=f10e1064]: Boracay
+              - text: or
+              - strong [ref=f10e1065]: El Nido
+              - text: "?"
+            - paragraph [ref=f10e1066]: You're chatting as a guest — log in or register for the full experience, or contact SUNNYTRIPS TRAVEL SERVICES at 09682447153 for more inquiries.
+        - paragraph [ref=f10e1070]: joiners island hopping details
+        - generic [ref=f10e1072]:
+          - img "SunnyBot" [ref=f10e1074]
+          - generic [ref=f10e1075]:
+            - generic [ref=f10e1076]:
+              - heading "El Nido Island Hopping A" [level=4] [ref=f10e1077]
+              - list [ref=f10e1078]:
+                - listitem [ref=f10e1079]:
+                  - strong [ref=f10e1080]: "Destination:"
+                  - text: El Nido
+                - listitem [ref=f10e1081]:
+                  - strong [ref=f10e1082]: "Category:"
+                  - text: Island Hopping
+                - listitem [ref=f10e1083]:
+                  - strong [ref=f10e1084]: "Activity level:"
+                  - text: Relaxing
+                - listitem [ref=f10e1085]:
+                  - strong [ref=f10e1086]: "Duration:"
+                  - text: Full Day
+                - listitem [ref=f10e1087]:
+                  - strong [ref=f10e1088]: "Capacity:"
+                  - text: Up to 10
+                - listitem [ref=f10e1089]:
+                  - strong [ref=f10e1090]: "Price:"
+                  - text: ₱1000/person
+                - listitem [ref=f10e1091]:
+                  - strong [ref=f10e1092]: "Ideal for:"
+                  - text: Everyone
+              - paragraph [ref=f10e1093]: You're chatting as a guest — log in or register for the full experience, or contact SUNNYTRIPS TRAVEL SERVICES at 09682447153 for more inquiries.
+            - generic [ref=f10e1095]:
+              - generic [ref=f10e1096]: Exact Match
+              - paragraph [ref=f10e1097]: El Nido Island Hopping A
+              - paragraph [ref=f10e1098]: El Nido
+              - generic [ref=f10e1099]:
+                - generic [ref=f10e1100]: ₱1000/person
+                - generic [ref=f10e1101]: Island Hopping
+              - generic [ref=f10e1102]:
+                - button "Preview" [ref=f10e1103] [cursor=pointer]
+                - button "+ Trip Basket" [ref=f10e1104] [cursor=pointer]
+        - paragraph [ref=f10e1108]: island hopping
+        - generic [ref=f10e1110]:
+          - img "SunnyBot" [ref=f10e1112]
+          - generic [ref=f10e1113]:
+            - generic [ref=f10e1114]:
+              - heading "El Nido Island Hopping A" [level=4] [ref=f10e1115]
+              - list [ref=f10e1116]:
+                - listitem [ref=f10e1117]:
+                  - strong [ref=f10e1118]: "Destination:"
+                  - text: El Nido
+                - listitem [ref=f10e1119]:
+                  - strong [ref=f10e1120]: "Category:"
+                  - text: Island Hopping
+                - listitem [ref=f10e1121]:
+                  - strong [ref=f10e1122]: "Activity level:"
+                  - text: Relaxing
+                - listitem [ref=f10e1123]:
+                  - strong [ref=f10e1124]: "Duration:"
+                  - text: Full Day
+                - listitem [ref=f10e1125]:
+                  - strong [ref=f10e1126]: "Capacity:"
+                  - text: Up to 10
+                - listitem [ref=f10e1127]:
+                  - strong [ref=f10e1128]: "Price:"
+                  - text: ₱1000/person
+                - listitem [ref=f10e1129]:
+                  - strong [ref=f10e1130]: "Ideal for:"
+                  - text: Everyone
+              - paragraph [ref=f10e1131]: You're chatting as a guest — log in or register for the full experience, or contact SUNNYTRIPS TRAVEL SERVICES at 09682447153 for more inquiries.
+            - generic [ref=f10e1133]:
+              - generic [ref=f10e1134]: Exact Match
+              - paragraph [ref=f10e1135]: El Nido Island Hopping A
+              - paragraph [ref=f10e1136]: El Nido
+              - generic [ref=f10e1137]:
+                - generic [ref=f10e1138]: ₱1000/person
+                - generic [ref=f10e1139]: Island Hopping
+              - generic [ref=f10e1140]:
+                - button "Preview" [ref=f10e1141] [cursor=pointer]
+                - button "+ Trip Basket" [ref=f10e1142] [cursor=pointer]
+        - generic [ref=f10e1144]:
+          - img "SunnyBot" [ref=f10e1146]
+          - generic [ref=f10e1147]:
+            - generic [ref=f10e1148]:
+              - heading "Jet Ski (30 mins)" [level=4] [ref=f10e1149]
+              - paragraph [ref=f10e1150]: Double the time, double the adrenaline! 30 full minutes of high-speed jet ski action with plenty of time to explore the coast.
+              - list [ref=f10e1151]:
+                - listitem [ref=f10e1152]:
+                  - strong [ref=f10e1153]: "Destination:"
+                  - text: Boracay
+                - listitem [ref=f10e1154]:
+                  - strong [ref=f10e1155]: "Category:"
+                  - text: Water Activity
+                - listitem [ref=f10e1156]:
+                  - strong [ref=f10e1157]: "Activity level:"
+                  - text: Extreme
+                - listitem [ref=f10e1158]:
+                  - strong [ref=f10e1159]: "Price:"
+                  - text: ₱3,800/person
+                - listitem [ref=f10e1160]:
+                  - strong [ref=f10e1161]: "Ideal for:"
+                  - text: Motorsports Fans, Couples, Adventure Seekers
+                - listitem [ref=f10e1162]:
+                  - strong [ref=f10e1163]: "Vibes:"
+                  - text: Extended High Speed, Wave Racing, Water Motorsport, Insta360 Action
+                - listitem [ref=f10e1164]:
+                  - strong [ref=f10e1165]: "Inclusions:"
+                  - text: Free Insta360 camera use
+                - listitem [ref=f10e1166]:
+                  - strong [ref=f10e1167]: "Additional notes:"
+                  - text: 1 unit for 2–3 persons (take turns driving)
+              - paragraph [ref=f10e1168]: You're chatting as a guest — log in or register for the full experience, or contact SUNNYTRIPS TRAVEL SERVICES at 09682447153 for more inquiries.
+            - generic [ref=f10e1170]:
+              - generic [ref=f10e1171]: Exact Match
+              - paragraph [ref=f10e1172]: Jet Ski (30 mins)
+              - paragraph [ref=f10e1173]: Boracay
+              - generic [ref=f10e1174]:
+                - generic [ref=f10e1175]: ₱3,800/person
+                - generic [ref=f10e1176]: Water Activity
+              - generic [ref=f10e1177]:
+                - button "Preview" [ref=f10e1178] [cursor=pointer]
+                - button "+ Trip Basket" [ref=f10e1179] [cursor=pointer]
+        - paragraph [ref=f10e1183]: jet ski details
+        - paragraph [ref=f10e1187]: scuba diving inclusions
+        - generic [ref=f10e1189]:
+          - img "SunnyBot" [ref=f10e1191]
+          - generic [ref=f10e1192]:
+            - generic [ref=f10e1193]:
+              - paragraph [ref=f10e1194]: "Scuba Diving includes: Underwater diving experience"
+              - paragraph [ref=f10e1195]:
+                - text: The inclusions for
+                - strong [ref=f10e1196]: Scuba Diving
+                - text: "are: Underwater diving experience. This PADI-guided experience is perfect for adventure lovers wanting to explore coral reefs and marine life!"
+              - paragraph [ref=f10e1197]: "Here are the options I found:"
+              - list [ref=f10e1198]:
+                - listitem [ref=f10e1199]:
+                  - strong [ref=f10e1200]: Scuba Diving
+                  - text: — ₱1,350.00 per person — ₱1,350.00 total for 1 pax
+              - paragraph [ref=f10e1201]: You're chatting as a guest — log in or register for the full experience, or contact SUNNYTRIPS TRAVEL SERVICES at 09682447153 for more inquiries.
+            - generic [ref=f10e1203]:
+              - generic [ref=f10e1204]: Exact Match
+              - paragraph [ref=f10e1205]: Scuba Diving
+              - paragraph [ref=f10e1206]: Boracay
+              - generic [ref=f10e1207]:
+                - generic [ref=f10e1208]: ₱1,350/person
+                - generic [ref=f10e1209]: Diving
+              - generic [ref=f10e1210]:
+                - button "Preview" [ref=f10e1211] [cursor=pointer]
+                - button "+ Trip Basket" [ref=f10e1212] [cursor=pointer]
+        - generic [ref=f10e1214]:
+          - img "SunnyBot" [ref=f10e1216]
+          - generic [ref=f10e1217]:
+            - generic [ref=f10e1218]:
+              - heading "Jet Ski (30 mins)" [level=4] [ref=f10e1219]
+              - paragraph [ref=f10e1220]: Double the time, double the adrenaline! 30 full minutes of high-speed jet ski action with plenty of time to explore the coast.
+              - list [ref=f10e1221]:
+                - listitem [ref=f10e1222]:
+                  - strong [ref=f10e1223]: "Destination:"
+                  - text: Boracay
+                - listitem [ref=f10e1224]:
+                  - strong [ref=f10e1225]: "Category:"
+                  - text: Water Activity
+                - listitem [ref=f10e1226]:
+                  - strong [ref=f10e1227]: "Activity level:"
+                  - text: Extreme
+                - listitem [ref=f10e1228]:
+                  - strong [ref=f10e1229]: "Price:"
+                  - text: ₱3,800/person
+                - listitem [ref=f10e1230]:
+                  - strong [ref=f10e1231]: "Ideal for:"
+                  - text: Motorsports Fans, Couples, Adventure Seekers
+                - listitem [ref=f10e1232]:
+                  - strong [ref=f10e1233]: "Vibes:"
+                  - text: Extended High Speed, Wave Racing, Water Motorsport, Insta360 Action
+                - listitem [ref=f10e1234]:
+                  - strong [ref=f10e1235]: "Inclusions:"
+                  - text: Free Insta360 camera use
+                - listitem [ref=f10e1236]:
+                  - strong [ref=f10e1237]: "Additional notes:"
+                  - text: 1 unit for 2–3 persons (take turns driving)
+              - paragraph [ref=f10e1238]: You're chatting as a guest — log in or register for the full experience, or contact SUNNYTRIPS TRAVEL SERVICES at 09682447153 for more inquiries.
+            - generic [ref=f10e1240]:
+              - generic [ref=f10e1241]: Exact Match
+              - paragraph [ref=f10e1242]: Jet Ski (30 mins)
+              - paragraph [ref=f10e1243]: Boracay
+              - generic [ref=f10e1244]:
+                - generic [ref=f10e1245]: ₱3,800/person
+                - generic [ref=f10e1246]: Water Activity
+              - generic [ref=f10e1247]:
+                - button "Preview" [ref=f10e1248] [cursor=pointer]
+                - button "+ Trip Basket" [ref=f10e1249] [cursor=pointer]
+        - paragraph [ref=f10e1253]: jetski
+        - generic [ref=f10e1255]:
+          - img "SunnyBot" [ref=f10e1257]
+          - generic [ref=f10e1258]:
+            - generic [ref=f10e1259]:
+              - heading "Paraw Sailing (Private)" [level=4] [ref=f10e1260]
+              - paragraph [ref=f10e1261]: Charter an authentic outrigger sailboat driven by breeze alone. Glide peacefully along White Beach during golden hour for unforgettable sunset photos.
+              - list [ref=f10e1262]:
+                - listitem [ref=f10e1263]:
+                  - strong [ref=f10e1264]: "Destination:"
+                  - text: Boracay
+                - listitem [ref=f10e1265]:
+                  - strong [ref=f10e1266]: "Category:"
+                  - text: Sailing
+                - listitem [ref=f10e1267]:
+                  - strong [ref=f10e1268]: "Activity level:"
+                  - text: Relaxing
+                - listitem [ref=f10e1269]:
+                  - strong [ref=f10e1270]: "Price:"
+                  - text: ₱750/person
+                - listitem [ref=f10e1271]:
+                  - strong [ref=f10e1272]: "Ideal for:"
+                  - text: Couples, Honeymooners, Families
+                - listitem [ref=f10e1273]:
+                  - strong [ref=f10e1274]: "Vibes:"
+                  - text: Traditional Sailboat, Private Sunset Cruise, Eco Wind Sailing, Romantic Golden Hour
+                - listitem [ref=f10e1275]:
+                  - strong [ref=f10e1276]: "Additional notes:"
+                  - text: Minimum 4 persons
+              - paragraph [ref=f10e1277]: You're chatting as a guest — log in or register for the full experience, or contact SUNNYTRIPS TRAVEL SERVICES at 09682447153 for more inquiries.
+            - generic [ref=f10e1279]:
+              - generic [ref=f10e1280]: Exact Match
+              - paragraph [ref=f10e1281]: Paraw Sailing (Private)
+              - paragraph [ref=f10e1282]: Boracay
+              - generic [ref=f10e1283]:
+                - generic [ref=f10e1284]: ₱750/person
+                - generic [ref=f10e1285]: Sailing
+              - generic [ref=f10e1286]:
+                - button "Preview" [ref=f10e1287] [cursor=pointer]
+                - button "+ Trip Basket" [ref=f10e1288] [cursor=pointer]
+        - paragraph [ref=f10e1292]: parawsailing
+        - paragraph [ref=f10e1296]: what is the difference between parawsailing and parasailing
+        - generic [ref=f10e1298]:
+          - img "SunnyBot" [ref=f10e1300]
+          - generic [ref=f10e1301]:
+            - generic [ref=f10e1302]:
+              - heading "Parasailing" [level=4] [ref=f10e1303]
+              - paragraph [ref=f10e1304]: Soar 150 meters above the azure waters of Boracay! Experience breathtaking 360-degree aerial views of the entire 7km island while strapped securely into a parachute canopy.
+              - list [ref=f10e1305]:
+                - listitem [ref=f10e1306]:
+                  - strong [ref=f10e1307]: "Destination:"
+                  - text: Boracay
+                - listitem [ref=f10e1308]:
+                  - strong [ref=f10e1309]: "Category:"
+                  - text: Water Activity
+                - listitem [ref=f10e1310]:
+                  - strong [ref=f10e1311]: "Activity level:"
+                  - text: Extreme
+                - listitem [ref=f10e1312]:
+                  - strong [ref=f10e1313]: "Price:"
+                  - text: ₱1,700/person
+                - listitem [ref=f10e1314]:
+                  - strong [ref=f10e1315]: "Ideal for:"
+                  - text: Thrill Seekers, Couples, Adventure Lovers
+                - listitem [ref=f10e1316]:
+                  - strong [ref=f10e1317]: "Vibes:"
+                  - text: Panoramic Aerial Views, Extreme Height, High Flying, Insta360 Action
+                - listitem [ref=f10e1318]:
+                  - strong [ref=f10e1319]: "Inclusions:"
+                  - text: Free Insta360 camera use
+                - listitem [ref=f10e1320]:
+                  - strong [ref=f10e1321]: "Additional notes:"
+                  - text: 2–3 flyers
+              - paragraph [ref=f10e1322]: You're chatting as a guest — log in or register for the full experience, or contact SUNNYTRIPS TRAVEL SERVICES at 09682447153 for more inquiries.
+            - generic [ref=f10e1324]:
+              - generic [ref=f10e1325]: Exact Match
+              - paragraph [ref=f10e1326]: Parasailing
+              - paragraph [ref=f10e1327]: Boracay
+              - generic [ref=f10e1328]:
+                - generic [ref=f10e1329]: ₱1,700/person
+                - generic [ref=f10e1330]: Water Activity
+              - generic [ref=f10e1331]:
+                - button "Preview" [ref=f10e1332] [cursor=pointer]
+                - button "+ Trip Basket" [ref=f10e1333] [cursor=pointer]
+        - paragraph [ref=f10e1337]: boracay hotel recommendation for 5k budget
+        - generic [ref=f10e1339]:
+          - img "SunnyBot" [ref=f10e1341]
+          - generic [ref=f10e1342]:
+            - generic [ref=f10e1343]:
+              - paragraph [ref=f10e1344]:
+                - strong [ref=f10e1345]: Frendz Resort & Hostel
+                - text: is your lowest price pick at ₱850/night. Check out the other hotel cards for more options in Boracay!
+              - paragraph [ref=f10e1346]: "Here are the options I found:"
+              - list [ref=f10e1347]:
+                - listitem [ref=f10e1348]:
+                  - strong [ref=f10e1349]: Frendz Resort & Hostel
+                  - text: — ₱850.00/night
+                - listitem [ref=f10e1350]:
+                  - strong [ref=f10e1351]: My Station Hotel
+                  - text: — ₱2,200.00/night
+                - listitem [ref=f10e1352]:
+                  - strong [ref=f10e1353]: Lazy Dog Bed & Breakfast
+                  - text: — ₱2,800.00/night
+                - listitem [ref=f10e1354]:
+                  - strong [ref=f10e1355]: Happiness Hostel
+                  - text: — ₱3,200.00/night
+                - listitem [ref=f10e1356]:
+                  - strong [ref=f10e1357]: The Muse Hotel
+                  - text: — ₱4,900.00/night
+              - paragraph [ref=f10e1358]: You're chatting as a guest — log in or register for the full experience, or contact SUNNYTRIPS TRAVEL SERVICES at 09682447153 for more inquiries.
+            - generic [ref=f10e1359]:
+              - generic [ref=f10e1360]:
+                - generic [ref=f10e1361]: Lowest Price
+                - paragraph [ref=f10e1362]: Frendz Resort & Hostel
+                - paragraph [ref=f10e1363]: Boracay
+                - generic [ref=f10e1364]:
+                  - generic [ref=f10e1365]: mid-affordable-hotels
+                  - generic [ref=f10e1366]: From ₱850/night
+                - link "View Hotel" [ref=f10e1367] [cursor=pointer]:
+                  - /url: /hotels/6
+              - generic [ref=f10e1368]:
+                - paragraph [ref=f10e1369]: My Station Hotel
+                - paragraph [ref=f10e1370]: Boracay
+                - generic [ref=f10e1371]:
+                  - generic [ref=f10e1372]: mid-affordable-hotels
+                  - generic [ref=f10e1373]: From ₱2,200/night
+                - link "View Hotel" [ref=f10e1374] [cursor=pointer]:
+                  - /url: /hotels/5
+              - generic [ref=f10e1375]:
+                - paragraph [ref=f10e1376]: Lazy Dog Bed & Breakfast
+                - paragraph [ref=f10e1377]: Boracay
+                - generic [ref=f10e1378]:
+                  - generic [ref=f10e1379]: mid-affordable-hotels
+                  - generic [ref=f10e1380]: From ₱2,800/night
+                - link "View Hotel" [ref=f10e1381] [cursor=pointer]:
+                  - /url: /hotels/7
+              - generic [ref=f10e1382]:
+                - paragraph [ref=f10e1383]: Happiness Hostel
+                - paragraph [ref=f10e1384]: Boracay
+                - generic [ref=f10e1385]:
+                  - generic [ref=f10e1386]: mid-affordable-hotels
+                  - generic [ref=f10e1387]: From ₱3,200/night
+                - link "View Hotel" [ref=f10e1388] [cursor=pointer]:
+                  - /url: /hotels/8
+              - generic [ref=f10e1389]:
+                - paragraph [ref=f10e1390]: The Muse Hotel
+                - paragraph [ref=f10e1391]: Boracay
+                - generic [ref=f10e1392]:
+                  - generic [ref=f10e1393]: mid-affordable-hotels
+                  - generic [ref=f10e1394]: From ₱4,900/night
+                - link "View Hotel" [ref=f10e1395] [cursor=pointer]:
+                  - /url: /hotels/9
+      - generic [ref=f10e1396]:
+        - generic [ref=f10e1397]:
+          - textbox "Ask about islands, hotels, rates..." [active] [ref=f10e1398]
+          - button "Send message" [disabled] [ref=f10e1399]
+        - paragraph [ref=f10e1402]: SunnyBot AI can make mistakes. Be specific in inquiries for higher accuracy. Do not treat SunnyBot as a Human.

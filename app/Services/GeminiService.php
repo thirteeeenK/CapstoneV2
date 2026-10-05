@@ -63,6 +63,13 @@ class GeminiService
      */
     public ?string $lastFinishReason = null;
 
+    /**
+     * True when the last generateChatResponse call was answered by the Groq
+     * fallback instead of Gemini. Lets callers disclose the model switch to
+     * the user instead of failing over silently.
+     */
+    public bool $lastUsedFallback = false;
+
     public ?int $lastCandidateCount = null;
 
     /** @var array<string, int>|null */
@@ -3038,6 +3045,7 @@ class GeminiService
     {
         $this->lastPromptHash = hash('sha256', $systemInstruction."\n".$userPrompt);
         $this->lastFinishReason = null;
+        $this->lastUsedFallback = false;
         $this->lastCandidateCount = null;
         $this->lastTokenUsage = null;
         $this->lastLatencyMs = null;
@@ -3173,6 +3181,7 @@ class GeminiService
         }
 
         $this->lastFinishReason = 'groq_fallback';
+        $this->lastUsedFallback = true;
         $this->lastLatencyMs = (int) (microtime(true) * 1000) - $startedAt;
 
         return trim($fallback);
