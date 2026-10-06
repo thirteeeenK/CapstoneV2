@@ -101,6 +101,14 @@ class RecommendationEvaluateCommand extends Command
             $clickedSessions,
             $sessions - $clickedSessions
         ));
+        $this->line(sprintf(
+            'Showing %d of %d verdicts (%d sessions; %d click-less excluded).',
+            $clickedSessions,
+            $clickedSessions,
+            $sessions,
+            $sessions - $clickedSessions
+        ));
+        $this->line('Full record: php artisan recommendation:evaluate --export=storage/eval/hitrate_metrics.csv');
 
         $export = $this->option('export');
         if (is_string($export) && $export !== '') {
