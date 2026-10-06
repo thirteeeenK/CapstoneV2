@@ -109,7 +109,7 @@ class AdminEvaluationController extends Controller
         return [
             'sessions' => $sessions,
             'rows' => $rows,
-            'verdicts' => array_slice($verdicts, 0, 100),
+            'verdicts' => $verdicts,
             'verdictTotal' => $clickedSessions,
             'clickedSessions' => $clickedSessions,
             'clickedHits' => $clickedHits,

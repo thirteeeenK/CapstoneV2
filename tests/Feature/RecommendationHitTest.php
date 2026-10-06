@@ -192,3 +192,14 @@ it('clears all tracking rows with recommendation:reset', function () {
 
     expect(RecommendationHit::count())->toBe(0);
 });
+
+it('states full verdict coverage in terminal output', function () {
+    $user = User::factory()->create();
+    trackSession($user, 's1', [['mode' => 'ai', 'entity_type' => 'hotel', 'entity_id' => 1, 'rank' => 2]]);
+    trackSession($user, 's2');
+
+    $this->artisan('recommendation:evaluate')
+        ->expectsOutputToContain('Showing 1 of 1 verdicts (2 sessions; 1 click-less excluded)')
+        ->expectsOutputToContain('Full record')
+        ->assertSuccessful();
+});

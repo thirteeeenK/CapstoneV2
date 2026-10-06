@@ -69,7 +69,7 @@
                         </tbody>
                     </table>
                 </div>
-                <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-400 mb-2">Per-session verdicts (latest {{ count($hitrate['verdicts']) }} of {{ $hitrate['verdictTotal'] }})</h3>
+                <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-400 mb-2">Per-session verdicts (all {{ $hitrate['verdictTotal'] }}) — full record via CLI --export CSV</h3>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-xs text-slate-700">
                         <thead class="bg-slate-100/70 uppercase text-[10px] font-extrabold text-slate-500 border-b border-slate-200">
