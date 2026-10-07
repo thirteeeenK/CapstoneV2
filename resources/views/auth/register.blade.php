@@ -87,7 +87,8 @@
 
         {{-- Submit --}}
         <div class="pt-1">
-            <x-primary-button type="button" class="w-full" x-data x-on:click.prevent="$dispatch('open-modal', 'confirm-submit-modal')">
+            <x-primary-button type="button" class="w-full" x-data
+                x-on:click.prevent="$dispatch('open-modal', 'confirm-submit-modal')">
                 Create account
             </x-primary-button>
         </div>
@@ -179,7 +180,8 @@
                         One last step before we set sail.
                     </h2>
                     <p class="mt-1.5 text-[13px] font-body text-ink-500 leading-relaxed">
-                        To create your account, please confirm the details below. These keep your experience safe, transparent, and fair.
+                        To create your account, please confirm the details below. These keep your experience safe,
+                        transparent, and fair.
                     </p>
                 </div>
                 <button type="button" x-on:click="$dispatch('close')"
@@ -192,7 +194,8 @@
             {{-- Progress hint --}}
             <div class="mt-4 flex items-center gap-3">
                 <div class="h-1.5 flex-1 overflow-hidden rounded-full bg-ink-100">
-                    <div id="consent-progress" class="h-full w-0 rounded-full bg-ocean-500 transition-all duration-300"></div>
+                    <div id="consent-progress" class="h-full w-0 rounded-full bg-ocean-500 transition-all duration-300">
+                    </div>
                 </div>
                 <span id="consent-count" class="shrink-0 font-label text-xs font-semibold text-ink-500">
                     0 of 4 agreements confirmed
@@ -203,8 +206,10 @@
             <div class="mt-4 space-y-2.5">
 
                 {{-- Age confirmation --}}
-                <label class="group flex cursor-pointer items-start gap-3 sm:gap-3.5 rounded-xl border border-ink-200 bg-white p-3 sm:p-3.5 transition-all duration-150 hover:border-ocean-300 hover:bg-ocean-50/40 has-[:checked]:border-ocean-500 has-[:checked]:bg-ocean-50/60 has-[:checked]:shadow-sm">
-                    <span class="mt-0.5 inline-flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg bg-ocean-50 text-ocean-600 ring-1 ring-ocean-100 transition-colors group-has-[:checked]:bg-ocean-500 group-has-[:checked]:text-white">
+                <label
+                    class="group flex cursor-pointer items-start gap-3 sm:gap-3.5 rounded-xl border border-ink-200 bg-white p-3 sm:p-3.5 transition-all duration-150 hover:border-ocean-300 hover:bg-ocean-50/40 has-[:checked]:border-ocean-500 has-[:checked]:bg-ocean-50/60 has-[:checked]:shadow-sm">
+                    <span
+                        class="mt-0.5 inline-flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg bg-ocean-50 text-ocean-600 ring-1 ring-ocean-100 transition-colors group-has-[:checked]:bg-ocean-500 group-has-[:checked]:text-white">
                         <span class="material-symbols-outlined text-[20px]">verified_user</span>
                     </span>
                     <span class="min-w-0 flex-1">
@@ -217,7 +222,8 @@
                         <input type="checkbox" name="age_confirmed" value="1" form="register-form"
                             class="consent-checkbox peer h-5 w-5 cursor-pointer appearance-none rounded-md border border-ink-300 bg-white transition-colors checked:border-ocean-500 checked:bg-ocean-500 focus:outline-none focus:ring-2 focus:ring-ocean-400/40 focus:ring-offset-1"
                             {{ old('age_confirmed') ? 'checked' : '' }}>
-                        <span class="pointer-events-none absolute inset-0 flex items-center justify-center text-white opacity-0 peer-checked:opacity-100 transition-opacity">
+                        <span
+                            class="pointer-events-none absolute inset-0 flex items-center justify-center text-white opacity-0 peer-checked:opacity-100 transition-opacity">
                             <span class="material-symbols-outlined text-[14px]">check</span>
                         </span>
                     </span>
@@ -227,24 +233,28 @@
                 </div>
 
                 {{-- Terms and Conditions --}}
-                <label class="group flex cursor-pointer items-start gap-3 sm:gap-3.5 rounded-xl border border-ink-200 bg-white p-3 sm:p-3.5 transition-all duration-150 hover:border-ocean-300 hover:bg-ocean-50/40 has-[:checked]:border-ocean-500 has-[:checked]:bg-ocean-50/60 has-[:checked]:shadow-sm">
-                    <span class="mt-0.5 inline-flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg bg-ocean-50 text-ocean-600 ring-1 ring-ocean-100 transition-colors group-has-[:checked]:bg-ocean-500 group-has-[:checked]:text-white">
+                <label
+                    class="group flex cursor-pointer items-start gap-3 sm:gap-3.5 rounded-xl border border-ink-200 bg-white p-3 sm:p-3.5 transition-all duration-150 hover:border-ocean-300 hover:bg-ocean-50/40 has-[:checked]:border-ocean-500 has-[:checked]:bg-ocean-50/60 has-[:checked]:shadow-sm">
+                    <span
+                        class="mt-0.5 inline-flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg bg-ocean-50 text-ocean-600 ring-1 ring-ocean-100 transition-colors group-has-[:checked]:bg-ocean-500 group-has-[:checked]:text-white">
                         <span class="material-symbols-outlined text-[20px]">description</span>
                     </span>
                     <span class="min-w-0 flex-1">
-                        <span class="block font-headline text-[13px] font-bold text-ink-900">Terms &amp; Conditions</span>
+                        <span class="block font-headline text-[13px] font-bold text-ink-900">Terms &amp;
+                            Conditions</span>
                         <span class="mt-0.5 block text-[13px] font-body text-ink-500 leading-relaxed">
                             I agree to the
                             <a href="{{ route('terms') }}" target="_blank"
-                                class="font-semibold text-ocean-600 hover:underline">Terms and Conditions</a>,
-                            including the binding arbitration clause.
+                                class="font-semibold text-ocean-600 hover:underline">Terms and Conditions</a>
+                            of SunnyTrips Travel Services.
                         </span>
                     </span>
                     <span class="relative mt-1 inline-flex h-5 w-5 shrink-0">
                         <input type="checkbox" name="terms_accepted" value="1" form="register-form"
                             class="consent-checkbox peer h-5 w-5 cursor-pointer appearance-none rounded-md border border-ink-300 bg-white transition-colors checked:border-ocean-500 checked:bg-ocean-500 focus:outline-none focus:ring-2 focus:ring-ocean-400/40 focus:ring-offset-1"
                             {{ old('terms_accepted') ? 'checked' : '' }}>
-                        <span class="pointer-events-none absolute inset-0 flex items-center justify-center text-white opacity-0 peer-checked:opacity-100 transition-opacity">
+                        <span
+                            class="pointer-events-none absolute inset-0 flex items-center justify-center text-white opacity-0 peer-checked:opacity-100 transition-opacity">
                             <span class="material-symbols-outlined text-[14px]">check</span>
                         </span>
                     </span>
@@ -254,8 +264,10 @@
                 </div>
 
                 {{-- Privacy Policy --}}
-                <label class="group flex cursor-pointer items-start gap-3 sm:gap-3.5 rounded-xl border border-ink-200 bg-white p-3 sm:p-3.5 transition-all duration-150 hover:border-ocean-300 hover:bg-ocean-50/40 has-[:checked]:border-ocean-500 has-[:checked]:bg-ocean-50/60 has-[:checked]:shadow-sm">
-                    <span class="mt-0.5 inline-flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg bg-ocean-50 text-ocean-600 ring-1 ring-ocean-100 transition-colors group-has-[:checked]:bg-ocean-500 group-has-[:checked]:text-white">
+                <label
+                    class="group flex cursor-pointer items-start gap-3 sm:gap-3.5 rounded-xl border border-ink-200 bg-white p-3 sm:p-3.5 transition-all duration-150 hover:border-ocean-300 hover:bg-ocean-50/40 has-[:checked]:border-ocean-500 has-[:checked]:bg-ocean-50/60 has-[:checked]:shadow-sm">
+                    <span
+                        class="mt-0.5 inline-flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg bg-ocean-50 text-ocean-600 ring-1 ring-ocean-100 transition-colors group-has-[:checked]:bg-ocean-500 group-has-[:checked]:text-white">
                         <span class="material-symbols-outlined text-[20px]">shield</span>
                     </span>
                     <span class="min-w-0 flex-1">
@@ -271,7 +283,8 @@
                         <input type="checkbox" name="privacy_accepted" value="1" form="register-form"
                             class="consent-checkbox peer h-5 w-5 cursor-pointer appearance-none rounded-md border border-ink-300 bg-white transition-colors checked:border-ocean-500 checked:bg-ocean-500 focus:outline-none focus:ring-2 focus:ring-ocean-400/40 focus:ring-offset-1"
                             {{ old('privacy_accepted') ? 'checked' : '' }}>
-                        <span class="pointer-events-none absolute inset-0 flex items-center justify-center text-white opacity-0 peer-checked:opacity-100 transition-opacity">
+                        <span
+                            class="pointer-events-none absolute inset-0 flex items-center justify-center text-white opacity-0 peer-checked:opacity-100 transition-opacity">
                             <span class="material-symbols-outlined text-[14px]">check</span>
                         </span>
                     </span>
@@ -281,8 +294,10 @@
                 </div>
 
                 {{-- AI Disclosure --}}
-                <label class="group flex cursor-pointer items-start gap-3 sm:gap-3.5 rounded-xl border border-ink-200 bg-white p-3 sm:p-3.5 transition-all duration-150 hover:border-ocean-300 hover:bg-ocean-50/40 has-[:checked]:border-ocean-500 has-[:checked]:bg-ocean-50/60 has-[:checked]:shadow-sm">
-                    <span class="mt-0.5 inline-flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg bg-ocean-50 text-ocean-600 ring-1 ring-ocean-100 transition-colors group-has-[:checked]:bg-ocean-500 group-has-[:checked]:text-white">
+                <label
+                    class="group flex cursor-pointer items-start gap-3 sm:gap-3.5 rounded-xl border border-ink-200 bg-white p-3 sm:p-3.5 transition-all duration-150 hover:border-ocean-300 hover:bg-ocean-50/40 has-[:checked]:border-ocean-500 has-[:checked]:bg-ocean-50/60 has-[:checked]:shadow-sm">
+                    <span
+                        class="mt-0.5 inline-flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg bg-ocean-50 text-ocean-600 ring-1 ring-ocean-100 transition-colors group-has-[:checked]:bg-ocean-500 group-has-[:checked]:text-white">
                         <span class="material-symbols-outlined text-[20px]">smart_toy</span>
                     </span>
                     <span class="min-w-0 flex-1">
@@ -291,14 +306,15 @@
                             I acknowledge the
                             <a href="{{ route('ai-disclosure') }}" target="_blank"
                                 class="font-semibold text-ocean-600 hover:underline">AI Usage Disclosure</a>
-                            and understand that AI recommendations may contain errors.
+                            and understand that AI recommendations and outputs may contain errors and be inaccurate.
                         </span>
                     </span>
                     <span class="relative mt-1 inline-flex h-5 w-5 shrink-0">
                         <input type="checkbox" name="ai_disclosure_accepted" value="1" form="register-form"
                             class="consent-checkbox peer h-5 w-5 cursor-pointer appearance-none rounded-md border border-ink-300 bg-white transition-colors checked:border-ocean-500 checked:bg-ocean-500 focus:outline-none focus:ring-2 focus:ring-ocean-400/40 focus:ring-offset-1"
                             {{ old('ai_disclosure_accepted') ? 'checked' : '' }}>
-                        <span class="pointer-events-none absolute inset-0 flex items-center justify-center text-white opacity-0 peer-checked:opacity-100 transition-opacity">
+                        <span
+                            class="pointer-events-none absolute inset-0 flex items-center justify-center text-white opacity-0 peer-checked:opacity-100 transition-opacity">
                             <span class="material-symbols-outlined text-[14px]">check</span>
                         </span>
                     </span>
@@ -309,7 +325,8 @@
             </div>
 
             {{-- Footer --}}
-            <div class="mt-5 border-t border-ink-100 pt-4 flex flex-col-reverse gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+            <div
+                class="mt-5 border-t border-ink-100 pt-4 flex flex-col-reverse gap-2.5 sm:flex-row sm:items-center sm:justify-between">
                 <button type="button" x-on:click="$dispatch('close')"
                     class="inline-flex items-center justify-center rounded-lg border border-sand-200 bg-white px-5 py-2.5 text-sm font-semibold text-ink-600 transition-all duration-150 hover:bg-sand-50 focus:outline-none focus:ring-2 focus:ring-ocean-400/40 cursor-pointer">
                     Cancel

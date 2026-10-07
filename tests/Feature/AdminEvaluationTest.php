@@ -76,3 +76,16 @@ it('shows sentiment matrix when labeled reviews exist', function () {
         ->assertSee('Sentiment F1')
         ->assertSee('Actual \\ Predicted', false);
 });
+
+it('lists every verdict without slicing', function () {
+    $user = User::factory()->create();
+    foreach (range(1, 5) as $i) {
+        RecommendationHit::create(['user_id' => $user->id, 'session_token' => "sess-all-{$i}", 'mode' => RecommendationHit::MODE_AI, 'entity_type' => RecommendationHit::TYPE_IMPRESSION]);
+        RecommendationHit::create(['user_id' => $user->id, 'session_token' => "sess-all-{$i}", 'mode' => RecommendationHit::MODE_AI, 'entity_type' => RecommendationHit::TYPE_HOTEL, 'entity_id' => 1, 'rank' => 2]);
+    }
+
+    $this->actingAs($this->admin, 'admin')
+        ->get(route('admin.evaluation.index'))
+        ->assertOk()
+        ->assertSee('Per-session verdicts (all 5)', false);
+});
