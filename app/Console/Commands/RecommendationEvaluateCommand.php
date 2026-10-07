@@ -88,8 +88,8 @@ class RecommendationEvaluateCommand extends Command
         }
 
         $vTable = new Table($this->output);
-        $vTable->setHeaders(['session', 'user', 'viewed_at', 'verdict', 'first click']);
-        $vTable->setRows($verdicts);
+        $vTable->setHeaders(['session', 'verdict', 'first click']);
+        $vTable->setRows(array_map(fn ($v) => [$v[0], $v[3], $v[4]], $verdicts));
         $vTable->render();
 
         $clickedSessions = count($verdicts);
@@ -131,9 +131,9 @@ class RecommendationEvaluateCommand extends Command
                 fputcsv($fp, $r);
             }
             fputcsv($fp, []);
-            fputcsv($fp, ['session', 'user_id', 'viewed_at', 'verdict', 'first_click']);
+            fputcsv($fp, ['session', 'verdict', 'first_click']);
             foreach ($verdicts as $v) {
-                fputcsv($fp, $v);
+                fputcsv($fp, [$v[0], $v[3], $v[4]]);
             }
             fclose($fp);
             $this->info("Wrote CSV to {$export} ({$path})");
