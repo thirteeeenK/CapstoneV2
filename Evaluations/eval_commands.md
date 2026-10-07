@@ -19,6 +19,7 @@ Here are your eval/report commands (all read-only — safe to run anytime):
    php artisan recommendation:evaluate
    php artisan recommendation:evaluate --export=storage/eval/hitrate_metrics.csv
    Needs ≥30 tracked users before the numbers mean anything; run recommendation:reset --force once before collecting real panel data.
+   Record copy: --export CSV holds every clicked verdict (oldest-first, click-less excluded from list but counted in summary). Terminal prints all rows; scroll up or open the CSV for the appendix. Admin /evaluation page mirrors the same full list.
 
     Pipeline commands (only when re-labeling / re-running AI):
     php artisan sentiment:run-ai --sync # inline, no worker needed

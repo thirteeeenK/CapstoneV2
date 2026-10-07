@@ -32,8 +32,8 @@
                                         {{ strtoupper(substr($u->name, 0, 2)) }}
                                     </div>
                                     <div class="min-w-0">
-                                        <div class="font-semibold text-slate-900 truncate max-w-[150px]">{{ $u->name }}</div>
-                                        <div class="text-[11px] text-slate-500 font-normal truncate max-w-[150px]">{{ $u->email }}</div>
+                                        <div class="font-semibold text-slate-900 truncate max-w-[150px]" title="{{ $u->name }}">{{ $u->name }}</div>
+                                        <div class="text-[11px] text-slate-500 font-normal truncate max-w-[150px]" title="{{ $u->email }}">{{ $u->email }}</div>
                                     </div>
                                 </div>
                                 {{-- Hover Tooltip --}}

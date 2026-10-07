@@ -69,25 +69,23 @@
                         </tbody>
                     </table>
                 </div>
-                <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-400 mb-2">Per-session verdicts (latest {{ count($hitrate['verdicts']) }} of {{ $hitrate['verdictTotal'] }})</h3>
+                <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-400 mb-2">Per-session verdicts (all {{ $hitrate['verdictTotal'] }}) — full record via CLI --export CSV</h3>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-xs text-slate-700">
                         <thead class="bg-slate-100/70 uppercase text-[10px] font-extrabold text-slate-500 border-b border-slate-200">
-                            <tr><th class="py-3 px-4">Session</th><th class="py-3 px-4">User</th><th class="py-3 px-4">Viewed</th><th class="py-3 px-4">Verdict</th><th class="py-3 px-4">First click</th></tr>
+                            <tr><th class="py-3 px-4">Session</th><th class="py-3 px-4">Verdict</th><th class="py-3 px-4">First click</th></tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
                             @forelse($hitrate['verdicts'] as $v)
                                 <tr class="hover:bg-slate-50/80 transition">
                                     <td class="py-3 px-4 font-mono font-bold">{{ $v['session'] }}</td>
-                                    <td class="py-3 px-4">{{ $v['user_id'] }}</td>
-                                    <td class="py-3 px-4">{{ $v['viewed_at'] }}</td>
                                     <td class="py-3 px-4">
                                         <span class="px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase {{ $v['verdict'] === 'HIT' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700' }}">{{ $v['verdict'] }}</span>
                                     </td>
                                     <td class="py-3 px-4 font-mono text-[11px]">{{ $v['first_click'] }}</td>
                                 </tr>
                             @empty
-                                <tr><td colspan="5" class="py-8 text-center text-slate-400 font-medium text-xs">Clicked sessions appear here.</td></tr>
+                                <tr><td colspan="3" class="py-8 text-center text-slate-400 font-medium text-xs">Clicked sessions appear here.</td></tr>
                             @endforelse
                         </tbody>
                     </table>

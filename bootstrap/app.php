@@ -3,6 +3,7 @@
 use App\Http\Middleware\CheckIpBanned;
 use App\Http\Middleware\CheckUserBan;
 use App\Http\Middleware\CheckUserOnboarding;
+use App\Http\Middleware\EnsureAdminTwoFactor;
 use App\Http\Middleware\NoCacheHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -28,6 +29,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'check.onboarding' => CheckUserOnboarding::class,
             'check.ban' => CheckUserBan::class,
             'check.ip_ban' => CheckIpBanned::class,
+            'admin.2fa' => EnsureAdminTwoFactor::class,
         ]);
 
         $middleware->web(append: [

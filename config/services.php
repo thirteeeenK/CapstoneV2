@@ -47,6 +47,12 @@ return [
         'chat_conversational_temperature' => (float) env('GEMINI_CHAT_CONVERSATIONAL_TEMP', 0.2),
     ],
 
+    'groq' => [
+        'key' => env('GROQ_API_KEY'),
+        'chat_model' => env('GROQ_CHAT_MODEL', 'openai/gpt-oss-120b'),
+        'base_url' => env('GROQ_BASE_URL', 'https://api.groq.com/openai/v1'),
+    ],
+
     'payment' => [
         // 'auto' | 'stripe' | 'simulator'
         'provider' => env('PAYMENT_PROVIDER', 'auto'),

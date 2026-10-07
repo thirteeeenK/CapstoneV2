@@ -61,3 +61,22 @@ test('dashboard activity cards open per-activity preview modal', function () {
     expect($content)->toContain('View Experience');
     expect($content)->toContain('openActivityById('.$act->id.')');
 });
+
+test('dashboard shows a retry fallback instead of hiding the map section', function () {
+    $user = onboardedUser();
+
+    $res = $this->actingAs($user)->get(route('dashboard'));
+    $res->assertOk();
+    expect($res->getContent())->toContain('Interactive map is unavailable right now.')
+        ->toContain('Retry');
+});
+
+test('explore page carries a map failure fallback', function () {
+    $user = onboardedUser();
+
+    $res = $this->actingAs($user)->get(route('explore'));
+    $res->assertOk();
+    expect($res->getContent())->toContain('Interactive map is unavailable right now.')
+        ->toContain('mapError')
+        ->toContain('Map tiles unavailable');
+});

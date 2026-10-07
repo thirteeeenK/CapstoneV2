@@ -31,6 +31,29 @@
                  class="grid lg:grid-cols-3 gap-6" style="z-index: 1;">
 
                 <div class="lg:col-span-2">
+                    <template x-if="mapError">
+                        <div class="mb-3 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-5 text-center space-y-2">
+                            <p class="text-sm font-bold text-slate-600 font-headline">Interactive map is unavailable right now.</p>
+                            <p class="text-xs text-slate-500 font-body" x-text="mapError"></p>
+                            <button @click="init()" type="button"
+                                class="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-4 py-2 text-xs font-bold text-white transition hover:bg-slate-800 cursor-pointer">
+                                <span class="material-symbols-outlined text-[16px]">refresh</span>
+                                <span>Retry</span>
+                            </button>
+                        </div>
+                    </template>
+                    <template x-if="!mapError && markers.length === 0">
+                        <div class="mb-3 rounded-2xl border border-dashed border-slate-300 bg-white/60 p-5 text-center text-sm text-slate-400">
+                            No locations to map yet — browse the listings below instead.
+                        </div>
+                    </template>
+                    <template x-if="tilesDown && !mapError">
+                        <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-amber-50 border border-amber-200 px-3 py-1.5 text-[11px] font-bold text-amber-800">
+                            <span class="material-symbols-outlined text-[14px]">warning</span>
+                            <span>Map tiles unavailable — markers may not display.</span>
+                            <button @click="init()" type="button" class="underline hover:no-underline cursor-pointer">Retry</button>
+                        </div>
+                    </template>
                     <div id="exploreMap" class="h-[70vh] rounded-3xl overflow-hidden border border-slate-200 shadow-sm" style="z-index: 1;"></div>
                 </div>
 
@@ -141,16 +164,26 @@
                 userMarker: null,
                 locating: false,
                 geoError: null,
+                mapError: null,
+                tilesDown: false,
 
                 init() {
                     const el = document.getElementById('exploreMap');
                     if (!el || el._leaflet_id) return;
+                    if (!window.L) {
+                        this.mapError = 'The map service could not load. Check your connection and retry.';
+                        return;
+                    }
+                    this.mapError = null;
+                    this.tilesDown = false;
                     const lat = @json($center) || { lat: 12.0, lng: 122.0 };
                     this.map = L.map('exploreMap', { scrollWheelZoom: true }).setView([lat.lat, lat.lng], 7);
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    const tiles = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                         maxZoom: 19,
                         attribution: '&copy; OpenStreetMap contributors',
-                    }).addTo(this.map);
+                    });
+                    tiles.on('tileerror', () => { this.tilesDown = true; });
+                    tiles.addTo(this.map);
                     this.render();
                     this.$watch('selected', (val) => {
                         if (val && this.map) {

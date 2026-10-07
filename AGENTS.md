@@ -1,6 +1,6 @@
 # AGENTS.md
 
-SunnyTrips — Philippine travel booking capstone with an AI Decision Support System. Laravel 13 / PHP 8.3, Blade + Tailwind 3 + Alpine.js + Vite, PostgreSQL + pgvector, Gemini embeddings (`text-embedding-001`). Windows/XAMPP dev machine.
+SunnyTrips — Philippine travel booking capstone with an AI Decision Support System. Laravel 13 / PHP 8.5, Blade + Tailwind 3 + Alpine.js 3 + Vite 8, Pest 4, PostgreSQL + pgvector, Gemini embeddings (`text-embedding-001`), Stripe-or-simulator payments, Resend email. Windows/XAMPP dev machine.
 
 ## Commands
 
@@ -11,9 +11,10 @@ SunnyTrips — Philippine travel booking capstone with an AI Decision Support Sy
 
 ## Database / env gotchas
 
-- Local dev DB is **PostgreSQL** (`DB_CONNECTION = pgsql` in `.env`), overriding `.env.example`'s sqlite default. Tests also run on Postgres via `.env.testing` (`SunnyTripsCapstoneV2_test`, localhost:5432, creds hardcoded there) — Postgres must be running or `composer test` fails. The pgvector `vector` extension migration is pgsql-only.
-- `GEMINI_API_KEY` goes in `.env` (read via `config('services.gemini')`); not present in `.env.example`.
-- `database/seeders/AdminSeeder.php` uses `updateOrCreate(['email' => env('EMAIL')], ...)` — it keys the admin off the `EMAIL` env var, which is unset on most machines (admin won't be created reliably). `DatabaseSeeder` also creates user `test@example.com` / `12345678`.
+- Local dev DB is **PostgreSQL** — `.env` and `.env.example` both ship `DB_CONNECTION = pgsql`. Tests also run on Postgres via `.env.testing` (`SunnyTripsCapstoneV2_test`, localhost:5432, creds hardcoded there) — Postgres must be running or `composer test` fails. The pgvector `vector` extension migration is pgsql-only.
+- `GEMINI_API_KEY` goes in `.env` (read via `config('services.gemini')`); `.env.example` carries the placeholder plus the `GEMINI_CHAT_MODEL` (`models/gemini-2.5-flash-lite`) / `GEMINI_JUDGE_MODEL` (`models/gemini-3.1-pro-preview`) knobs — override via env rather than hardcoding model names in services.
+- Payments resolve via `config('services.payment.provider')` = `auto` | `stripe` | `simulator` (`PAYMENT_PROVIDER`); `auto` picks Stripe when `STRIPE_SECRET_KEY` is set, otherwise the local simulator. Keep checkout code on that switch, never calling Stripe directly.
+- `database/seeders/AdminSeeder.php` uses `updateOrCreate(['email' => env('EMAIL')], ...)` — it keys the admin off the `EMAIL` env var, which is only in your local `.env` and not in `.env.example` (admin won't be created reliably elsewhere). `DatabaseSeeder` also creates user `test@example.com` / `12345678`.
 
 ## Architecture
 

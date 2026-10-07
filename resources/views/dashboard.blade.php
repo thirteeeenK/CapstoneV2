@@ -131,6 +131,19 @@
                         </div>
                     </div>
                 </section>
+            @else
+                <section class="bg-white border border-dashed border-slate-300 rounded-3xl p-6 sm:p-8 shadow-sm">
+                    <div class="flex flex-col items-center gap-2 text-center">
+                        <span class="material-symbols-outlined text-[28px] text-slate-400">map_off</span>
+                        <h2 class="text-lg font-black text-slate-700 font-headline">Interactive map is unavailable right now.</h2>
+                        <p class="text-slate-500 text-xs sm:text-sm font-body">There are no destinations to show on the map yet. Your recommendations are still listed above.</p>
+                        <button type="button" onclick="window.location.reload()"
+                            class="mt-1 inline-flex items-center gap-2 rounded-xl bg-slate-900 hover:bg-slate-800 px-4 py-2.5 text-xs font-bold text-white transition-all shadow-xs cursor-pointer">
+                            <span class="material-symbols-outlined text-[16px]">refresh</span>
+                            <span>Retry</span>
+                        </button>
+                    </div>
+                </section>
             @endif
 
             <script>
