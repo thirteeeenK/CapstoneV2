@@ -1,5 +1,5 @@
-<div class="bg-white rounded-2xl border p-3 sm:p-4 flex gap-2.5 sm:gap-3.5 items-start transition-all duration-200 hover:shadow-md hover:shadow-ocean-900/5"
-     :class="[item.is_selected ? '' : 'opacity-60', item.is_expired ? 'border-rose-300 bg-rose-50/40 hover:border-rose-400' : 'border-sand-200/90 hover:border-ocean-300']">
+<div class="bg-white dark:bg-slate-900 rounded-2xl border p-3 sm:p-4 flex gap-2.5 sm:gap-3.5 items-start transition-all duration-200 hover:shadow-md hover:shadow-ocean-900/5"
+     :class="[item.is_selected ? '' : 'opacity-60', item.is_expired ? 'border-rose-300 dark:border-rose-700 bg-rose-50/40 dark:bg-rose-950/60 hover:border-rose-400' : 'border-sand-200/90 dark:border-slate-700/90 hover:border-ocean-300']">
 
     {{-- Checkbox --}}
     <div class="pt-1 shrink-0">
@@ -7,11 +7,11 @@
                :checked="item.is_selected"
                @change="toggleSelect(item.id)"
                :aria-label="'Select ' + item.title"
-               class="w-4 h-4 sm:w-5 sm:h-5 rounded accent-ocean-600 text-ocean-600 border-sand-300 focus:ring-ocean-500 cursor-pointer">
+               class="w-4 h-4 sm:w-5 sm:h-5 rounded accent-ocean-600 text-ocean-600 border-sand-300 dark:border-slate-600 focus:ring-ocean-500 cursor-pointer">
     </div>
 
     {{-- Image Thumbnail --}}
-    <div class="w-16 h-16 sm:w-24 sm:h-24 rounded-xl sm:rounded-2xl overflow-hidden bg-slate-100 border border-sand-200/80 shrink-0">
+    <div class="w-16 h-16 sm:w-24 sm:h-24 rounded-xl sm:rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-800 border border-sand-200/80 dark:border-slate-700/80 shrink-0">
         <img :src="item.image" :alt="item.title"
              class="w-full h-full object-cover"
              onerror="this.style.display='none'">
@@ -23,7 +23,7 @@
             <div class="flex items-start justify-between gap-2">
                 <div class="min-w-0 flex-1">
                     <div class="flex flex-wrap items-center gap-1.5 mb-1">
-                        <span class="inline-flex items-center rounded-md bg-ocean-50 text-ocean-800 border border-ocean-100 px-2 py-0.5 text-[10px] font-bold tracking-wide uppercase"
+                        <span class="inline-flex items-center rounded-md bg-ocean-50 dark:bg-ocean-900/50 text-ocean-800 dark:text-ocean-100 border border-ocean-100 dark:border-ocean-800 px-2 py-0.5 text-[10px] font-bold tracking-wide uppercase"
                               x-text="item.item_type">
                         </span>
                         <template x-if="item.location_name">
@@ -35,7 +35,7 @@
                     </div>
 
                     <template x-if="item.hotel_name">
-                        <div class="flex items-center gap-1 text-[11px] font-semibold text-ocean-700 mb-0.5">
+                        <div class="flex items-center gap-1 text-[11px] font-semibold text-ocean-700 dark:text-ocean-100 mb-0.5">
                             <span class="material-symbols-outlined text-[13px] text-ocean-600 shrink-0">hotel</span>
                             <span class="truncate" x-text="item.hotel_name"></span>
                         </div>
@@ -48,7 +48,7 @@
                 <button type="button"
                         @click="removeItem(item.id)"
                         :aria-label="'Remove ' + item.title"
-                        class="p-1.5 rounded-lg text-rose-500 hover:text-rose-700 bg-rose-50/70 hover:bg-rose-100 border border-rose-100 transition cursor-pointer shrink-0">
+                        class="p-1.5 rounded-lg text-rose-500 hover:text-rose-700 bg-rose-50/70 dark:bg-rose-950/60 hover:bg-rose-100 dark:hover:bg-rose-950/60 border border-rose-100 dark:border-rose-800 transition cursor-pointer shrink-0">
                     <span class="material-symbols-outlined text-[18px]">delete</span>
                 </button>
             </div>
@@ -56,14 +56,14 @@
             {{-- Feature Badges & Specs --}}
             <div class="flex flex-wrap gap-1 mt-1.5">
                 <template x-if="item.item_type === 'room' && item.base_occupancy">
-                    <span class="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-medium text-ink-600 bg-sand-100 px-1.5 py-0.5 rounded-md border border-sand-200">
+                    <span class="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-medium text-ink-600 bg-sand-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-md border border-sand-200 dark:border-slate-700">
                         <span class="material-symbols-outlined text-[12px] text-ink-400">group</span>
                         <span x-text="'Base ' + item.base_occupancy + ' • Max ' + item.max_occupancy + ' Pax'"></span>
                     </span>
                 </template>
 
                 <template x-if="item.bed_configuration">
-                    <span class="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-medium text-ink-600 bg-sand-100 px-1.5 py-0.5 rounded-md border border-sand-200">
+                    <span class="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-medium text-ink-600 bg-sand-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-md border border-sand-200 dark:border-slate-700">
                         <span class="material-symbols-outlined text-[12px] text-ink-400">king_bed</span>
                         <span x-text="item.bed_configuration"></span>
                     </span>
@@ -71,20 +71,20 @@
 
                 <template x-if="item.date_details">
                     <span                           class="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-medium px-1.5 py-0.5 rounded-md border"
-                          :class="item.is_expired ? 'text-rose-800 bg-rose-50 border-rose-200' : 'text-ocean-800 bg-ocean-50 border-ocean-100'">
+                          :class="item.is_expired ? 'text-rose-800 dark:text-rose-100 bg-rose-50 dark:bg-rose-950/60 border-rose-200 dark:border-rose-800' : 'text-ocean-800 dark:text-ocean-100 bg-ocean-50 dark:bg-ocean-900/50 border-ocean-100 dark:border-ocean-800'">
                         <span class="material-symbols-outlined text-[12px]" :class="item.is_expired ? 'text-rose-600' : 'text-ocean-600'">calendar_month</span>
                         <span x-text="item.date_details"></span>
                     </span>
                 </template>
                 <template x-if="item.is_expired">
-                    <span class="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-bold text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded-md border border-rose-200">
+                    <span class="inline-flex items-center gap-1 text-[10px] sm:text-[11px] font-bold text-rose-700 dark:text-rose-100 bg-rose-50 dark:bg-rose-950/60 px-1.5 py-0.5 rounded-md border border-rose-200 dark:border-rose-800">
                         <span class="material-symbols-outlined text-[12px] text-rose-600">warning</span>
                         <span>Expired — update dates or deselect</span>
                     </span>
                 </template>
             </div>
             <template x-if="item.is_expired">
-                <div class="mt-2 flex items-center gap-2 text-[11px] font-semibold text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-2.5 py-2">
+                <div class="mt-2 flex items-center gap-2 text-[11px] font-semibold text-rose-700 dark:text-rose-100 bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 rounded-lg px-2.5 py-2">
                     <span class="material-symbols-outlined text-[14px] text-rose-600">error</span>
                     <span>Dates have already passed. Please update the dates, remove this item, or deselect it to proceed to checkout.</span>
                 </div>
@@ -92,27 +92,27 @@
         </div>
 
         {{-- Controls and Price Bar --}}
-        <div class="mt-2 pt-2 border-t border-sand-100 flex flex-wrap items-center justify-between gap-2">
+        <div class="mt-2 pt-2 border-t border-sand-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2">
             {{-- Steppers: Pax for Activities/Transfers/Addons/Packages, Qty for Rooms --}}
             <template x-if="item.item_type === 'addon' || item.item_type === 'activity' || item.item_type === 'package'">
                 <div class="flex items-center gap-1.5 flex-wrap">
                     <span class="text-[11px] font-semibold text-ink-500">Travelers:</span>
-                    <div class="flex items-center rounded-lg border border-sand-200 bg-white p-0.5 shadow-2xs">
+                    <div class="flex items-center rounded-lg border border-sand-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-0.5 shadow-2xs">
                         <button type="button"
                                 @click="updatePax(item.id, -1)"
                                 :disabled="item.selected_pax <= 1"
-                                class="w-6 h-6 rounded flex items-center justify-center text-ink-600 hover:bg-sand-100 disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer font-bold text-xs">
+                                class="w-6 h-6 rounded flex items-center justify-center text-ink-600 hover:bg-sand-100 dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer font-bold text-xs">
                             <span>-</span>
                         </button>
                         <span class="w-10 text-center text-xs font-bold text-ink-900" x-text="item.selected_pax + ' pax'"></span>
                         <button type="button"
                                 @click="updatePax(item.id, 1)"
-                                class="w-6 h-6 rounded flex items-center justify-center text-ink-600 hover:bg-sand-100 transition cursor-pointer font-bold text-xs">
+                                class="w-6 h-6 rounded flex items-center justify-center text-ink-600 hover:bg-sand-100 dark:hover:bg-slate-700 transition cursor-pointer font-bold text-xs">
                             <span>+</span>
                         </button>
                     </div>
                     <template x-if="item.item_type === 'package'">
-                        <span class="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded">Min 2 Pax</span>
+                        <span class="text-[10px] font-bold text-amber-700 dark:text-amber-100 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 px-1.5 py-0.5 rounded">Min 2 Pax</span>
                     </template>
                 </div>
             </template>
@@ -120,18 +120,18 @@
             <template x-if="item.item_type !== 'addon' && item.item_type !== 'activity' && item.item_type !== 'package'">
                 <div class="flex items-center gap-1.5 flex-wrap">
                     <span class="text-[11px] font-semibold text-ink-500">Rooms:</span>
-                    <div class="flex items-center rounded-lg border border-sand-200 bg-white p-0.5 shadow-2xs">
+                    <div class="flex items-center rounded-lg border border-sand-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-0.5 shadow-2xs">
                         <button type="button"
                                 @click="updateQty(item.id, -1)"
                                 :disabled="item.quantity <= 1"
-                                class="w-6 h-6 rounded flex items-center justify-center text-ink-600 hover:bg-sand-100 disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer font-bold text-xs">
+                                class="w-6 h-6 rounded flex items-center justify-center text-ink-600 hover:bg-sand-100 dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer font-bold text-xs">
                             <span>-</span>
                         </button>
                         <span class="w-8 text-center text-xs font-bold text-ink-900" x-text="item.quantity"></span>
                         <button type="button"
                                 @click="updateQty(item.id, 1)"
                                 :disabled="item.quantity >= item.max_qty"
-                                class="w-6 h-6 rounded flex items-center justify-center text-ink-600 hover:bg-sand-100 disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer font-bold text-xs">
+                                class="w-6 h-6 rounded flex items-center justify-center text-ink-600 hover:bg-sand-100 dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition cursor-pointer font-bold text-xs">
                             <span>+</span>
                         </button>
                     </div>

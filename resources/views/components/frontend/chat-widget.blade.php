@@ -26,7 +26,7 @@
     <div x-show="open" x-transition:enter="transition ease-out duration-200"
         x-transition:enter-start="opacity-0 translate-y-4 scale-95"
         x-transition:enter-end="opacity-100 translate-y-0 scale-100"
-        class="w-[calc(100vw-2rem)] max-w-sm sm:w-[410px] h-[min(520px,calc(100dvh-6rem))] sm:h-[min(570px,calc(100dvh-6rem))] bg-white rounded-3xl shadow-2xl border border-slate-200/90 flex flex-col overflow-hidden"
+        class="w-[calc(100vw-2rem)] max-w-sm sm:w-[410px] h-[min(520px,calc(100dvh-6rem))] sm:h-[min(570px,calc(100dvh-6rem))] bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200/90 dark:border-slate-700/90 flex flex-col overflow-hidden"
         @click.outside="close()">
         {{-- Header --}}
         <div
@@ -62,94 +62,94 @@
         </div>
 
         {{-- Handoff status bar (always visible below the header) --}}
-        <div class="px-3.5 py-2.5 border-b border-slate-100 bg-slate-50/80 shrink-0 space-y-2"
+        <div class="px-3.5 py-2.5 border-b border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-800/80 shrink-0 space-y-2"
             x-show="!guestLimited && (handoffStatus === 'pending' || handoffStatus === 'active')">
             <template x-if="handoffStatus === 'pending'">
-                <div class="bg-amber-50 border border-amber-200/90 rounded-2xl p-3 shadow-xs">
-                    <p class="text-xs text-amber-800 font-body leading-relaxed">
+                <div class="bg-amber-50 dark:bg-amber-950/60 border border-amber-200/90 dark:border-amber-800 rounded-2xl p-3 shadow-xs">
+                    <p class="text-xs text-amber-800 dark:text-amber-100 font-body leading-relaxed">
                         <span class="font-bold">Waiting for an agent...</span> An administrator will be with you
                         shortly. SunnyBot stays available while you wait. Ticket: <span
-                            class="font-mono font-bold text-amber-900" x-text="handoffTicket"></span>
+                            class="font-mono font-bold text-amber-900 dark:text-amber-100" x-text="handoffTicket"></span>
                     </p>
                     <button @click="cancelHandoff()"
-                        class="mt-1.5 text-[11px] text-amber-700 underline hover:text-amber-900 font-bold cursor-pointer">Cancel
+                        class="mt-1.5 text-[11px] text-amber-700 dark:text-amber-200 underline hover:text-amber-900 dark:hover:text-amber-100 font-bold cursor-pointer">Cancel
                         request</button>
                 </div>
             </template>
 
             <template x-if="handoffStatus === 'active'">
-                <div class="bg-emerald-50 border border-emerald-200/90 rounded-2xl p-3 shadow-xs">
-                    <p class="text-xs text-emerald-800 font-body leading-relaxed"><span class="font-bold">You're
+                <div class="bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200/90 dark:border-emerald-800 rounded-2xl p-3 shadow-xs">
+                    <p class="text-xs text-emerald-800 dark:text-emerald-100 font-body leading-relaxed"><span class="font-bold">You're
                             chatting with a human agent.</span> They will respond shortly.</p>
                 </div>
             </template>
         </div>
 
         {{-- Messages area --}}
-        <div x-ref="messages" class="flex-1 overflow-y-auto px-4 py-4 space-y-4 bg-slate-50/80">
+        <div x-ref="messages" class="flex-1 overflow-y-auto px-4 py-4 space-y-4 bg-slate-50/80 dark:bg-slate-800/80">
             {{-- First-open guide --}}
             <template x-if="showGuide && messages.length === 0 && !guestLimited">
-                <div data-chat-guide class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+                <div data-chat-guide class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs overflow-hidden">
                     <div class="px-4 pt-4 pb-3 text-center space-y-2">
                         <div
                             class="w-10 h-10 rounded-2xl bg-white mx-auto flex items-center justify-center border border-ocean-100 overflow-hidden">
                             <img src="{{ asset('images/sun-chat-dots.svg') }}" alt="SunnyBot"
                                 class="w-10 h-10 object-contain">
                         </div>
-                        <p class="text-slate-800 text-xs font-bold font-headline">Mabuhay! I'm SunnyBot, your travel
+                        <p class="text-slate-800 dark:text-slate-200 text-xs font-bold font-headline">Mabuhay! I'm SunnyBot, your travel
                             assistant.</p>
-                        <p class="text-slate-500 text-[11px] font-body leading-relaxed">How can I help you today?
+                        <p class="text-slate-500 dark:text-slate-400 text-[11px] font-body leading-relaxed">How can I help you today?
                             Here's what I can do:</p>
                     </div>
                     <ul class="px-4 pb-3 space-y-1.5 text-left">
-                        <li class="flex items-center gap-2 text-[11px] text-slate-600 font-body">
+                        <li class="flex items-center gap-2 text-[11px] text-slate-600 dark:text-slate-400 font-body">
                             <span class="material-symbols-outlined text-[15px] text-ocean-500">hotel</span>
                             Find sanctuary hotel and rooms to stay
                         </li>
-                        <li class="flex items-center gap-2 text-[11px] text-slate-600 font-body">
+                        <li class="flex items-center gap-2 text-[11px] text-slate-600 dark:text-slate-400 font-body">
                             <span class="material-symbols-outlined text-[15px] text-ocean-500">king_bed</span>
                             Check rooms and rates
                         </li>
-                        <li class="flex items-center gap-2 text-[11px] text-slate-600 font-body">
+                        <li class="flex items-center gap-2 text-[11px] text-slate-600 dark:text-slate-400 font-body">
                             <span class="material-symbols-outlined text-[15px] text-ocean-500">explore</span>
                             Recommend activities and packages
                         </li>
-                        <li class="flex items-center gap-2 text-[11px] text-slate-600 font-body">
+                        <li class="flex items-center gap-2 text-[11px] text-slate-600 dark:text-slate-400 font-body">
                             <span class="material-symbols-outlined text-[15px] text-ocean-500">headset_mic</span>
                             Hand you to a human agent any time — just click the Talk to Agent button above.
                         </li>
                     </ul>
                     <div class="px-4 pb-3 flex flex-wrap gap-2 justify-center">
                         <button @click='input = "Plan a 3-day Boracay trip for 2"; send()'
-                            class="px-3 py-1.5 rounded-full bg-ocean-50 hover:bg-ocean-100 text-ocean-700 text-[11px] font-bold border border-ocean-200 transition-colors cursor-pointer">Plan
+                            class="px-3 py-1.5 rounded-full bg-ocean-50 dark:bg-ocean-900/50 hover:bg-ocean-100 dark:hover:bg-ocean-900 text-ocean-700 dark:text-ocean-100 text-[11px] font-bold border border-ocean-200 dark:border-ocean-800 transition-colors cursor-pointer">Plan
                             a 3-day Boracay trip</button>
                         <button @click='input = "Where to stay in El Nido?"; send()'
-                            class="px-3 py-1.5 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[11px] font-bold border border-emerald-200 transition-colors cursor-pointer">Where
+                            class="px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-950 text-emerald-700 dark:text-emerald-100 text-[11px] font-bold border border-emerald-200 dark:border-emerald-800 transition-colors cursor-pointer">Where
                             to stay in El Nido?</button>
                         <button @click='input = "Best activities in El Nido?"; send()'
-                            class="px-3 py-1.5 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-700 text-[11px] font-bold border border-amber-200 transition-colors cursor-pointer">Best
+                            class="px-3 py-1.5 rounded-full bg-amber-50 dark:bg-amber-950/60 hover:bg-amber-100 dark:hover:bg-amber-950 text-amber-700 dark:text-amber-100 text-[11px] font-bold border border-amber-200 dark:border-amber-800 transition-colors cursor-pointer">Best
                             activities in El Nido?</button>
                         <button @click='input = "What is the weather like in Boracay?"; send()'
-                            class="px-3 py-1.5 rounded-full bg-sky-50 hover:bg-sky-100 text-sky-700 text-[11px] font-bold border border-sky-200 transition-colors cursor-pointer">Boracay
+                            class="px-3 py-1.5 rounded-full bg-sky-50 dark:bg-sky-950/60 hover:bg-sky-100 dark:hover:bg-sky-950 text-sky-700 dark:text-sky-100 text-[11px] font-bold border border-sky-200 dark:border-sky-800 transition-colors cursor-pointer">Boracay
                             weather today?</button>
                     </div>
                     <button @click="dismissGuide()"
-                        class="w-full py-2 bg-slate-50 hover:bg-slate-100 border-t border-slate-100 text-slate-500 hover:text-slate-700 text-[11px] font-bold font-headline transition-colors cursor-pointer">Got
+                        class="w-full py-2 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border-t border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 text-[11px] font-bold font-headline transition-colors cursor-pointer">Got
                         it, thanks!</button>
                 </div>
             </template>
 
             {{-- Welcome --}}
             <template x-if="!showGuide && messages.length === 0 && !guestLimited">
-                <div class="text-center py-6 px-4 bg-white rounded-2xl border border-slate-200/80 shadow-xs space-y-2">
+                <div class="text-center py-6 px-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs space-y-2">
                     <div
                         class="w-10 h-10 rounded-2xl bg-white mx-auto flex items-center justify-center border border-ocean-100 overflow-hidden">
                         <img src="{{ asset('images/sun-chat-dots.svg') }}" alt="SunnyBot"
                             class="w-10 h-10 object-contain">
                     </div>
-                    <p class="text-slate-800 text-xs font-bold font-headline">Mabuhay! I'm SunnyBot, your travel
+                    <p class="text-slate-800 dark:text-slate-200 text-xs font-bold font-headline">Mabuhay! I'm SunnyBot, your travel
                         assistant.</p>
-                    <p class="text-slate-500 text-[11px] font-body leading-relaxed">How can I help you today? Ask me
+                    <p class="text-slate-500 dark:text-slate-400 text-[11px] font-body leading-relaxed">How can I help you today? Ask me
                         about
                         hotels, island activities, room rates, or custom itineraries.</p>
                     <div class="flex flex-wrap gap-2 justify-center pt-2">
@@ -181,13 +181,13 @@
                                     class="w-7 h-7 object-contain">
                             </div>
                             <div
-                                class="bg-white rounded-2xl rounded-tl-xs px-3.5 py-3 shadow-xs border border-slate-200/80 max-w-[85%]">
-                                <div class="text-xs sm:text-sm text-slate-800 font-body leading-relaxed space-y-2"
+                                class="bg-white dark:bg-slate-800 rounded-2xl rounded-tl-xs px-3.5 py-3 shadow-xs border border-slate-200/80 dark:border-slate-700 max-w-[85%]">
+                                <div class="text-xs sm:text-sm text-slate-800 dark:text-slate-200 font-body leading-relaxed space-y-2"
                                     x-html="renderMarkdown(msg.text)"></div>
 
                                 {{-- AI fallback notice (Gemini → Groq failover) --}}
                                 <template x-if="msg.ai_notice">
-                                    <p class="mt-2 text-[10px] leading-relaxed text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1.5"
+                                    <p class="mt-2 text-[10px] leading-relaxed text-amber-700 dark:text-amber-100 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 rounded-lg px-2 py-1.5"
                                         x-text="msg.ai_notice"></p>
                                 </template>
 
@@ -196,25 +196,25 @@
                                     <div class="mt-3 space-y-2">
                                         <template x-for="room in msg.rooms">
                                             <div
-                                                class="bg-slate-50 rounded-xl p-2.5 border border-slate-200/80 space-y-1.5 relative">
+                                                class="bg-slate-50 dark:bg-slate-800 rounded-xl p-2.5 border border-slate-200/80 dark:border-slate-700 space-y-1.5 relative">
                                                 <span x-show="msg.rooms[0] && msg.rooms[0].id === room.id"
                                                     class="absolute -top-1.5 -right-1.5 text-[10px] font-black bg-coral-500 text-white px-2 py-0.5 rounded-full shadow-xs border border-white"
                                                     x-text="rankPill(msg)"></span>
                                                 <img x-show="room.image" :src="imgSrc(room.image)"
-                                                    class="w-full h-24 object-cover rounded-lg mb-1 border border-slate-200"
+                                                    class="w-full h-24 object-cover rounded-lg mb-1 border border-slate-200 dark:border-slate-700"
                                                     alt="" onerror="this.style.display='none'">
-                                                <p class="text-xs font-bold text-slate-900 font-headline"
+                                                <p class="text-xs font-bold text-slate-900 dark:text-slate-100 font-headline"
                                                     x-text="room.room_name"></p>
-                                                <p class="text-[11px] text-slate-500" x-text="room.hotel_name"></p>
+                                                <p class="text-[11px] text-slate-500 dark:text-slate-400" x-text="room.hotel_name"></p>
                                                 <div class="flex items-center justify-between pt-0.5">
                                                     <span class="text-xs font-black text-ocean-600 font-headline"
                                                         x-text="'₱' + new Intl.NumberFormat().format(room.base_price)"></span>
                                                     <span
-                                                        class="text-[10px] font-bold text-slate-500 bg-white px-2 py-0.5 rounded-md border border-slate-200"
+                                                        class="text-[10px] font-bold text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700"
                                                         x-text="(room.max_occupancy || room.occupancy) + ' pax max'"></span>
                                                 </div>
                                                 <template x-if="room.check_in_date && room.check_out_date">
-                                                    <div class="text-[11px] text-slate-500 font-medium">
+                                                     <div class="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
                                                         <span
                                                             x-text="room.check_in_date + ' → ' + room.check_out_date"></span>
                                                     </div>
@@ -228,7 +228,7 @@
                                                 </template>
                                                 <div class="flex gap-1.5 pt-1">
                                                     <button @click="$store.preview.openRoomById(room.id)"
-                                                        class="flex-1 text-[11px] bg-white border border-slate-200 text-slate-700 font-bold px-2 py-1.5 rounded-lg hover:bg-slate-100 transition-colors font-headline cursor-pointer">Preview</button>
+                                                        class="flex-1 text-[11px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold px-2 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors font-headline cursor-pointer">Preview</button>
                                                     <button
                                                         @click="addToBasket('room', room.id, room.check_in_date ? { check_in_date: room.check_in_date, check_out_date: room.check_out_date, selected_pax: room.pax || 1 } : { check_in_date: room._checkIn, check_out_date: room._checkOut, selected_pax: 1 })"
                                                         :disabled="(!room.check_in_date || !room.check_out_date) && (!room._checkIn || !room._checkOut)"
@@ -245,26 +245,26 @@
                                     <div class="mt-3 space-y-2">
                                         <template x-for="act in msg.activities">
                                             <div
-                                                class="bg-slate-50 rounded-xl p-2.5 border border-slate-200/80 space-y-1.5 relative">
+                                                class="bg-slate-50 dark:bg-slate-800 rounded-xl p-2.5 border border-slate-200/80 dark:border-slate-700 space-y-1.5 relative">
                                                 <span x-show="msg.activities[0] && msg.activities[0].id === act.id"
                                                     class="absolute -top-1.5 -right-1.5 text-[10px] font-black bg-coral-500 text-white px-2 py-0.5 rounded-full shadow-xs border border-white"
                                                     x-text="rankPill(msg)"></span>
                                                 <img x-show="act.image" :src="imgSrc(act.image)"
-                                                    class="w-full h-24 object-cover rounded-lg mb-1 border border-slate-200"
+                                                    class="w-full h-24 object-cover rounded-lg mb-1 border border-slate-200 dark:border-slate-700"
                                                     alt="" onerror="this.style.display='none'">
-                                                <p class="text-xs font-bold text-slate-900 font-headline"
+                                                <p class="text-xs font-bold text-slate-900 dark:text-slate-100 font-headline"
                                                     x-text="act.activity_name"></p>
-                                                <p class="text-[11px] text-slate-500" x-text="act.destination"></p>
+                                                <p class="text-[11px] text-slate-500 dark:text-slate-400" x-text="act.destination"></p>
                                                 <div class="flex items-center justify-between pt-0.5">
                                                     <span class="text-xs font-black text-emerald-600 font-headline"
                                                         x-text="act.rate || '₱' + new Intl.NumberFormat().format(act.base_price)"></span>
                                                     <span
-                                                        class="text-[10px] font-bold text-slate-500 bg-white px-2 py-0.5 rounded-md border border-slate-200 capitalize"
+                                                        class="text-[10px] font-bold text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700 capitalize"
                                                         x-text="act.category"></span>
                                                 </div>
                                                 <div class="flex gap-1.5 pt-1">
                                                     <button @click="$store.preview.openActivityById(act.id)"
-                                                        class="flex-1 text-[11px] bg-white border border-slate-200 text-slate-700 font-bold px-2 py-1.5 rounded-lg hover:bg-slate-100 transition-colors font-headline cursor-pointer">Preview</button>
+                                                        class="flex-1 text-[11px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold px-2 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors font-headline cursor-pointer">Preview</button>
                                                     <button
                                                         @click="addToBasket('activity', act.id, { selected_pax: 1 })"
                                                         class="flex-1 text-[11px] bg-emerald-600 text-white font-bold px-2 py-1.5 rounded-lg hover:bg-emerald-700 transition-colors font-headline cursor-pointer">+
@@ -280,19 +280,19 @@
                                     <div class="mt-3 space-y-2">
                                         <template x-for="hotel in msg.hotels">
                                             <div
-                                                class="bg-slate-50 rounded-xl p-2.5 border border-slate-200/80 space-y-1.5 relative">
+                                                class="bg-slate-50 dark:bg-slate-800 rounded-xl p-2.5 border border-slate-200/80 dark:border-slate-700 space-y-1.5 relative">
                                                 <span x-show="msg.hotels[0] && msg.hotels[0].id === hotel.id"
                                                     class="absolute -top-1.5 -right-1.5 text-[10px] font-black bg-coral-500 text-white px-2 py-0.5 rounded-full shadow-xs border border-white"
                                                     x-text="rankPill(msg)"></span>
                                                 <img x-show="hotel.image" :src="imgSrc(hotel.image)"
-                                                    class="w-full h-24 object-cover rounded-lg mb-1 border border-slate-200"
+                                                    class="w-full h-24 object-cover rounded-lg mb-1 border border-slate-200 dark:border-slate-700"
                                                     alt="" onerror="this.style.display='none'">
-                                                <p class="text-xs font-bold text-slate-900 font-headline"
+                                                <p class="text-xs font-bold text-slate-900 dark:text-slate-100 font-headline"
                                                     x-text="hotel.hotel_name"></p>
-                                                <p class="text-[11px] text-slate-500" x-text="hotel.destination"></p>
+                                                <p class="text-[11px] text-slate-500 dark:text-slate-400" x-text="hotel.destination"></p>
                                                 <div class="flex items-center justify-between pt-0.5">
                                                     <span
-                                                        class="text-[10px] font-bold text-slate-500 bg-white px-2 py-0.5 rounded-md border border-slate-200 capitalize"
+                                                        class="text-[10px] font-bold text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700 capitalize"
                                                         x-text="hotel.type"></span>
                                                     <span
                                                         x-show="hotel.price_from !== null && hotel.price_from !== undefined"
@@ -312,26 +312,26 @@
                                     <div class="mt-3 space-y-2">
                                         <template x-for="pkg in msg.packages">
                                             <div
-                                                class="bg-slate-50 rounded-xl p-2.5 border border-slate-200/80 space-y-1.5 relative">
+                                                class="bg-slate-50 dark:bg-slate-800 rounded-xl p-2.5 border border-slate-200/80 dark:border-slate-700 space-y-1.5 relative">
                                                 <span x-show="msg.packages[0] && msg.packages[0].id === pkg.id"
                                                     class="absolute -top-1.5 -right-1.5 text-[10px] font-black bg-coral-500 text-white px-2 py-0.5 rounded-full shadow-xs border border-white"
                                                     x-text="rankPill(msg)"></span>
                                                 <img x-show="pkg.image" :src="imgSrc(pkg.image)"
-                                                    class="w-full h-24 object-cover rounded-lg mb-1 border border-slate-200"
+                                                    class="w-full h-24 object-cover rounded-lg mb-1 border border-slate-200 dark:border-slate-700"
                                                     alt="" onerror="this.style.display='none'">
-                                                <p class="text-xs font-bold text-slate-900 font-headline"
+                                                <p class="text-xs font-bold text-slate-900 dark:text-slate-100 font-headline"
                                                     x-text="pkg.name"></p>
-                                                <p class="text-[11px] text-slate-500" x-text="pkg.destination"></p>
+                                                <p class="text-[11px] text-slate-500 dark:text-slate-400" x-text="pkg.destination"></p>
                                                 <div class="flex items-center justify-between pt-0.5">
                                                     <span class="text-xs font-black text-amber-600 font-headline"
                                                         x-text="'₱' + new Intl.NumberFormat().format(pkg.price)"></span>
                                                     <span
-                                                        class="text-[10px] font-bold text-slate-500 bg-white px-2 py-0.5 rounded-md border border-slate-200"
+                                                        class="text-[10px] font-bold text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700"
                                                         x-text="pkg.days + 'D/' + pkg.nights + 'N'"></span>
                                                 </div>
                                                 <div class="flex gap-1.5 pt-1">
                                                     <button @click="$store.preview.openPackageById(pkg.id)"
-                                                        class="flex-1 text-[11px] bg-white border border-slate-200 text-slate-700 font-bold px-2 py-1.5 rounded-lg hover:bg-slate-100 transition-colors font-headline cursor-pointer">Preview</button>
+                                                        class="flex-1 text-[11px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold px-2 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors font-headline cursor-pointer">Preview</button>
                                                     <button
                                                         @click="addToBasket('package', pkg.id, { quantity: pkg.min_pax || 2, selected_pax: pkg.min_pax || 2 })"
                                                         class="flex-1 text-[11px] bg-amber-500 text-slate-950 font-bold px-2 py-1.5 rounded-lg hover:bg-amber-600 transition-colors font-headline cursor-pointer">+
@@ -345,21 +345,21 @@
                                 {{-- Itinerary card --}}
                                 <template x-if="msg.itinerary">
                                     <div
-                                        class="mt-3 bg-slate-50 rounded-xl p-2.5 border border-slate-200/80 text-xs space-y-1.5">
-                                        <p class="font-bold text-slate-900 font-headline flex items-center gap-1.5">
+                                        class="mt-3 bg-slate-50 dark:bg-slate-800 rounded-xl p-2.5 border border-slate-200/80 dark:border-slate-700 text-xs space-y-1.5">
+                                        <p class="font-bold text-slate-900 dark:text-slate-100 font-headline flex items-center gap-1.5">
                                             <span x-text="msg.itinerary.destination.name"></span>
                                             <span x-show="msg.itinerary.days"
-                                                class="text-[10px] font-body font-bold px-1.5 py-0.5 rounded bg-ocean-100 text-ocean-700"
+                                                class="text-[10px] font-body font-bold px-1.5 py-0.5 rounded bg-ocean-100 dark:bg-ocean-900/50 text-ocean-700 dark:text-ocean-100"
                                                 x-text="msg.itinerary.days + 'D/' + msg.itinerary.nights + 'N'"></span>
                                         </p>
-                                        <p class="text-slate-600"><span x-text="msg.itinerary.room.room_name"></span>
+                                        <p class="text-slate-600 dark:text-slate-400"><span x-text="msg.itinerary.room.room_name"></span>
                                             &mdash; <span x-text="msg.itinerary.room.formatted_total"></span></p>
                                         <template x-for="act in msg.itinerary.activities">
-                                            <p class="text-slate-600"><span x-text="act.activity_name"></span> &mdash;
+                                            <p class="text-slate-600 dark:text-slate-400"><span x-text="act.activity_name"></span> &mdash;
                                                 <span x-text="act.formatted_cost"></span>
                                             </p>
                                         </template>
-                                        <p class="font-black text-ocean-600 font-headline text-xs pt-1 border-t border-slate-200"
+                                        <p class="font-black text-ocean-600 font-headline text-xs pt-1 border-t border-slate-200 dark:border-slate-700"
                                             x-text="'Total: ' + msg.itinerary.formatted_grand_total"></p>
                                         <div class="grid grid-cols-2 gap-1.5 pt-1">
                                             <button type="button" @click="addItineraryToBasket(msg.itinerary)"
@@ -386,7 +386,7 @@
                                         <template x-for="action in msg.suggested_actions" :key="action.id">
                                             <button type="button" @click="useSuggestedAction(msg, action)"
                                                 :disabled="isActionUsed(msg.id, action.id)"
-                                                :class="isActionUsed(msg.id, action.id) ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-default' : 'bg-ocean-50 text-ocean-700 border-ocean-200 hover:bg-ocean-100 cursor-pointer'"
+                                                 :class="isActionUsed(msg.id, action.id) ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border-slate-200 dark:border-slate-700 cursor-default' : 'bg-ocean-50 dark:bg-ocean-900/50 text-ocean-700 dark:text-ocean-100 border-ocean-200 dark:border-ocean-800 hover:bg-ocean-100 dark:hover:bg-ocean-900 cursor-pointer'"
                                                 class="text-[11px] font-bold px-3 py-1.5 rounded-full border transition-colors font-headline disabled:opacity-60">
                                                 <span x-text="action.label"></span>
                                             </button>
@@ -396,13 +396,13 @@
 
                                 {{-- Location request --}}
                                 <template x-if="msg.location_request">
-                                    <div class="mt-3 bg-ocean-50 rounded-xl p-3 border border-ocean-200/80 space-y-2">
+                                    <div class="mt-3 bg-ocean-50 dark:bg-ocean-900/50 rounded-xl p-3 border border-ocean-200/80 dark:border-ocean-800 space-y-2">
                                         <p
-                                            class="text-xs font-bold text-ocean-800 font-headline flex items-center gap-1.5">
+                                            class="text-xs font-bold text-ocean-800 dark:text-ocean-100 font-headline flex items-center gap-1.5">
                                             <span class="material-symbols-outlined text-[16px]">my_location</span>
                                             Share your location?
                                         </p>
-                                        <p class="text-[11px] text-ocean-700 leading-relaxed">Allow location access to
+                                        <p class="text-[11px] text-ocean-700 dark:text-ocean-100 leading-relaxed">Allow location access to
                                             see your distance to <span class="font-bold"
                                                 x-text="msg.location_target"></span>.</p>
                                         <button @click="shareLocation(msg.location_target)" :disabled="locatingLocation"
@@ -413,9 +413,9 @@
                                                 x-text="locatingLocation ? 'Locating…' : 'Share my current location'"></span>
                                         </button>
                                         <p x-show="geoError" x-text="geoError"
-                                            class="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1.5">
+                                            class="text-[11px] text-amber-700 dark:text-amber-100 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 rounded-lg px-2 py-1.5">
                                         </p>
-                                        <p class="text-[10px] text-slate-500">Or tell me where you are, e.g. “How far is
+                                        <p class="text-[10px] text-slate-500 dark:text-slate-400">Or tell me where you are, e.g. “How far is
                                             El Nido from <span x-text="msg.location_target"></span>?”</p>
                                     </div>
                                 </template>
@@ -423,14 +423,14 @@
                                 {{-- Distance result --}}
                                 <template x-if="msg.map && msg.map.distance_label">
                                     <div
-                                        class="mt-3 bg-emerald-50 rounded-xl p-2.5 border border-emerald-200/80 flex items-center justify-between">
+                                        class="mt-3 bg-emerald-50 dark:bg-emerald-950/60 rounded-xl p-2.5 border border-emerald-200/80 dark:border-emerald-800 flex items-center justify-between">
                                         <span
-                                            class="text-xs font-bold text-emerald-800 font-headline flex items-center gap-1">
+                                            class="text-xs font-bold text-emerald-800 dark:text-emerald-100 font-headline flex items-center gap-1">
                                             <span class="material-symbols-outlined text-[16px]">route</span>
                                             <span x-text="msg.map.distance_label + ' away'"></span>
                                         </span>
                                         <span
-                                            class="text-[10px] text-emerald-700 bg-white px-2 py-0.5 rounded-md border border-emerald-200"
+                                            class="text-[10px] text-emerald-700 dark:text-emerald-100 bg-white dark:bg-slate-900 px-2 py-0.5 rounded-md border border-emerald-200 dark:border-emerald-800"
                                             x-text="msg.map.from?.label === 'You' ? 'from you' : ''"></span>
                                     </div>
                                 </template>
@@ -455,8 +455,8 @@
                                 class="w-7 h-7 rounded-xl bg-coral-600 text-white flex items-center justify-center text-xs font-bold shrink-0 font-headline shadow-xs mt-0.5">
                                 A</div>
                             <div
-                                class="bg-white rounded-2xl rounded-tl-xs px-3.5 py-3 shadow-xs border border-coral-200/80 max-w-[85%]">
-                                <div class="text-xs sm:text-sm text-slate-800 font-body leading-relaxed space-y-2"
+                                class="bg-white dark:bg-slate-800 rounded-2xl rounded-tl-xs px-3.5 py-3 shadow-xs border border-coral-200/80 max-w-[85%]">
+                                <div class="text-xs sm:text-sm text-slate-800 dark:text-slate-200 font-body leading-relaxed space-y-2"
                                     x-html="renderMarkdown(msg.text)"></div>
                             </div>
                         </div>
@@ -470,7 +470,7 @@
                     class="w-7 h-7 rounded-xl bg-white flex items-center justify-center shrink-0 shadow-xs overflow-hidden border border-amber-100">
                     <img src="{{ asset('images/sun-chat-dots.svg') }}" alt="SunnyBot" class="w-7 h-7 object-contain">
                 </div>
-                <div class="bg-white rounded-2xl rounded-tl-xs px-4 py-3 shadow-xs border border-slate-200/80">
+                <div class="bg-white dark:bg-slate-800 rounded-2xl rounded-tl-xs px-4 py-3 shadow-xs border border-slate-200/80 dark:border-slate-700">
                     <x-thinking-orb state="composing" :size="18" />
                 </div>
             </div>
@@ -479,12 +479,12 @@
             bottom of the list where the eye already rests (list auto-scrolls
             to bottom on every message; input hides while limited). --}}
             <template x-if="guestLimited">
-                <div class="text-center py-6 px-4 bg-white rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
+                <div class="text-center py-6 px-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 shadow-xs space-y-3">
                     <div
                         class="w-12 h-12 rounded-2xl bg-coral-50 text-coral-600 mx-auto flex items-center justify-center border border-coral-100">
                         <span class="material-symbols-outlined text-[24px]">lock</span>
                     </div>
-                    <p class="text-slate-800 font-body text-xs font-bold" x-text="guestLimitMessage"></p>
+                    <p class="text-slate-800 dark:text-slate-200 font-body text-xs font-bold" x-text="guestLimitMessage"></p>
                     <div class="flex flex-col gap-2 pt-1">
                         <a :href="loginUrl"
                             class="inline-block bg-ocean-600 text-white text-xs px-4 py-2.5 rounded-xl hover:bg-ocean-700 transition-colors font-headline font-bold shadow-xs">
@@ -499,11 +499,11 @@
         </div>
 
         {{-- Input area --}}
-        <div class="border-t border-slate-100 px-3.5 py-3 bg-white shrink-0 space-y-2" x-show="!guestLimited">
+        <div class="border-t border-slate-100 dark:border-slate-800 px-3.5 py-3 bg-white dark:bg-slate-900 shrink-0 space-y-2" x-show="!guestLimited">
             <form @submit.prevent="send()" class="flex gap-2 items-end">
                 <textarea x-model="input" @keydown.enter.prevent="!$event.shiftKey && send()"
                     placeholder="Ask about islands, hotels, rates..." rows="1"
-                    class="flex-1 resize-none rounded-2xl border border-slate-200 bg-slate-50 text-xs sm:text-sm px-3.5 py-2.5 focus:bg-white focus:border-ocean-500 focus:outline-none transition-all font-body text-slate-800 placeholder:text-slate-400"
+                    class="flex-1 resize-none rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs sm:text-sm px-3.5 py-2.5 focus:bg-white dark:focus:bg-slate-900 focus:border-ocean-500 focus:outline-none transition-all font-body text-slate-800 dark:text-slate-200 placeholder:text-slate-400"
                     :disabled="sending" x-ref="input" @input="autoResize($el)"></textarea>
                 <button type="submit" :disabled="sending || !input.trim()"
                     class="shrink-0 w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-ocean-600 text-white flex items-center justify-center hover:bg-ocean-700 transition-colors shadow-xs disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
@@ -514,7 +514,7 @@
                     </svg>
                 </button>
             </form>
-            <p class="text-center text-black text-[10px] font-medium leading-tight">SunnyBot AI can make mistakes.
+            <p class="text-center text-black dark:text-slate-400 text-[10px] font-medium leading-tight">SunnyBot AI can make mistakes.
                 Be specific in inquiries for higher accuracy. Do not treat SunnyBot as a Human.</p>
         </div>
     </div>
@@ -734,18 +734,18 @@
                     const withPlaceholders = value.replace(
                         /\[([^\]]+)\]\((https?:\/\/[^)\s]+|\/[^)\s]*)\)/g,
                         (match, label, url) => {
-                            stored.push(`<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-ocean-600 underline underline-offset-2 hover:text-ocean-700 break-all">${label}</a>`);
+                            stored.push(`<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-ocean-600 dark:text-ocean-300 underline underline-offset-2 hover:text-ocean-700 dark:hover:text-ocean-200 break-all">${label}</a>`);
                             return `\u0000CHATLINK${stored.length - 1}\u0000`;
                         }
                     );
                     const autolinked = withPlaceholders
-                        .replace(/(https?:\/\/[^\s<]+?)([.,;:!?)]?(?=\s|$|<))/g, '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-ocean-600 underline underline-offset-2 hover:text-ocean-700 break-all">$1</a>$2')
-                        .replace(/(?<![\w/"'])(\/bookings\/[A-Za-z0-9\-_]+)([.,;:!?)]?(?=\s|$|<))/g, '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-ocean-600 underline underline-offset-2 hover:text-ocean-700 break-all">$1</a>$2');
+                        .replace(/(https?:\/\/[^\s<]+?)([.,;:!?)]?(?=\s|$|<))/g, '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-ocean-600 dark:text-ocean-300 underline underline-offset-2 hover:text-ocean-700 dark:hover:text-ocean-200 break-all">$1</a>$2')
+                        .replace(/(?<![\w/"'])(\/bookings\/[A-Za-z0-9\-_]+)([.,;:!?)]?(?=\s|$|<))/g, '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-ocean-600 dark:text-ocean-300 underline underline-offset-2 hover:text-ocean-700 dark:hover:text-ocean-200 break-all">$1</a>$2');
                     return autolinked.replace(/\u0000CHATLINK(\d+)\u0000/g, (match, index) => stored[Number(index)] ?? match);
                 };
 
                 const formatInline = value => linkify(value
-                    .replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold text-ink-800">$1</strong>')
+                    .replace(/\*\*(.+?)\*\*/g, '<strong class="font-semibold text-ink-800 dark:text-slate-200">$1</strong>')
                     .replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, '$1<em>$2</em>'));
 
                 const flushParagraph = () => {
@@ -778,7 +778,7 @@
                     if (heading) {
                         flushParagraph();
                         flushList();
-                        blocks.push(`<h4 class="font-headline text-sm font-semibold text-ink-900 leading-snug">${formatInline(heading[1])}</h4>`);
+                        blocks.push(`<h4 class="font-headline text-sm font-semibold text-ink-900 dark:text-slate-100 leading-snug">${formatInline(heading[1])}</h4>`);
                         continue;
                     }
 

@@ -28,27 +28,27 @@
         ];
         $entityIcon = [];
         $sentimentIcon = ['positive' => 'sentiment_satisfied', 'neutral' => 'sentiment_neutral', 'negative' => 'sentiment_dissatisfied'];
-        $sentimentTint = ['positive' => 'bg-emerald-50 text-emerald-700 border-emerald-100', 'neutral' => 'bg-amber-50 text-amber-700 border-amber-100', 'negative' => 'bg-rose-50 text-rose-700 border-rose-100'];
+        $sentimentTint = ['positive' => 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-100 border-emerald-100 dark:border-emerald-800', 'neutral' => 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-100 border-amber-100 dark:border-amber-800', 'negative' => 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-100 border-rose-100 dark:border-rose-800'];
     @endphp
 
-    <div class="{{ Auth::check() ? 'pt-5 sm:pt-8 lg:pt-10' : 'pt-20 sm:pt-28' }} pb-12 min-h-screen bg-sand-50/70 font-body">
+    <div class="{{ Auth::check() ? 'pt-5 sm:pt-8 lg:pt-10' : 'pt-20 sm:pt-28' }} pb-12 min-h-screen bg-sand-50/70 dark:bg-slate-800/60 font-body">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
 
             {{-- Masthead --}}
             <div class="flex items-center justify-between mb-5">
-                <p class="font-label text-[10px] uppercase font-bold tracking-[0.25em] text-slate-400">
+                <p class="font-label text-[10px] uppercase font-bold tracking-[0.25em] text-slate-400 dark:text-slate-500">
                     SunnyTrips · Traveler Insights Hub
                 </p>
-                <!-- <p class="font-label text-[10px] uppercase font-bold tracking-[0.2em] text-slate-400">
+                <!-- <p class="font-label text-[10px] uppercase font-bold tracking-[0.2em] text-slate-400 dark:text-slate-500">
                     {{ now()->format('M j, Y') }}
                 </p> -->
             </div>
 
             <header class="mb-8 animate-fade-up">
-                <h1 class="font-headline text-3xl sm:text-4xl font-black tracking-tight text-slate-900">
+                <h1 class="font-headline text-3xl sm:text-4xl font-black tracking-tight text-slate-900 dark:text-slate-100">
                     Guest Reviews
                 </h1>
-                <p class="font-body text-xs sm:text-sm text-slate-500 leading-relaxed mt-2 max-w-xl">
+                <p class="font-body text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-relaxed mt-2 max-w-xl">
                     Honest guest feedback across hotels, rooms, activities, and packages —
                     distilled with our AI Decision Support System.
                 </p>
@@ -75,7 +75,7 @@
                         @keydown.left.window="if (lightbox) prevLightboxImage()"
                         @keydown.right.window="if (lightbox) nextLightboxImage()"
                         class="fixed inset-0 z-[120] bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
-                        <div class="relative bg-white rounded-3xl shadow-2xl border border-sand-200 w-full max-w-[min(94vw,680px)] overflow-hidden flex flex-col my-auto"
+                        <div class="relative bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-sand-200 dark:border-slate-700 w-full max-w-[min(94vw,680px)] overflow-hidden flex flex-col my-auto"
                             x-transition:enter="transition ease-out duration-200"
                             x-transition:enter-start="opacity-0 scale-95"
                             x-transition:enter-end="opacity-100 scale-100"
@@ -85,15 +85,15 @@
                             @click.stop>
 
                             {{-- Header --}}
-                            <div class="px-5 py-4 border-b border-sand-100 flex items-center justify-between gap-3 bg-white">
+                            <div class="px-5 py-4 border-b border-sand-100 dark:border-slate-800 flex items-center justify-between gap-3 bg-white dark:bg-slate-900">
                                 <div class="flex items-center gap-3 min-w-0">
-                                    <div class="w-9 h-9 rounded-xl bg-ocean-50 border border-ocean-100 text-ocean-700 flex items-center justify-center shrink-0">
+                                    <div class="w-9 h-9 rounded-xl bg-ocean-50 dark:bg-ocean-900/50 border border-ocean-100 dark:border-ocean-800 text-ocean-700 dark:text-ocean-100 flex items-center justify-center shrink-0">
                                         <span class="material-symbols-outlined text-[18px]" x-text="lightboxReview ? iconFor(lightboxReview.entity_type) : 'photo'"></span>
                                     </div>
                                     <div class="min-w-0">
-                                        <h4 class="text-xs sm:text-sm font-bold text-slate-900 font-headline truncate"
+                                        <h4 class="text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100 font-headline truncate"
                                             x-text="lightboxReview?.entity_label || 'Guest Review Photo'"></h4>
-                                        <p class="text-[11px] text-slate-400 truncate">
+                                        <p class="text-[11px] text-slate-400 dark:text-slate-500 truncate">
                                             <span x-text="lightboxReview?.entity_location ? lightboxReview.entity_location + ' · ' : ''"></span>
                                             <span x-text="lightboxReview?.reviewer_alias || 'Guest'"></span>
                                             <span x-text="lightboxReview?.created_at_label ? ' · ' + lightboxReview.created_at_label : ''"></span>
@@ -101,7 +101,7 @@
                                     </div>
                                 </div>
                                 <button type="button" @click="closeLightbox()"
-                                    class="w-8 h-8 rounded-xl bg-sand-100 hover:bg-sand-200 text-slate-500 hover:text-slate-900 flex items-center justify-center transition cursor-pointer shrink-0">
+                                    class="w-8 h-8 rounded-xl bg-sand-100 dark:bg-slate-800 hover:bg-sand-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 flex items-center justify-center transition cursor-pointer shrink-0">
                                     <span class="material-symbols-outlined text-[18px]">close</span>
                                 </button>
                             </div>
@@ -137,7 +137,7 @@
 
                             {{-- Review Details Footer --}}
                             <template x-if="lightboxReview">
-                                <div class="p-4 sm:p-5 bg-white border-t border-sand-100">
+                                <div class="p-4 sm:p-5 bg-white dark:bg-slate-900 border-t border-sand-100 dark:border-slate-800">
                                     <div class="flex items-center justify-between gap-2 flex-wrap mb-2">
                                         <div class="flex items-center gap-1.5">
                                             <span class="flex items-center gap-0.5 text-amber-400">
@@ -146,28 +146,28 @@
                                                         :style="'font-variation-settings: \'FILL\' ' + (i <= lightboxReview.rating ? 1 : 0)">star</span>
                                                 </template>
                                             </span>
-                                            <span class="text-xs font-bold text-slate-700 font-headline" x-text="lightboxReview.rating + '/5'"></span>
+                                            <span class="text-xs font-bold text-slate-700 dark:text-slate-300 font-headline" x-text="lightboxReview.rating + '/5'"></span>
                                         </div>
                                         <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border"
                                             :class="{
-                                                'bg-emerald-50 text-emerald-700 border-emerald-100': lightboxReview.sentiment === 'positive',
-                                                'bg-amber-50 text-amber-700 border-amber-100': lightboxReview.sentiment === 'neutral',
-                                                'bg-rose-50 text-rose-700 border-rose-100': lightboxReview.sentiment === 'negative'
+                                                'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-100 border-emerald-100 dark:border-emerald-800': lightboxReview.sentiment === 'positive',
+                                                'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-100 border-amber-100 dark:border-amber-800': lightboxReview.sentiment === 'neutral',
+                                                'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-100 border-rose-100 dark:border-rose-800': lightboxReview.sentiment === 'negative'
                                             }">
                                             <span class="material-symbols-outlined text-[12px]"
                                                 x-text="lightboxReview.sentiment === 'positive' ? 'sentiment_satisfied' : (lightboxReview.sentiment === 'negative' ? 'sentiment_dissatisfied' : 'sentiment_neutral')"></span>
                                             <span x-text="lightboxReview.sentiment ? (lightboxReview.sentiment.charAt(0).toUpperCase() + lightboxReview.sentiment.slice(1)) : ''"></span>
                                         </span>
                                     </div>
-                                    <p class="text-xs sm:text-sm text-slate-600 leading-relaxed" x-text="lightboxReview.comment"></p>
+                                    <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed" x-text="lightboxReview.comment"></p>
 
                                     {{-- Thumbnails strip if multiple photos --}}
                                     <template x-if="lightboxReview.images && lightboxReview.images.length > 1">
-                                        <div class="flex items-center gap-2 mt-3 pt-3 border-t border-sand-100">
+                                        <div class="flex items-center gap-2 mt-3 pt-3 border-t border-sand-100 dark:border-slate-800">
                                             <template x-for="(tImg, tIdx) in lightboxReview.images" :key="tIdx">
                                                 <button type="button" @click="lightboxImg = tImg; lightboxImgIdx = tIdx"
-                                                    :class="lightboxImgIdx === tIdx ? 'ring-2 ring-ocean-500 border-transparent' : 'opacity-60 hover:opacity-100 border-sand-200'"
-                                                    class="w-12 h-12 rounded-lg overflow-hidden border bg-sand-50 transition cursor-pointer shrink-0">
+                                                    :class="lightboxImgIdx === tIdx ? 'ring-2 ring-ocean-500 border-transparent' : 'opacity-60 hover:opacity-100 border-sand-200 dark:border-slate-700'"
+                                                    class="w-12 h-12 rounded-lg overflow-hidden border bg-sand-50 dark:bg-slate-800 transition cursor-pointer shrink-0">
                                                     <img :src="tImg" class="w-full h-full object-cover">
                                                 </button>
                                             </template>
@@ -183,7 +183,7 @@
                 <div class="flex items-center gap-2 flex-wrap mb-4">
                     @foreach ($tabs as $t)
                         <button @click="setTab('{{ $t['key'] }}')"
-                            :class="tab === '{{ $t['key'] }}' ? 'bg-slate-900 text-white border-slate-900 shadow-md' : 'bg-white text-slate-600 border-sand-200 hover:bg-sand-100'"
+                            :class="tab === '{{ $t['key'] }}' ? 'bg-slate-900 text-white border-slate-900 shadow-md' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-sand-200 dark:border-slate-700 hover:bg-sand-100 dark:hover:bg-slate-800'"
                             class="px-4 py-2 rounded-full border text-[11px] font-bold transition cursor-pointer">
                             {{ $t['label'] }}
                         </button>
@@ -191,15 +191,15 @@
                 </div>
 
                 {{-- Rating + sentiment + sort + search --}}
-                <div class="bg-white rounded-3xl border border-sand-200/80 shadow-sm p-5 sm:p-6 mb-6">
+                <div class="bg-white dark:bg-slate-900 rounded-3xl border border-sand-200/80 dark:border-slate-700/80 shadow-sm p-5 sm:p-6 mb-6">
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
                         <div>
-                            <p class="font-label text-[9px] uppercase font-bold tracking-[0.2em] text-slate-400 mb-2">
+                            <p class="font-label text-[9px] uppercase font-bold tracking-[0.2em] text-slate-400 dark:text-slate-500 mb-2">
                                 Rating</p>
                             <div class="flex items-center gap-1.5 flex-wrap">
                                 @foreach ($ratingFilters as $r)
                                     <button @click="setRating({{ $r['key'] }})"
-                                        :class="minRating === {{ $r['key'] }} ? 'bg-ocean-600 text-white border-ocean-600' : 'bg-white text-slate-600 border-sand-200 hover:bg-sand-50'"
+                                        :class="minRating === {{ $r['key'] }} ? 'bg-ocean-600 text-white border-ocean-600' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-sand-200 dark:border-slate-700 hover:bg-sand-50 dark:hover:bg-slate-800'"
                                         class="px-3 py-1.5 rounded-xl border text-[10px] font-bold transition cursor-pointer">
                                         {{ $r['label'] }}
                                     </button>
@@ -207,12 +207,12 @@
                             </div>
                         </div>
                         <div>
-                            <p class="font-label text-[9px] uppercase font-bold tracking-[0.2em] text-slate-400 mb-2">
+                            <p class="font-label text-[9px] uppercase font-bold tracking-[0.2em] text-slate-400 dark:text-slate-500 mb-2">
                                 Sentiment</p>
                             <div class="flex items-center gap-1.5 flex-wrap">
                                 @foreach ($sentimentFilters as $s)
                                     <button @click="setSentiment('{{ $s['key'] }}')"
-                                        :class="sentiment === '{{ $s['key'] }}' ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-600 border-sand-200 hover:bg-sand-50'"
+                                        :class="sentiment === '{{ $s['key'] }}' ? 'bg-slate-900 text-white border-slate-900' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-sand-200 dark:border-slate-700 hover:bg-sand-50 dark:hover:bg-slate-800'"
                                         class="px-3 py-1.5 rounded-xl border text-[10px] font-bold transition cursor-pointer">
                                         {{ $s['label'] }}
                                     </button>
@@ -220,10 +220,10 @@
                             </div>
                         </div>
                         <div>
-                            <p class="font-label text-[9px] uppercase font-bold tracking-[0.2em] text-slate-400 mb-2">
+                            <p class="font-label text-[9px] uppercase font-bold tracking-[0.2em] text-slate-400 dark:text-slate-500 mb-2">
                                 Sort</p>
                             <select x-model="sort" @change="applySort()"
-                                class="w-full rounded-xl border border-sand-200 bg-white text-xs font-bold text-slate-700 px-3 py-2.5 focus:border-ocean-400 focus:ring-ocean-100">
+                                class="w-full rounded-xl border border-sand-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-bold text-slate-700 dark:text-slate-300 px-3 py-2.5 focus:border-ocean-400 focus:ring-ocean-100">
                                 @foreach ($sorts as $s)
                                     <option value="{{ $s['key'] }}">{{ $s['label'] }}</option>
                                 @endforeach
@@ -237,15 +237,15 @@
                         <input type="hidden" name="sentiment" value="{{ $sentiment }}">
                         <input type="hidden" name="sort" value="{{ $sort }}">
                         <span
-                            class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[18px] text-slate-400">search</span>
+                            class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[18px] text-slate-400 dark:text-slate-500">search</span>
                         <input name="search" value="{{ $search }}" type="search"
                             placeholder="Search by hotel, room, activity, or package name..."
-                            class="w-full rounded-2xl border border-sand-200 bg-white pl-11 pr-4 py-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-ocean-400 focus:ring-ocean-100">
+                            class="w-full rounded-2xl border border-sand-200 dark:border-slate-700 bg-white dark:bg-slate-900 pl-11 pr-4 py-3 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:border-ocean-400 focus:ring-ocean-100">
                     </form>
                 </div>
 
                 {{-- Result count --}}
-                <p class="text-[11px] text-slate-500 mb-4 font-bold">
+                <p class="text-[11px] text-slate-500 dark:text-slate-400 mb-4 font-bold">
                     Showing {{ $paginator->firstItem() ?? 0 }}–{{ $paginator->lastItem() ?? 0 }}
                     of {{ $paginator->total() }}
                     {{ $paginator->total() === 1 ? 'review' : 'reviews' }}
@@ -253,30 +253,30 @@
 
                 {{-- Empty state --}}
                 <div x-show="filtered.length === 0" x-cloak
-                    class="bg-white rounded-3xl border border-sand-200/80 shadow-sm px-6 py-14 text-center">
+                    class="bg-white dark:bg-slate-900 rounded-3xl border border-sand-200/80 dark:border-slate-700/80 shadow-sm px-6 py-14 text-center">
                     <div
-                        class="w-16 h-16 rounded-3xl bg-sand-100 border border-sand-200 flex items-center justify-center mx-auto mb-4">
-                        <span class="material-symbols-outlined text-3xl text-slate-400">search_off</span>
+                        class="w-16 h-16 rounded-3xl bg-sand-100 dark:bg-slate-800 border border-sand-200 dark:border-slate-700 flex items-center justify-center mx-auto mb-4">
+                        <span class="material-symbols-outlined text-3xl text-slate-400 dark:text-slate-500">search_off</span>
                     </div>
-                    <h3 class="font-headline text-sm font-bold text-slate-900">No reviews match</h3>
-                    <p class="text-xs text-slate-500 mt-1">Try widening your filters or clearing the search.</p>
+                    <h3 class="font-headline text-sm font-bold text-slate-900 dark:text-slate-100">No reviews match</h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Try widening your filters or clearing the search.</p>
                 </div>
 
                 {{-- Feed --}}
                 <div class="space-y-4">
                     <template x-for="review in filtered" :key="review.id">
-                        <article class="bg-white rounded-3xl border border-sand-200/80 shadow-sm p-5 sm:p-6">
+                        <article class="bg-white dark:bg-slate-900 rounded-3xl border border-sand-200/80 dark:border-slate-700/80 shadow-sm p-5 sm:p-6">
                             <div class="flex items-center justify-between gap-3 flex-wrap">
                                 <div class="flex items-center gap-3 min-w-0">
                                     <div
-                                        class="w-11 h-11 rounded-2xl bg-ocean-50 border border-ocean-100 text-ocean-700 flex items-center justify-center shrink-0">
+                                        class="w-11 h-11 rounded-2xl bg-ocean-50 dark:bg-ocean-900/50 border border-ocean-100 dark:border-ocean-800 text-ocean-700 dark:text-ocean-100 flex items-center justify-center shrink-0">
                                         <span class="material-symbols-outlined text-[20px]"
                                             x-text="iconFor(review.entity_type)"></span>
                                     </div>
                                     <div class="min-w-0">
-                                        <p class="text-sm font-bold text-slate-900 font-headline truncate"
+                                        <p class="text-sm font-bold text-slate-900 dark:text-slate-100 font-headline truncate"
                                             x-text="review.entity_label"></p>
-                                        <p class="text-[11px] text-slate-400 truncate">
+                                        <p class="text-[11px] text-slate-400 dark:text-slate-500 truncate">
                                             <span
                                                 x-text="review.entity_location ? review.entity_location + ' · ' : ''"></span>
                                             <span x-text="review.reviewer_alias"></span> · <span
@@ -294,9 +294,9 @@
                                     <span
                                         class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold border"
                                         :class="{
-                                            'bg-emerald-50 text-emerald-700 border-emerald-100': review.sentiment === 'positive',
-                                            'bg-amber-50 text-amber-700 border-amber-100': review.sentiment === 'neutral',
-                                            'bg-rose-50 text-rose-700 border-rose-100': review.sentiment === 'negative'
+                                            'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-100 border-emerald-100 dark:border-emerald-800': review.sentiment === 'positive',
+                                            'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-100 border-amber-100 dark:border-amber-800': review.sentiment === 'neutral',
+                                            'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-100 border-rose-100 dark:border-rose-800': review.sentiment === 'negative'
                                         }">
                                         <span class="material-symbols-outlined text-[12px]"
                                             x-text="review.sentiment === 'positive' ? 'sentiment_satisfied' : (review.sentiment === 'negative' ? 'sentiment_dissatisfied' : 'sentiment_neutral')"></span>
@@ -306,18 +306,18 @@
                                 </div>
                             </div>
 
-                            <p class="text-sm text-slate-600 leading-relaxed mt-4" x-text="review.comment"></p>
+                            <p class="text-sm text-slate-600 dark:text-slate-400 leading-relaxed mt-4" x-text="review.comment"></p>
 
                             <template x-if="review.images && review.images.length">
                                 <div class="mt-3.5 grid grid-cols-3 sm:grid-cols-4 gap-2.5">
                                     <template x-for="(img, idx) in review.images.slice(0,3)" :key="idx">
                                         <button type="button" @click="openLightbox(review, img)"
-                                            class="group relative aspect-[4/3] w-full overflow-hidden rounded-xl border border-sand-200 bg-sand-100/50 flex items-center justify-center hover:border-ocean-300 hover:shadow-md transition-all cursor-zoom-in">
+                                            class="group relative aspect-[4/3] w-full overflow-hidden rounded-xl border border-sand-200 dark:border-slate-700 bg-sand-100/50 dark:bg-slate-800/50 flex items-center justify-center hover:border-ocean-300 dark:hover:border-ocean-700 hover:shadow-md transition-all cursor-zoom-in">
                                             <img :src="img" :alt="review.entity_label + ' photo ' + (idx+1)"
                                                 class="w-full h-full object-cover rounded-xl group-hover:scale-105 transition-transform duration-300"
                                                 loading="lazy"
                                                 x-on:error="$el.style.display='none'; $el.nextElementSibling.style.display='flex'">
-                                            <div style="display:none" class="w-full h-full items-center justify-center flex flex-col gap-1 text-[10px] font-bold text-slate-400 bg-sand-100 rounded-xl">
+                                            <div style="display:none" class="w-full h-full items-center justify-center flex flex-col gap-1 text-[10px] font-bold text-slate-400 dark:text-slate-500 bg-sand-100 dark:bg-slate-800 rounded-xl">
                                                 <span class="material-symbols-outlined text-[16px]">broken_image</span>
                                                 <span>No image</span>
                                             </div>
@@ -332,7 +332,7 @@
                             <div class="mt-4 flex items-center gap-1.5 flex-wrap">
                                 <template x-for="(tag, ti) in review.keywords.slice(0, 5)" :key="ti">
                                     <span
-                                        class="px-2.5 py-1 rounded-lg bg-sand-100 border border-sand-200 text-slate-600 text-[10px] font-bold">#<span
+                                        class="px-2.5 py-1 rounded-lg bg-sand-100 dark:bg-slate-800 border border-sand-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 text-[10px] font-bold">#<span
                                             x-text="tag"></span></span>
                                 </template>
                             </div>
@@ -349,7 +349,7 @@
             </div>
 
             {{-- Colophon --}}
-            <p class="text-center font-label text-[10px] uppercase font-bold tracking-[0.25em] text-slate-400 pt-10">
+            <p class="text-center font-label text-[10px] uppercase font-bold tracking-[0.25em] text-slate-400 dark:text-slate-500 pt-10">
                 SunnyTrips · AI-assisted sentiment analysis on guest reviews
             </p>
         </div>

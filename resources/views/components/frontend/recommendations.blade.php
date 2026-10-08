@@ -36,17 +36,17 @@
         }).catch(() => {});
     }
 }"
-    class="bg-white text-slate-900 rounded-3xl border border-slate-200 shadow-sm p-4 sm:p-6 lg:p-8 space-y-5 sm:space-y-8 relative overflow-hidden">
+    class="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm p-4 sm:p-6 lg:p-8 space-y-5 sm:space-y-8 relative overflow-hidden">
 
     {{-- Header Section with Header Tabs & Action Button --}}
     <div
-        class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 border-b border-slate-100 pb-6">
+        class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 border-b border-slate-100 dark:border-slate-800 pb-6">
 
         {{-- Header Mode Tabs: AI Recommendations vs Default Listings vs Tour Packages --}}
         <div class="space-y-3 lg:min-h-[72px]">
-            <div class="inline-flex flex-wrap items-center gap-1 p-1 sm:gap-1.5 sm:p-1.5 bg-slate-100/80 rounded-2xl border border-slate-200">
+            <div class="inline-flex flex-wrap items-center gap-1 p-1 sm:gap-1.5 sm:p-1.5 bg-slate-100/80 dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700">
                 <button type="button" @click="mode = 'ai'"
-                    :class="mode === 'ai' ? 'bg-gradient-to-r from-sky-500 to-sky-600 text-white font-extrabold shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 font-semibold'"
+                    :class="mode === 'ai' ? 'bg-gradient-to-r from-sky-500 to-sky-600 text-white font-extrabold shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-200/60 dark:hover:bg-slate-800/60 font-semibold'"
                     class="px-2.5 sm:px-4 py-2 sm:py-2.5 rounded-xl text-[11px] sm:text-xs transition-colors duration-150 flex items-center gap-1.5 sm:gap-2 cursor-pointer">
                     <span class="material-symbols-outlined text-[16px] sm:text-[18px]">auto_awesome</span>
                     <span>AI Recommendations</span>
@@ -56,21 +56,21 @@
                 </button>
 
                 <button type="button" @click="mode = 'default'"
-                    :class="mode === 'default' ? 'bg-gradient-to-r from-sky-500 to-sky-600 text-white font-extrabold shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 font-semibold'"
+                    :class="mode === 'default' ? 'bg-gradient-to-r from-sky-500 to-sky-600 text-white font-extrabold shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-200/60 dark:hover:bg-slate-800/60 font-semibold'"
                     class="px-2.5 sm:px-4 py-2 sm:py-2.5 rounded-xl text-[11px] sm:text-xs transition-colors duration-150 flex items-center gap-1.5 sm:gap-2 cursor-pointer">
                     <span class="material-symbols-outlined text-[16px] sm:text-[18px]">travel_explore</span>
                     <span>Default Listings</span>
                 </button>
 
                 <button type="button" @click="mode = 'packages'"
-                    :class="mode === 'packages' ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/60 font-semibold'"
+                    :class="mode === 'packages' ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-200/60 dark:hover:bg-slate-800/60 font-semibold'"
                     class="px-2.5 sm:px-4 py-2 sm:py-2.5 rounded-xl text-[11px] sm:text-xs transition-colors duration-150 flex items-center gap-1.5 sm:gap-2 cursor-pointer">
                     <span class="material-symbols-outlined text-[16px] sm:text-[18px]">card_travel</span>
                     <span>Tour Packages</span>
                 </button>
             </div>
 
-            <p class="text-slate-500 text-[11px] sm:text-xs font-body max-w-xl sm:h-5 flex items-center">
+            <p class="text-slate-500 dark:text-slate-400 text-[11px] sm:text-xs font-body max-w-xl sm:h-5 flex items-center">
                 <span x-show="mode === 'ai'" x-cloak>Top 5 sanctuary stays and top 5 experiences matched to your preference profile.</span>
                 <span x-show="mode === 'default'" x-cloak>Popular island highlights across top destinations.</span>
                 <span x-show="mode === 'packages'" x-cloak>Curated all-inclusive island tour packages combining stays, transfers, and activities.</span>
@@ -81,7 +81,7 @@
         <div class="flex flex-col items-start lg:items-end gap-3 shrink-0 w-full lg:w-auto lg:min-h-[72px] justify-between">
             {{-- Reset / Personalize Profile Button --}}
             <a href="{{ route('onboarding.reset') }}"
-                class="px-4 py-2 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-700 font-bold text-xs shadow-xs border border-sky-200/80 transition-colors flex items-center gap-1.5 cursor-pointer">
+                class="px-4 py-2 rounded-xl bg-sky-50 dark:bg-sky-950/60 hover:bg-sky-100 dark:hover:bg-sky-900 text-sky-700 dark:text-sky-100 font-bold text-xs shadow-xs border border-sky-200/80 dark:border-sky-800 transition-colors flex items-center gap-1.5 cursor-pointer">
                 <span class="material-symbols-outlined text-[16px] text-sky-600">tune</span>
                 <span>{{ $isPersonalized ? 'Reset Preferences' : 'Personalize My Profile' }}</span>
             </a>
@@ -91,15 +91,15 @@
                 {{-- AI Mode Filters --}}
                 @if($hasAi)
                     <div x-show="mode === 'ai'" x-cloak
-                        class="flex flex-wrap items-center gap-1.5 max-w-full p-1.5 bg-slate-100/80 rounded-2xl border border-slate-200">
-                        <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider pl-2.5 pr-1 shrink-0 flex items-center gap-1.5 select-none">
-                            <span class="material-symbols-outlined text-[15px] text-slate-400">filter_alt</span>
+                        class="flex flex-wrap items-center gap-1.5 max-w-full p-1.5 bg-slate-100/80 dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700">
+                        <span class="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider pl-2.5 pr-1 shrink-0 flex items-center gap-1.5 select-none">
+                            <span class="material-symbols-outlined text-[15px] text-slate-400 dark:text-slate-500">filter_alt</span>
                             <span>Sanctuary:</span>
                         </span>
                         @foreach($aiRecommendations as $item)
                             @php $dest = $item['destination']; @endphp
                             <button type="button" @click="activeAiDestId = {{ $dest->id }}"
-                                :class="activeAiDestId === {{ $dest->id }} ? 'bg-sky-600 text-white font-extrabold shadow-xs border-sky-600' : 'bg-white text-slate-600 hover:bg-slate-200/80 hover:text-slate-900 font-semibold border-slate-200/80'"
+                                :class="activeAiDestId === {{ $dest->id }} ? 'bg-sky-600 text-white font-extrabold shadow-xs border-sky-600' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-200/80 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 font-semibold border-slate-200/80 dark:border-slate-700/80'"
                                 class="px-3.5 py-1.5 rounded-xl text-xs transition-colors shrink-0 flex items-center gap-1.5 border cursor-pointer">
                                 <span class="material-symbols-outlined text-[15px]" :class="activeAiDestId === {{ $dest->id }} ? 'text-white' : 'text-sky-600'">location_on</span>
                                 <span>{{ $dest->name }}</span>
@@ -111,15 +111,15 @@
                 {{-- Default Mode Filters --}}
                 @if($hasDefault)
                     <div x-show="mode === 'default'" x-cloak
-                        class="flex flex-wrap items-center gap-1.5 max-w-full p-1.5 bg-slate-100/80 rounded-2xl border border-slate-200">
-                        <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider pl-2.5 pr-1 shrink-0 flex items-center gap-1.5 select-none">
-                            <span class="material-symbols-outlined text-[15px] text-slate-400">filter_alt</span>
+                        class="flex flex-wrap items-center gap-1.5 max-w-full p-1.5 bg-slate-100/80 dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700">
+                        <span class="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider pl-2.5 pr-1 shrink-0 flex items-center gap-1.5 select-none">
+                            <span class="material-symbols-outlined text-[15px] text-slate-400 dark:text-slate-500">filter_alt</span>
                             <span>Sanctuary:</span>
                         </span>
                         @foreach($defaultRecommendations as $item)
                             @php $dest = $item['destination']; @endphp
                             <button type="button" @click="activeDefaultDestId = {{ $dest->id }}"
-                                :class="activeDefaultDestId === {{ $dest->id }} ? 'bg-sky-600 text-white font-extrabold shadow-xs border-sky-600' : 'bg-white text-slate-600 hover:bg-slate-200/80 hover:text-slate-900 font-semibold border-slate-200/80'"
+                                :class="activeDefaultDestId === {{ $dest->id }} ? 'bg-sky-600 text-white font-extrabold shadow-xs border-sky-600' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-200/80 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 font-semibold border-slate-200/80 dark:border-slate-700/80'"
                                 class="px-3.5 py-1.5 rounded-xl text-xs transition-colors shrink-0 flex items-center gap-1.5 border cursor-pointer">
                                 <span class="material-symbols-outlined text-[15px]" :class="activeDefaultDestId === {{ $dest->id }} ? 'text-white' : 'text-sky-600'">location_on</span>
                                 <span>{{ $dest->name }}</span>
@@ -131,15 +131,15 @@
                 {{-- Packages Mode Filters --}}
                 @if($hasDefault)
                     <div x-show="mode === 'packages'" x-cloak
-                        class="flex flex-wrap items-center gap-1.5 max-w-full p-1.5 bg-slate-100/80 rounded-2xl border border-slate-200">
-                        <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider pl-2.5 pr-1 shrink-0 flex items-center gap-1.5 select-none">
-                            <span class="material-symbols-outlined text-[15px] text-slate-400">filter_alt</span>
+                        class="flex flex-wrap items-center gap-1.5 max-w-full p-1.5 bg-slate-100/80 dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700">
+                        <span class="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider pl-2.5 pr-1 shrink-0 flex items-center gap-1.5 select-none">
+                            <span class="material-symbols-outlined text-[15px] text-slate-400 dark:text-slate-500">filter_alt</span>
                             <span>Sanctuary:</span>
                         </span>
                         @foreach($defaultRecommendations as $item)
                             @php $dest = $item['destination']; @endphp
                             <button type="button" @click="activePackageDestId = {{ $dest->id }}"
-                                :class="activePackageDestId === {{ $dest->id }} ? 'bg-amber-500 text-slate-950 font-extrabold shadow-xs border-amber-500' : 'bg-white text-slate-600 hover:bg-slate-200/80 hover:text-slate-900 font-semibold border-slate-200/80'"
+                                :class="activePackageDestId === {{ $dest->id }} ? 'bg-amber-500 text-slate-950 font-extrabold shadow-xs border-amber-500' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-200/80 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-100 font-semibold border-slate-200/80 dark:border-slate-700/80'"
                                 class="px-3.5 py-1.5 rounded-xl text-xs transition-colors shrink-0 flex items-center gap-1.5 border cursor-pointer">
                                 <span class="material-symbols-outlined text-[15px]" :class="activePackageDestId === {{ $dest->id }} ? 'text-slate-950' : 'text-amber-600'">location_on</span>
                                 <span>{{ $dest->name }}</span>
@@ -154,10 +154,10 @@
     {{-- Content Area 1: AI Recommendations Mode --}}
     <div x-show="mode === 'ai'" x-cloak class="space-y-5 sm:space-y-8">
         @if(!$hasAi)
-            <div class="p-8 text-center bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+            <div class="p-8 text-center bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3">
                 <span class="material-symbols-outlined text-4xl text-sky-500">auto_awesome</span>
-                <p class="text-sm font-semibold text-slate-700">No AI Recommendations available yet.</p>
-                <p class="text-xs text-slate-500 max-w-md mx-auto">Complete your travel preferences quiz to get tailored recommendations.</p>
+                <p class="text-sm font-semibold text-slate-700 dark:text-slate-300">No AI Recommendations available yet.</p>
+                <p class="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">Complete your travel preferences quiz to get tailored recommendations.</p>
                 <a href="{{ route('onboarding.index') }}" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-sky-600 text-white font-bold text-xs shadow-sm hover:bg-sky-700 transition-colors">
                     Take Quiz Now
                 </a>
@@ -173,25 +173,25 @@
                     {{-- 1. AI HOTELS --}}
                     @if($hotels->isNotEmpty())
                         <div class="space-y-4">
-                            <div class="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 pb-3">
+                            <div class="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                                 <div class="flex items-center gap-2 min-w-0">
                                     <span class="material-symbols-outlined text-sky-600 text-[22px] shrink-0">hotel</span>
-                                    <h3 class="text-base sm:text-lg font-extrabold text-slate-900 font-headline">
+                                    <h3 class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-slate-100 font-headline">
                                         Top {{ $hotels->count() }} Recommended Sanctuary Stays in {{ $dest->name }}
                                     </h3>
                                 </div>
-                                <span class="shrink-0 whitespace-nowrap text-[11px] font-bold text-sky-700 bg-sky-50 px-3 py-1 rounded-full border border-sky-200">
+                                <span class="shrink-0 whitespace-nowrap text-[11px] font-bold text-sky-700 dark:text-sky-100 bg-sky-50 dark:bg-sky-950/60 px-3 py-1 rounded-full border border-sky-200 dark:border-sky-800">
                                     Ranked by AI Match
                                 </span>
                             </div>
 
                             @if(!empty($item['hotels_reason']))
-                                <p class="text-xs sm:text-[13px] text-sky-800 bg-sky-50 border border-sky-100 rounded-xl px-4 py-3 leading-relaxed flex items-start gap-2.5">
+                                <p class="text-xs sm:text-[13px] text-sky-800 dark:text-sky-100 bg-sky-50 dark:bg-sky-950/60 border border-sky-100 dark:border-sky-800 rounded-xl px-4 py-3 leading-relaxed flex items-start gap-2.5">
                                     <span class="material-symbols-outlined text-[18px] shrink-0 text-sky-500 mt-0.5">auto_awesome</span>
                                     <span><strong class="font-bold">Why these were picked:</strong> {{ $item['hotels_reason'] }}</span>
                                 </p>
                             @else
-                                <p class="text-xs text-slate-500">
+                                <p class="text-xs text-slate-500 dark:text-slate-400">
                                     Complete your travel profile to see why these stays were chosen for you.
                                     <a href="{{ route('onboarding.reset') }}" class="font-bold text-sky-600 hover:underline">Personalize now</a>
                                 </p>
@@ -218,9 +218,9 @@
                                     @endphp
                                     <a href="{{ route('hotels.show', $hotel->id) }}" data-rec
                                         @click="recClick('hotel', {{ $hotel->id }}, {{ $loop->index + 1 }})"
-                                        class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs hover:shadow-md hover:border-sky-300 transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between group">
+                                        class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden shadow-xs hover:shadow-md hover:border-sky-300 transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between group">
                                         <div>
-                                            <div class="relative h-40 overflow-hidden bg-slate-100">
+                                            <div class="relative h-40 overflow-hidden bg-slate-100 dark:bg-slate-800">
                                                 <img src="{{ $hotelImg }}" alt="{{ $hotel->hotel_name }}"
                                                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
                                                 <div class="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent"></div>
@@ -232,17 +232,17 @@
                                             </div>
 
                                             <div class="p-4 space-y-2">
-                                                <h4 class="text-sm font-bold text-slate-900 group-hover:text-sky-600 transition-colors font-headline line-clamp-1">
+                                                <h4 class="text-sm font-bold text-slate-900 dark:text-slate-100 group-hover:text-sky-600 transition-colors font-headline line-clamp-1">
                                                     {{ $hotel->hotel_name }}
                                                 </h4>
-                                                <p class="text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                                                <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
                                                     {{ $hotel->hotel_description }}
                                                 </p>
                                             </div>
                                         </div>
 
                                         <div class="p-4 pt-0">
-                                                <span class="w-full py-2.5 px-3 rounded-xl bg-slate-50 group-hover:bg-sky-600 text-slate-700 group-hover:text-white font-bold text-xs transition-all duration-300 flex items-center justify-between border border-slate-200 group-hover:border-sky-600">
+                                                <span class="w-full py-2.5 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 group-hover:bg-sky-600 text-slate-700 dark:text-slate-300 group-hover:text-white font-bold text-xs transition-all duration-300 flex items-center justify-between border border-slate-200 dark:border-slate-700 group-hover:border-sky-600">
                                                 <span>View Sanctuary</span>
                                                 <span class="material-symbols-outlined text-[15px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
                                             </span>
@@ -256,25 +256,25 @@
                     {{-- 2. AI ACTIVITIES --}}
                     @if($activities->isNotEmpty())
                         <div class="space-y-4 pt-2">
-                            <div class="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 pb-3">
+                            <div class="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                                 <div class="flex items-center gap-2 min-w-0">
                                     <span class="material-symbols-outlined text-emerald-600 text-[22px] shrink-0">explore</span>
-                                    <h3 class="text-base sm:text-lg font-extrabold text-slate-900 font-headline">
+                                    <h3 class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-slate-100 font-headline">
                                         Top {{ $activities->count() }} Must-Try Experiences in {{ $dest->name }}
                                     </h3>
                                 </div>
-                                <span class="shrink-0 whitespace-nowrap text-[11px] font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+                                <span class="shrink-0 whitespace-nowrap text-[11px] font-bold text-emerald-700 dark:text-emerald-100 bg-emerald-50 dark:bg-emerald-950/60 px-3 py-1 rounded-full border border-emerald-200 dark:border-emerald-800">
                                     Curated AI Matches
                                 </span>
                             </div>
 
                             @if(!empty($item['activities_reason']))
-                                <p class="text-xs sm:text-[13px] text-emerald-800 bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3 leading-relaxed flex items-start gap-2.5">
+                                <p class="text-xs sm:text-[13px] text-emerald-800 dark:text-emerald-100 bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-100 dark:border-emerald-800 rounded-xl px-4 py-3 leading-relaxed flex items-start gap-2.5">
                                     <span class="material-symbols-outlined text-[18px] shrink-0 text-emerald-500 mt-0.5">auto_awesome</span>
                                     <span><strong class="font-bold">Why these were picked:</strong> {{ $item['activities_reason'] }}</span>
                                 </p>
                             @else
-                                <p class="text-xs text-slate-500">
+                                <p class="text-xs text-slate-500 dark:text-slate-400">
                                     Complete your travel profile to see why these experiences were chosen for you.
                                     <a href="{{ route('onboarding.reset') }}" class="font-bold text-emerald-600 hover:underline">Personalize now</a>
                                 </p>
@@ -300,9 +300,9 @@
                                             $act->category
                                         );
                                     @endphp
-                                    <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs hover:shadow-md hover:border-emerald-300 transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between group">
+                                    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden shadow-xs hover:shadow-md hover:border-emerald-300 transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between group">
                                         <div>
-                                            <div class="relative h-40 overflow-hidden bg-slate-100">
+                                            <div class="relative h-40 overflow-hidden bg-slate-100 dark:bg-slate-800">
                                                 <img src="{{ $actImg }}" alt="{{ $act->activity_name }}"
                                                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
                                                 <div class="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent"></div>
@@ -314,10 +314,10 @@
                                             </div>
 
                                             <div class="p-4 space-y-2">
-                                                <h4 class="text-sm font-bold text-slate-900 group-hover:text-emerald-600 transition-colors font-headline line-clamp-1">
+                                                <h4 class="text-sm font-bold text-slate-900 dark:text-slate-100 group-hover:text-emerald-600 transition-colors font-headline line-clamp-1">
                                                     {{ $act->activity_name }}
                                                 </h4>
-                                                <p class="text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                                                <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
                                                     {{ $act->description }}
                                                 </p>
                                             </div>
@@ -326,7 +326,7 @@
                                         <div class="p-4 pt-0">
                                             <button type="button" data-rec
                                                 @click="$store.preview.openActivityById({{ $act->id }}); recClick('activity', {{ $act->id }}, {{ $loop->index + 1 }})"
-                                                 class="w-full py-2.5 px-3 rounded-xl bg-slate-50 hover:bg-emerald-600 text-slate-700 hover:text-white font-bold text-xs transition-all duration-300 flex items-center justify-between border border-slate-200 hover:border-emerald-600 cursor-pointer">
+                                                 class="w-full py-2.5 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-emerald-600 text-slate-700 dark:text-slate-300 hover:text-white font-bold text-xs transition-all duration-300 flex items-center justify-between border border-slate-200 dark:border-slate-700 hover:border-emerald-600 cursor-pointer">
                                                 <span>View Experience</span>
                                                 <span class="material-symbols-outlined text-[15px]">arrow_forward</span>
                                             </button>
@@ -344,7 +344,7 @@
     {{-- Content Area 2: Default Listings Mode --}}
     <div x-show="mode === 'default'" x-cloak class="space-y-5 sm:space-y-8">
         @if(!$hasDefault)
-            <div class="p-8 text-center bg-slate-50 rounded-2xl border border-slate-200 text-slate-400 text-sm">
+            <div class="p-8 text-center bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 text-sm">
                 No listings available.
             </div>
         @else
@@ -358,14 +358,14 @@
                     {{-- 1. DEFAULT HOTELS --}}
                     @if($hotels->isNotEmpty())
                         <div class="space-y-4">
-                            <div class="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 pb-3">
+                            <div class="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                                 <div class="flex items-center gap-2 min-w-0">
                                     <span class="material-symbols-outlined text-sky-600 text-[22px] shrink-0">hotel</span>
-                                    <h3 class="text-base sm:text-lg font-extrabold text-slate-900 font-headline">
+                                    <h3 class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-slate-100 font-headline">
                                         Popular Hotels in {{ $dest->name }}
                                     </h3>
                                 </div>
-                                <span class="shrink-0 whitespace-nowrap text-[11px] font-bold text-slate-600 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
+                                <span class="shrink-0 whitespace-nowrap text-[11px] font-bold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full border border-slate-200 dark:border-slate-700">
                                     Popular Stays
                                 </span>
                             </div>
@@ -391,9 +391,9 @@
                                     @endphp
                                     <a href="{{ route('hotels.show', $hotel->id) }}" data-rec
                                         @click="recClick('hotel', {{ $hotel->id }}, {{ $loop->index + 1 }})"
-                                        class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs hover:shadow-md hover:border-sky-300 transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between group">
+                                        class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden shadow-xs hover:shadow-md hover:border-sky-300 transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between group">
                                         <div>
-                                            <div class="relative h-40 overflow-hidden bg-slate-100">
+                                            <div class="relative h-40 overflow-hidden bg-slate-100 dark:bg-slate-800">
                                                 <img src="{{ $hotelImg }}" alt="{{ $hotel->hotel_name }}"
                                                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
                                                 <div class="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent"></div>
@@ -405,17 +405,17 @@
                                             </div>
 
                                             <div class="p-4 space-y-2">
-                                                <h4 class="text-sm font-bold text-slate-900 group-hover:text-sky-600 transition-colors font-headline line-clamp-1">
+                                                <h4 class="text-sm font-bold text-slate-900 dark:text-slate-100 group-hover:text-sky-600 transition-colors font-headline line-clamp-1">
                                                     {{ $hotel->hotel_name }}
                                                 </h4>
-                                                <p class="text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                                                <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
                                                     {{ $hotel->hotel_description }}
                                                 </p>
                                             </div>
                                         </div>
 
                                         <div class="p-4 pt-0">
-                                                <span class="w-full py-2.5 px-3 rounded-xl bg-slate-50 group-hover:bg-sky-600 text-slate-700 group-hover:text-white font-bold text-xs transition-all duration-300 flex items-center justify-between border border-slate-200 group-hover:border-sky-600">
+                                                <span class="w-full py-2.5 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 group-hover:bg-sky-600 text-slate-700 dark:text-slate-300 group-hover:text-white font-bold text-xs transition-all duration-300 flex items-center justify-between border border-slate-200 dark:border-slate-700 group-hover:border-sky-600">
                                                 <span>Explore Sanctuary</span>
                                                 <span class="material-symbols-outlined text-[15px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
                                             </span>
@@ -429,14 +429,14 @@
                     {{-- 2. DEFAULT ACTIVITIES --}}
                     @if($activities->isNotEmpty())
                         <div class="space-y-4 pt-2">
-                            <div class="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 pb-3">
+                            <div class="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                                 <div class="flex items-center gap-2 min-w-0">
                                     <span class="material-symbols-outlined text-emerald-600 text-[22px] shrink-0">explore</span>
-                                    <h3 class="text-base sm:text-lg font-extrabold text-slate-900 font-headline">
+                                    <h3 class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-slate-100 font-headline">
                                         Popular Experiences in {{ $dest->name }}
                                     </h3>
                                 </div>
-                                <span class="shrink-0 whitespace-nowrap text-[11px] font-bold text-slate-600 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
+                                <span class="shrink-0 whitespace-nowrap text-[11px] font-bold text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full border border-slate-200 dark:border-slate-700">
                                     Top Highlights
                                 </span>
                             </div>
@@ -461,9 +461,9 @@
                                             $act->category
                                         );
                                     @endphp
-                                    <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs hover:shadow-md hover:border-emerald-300 transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between group">
+                                    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl overflow-hidden shadow-xs hover:shadow-md hover:border-emerald-300 transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between group">
                                         <div>
-                                            <div class="relative h-40 overflow-hidden bg-slate-100">
+                                            <div class="relative h-40 overflow-hidden bg-slate-100 dark:bg-slate-800">
                                                 <img src="{{ $actImg }}" alt="{{ $act->activity_name }}"
                                                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
                                                 <div class="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent"></div>
@@ -475,10 +475,10 @@
                                             </div>
 
                                             <div class="p-4 space-y-2">
-                                                <h4 class="text-sm font-bold text-slate-900 group-hover:text-emerald-600 transition-colors font-headline line-clamp-1">
+                                                <h4 class="text-sm font-bold text-slate-900 dark:text-slate-100 group-hover:text-emerald-600 transition-colors font-headline line-clamp-1">
                                                     {{ $act->activity_name }}
                                                 </h4>
-                                                <p class="text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                                                <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
                                                     {{ $act->description }}
                                                 </p>
                                             </div>
@@ -487,7 +487,7 @@
                                         <div class="p-4 pt-0">
                                             <button type="button" data-rec
                                                 @click="$store.preview.openActivityById({{ $act->id }}); recClick('activity', {{ $act->id }}, {{ $loop->index + 1 }})"
-                                                 class="w-full py-2.5 px-3 rounded-xl bg-slate-50 hover:bg-emerald-600 text-slate-700 hover:text-white font-bold text-xs transition-all duration-300 flex items-center justify-between border border-slate-200 hover:border-emerald-600 cursor-pointer">
+                                                 class="w-full py-2.5 px-3 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-emerald-600 text-slate-700 dark:text-slate-300 hover:text-white font-bold text-xs transition-all duration-300 flex items-center justify-between border border-slate-200 dark:border-slate-700 hover:border-emerald-600 cursor-pointer">
                                                 <span>View Experience</span>
                                                 <span class="material-symbols-outlined text-[15px]">arrow_forward</span>
                                             </button>
@@ -506,7 +506,7 @@
     {{-- Content Area 3: Tour Packages Mode --}}
     <div x-show="mode === 'packages'" x-cloak class="space-y-5 sm:space-y-8">
         @if(!$hasDefault)
-            <div class="p-8 text-center bg-slate-50 rounded-2xl border border-slate-200 text-slate-400 text-sm">
+            <div class="p-8 text-center bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 text-sm">
                 No packages available.
             </div>
         @else
@@ -516,20 +516,20 @@
                     $packages = $item['packages'] ?? collect();
                 @endphp
                 <div x-show="activePackageDestId === {{ $dest->id }}" x-cloak class="space-y-6">
-                    <div class="border-b border-slate-100 pb-3">
+                    <div class="border-b border-slate-100 dark:border-slate-800 pb-3">
                         <div class="flex items-center gap-2 min-w-0">
                             <span class="material-symbols-outlined text-amber-600 text-[24px] shrink-0">card_travel</span>
                             <div class="min-w-0">
-                                <h3 class="text-base sm:text-lg font-black text-slate-900 font-headline">
+                                <h3 class="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100 font-headline">
                                     Tour Packages & All-Inclusive Promos in {{ $dest->name }}
                                 </h3>
-                                <p class="text-xs text-slate-500">Save big with flights, hotel stays, airport transfers, and guided island hopping.</p>
+                                <p class="text-xs text-slate-500 dark:text-slate-400">Save big with flights, hotel stays, airport transfers, and guided island hopping.</p>
                             </div>
                         </div>
                     </div>
 
                     @if($packages->isEmpty())
-                        <div class="p-8 text-center bg-slate-50 rounded-2xl border border-slate-200 text-slate-400 text-xs">
+                        <div class="p-8 text-center bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 text-xs">
                             No active promo packages listed for {{ $dest->name }} yet.
                         </div>
                     @else
@@ -543,7 +543,7 @@
                                     );
                                     $inclusionsRaw = is_array($pkg->generic_inclusions) ? $pkg->generic_inclusions : (is_string($pkg->generic_inclusions) ? array_filter(array_map('trim', explode(',', $pkg->generic_inclusions))) : []);
                                 @endphp
-                                <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-xs hover:shadow-md hover:border-amber-400 transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between group">
+                                <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-3xl overflow-hidden shadow-xs hover:shadow-md hover:border-amber-400 transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between group">
                                     <div>
                                         <div class="relative h-44 overflow-hidden bg-slate-900">
                                             <img src="{{ $pkgImg }}" alt="{{ $pkg->name }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
@@ -568,24 +568,24 @@
 
                                         <div class="p-4 sm:p-5 space-y-2.5 sm:space-y-3">
                                             @if($pkg->type)
-                                                <div class="inline-block px-2.5 py-1 rounded-lg bg-amber-50 text-amber-800 text-[11px] font-extrabold tracking-wide border border-amber-200/80">
+                                                <div class="inline-block px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-100 text-[11px] font-extrabold tracking-wide border border-amber-200/80 dark:border-amber-800">
                                                     {{ $pkg->type }}
                                                 </div>
                                             @endif
 
                                             <div class="flex items-start justify-between gap-2">
-                                                <h4 class="text-base font-black text-slate-900 group-hover:text-amber-600 transition-colors font-headline line-clamp-1">
+                                                <h4 class="text-base font-black text-slate-900 dark:text-slate-100 group-hover:text-amber-600 transition-colors font-headline line-clamp-1">
                                                     {{ $pkg->name }}
                                                 </h4>
-                                                <span class="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md shrink-0 border border-slate-200">
+                                                <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md shrink-0 border border-slate-200 dark:border-slate-700">
                                                     Min {{ $pkg->min_pax }} Pax
                                                 </span>
                                             </div>
 
                                             @if(!empty($inclusionsRaw))
-                                                <div class="space-y-1 pt-1 border-t border-slate-100 text-xs">
+                                                <div class="space-y-1 pt-1 border-t border-slate-100 dark:border-slate-800 text-xs">
                                                     @foreach(array_slice($inclusionsRaw, 0, 3) as $inc)
-                                                        <div class="flex items-center gap-1.5 text-slate-700 font-medium">
+                                                        <div class="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 font-medium">
                                                             <span class="material-symbols-outlined text-[14px] text-emerald-500 shrink-0">check_circle</span>
                                                             <span class="line-clamp-1">{{ $inc }}</span>
                                                         </div>

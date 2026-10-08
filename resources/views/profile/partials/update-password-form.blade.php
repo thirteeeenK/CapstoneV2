@@ -32,7 +32,7 @@
 
             @if (session('status') === 'password-updated')
                 <p x-data="{ show: true }" x-show="show" x-transition x-init="setTimeout(() => show = false, 2500)"
-                    class="text-sm text-ocean-700 font-semibold flex items-center gap-1.5">
+                    class="text-sm text-ocean-700 dark:text-ocean-300 font-semibold flex items-center gap-1.5">
                     <span class="material-symbols-outlined text-[16px]">check_circle</span>
                     {{ __('Saved.') }}
                 </p>

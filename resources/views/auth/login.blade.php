@@ -5,18 +5,18 @@
 
     {{-- Success flash --}}
     @session('success')
-        <div class="mb-6 flex items-center gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700">
-            <span class="material-symbols-outlined text-emerald-500 shrink-0" style="font-size:18px">check_circle</span>
+        <div class="mb-6 flex items-center gap-3 rounded-lg border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/60 px-4 py-3 text-sm font-medium text-emerald-700 dark:text-emerald-100">
+            <span class="material-symbols-outlined text-emerald-500 dark:text-emerald-400 shrink-0" style="font-size:18px">check_circle</span>
             <span>{{ session('success') }}</span>
         </div>
     @endsession
 
     {{-- Page heading --}}
     <div class="mb-6">
-        <h1 class="font-headline text-[1.625rem] font-semibold text-ink-900 leading-tight">
+        <h1 class="font-headline text-[1.625rem] font-semibold text-ink-900 dark:text-slate-100 leading-tight">
             Welcome back.
         </h1>
-        <p class="mt-1.5 text-[13px] text-ink-500 leading-relaxed">
+        <p class="mt-1.5 text-[13px] text-ink-500 dark:text-slate-400 leading-relaxed">
             Sign in to continue planning your next escape.
         </p>
     </div>
@@ -58,7 +58,7 @@
                 <button
                     type="button"
                     onclick="togglePasswordVisibility('password', 'eye-login-pw')"
-                    class="absolute inset-y-0 right-0 flex items-center pr-3.5 text-ink-400 hover:text-ink-600 transition-colors"
+                    class="absolute inset-y-0 right-0 flex items-center pr-3.5 text-ink-400 dark:text-slate-500 hover:text-ink-600 dark:hover:text-slate-400 transition-colors"
                     aria-label="Toggle password visibility"
                 >
                     <span class="material-symbols-outlined select-none" style="font-size:20px" id="eye-login-pw">visibility</span>
@@ -71,7 +71,7 @@
                 <div class="mt-2 flex justify-end">
                     <a
                         href="{{ route('password.request') }}"
-                        class="text-xs font-medium text-ocean-600 hover:text-ocean-700 underline-offset-2 hover:underline transition-colors"
+                        class="text-xs font-medium text-ocean-600 dark:text-ocean-400 hover:text-ocean-700 dark:hover:text-ocean-300 underline-offset-2 hover:underline transition-colors"
                     >
                         Forgot your password?
                     </a>
@@ -85,9 +85,9 @@
                 id="remember_me"
                 type="checkbox"
                 name="remember"
-                class="h-4 w-4 rounded border-ink-300 text-ocean-500 focus:ring-ocean-400/30 focus:ring-offset-0 cursor-pointer"
+                class="h-4 w-4 rounded border-ink-300 dark:border-slate-700 text-ocean-500 focus:ring-ocean-400/30 focus:ring-offset-0 cursor-pointer"
             >
-            <label for="remember_me" class="text-[13px] text-ink-600 cursor-pointer select-none">
+            <label for="remember_me" class="text-[13px] text-ink-600 dark:text-slate-300 cursor-pointer select-none">
                 Keep me signed in
             </label>
         </div>
@@ -102,17 +102,17 @@
         {{-- Divider --}}
         <div class="relative my-1">
             <div class="absolute inset-0 flex items-center" aria-hidden="true">
-                <div class="w-full border-t border-ink-200"></div>
+                <div class="w-full border-t border-ink-200 dark:border-slate-700"></div>
             </div>
             <div class="relative flex justify-center">
-                <span class="bg-sand-50 px-3 text-xs text-ink-400">or</span>
+                <span class="bg-sand-50 dark:bg-slate-800 px-3 text-xs text-ink-400 dark:text-slate-500">or</span>
             </div>
         </div>
 
         {{-- Register link --}}
-        <p class="text-center text-[13px] text-ink-500">
+        <p class="text-center text-[13px] text-ink-500 dark:text-slate-400">
             Don't have an account?
-            <a href="{{ route('register') }}" class="font-semibold text-ocean-600 hover:text-ocean-700 transition-colors ml-1">
+            <a href="{{ route('register') }}" class="font-semibold text-ocean-600 dark:text-ocean-400 hover:text-ocean-700 dark:hover:text-ocean-300 transition-colors ml-1">
                 Create one
             </a>
         </p>

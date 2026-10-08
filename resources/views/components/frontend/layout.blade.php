@@ -1,9 +1,21 @@
 <!DOCTYPE html>
-<html class="scroll-smooth" lang="en" data-theme="mytheme">
+<html class="scroll-smooth" lang="en">
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
     <meta name="csrf-token" content="{{ csrf_token() }}"/>
+    {{-- Theme init: runs before first paint to avoid light/dark flash --}}
+    <script>
+        (function () {
+            try {
+                var saved = localStorage.getItem('sunnytrips-theme');
+                var dark = saved
+                    ? saved === 'dark'
+                    : window.matchMedia('(prefers-color-scheme: dark)').matches;
+                document.documentElement.classList.toggle('dark', dark);
+            } catch (e) { /* storage unavailable: stay light */ }
+        })();
+    </script>
     <title>{{ $title ?? 'SunnyTrips | Travel Made Easy' }}</title>
 
     <!-- Fonts & Icons -->
@@ -56,7 +68,7 @@
         }
     </style>
 </head>
-<body class="bg-sand-50/70 font-body text-on-surface antialiased">
+<body class="bg-sand-50/70 dark:bg-slate-950 font-body text-slate-900 dark:text-slate-100 antialiased">
     @unless($hideNavFooter ?? false)
         @auth
             @include('layouts.user-sidebar')

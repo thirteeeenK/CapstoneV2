@@ -116,14 +116,14 @@
 
         {{-- Breadcrumb & Title Header --}}
         <div class="mb-4 sm:mb-6">
-            <nav class="flex items-center gap-1.5 text-xs font-semibold text-slate-400 mb-1" aria-label="Breadcrumb">
+            <nav class="flex items-center gap-1.5 text-xs font-semibold text-slate-400 dark:text-slate-500 mb-1" aria-label="Breadcrumb">
                 <a href="{{ route('dashboard') }}" class="hover:text-sky-600 transition">Home</a>
                 <span>/</span>
                 <a href="{{ route('cart.index') }}" class="hover:text-sky-600 transition">Trip Basket</a>
                 <span>/</span>
                 <span class="text-slate-800">Final Checkout</span>
             </nav>
-            <h1 class="text-xl sm:text-3xl font-extrabold text-slate-900 tracking-tight font-headline">
+            <h1 class="text-xl sm:text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight font-headline">
                 Finalize Travel Booking
             </h1>
         </div>
@@ -143,42 +143,42 @@
                         :lead-phone="Auth::user()->phone_number ?? (Auth::user()->phone ?? '')" />
                 @else
                     {{-- Standard Lead Contact Details when no Hotel Room present --}}
-                    <div class="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-slate-200/80 shadow-xs space-y-3.5 sm:space-y-4 font-body">
-                        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl p-4 sm:p-6 border border-slate-200/80 dark:border-slate-700/80 shadow-xs space-y-3.5 sm:space-y-4 font-body">
+                        <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                             <div class="flex items-center gap-2.5 sm:gap-3">
                                 <div
-                                    class="w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-sky-50 text-sky-600 border border-sky-200 flex items-center justify-center font-bold shrink-0">
+                                    class="w-8 h-8 sm:w-9 sm:h-9 rounded-lg sm:rounded-xl bg-sky-50 dark:bg-sky-950/60 text-sky-600 border border-sky-200 dark:border-sky-800 flex items-center justify-center font-bold shrink-0">
                                     <span class="material-symbols-outlined text-base sm:text-lg">badge</span>
                                 </div>
                                 <div>
-                                    <h3 class="text-sm sm:text-base font-bold text-slate-900 font-headline">Lead Guest Contact Details</h3>
-                                    <p class="text-[11px] sm:text-xs text-slate-500">We will send your voucher, payment updates, and itinerary here.</p>
+                                    <h3 class="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 font-headline">Lead Guest Contact Details</h3>
+                                    <p class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400">We will send your voucher, payment updates, and itinerary here.</p>
                                 </div>
                             </div>
                             <span
-                                class="px-2 py-0.5 rounded-full bg-sky-50 text-sky-700 text-[10px] sm:text-[11px] font-bold border border-sky-200 shrink-0">Primary</span>
+                                class="px-2 py-0.5 rounded-full bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-100 text-[10px] sm:text-[11px] font-bold border border-sky-200 dark:border-sky-800 shrink-0">Primary</span>
                         </div>
 
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3.5">
                             <div class="sm:col-span-2">
-                                <label class="block text-[10.5px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Lead Traveler Full Name *</label>
+                                <label class="block text-[10.5px] font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-wider">Lead Traveler Full Name *</label>
                                 <input type="text" name="contact_name" value="{{ Auth::user()->name ?? '' }}" required
-                                    class="w-full px-3.5 py-3 sm:py-2.5 rounded-xl border border-slate-200 text-base sm:text-sm font-semibold text-slate-900 bg-slate-50/50 focus:bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition">
+                                    class="w-full px-3.5 py-3 sm:py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-base sm:text-sm font-semibold text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-900 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition">
                             </div>
                             <div>
-                                <label class="block text-[10.5px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Email Address *</label>
+                                <label class="block text-[10.5px] font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-wider">Email Address *</label>
                                 <input type="email" name="contact_email" value="{{ Auth::user()->email ?? '' }}" required
                                     placeholder="e.g. name@example.com"
-                                    class="w-full px-3.5 py-3 sm:py-2.5 rounded-xl border border-slate-200 text-base sm:text-sm font-semibold text-slate-900 bg-slate-50/50 focus:bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition">
+                                    class="w-full px-3.5 py-3 sm:py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-base sm:text-sm font-semibold text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-900 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition">
                             </div>
                             <div>
-                                <label class="block text-[10.5px] font-bold text-slate-500 mb-1 uppercase tracking-wider">Mobile Phone Number *</label>
+                                <label class="block text-[10.5px] font-bold text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-wider">Mobile Phone Number *</label>
                                 <input type="tel" name="contact_phone"
                                     value="{{ Auth::user()->phone_number ?? (Auth::user()->phone ?? '') }}" required
                                     placeholder="e.g. 09171234567" maxlength="11" inputmode="numeric" pattern="[0-9]{11}"
                                     title="Enter exactly 11 digits"
                                     oninput="this.value = this.value.replace(/\D/g, '').slice(0, 11)"
-                                    class="w-full px-3.5 py-3 sm:py-2.5 rounded-xl border border-slate-200 text-base sm:text-sm font-semibold text-slate-900 bg-slate-50/50 focus:bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition">
+                                    class="w-full px-3.5 py-3 sm:py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-base sm:text-sm font-semibold text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-900 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition">
                             </div>
                         </div>
                     </div>
@@ -196,38 +196,38 @@
                                     initialName: '{{ addslashes($manifest['initial_name'] ?? '') }}',
                                     rules: {{ json_encode($categoryRules) }}
                                  })"
-                        class="bg-white rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 border border-slate-200/80 shadow-xs space-y-2.5 sm:space-y-3 font-body">
+                        class="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 border border-slate-200/80 dark:border-slate-700/80 shadow-xs space-y-2.5 sm:space-y-3 font-body">
 
                         {{-- Header --}}
-                        <div class="flex items-center gap-2.5 sm:gap-3 border-b border-slate-100 pb-2.5">
+                        <div class="flex items-center gap-2.5 sm:gap-3 border-b border-slate-100 dark:border-slate-800 pb-2.5">
                             <div
-                                class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl {{ $manifest['type'] === 'package' ? 'bg-amber-50 text-amber-700 border-amber-200' : ($manifest['type'] === 'addon' ? 'bg-violet-50 text-violet-600 border-violet-200' : ($manifest['type'] === 'room' ? 'bg-amber-50 text-amber-600 border-amber-200' : 'bg-teal-50 text-teal-600 border-teal-200')) }} border flex items-center justify-center font-bold shrink-0">
+                                class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl {{ $manifest['type'] === 'package' ? 'bg-amber-50 text-amber-700 dark:text-amber-100 border-amber-200 dark:border-amber-800' : ($manifest['type'] === 'addon' ? ' bg-violet-50 dark:bg-violet-950/60 text-violet-600 border-violet-200 dark:border-violet-800' : ($manifest['type'] === 'room' ? 'bg-amber-50 text-amber-600 border-amber-200 dark:border-amber-800' : ' bg-teal-50 dark:bg-teal-950/60 text-teal-600 border-teal-200 dark:border-teal-800')) }} border flex items-center justify-center font-bold shrink-0">
                                 <span class="material-symbols-outlined text-[15px] sm:text-base">{{ $manifest['icon'] }}</span>
                             </div>
                             <div class="flex-1 min-w-0">
                                 @if($manifest['type'] === 'package')
                                     <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                                        <h3 class="text-[13px] sm:text-[15px] font-bold text-slate-900 font-headline">
+                                        <h3 class="text-[13px] sm:text-[15px] font-bold text-slate-900 dark:text-slate-100 font-headline">
                                             Package {{ $manifest['package_slot'] }}
                                         </h3>
                                         @if($manifest['is_lead'])
                                             <span
-                                                class="text-[10px] font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded-full border border-sky-200">Lead</span>
+                                                class="text-[10px] font-bold text-sky-700 dark:text-sky-100 bg-sky-50 dark:bg-sky-950/60 px-2 py-0.5 rounded-full border border-sky-200 dark:border-sky-800">Lead</span>
                                         @endif
-                                        <span class="text-[10px] text-slate-400 font-semibold">of
+                                        <span class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold">of
                                             {{ $manifest['total_pax'] }}</span>
                                     </div>
-                                    <p class="text-[10px] sm:text-[11px] text-slate-500 mt-0.5 truncate">
-                                        <span class="font-semibold text-amber-800">{{ $manifest['label'] }}</span>
+                                    <p class="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                                        <span class="font-semibold text-amber-800 dark:text-amber-100">{{ $manifest['label'] }}</span>
                                         — full name as on ID
                                     </p>
                                 @else
-                                    <h3 class="text-[13px] sm:text-[15px] font-bold text-slate-900 font-headline">
+                                    <h3 class="text-[13px] sm:text-[15px] font-bold text-slate-900 dark:text-slate-100 font-headline">
                                         {{ $manifest['type'] === 'room' ? 'Hotel Guest Manifest' : 'Passenger Manifest' }}
                                     </h3>
-                                    <p class="text-[10px] sm:text-[11px] text-slate-500">
+                                    <p class="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400">
                                         <span
-                                            class="font-semibold {{ $manifest['type'] === 'addon' ? 'text-violet-700' : ($manifest['type'] === 'room' ? 'text-amber-800' : 'text-teal-700') }}">{{ $manifest['label'] }}</span>
+                                            class="font-semibold {{ $manifest['type'] === 'addon' ? ' text-violet-700 dark:text-violet-100' : ($manifest['type'] === 'room' ? 'text-amber-800' : ' text-teal-700 dark:text-teal-100') }}">{{ $manifest['label'] }}</span>
                                     </p>
                                 @endif
                             </div>
@@ -236,24 +236,24 @@
                         {{-- Room preference (package slot 1 only, no price effect — ops instruction for partner hotels) --}}
                         @if($manifest['type'] === 'package' && ($manifest['package_slot'] ?? 0) === 1 && ! empty($manifest['has_linked_rooms']))
                             <div x-data="{ choice: '{{ $manifest['room_option'] ?? 'shared' }}' }"
-                                class="bg-sky-50/60 border border-sky-200/70 rounded-xl px-2.5 py-2">
-                                <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 flex items-center gap-1">
+                                class="bg-sky-50/60 dark:bg-sky-950/60 border border-sky-200/70 dark:border-sky-800/70 rounded-xl px-2.5 py-2">
+                                <p class="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1">
                                     <span class="material-symbols-outlined text-[14px] text-sky-600">bed</span>
                                     Room Arrangement
                                 </p>
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                    <label class="flex items-center gap-2 text-xs text-slate-700 bg-white px-3 py-2 rounded-xl border cursor-pointer" :class="choice === 'shared' ? 'border-sky-500 ring-2 ring-sky-500/20' : 'border-slate-200'">
+                                    <label class="flex items-center gap-2 text-xs text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 px-3 py-2 rounded-xl border cursor-pointer" :class="choice === 'shared' ? 'border-sky-500 ring-2 ring-sky-500/20' : 'border-slate-200 dark:border-slate-700'">
                                         <input type="radio" value="shared" x-model="choice" class="accent-sky-600"
                                             @change="fetch('{{ route('cart.update', $manifest['cart_item_id']) }}', { method: 'PATCH', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' }, body: JSON.stringify({ room_option: 'shared' }) })">
                                         <span class="font-bold">Share 1 room</span>
                                     </label>
-                                    <label class="flex items-center gap-2 text-xs text-slate-700 bg-white px-3 py-2 rounded-xl border cursor-pointer" :class="choice === 'separate' ? 'border-sky-500 ring-2 ring-sky-500/20' : 'border-slate-200'">
+                                    <label class="flex items-center gap-2 text-xs text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 px-3 py-2 rounded-xl border cursor-pointer" :class="choice === 'separate' ? 'border-sky-500 ring-2 ring-sky-500/20' : 'border-slate-200 dark:border-slate-700'">
                                         <input type="radio" value="separate" x-model="choice" class="accent-sky-600"
                                             @change="fetch('{{ route('cart.update', $manifest['cart_item_id']) }}', { method: 'PATCH', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' }, body: JSON.stringify({ room_option: 'separate' }) })">
                                         <span class="font-bold">Separate rooms</span>
                                     </label>
                                 </div>
-                                <p class="text-[10px] text-slate-400 mt-1">No extra charge — same price per person. We relay this to the hotel.</p>
+                                <p class="text-[10px] text-slate-400 dark:text-slate-500 mt-1">No extra charge — same price per person. We relay this to the hotel.</p>
                             </div>
                         @endif
 
@@ -265,20 +265,20 @@
                                     <template x-if="manifestType === 'package'">
                                         <div>
                                             <label
-                                                class="block text-[10px] font-bold text-slate-500 mb-0.5 uppercase tracking-wider">
+                                                class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-0.5 uppercase tracking-wider">
                                                 Traveler Full Name *
                                             </label>
                                             <input type="text" x-model="p.full_name" @input="notifyManifestChange()"
                                                 placeholder="Full name as on valid ID"
-                                                class="w-full px-3.5 py-2.5 sm:py-2 rounded-xl border border-slate-200 text-base sm:text-sm font-semibold text-slate-900 bg-slate-50/50 focus:bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition">
+                                                class="w-full px-3.5 py-2.5 sm:py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-base sm:text-sm font-semibold text-slate-900 dark:text-slate-100 bg-slate-50 dark:bg-slate-800/50 dark:bg-slate-800 focus:bg-white dark:focus:bg-slate-900 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition">
                                         </div>
                                     </template>
 
                                     {{-- For Hotel Rooms / Multi-Guest Items: Grouped Box with Category --}}
                                     <template x-if="manifestType !== 'package'">
-                                        <div class="bg-slate-50/80 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border border-slate-200/70 space-y-2 transition duration-200 hover:border-slate-300">
+                                        <div class="bg-slate-50/80 dark:bg-slate-800 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border border-slate-200/70 dark:border-slate-700/70 space-y-2 transition duration-200 hover:border-slate-300 dark:hover:border-slate-600">
                                             <div class="flex items-center justify-between">
-                                                <span class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                                                <span class="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                                                     <span
                                                         class="material-symbols-outlined text-[16px] text-sky-600">person</span>
                                                     <span
@@ -295,16 +295,16 @@
                                             <div class="grid grid-cols-1 min-[360px]:grid-cols-2 gap-2 sm:gap-3">
                                                 <div>
                                                     <label
-                                                        class="block text-[10px] font-bold text-slate-500 mb-0.5 uppercase tracking-wider">Full Name *</label>
+                                                        class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-0.5 uppercase tracking-wider">Full Name *</label>
                                                     <input type="text" x-model="p.full_name" @input="notifyManifestChange()"
                                                         :placeholder="i === 0 ? 'Lead traveler name' : 'Full Name as in ID'"
-                                                        class="w-full px-3.5 py-2.5 sm:py-1.5 rounded-xl border border-slate-200 text-base sm:text-sm font-semibold text-slate-900 bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">
+                                                        class="w-full px-3.5 py-2.5 sm:py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-base sm:text-sm font-semibold text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-900 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">
                                                 </div>
                                                 <div>
                                                     <label
-                                                        class="block text-[10px] font-bold text-slate-500 mb-0.5 uppercase tracking-wider">Passenger Category *</label>
+                                                        class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-0.5 uppercase tracking-wider">Passenger Category *</label>
                                                     <select x-model="p.category" @change="notifyManifestChange()"
-                                                        class="w-full px-3.5 py-2.5 sm:py-1.5 rounded-xl border border-slate-200 text-base sm:text-sm font-semibold text-slate-900 bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">
+                                                        class="w-full px-3.5 py-2.5 sm:py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 text-base sm:text-sm font-semibold text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-900 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">
                                                         @foreach($categoryRules as $rule)
                                                             @php
                                                                 $rObj = is_array($rule) ? (object) $rule : $rule;
@@ -335,13 +335,13 @@
                         <div x-show="manifestType !== 'package' && maxPax > 1"
                             class="pt-1 flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-between">
                             <button type="button" @click="addPassenger()" :disabled="passengers.length >= maxPax"
-                                :class="passengers.length >= maxPax ? 'opacity-50 cursor-not-allowed bg-slate-100 text-slate-400 border-slate-200' : 'bg-sky-50 hover:bg-sky-100 text-sky-700 border-sky-200 hover:border-sky-300 cursor-pointer'"
+                                :class="passengers.length >= maxPax ? 'opacity-50 cursor-not-allowed bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border-slate-200 dark:border-slate-700' : 'bg-sky-50 dark:bg-sky-950/60 hover:bg-sky-100 dark:hover:bg-sky-900/60 text-sky-700 dark:text-sky-100 border-sky-200 dark:border-sky-800 hover:border-sky-300 cursor-pointer'"
                                 class="w-full sm:w-auto px-4 py-2 rounded-xl border font-bold text-xs flex items-center justify-center gap-2 shadow-2xs transition">
                                 <span class="material-symbols-outlined text-[16px]">person_add</span>
                                 <span
                                     x-text="passengers.length >= maxPax ? 'Max Occupancy Limit Reached (' + maxPax + ' Guests)' : '+ Add Accompanying Guest'"></span>
                             </button>
-                            <span class="text-[10px] font-semibold text-slate-500">
+                            <span class="text-[10px] font-semibold text-slate-500 dark:text-slate-400">
                                 <template x-if="basePax > 0">
                                     <span>Base: <strong class="text-slate-800" x-text="basePax + ' Pax'"></strong> · </span>
                                 </template>
@@ -362,7 +362,7 @@
                     <div class="space-y-4 font-body">
                         <div class="flex items-center gap-2">
                             <span class="material-symbols-outlined text-sky-600 text-lg">confirmation_number</span>
-                            <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wider">
+                            <h3 class="text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
                                 Activities & Transfers Passenger Summary
                             </h3>
                         </div>
@@ -375,18 +375,18 @@
                             @endphp
 
                             <div
-                                class="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-5 border border-slate-200/80 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 transition-all duration-200 hover:border-slate-300">
+                                class="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-700/80 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 transition-all duration-200 hover:border-slate-300 dark:hover:border-slate-600">
                                 <div class="flex items-center gap-3 min-w-0">
                                     <div
-                                        class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl {{ $isTransfer ? 'bg-violet-50 text-violet-600 border-violet-200' : 'bg-teal-50 text-teal-600 border-teal-200' }} border flex items-center justify-center font-bold shrink-0">
+                                        class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl {{ $isTransfer ? ' bg-violet-50 dark:bg-violet-950/60 text-violet-600 border-violet-200 dark:border-violet-800' : ' bg-teal-50 dark:bg-teal-950/60 text-teal-600 border-teal-200 dark:border-teal-800' }} border flex items-center justify-center font-bold shrink-0">
                                         <span
                                             class="material-symbols-outlined text-xl sm:text-2xl">{{ $isTransfer ? 'directions_bus' : 'kayaking' }}</span>
                                     </div>
                                     <div class="min-w-0">
-                                        <h4 class="text-sm sm:text-base font-bold text-slate-900 font-headline truncate">
+                                        <h4 class="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 font-headline truncate">
                                             {{ $cItem->item_title }}
                                         </h4>
-                                        <p class="text-[11px] sm:text-xs text-slate-500 font-medium mt-0.5 truncate">
+                                        <p class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5 truncate">
                                             {{ $cItem->location_name ?: 'Boracay Island' }} •
                                             {{ $isTransfer ? 'Airport to Hotel Roundtrip Transfer' : 'Activity Experience' }}
                                         </p>
@@ -395,12 +395,12 @@
 
                                 <div class="flex flex-col sm:items-end gap-1 shrink-0 w-full sm:w-auto">
                                     <span
-                                        class="inline-flex items-center gap-1.5 px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full {{ $isTransfer ? 'bg-violet-50 text-violet-800 border-violet-200' : 'bg-teal-50 text-teal-800 border-teal-200' }} border text-[11px] sm:text-xs font-bold w-fit">
+                                        class="inline-flex items-center gap-1.5 px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full {{ $isTransfer ? ' bg-violet-50 dark:bg-violet-950/60 text-violet-800 dark:text-violet-100 border-violet-200 dark:border-violet-800' : ' bg-teal-50 dark:bg-teal-950/60 text-teal-800 dark:text-teal-100 border-teal-200 dark:border-teal-800' }} border text-[11px] sm:text-xs font-bold w-fit">
                                         <span
                                             class="material-symbols-outlined text-[14px] sm:text-[15px] {{ $isTransfer ? 'text-violet-600' : 'text-teal-600' }}">group</span>
                                         <span>Booked for {{ $pax }} Pax</span>
                                     </span>
-                                    <span class="text-[10px] font-medium text-slate-500">{{ $badgeSummary }}</span>
+                                    <span class="text-[10px] font-medium text-slate-500 dark:text-slate-400">{{ $badgeSummary }}</span>
                                 </div>
                             </div>
                         @endforeach
@@ -408,15 +408,15 @@
                 @endif
 
                 {{-- 3. How Booking Confirmation Works --}}
-                <div class="bg-white rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 border border-slate-200/80 shadow-xs space-y-2.5 sm:space-y-3 font-body">
-                    <div class="flex items-center gap-2.5 border-b border-slate-100 pb-2.5">
+                <div class="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 border border-slate-200/80 dark:border-slate-700/80 shadow-xs space-y-2.5 sm:space-y-3 font-body">
+                    <div class="flex items-center gap-2.5 border-b border-slate-100 dark:border-slate-800 pb-2.5">
                         <div
-                            class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-sky-50 text-sky-600 border border-sky-200 flex items-center justify-center font-bold shrink-0">
+                            class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-sky-50 dark:bg-sky-950/60 text-sky-600 border border-sky-200 dark:border-sky-800 flex items-center justify-center font-bold shrink-0">
                             <span class="material-symbols-outlined text-base">fact_check</span>
                         </div>
                         <div>
-                            <h3 class="text-xs sm:text-sm font-bold text-slate-900 font-headline">How Booking Works</h3>
-                            <p class="text-[10.5px] sm:text-xs text-slate-500">Your reservation is verified before payment.</p>
+                            <h3 class="text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100 font-headline">How Booking Works</h3>
+                            <p class="text-[10.5px] sm:text-xs text-slate-500 dark:text-slate-400">Your reservation is verified before payment.</p>
                         </div>
                     </div>
 
@@ -424,17 +424,17 @@
                         <li class="flex items-start gap-2">
                             <span
                                 class="w-5 h-5 min-w-[20px] rounded-full bg-sky-600 text-white text-[10px] font-black flex items-center justify-center shrink-0 mt-0.5">1</span>
-                            <p class="text-[11px] sm:text-xs text-slate-600"><strong class="text-slate-900">Submit request:</strong> We hold your selected items.</p>
+                            <p class="text-[11px] sm:text-xs text-slate-600 dark:text-slate-400"><strong class="text-slate-900">Submit request:</strong> We hold your selected items.</p>
                         </li>
                         <li class="flex items-start gap-2">
                             <span
                                 class="w-5 h-5 min-w-[20px] rounded-full bg-sky-600 text-white text-[10px] font-black flex items-center justify-center shrink-0 mt-0.5">2</span>
-                            <p class="text-[11px] sm:text-xs text-slate-600"><strong class="text-slate-900">Availability check:</strong> Our team verifies room/activity dates.</p>
+                            <p class="text-[11px] sm:text-xs text-slate-600 dark:text-slate-400"><strong class="text-slate-900">Availability check:</strong> Our team verifies room/activity dates.</p>
                         </li>
                         <li class="flex items-start gap-2">
                             <span
                                 class="w-5 h-5 min-w-[20px] rounded-full bg-sky-600 text-white text-[10px] font-black flex items-center justify-center shrink-0 mt-0.5">3</span>
-                            <p class="text-[11px] sm:text-xs text-slate-600"><strong class="text-slate-900">Pay to confirm:</strong> Pay within <strong class="text-slate-900">48 hours</strong> via email link.</p>
+                            <p class="text-[11px] sm:text-xs text-slate-600 dark:text-slate-400"><strong class="text-slate-900">Pay to confirm:</strong> Pay within <strong class="text-slate-900">48 hours</strong> via email link.</p>
                         </li>
                     </ol>
                 </div>
@@ -443,9 +443,9 @@
 
             {{-- RIGHT COLUMN: Sticky Itinerary Summary (1/3) --}}
             <div class="space-y-3.5 sm:space-y-5">
-                <div class="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-5 border border-slate-200/80 shadow-md lg:sticky lg:top-5 xl:top-8 space-y-3.5 sm:space-y-4 font-body">
+                <div class="bg-white dark:bg-slate-900 rounded-2xl sm:rounded-3xl p-4 sm:p-5 border border-slate-200/80 dark:border-slate-700/80 shadow-md lg:sticky lg:top-5 xl:top-8 space-y-3.5 sm:space-y-4 font-body">
                     <h3
-                        class="text-xs sm:text-sm font-bold text-slate-900 border-b border-slate-100 pb-2.5 font-headline flex items-center gap-1.5">
+                        class="text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100 border-b border-slate-100 dark:border-slate-800 pb-2.5 font-headline flex items-center gap-1.5">
                         <span class="material-symbols-outlined text-sky-600 text-base">receipt_long</span>
                         <span>Itinerary Order Breakdown</span>
                     </h3>
@@ -454,38 +454,38 @@
                     <div class="space-y-2 max-h-72 overflow-y-auto pr-1">
                         @foreach($cartItems as $item)
                             <div
-                                class="flex items-center justify-between text-xs py-1.5 border-b border-slate-100 last:border-0">
+                                class="flex items-center justify-between text-xs py-1.5 border-b border-slate-100 dark:border-slate-800 last:border-0">
                                 <div class="flex items-center gap-2 min-w-0 pr-2">
                                     <img src="{{ $item->item_image }}" alt="{{ $item->item_title }}"
-                                        class="w-9 h-9 sm:w-10 sm:h-10 rounded-lg object-cover border border-slate-200/80 shrink-0"
+                                        class="w-9 h-9 sm:w-10 sm:h-10 rounded-lg object-cover border border-slate-200/80 dark:border-slate-700/80 shrink-0"
                                         onerror="this.style.display='none'">
                                     <div class="truncate">
-                                        <h4 class="font-bold text-slate-900 truncate text-[11px] sm:text-xs">{{ $item->item_title }}</h4>
-                                        <p class="text-[10px] sm:text-[11px] text-slate-500 truncate">
+                                        <h4 class="font-bold text-slate-900 dark:text-slate-100 truncate text-[11px] sm:text-xs">{{ $item->item_title }}</h4>
+                                        <p class="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 truncate">
                                             {{ $item->date_details ?: $item->item_subtitle }}
                                         </p>
                                     </div>
                                 </div>
                                 <span
-                                    class="font-extrabold text-slate-900 shrink-0 text-xs">₱{{ number_format($roomLineTotals[$item->id] ?? $item->subtotal, 2) }}</span>
+                                    class="font-extrabold text-slate-900 dark:text-slate-100 shrink-0 text-xs">₱{{ number_format($roomLineTotals[$item->id] ?? $item->subtotal, 2) }}</span>
                             </div>
                         @endforeach
                     </div>
 
                     {{-- Totals Calculation --}}
-                    <div class="bg-slate-50 rounded-xl p-3 space-y-1.5 border border-slate-200/60 text-xs">
-                        <div class="flex items-center justify-between text-slate-600 font-medium text-[11.5px]">
+                    <div class="bg-slate-50 dark:bg-slate-800 rounded-xl p-3 space-y-1.5 border border-slate-200/60 dark:border-slate-700/60 text-xs">
+                        <div class="flex items-center justify-between text-slate-600 dark:text-slate-400 font-medium text-[11.5px]">
                             <span>Subtotal</span>
-                            <span class="font-bold text-slate-800">₱{{ number_format($totalAmount, 2) }}</span>
+                            <span class="font-bold text-slate-800 dark:text-slate-200">₱{{ number_format($totalAmount, 2) }}</span>
                         </div>
 
                         {{-- Itemized Stacked Passenger Discounts & Surcharges --}}
                         <template x-for="(item, idx) in pricingBreakdown" :key="idx">
                             <div class="flex items-center justify-between py-1 px-2 rounded-lg border text-[10.5px] font-semibold transition"
-                                :class="item.type === 'discount' ? 'bg-emerald-50/70 border-emerald-200/80 text-emerald-800' : 'bg-amber-50/70 border-amber-200/80 text-amber-900'">
+                                :class="item.type === 'discount' ? 'bg-emerald-50/70 dark:bg-emerald-950/60 border-emerald-200/80 dark:border-emerald-800/80 text-emerald-800 dark:text-emerald-100' : 'bg-amber-50/70 dark:bg-amber-950/60 border-amber-200/80 dark:border-amber-800/80 text-amber-900 dark:text-amber-100'">
                                 <span class="flex items-center gap-1.5 min-w-0 pr-2 truncate">
                                     <span class="material-symbols-outlined text-[13px] shrink-0"
-                                        :class="item.type === 'discount' ? 'text-emerald-600' : 'text-amber-600'"
+                                        :class="item.type === 'discount' ? ' text-emerald-600 dark:text-emerald-400' : 'text-amber-600'"
                                         x-text="item.type === 'discount' ? 'percent' : 'public'"></span>
                                     <span class="truncate" x-text="item.label"></span>
                                 </span>
@@ -496,31 +496,31 @@
 
                         {{-- Auto-Calculated Room Extra Person Surcharge with Explicit Math Breakdown --}}
                         <div x-show="extraPersonFeeTotal > 0"
-                            class="p-2 rounded-lg border border-amber-200/80 bg-amber-50/80 text-amber-950 text-xs transition space-y-1.5"
+                            class="p-2 rounded-lg border border-amber-200/80 dark:border-amber-800/80 bg-amber-50/80 dark:bg-amber-950/60 text-amber-950 dark:text-amber-100 text-xs transition space-y-1.5"
                             x-cloak>
                             <div class="flex items-center justify-between font-bold text-[11px]">
-                                <span class="flex items-center gap-1 text-amber-900">
+                                <span class="flex items-center gap-1 text-amber-900 dark:text-amber-100">
                                     <span
                                         class="material-symbols-outlined text-[14px] text-amber-600 shrink-0">group_add</span>
                                     <span>Extra Guest Charge</span>
                                 </span>
-                                <span class="font-black text-amber-900"
+                                <span class="font-black text-amber-900 dark:text-amber-100"
                                     x-text="'+₱' + Number(extraPersonFeeTotal).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })"></span>
                             </div>
-                            <div class="space-y-1 pt-1 border-t border-amber-200/60">
+                            <div class="space-y-1 pt-1 border-t border-amber-200 dark:border-amber-800/60">
                                 <template x-for="(item, idx) in extraPersonFeeBreakdownItems" :key="idx">
                                     <div
-                                        class="text-[10px] bg-white/90 p-1.5 rounded border border-amber-200/60 space-y-0.5 shadow-2xs">
-                                        <div class="flex items-center justify-between font-bold text-amber-950">
+                                        class="text-[10px] bg-white dark:bg-slate-900/90 dark:bg-slate-900/90 p-1.5 rounded border border-amber-200 dark:border-amber-800/60 space-y-0.5 shadow-2xs">
+                                        <div class="flex items-center justify-between font-bold text-amber-950 dark:text-amber-100">
                                             <span x-text="item.roomName"></span>
-                                            <span class="font-extrabold text-amber-900"
+                                            <span class="font-extrabold text-amber-900 dark:text-amber-100"
                                                 x-text="'+' + item.lineTotalStr"></span>
                                         </div>
                                         <div
-                                            class="text-[9.5px] text-amber-800 font-medium flex items-center justify-between gap-1 flex-wrap">
+                                            class="text-[9.5px] text-amber-800 dark:text-amber-100 font-medium flex items-center justify-between gap-1 flex-wrap">
                                             <span class="text-amber-700">Computation:</span>
                                             <span
-                                                class="font-mono font-bold bg-amber-100/70 px-1 py-0.2 rounded text-amber-950"
+                                                class="font-mono font-bold bg-amber-100/70 dark:bg-amber-900/60 px-1 py-0.2 rounded text-amber-950 dark:text-amber-100"
                                                 x-text="item.formula"></span>
                                         </div>
                                     </div>
@@ -529,9 +529,9 @@
                         </div>
 
                         <div
-                            class="flex items-center justify-between text-xs sm:text-sm font-black text-slate-900 pt-1.5 border-t border-slate-200">
+                            class="flex items-center justify-between text-xs sm:text-sm font-black text-slate-900 dark:text-slate-100 pt-1.5 border-t border-slate-200 dark:border-slate-700">
                             <span>Total Net Amount</span>
-                            <span class="text-sm sm:text-base font-headline font-black text-sky-900"
+                            <span class="text-sm sm:text-base font-headline font-black text-sky-900 dark:text-sky-100"
                                 x-text="formattedTotalNet">₱{{ number_format($totalAmount, 2) }}</span>
                         </div>
                     </div>
@@ -546,17 +546,17 @@
                         <span x-text="isSubmitting ? 'Submitting Booking Request...' : 'Submit Booking Request'"></span>
                     </button>
 
-                    <p class="text-[10px] text-center text-slate-400 font-medium leading-tight">
+                    <p class="text-[10px] text-center text-slate-400 dark:text-slate-500 font-medium leading-tight">
                         By confirming, you agree to SunnyTrips terms, cancellation policies, and traveler guidelines.
                     </p>
                 </div>
             </div>
 
             {{-- Mobile sticky submit bar — keeps the total + CTA reachable without scrolling the whole manifest --}}
-            <div class="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t border-slate-200 bg-white/95 backdrop-blur px-4 py-3 shadow-[0_-4px_16px_rgba(15,23,42,0.06)] flex items-center gap-3 font-body">
+            <div class="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900/95 dark:bg-slate-900/95 backdrop-blur px-4 py-3 shadow-[0_-4px_16px_rgba(15,23,42,0.06)] flex items-center gap-3 font-body">
                 <div class="flex-1 min-w-0">
-                    <p class="text-[10.5px] font-bold uppercase tracking-wider text-slate-500">Total Net Amount</p>
-                    <p class="font-display text-lg font-bold text-sky-900 truncate"
+                    <p class="text-[10.5px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Total Net Amount</p>
+                    <p class="font-display text-lg font-bold text-sky-900 dark:text-sky-100 truncate"
                         x-text="formattedTotalNet">₱{{ number_format($totalAmount, 2) }}</p>
                 </div>
                 <button type="submit" :disabled="isSubmitting"

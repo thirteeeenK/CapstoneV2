@@ -26,7 +26,7 @@
     
     {{-- Flatpickr Calendar Input Trigger --}}
     <div class="relative">
-        <label class="block text-[11px] uppercase tracking-wider font-extrabold text-slate-500 mb-1 flex items-center justify-between">
+        <label class="block text-[11px] uppercase tracking-wider font-extrabold text-slate-500 dark:text-slate-400 mb-1 flex items-center justify-between">
             <span>Select Stay Dates (Check-in → Check-out)</span>
             <span x-show="nights > 0" class="text-sky-700 font-bold" x-text="nights + ' Night' + (nights > 1 ? 's' : '')"></span>
         </label>
@@ -37,12 +37,12 @@
                    type="text" 
                    placeholder="Click to pick check-in & check-out dates..." 
                    readonly
-                   class="w-full pl-10 pr-10 py-2.5 bg-slate-50 hover:bg-slate-100/80 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 shadow-2xs focus:bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 transition cursor-pointer">
+                    class="w-full pl-10 pr-10 py-2.5 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100/80 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-200 shadow-2xs focus:bg-white dark:focus:bg-slate-900 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-500/20 transition cursor-pointer">
             
             <button x-show="checkIn && checkOut" 
                     @click="clearDates()" 
                     type="button" 
-                    class="absolute right-3 text-slate-400 hover:text-slate-600 transition p-1">
+                    class="absolute right-3 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400 transition p-1">
                 <span class="material-symbols-outlined text-[16px]">close</span>
             </button>
         </div>
@@ -52,19 +52,19 @@
     </div>
 
     {{-- Live Summary & Availability Status Badge --}}
-    <div x-show="checkIn && checkOut" x-cloak class="p-3 bg-sky-50/70 border border-sky-200/80 rounded-xl text-xs space-y-2">
-        <div class="flex items-center justify-between font-semibold text-slate-700">
+    <div x-show="checkIn && checkOut" x-cloak class="p-3 bg-sky-50/70 dark:bg-sky-950/60 border border-sky-200/80 dark:border-sky-800 rounded-xl text-xs space-y-2">
+        <div class="flex items-center justify-between font-semibold text-slate-700 dark:text-slate-300">
             <span class="flex items-center gap-1.5 text-sky-900">
                 <span class="material-symbols-outlined text-[16px] text-sky-600">date_range</span>
                 <span x-text="formattedDateRange"></span>
             </span>
-            <span class="font-black text-slate-900" x-text="formattedSubtotal"></span>
+            <span class="font-black text-slate-900 dark:text-slate-100" x-text="formattedSubtotal"></span>
         </div>
 
         {{-- Availability Indicator --}}
         <div class="pt-1.5 border-t border-sky-200/60 flex items-center justify-between text-[11px]">
             <template x-if="checking">
-                <span class="text-slate-500 flex items-center gap-1">
+                <span class="text-slate-500 dark:text-slate-400 flex items-center gap-1">
                     <span class="inline-block animate-spin w-3 h-3 border-2 border-sky-600 border-t-transparent rounded-full"></span>
                     <span>Checking room availability...</span>
                 </span>

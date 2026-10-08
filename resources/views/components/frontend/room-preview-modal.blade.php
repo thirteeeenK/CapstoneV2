@@ -4,7 +4,7 @@
     class="fixed inset-0 z-[110] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 overflow-y-auto"
     x-cloak style="display: none;">
     <div @click.away="$store.preview.closeRoom()" @click.stop
-        class="bg-white rounded-3xl shadow-2xl max-w-4xl w-full overflow-hidden border border-slate-200/80 my-auto transform transition-all">
+        class="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl max-w-4xl w-full overflow-hidden border border-slate-200/80 dark:border-slate-700/80 my-auto transform transition-all">
 
         {{-- Modal Header --}}
         <div class="relative bg-slate-900 text-white p-6 sm:p-8 overflow-hidden">
@@ -36,7 +36,7 @@
                 <span class="text-xs text-slate-300 font-medium">/ night</span>
                 <span x-show="$store.preview.room?.price_change" x-cloak
                     class="inline-flex items-center gap-0.5 rounded-md px-1.5 py-0.5 text-[10px] font-extrabold border"
-                    :class="$store.preview.room?.price_change?.dir === 'up' ? 'bg-red-50 text-red-600 border-red-200' : 'bg-emerald-50 text-emerald-600 border-emerald-200'"
+                    :class="$store.preview.room?.price_change?.dir === 'up' ? 'bg-red-50 dark:bg-red-950/60 text-red-600 dark:text-red-200 border-red-200 dark:border-red-800' : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-200 border-emerald-200 dark:border-emerald-800'"
                     :title="$store.preview.room?.price_change ? 'Was ₱' + Number($store.preview.room.price_change.old).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' on ' + $store.preview.room.price_change.date : ''"
                     :aria-label="$store.preview.room?.price_change ? ($store.preview.room.price_change.dir === 'up' ? 'Price increased from ₱' : 'Price decreased from ₱') + Number($store.preview.room.price_change.old).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' on ' + $store.preview.room.price_change.date : ''">
                     <span class="material-symbols-outlined text-[13px] leading-none" x-text="$store.preview.room?.price_change ? ($store.preview.room.price_change.dir === 'up' ? 'trending_up' : 'trending_down') : ''"></span>
@@ -68,7 +68,7 @@
                             <template x-for="(img, idx) in $store.preview.room.images" :key="idx">
                                 <button @click="$store.preview.roomImgIndex = idx"
                                     :class="$store.preview.roomImgIndex === idx ? 'ring-2 ring-ocean-600 scale-105' : 'opacity-70 hover:opacity-100'"
-                                    class="w-16 h-12 rounded-lg overflow-hidden border border-slate-200 shrink-0 transition-all">
+                                    class="w-16 h-12 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 shrink-0 transition-all">
                                     <img :src="img" class="w-full h-full object-cover">
                                 </button>
                             </template>
@@ -79,30 +79,30 @@
 
             {{-- Specs Quick Grid --}}
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/80 space-y-1">
-                    <span class="text-slate-400 text-[10px] block uppercase font-bold tracking-wider">Bed Layout</span>
-                    <span class="font-bold text-slate-800 flex items-center gap-1">
+                <div class="bg-slate-50 dark:bg-slate-800 p-3 rounded-xl border border-slate-200/80 dark:border-slate-700/80 space-y-1">
+                    <span class="text-slate-400 dark:text-slate-500 text-[10px] block uppercase font-bold tracking-wider">Bed Layout</span>
+                    <span class="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1">
                         <span class="material-symbols-outlined text-[16px] text-ocean-600">bed</span>
                         <span x-text="$store.preview.room?.bed_configuration || 'Standard'"></span>
                     </span>
                 </div>
-                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/80 space-y-1">
-                    <span class="text-slate-400 text-[10px] block uppercase font-bold tracking-wider">Base Occupancy</span>
-                    <span class="font-bold text-slate-800 flex items-center gap-1">
+                <div class="bg-slate-50 dark:bg-slate-800 p-3 rounded-xl border border-slate-200/80 dark:border-slate-700/80 space-y-1">
+                    <span class="text-slate-400 dark:text-slate-500 text-[10px] block uppercase font-bold tracking-wider">Base Occupancy</span>
+                    <span class="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1">
                         <span class="material-symbols-outlined text-[16px] text-ocean-600">person</span>
                         <span x-text="($store.preview.room?.base_occupancy || 2) + ' Guests'"></span>
                     </span>
                 </div>
-                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/80 space-y-1">
-                    <span class="text-slate-400 text-[10px] block uppercase font-bold tracking-wider">Max Occupancy</span>
-                    <span class="font-bold text-slate-800 flex items-center gap-1">
+                <div class="bg-slate-50 dark:bg-slate-800 p-3 rounded-xl border border-slate-200/80 dark:border-slate-700/80 space-y-1">
+                    <span class="text-slate-400 dark:text-slate-500 text-[10px] block uppercase font-bold tracking-wider">Max Occupancy</span>
+                    <span class="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1">
                         <span class="material-symbols-outlined text-[16px] text-ocean-600">group</span>
                         <span x-text="($store.preview.room?.max_occupancy || $store.preview.room?.occupancy || 4) + ' Guests'"></span>
                     </span>
                 </div>
-                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/80 space-y-1" x-show="$store.preview.room?.room_size">
-                    <span class="text-slate-400 text-[10px] block uppercase font-bold tracking-wider">Room Size</span>
-                    <span class="font-bold text-slate-800 flex items-center gap-1">
+                <div class="bg-slate-50 dark:bg-slate-800 p-3 rounded-xl border border-slate-200/80 dark:border-slate-700/80 space-y-1" x-show="$store.preview.room?.room_size">
+                    <span class="text-slate-400 dark:text-slate-500 text-[10px] block uppercase font-bold tracking-wider">Room Size</span>
+                    <span class="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1">
                         <span class="material-symbols-outlined text-[16px] text-ocean-600">straighten</span>
                         <span x-text="$store.preview.room?.room_size"></span>
                     </span>
@@ -112,8 +112,8 @@
             {{-- Description --}}
             <template x-if="$store.preview.room?.description">
                 <div class="space-y-2">
-                    <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Room Description</h4>
-                    <p class="text-xs sm:text-sm text-slate-600 leading-relaxed bg-slate-50/70 p-4 rounded-xl border border-slate-200/60"
+                    <h4 class="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider">Room Description</h4>
+                    <p class="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed bg-slate-50/70 dark:bg-slate-800/70 p-4 rounded-xl border border-slate-200/60 dark:border-slate-700/60"
                         x-text="$store.preview.room.description"></p>
                 </div>
             </template>
@@ -121,10 +121,10 @@
             {{-- Amenities Badges --}}
             <template x-if="$store.preview.room?.amenities && $store.preview.room.amenities.length > 0">
                 <div class="space-y-3">
-                    <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Included Amenities</h4>
+                    <h4 class="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider">Included Amenities</h4>
                     <div class="flex flex-wrap gap-2">
                         <template x-for="(amenity, idx) in $store.preview.room.amenities" :key="idx">
-                            <span class="px-3 py-1.5 bg-ocean-50 text-ocean-800 rounded-lg text-xs font-semibold border border-ocean-100 flex items-center gap-1.5">
+                            <span class="px-3 py-1.5 bg-ocean-50 dark:bg-ocean-900/50 text-ocean-800 dark:text-ocean-100 rounded-lg text-xs font-semibold border border-ocean-100 dark:border-ocean-800 flex items-center gap-1.5">
                                 <span class="material-symbols-outlined text-[16px] text-ocean-600">check_circle</span>
                                 <span x-text="amenity"></span>
                             </span>
@@ -135,9 +135,9 @@
 
             {{-- Room Review Summary (DSS) --}}
             <template x-if="$store.preview.room?.review_summary">
-                <div class="space-y-3 rounded-2xl bg-gradient-to-br from-ocean-50/70 to-sand-50/70 border border-ocean-100 p-4">
+                <div class="space-y-3 rounded-2xl bg-gradient-to-br from-ocean-50/70 to-sand-50/70 dark:from-slate-800 dark:to-slate-800 border border-ocean-100 dark:border-slate-700 p-4">
                     <div class="flex items-center justify-between gap-2 flex-wrap">
-                        <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                        <h4 class="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider flex items-center gap-1.5">
                             <span class="material-symbols-outlined text-[15px] text-ocean-600">reviews</span>
                             Guest Reviews & Sentiment
                         </h4>
@@ -147,37 +147,37 @@
                             </template>
                         </span>
                     </div>
-                    <p class="text-[11px] text-slate-600 font-bold">
+                    <p class="text-[11px] text-slate-600 dark:text-slate-400 font-bold">
                         <span x-text="$store.preview.room.review_summary.average_rating.toFixed(1)"></span> / 5.0 ·
                         <span x-text="$store.preview.room.review_summary.total_reviews"></span> guest reviews
                     </p>
-                    <p class="text-[11px] text-slate-500" x-text="$store.preview.room.review_summary.ai_summary_text"></p>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400" x-text="$store.preview.room.review_summary.ai_summary_text"></p>
                 </div>
             </template>
 
             {{-- Room Recent Reviews --}}
             <template x-if="$store.preview.room?.reviews && $store.preview.room.reviews.length > 0">
                 <div class="space-y-3">
-                    <h4 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Recent Guest Reviews</h4>
+                    <h4 class="text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider">Recent Guest Reviews</h4>
                     <template x-for="(rv, idx) in $store.preview.room.reviews" :key="idx">
-                        <div class="bg-white border border-sand-200 rounded-xl p-3.5 space-y-1.5">
+                        <div class="bg-white dark:bg-slate-900 border border-sand-200 dark:border-slate-700 rounded-xl p-3.5 space-y-1.5">
                             <div class="flex items-center justify-between gap-2">
-                                <p class="text-xs font-bold text-slate-900" x-text="rv.reviewer_alias"></p>
+                                <p class="text-xs font-bold text-slate-900 dark:text-slate-100" x-text="rv.reviewer_alias"></p>
                                 <span class="flex items-center gap-0.5 text-amber-400">
                                     <template x-for="i in 5" :key="i">
                                         <span class="material-symbols-outlined text-[13px]" :style="'font-variation-settings: \'FILL\' ' + (i <= rv.rating ? 1 : 0)">star</span>
                                     </template>
                                 </span>
                             </div>
-                            <p class="text-[11px] text-slate-600 leading-relaxed" x-text="rv.comment"></p>
-                            <p class="text-[9px] font-label uppercase tracking-[0.15em] text-slate-400 font-bold" x-text="rv.created_at_label"></p>
+                            <p class="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed" x-text="rv.comment"></p>
+                            <p class="text-[9px] font-label uppercase tracking-[0.15em] text-slate-400 dark:text-slate-500 font-bold" x-text="rv.created_at_label"></p>
                         </div>
                     </template>
                 </div>
             </template>
 
             {{-- Date Picker Section (store-driven; keyed by pickerEpoch to reset per room) --}}
-            <div class="pt-3 border-t border-slate-200" @date-range-changed.stop="$store.preview.setRoomDates($event.detail)">
+            <div class="pt-3 border-t border-slate-200 dark:border-slate-800" @date-range-changed.stop="$store.preview.setRoomDates($event.detail)">
                 <template x-for="n in [$store.preview.pickerEpoch]" :key="'drp-' + n">
                     <x-frontend.date-range-picker store-room />
                 </template>
@@ -186,9 +186,9 @@
         </div>
 
         {{-- Modal Footer --}}
-        <div class="bg-slate-50 p-4 sm:p-6 border-t border-slate-200/80 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="bg-slate-50 dark:bg-slate-800 p-4 sm:p-6 border-t border-slate-200/80 dark:border-slate-700/80 flex flex-col sm:flex-row items-center justify-between gap-4">
             <button type="button" @click="$store.preview.closeRoom()"
-                class="w-full sm:w-auto px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-bold text-xs hover:bg-slate-200 transition-colors">
+                class="w-full sm:w-auto px-5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 font-bold text-xs hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
                 Close Preview
             </button>
             <button type="button"

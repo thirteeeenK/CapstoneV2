@@ -11,7 +11,7 @@
 - Facilities include incredibly clean rooms and a natural cove located right in front of the hotel for easy snorkeling with sea turtles and fish.
 - Guests appreciate the all-inclusive tours, such as the exclusive 6 AM Big Lagoon tour, which allows for various experiences without needing a wallet.
 - The fresh, daily-changing meals and pristine natural environment create a highly satisfying, paradise-like resort experience.
-
+    
 ## Cauayan Island Resort (10 reviews, 4.7-5★)
 
 - Reviewers consistently mention the VIP treatment, world-class service, and lovely staff who ensure a stress-free stay.

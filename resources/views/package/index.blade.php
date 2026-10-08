@@ -22,7 +22,7 @@
         get anyVisiblePackage() {
             return this.packageIndex.some(p => this.matchesPackage(p.dest, p.name, p.type));
         }
-    }" class="{{ Auth::check() ? 'py-12' : 'pt-20 sm:pt-28 pb-12' }} bg-sand-50/70 text-slate-900 min-h-screen relative overflow-hidden">
+    }" class="{{ Auth::check() ? 'py-12' : 'pt-20 sm:pt-28 pb-12' }} bg-sand-50/70 dark:bg-slate-800/60 text-slate-900 dark:text-slate-100 min-h-screen relative overflow-hidden">
 
         {{-- Background Soft Ambient Mesh Glows --}}
         <div
@@ -36,32 +36,32 @@
 
             {{-- Header Banner --}}
             <div
-                class="bg-white border border-slate-200 rounded-3xl p-5 sm:p-8 lg:p-10 shadow-sm flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+                class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-3xl p-5 sm:p-8 lg:p-10 shadow-sm flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
                 <div class="space-y-2 max-w-2xl">
                     <div
-                        class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-bold uppercase tracking-widest border border-amber-200">
+                        class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-200 text-xs font-bold uppercase tracking-widest border border-amber-200 dark:border-amber-900/60">
                         <span class="material-symbols-outlined text-[16px] text-amber-600">card_travel</span>
                         <span>Curated Tour Packages & Promos</span>
                     </div>
-                    <h1 class="text-2xl sm:text-4xl font-black text-slate-900 font-headline tracking-tight">
+                    <h1 class="text-2xl sm:text-4xl font-black text-slate-900 dark:text-slate-100 font-headline tracking-tight">
                         All-Inclusive Vacation Deals
                     </h1>
-                    <p class="text-slate-500 text-xs sm:text-sm font-body leading-relaxed">
+                    <p class="text-slate-500 dark:text-slate-400 text-xs sm:text-sm font-body leading-relaxed">
                         Save big on complete island getaways combining flights, luxury hotel stays, roundtrip airport
                         transfers, and guided island hopping adventures.
                     </p>
                 </div>
 
                 {{-- Location Filter Tabs (Flex Wrap, No Horizontal Scrollbars) --}}
-                <div class="w-full lg:w-auto p-2 sm:p-2.5 bg-slate-50/90 rounded-2xl border border-slate-200/80 space-y-2 lg:space-y-0">
-                    <div class="flex items-center gap-1 text-[11px] font-extrabold text-slate-500 uppercase tracking-wider px-1 lg:hidden">
+                <div class="w-full lg:w-auto p-2 sm:p-2.5 bg-slate-50/90 dark:bg-slate-800/90 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 space-y-2 lg:space-y-0">
+                    <div class="flex items-center gap-1 text-[11px] font-extrabold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-1 lg:hidden">
                         <span class="material-symbols-outlined text-[15px] text-amber-600">location_on</span>
                         <span>Filter Island:</span>
                     </div>
 
                     <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
                         <button type="button" @click="activeDestId = 'all'"
-                            :class="activeDestId === 'all' ? 'bg-sky-600 text-white font-extrabold shadow-xs border-sky-600' : 'bg-white text-slate-600 hover:bg-slate-200/80 hover:text-slate-900 font-semibold border-slate-200/80'"
+                            :class="activeDestId === 'all' ? 'bg-sky-600 text-white font-extrabold shadow-xs border-sky-600' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-200/80 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white font-semibold border-slate-200/80 dark:border-slate-700/80'"
                             class="px-3.5 py-1.5 rounded-xl text-xs transition-all border cursor-pointer">
                             All Islands ({{ $packages->count() }})
                         </button>
@@ -71,11 +71,11 @@
                             @endphp
                             @if($destPkgCount > 0)
                                 <button type="button" @click="activeDestId = '{{ $dest->id }}'"
-                                    :class="activeDestId === '{{ $dest->id }}' ? 'bg-sky-600 text-white font-extrabold shadow-xs border-sky-600' : 'bg-white text-slate-600 hover:bg-slate-200/80 hover:text-slate-900 font-semibold border-slate-200/80'"
+                                    :class="activeDestId === '{{ $dest->id }}' ? 'bg-sky-600 text-white font-extrabold shadow-xs border-sky-600' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-200/80 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white font-semibold border-slate-200/80 dark:border-slate-700/80'"
                                     class="px-3.5 py-1.5 rounded-xl text-xs transition-all flex items-center gap-1.5 border cursor-pointer">
                                     <span>{{ $dest->name }}</span>
                                     <span class="px-1.5 py-0.5 rounded-full text-[10px]"
-                                        :class="activeDestId === '{{ $dest->id }}' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'">
+                                        :class="activeDestId === '{{ $dest->id }}' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'">
                                         {{ $destPkgCount }}
                                     </span>
                                 </button>
@@ -86,27 +86,27 @@
             </div>
 
             {{-- Keyword Search --}}
-            <div class="flex flex-col sm:flex-row gap-3 items-center justify-between bg-white border border-slate-200 rounded-3xl p-4 sm:p-5 shadow-sm">
+            <div class="flex flex-col sm:flex-row gap-3 items-center justify-between bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-3xl p-4 sm:p-5 shadow-sm">
                 <div class="relative flex-1 w-full">
-                    <span class="absolute left-3.5 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 text-[18px]">search</span>
+                    <span class="absolute left-3.5 top-1/2 -translate-y-1/2 material-symbols-outlined text-slate-400 dark:text-slate-500 text-[18px]">search</span>
                     <input type="search" x-model="searchQuery" placeholder="Search by package name, type, or keyword..." aria-label="Search packages"
-                        class="w-full pl-10 pr-8 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-sky-500 focus:bg-white transition-colors"
+                        class="w-full pl-10 pr-8 py-2.5 rounded-2xl bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs sm:text-sm text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:border-sky-500 focus:bg-white dark:focus:bg-slate-900 transition-colors"
                         @keydown.enter="window.location.href = '{{ route('packages.index') }}?search=' + encodeURIComponent(searchQuery) + (activeDestId !== 'all' ? '&destination_id=' + activeDestId : '')">
-                    <button type="button" x-show="searchQuery" @click="searchQuery = ''" class="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-slate-100 text-slate-400 transition-colors cursor-pointer" aria-label="Clear search">
+                    <button type="button" x-show="searchQuery" @click="searchQuery = ''" class="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 dark:text-slate-500 transition-colors cursor-pointer" aria-label="Clear search">
                         <span class="material-symbols-outlined text-[16px]">close</span>
                     </button>
                 </div>
                 <div class="flex gap-2 shrink-0 w-full sm:w-auto">
                     <a :href="'{{ route('packages.index') }}?search=' + encodeURIComponent(searchQuery) + (activeDestId !== 'all' ? '&destination_id=' + activeDestId : '')"
                         class="flex-1 sm:flex-none px-5 py-2.5 rounded-2xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs text-center transition-colors cursor-pointer shadow-xs">Search</a>
-                    <a href="{{ route('packages.index') }}" x-show="searchQuery || activeDestId !== 'all'" class="flex-1 sm:flex-none px-4 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 font-bold text-xs text-center transition-colors">Clear</a>
+                    <a href="{{ route('packages.index') }}" x-show="searchQuery || activeDestId !== 'all'" class="flex-1 sm:flex-none px-4 py-2.5 rounded-2xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs text-center transition-colors">Clear</a>
                 </div>
             </div>
 
             {{-- Packages Grid --}}
             @if($packages->isEmpty())
-                <div class="bg-white p-12 rounded-3xl border border-slate-200 text-center text-slate-500 text-sm shadow-xs">
-                    <span class="material-symbols-outlined text-4xl text-slate-300 mb-2 block">search_off</span>
+                <div class="bg-white dark:bg-slate-900 p-12 rounded-3xl border border-slate-200 dark:border-slate-700 text-center text-slate-500 dark:text-slate-400 text-sm shadow-xs">
+                    <span class="material-symbols-outlined text-4xl text-slate-300 dark:text-slate-600 mb-2 block">search_off</span>
                     {{ $searchQuery ? 'No packages match your search. Try different keywords or clear your filters.' : 'No tour packages listed yet. Check back soon!' }}
                     <div class="mt-4 flex flex-wrap items-center justify-center gap-2">
                         <a href="{{ route('packages.index') }}"
@@ -115,8 +115,8 @@
                 </div>
             @else
                 <div x-show="!anyVisiblePackage" x-cloak
-                    class="bg-white p-12 rounded-3xl border border-slate-200 text-center text-slate-500 text-sm shadow-xs">
-                    <span class="material-symbols-outlined text-4xl text-slate-300 mb-2 block">search_off</span>
+                    class="bg-white dark:bg-slate-900 p-12 rounded-3xl border border-slate-200 dark:border-slate-700 text-center text-slate-500 dark:text-slate-400 text-sm shadow-xs">
+                    <span class="material-symbols-outlined text-4xl text-slate-300 dark:text-slate-600 mb-2 block">search_off</span>
                     No packages match your search or filters. Try different keywords or clear your filters.
                     <div class="mt-4 flex flex-wrap items-center justify-center gap-2">
                         <a href="{{ route('packages.index') }}"
@@ -140,7 +140,7 @@
                         @endphp
 
                         <div x-show="matchesPackage('{{ $pkg->destination_id }}', @js($pkg->name), @js($pkg->type ?? ''))"
-                            class="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-xs hover:shadow-md hover:border-amber-400 transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between group">
+                            class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-3xl overflow-hidden shadow-xs hover:shadow-md hover:border-amber-400 transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between group">
 
                             <div>
                                 {{-- Card Image & Badges --}}
@@ -182,31 +182,31 @@
                                     {{-- Type Badge (Full Text, No Overlap/Truncation) --}}
                                     @if($pkg->type)
                                         <div
-                                            class="inline-block px-2.5 py-1 rounded-lg bg-amber-50 text-amber-800 text-[11px] font-extrabold tracking-wide border border-amber-200/80">
+                                            class="inline-block px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-200 text-[11px] font-extrabold tracking-wide border border-amber-200/80 dark:border-amber-900/60">
                                             {{ $pkg->type }}
                                         </div>
                                     @endif
 
                                     <div class="flex items-start justify-between gap-2">
                                         <h3
-                                            class="text-base sm:text-lg font-black text-slate-900 group-hover:text-amber-600 transition-colors font-headline">
+                                            class="text-base sm:text-lg font-black text-slate-900 dark:text-slate-100 group-hover:text-amber-600 transition-colors font-headline">
                                             {{ $pkg->name }}
                                         </h3>
                                         <span
-                                            class="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md shrink-0 border border-slate-200">
+                                            class="text-[10px] font-bold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md shrink-0 border border-slate-200 dark:border-slate-700">
                                             Min {{ $pkg->min_pax }} Pax
                                         </span>
                                     </div>
 
                                     {{-- Generic Inclusions Checklist --}}
                                     @if(!empty($inclusionsRaw))
-                                        <div class="space-y-1.5 pt-1 border-t border-slate-100">
+                                        <div class="space-y-1.5 pt-1 border-t border-slate-100 dark:border-slate-800">
                                             <span
-                                                class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Package
+                                                class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Package
                                                 Inclusions:</span>
                                             <div class="space-y-1">
                                                 @foreach(array_slice($inclusionsRaw, 0, 4) as $inc)
-                                                    <div class="flex items-center gap-2 text-xs text-slate-700 font-medium">
+                                                    <div class="flex items-center gap-2 text-xs text-slate-700 dark:text-slate-300 font-medium">
                                                         <span
                                                             class="material-symbols-outlined text-[15px] text-emerald-500 shrink-0">check_circle</span>
                                                         <span class="line-clamp-1">{{ $inc }}</span>
@@ -227,7 +227,7 @@
                             <div class="p-4 sm:p-5 pt-0 grid grid-cols-2 gap-2">
                                 <button type="button"
                                     @click="$store.preview.openPackageById({{ $pkg->id }})"
-                                    class="w-full py-2.5 px-2 sm:px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-colors flex items-center justify-center gap-1 cursor-pointer">
+                                    class="w-full py-2.5 px-2 sm:px-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs transition-colors flex items-center justify-center gap-1 cursor-pointer">
                                     <span class="material-symbols-outlined text-[16px] text-slate-500">visibility</span>
                                     <span>Details</span>
                                 </button>

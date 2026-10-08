@@ -1,5 +1,5 @@
 <x-frontend.layout title="My Dashboard — SunnyTrips">
-    <div class="py-5 sm:py-8 lg:py-10 bg-sand-50/70 text-slate-900 min-h-screen relative overflow-hidden">
+    <div class="py-5 sm:py-8 lg:py-10 bg-sand-50/70 dark:bg-slate-800/60 text-slate-900 dark:text-slate-100 min-h-screen relative overflow-hidden">
 
         {{-- Background Soft Ambient Mesh Glows --}}
         <div
@@ -13,18 +13,18 @@
 
             {{-- Dashboard User Header Banner (Light Mode Theme) --}}
             <div
-                class="bg-white border border-slate-200 rounded-3xl p-5 sm:p-8 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-3xl p-5 sm:p-8 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                 <div class="space-y-2">
                     <div class="flex flex-wrap items-center gap-2">
                         @if($isPersonalized)
                             <span
-                                class="px-3 py-1 rounded-full bg-sky-50 text-sky-700 text-[11px] font-extrabold uppercase tracking-widest border border-sky-200 flex items-center gap-1.5 shadow-xs">
+                                class="px-3 py-1 rounded-full bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-200 text-[11px] font-extrabold uppercase tracking-widest border border-sky-200 dark:border-sky-800 flex items-center gap-1.5 shadow-xs">
                                 <span class="material-symbols-outlined text-[15px] text-sky-600">auto_awesome</span>
                                 <span>Recommendation Active</span>
                             </span>
                         @else
                             <span
-                                class="px-3 py-1 rounded-full bg-amber-50 text-amber-700 text-[11px] font-extrabold uppercase tracking-widest border border-amber-200 flex items-center gap-1.5 shadow-xs">
+                                class="px-3 py-1 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-200 text-[11px] font-extrabold uppercase tracking-widest border border-amber-200 dark:border-amber-900/60 flex items-center gap-1.5 shadow-xs">
                                 <span class="material-symbols-outlined text-[15px] text-amber-600">travel_explore</span>
                                 <span>Popular Highlights Active</span>
                             </span>
@@ -32,11 +32,11 @@
 
                     </div>
 
-                    <h1 class="text-2xl sm:text-3xl font-black text-slate-900 font-headline tracking-tight">
+                    <h1 class="text-2xl sm:text-3xl font-black text-slate-900 dark:text-slate-100 font-headline tracking-tight">
                         Welcome back, {{ Auth::user()->name }}!
                     </h1>
-                    <p class="text-slate-500 text-xs sm:text-sm font-body">
-                        Logged in as <span class="text-slate-800 font-semibold">{{ Auth::user()->email }}</span>.
+                    <p class="text-slate-500 dark:text-slate-400 text-xs sm:text-sm font-body">
+                        Logged in as <span class="text-slate-800 dark:text-slate-200 font-semibold">{{ Auth::user()->email }}</span>.
                         Explore your island recommendations below.
                     </p>
                 </div>
@@ -45,12 +45,12 @@
             {{-- Reinforcing CTA: one-time nudge after onboarding processing --}}
             @if(session('success') && $isPersonalized)
                 <div x-data="{ show: true }" x-show="show" x-transition.opacity.duration.300ms
-                     class="bg-sky-50 border border-sky-200 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
+                     class="bg-sky-50 dark:bg-sky-950/60 border border-sky-200 dark:border-sky-800 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
                     <div class="flex gap-3">
                         <span class="material-symbols-outlined text-sky-600 text-[22px] shrink-0 mt-0.5">auto_awesome</span>
                         <div class="space-y-1">
-                            <p class="text-sm font-black text-sky-900 font-headline">Your AI matches are ready!</p>
-                            <p class="text-xs text-sky-800 leading-relaxed max-w-2xl">
+                            <p class="text-sm font-black text-sky-900 dark:text-sky-100 font-headline">Your AI matches are ready!</p>
+                            <p class="text-xs text-sky-800 dark:text-sky-200 leading-relaxed max-w-2xl">
                                 Open the <span class="font-bold">AI Recommendations</span> tab below to see your Top 5 stays &amp; Top 5 experiences ranked for your vibe. Travelers who start there find a great match faster.
                             </p>
                         </div>
@@ -63,7 +63,7 @@
                             <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
                         </a>
                         <button type="button" @click="show = false"
-                                class="p-2 rounded-full hover:bg-sky-100 text-sky-700 transition-colors shrink-0" aria-label="Dismiss">
+                                class="p-2 rounded-full hover:bg-sky-100 dark:hover:bg-sky-900/60 text-sky-700 dark:text-sky-200 transition-colors shrink-0" aria-label="Dismiss">
                             <span class="material-symbols-outlined text-[18px]">close</span>
                         </button>
                     </div>
@@ -79,17 +79,17 @@
 
             {{-- DSS Destination Overview Map Section (Below Recommendations) --}}
             @if(!empty($mapMarkers))
-                <section class="bg-white border border-slate-200/80 rounded-3xl p-6 sm:p-8 shadow-sm space-y-5">
-                    <div class="flex flex-wrap items-end justify-between gap-4 border-b border-slate-100 pb-4">
+                <section class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-700/80 rounded-3xl p-6 sm:p-8 shadow-sm space-y-5">
+                    <div class="flex flex-wrap items-end justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-4">
                         <div class="space-y-1">
-                            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-ocean-50 text-ocean-700 text-xs font-bold uppercase tracking-widest border border-ocean-200">
+                            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-ocean-50 dark:bg-ocean-900/50 text-ocean-700 dark:text-ocean-100 text-xs font-bold uppercase tracking-widest border border-ocean-200 dark:border-ocean-800">
                                 <span class="material-symbols-outlined text-[16px] text-ocean-600">map</span>
                                 <span>Interactive Map Explorer</span>
                             </div>
-                            <h2 class="text-xl sm:text-2xl font-black text-slate-900 font-headline tracking-tight">
+                            <h2 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100 font-headline tracking-tight">
                                 Explore Destinations Across the Philippines
                             </h2>
-                            <p class="text-slate-500 text-xs sm:text-sm font-body">
+                            <p class="text-slate-500 dark:text-slate-400 text-xs sm:text-sm font-body">
                                 Tap markers on the map to explore sanctuary hotels and local experiences across all partner islands.
                             </p>
                         </div>
@@ -103,14 +103,14 @@
                     <div x-data="dashboardMap()"
                          @sunnytrip:map-select.window="onSelect($event.detail)"
                          @keydown.escape.window="close()"
-                         class="rounded-2xl border border-slate-200/80 overflow-hidden shadow-xs">
+                         class="rounded-2xl border border-slate-200/80 dark:border-slate-700/80 overflow-hidden shadow-xs">
                         <div class="grid lg:grid-cols-3">
                             <div class="lg:col-span-2">
                                 <x-frontend.map id="dashboard-map" :markers="$mapMarkers" :center="null" :zoom="6" height="h-80 sm:h-96" />
                             </div>
-                            <div class="hidden lg:flex lg:flex-col justify-center border-l border-slate-200 bg-slate-50/60 p-4">
+                            <div class="hidden lg:flex lg:flex-col justify-center border-l border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-800/60 p-4">
                                 <div x-show="selected" x-transition.opacity.duration.300ms x-html="cardHtml" class="w-full"></div>
-                                <div x-show="!selected" class="flex h-full min-h-[16rem] items-center justify-center rounded-2xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-400 font-body">
+                                <div x-show="!selected" class="flex h-full min-h-[16rem] items-center justify-center rounded-2xl border border-dashed border-slate-300 dark:border-slate-600 p-6 text-center text-sm text-slate-400 dark:text-slate-500 font-body">
                                     Tap a destination pin on the map to preview its sanctuary stays and local experiences.
                                 </div>
                             </div>
@@ -121,10 +121,10 @@
                              x-transition:enter-start="translate-y-full" x-transition:enter-end="translate-y-0"
                              x-transition:leave="transition ease-in duration-200"
                              x-transition:leave-start="translate-y-0" x-transition:leave-end="translate-y-full"
-                             class="lg:hidden fixed inset-x-0 bottom-0 z-[60] rounded-t-3xl border border-slate-200 bg-white p-4 shadow-2xl"
+                             class="lg:hidden fixed inset-x-0 bottom-0 z-[60] rounded-t-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 shadow-2xl"
                              style="display:none">
                             <button type="button" @click="close()"
-                                    class="absolute right-3 top-3 rounded-full bg-slate-100 p-1.5 text-slate-500 hover:bg-slate-200 cursor-pointer">
+                                    class="absolute right-3 top-3 rounded-full bg-slate-100 dark:bg-slate-800 p-1.5 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 cursor-pointer">
                                 <span class="material-symbols-outlined text-[18px]">close</span>
                             </button>
                             <div x-html="cardHtml"></div>
@@ -132,11 +132,11 @@
                     </div>
                 </section>
             @else
-                <section class="bg-white border border-dashed border-slate-300 rounded-3xl p-6 sm:p-8 shadow-sm">
+                <section class="bg-white dark:bg-slate-900 border border-dashed border-slate-300 dark:border-slate-600 rounded-3xl p-6 sm:p-8 shadow-sm">
                     <div class="flex flex-col items-center gap-2 text-center">
-                        <span class="material-symbols-outlined text-[28px] text-slate-400">map_off</span>
-                        <h2 class="text-lg font-black text-slate-700 font-headline">Interactive map is unavailable right now.</h2>
-                        <p class="text-slate-500 text-xs sm:text-sm font-body">There are no destinations to show on the map yet. Your recommendations are still listed above.</p>
+                        <span class="material-symbols-outlined text-[28px] text-slate-400 dark:text-slate-500">map_off</span>
+                        <h2 class="text-lg font-black text-slate-700 dark:text-slate-300 font-headline">Interactive map is unavailable right now.</h2>
+                        <p class="text-slate-500 dark:text-slate-400 text-xs sm:text-sm font-body">There are no destinations to show on the map yet. Your recommendations are still listed above.</p>
                         <button type="button" onclick="window.location.reload()"
                             class="mt-1 inline-flex items-center gap-2 rounded-xl bg-slate-900 hover:bg-slate-800 px-4 py-2.5 text-xs font-bold text-white transition-all shadow-xs cursor-pointer">
                             <span class="material-symbols-outlined text-[16px]">refresh</span>
@@ -193,8 +193,8 @@
                             const explorerMapUrl = `{{ route('explore') }}?focus=destination:${m.id}`;
 
                             this.cardHtml = `
-                                <div class="overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm hover:shadow-md transition-all duration-300">
-                                    <div class="relative h-44 w-full overflow-hidden bg-slate-100 group">
+                                <div class="overflow-hidden rounded-2xl border border-slate-200/90 dark:border-slate-700/90 bg-white dark:bg-slate-900 shadow-sm hover:shadow-md transition-all duration-300">
+                                    <div class="relative h-44 w-full overflow-hidden bg-slate-100 dark:bg-slate-800 group">
                                         <img src="${imgUrl}" 
                                              alt="${m.name || 'Destination'}" 
                                              onerror="this.onerror=null;this.src='${fallbackImg}';" 
@@ -213,23 +213,23 @@
                                     
                                     <div class="space-y-3 p-4">
                                         <div class="flex flex-wrap items-center gap-1.5">
-                                            <span class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-700 font-label">
+                                            <span class="inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-[11px] font-semibold text-slate-700 dark:text-slate-300 font-label">
                                                 <span class="material-symbols-outlined text-[13px] text-ocean-600">hotel</span>
                                                 <span>${staysCount} stays</span>
                                             </span>
-                                            <span class="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-700 font-label">
+                                            <span class="inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-[11px] font-semibold text-slate-700 dark:text-slate-300 font-label">
                                                 <span class="material-symbols-outlined text-[13px] text-coral-500">kayaking</span>
                                                 <span>${expCount} experiences</span>
                                             </span>
-                                            ${m.distance_label ? `<span class="inline-flex items-center gap-1 rounded-full bg-ocean-50 text-ocean-700 px-2.5 py-1 text-[11px] font-bold font-label"><span>${m.distance_label} away</span></span>` : ''}
+                                            ${m.distance_label ? `<span class="inline-flex items-center gap-1 rounded-full bg-ocean-50 dark:bg-ocean-900/50 text-ocean-700 dark:text-ocean-100 px-2.5 py-1 text-[11px] font-bold font-label"><span>${m.distance_label} away</span></span>` : ''}
                                         </div>
 
-                                        <div class="flex items-center gap-2 pt-1 border-t border-slate-100">
+                                        <div class="flex items-center gap-2 pt-1 border-t border-slate-100 dark:border-slate-800">
                                             <a href="${exploreUrl}" class="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-ocean-600 hover:bg-ocean-700 px-3 py-2.5 text-center text-xs font-bold text-white transition shadow-xs cursor-pointer">
                                                 <span class="material-symbols-outlined text-[14px]">bed</span>
                                                 <span>Explore Hotels</span>
                                             </a>
-                                            <a href="${explorerMapUrl}" class="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 px-3 py-2.5 text-center text-xs font-bold text-slate-700 transition cursor-pointer">
+                                            <a href="${explorerMapUrl}" class="flex-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 px-3 py-2.5 text-center text-xs font-bold text-slate-700 dark:text-slate-300 transition cursor-pointer">
                                                 <span class="material-symbols-outlined text-[14px]">explore</span>
                                                 <span>Open in Explorer</span>
                                             </a>

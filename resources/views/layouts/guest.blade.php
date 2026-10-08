@@ -6,6 +6,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
+    <script>
+        (function () {
+            try {
+                var savedTheme = localStorage.getItem('sunnytrips-theme');
+                var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+                document.documentElement.classList.toggle(
+                    'dark',
+                    savedTheme ? savedTheme === 'dark' : prefersDark,
+                );
+            } catch (error) {
+                // Keep the default light theme when browser storage is unavailable.
+            }
+        })();
+    </script>
+
     <title>{{ config('app.name', 'SunnyTrips') }}</title>
 
     {{-- Google Fonts: Sora (headlines) + DM Sans (body) --}}
@@ -24,7 +40,7 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 
-<body class="font-sans text-ink-900 antialiased bg-sand-50">
+<body class="font-sans text-ink-900 dark:text-slate-100 antialiased bg-sand-50 dark:bg-slate-800">
 
     <div class="min-h-screen lg:grid lg:grid-cols-2">
 
@@ -58,19 +74,23 @@
         {{-- ══════════════════════════════════════════
         RIGHT PANEL — Form Area
         ══════════════════════════════════════════ --}}
-        <div class="flex min-h-screen flex-col justify-center py-12 px-8 sm:px-14 lg:px-16 bg-sand-50">
+        <div class="flex min-h-screen flex-col justify-center py-12 px-8 sm:px-14 lg:px-16 bg-sand-50 dark:bg-slate-800">
             <div class="w-full max-w-md mx-auto">
 
-                {{-- Brand wordmark --}}
-                <a href="/" class="inline-flex items-baseline gap-1.5 mb-4 group"
-                    aria-label="SunnyTrips — Go to homepage">
-                    <span class="material-symbols-outlined text-ocean-500 text-[22px] leading-none"
-                        aria-hidden="true">wb_sunny</span>
-                    <span
-                        class="font-headline text-[1.35rem] font-bold text-ocean-600 tracking-tight group-hover:text-ocean-700 transition-colors duration-150">
-                        SunnyTrips
-                    </span>
-                </a>
+                <div class="mb-4 flex items-center justify-between gap-4">
+                    {{-- Brand wordmark --}}
+                    <a href="/" class="inline-flex items-baseline gap-1.5 group"
+                        aria-label="SunnyTrips — Go to homepage">
+                        <span class="material-symbols-outlined text-ocean-500 text-[22px] leading-none"
+                            aria-hidden="true">wb_sunny</span>
+                        <span
+                            class="font-headline text-[1.35rem] font-bold text-ocean-600 dark:text-ocean-400 tracking-tight group-hover:text-ocean-700 dark:group-hover:text-ocean-300 transition-colors duration-150">
+                            SunnyTrips
+                        </span>
+                    </a>
+
+                    <x-frontend.theme-toggle />
+                </div>
 
                 {{-- Page content (login / register form) --}}
                 <div class="animate-fade-up">

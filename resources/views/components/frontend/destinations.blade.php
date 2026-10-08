@@ -1,4 +1,4 @@
-<section class="py-12 sm:py-16 lg:py-24 bg-sand-50/50 border-t border-slate-200/60 overflow-hidden relative" id="destinations">
+<section class="py-12 sm:py-16 lg:py-24 bg-sand-50/50 dark:bg-slate-900/60 border-t border-slate-200/60 dark:border-slate-700/60 overflow-hidden relative" id="destinations">
 
     {{-- Decorative Mesh Background Glow --}}
     <div class="absolute top-1/3 left-1/4 w-[min(600px,100vw)] max-w-[100vw] h-[350px] bg-sky-400/5 blur-3xl rounded-full pointer-events-none">
@@ -10,10 +10,10 @@
         <div class="flex flex-col md:flex-row justify-between items-center md:items-end text-center md:text-left gap-6 reveal-on-scroll">
             <div class="max-w-2xl space-y-3 mx-auto md:mx-0">
                 <h2
-                    class="font-headline text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900 leading-tight">
+                    class="font-headline text-3xl md:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100 leading-tight">
                     The Essence of the Archipelago
                 </h2>
-                <p class="text-slate-600 text-xs md:text-sm leading-relaxed max-w-xl font-body mx-auto md:mx-0">
+                <p class="text-slate-600 dark:text-slate-400 text-xs md:text-sm leading-relaxed max-w-xl font-body mx-auto md:mx-0">
                     Each sanctuary is handpicked for its breathtaking natural beauty, pristine beaches, and promise of
                     luxury island living.
                 </p>
@@ -21,7 +21,7 @@
 
             <div class="hidden md:flex items-center gap-2">
                 <span
-                    class="text-xs font-bold text-slate-500 bg-white px-4 py-2 rounded-full border border-slate-200/80 shadow-xs flex items-center gap-1.5">
+                    class="text-xs font-bold text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 px-4 py-2 rounded-full border border-slate-200/80 dark:border-slate-700/80 shadow-xs flex items-center gap-1.5">
                     <span class="material-symbols-outlined text-[16px] text-sky-600">travel_explore</span>
                     <span>{{ $destinations->count() }} Island Destination</span>
                 </span>
@@ -46,7 +46,7 @@
                     $hotelsCount = $dest->hotels ? $dest->hotels->count() : 0;
                     $activitiesCount = $dest->activities ? $dest->activities->count() : 0;
                 @endphp
-                <div class="group relative flex flex-col bg-white border border-slate-200/90 rounded-3xl overflow-hidden shadow-xs hover:shadow-2xl transition-all duration-500 hover:-translate-y-1.5 reveal-on-scroll"
+                <div class="group relative flex flex-col bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-700/90 rounded-3xl overflow-hidden shadow-xs hover:shadow-2xl transition-all duration-500 hover:-translate-y-1.5 reveal-on-scroll"
                     style="transition-delay: {{ ($index % 3) * 100 }}ms;">
 
                     {{-- Destination Photo & Floating Glass Badges --}}
@@ -86,18 +86,18 @@
                     <div class="p-4 sm:p-5 md:p-6 flex flex-col flex-grow space-y-3 md:space-y-4">
                         <div class="space-y-1.5">
                             <h3
-                                class="font-headline text-xl font-bold text-slate-900 group-hover:text-sky-600 transition-colors">
+                                class="font-headline text-xl font-bold text-slate-900 dark:text-slate-100 group-hover:text-sky-600 transition-colors">
                                 {{ $dest->name }}
                             </h3>
-                            <p class="text-slate-500 text-xs leading-relaxed line-clamp-3">
+                            <p class="text-slate-500 dark:text-slate-400 text-xs leading-relaxed line-clamp-3">
                                 {{ $dest->description }}
                             </p>
                         </div>
 
                         {{-- Card Footer --}}
-                        <div class="mt-auto pt-4 border-t border-slate-100 flex items-center justify-between">
+                        <div class="mt-auto pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
                             <a href="{{ route('destinations.show', $dest->id) }}"
-                                class="w-full py-2.5 px-4 rounded-xl bg-slate-50 hover:bg-gradient-to-r hover:from-sky-600 hover:to-sky-700 hover:text-white text-slate-900 font-bold text-xs transition-all duration-300 flex items-center justify-between group/btn shadow-2xs">
+                                class="w-full py-2.5 px-4 rounded-xl bg-slate-50 dark:bg-slate-800 hover:bg-gradient-to-r hover:from-sky-600 hover:to-sky-700 hover:text-white text-slate-900 dark:text-slate-100 font-bold text-xs transition-all duration-300 flex items-center justify-between group/btn shadow-2xs">
                                 <span>Discover Sanctuary</span>
                                 <span
                                     class="material-symbols-outlined text-[18px] transition-transform group-hover/btn:translate-x-1">

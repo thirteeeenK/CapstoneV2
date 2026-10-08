@@ -8,7 +8,7 @@
                 'label' => 'Request Under Review',
                 'icon' => 'hourglass_top',
                 'vars' => '--t-sky1:#fdf6e3; --t-sky2:#fde68a; --t-sky3:#fdba74; --t-sun:#f59e0b; --t-sea1:#0e7490; --t-sea2:#0f5e6b; --t-isle:#134e4a; --t-isle-far:#115e59; --t-palm:#14532d; --t-birds:#92400e;',
-                'chip' => 'bg-amber-100 text-amber-900 border-amber-200',
+                'chip' => 'bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-100 border-amber-200 dark:border-amber-800',
                 'dot' => 'bg-amber-500',
                 'text' => 'text-amber-600',
             ],
@@ -16,7 +16,7 @@
                 'label' => 'Approved · Awaiting Payment',
                 'icon' => 'schedule_send',
                 'vars' => '--t-sky1:#eff6ff; --t-sky2:#93c5fd; --t-sky3:#38bdf8; --t-sun:#fbbf24; --t-sea1:#155e75; --t-sea2:#0e4f6b; --t-isle:#064e3b; --t-isle-far:#065f46; --t-palm:#166534; --t-birds:#1e40af;',
-                'chip' => 'bg-sky-100 text-sky-900 border-sky-200',
+                'chip' => 'bg-sky-100 dark:bg-sky-950/60 text-sky-900 dark:text-sky-100 border-sky-200 dark:border-sky-800',
                 'dot' => 'bg-sky-500',
                 'text' => 'text-sky-600',
             ],
@@ -24,7 +24,7 @@
                 'label' => 'Booking Confirmed',
                 'icon' => 'task_alt',
                 'vars' => '--t-sky1:#f0fdf4; --t-sky2:#a7f3d0; --t-sky3:#6ee7b7; --t-sun:#fbbf24; --t-sea1:#0f766e; --t-sea2:#115e59; --t-isle:#134e4a; --t-isle-far:#115e59; --t-palm:#166534; --t-birds:#065f46;',
-                'chip' => 'bg-emerald-100 text-emerald-900 border-emerald-200',
+                'chip' => 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-900 dark:text-emerald-100 border-emerald-200 dark:border-emerald-800',
                 'dot' => 'bg-emerald-500',
                 'text' => 'text-emerald-600',
             ],
@@ -32,7 +32,7 @@
                 'label' => 'Trip Completed',
                 'icon' => 'celebration',
                 'vars' => '--t-sky1:#f0fdfa; --t-sky2:#5eead4; --t-sky3:#2dd4bf; --t-sun:#fb923c; --t-sea1:#0f766e; --t-sea2:#115e59; --t-isle:#134e4a; --t-isle-far:#115e59; --t-palm:#166534; --t-birds:#0f766e;',
-                'chip' => 'bg-teal-100 text-teal-900 border-teal-200',
+                'chip' => 'bg-teal-100 dark:bg-teal-950/60 text-teal-900 dark:text-teal-100 border-teal-200 dark:border-teal-800',
                 'dot' => 'bg-teal-500',
                 'text' => 'text-teal-600',
             ],
@@ -40,7 +40,7 @@
                 'label' => 'Request Declined',
                 'icon' => 'cancel',
                 'vars' => '--t-sky1:#fafaf9; --t-sky2:#e7e5e4; --t-sky3:#d6d3d1; --t-sun:#fca5a5; --t-sea1:#78716c; --t-sea2:#57534e; --t-isle:#44403c; --t-isle-far:#57534e; --t-palm:#44403c; --t-birds:#57534e;',
-                'chip' => 'bg-rose-100 text-rose-900 border-rose-200',
+                'chip' => 'bg-rose-100 dark:bg-rose-950/60 text-rose-900 dark:text-rose-100 border-rose-200 dark:border-rose-800',
                 'dot' => 'bg-rose-500',
                 'text' => 'text-rose-600',
             ],
@@ -48,7 +48,7 @@
                 'label' => 'Booking Cancelled',
                 'icon' => 'block',
                 'vars' => '--t-sky1:#fafaf9; --t-sky2:#e7e5e4; --t-sky3:#d6d3d1; --t-sun:#d6d3d1; --t-sea1:#78716c; --t-sea2:#57534e; --t-isle:#44403c; --t-isle-far:#57534e; --t-palm:#44403c; --t-birds:#57534e;',
-                'chip' => 'bg-slate-100 text-slate-800 border-slate-200',
+                'chip' => 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-slate-200 dark:border-slate-700',
                 'dot' => 'bg-slate-400',
                 'text' => 'text-slate-500',
             ],
@@ -56,7 +56,7 @@
                 'label' => 'Booking Expired',
                 'icon' => 'schedule',
                 'vars' => '--t-sky1:#fafaf9; --t-sky2:#e7e5e4; --t-sky3:#d6d3d1; --t-sun:#d6d3d1; --t-sea1:#78716c; --t-sea2:#57534e; --t-isle:#44403c; --t-isle-far:#57534e; --t-palm:#44403c; --t-birds:#57534e;',
-                'chip' => 'bg-slate-100 text-slate-800 border-slate-200',
+                'chip' => 'bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border-slate-200 dark:border-slate-700',
                 'dot' => 'bg-slate-400',
                 'text' => 'text-slate-500',
             ],
@@ -64,7 +64,7 @@
                 'label' => 'Cancellation Requested',
                 'icon' => 'hourglass_top',
                 'vars' => '--t-sky1:#fff7ed; --t-sky2:#fed7aa; --t-sky3:#fdba74; --t-sun:#fb923c; --t-sea1:#9a3412; --t-sea2:#7c2d12; --t-isle:#431407; --t-isle-far:#7c2d12; --t-palm:#14532d; --t-birds:#9a3412;',
-                'chip' => 'bg-orange-100 text-orange-900 border-orange-200',
+                'chip' => 'bg-orange-100 dark:bg-orange-950/60 text-orange-900 dark:text-orange-100 border-orange-200 dark:border-orange-800',
                 'dot' => 'bg-orange-500',
                 'text' => 'text-orange-600',
             ],
@@ -72,7 +72,7 @@
                 'label' => 'Cancellation Denied',
                 'icon' => 'block',
                 'vars' => '--t-sky1:#fff1f2; --t-sky2:#fecdd3; --t-sky3:#fda4af; --t-sun:#f43f5e; --t-sea1:#881337; --t-sea2:#7f1d1d; --t-isle:#450a0a; --t-isle-far:#881337; --t-palm:#14532d; --t-birds:#881337;',
-                'chip' => 'bg-rose-100 text-rose-900 border-rose-200',
+                'chip' => 'bg-rose-100 dark:bg-rose-950/60 text-rose-900 dark:text-rose-100 border-rose-200 dark:border-rose-800',
                 'dot' => 'bg-rose-500',
                 'text' => 'text-rose-600',
             ],
@@ -80,36 +80,36 @@
         $t = $themes[$status] ?? $themes['pending'];
     @endphp
 
-    <div class="min-h-screen bg-sand-50/70 font-body">
+    <div class="min-h-screen bg-sand-50 dark:bg-slate-800/70 dark:bg-slate-800/60 font-body">
 
         <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
 
             {{-- Journal masthead --}}
             <div class="flex items-center justify-between mb-5">
-                <p class="font-label text-[10px] uppercase font-bold tracking-[0.25em] text-slate-400">
+                <p class="font-label text-[10px] uppercase font-bold tracking-[0.25em] text-slate-400 dark:text-slate-500">
                     SunnyTrips · Traveler Journal
                 </p>
-                <p class="font-label text-[10px] uppercase font-bold tracking-[0.2em] text-slate-400">
+                <p class="font-label text-[10px] uppercase font-bold tracking-[0.2em] text-slate-400 dark:text-slate-500">
                     {{ now()->format('M j, Y') }}
                 </p>
             </div>
 
             @if (session('success'))
-                <div class="bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-sm px-4 py-3 rounded-2xl mb-6 flex items-center gap-2 animate-fade-in">
+                <div class="bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200/80 dark:border-emerald-800/80 text-emerald-800 dark:text-emerald-100 text-sm px-4 py-3 rounded-2xl mb-6 flex items-center gap-2 animate-fade-in">
                     <span class="material-symbols-outlined text-[20px] text-emerald-600">check_circle</span>
                     <span>{{ session('success') }}</span>
                 </div>
             @endif
 
             @if (session('error'))
-                <div class="bg-rose-50 border border-rose-200/80 text-rose-800 text-sm px-4 py-3 rounded-2xl mb-6 flex items-center gap-2 animate-fade-in">
+                <div class="bg-rose-50 dark:bg-rose-950/60 border border-rose-200/80 dark:border-rose-800/80 text-rose-800 dark:text-rose-100 text-sm px-4 py-3 rounded-2xl mb-6 flex items-center gap-2 animate-fade-in">
                     <span class="material-symbols-outlined text-[20px] text-rose-600">error</span>
                     <span>{{ session('error') }}</span>
                 </div>
             @endif
 
             {{-- ============ HERO: THE ISLAND SCENE ============ --}}
-            <section class="relative overflow-hidden rounded-[2rem] shadow-xl shadow-slate-900/5 border border-sand-200/80 animate-fade-up"
+            <section class="relative overflow-hidden rounded-[2rem] shadow-xl shadow-slate-900/5 border border-sand-200/80 dark:border-slate-700/80 animate-fade-up"
                      style="{{ $t['vars'] }}">
 
                 {{-- Dusk seascape illustration --}}
@@ -327,23 +327,23 @@
             </section>
 
             @if ($status === 'approved')
-                <section class="mt-6 bg-white rounded-[2rem] border border-sand-200/80 shadow-sm overflow-hidden">
+                <section class="mt-6 bg-white dark:bg-slate-900 rounded-[2rem] border border-sand-200/80 dark:border-slate-700/80 shadow-sm overflow-hidden">
                     <div class="p-6 sm:p-8">
                         <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
                             <div class="flex items-start gap-3">
-                                <span class="w-10 h-10 rounded-2xl bg-ocean-50 text-ocean-600 border border-ocean-100 flex items-center justify-center shrink-0">
+                                <span class="w-10 h-10 rounded-2xl bg-ocean-50 dark:bg-ocean-900/50 text-ocean-600 border border-ocean-100 dark:border-ocean-800 flex items-center justify-center shrink-0">
                                     <span class="material-symbols-outlined text-[20px]">payments</span>
                                 </span>
                                 <div>
-                                    <h2 class="font-headline text-base font-bold text-slate-900">Secure Payment</h2>
-                                    <p class="text-xs text-slate-500 mt-0.5 leading-relaxed">Choose how you'd like to pay — your reservation is held until the deadline.</p>
+                                    <h2 class="font-headline text-base font-bold text-slate-900 dark:text-slate-100">Secure Payment</h2>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">Choose how you'd like to pay — your reservation is held until the deadline.</p>
                                 </div>
                             </div>
-                            <div class="text-left sm:text-right shrink-0 bg-sand-50 border border-sand-200 rounded-2xl px-4 py-3 sm:bg-transparent sm:border-0 sm:px-0 sm:py-0">
-                                <p class="font-label text-[10px] uppercase font-bold tracking-[0.15em] text-slate-400">Amount due</p>
-                                <p class="font-headline text-xl font-black text-slate-900">₱{{ number_format((float)$booking->net_amount, 2) }}</p>
+                            <div class="text-left sm:text-right shrink-0 bg-sand-50 dark:bg-slate-800 dark:bg-slate-800 border border-sand-200 dark:border-slate-700 dark:border-slate-700 rounded-2xl px-4 py-3 sm:bg-transparent sm:border-0 sm:px-0 sm:py-0">
+                                <p class="font-label text-[10px] uppercase font-bold tracking-[0.15em] text-slate-400 dark:text-slate-500">Amount due</p>
+                                <p class="font-headline text-xl font-black text-slate-900 dark:text-slate-100">₱{{ number_format((float)$booking->net_amount, 2) }}</p>
                                 @if ($booking->payment_deadline)
-                                    <p class="text-[11px] font-semibold text-amber-700 mt-1 flex items-center gap-1 sm:justify-end">
+                                    <p class="text-[11px] font-semibold text-amber-700 dark:text-amber-100 mt-1 flex items-center gap-1 sm:justify-end">
                                         <span class="material-symbols-outlined text-[14px]">hourglass_bottom</span>
                                         Due {{ $booking->payment_deadline->format('M j · g:i A') }}
                                     </p>
@@ -355,25 +355,25 @@
                             <form action="{{ route('booking.pay.process', $booking->booking_code) }}" method="POST"
                                   @submit="if (!chosen) { tried = true; $event.preventDefault(); }">
                                 @csrf
-                                <p class="font-label text-[10px] uppercase font-bold tracking-[0.15em] text-slate-400 mb-3">Select a payment method</p>
+                                <p class="font-label text-[10px] uppercase font-bold tracking-[0.15em] text-slate-400 dark:text-slate-500 mb-3">Select a payment method</p>
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                     @if (!empty($gateways['card']))
                                         <label class="cursor-pointer rounded-2xl border-2 p-4 transition flex items-start gap-3"
-                                               :class="chosen === 'card' ? 'border-sky-500 bg-sky-50/70 shadow-sm' : 'border-slate-200 bg-white hover:border-slate-300'">
+                                               :class="chosen === 'card' ? 'border-sky-500 bg-sky-50/70 dark:bg-sky-950/60 shadow-sm' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-600'">
                                             <input type="radio" name="gateway" value="card" x-model="chosen" @change="tried = false" class="mt-0.5 accent-sky-600 cursor-pointer">
                                             <span>
-                                                <span class="flex items-center gap-1.5 text-sm font-extrabold text-slate-900"><span class="material-symbols-outlined text-[16px] text-sky-600">credit_card</span>Card</span>
-                                                <span class="block text-[11px] text-slate-500 mt-0.5">Visa / Mastercard via Stripe</span>
+                                                <span class="flex items-center gap-1.5 text-sm font-extrabold text-slate-900 dark:text-slate-100"><span class="material-symbols-outlined text-[16px] text-sky-600">credit_card</span>Card</span>
+                                                <span class="block text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Visa / Mastercard via Stripe</span>
                                             </span>
                                         </label>
                                     @endif
                                     @if (!empty($gateways['qrph']))
                                         <label class="cursor-pointer rounded-2xl border-2 p-4 transition flex items-start gap-3"
-                                               :class="chosen === 'qrph' ? 'border-emerald-500 bg-emerald-50/70 shadow-sm' : 'border-slate-200 bg-white hover:border-slate-300'">
+                                               :class="chosen === 'qrph' ? 'border-emerald-500 bg-emerald-50/70 dark:bg-emerald-950/60 shadow-sm' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-600'">
                                             <input type="radio" name="gateway" value="qrph" x-model="chosen" @change="tried = false" class="mt-0.5 accent-emerald-600 cursor-pointer">
                                             <span>
-                                                <span class="flex items-center gap-1.5 text-sm font-extrabold text-slate-900"><span class="material-symbols-outlined text-[16px] text-emerald-600">qr_code_2</span>QRPH</span>
-                                                <span class="block text-[11px] text-slate-500 mt-0.5">GCash · GoTyme · Maya — scan to pay</span>
+                                                <span class="flex items-center gap-1.5 text-sm font-extrabold text-slate-900 dark:text-slate-100"><span class="material-symbols-outlined text-[16px] text-emerald-600">qr_code_2</span>QRPH</span>
+                                                <span class="block text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">GCash · GoTyme · Maya — scan to pay</span>
                                             </span>
                                         </label>
                                     @endif
@@ -386,7 +386,7 @@
                             </form>
                         </div>
 
-                        <p class="text-[11px] text-center text-slate-400 font-medium mt-3">Payment can be retried from this page at any time before the deadline. No payment was taken yet.</p>
+                        <p class="text-[11px] text-center text-slate-400 dark:text-slate-500 font-medium mt-3">Payment can be retried from this page at any time before the deadline. No payment was taken yet.</p>
                     </div>
                 </section>
             @endif
@@ -398,34 +398,34 @@
                 <div class="lg:col-span-2 space-y-6">
 
                     {{-- 1. Expedition Itinerary --}}
-                    <section class="bg-white rounded-3xl border border-sand-200/80 shadow-xs overflow-hidden">
-                        <header class="px-6 sm:px-8 pt-6 pb-4 border-b border-sand-100 flex items-center justify-between gap-3">
-                            <h2 class="font-headline text-base font-bold text-slate-900 flex items-center gap-2.5">
-                                <span class="w-8 h-8 rounded-xl bg-ocean-50 text-ocean-600 border border-ocean-100 flex items-center justify-center">
+                    <section class="bg-white dark:bg-slate-900 rounded-3xl border border-sand-200/80 dark:border-slate-700/80 shadow-xs overflow-hidden">
+                        <header class="px-6 sm:px-8 pt-6 pb-4 border-b border-sand-100 dark:border-slate-800 flex items-center justify-between gap-3">
+                            <h2 class="font-headline text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2.5">
+                                <span class="w-8 h-8 rounded-xl bg-ocean-50 dark:bg-ocean-900/50 text-ocean-600 border border-ocean-100 dark:border-ocean-800 flex items-center justify-center">
                                     <span class="material-symbols-outlined text-[18px]">luggage</span>
                                 </span>
                                 Expedition Itinerary
                             </h2>
-                            <span class="font-label text-[10px] uppercase font-bold tracking-[0.15em] text-slate-400">
+                            <span class="font-label text-[10px] uppercase font-bold tracking-[0.15em] text-slate-400 dark:text-slate-500">
                                 {{ $booking->items->count() }} {{ Str::plural('item', $booking->items->count()) }}
                             </span>
                         </header>
 
-                        <div class="px-6 sm:px-8 divide-y divide-sand-100">
+                        <div class="px-6 sm:px-8 divide-y divide-sand-100 dark:divide-slate-800">
                             @foreach($booking->items as $item)
                                 <div class="py-5 flex items-center justify-between gap-4">
                                     <div class="flex items-center gap-4 min-w-0">
-                                        <div class="w-12 h-12 rounded-2xl bg-sand-100 text-slate-700 border border-sand-200 flex items-center justify-center shrink-0">
+                                        <div class="w-12 h-12 rounded-2xl bg-sand-100 dark:bg-slate-800 text-slate-700 border border-sand-200 dark:border-slate-700 flex items-center justify-center shrink-0">
                                             <span class="material-symbols-outlined text-xl">
                                                 {{ $item->item_type === 'room' ? 'hotel' : ($item->item_type === 'activity' ? 'explore' : 'card_travel') }}
                                             </span>
                                         </div>
                                         <div class="min-w-0">
                                             @if($item->hotel_name)
-                                                <p class="font-label text-[9px] font-bold text-ocean-700 uppercase tracking-[0.15em] mb-0.5">{{ $item->hotel_name }}</p>
+                                                <p class="font-label text-[9px] font-bold text-ocean-700 dark:text-ocean-100 uppercase tracking-[0.15em] mb-0.5">{{ $item->hotel_name }}</p>
                                             @endif
-                                            <h3 class="text-sm font-bold text-slate-900 truncate font-headline">{{ $item->item_title }}</h3>
-                                            <p class="text-xs text-slate-500">
+                                            <h3 class="text-sm font-bold text-slate-900 dark:text-slate-100 truncate font-headline">{{ $item->item_title }}</h3>
+                                            <p class="text-xs text-slate-500 dark:text-slate-400">
                                                 @if($item->check_in_date && $item->check_out_date)
                                                     {{ date('M j, Y', strtotime($item->check_in_date)) }} – {{ date('M j, Y', strtotime($item->check_out_date)) }}
                                                     <span class="text-slate-400">· {{ $item->nights }} {{ Str::plural('night', $item->nights) }}</span>
@@ -442,9 +442,9 @@
                                         </div>
                                     </div>
                                     <div class="text-right shrink-0">
-                                        <span class="text-[10px] text-slate-400 font-semibold block">Qty × {{ $item->quantity }}</span>
+                                        <span class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold block">Qty × {{ $item->quantity }}</span>
                                         @if($item->availability_status !== 'unavailable')
-                                            <span class="text-sm font-black text-slate-900">₱{{ number_format($item->subtotal, 2) }}</span>
+                                            <span class="text-sm font-black text-slate-900 dark:text-slate-100">₱{{ number_format($item->subtotal, 2) }}</span>
                                         @else
                                             <span class="text-xs font-bold text-rose-500">Excluded</span>
                                         @endif
@@ -456,32 +456,32 @@
 
                     {{-- 2. Ship Manifest --}}
                     @if(!empty($booking->guest_manifest) && is_array($booking->guest_manifest) && count($booking->guest_manifest) > 0)
-                        <section class="bg-white rounded-3xl border border-sand-200/80 shadow-xs overflow-hidden">
-                            <header class="px-6 sm:px-8 pt-6 pb-4 border-b border-sand-100 flex items-center justify-between gap-3">
-                                <h2 class="font-headline text-base font-bold text-slate-900 flex items-center gap-2.5">
+                        <section class="bg-white dark:bg-slate-900 rounded-3xl border border-sand-200/80 dark:border-slate-700/80 shadow-xs overflow-hidden">
+                            <header class="px-6 sm:px-8 pt-6 pb-4 border-b border-sand-100 dark:border-slate-800 flex items-center justify-between gap-3">
+                                <h2 class="font-headline text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2.5">
                                     <span class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 border border-amber-100 flex items-center justify-center">
                                         <span class="material-symbols-outlined text-[18px]">groups</span>
                                     </span>
                                     Ship Manifest
                                 </h2>
-                                <span class="font-label text-[10px] uppercase font-bold tracking-[0.15em] text-slate-400">
+                                <span class="font-label text-[10px] uppercase font-bold tracking-[0.15em] text-slate-400 dark:text-slate-500">
                                     {{ count($booking->guest_manifest) }} {{ Str::plural('guest', count($booking->guest_manifest)) }}
                                 </span>
                             </header>
 
                             <div class="px-6 sm:px-8 py-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 @foreach($booking->guest_manifest as $idx => $guest)
-                                    <div class="bg-sand-50 p-4 rounded-2xl border border-sand-200/70 flex items-center justify-between gap-3">
+                                    <div class="bg-sand-50 dark:bg-slate-800 p-4 rounded-2xl border border-sand-200/70 dark:border-slate-700/70 flex items-center justify-between gap-3">
                                         <div class="flex items-center gap-3 min-w-0">
-                                            <div class="w-9 h-9 rounded-xl bg-white border border-sand-200 text-slate-700 font-black text-xs flex items-center justify-center font-headline">
+                                            <div class="w-9 h-9 rounded-xl bg-white dark:bg-slate-900 border border-sand-200 dark:border-slate-700 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-black text-xs flex items-center justify-center font-headline">
                                                 {{ str_pad($idx + 1, 2, '0', STR_PAD_LEFT) }}
                                             </div>
                                             <div class="min-w-0">
-                                                <h4 class="text-xs font-bold text-slate-900 truncate">{{ $guest['full_name'] ?? 'Guest' }}</h4>
-                                                <p class="text-[10px] text-slate-500 truncate">{{ $guest['special_notes'] ?? 'No special requests' }}</p>
+                                                <h4 class="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">{{ $guest['full_name'] ?? 'Guest' }}</h4>
+                                                <p class="text-[10px] text-slate-500 dark:text-slate-400 truncate">{{ $guest['special_notes'] ?? 'No special requests' }}</p>
                                             </div>
                                         </div>
-                                        <span class="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-white border border-sand-200 text-slate-700 whitespace-nowrap">
+                                        <span class="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-white dark:bg-slate-900 border border-sand-200 dark:border-slate-700 dark:border-slate-700 text-slate-700 dark:text-slate-200 whitespace-nowrap">
                                             {{ $guest['category'] ?? 'Adult' }}
                                         </span>
                                     </div>
@@ -500,9 +500,9 @@
                                 ['label' => 'Pay to confirm', 'desc' => 'Settle the balance within 48 hours.', 'state' => $status === 'pending' ? 'todo' : 'current'],
                             ];
                         @endphp
-                        <section class="bg-white rounded-3xl border border-sand-200/80 shadow-xs p-6 sm:p-8">
-                            <h2 class="font-headline text-base font-bold text-slate-900 flex items-center gap-2.5 mb-6">
-                                <span class="w-8 h-8 rounded-xl bg-ocean-50 text-ocean-600 border border-ocean-100 flex items-center justify-center">
+                        <section class="bg-white dark:bg-slate-900 rounded-3xl border border-sand-200/80 dark:border-slate-700/80 shadow-xs p-6 sm:p-8">
+                            <h2 class="font-headline text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2.5 mb-6">
+                                <span class="w-8 h-8 rounded-xl bg-ocean-50 dark:bg-ocean-900/50 text-ocean-600 border border-ocean-100 dark:border-ocean-800 flex items-center justify-center">
                                     <span class="material-symbols-outlined text-[18px]">explore</span>
                                 </span>
                                 The Journey Ahead
@@ -525,14 +525,14 @@
                                                         </div>
                                                     </div>
                                                 @else
-                                                    <div class="w-9 h-9 rounded-full bg-sand-100 border border-sand-200 text-slate-400 flex items-center justify-center">
+                                                    <div class="w-9 h-9 rounded-full bg-sand-100 dark:bg-slate-800 border border-sand-200 dark:border-slate-700 dark:border-slate-700 text-slate-400 dark:text-slate-500 flex items-center justify-center">
                                                         <span class="material-symbols-outlined text-[16px]">circle</span>
                                                     </div>
                                                 @endif
                                             </div>
                                             <div class="min-w-0">
-                                                <p class="text-xs font-bold {{ $step['state'] === 'todo' ? 'text-slate-400' : 'text-slate-900' }}">{{ $step['label'] }}</p>
-                                                <p class="text-[10px] text-slate-500 leading-snug mt-0.5">{{ $step['desc'] }}</p>
+                                                <p class="text-xs font-bold {{ $step['state'] === 'todo' ? 'text-slate-400 dark:text-slate-500' : 'text-slate-900 dark:text-slate-100' }}">{{ $step['label'] }}</p>
+                                                <p class="text-[10px] text-slate-500 dark:text-slate-400 leading-snug mt-0.5">{{ $step['desc'] }}</p>
                                             </div>
                                         </div>
                                     </li>
@@ -546,16 +546,16 @@
                 <div class="space-y-6">
 
                     {{-- Captain's ledger --}}
-                    <section class="bg-white rounded-3xl border border-sand-200/80 shadow-xs p-6">
-                        <h2 class="font-headline text-sm font-bold text-slate-900 flex items-center gap-2 mb-4">
-                            <span class="w-7 h-7 rounded-lg bg-sand-100 text-slate-600 border border-sand-200 flex items-center justify-center">
+                    <section class="bg-white dark:bg-slate-900 rounded-3xl border border-sand-200/80 dark:border-slate-700/80 shadow-xs p-6">
+                        <h2 class="font-headline text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2 mb-4">
+                            <span class="w-7 h-7 rounded-lg bg-sand-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-sand-200 dark:border-slate-700 flex items-center justify-center">
                                 <span class="material-symbols-outlined text-[15px]">menu_book</span>
                             </span>
                             Captain's Ledger
                         </h2>
                         <dl class="space-y-2.5 text-xs">
                             <div class="flex items-center justify-between gap-2">
-                                <dt class="text-slate-400 font-medium">Status</dt>
+                                <dt class="text-slate-400 dark:text-slate-500 font-medium">Status</dt>
                                 <dd>
                                     <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider {{ $t['chip'] }}">
                                         <span class="w-1.5 h-1.5 rounded-full {{ $t['dot'] }}"></span>
@@ -564,13 +564,13 @@
                                 </dd>
                             </div>
                             <div class="flex items-center justify-between gap-2">
-                                <dt class="text-slate-400 font-medium">Payment</dt>
-                                <dd class="font-bold text-slate-900 uppercase tracking-wider">{{ $booking->payment_status }}</dd>
+                                <dt class="text-slate-400 dark:text-slate-500 font-medium">Payment</dt>
+                                <dd class="font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider">{{ $booking->payment_status }}</dd>
                             </div>
                             @if ($booking->payment_method)
                                 <div class="flex items-center justify-between gap-2">
-                                    <dt class="text-slate-400 font-medium">Method</dt>
-                                    <dd class="font-bold text-slate-900 uppercase tracking-wider">
+                                    <dt class="text-slate-400 dark:text-slate-500 font-medium">Method</dt>
+                                    <dd class="font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider">
                                         @if($booking->payment_method === 'qrph')
                                             <span class="inline-flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-emerald-600">qr_code_2</span> QRPH · GCash/GoTyme</span>
                                         @else
@@ -581,33 +581,33 @@
                             @endif
                             @if ($booking->payment_deadline)
                                 <div class="flex items-center justify-between gap-2">
-                                    <dt class="text-slate-400 font-medium">Deadline</dt>
-                                    <dd class="font-bold text-slate-900">{{ $booking->payment_deadline->format('M j · g:i A') }}</dd>
+                                    <dt class="text-slate-400 dark:text-slate-500 font-medium">Deadline</dt>
+                                    <dd class="font-bold text-slate-900 dark:text-slate-100">{{ $booking->payment_deadline->format('M j · g:i A') }}</dd>
                                 </div>
                             @endif
                             @if ($booking->gateway_reference)
                                 <div class="flex items-start justify-between gap-2">
-                                    <dt class="text-slate-400 font-medium shrink-0">Reference</dt>
-                                    <dd class="font-mono font-bold text-slate-900 text-[11px] break-all text-right min-w-0">{{ $booking->gateway_reference }}</dd>
+                                    <dt class="text-slate-400 dark:text-slate-500 font-medium shrink-0">Reference</dt>
+                                    <dd class="font-mono font-bold text-slate-900 dark:text-slate-100 text-[11px] break-all text-right min-w-0">{{ $booking->gateway_reference }}</dd>
                                 </div>
                             @endif
                             <div class="flex items-center justify-between gap-2">
-                                <dt class="text-slate-400 font-medium">Submitted</dt>
-                                <dd class="font-bold text-slate-900">{{ $booking->created_at->format('M j, Y') }}</dd>
+                                <dt class="text-slate-400 dark:text-slate-500 font-medium">Submitted</dt>
+                                <dd class="font-bold text-slate-900 dark:text-slate-100">{{ $booking->created_at->format('M j, Y') }}</dd>
                             </div>
                         </dl>
                     </section>
 
                     {{-- Lead traveler --}}
-                    <section class="bg-white rounded-3xl border border-sand-200/80 shadow-xs p-6">
-                        <h2 class="font-headline text-sm font-bold text-slate-900 flex items-center gap-2 mb-4">
-                            <span class="w-7 h-7 rounded-lg bg-sand-100 text-slate-600 border border-sand-200 flex items-center justify-center">
+                    <section class="bg-white dark:bg-slate-900 rounded-3xl border border-sand-200/80 dark:border-slate-700/80 shadow-xs p-6">
+                        <h2 class="font-headline text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2 mb-4">
+                            <span class="w-7 h-7 rounded-lg bg-sand-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-sand-200 dark:border-slate-700 flex items-center justify-center">
                                 <span class="material-symbols-outlined text-[15px]">sailing</span>
                             </span>
                             Lead Traveler
                         </h2>
-                        <p class="text-sm font-black text-slate-900 font-headline">{{ $booking->contact_name }}</p>
-                        <div class="mt-2 space-y-1.5 text-xs text-slate-600">
+                        <p class="text-sm font-black text-slate-900 dark:text-slate-100 font-headline">{{ $booking->contact_name }}</p>
+                        <div class="mt-2 space-y-1.5 text-xs text-slate-600 dark:text-slate-400">
                             <p class="flex items-center gap-1.5">
                                 <span class="material-symbols-outlined text-[14px] text-slate-400">mail</span>
                                 <span class="truncate">{{ $booking->contact_email }}</span>
@@ -618,17 +618,17 @@
                             </p>
                         </div>
                         @if ($booking->special_requests)
-                            <div class="mt-4 pt-4 border-t border-sand-100">
-                                <p class="font-label text-[9px] uppercase font-bold tracking-[0.15em] text-slate-400 mb-1">Special requests</p>
-                                <p class="text-xs text-slate-600 leading-relaxed">{{ $booking->special_requests }}</p>
+                            <div class="mt-4 pt-4 border-t border-sand-100 dark:border-slate-800">
+                                <p class="font-label text-[9px] uppercase font-bold tracking-[0.15em] text-slate-400 dark:text-slate-500 mb-1">Special requests</p>
+                                <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">{{ $booking->special_requests }}</p>
                             </div>
                         @endif
                     </section>
 
                     {{-- Travel Documents (uploaded by admin) --}}
                     @if($booking->attachments->isNotEmpty())
-                    <section class="bg-white rounded-3xl border border-sand-200/80 shadow-xs p-6">
-                        <h2 class="font-headline text-sm font-bold text-slate-900 flex items-center gap-2 mb-4">
+                    <section class="bg-white dark:bg-slate-900 rounded-3xl border border-sand-200/80 dark:border-slate-700/80 shadow-xs p-6">
+                        <h2 class="font-headline text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2 mb-4">
                             <span class="w-7 h-7 rounded-lg bg-sky-100 text-sky-700 border border-sky-200 flex items-center justify-center">
                                 <span class="material-symbols-outlined text-[15px]">folder_shared</span>
                             </span>
@@ -637,22 +637,22 @@
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                             @foreach($booking->attachments as $doc)
                                 <a href="{{ asset('storage/' . $doc->path) }}" target="_blank"
-                                   class="flex items-center gap-3 bg-sand-50/60 border border-sand-200/80 rounded-2xl p-3 hover:border-sky-300 hover:shadow-sm transition group">
+                                   class="flex items-center gap-3 bg-sand-50/60 dark:bg-slate-800/60 border border-sand-200/80 dark:border-slate-700/80 rounded-2xl p-3 hover:border-sky-300 hover:shadow-sm transition group">
                                     @if($doc->isImage())
-                                        <img src="{{ asset('storage/' . $doc->path) }}" alt="{{ $doc->label }}" class="w-14 h-14 rounded-xl object-cover shrink-0 border border-sand-200">
+                                        <img src="{{ asset('storage/' . $doc->path) }}" alt="{{ $doc->label }}" class="w-14 h-14 rounded-xl object-cover shrink-0 border border-sand-200 dark:border-slate-700">
                                     @else
                                         <span class="w-14 h-14 rounded-xl bg-rose-50 text-rose-600 border border-rose-200 flex items-center justify-center shrink-0">
                                             <span class="material-symbols-outlined">picture_as_pdf</span>
                                         </span>
                                     @endif
                                     <span class="flex-1 min-w-0">
-                                        <span class="block text-xs font-bold text-slate-900 truncate group-hover:text-sky-800">{{ $doc->label }}</span>
-                                        <span class="block text-[10px] text-slate-500 font-medium mt-0.5">
+                                        <span class="block text-xs font-bold text-slate-900 dark:text-slate-100 truncate group-hover:text-sky-800 dark:group-hover:text-sky-300">{{ $doc->label }}</span>
+                                        <span class="block text-[10px] text-slate-500 dark:text-slate-400 font-medium mt-0.5">
                                             {{ ucfirst($doc->kind) }}
                                             @if($doc->item) · {{ Str::limit($doc->item->item_title, 30) }} @endif
                                         </span>
                                     </span>
-                                    <span class="material-symbols-outlined text-slate-400 group-hover:text-sky-600 text-lg shrink-0">open_in_new</span>
+                                    <span class="material-symbols-outlined text-slate-400 dark:text-slate-500 group-hover:text-sky-600 dark:group-hover:text-sky-400 text-lg shrink-0">open_in_new</span>
                                 </a>
                             @endforeach
                         </div>
@@ -660,9 +660,9 @@
                     @endif
 
                     {{-- Settlement --}}
-                    <section class="bg-white rounded-3xl border border-sand-200/80 shadow-xs p-6">
-                        <h2 class="font-headline text-sm font-bold text-slate-900 flex items-center gap-2 mb-4">
-                            <span class="w-7 h-7 rounded-lg bg-sand-100 text-slate-600 border border-sand-200 flex items-center justify-center">
+                    <section class="bg-white dark:bg-slate-900 rounded-3xl border border-sand-200/80 dark:border-slate-700/80 shadow-xs p-6">
+                        <h2 class="font-headline text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2 mb-4">
+                            <span class="w-7 h-7 rounded-lg bg-sand-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-sand-200 dark:border-slate-700 flex items-center justify-center">
                                 <span class="material-symbols-outlined text-[15px]">receipt_long</span>
                             </span>
                             Settlement
@@ -673,9 +673,9 @@
                         @endphp
 
                         <dl class="space-y-2 text-xs">
-                            <div class="flex items-center justify-between text-slate-600">
+                            <div class="flex items-center justify-between text-slate-600 dark:text-slate-400">
                                 <dt>Subtotal</dt>
-                                <dd class="font-bold text-slate-900">₱{{ number_format($booking->total_amount, 2) }}</dd>
+                                <dd class="font-bold text-slate-900 dark:text-slate-100">₱{{ number_format($booking->total_amount, 2) }}</dd>
                             </div>
 
                             @if(!empty($booking->guest_manifest) && is_array($booking->guest_manifest))
@@ -685,7 +685,7 @@
                                         $rule = $rulesMap[$cat] ?? null;
                                     @endphp
                                     @if($rule && $rule->adjustment_type === 'discount' && (float)$rule->amount > 0)
-                                        <div class="flex items-center justify-between text-emerald-700 font-semibold">
+                                        <div class="flex items-center justify-between text-emerald-700 dark:text-emerald-100 font-semibold">
                                             <dt class="flex items-center gap-1 min-w-0">
                                                 <span class="material-symbols-outlined text-[13px]">percent</span>
                                                 <span class="truncate">{{ $rule->display_label }}</span>
@@ -693,7 +693,7 @@
                                             <dd>-₱{{ number_format((float)$rule->amount, 2) }}</dd>
                                         </div>
                                     @elseif($rule && $rule->adjustment_type === 'surcharge' && (float)$rule->amount > 0)
-                                        <div class="flex items-center justify-between text-amber-800 font-semibold">
+                                        <div class="flex items-center justify-between text-amber-800 dark:text-amber-100 font-semibold">
                                             <dt class="flex items-center gap-1 min-w-0">
                                                 <span class="material-symbols-outlined text-[13px]">public</span>
                                                 <span class="truncate">{{ $rule->display_label }}</span>
@@ -704,13 +704,13 @@
                                 @endforeach
                             @else
                                 @if($booking->discount_amount > 0)
-                                    <div class="flex items-center justify-between text-emerald-700 font-semibold">
+                                    <div class="flex items-center justify-between text-emerald-700 dark:text-emerald-100 font-semibold">
                                         <dt>Passenger Discount</dt>
                                         <dd>-₱{{ number_format($booking->discount_amount, 2) }}</dd>
                                     </div>
                                 @endif
                                 @if($booking->tax_amount > 0)
-                                    <div class="flex items-center justify-between text-amber-800 font-semibold">
+                                    <div class="flex items-center justify-between text-amber-800 dark:text-amber-100 font-semibold">
                                         <dt>Foreign Tourist Surcharge</dt>
                                         <dd>+₱{{ number_format($booking->tax_amount, 2) }}</dd>
                                     </div>
@@ -718,23 +718,23 @@
                             @endif
 
                             @if($booking->admin_discount_amount > 0)
-                                <div class="flex items-center justify-between text-emerald-700 font-semibold">
+                                <div class="flex items-center justify-between text-emerald-700 dark:text-emerald-100 font-semibold">
                                     <dt>Admin discount</dt>
                                     <dd>-₱{{ number_format($booking->admin_discount_amount, 2) }}</dd>
                                 </div>
                             @endif
                             @if($booking->admin_surcharge_amount > 0)
-                                <div class="flex items-center justify-between text-amber-800 font-semibold">
+                                <div class="flex items-center justify-between text-amber-800 dark:text-amber-100 font-semibold">
                                     <dt>Additional amount</dt>
                                     <dd>+₱{{ number_format($booking->admin_surcharge_amount, 2) }}</dd>
                                 </div>
                             @endif
 
-                            <div class="flex items-center justify-between pt-3 mt-2 border-t-2 border-dashed border-sand-200">
-                                <dt class="font-headline text-sm font-bold text-slate-900">
+                            <div class="flex items-center justify-between pt-3 mt-2 border-t-2 border-dashed border-sand-200 dark:border-slate-700 dark:border-slate-700">
+                                <dt class="font-headline text-sm font-bold text-slate-900 dark:text-slate-100">
                                     {{ $paidOrDone ? 'Total paid' : 'Total due' }}
                                 </dt>
-                                <dd class="font-headline text-xl font-black text-ocean-800">₱{{ number_format($booking->net_amount, 2) }}</dd>
+                                <dd class="font-headline text-xl font-black text-ocean-800 dark:text-ocean-100">₱{{ number_format($booking->net_amount, 2) }}</dd>
                             </div>
                         </dl>
 
@@ -743,8 +743,8 @@
                                 $adjOnlyDiscount = $booking->admin_discount_amount > 0 && $booking->admin_surcharge_amount == 0;
                                 $adjOnlySurcharge = $booking->admin_surcharge_amount > 0 && $booking->admin_discount_amount == 0;
                                 $adjCardClasses = $adjOnlySurcharge
-                                    ? 'bg-amber-50 border-amber-200 text-amber-900'
-                                    : 'bg-emerald-50 border-emerald-200 text-emerald-900';
+                                    ? 'bg-amber-50 dark:bg-amber-950/60 border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-100'
+                                    : 'bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-100';
                                 $adjIcon = $adjOnlyDiscount ? 'savings' : ($adjOnlySurcharge ? 'add_card' : 'swap_vert');
                             @endphp
                             <div class="mt-4 rounded-2xl border px-4 py-3 text-xs leading-relaxed {{ $adjCardClasses }}">
@@ -759,9 +759,9 @@
 
                     {{-- Under-review checklist (pending only) --}}
                     @if ($status === 'pending')
-                        <section class="bg-amber-50/70 border border-amber-200/80 rounded-3xl p-6">
-                            <h2 class="font-headline text-sm font-bold text-amber-900 flex items-center gap-2 mb-4">
-                                <span class="w-7 h-7 rounded-lg bg-white text-amber-600 border border-amber-200 flex items-center justify-center">
+                        <section class="bg-amber-50/70 dark:bg-amber-950/60 border border-amber-200/80 dark:border-amber-800/80 rounded-3xl p-6">
+                            <h2 class="font-headline text-sm font-bold text-amber-900 dark:text-amber-100 flex items-center gap-2 mb-4">
+                                <span class="w-7 h-7 rounded-lg bg-white dark:bg-slate-900 text-amber-600 border border-amber-200 dark:border-amber-800 flex items-center justify-center">
                                     <span class="material-symbols-outlined text-[15px]">fact_check</span>
                                 </span>
                                 What we're checking
@@ -769,15 +769,15 @@
                             <ul class="space-y-3 text-xs">
                                 <li class="flex items-start gap-2.5">
                                     <span class="material-symbols-outlined text-[16px] text-amber-600 mt-0.5">calendar_month</span>
-                                    <span class="text-amber-900/90 font-medium leading-relaxed">Dates are open for every room, tour & add-on in your journal.</span>
+                                    <span class="text-amber-900/90 dark:text-amber-100/90 font-medium leading-relaxed">Dates are open for every room, tour & add-on in your journal.</span>
                                 </li>
                                 <li class="flex items-start gap-2.5">
                                     <span class="material-symbols-outlined text-[16px] text-amber-600 mt-0.5">scale</span>
-                                    <span class="text-amber-900/90 font-medium leading-relaxed">Pricing matches our current rates, promos & passenger rules.</span>
+                                    <span class="text-amber-900/90 dark:text-amber-100/90 font-medium leading-relaxed">Pricing matches our current rates, promos & passenger rules.</span>
                                 </li>
                                 <li class="flex items-start gap-2.5">
                                     <span class="material-symbols-outlined text-[16px] text-amber-600 mt-0.5">mark_email_read</span>
-                                    <span class="text-amber-900/90 font-medium leading-relaxed">We'll email <strong class="text-amber-950">{{ $booking->contact_email }}</strong> the moment it's approved — usually within the day.</span>
+                                    <span class="text-amber-900/90 dark:text-amber-100/90 font-medium leading-relaxed">We'll email <strong class="text-amber-950 dark:text-amber-100">{{ $booking->contact_email }}</strong> the moment it's approved — usually within the day.</span>
                                 </li>
                             </ul>
                         </section>
@@ -790,24 +790,24 @@
 
                 {{-- Cancellation request zone (pending/approved → request; requested → withdraw; denied → info) --}}
                 @if (in_array($status, ['pending', 'approved'], true))
-                    <section class="bg-white rounded-3xl border border-sand-200/80 shadow-xs p-6">
+                    <section class="bg-white dark:bg-slate-900 rounded-3xl border border-sand-200/80 dark:border-slate-700/80 shadow-xs p-6">
                         <div class="flex items-start gap-3 mb-4">
-                            <div class="w-10 h-10 rounded-2xl bg-rose-50 text-rose-600 border border-rose-100 flex items-center justify-center shrink-0">
+                            <div class="w-10 h-10 rounded-2xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 border border-rose-100 dark:border-rose-800 flex items-center justify-center shrink-0">
                                 <span class="material-symbols-outlined text-xl">event_busy</span>
                             </div>
                             <div>
-                                <h3 class="font-headline text-sm font-bold text-slate-900">Request cancellation?</h3>
-                                <p class="text-xs text-slate-500">Your request will be reviewed by our team. Cancellation is not immediate — you will be notified of the decision. A reason is required.</p>
+                                <h3 class="font-headline text-sm font-bold text-slate-900 dark:text-slate-100">Request cancellation?</h3>
+                                <p class="text-xs text-slate-500 dark:text-slate-400">Your request will be reviewed by our team. Cancellation is not immediate — you will be notified of the decision. A reason is required.</p>
                             </div>
                         </div>
                         <form action="{{ route('booking.cancel', $booking->booking_code) }}" method="POST" class="space-y-3"
                               onsubmit="return confirm('Submit this cancellation request for review? Your booking dates remain held until a decision is made.')">
                             @csrf
                             <div>
-                                <label for="cancel-reason" class="font-label text-[11px] uppercase font-bold tracking-[0.15em] text-slate-500 block mb-1.5">Reason for cancellation <span class="text-rose-600">*</span></label>
+                                <label for="cancel-reason" class="font-label text-[11px] uppercase font-bold tracking-[0.15em] text-slate-500 dark:text-slate-400 block mb-1.5">Reason for cancellation <span class="text-rose-600">*</span></label>
                                 <textarea id="cancel-reason" name="reason" rows="3" required minlength="10" maxlength="2000"
                                           placeholder="Tell us why you need to cancel (at least 10 characters)..."
-                                          class="w-full px-4 py-3 rounded-2xl border border-sand-200 text-xs text-slate-900 bg-white focus:border-rose-300 focus:ring-2 focus:ring-rose-500/20 placeholder:text-slate-400">{{ old('reason') }}</textarea>
+                                          class="w-full px-4 py-3 rounded-2xl border border-sand-200 dark:border-slate-700 dark:border-slate-700 text-xs text-slate-900 dark:text-slate-100 bg-white dark:bg-slate-900 focus:border-rose-300 focus:ring-2 focus:ring-rose-500/20 placeholder:text-slate-400">{{ old('reason') }}</textarea>
                                 @error('reason')
                                     <p class="text-[11px] text-rose-600 mt-1">{{ $message }}</p>
                                 @enderror
@@ -821,44 +821,44 @@
                         </form>
                     </section>
                 @elseif ($status === 'cancellation_requested')
-                    <section class="bg-orange-50 border border-orange-200 rounded-3xl p-6">
+                    <section class="bg-orange-50 dark:bg-orange-950/60 border border-orange-200 dark:border-orange-800 rounded-3xl p-6">
                         <div class="flex items-start gap-3">
-                            <div class="w-10 h-10 rounded-2xl bg-white text-orange-600 border border-orange-200 flex items-center justify-center shrink-0">
+                            <div class="w-10 h-10 rounded-2xl bg-white dark:bg-slate-900 text-orange-600 border border-orange-200 dark:border-orange-800 flex items-center justify-center shrink-0">
                                 <span class="material-symbols-outlined text-xl">hourglass_top</span>
                             </div>
                             <div class="flex-1 min-w-0">
-                                <h3 class="font-headline text-sm font-bold text-orange-900">Cancellation requested — awaiting review</h3>
-                                <p class="text-xs text-orange-800/80 mt-1">Submitted {{ $booking->cancellation_requested_at?->format('M j, Y g:i A') }}. Your dates are still held.</p>
-                                <div class="mt-3 bg-white border border-orange-200 rounded-2xl p-4">
-                                    <p class="font-label text-[10px] uppercase font-bold tracking-[0.15em] text-slate-400 mb-1">Your reason</p>
-                                    <p class="text-xs text-slate-700 leading-relaxed">"{{ $booking->cancellation_request_reason }}"</p>
+                                <h3 class="font-headline text-sm font-bold text-orange-900 dark:text-orange-100">Cancellation requested — awaiting review</h3>
+                                <p class="text-xs text-orange-800/80 dark:text-orange-100/80 mt-1">Submitted {{ $booking->cancellation_requested_at?->format('M j, Y g:i A') }}. Your dates are still held.</p>
+                                <div class="mt-3 bg-white dark:bg-slate-900 border border-orange-200 dark:border-orange-800 rounded-2xl p-4">
+                                    <p class="font-label text-[10px] uppercase font-bold tracking-[0.15em] text-slate-400 dark:text-slate-500 mb-1">Your reason</p>
+                                    <p class="text-xs text-slate-700 dark:text-slate-200 leading-relaxed">"{{ $booking->cancellation_request_reason }}"</p>
                                 </div>
                             </div>
                         </div>
                         <form action="{{ route('booking.cancel.withdraw', $booking->booking_code) }}" method="POST" class="mt-4 flex justify-end" onsubmit="return confirm('Withdraw your cancellation request? Your booking will become active again.')">
                             @csrf
-                            <button type="submit" class="px-5 py-2.5 rounded-2xl bg-white hover:bg-orange-50 text-orange-700 border border-orange-200 font-bold text-xs transition flex items-center gap-1.5 cursor-pointer">
+                            <button type="submit" class="px-5 py-2.5 rounded-2xl bg-white dark:bg-slate-900 hover:bg-orange-50 dark:hover:bg-orange-950/60 text-orange-700 dark:text-orange-100 border border-orange-200 dark:border-orange-800 font-bold text-xs transition flex items-center gap-1.5 cursor-pointer">
                                 <span class="material-symbols-outlined text-[16px]">undo</span>
                                 <span>Withdraw Request</span>
                             </button>
                         </form>
                     </section>
                 @elseif ($status === 'cancellation_denied')
-                    <section class="bg-rose-50 border border-rose-200 rounded-3xl p-6">
+                    <section class="bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 rounded-3xl p-6">
                         <div class="flex items-start gap-3">
-                            <div class="w-10 h-10 rounded-2xl bg-white text-rose-600 border border-rose-200 flex items-center justify-center shrink-0">
+                            <div class="w-10 h-10 rounded-2xl bg-white dark:bg-slate-900 text-rose-600 border border-rose-200 dark:border-rose-800 flex items-center justify-center shrink-0">
                                 <span class="material-symbols-outlined text-xl">block</span>
                             </div>
                             <div class="flex-1 min-w-0">
-                                <h3 class="font-headline text-sm font-bold text-rose-900">Cancellation denied — booking remains active</h3>
-                                <p class="text-xs text-rose-800/80 mt-1">Reviewed {{ $booking->updated_at->format('M j, Y g:i A') }}. Your reserved dates are still held.</p>
+                                <h3 class="font-headline text-sm font-bold text-rose-900 dark:text-rose-100">Cancellation denied — booking remains active</h3>
+                                <p class="text-xs text-rose-800/80 dark:text-rose-100/80 mt-1">Reviewed {{ $booking->updated_at->format('M j, Y g:i A') }}. Your reserved dates are still held.</p>
                                 @if($booking->cancellation_reason)
-                                    <div class="mt-3 bg-white border border-rose-200 rounded-2xl p-4">
-                                        <p class="font-label text-[10px] uppercase font-bold tracking-[0.15em] text-slate-400 mb-1">Admin message</p>
-                                        <p class="text-xs text-slate-700 leading-relaxed">"{{ $booking->cancellation_reason }}"</p>
+                                    <div class="mt-3 bg-white dark:bg-slate-900 border border-rose-200 dark:border-rose-800 rounded-2xl p-4">
+                                        <p class="font-label text-[10px] uppercase font-bold tracking-[0.15em] text-slate-400 dark:text-slate-500 mb-1">Admin message</p>
+                                        <p class="text-xs text-slate-700 dark:text-slate-200 leading-relaxed">"{{ $booking->cancellation_reason }}"</p>
                                     </div>
                                 @endif
-                                <p class="text-[11px] text-rose-700 mt-3">If you still need to cancel, please contact support via chat.</p>
+                                <p class="text-[11px] text-rose-700 dark:text-rose-100 mt-3">If you still need to cancel, please contact support via chat.</p>
                             </div>
                         </div>
                     </section>
@@ -866,27 +866,27 @@
 
                 {{-- Journal timeline --}}
                 @if($booking->history->isNotEmpty())
-                    <section class="bg-white rounded-3xl border border-sand-200/80 shadow-xs p-6 sm:p-8">
-                        <h2 class="font-headline text-base font-bold text-slate-900 flex items-center gap-2.5 mb-6">
-                            <span class="w-8 h-8 rounded-xl bg-ocean-50 text-ocean-600 border border-ocean-100 flex items-center justify-center">
+                    <section class="bg-white dark:bg-slate-900 rounded-3xl border border-sand-200/80 dark:border-slate-700/80 shadow-xs p-6 sm:p-8">
+                        <h2 class="font-headline text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2.5 mb-6">
+                            <span class="w-8 h-8 rounded-xl bg-ocean-50 dark:bg-ocean-900/50 text-ocean-600 border border-ocean-100 dark:border-ocean-800 flex items-center justify-center">
                                 <span class="material-symbols-outlined text-[18px]">history</span>
                             </span>
                             Journal Timeline
                         </h2>
-                        <ol class="relative border-l-2 border-dashed border-sand-300 ml-3 space-y-5">
+                        <ol class="relative border-l-2 border-dashed border-sand-300 dark:border-slate-600 ml-3 space-y-5">
                             @foreach($booking->history as $event)
                                 <li class="ml-6">
                                     <span class="absolute -left-[9px] mt-1 w-3.5 h-3.5 rounded-full border-2 border-white {{ $t['dot'] }} shadow"></span>
-                                    <p class="text-xs font-bold text-slate-900 font-headline">
+                                    <p class="text-xs font-bold text-slate-900 dark:text-slate-100 font-headline">
                                         {{ ucfirst(str_replace('_', ' ', $event->to_status)) }}
                                         @if($event->from_status)
-                                            <span class="text-slate-400 font-medium">(was {{ $event->from_status }})</span>
+                                            <span class="text-slate-400 dark:text-slate-500 font-medium">(was {{ $event->from_status }})</span>
                                         @endif
                                     </p>
                                     @if($event->note)
-                                        <p class="text-[11px] text-slate-500 mt-0.5">{{ $event->note }}</p>
+                                        <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">{{ $event->note }}</p>
                                     @endif
-                                    <p class="font-label text-[9px] uppercase tracking-[0.15em] text-slate-400 font-bold mt-1">
+                                    <p class="font-label text-[9px] uppercase tracking-[0.15em] text-slate-400 dark:text-slate-500 font-bold mt-1">
                                         {{ $event->created_at->format('M j, Y · g:i A') }}
                                     </p>
                                 </li>
@@ -896,7 +896,7 @@
                 @endif
 
                 {{-- Colophon --}}
-                <p class="text-center font-label text-[10px] uppercase font-bold tracking-[0.25em] text-slate-400 pt-2">
+                <p class="text-center font-label text-[10px] uppercase font-bold tracking-[0.25em] text-slate-400 dark:text-slate-500 pt-2">
                     SunnyTrips · Curated island escapes, verified before payment
                 </p>
             </div>

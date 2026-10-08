@@ -1,27 +1,27 @@
 <x-frontend.layout title="Explore Islands — SunnyTrips">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-    <div class="py-6 sm:py-10 bg-sand-50/70 text-slate-900 min-h-screen">
+    <div class="py-6 sm:py-10 bg-sand-50/70 dark:bg-slate-800/60 text-slate-900 dark:text-slate-100 min-h-screen">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
             <div class="flex flex-wrap items-end justify-between gap-4">
                 <div>
-                    <h1 class="text-2xl sm:text-3xl font-black text-slate-900 font-headline tracking-tight">
+                    <h1 class="text-2xl sm:text-3xl font-black text-slate-900 dark:text-slate-100 font-headline tracking-tight">
                         Explore the Islands
                     </h1>
-                    <p class="text-slate-500 text-xs sm:text-sm font-body">
+                    <p class="text-slate-500 dark:text-slate-400 text-xs sm:text-sm font-body">
                         Every hotel, experience and destination across the Philippines — in one interactive view.
                     </p>
                 </div>
                 <div class="flex flex-wrap items-center gap-2" x-data="{ filter: 'all' }">
-                    <button @click="filter = 'all'; window['exploreMap']?.setFilter('all')" :class="filter === 'all' ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'"
-                        class="rounded-full px-4 py-1.5 text-xs font-semibold border border-slate-200 transition">
+                    <button @click="filter = 'all'; window['exploreMap']?.setFilter('all')" :class="filter === 'all' ? 'bg-slate-900 text-white' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'"
+                        class="rounded-full px-4 py-1.5 text-xs font-semibold border border-slate-200 dark:border-slate-700 transition">
                         All
                     </button>
-                    <button @click="filter = 'hotel'; window['exploreMap']?.setFilter('hotel')" :class="filter === 'hotel' ? 'bg-sky-600 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'"
-                        class="rounded-full px-4 py-1.5 text-xs font-semibold border border-slate-200 transition">
+                    <button @click="filter = 'hotel'; window['exploreMap']?.setFilter('hotel')" :class="filter === 'hotel' ? 'bg-sky-600 text-white' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'"
+                        class="rounded-full px-4 py-1.5 text-xs font-semibold border border-slate-200 dark:border-slate-700 transition">
                         Hotels
                     </button>
-                    <button @click="filter = 'activity'; window['exploreMap']?.setFilter('activity')" :class="filter === 'activity' ? 'bg-orange-500 text-white' : 'bg-white text-slate-600 hover:bg-slate-100'"
-                        class="rounded-full px-4 py-1.5 text-xs font-semibold border border-slate-200 transition">
+                    <button @click="filter = 'activity'; window['exploreMap']?.setFilter('activity')" :class="filter === 'activity' ? 'bg-orange-500 text-white' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'"
+                        class="rounded-full px-4 py-1.5 text-xs font-semibold border border-slate-200 dark:border-slate-700 transition">
                         Activities
                     </button>
                 </div>
@@ -32,9 +32,9 @@
 
                 <div class="lg:col-span-2">
                     <template x-if="mapError">
-                        <div class="mb-3 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-5 text-center space-y-2">
-                            <p class="text-sm font-bold text-slate-600 font-headline">Interactive map is unavailable right now.</p>
-                            <p class="text-xs text-slate-500 font-body" x-text="mapError"></p>
+                        <div class="mb-3 rounded-2xl border border-dashed border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 p-5 text-center space-y-2">
+                            <p class="text-sm font-bold text-slate-600 dark:text-slate-400 font-headline">Interactive map is unavailable right now.</p>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 font-body" x-text="mapError"></p>
                             <button @click="init()" type="button"
                                 class="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-4 py-2 text-xs font-bold text-white transition hover:bg-slate-800 cursor-pointer">
                                 <span class="material-symbols-outlined text-[16px]">refresh</span>
@@ -43,18 +43,18 @@
                         </div>
                     </template>
                     <template x-if="!mapError && markers.length === 0">
-                        <div class="mb-3 rounded-2xl border border-dashed border-slate-300 bg-white/60 p-5 text-center text-sm text-slate-400">
+                        <div class="mb-3 rounded-2xl border border-dashed border-slate-300 dark:border-slate-600 bg-white/60 dark:bg-slate-900/60 p-5 text-center text-sm text-slate-400 dark:text-slate-500">
                             No locations to map yet — browse the listings below instead.
                         </div>
                     </template>
                     <template x-if="tilesDown && !mapError">
-                        <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-amber-50 border border-amber-200 px-3 py-1.5 text-[11px] font-bold text-amber-800">
+                        <div class="mb-3 inline-flex items-center gap-2 rounded-full bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-900/60 px-3 py-1.5 text-[11px] font-bold text-amber-800 dark:text-amber-200">
                             <span class="material-symbols-outlined text-[14px]">warning</span>
                             <span>Map tiles unavailable — markers may not display.</span>
                             <button @click="init()" type="button" class="underline hover:no-underline cursor-pointer">Retry</button>
                         </div>
                     </template>
-                    <div id="exploreMap" class="h-[70vh] rounded-3xl overflow-hidden border border-slate-200 shadow-sm" style="z-index: 1;"></div>
+                    <div id="exploreMap" class="h-[70vh] rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-700 shadow-sm" style="z-index: 1;"></div>
                 </div>
 
                 <aside class="space-y-3 max-h-[70vh] overflow-y-auto pr-1" @sunnytrip:map-hover.window="highlight($event.detail.marker, $event.detail.on)">
@@ -65,30 +65,30 @@
                     </button>
 
                     <template x-if="geoError">
-                        <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-800">
+                        <div class="rounded-2xl border border-amber-200 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/60 p-4 text-xs text-amber-800 dark:text-amber-200">
                             <span x-text="geoError"></span>
                         </div>
                     </template>
 
                     <template x-if="userCoords && !selected">
-                        <div class="rounded-2xl border border-ocean-200 bg-ocean-50 p-4 text-xs text-ocean-800">
+                        <div class="rounded-2xl border border-ocean-200 dark:border-ocean-800 bg-ocean-50 dark:bg-ocean-900/50 p-4 text-xs text-ocean-800 dark:text-ocean-100">
                             Showing nearest-first from your location.
                         </div>
                     </template>
 
                     <template x-if="userCoords">
-                        <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                            <div class="border-b border-slate-100 px-4 py-2.5 text-[11px] font-extrabold uppercase tracking-widest text-slate-500">
+                        <div class="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm">
+                            <div class="border-b border-slate-100 dark:border-slate-800 px-4 py-2.5 text-[11px] font-extrabold uppercase tracking-widest text-slate-500 dark:text-slate-400">
                                 Distances from you
-                                <span class="ml-1 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] text-slate-500" x-text="markers.length"></span>
+                                <span class="ml-1 rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[10px] text-slate-500 dark:text-slate-400" x-text="markers.length"></span>
                             </div>
-                            <div class="max-h-64 divide-y divide-slate-100 overflow-y-auto">
+                            <div class="max-h-64 divide-y divide-slate-100 dark:divide-slate-800 overflow-y-auto">
                                 <template x-for="m in sortedMarkers()" :key="(m.type || 'x') + '-' + m.id">
                                     <button @click="selectWithCard(m)" @mouseenter="highlight(m,true)" @mouseleave="highlight(m,false)" type="button"
-                                        class="flex w-full items-center gap-2.5 px-4 py-2.5 text-left transition hover:bg-slate-50 cursor-pointer">
+                                        class="flex w-full items-center gap-2.5 px-4 py-2.5 text-left transition hover:bg-slate-50 dark:hover:bg-slate-800 cursor-pointer">
                                         <span class="h-2.5 w-2.5 shrink-0 rounded-full"
                                               :class="m.type === 'hotel' ? 'bg-sky-500' : m.type === 'activity' ? 'bg-orange-500' : 'bg-sky-900'"></span>
-                                        <span class="flex-1 truncate text-xs font-semibold text-slate-700" x-text="m.name"></span>
+                                        <span class="flex-1 truncate text-xs font-semibold text-slate-700 dark:text-slate-300" x-text="m.name"></span>
                                         <span class="shrink-0 text-[11px] font-bold text-ocean-600" x-text="m.distance_label || '—'"></span>
                                     </button>
                                 </template>
@@ -97,29 +97,29 @@
                     </template>
 
                     <template x-if="selected">
-                        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm p-5 space-y-3">
+                        <div class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm p-5 space-y-3">
                             <p class="text-[11px] font-extrabold uppercase tracking-widest text-sky-600"
                                x-text="selected.type === 'hotel' ? 'Hotel / Sanctuary Stay' : 'Activity / Experience'"></p>
-                            <h2 class="text-lg font-black text-slate-900 font-headline" x-text="selected.name"></h2>
-                            <p class="text-sm text-slate-500" x-text="selected.subtitle"></p>
+                            <h2 class="text-lg font-black text-slate-900 dark:text-slate-100 font-headline" x-text="selected.name"></h2>
+                            <p class="text-sm text-slate-500 dark:text-slate-400" x-text="selected.subtitle"></p>
                             <template x-if="selectedImage()">
                                 <img :src="selectedImage()" :alt="selected.name" class="w-full h-40 object-cover rounded-xl" loading="lazy"
                                      onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80'">
                             </template>
                             <div class="flex flex-wrap gap-2 text-xs">
                                 <template x-if="selected.distance_label">
-                                    <span class="rounded-full bg-ocean-50 px-3 py-1 font-medium text-ocean-700"
+                                    <span class="rounded-full bg-ocean-50 dark:bg-ocean-900/50 px-3 py-1 font-medium text-ocean-700 dark:text-ocean-100"
                                           x-text="selected.distance_label + ' from you'"></span>
                                 </template>
                                 <template x-if="selected.rating">
-                                    <span class="rounded-full bg-amber-50 px-3 py-1 font-medium text-amber-700"
+                                    <span class="rounded-full bg-amber-50 dark:bg-amber-950/60 px-3 py-1 font-medium text-amber-700 dark:text-amber-200"
                                           x-text="'★ ' + Number(selected.rating).toFixed(1) + ' (' + selected.review_count + ')'"></span>
                                 </template>
                             </div>
                             <div class="flex flex-wrap gap-2" x-show="selected.type === 'activity'">
                                 <button type="button"
                                         @click="$store.preview.openActivityById(selected.id)"
-                                        class="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-slate-100 px-3 py-2.5 text-xs font-bold text-slate-700 transition hover:bg-slate-200 cursor-pointer">
+                                        class="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 px-3 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 transition hover:bg-slate-200 dark:hover:bg-slate-700 cursor-pointer">
                                     <span class="material-symbols-outlined text-[15px]">auto_awesome</span>
                                     <span>Quick Preview</span>
                                 </button>
@@ -142,7 +142,7 @@
                     </template>
 
                     <template x-if="!selected">
-                        <div class="rounded-2xl border border-dashed border-slate-300 bg-white/60 p-5 text-center text-sm text-slate-400">
+                        <div class="rounded-2xl border border-dashed border-slate-300 dark:border-slate-600 bg-white/60 dark:bg-slate-900/60 p-5 text-center text-sm text-slate-400 dark:text-slate-500">
                             Tap a marker on the map to see its details here.
                         </div>
                     </template>

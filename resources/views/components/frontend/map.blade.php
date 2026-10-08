@@ -15,14 +15,14 @@
 @endphp
 
 <div class="relative">
-    <div id="{{ $mapId }}" class="{{ $height }} w-full rounded-2xl border border-sand-200 shadow-sm"
+    <div id="{{ $mapId }}" class="{{ $height }} w-full rounded-2xl border border-sand-200 dark:border-slate-700 shadow-sm"
         style="z-index: 1;"></div>
 
     <div id="{{ $mapId }}-fallback" style="display: none;"
-        class="{{ $height }} w-full rounded-2xl border border-dashed border-slate-300 bg-slate-50 flex-col items-center justify-center gap-2 p-6 text-center">
-        <span class="material-symbols-outlined text-[28px] text-slate-400">map_off</span>
-        <p class="text-sm font-bold text-slate-600 font-headline">Interactive map is unavailable right now.</p>
-        <p class="text-xs text-slate-500 font-body">The map service could not load. Your listings are still available
+        class="{{ $height }} w-full rounded-2xl border border-dashed border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-800 flex-col items-center justify-center gap-2 p-6 text-center">
+        <span class="material-symbols-outlined text-[28px] text-slate-400 dark:text-slate-500">map_off</span>
+        <p class="text-sm font-bold text-slate-600 dark:text-slate-400 font-headline">Interactive map is unavailable right now.</p>
+        <p class="text-xs text-slate-500 dark:text-slate-400 font-body">The map service could not load. Your listings are still available
             below.</p>
         <button type="button" onclick="window.location.reload()"
             class="mt-1 inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-4 py-2 text-xs font-bold text-white transition hover:bg-slate-800 cursor-pointer">
@@ -32,7 +32,7 @@
     </div>
 
     <div id="{{ $mapId }}-tiles-banner" style="display: none;"
-        class="absolute top-3 left-1/2 -translate-x-1/2 z-10 inline-flex items-center gap-2 rounded-full bg-amber-50 border border-amber-200 px-3 py-1.5 text-[11px] font-bold text-amber-800 shadow-sm">
+        class="absolute top-3 left-1/2 -translate-x-1/2 z-10 inline-flex items-center gap-2 rounded-full bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 px-3 py-1.5 text-[11px] font-bold text-amber-800 dark:text-amber-100 shadow-sm">
         <span class="material-symbols-outlined text-[14px]">warning</span>
         <span>Map tiles unavailable — markers may not display.</span>
         <button type="button" onclick="window.location.reload()"

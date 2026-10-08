@@ -3,7 +3,7 @@
     {{-- Admin Preview Banner --}}
     @if ($isAdminPreview)
         <div
-            class="bg-amber-500 text-slate-950 font-bold px-4 py-2.5 text-xs text-center flex items-center justify-center gap-2 shadow-md z-[60] sticky top-0">
+            class="bg-amber-50 dark:bg-amber-950/600 text-slate-950 font-bold px-4 py-2.5 text-xs text-center flex items-center justify-center gap-2 shadow-md z-[60] sticky top-0">
             <span class="material-symbols-outlined text-[18px]">visibility</span>
             <span>Admin Preview Mode &mdash; This is how public visitors see this hotel page.</span>
             @if (!$hotel->is_shown)
@@ -96,7 +96,7 @@
             this.activeModalImgIndex = (this.activeModalImgIndex + 1) % this.galleryImages.length;
             this.activeModalImg = this.galleryImages[this.activeModalImgIndex];
         }
-    }" class="{{ Auth::check() ? 'pt-6 sm:pt-10' : 'pt-32 sm:pt-36' }} pb-24 bg-sand-50/70 min-h-screen">
+    }" class="{{ Auth::check() ? 'pt-6 sm:pt-10' : 'pt-32 sm:pt-36' }} pb-24 bg-sand-50/70 dark:bg-slate-800/60 min-h-screen">
 
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
 
@@ -161,8 +161,8 @@
                 <div class="lg:col-span-7 xl:col-span-8 space-y-8">
 
                     {{-- Overview Card --}}
-                    <div class="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-4">
-                        <h2 class="text-xl sm:text-2xl font-bold text-slate-900 font-headline">
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 sm:p-8 border border-slate-200/80 dark:border-slate-700/80 shadow-sm space-y-4">
+                        <h2 class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 font-headline">
                             Hotel Description
                         </h2>
                         <div class="text-slate-600 text-sm leading-relaxed space-y-3 font-body">
@@ -172,10 +172,10 @@
 
                     {{-- Exclusive Amenities Grid --}}
                     @if(!empty($hotel->featured_amenities) && is_array($hotel->featured_amenities))
-                        <div class="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200/80 shadow-sm space-y-5">
-                            <div class="flex items-center gap-2 border-b border-slate-100 pb-4">
+                        <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 sm:p-8 border border-slate-200/80 dark:border-slate-700/80 shadow-sm space-y-5">
+                            <div class="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-4">
                                 <span class="w-1.5 h-6 bg-ocean-600 rounded-full"></span>
-                                <h3 class="text-lg font-bold text-slate-900 font-headline">
+                                <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100 font-headline">
                                     Exclusive Amenities & Services
                                 </h3>
                             </div>
@@ -183,14 +183,14 @@
                             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                                 @foreach($hotel->featured_amenities as $amenity)
                                     <div
-                                        class="bg-slate-50 hover:bg-ocean-50/70 px-3.5 py-2.5 rounded-xl border border-slate-200/70 transition-all duration-200 flex items-center gap-2.5 group">
+                                        class="bg-slate-50 dark:bg-slate-800 hover:bg-ocean-50/70 px-3.5 py-2.5 rounded-xl border border-slate-200/70 dark:border-slate-700/70 transition-all duration-200 flex items-center gap-2.5 group">
                                         <div
-                                            class="w-7 h-7 rounded-lg bg-white shadow-xs border border-slate-200/80 text-ocean-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                                            class="w-7 h-7 rounded-lg bg-white dark:bg-slate-900 shadow-xs border border-slate-200/80 dark:border-slate-700/80 text-ocean-600 dark:text-ocean-100 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
                                             <span class="material-symbols-outlined text-[16px]">
                                                 {{ App\Concerns\ResolvesImages::getAmenityIcon($amenity) }}
                                             </span>
                                         </div>
-                                        <span class="text-xs font-semibold text-slate-800 group-hover:text-ocean-700 transition-colors leading-snug">
+                                        <span class="text-xs font-semibold text-slate-800 dark:text-slate-200 group-hover:text-ocean-700 dark:hover:text-ocean-100 transition-colors leading-snug">
                                             {{ $amenity }}
                                         </span>
                                     </div>
@@ -204,7 +204,7 @@
                 {{-- RIGHT COLUMN (4 cols on desktop): STICKY ROOM SELECTOR & RATE CARD --}}
                 <div id="selected-room-sidebar" class="lg:col-span-5 xl:col-span-4 sticky top-32 sm:top-36 space-y-4">
                     <div
-                        class="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200/90 shadow-xl relative overflow-hidden transition-all">
+                        class="bg-white dark:bg-slate-900 rounded-2xl p-6 sm:p-8 border border-slate-200/90 dark:border-slate-700/90 shadow-xl relative overflow-hidden transition-all">
                         <div
                             class="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-ocean-500/10 via-transparent to-transparent rounded-bl-full pointer-events-none">
                         </div>
@@ -213,18 +213,18 @@
                         <template x-if="!selectedRoom">
                             <div class="text-center py-6 space-y-4">
                                 <div
-                                    class="w-16 h-16 rounded-full bg-ocean-50 text-ocean-600 flex items-center justify-center mx-auto border border-ocean-100">
+                                    class="w-16 h-16 rounded-full bg-ocean-50 dark:bg-ocean-900/50 text-ocean-600 dark:text-ocean-100 flex items-center justify-center mx-auto border border-ocean-100 dark:border-ocean-800">
                                     <span class="material-symbols-outlined text-[32px]">king_bed</span>
                                 </div>
                                 <div class="space-y-1">
-                                    <h3 class="text-lg font-bold text-slate-900 font-headline">Select a Room</h3>
-                                    <p class="text-xs text-slate-500 max-w-xs mx-auto">
+                                    <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100 font-headline">Select a Room</h3>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400 max-w-xs mx-auto">
                                         Choose your preferred room type from the gallery below to view live pricing and
                                         details.
                                     </p>
                                 </div>
                                 <a href="#room-gallery"
-                                    class="inline-flex items-center gap-1.5 text-xs font-bold text-ocean-600 hover:text-ocean-700 bg-ocean-50 px-4 py-2 rounded-full transition-colors">
+                                    class="inline-flex items-center gap-1.5 text-xs font-bold text-ocean-600 dark:text-ocean-100 hover:text-ocean-700 dark:hover:text-ocean-100 bg-ocean-50 dark:bg-ocean-900/50 px-4 py-2 rounded-full transition-colors">
                                     <span>Browse Available Rooms</span>
                                     <span class="material-symbols-outlined text-[16px]">arrow_downward</span>
                                 </a>
@@ -234,16 +234,16 @@
                         {{-- WHEN A ROOM IS SELECTED --}}
                         <template x-if="selectedRoom">
                             <div class="space-y-6 animate-fade-in">
-                                <div class="flex items-center justify-between border-b border-slate-100 pb-4">
+                                <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-4">
                                     <div>
                                         <span
-                                            class="text-[10px] font-bold uppercase tracking-wider text-ocean-600 bg-ocean-50 px-2.5 py-0.5 rounded-md">Selected
+                                            class="text-[10px] font-bold uppercase tracking-wider text-ocean-600 dark:text-ocean-100 bg-ocean-50 dark:bg-ocean-900/50 px-2.5 py-0.5 rounded-md">Selected
                                             Room</span>
-                                        <h3 class="text-xl font-bold text-slate-900 font-headline mt-1"
+                                        <h3 class="text-xl font-bold text-slate-900 dark:text-slate-100 font-headline mt-1"
                                             x-text="selectedRoom.room_name"></h3>
                                     </div>
                                     <button @click="selectedRoom = null"
-                                        class="text-slate-400 hover:text-slate-600 text-xs flex items-center gap-0.5 bg-slate-100 px-2 py-1 rounded-md"
+                                        class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-400 text-xs flex items-center gap-0.5 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-md"
                                         title="Clear selection">
                                         <span class="material-symbols-outlined text-[14px]">close</span> Reset
                                     </button>
@@ -267,19 +267,19 @@
 
                                  {{-- Specs Grid --}}
                                 <div class="grid grid-cols-2 gap-3 text-xs">
-                                    <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-100 space-y-0.5">
+                                    <div class="bg-slate-50 dark:bg-slate-800 p-2.5 rounded-lg border border-slate-100 dark:border-slate-800 space-y-0.5">
                                         <span class="text-slate-400 text-[10px] block uppercase font-medium">Bed Layout</span>
-                                        <span class="font-bold text-slate-800 truncate block" x-text="selectedRoom.bed_configuration || 'Standard'"></span>
+                                        <span class="font-bold text-slate-800 dark:text-slate-200 truncate block" x-text="selectedRoom.bed_configuration || 'Standard'"></span>
                                     </div>
-                                    <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-100 space-y-0.5">
+                                    <div class="bg-slate-50 dark:bg-slate-800 p-2.5 rounded-lg border border-slate-100 dark:border-slate-800 space-y-0.5">
                                         <span class="text-slate-400 text-[10px] block uppercase font-medium">Capacity (Base / Max)</span>
-                                        <span class="font-bold text-slate-800 block" x-text="'Base: ' + (selectedRoom.base_occupancy || 2) + ' • Max: ' + (selectedRoom.max_occupancy || selectedRoom.occupancy || 4) + ' Pax'"></span>
+                                        <span class="font-bold text-slate-800 dark:text-slate-200 block" x-text="'Base: ' + (selectedRoom.base_occupancy || 2) + ' • Max: ' + (selectedRoom.max_occupancy || selectedRoom.occupancy || 4) + ' Pax'"></span>
                                     </div>
                                 </div>
 
                                 {{-- Description snippet --}}
                                 <div x-show="selectedRoom.description"
-                                    class="text-xs text-slate-600 bg-slate-50/70 p-3 rounded-lg border border-slate-100">
+                                    class="text-xs text-slate-600 dark:text-slate-400 bg-slate-50/70 dark:bg-slate-800/70 p-3 rounded-lg border border-slate-100 dark:border-slate-800">
                                     <p x-text="selectedRoom.description"></p>
                                 </div>
 
@@ -309,23 +309,23 @@
             3. ROOM GALLERY & TYPE SELECTION
             â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• --}}
             <div id="room-gallery" class="space-y-6 pt-6">
-                <div class="flex items-center justify-between border-b border-slate-200 pb-4">
+                <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-4">
                     <div>
-                        <h2 class="text-xl sm:text-2xl font-bold text-slate-900 font-headline">
+                        <h2 class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 font-headline">
                             Available Room Types
                         </h2>
-                        <p class="text-xs sm:text-sm text-slate-500">
+                        <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
                             Explore available suites & rooms at {{ $hotel->hotel_name }}
                         </p>
                     </div>
                     <span
-                        class="text-xs font-bold text-ocean-600 bg-ocean-50 px-3 py-1.5 rounded-full border border-ocean-100">
+                        class="text-xs font-bold text-ocean-600 dark:text-ocean-100 bg-ocean-50 dark:bg-ocean-900/50 px-3 py-1.5 rounded-full border border-ocean-100 dark:border-ocean-800">
                         {{ $hotel->rooms->count() }} Room {{ Str::plural('Type', $hotel->rooms->count()) }}
                     </span>
                 </div>
 
                 @if($hotel->rooms->isEmpty())
-                    <div class="bg-white p-8 rounded-2xl border border-slate-200 text-center text-slate-400 text-sm">
+                    <div class="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-700 text-center text-slate-400 dark:text-slate-500 text-sm">
                         No room details listed for this hotel yet.
                     </div>
                 @else
@@ -346,11 +346,11 @@
                                 $roomPayload = app(App\Services\Preview\RoomPreviewService::class)->build($room, $heroImage, $priceChanges[$room->id] ?? null);
                             @endphp
                             <div id="room-card-{{ $room->id }}"
-                                class="bg-white rounded-2xl border border-slate-200/80 overflow-hidden shadow-xs hover:shadow-md transition-all duration-300 flex flex-col justify-between group">
+                                class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 overflow-hidden shadow-xs hover:shadow-md transition-all duration-300 flex flex-col justify-between group">
                                 <div>
                                     {{-- Room Image with Hover Preview Overlay --}}
                                     <div @click="$store.preview.openRoom({{ json_encode($roomPayload) }})"
-                                        class="relative h-56 sm:h-64 overflow-hidden bg-slate-100 cursor-pointer">
+                                        class="relative h-56 sm:h-64 overflow-hidden bg-slate-100 dark:bg-slate-800 cursor-pointer">
                                         <img src="{{ $roomImg }}" alt="{{ $room->room_name }}"
                                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
                                         
@@ -362,7 +362,7 @@
                                         </div>
 
                                         @if($isAdminPreview && !$room->is_shown)
-                                            <div class="absolute top-3 left-3 bg-amber-500 text-slate-950 text-[10px] font-extrabold uppercase px-2 py-0.5 rounded shadow-md z-10 flex items-center gap-1">
+                                            <div class="absolute top-3 left-3 bg-amber-50 dark:bg-amber-950/600 text-slate-950 text-[10px] font-extrabold uppercase px-2 py-0.5 rounded shadow-md z-10 flex items-center gap-1">
                                                 <span class="material-symbols-outlined text-[13px]">visibility_off</span>
                                                 Hidden from Public
                                             </div>
@@ -386,31 +386,31 @@
                                     <div class="p-5 space-y-3">
                                         <div class="flex items-center justify-between gap-2">
                                             <h3 @click="$store.preview.openRoom({{ json_encode($roomPayload) }})"
-                                                class="text-base font-bold text-slate-900 group-hover:text-ocean-600 transition-colors font-headline cursor-pointer">
+                                                class="text-base font-bold text-slate-900 dark:text-slate-100 group-hover:text-ocean-600 transition-colors font-headline cursor-pointer">
                                                 {{ $room->room_name }}
                                             </h3>
                                         </div>
 
-                                        <p class="text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                                        <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
                                             {{ $room->description }}
                                         </p>
 
                                         {{-- Badges --}}
-                                        <div class="flex flex-wrap gap-2 text-[11px] text-slate-600 pt-1">
+                                        <div class="flex flex-wrap gap-2 text-[11px] text-slate-600 dark:text-slate-400 pt-1">
                                             @if($room->bed_configuration)
-                                                <span class="bg-slate-100 px-2 py-1 rounded-md flex items-center gap-1 font-medium">
-                                                    <span class="material-symbols-outlined text-[14px] text-slate-400">bed</span>
+                                                <span class="bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-md flex items-center gap-1 font-medium">
+                                                    <span class="material-symbols-outlined text-[14px] text-slate-400 dark:text-slate-500">bed</span>
                                                     {{ $room->bed_configuration }}
                                                 </span>
                                             @endif
-                                            <span class="bg-slate-100 px-2.5 py-1 rounded-md flex items-center gap-1 font-medium text-slate-700">
+                                            <span class="bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-md flex items-center gap-1 font-medium text-slate-700 dark:text-slate-300">
                                                 <span class="material-symbols-outlined text-[14px] text-sky-600">group</span>
                                                 Base: {{ $room->base_occupancy ?: 2 }} • Max: {{ $room->max_occupancy ?: ($room->occupancy ?: 4) }} Guests
                                             </span>
                                             @if($room->room_size)
-                                                <span class="bg-slate-100 px-2 py-1 rounded-md flex items-center gap-1 font-medium">
+                                                <span class="bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-md flex items-center gap-1 font-medium">
                                                     <span
-                                                        class="material-symbols-outlined text-[14px] text-slate-400">aspect_ratio</span>
+                                                        class="material-symbols-outlined text-[14px] text-slate-400 dark:text-slate-500">aspect_ratio</span>
                                                     {{ $room->room_size }}
                                                 </span>
                                             @endif
@@ -421,12 +421,12 @@
                                  {{-- Card Footer / Action Buttons --}}
                                 <div class="p-5 pt-0 grid grid-cols-2 gap-2">
                                     <button type="button" id="preview-btn-{{ $room->id }}" @click.stop="$store.preview.openRoom({{ json_encode($roomPayload) }})"
-                                        class="w-full py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-colors flex items-center justify-center gap-1 cursor-pointer">
+                                        class="w-full py-2.5 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs transition-colors flex items-center justify-center gap-1 cursor-pointer">
                                         <span class="material-symbols-outlined text-[15px]">visibility</span>
                                         <span>Preview</span>
                                     </button>
                                     <button type="button" @click.stop="selectRoom({{ json_encode($roomPayload) }})"
-                                        class="w-full py-2.5 px-3 rounded-xl bg-ocean-50 hover:bg-ocean-600 hover:text-white text-ocean-700 font-bold text-xs transition-colors flex items-center justify-center gap-1 cursor-pointer">
+                                        class="w-full py-2.5 px-3 rounded-xl bg-ocean-50 dark:bg-ocean-900/50 hover:bg-ocean-600 hover:text-white text-ocean-700 dark:text-ocean-100 font-bold text-xs transition-colors flex items-center justify-center gap-1 cursor-pointer">
                                         <span class="material-symbols-outlined text-[15px]">touch_app</span>
                                         <span>Select</span>
                                     </button>
@@ -442,11 +442,11 @@
             â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• --}}
             @if(!empty($hotel->images) && is_array($hotel->images) && count($hotel->images) > 1)
                 <div class="space-y-4 pt-6">
-                    <div class="border-b border-slate-200 pb-4">
-                        <h2 class="text-xl sm:text-2xl font-bold text-slate-900 font-headline">
+                    <div class="border-b border-slate-200 dark:border-slate-700 pb-4">
+                        <h2 class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 font-headline">
                             Hotel Photo Gallery
                         </h2>
-                        <p class="text-xs sm:text-sm text-slate-500">
+                        <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
                             Immerse yourself in the atmosphere of {{ $hotel->hotel_name }}
                         </p>
                     </div>
@@ -455,7 +455,7 @@
                         @foreach($hotel->images as $idx => $img)
                             @php $fullUrl = App\Concerns\ResolvesImages::resolveImg($img); @endphp
                             <div @click="openGallery({{ $idx }})"
-                                class="relative h-40 sm:h-48 rounded-xl overflow-hidden cursor-pointer group bg-slate-200">
+                                class="relative h-40 sm:h-48 rounded-xl overflow-hidden cursor-pointer group bg-slate-200 dark:bg-slate-700">
                                 <img src="{{ $fullUrl }}" alt="Hotel photo {{ $idx + 1 }}"
                                     class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
                                 <div
@@ -472,23 +472,23 @@
             {{-- DSS Location Map, Weather & Nearby Experiences --}}
             @if(isset($mapContext) && $mapContext['hotel']['lat'] && $mapContext['hotel']['lng'])
                 <div class="space-y-4 pt-6">
-                    <div class="border-b border-slate-200 pb-4 flex flex-wrap items-end justify-between gap-3">
+                    <div class="border-b border-slate-200 dark:border-slate-700 pb-4 flex flex-wrap items-end justify-between gap-3">
                         <div>
-                            <h2 class="text-xl sm:text-2xl font-bold text-slate-900 font-headline">
+                            <h2 class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 font-headline">
                                 Location & Weather
                             </h2>
-                            <p class="text-xs sm:text-sm text-slate-500">
+                            <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
                                 Where you'll be staying and what to expect
                             </p>
                         </div>
                         @if(isset($weatherSummary) && ($weatherSummary['current']['temp'] ?? null))
-                            <div class="flex items-center gap-2 rounded-full bg-ocean-50 px-4 py-2">
+                            <div class="flex items-center gap-2 rounded-full bg-ocean-50 dark:bg-ocean-900/50 px-4 py-2">
                                 @if(($weatherSummary['current']['icon'] ?? null))
                                     <img src="https://openweathermap.org/img/wn/{{ $weatherSummary['current']['icon'] }}@2x.png"
                                          alt="" class="h-9 w-9 object-contain">
                                 @endif
                                 <div class="text-sm">
-                                    <p class="font-bold text-slate-900 leading-none">
+                                    <p class="font-bold text-slate-900 dark:text-slate-100 leading-none">
                                         {{ round($weatherSummary['current']['temp']) }}°C
                                     </p>
                                     <p class="text-slate-500 capitalize leading-none">
@@ -513,7 +513,7 @@
                     <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
                         {{-- MAP & ROUTE DISTANCES COLUMN (7 cols) --}}
                         <div class="lg:col-span-7 space-y-4">
-                            <div class="rounded-2xl border border-slate-200/80 overflow-hidden shadow-xs">
+                            <div class="rounded-2xl border border-slate-200/80 dark:border-slate-700/80 overflow-hidden shadow-xs">
                                 <x-frontend.map id="hotel-location-map" :markers="$mapMarkers"
                                     :center="$mapContext['hotel']" :zoom="13" height="h-80 sm:h-96" route-mode />
                             </div>
@@ -521,51 +521,51 @@
                             {{-- Trip distances: hotel->activity routes + user->hotel --}}
                             <div @sunnytrip:hotel-route.window="routeHistory = routeHistory.filter(r => r.activity !== $event.detail.activity); routeHistory.push($event.detail)"
                                  @sunnytrip:user-hotel-distance.window="userHotel = $event.detail"
-                                 class="rounded-2xl border border-ocean-200/80 bg-ocean-50/70 p-4 space-y-2.5">
+                                 class="rounded-2xl border border-ocean-200/80 dark:border-ocean-800 bg-ocean-50/70 dark:bg-ocean-900/50 p-4 space-y-2.5">
                                 <div class="flex items-center justify-between gap-2 flex-wrap">
                                     <div class="flex items-center gap-2">
-                                        <span class="material-symbols-outlined text-[16px] text-ocean-600">route</span>
-                                        <h3 class="text-xs font-bold uppercase tracking-wider text-ocean-800 font-headline">
+                                        <span class="material-symbols-outlined text-[16px] text-ocean-600 dark:text-ocean-100">route</span>
+                                        <h3 class="text-xs font-bold uppercase tracking-wider text-ocean-800 dark:text-ocean-100 font-headline">
                                             Trip Distance Estimator
                                         </h3>
-                                        <span class="px-2 py-0.5 rounded-full bg-ocean-100/80 text-ocean-700 text-[10px] font-bold border border-ocean-200/60">
+                                        <span class="px-2 py-0.5 rounded-full bg-ocean-100/80 dark:bg-ocean-900/50 text-ocean-700 dark:text-ocean-100 text-[10px] font-bold border border-ocean-200/60 dark:border-ocean-800">
                                             Approximate Direct
                                         </span>
                                     </div>
                                     <template x-if="routeHistory.length">
-                                        <button type="button" @click="routeHistory = []" class="text-[10px] text-ocean-600 hover:text-ocean-800 font-bold underline cursor-pointer">
+                                        <button type="button" @click="routeHistory = []" class="text-[10px] text-ocean-600 dark:text-ocean-100 hover:text-ocean-800 font-bold underline cursor-pointer">
                                             Clear Routes
                                         </button>
                                     </template>
                                 </div>
 
                                 {{-- Default Helper Text when no route is calculated yet --}}
-                                <div x-show="!routeHistory.length && !userHotel" class="text-xs text-slate-500 flex items-center gap-2 py-0.5">
+                                <div x-show="!routeHistory.length && !userHotel" class="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2 py-0.5">
                                     <span class="material-symbols-outlined text-[16px] text-ocean-500 shrink-0">touch_app</span>
                                     <span>Click <strong class="text-slate-700">Distance</strong> on any nearby experience to view estimated travel distances from {{ $hotel->hotel_name }}.</span>
                                 </div>
 
                                 {{-- Active Route List --}}
-                                <div x-show="routeHistory.length || userHotel" x-cloak class="space-y-1.5 text-xs text-slate-700">
+                                <div x-show="routeHistory.length || userHotel" x-cloak class="space-y-1.5 text-xs text-slate-700 dark:text-slate-300">
                                     <template x-for="r in routeHistory" :key="r.activity">
-                                        <p class="flex items-center justify-between gap-2 bg-white/80 px-3 py-1.5 rounded-lg border border-ocean-100/60">
+                                        <p class="flex items-center justify-between gap-2 bg-white/80 dark:bg-slate-900/80 px-3 py-1.5 rounded-lg border border-ocean-100/60 dark:border-ocean-800">
                                             <span class="truncate">
-                                                From <span class="font-bold text-slate-900" x-text="r.hotel"></span>
-                                                to <span class="font-bold text-slate-900" x-text="r.activity"></span>
+                                                From <span class="font-bold text-slate-900 dark:text-slate-100" x-text="r.hotel"></span>
+                                                to <span class="font-bold text-slate-900 dark:text-slate-100" x-text="r.activity"></span>
                                             </span>
-                                            <span class="font-black text-ocean-700 shrink-0" x-text="'Approx. ~ ' + r.distance_label"></span>
+                                            <span class="font-black text-ocean-700 dark:text-ocean-100 shrink-0" x-text="'Approx. ~ ' + r.distance_label"></span>
                                         </p>
                                     </template>
-                                    <p x-show="userHotel" x-cloak class="flex items-center justify-between gap-2 bg-white/80 px-3 py-1.5 rounded-lg border border-ocean-100/60">
+                                    <p x-show="userHotel" x-cloak class="flex items-center justify-between gap-2 bg-white/80 dark:bg-slate-900/80 px-3 py-1.5 rounded-lg border border-ocean-100/60 dark:border-ocean-800">
                                         <span class="truncate">
-                                            From your current location to <span class="font-bold text-slate-900" x-text="userHotel?.hotel"></span>
+                                            From your current location to <span class="font-bold text-slate-900 dark:text-slate-100" x-text="userHotel?.hotel"></span>
                                         </span>
-                                        <span class="font-black text-ocean-700 shrink-0" x-text="'Approx. ~ ' + userHotel?.distance_label"></span>
+                                        <span class="font-black text-ocean-700 dark:text-ocean-100 shrink-0" x-text="'Approx. ~ ' + userHotel?.distance_label"></span>
                                     </p>
                                 </div>
 
                                 {{-- Haversine Disclaimer Note --}}
-                                <div class="pt-2 border-t border-ocean-200/60 flex items-start gap-1.5 text-[10px] text-slate-500 leading-tight">
+                                <div class="pt-2 border-t border-ocean-200/60 dark:border-ocean-800 flex items-start gap-1.5 text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
                                     <span class="material-symbols-outlined text-[13px] text-amber-600 shrink-0 mt-0.5">info</span>
                                     <span><strong>Note:</strong> Distances shown are approximate straight-line (Haversine) estimates. Actual travel distance and duration may vary based on island terrain, road networks, or boat transport.</span>
                                 </div>
@@ -576,7 +576,7 @@
                         <div class="lg:col-span-5 space-y-4">
                             @if(isset($weatherSummary))
                                 <div class="space-y-1.5">
-                                    <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider font-headline px-1">
+                                    <h3 class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider font-headline px-1">
                                         {{ $hotel->destination->name ?? 'Local' }} Forecast
                                     </h3>
                                     <x-frontend.weather-card :summary="$weatherSummary" />
@@ -585,24 +585,24 @@
 
                             @if(count($mapContext['activities']))
                                 <div class="space-y-1.5">
-                                    <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider font-headline px-1">
+                                    <h3 class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider font-headline px-1">
                                         Nearby Experiences
                                     </h3>
-                                    <ul class="divide-y divide-slate-100 rounded-2xl border border-slate-200/80 bg-white shadow-xs max-h-[300px] overflow-y-auto">
+                                    <ul class="divide-y divide-slate-100 dark:divide-slate-800 rounded-2xl border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900 shadow-xs max-h-[300px] overflow-y-auto">
                                         @php $mapMarkerIdx = 1; @endphp
                                         @foreach($mapContext['activities'] as $index => $activity)
                                             @php
                                                 $actModel = $mapContext['activityModels'][$index] ?? null;
                                                 $hasLocation = !empty($activity['lat']) && !empty($activity['lng']);
                                             @endphp
-                                            <li class="p-3 space-y-2 hover:bg-slate-50/60 transition-colors">
+                                            <li class="p-3 space-y-2 hover:bg-slate-50/60 dark:hover:bg-slate-800 transition-colors">
                                                 <div class="flex items-start justify-between gap-2">
                                                     <div class="min-w-0">
-                                                        <p class="font-bold text-slate-900 truncate text-xs font-headline">{{ $activity['name'] }}</p>
-                                                        <p class="text-[11px] text-slate-400 truncate">{{ $activity['subtitle'] }}</p>
+                                                        <p class="font-bold text-slate-900 dark:text-slate-100 truncate text-xs font-headline">{{ $activity['name'] }}</p>
+                                                        <p class="text-[11px] text-slate-400 dark:text-slate-500 truncate">{{ $activity['subtitle'] }}</p>
                                                     </div>
                                                     @if(!$hasLocation)
-                                                        <span class="shrink-0 rounded-md bg-amber-50 border border-amber-200 px-1.5 py-0.5 text-[9px] font-bold text-amber-700">
+                                                        <span class="shrink-0 rounded-md bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-900/60 px-1.5 py-0.5 text-[9px] font-bold text-amber-700 dark:text-amber-200">
                                                             No GPS
                                                         </span>
                                                     @endif
@@ -629,7 +629,7 @@
                                                         @endphp
                                                         <button type="button"
                                                             @click="$store.preview.openActivity({{ json_encode($actPayload) }})"
-                                                            class="inline-flex flex-1 items-center justify-center gap-1 rounded-lg bg-slate-100 hover:bg-slate-200 px-2.5 py-1.5 text-[10px] font-bold text-slate-700 transition cursor-pointer">
+                                                            class="inline-flex flex-1 items-center justify-center gap-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-700 px-2.5 py-1.5 text-[10px] font-bold text-slate-700 dark:text-slate-300 transition cursor-pointer">
                                                             <span class="material-symbols-outlined text-[13px]">visibility</span>
                                                             Preview
                                                         </button>

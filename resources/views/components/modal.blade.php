@@ -74,7 +74,7 @@ $alignClass = $align === 'right' ? 'lg:mr-0' : '';
 
             <div
                 x-show="show"
-                class="m-auto w-full {{ $alignClass }} bg-white rounded-2xl overflow-hidden shadow-2xl transform transition-all {{ $maxWidth }}"
+                class="m-auto w-full {{ $alignClass }} bg-white dark:bg-slate-900 rounded-2xl overflow-hidden shadow-2xl transform transition-all {{ $maxWidth }}"
                 x-transition:enter="ease-out duration-300"
                 x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
                 x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"

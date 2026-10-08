@@ -1,5 +1,5 @@
 <x-frontend.layout title="All Island Sanctuaries — SunnyTrips">
-    <div class="{{ Auth::check() ? 'py-12' : 'pt-20 sm:pt-28 pb-12' }} bg-sand-50/70 text-slate-900 min-h-screen relative overflow-hidden">
+    <div class="{{ Auth::check() ? 'py-12' : 'pt-20 sm:pt-28 pb-12' }} bg-sand-50/70 dark:bg-slate-800/60 text-slate-900 dark:text-slate-100 min-h-screen relative overflow-hidden">
         
         {{-- Background Soft Ambient Mesh Glows --}}
         <div class="absolute top-10 left-1/3 w-[500px] h-[300px] bg-sky-200/40 blur-3xl rounded-full pointer-events-none"></div>
@@ -8,15 +8,15 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10 relative z-10">
 
             {{-- Header Banner --}}
-            <div class="bg-white border border-slate-200 rounded-3xl p-6 sm:p-10 shadow-sm space-y-3">
-                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-50 text-sky-700 text-xs font-bold uppercase tracking-widest border border-sky-200">
+            <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-3xl p-6 sm:p-10 shadow-sm space-y-3">
+                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-200 text-xs font-bold uppercase tracking-widest border border-sky-200 dark:border-sky-900/60">
                     <span class="material-symbols-outlined text-[16px] text-sky-600">location_on</span>
                     <span>Tropical Island Destinations</span>
                 </div>
-                <h1 class="text-3xl sm:text-4xl font-black text-slate-900 font-headline tracking-tight">
+                <h1 class="text-3xl sm:text-4xl font-black text-slate-900 dark:text-slate-100 font-headline tracking-tight">
                     Explore All Island Sanctuaries
                 </h1>
-                <p class="text-slate-500 text-xs sm:text-sm font-body max-w-2xl leading-relaxed">
+                <p class=" text-slate-500 dark:text-slate-400 text-xs sm:text-sm font-body max-w-2xl leading-relaxed">
                     Discover breathtaking paradise destinations across the Philippines. Select any sanctuary to view detailed hotels, luxury rooms, and curated experiences.
                 </p>
             </div>
@@ -31,10 +31,10 @@
                         );
                     @endphp
 
-                    <div class="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-xs hover:shadow-md hover:border-sky-300 transition-all duration-300 flex flex-col justify-between group">
+                    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-3xl overflow-hidden shadow-xs hover:shadow-md hover:border-sky-300 transition-all duration-300 flex flex-col justify-between group">
                         <div>
                             {{-- Image Container --}}
-                            <div class="relative h-56 overflow-hidden bg-slate-100">
+                            <div class="relative h-56 overflow-hidden bg-slate-100 dark:bg-slate-800">
                                 <img src="{{ $destImg }}" alt="{{ $dest->name }}"
                                     class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
                                 <div class="absolute inset-0 bg-gradient-to-t from-slate-900/70 via-slate-900/10 to-transparent"></div>
@@ -57,7 +57,7 @@
 
                             {{-- Description --}}
                             <div class="p-6 space-y-3">
-                                <p class="text-xs text-slate-600 leading-relaxed line-clamp-3">
+                                <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed line-clamp-3">
                                     {{ $dest->description ?: 'Experience paradise beaches, pristine crystal waters, luxury resorts, and vibrant island culture.' }}
                                 </p>
                             </div>

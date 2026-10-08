@@ -22,7 +22,7 @@
             return true;
         }
     }"
-        class="{{ Auth::check() ? 'pt-6 sm:pt-10' : 'pt-32 sm:pt-36' }} pb-24 bg-sand-50/70 min-h-screen">
+        class="{{ Auth::check() ? 'pt-6 sm:pt-10' : 'pt-32 sm:pt-36' }} pb-24 bg-sand-50/70 dark:bg-slate-800/60 min-h-screen">
 
         {{-- HERO BANNER --}}
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -68,26 +68,26 @@
             HOTELS SECTION (SANCTUARY STAYS)
             â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• --}}
             <section class="space-y-8">
-                <div class="flex items-center justify-between border-b border-slate-200 pb-4">
+                <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-4">
                     <div>
                         <span class="text-xs font-bold text-ocean-600 tracking-wider uppercase block">WHERE TO
                             STAY</span>
-                        <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 font-headline">
+                        <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-slate-100 font-headline">
                             Sanctuary Stays
                         </h2>
-                        <p class="text-xs sm:text-sm text-slate-500">
+                        <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
                             Handpicked luxury resorts and villas in {{ $destination->name }}
                         </p>
                     </div>
                     <span
-                        class="text-xs font-bold text-ocean-700 bg-ocean-50 px-3.5 py-1.5 rounded-full border border-ocean-200/80 shadow-2xs">
+                        class="text-xs font-bold text-ocean-700 dark:text-ocean-100 bg-ocean-50 dark:bg-ocean-900/50 px-3.5 py-1.5 rounded-full border border-ocean-200/80 dark:border-ocean-800 shadow-2xs">
                         {{ $destination->hotels->count() }} {{ Str::plural('Hotel', $destination->hotels->count()) }}
                     </span>
                 </div>
 
                 @if($destination->hotels->isEmpty())
                     <div
-                        class="bg-white p-12 rounded-3xl border border-slate-200 text-center text-slate-400 text-sm shadow-xs">
+                        class="bg-white dark:bg-slate-900 p-12 rounded-3xl border border-slate-200 dark:border-slate-700 text-center text-slate-400 dark:text-slate-500 text-sm shadow-xs">
                         <span class="material-symbols-outlined text-4xl text-slate-300 mb-2 block">hotel_class</span>
                         No hotels listed for this destination yet. Check back soon!
                     </div>
@@ -111,7 +111,7 @@
                                 $roomsCount = $hotel->rooms ? $hotel->rooms->count() : 0;
                             @endphp
                             <a href="{{ route('hotels.show', $hotel->id) }}"
-                                class="bg-white rounded-3xl border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-2xl transition-all duration-500 hover:-translate-y-1.5 flex flex-col justify-between group">
+                                class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/90 dark:border-slate-700/90 overflow-hidden shadow-xs hover:shadow-2xl transition-all duration-500 hover:-translate-y-1.5 flex flex-col justify-between group">
                                 <div>
                                     <div class="relative h-60 sm:h-64 overflow-hidden bg-slate-950">
                                         <img src="{{ $hotelImg }}" alt="{{ $hotel->hotel_name }}"
@@ -139,17 +139,17 @@
 
                                     <div class="p-6 space-y-3">
                                         <h3
-                                            class="text-lg font-bold text-slate-900 group-hover:text-ocean-600 transition-colors font-headline">
+                                            class="text-lg font-bold text-slate-900 dark:text-slate-100 group-hover:text-ocean-600 transition-colors font-headline">
                                             {{ $hotel->hotel_name }}
                                         </h3>
-                                        <p class="text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                                        <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
                                             {{ $hotel->hotel_description }}
                                         </p>
                                         @if(!empty($hotel->vibe_tags) && is_array($hotel->vibe_tags))
                                             <div class="flex flex-wrap gap-1.5 pt-1">
                                                 @foreach(array_slice($hotel->vibe_tags, 0, 3) as $tag)
                                                     <span
-                                                        class="px-2 py-0.5 rounded-md bg-ocean-50 text-ocean-700 text-[10px] font-semibold border border-ocean-100">
+                                                        class="px-2 py-0.5 rounded-md bg-ocean-50 dark:bg-ocean-900/50 text-ocean-700 dark:text-ocean-100 text-[10px] font-semibold border border-ocean-100 dark:border-ocean-800">
                                                         #{{ $tag }}
                                                     </span>
                                                 @endforeach
@@ -160,7 +160,7 @@
 
                                 <div class="p-6 pt-0">
                                     <span
-                                        class="w-full py-2.5 px-4 rounded-xl bg-slate-50 group-hover:bg-gradient-to-r group-hover:from-ocean-600 group-hover:to-ocean-700 group-hover:text-white text-slate-900 font-bold text-xs transition-all duration-300 flex items-center justify-between shadow-2xs">
+                                        class="w-full py-2.5 px-4 rounded-xl bg-slate-50 dark:bg-slate-800 group-hover:bg-gradient-to-r group-hover:from-ocean-600 group-hover:to-ocean-700 group-hover:text-white text-slate-900 dark:text-slate-100 font-bold text-xs transition-all duration-300 flex items-center justify-between shadow-2xs">
                                         <span>Explore Sanctuary & Rooms</span>
                                         <span
                                             class="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
@@ -176,17 +176,17 @@
             ACTIVITIES SECTION
             â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• --}}
             <section class="space-y-6">
-                <div class="flex items-center justify-between border-b border-slate-200 pb-4">
+                <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 pb-4">
                     <div>
-                        <h2 class="text-xl sm:text-2xl font-bold text-slate-900 font-headline">
+                        <h2 class="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 font-headline">
                             Experiences & Tours
                         </h2>
-                        <p class="text-xs sm:text-sm text-slate-500">
+                        <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
                             Unforgettable activities waiting for you at {{ $destination->name }}
                         </p>
                     </div>
                     <span
-                        class="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100">
+                        class="text-xs font-bold text-emerald-600 dark:text-emerald-200 bg-emerald-50 dark:bg-emerald-950/60 px-3 py-1.5 rounded-full border border-emerald-100 dark:border-emerald-900/60">
                         {{ $destination->activities->count() }}
                         {{ Str::plural('Activity', $destination->activities->count()) }}
                     </span>
@@ -194,31 +194,31 @@
 
                 @if($destination->activities->isNotEmpty())
                     {{-- Activity Filter Toolbar (5 Levels & Search) --}}
-                    <div class="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-700/80 rounded-2xl p-4 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
                         <div class="relative w-full sm:w-72">
-                            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[18px]">search</span>
+                            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 text-[18px]">search</span>
                             <input type="text" x-model="searchQuery" placeholder="Search activity, level, or tags..."
-                                class="w-full bg-slate-50 border border-slate-200 focus:border-sky-500 focus:bg-white rounded-xl py-1.5 pl-9 pr-8 text-xs font-medium text-slate-800 placeholder-slate-400 focus:outline-none transition-all shadow-xs" />
-                            <button x-show="searchQuery" @click="searchQuery = ''" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer">
+                                class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 focus:border-sky-500 focus:bg-white dark:focus:bg-slate-900 rounded-xl py-1.5 pl-9 pr-8 text-xs font-medium text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none transition-all shadow-xs" />
+                            <button x-show="searchQuery" @click="searchQuery = ''" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400 cursor-pointer">
                                 <span class="material-symbols-outlined text-xs">cancel</span>
                             </button>
                         </div>
 
                         <div class="flex flex-wrap items-center gap-1.5 overflow-x-auto w-full sm:w-auto justify-start sm:justify-end">
-                            <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1 shrink-0 mr-1">
+                            <span class="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1 shrink-0 mr-1">
                                 <span class="material-symbols-outlined text-[15px] text-sky-600">signal_cellular_alt</span>
                                 <span>Level:</span>
                             </span>
 
                             <button type="button" @click="levelFilter = 'all'"
-                                :class="levelFilter === 'all' ? 'bg-sky-600 text-white font-bold shadow-xs' : 'bg-slate-100 text-slate-600 hover:bg-slate-200 font-medium'"
+                                :class="levelFilter === 'all' ? 'bg-sky-600 text-white font-bold shadow-xs' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 font-medium'"
                                 class="px-2.5 py-1 rounded-xl text-xs transition-all cursor-pointer shrink-0">
                                 All
                             </button>
 
                             @foreach(['Relaxing' => '🧘', 'Sightseeing' => '🗺️', 'Adventure' => '🏔️', 'Extreme' => '⚡', 'Underwater' => '🤿'] as $lvl => $icon)
                                 <button type="button" @click="levelFilter = '{{ $lvl }}'"
-                                    :class="levelFilter === '{{ $lvl }}' ? 'bg-sky-600 text-white font-bold shadow-xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200 font-medium'"
+                                    :class="levelFilter === '{{ $lvl }}' ? 'bg-sky-600 text-white font-bold shadow-xs' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 font-medium'"
                                     class="px-2.5 py-1 rounded-xl text-xs transition-all cursor-pointer shrink-0 flex items-center gap-1">
                                     <span>{{ $icon }}</span>
                                     <span>{{ $lvl }}</span>
@@ -236,7 +236,7 @@
                 @endif
 
                 @if($destination->activities->isEmpty())
-                    <div class="bg-white p-8 rounded-2xl border border-slate-200 text-center text-slate-400 text-sm">
+                    <div class="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-700 text-center text-slate-400 dark:text-slate-500 text-sm">
                         No activities listed for this destination yet. Check back soon.
                     </div>
                 @else
@@ -272,7 +272,7 @@
                                 $actPayload = app(App\Services\Preview\ActivityPreviewService::class)->build($activity, $priceChanges[$activity->id] ?? null);
                             @endphp
                             <div x-show="matchesActivity('{{ addslashes($activity->activity_level ?? '') }}', {{ json_encode($searchablePayload) }})"
-                                class="bg-white rounded-3xl border border-slate-200/90 overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between group hover:-translate-y-1">
+                                class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/90 dark:border-slate-700/90 overflow-hidden shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between group hover:-translate-y-1">
                                 <div>
                                     <div class="relative h-48 sm:h-56 overflow-hidden bg-slate-950">
                                         <img src="{{ $actImg }}" alt="{{ $activity->activity_name }}"
@@ -295,30 +295,30 @@
 
                                     <div class="p-5 space-y-3">
                                         <h3
-                                            class="text-base font-bold text-slate-900 group-hover:text-ocean-600 transition-colors font-headline">
+                                            class="text-base font-bold text-slate-900 dark:text-slate-100 group-hover:text-ocean-600 transition-colors font-headline">
                                             {{ $activity->activity_name }}
                                         </h3>
-                                        <p class="text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                                        <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
                                             {{ $activity->description }}
                                         </p>
-                                        <div class="flex flex-wrap gap-2 text-[11px] text-slate-600 pt-1">
+                                        <div class="flex flex-wrap gap-2 text-[11px] text-slate-600 dark:text-slate-400 pt-1">
                                             @if($activity->duration)
-                                                <span class="bg-slate-100 px-2 py-1 rounded-md flex items-center gap-1 font-medium">
+                                                <span class="bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-md flex items-center gap-1 font-medium">
                                                     <span
-                                                        class="material-symbols-outlined text-[14px] text-slate-400">schedule</span>
+                                                        class="material-symbols-outlined text-[14px] text-slate-400 dark:text-slate-500">schedule</span>
                                                     {{ $activity->duration }}
                                                 </span>
                                             @endif
                                             @if($activity->activity_level)
-                                                <span class="bg-slate-100 px-2 py-1 rounded-md flex items-center gap-1 font-medium">
+                                                <span class="bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-md flex items-center gap-1 font-medium">
                                                     <span
-                                                        class="material-symbols-outlined text-[14px] text-slate-400">signal_cellular_alt</span>
+                                                        class="material-symbols-outlined text-[14px] text-slate-400 dark:text-slate-500">signal_cellular_alt</span>
                                                     {{ $activity->activity_level }}
                                                 </span>
                                             @endif
                                             @if($activity->capacity)
-                                                <span class="bg-slate-100 px-2 py-1 rounded-md flex items-center gap-1 font-medium">
-                                                    <span class="material-symbols-outlined text-[14px] text-slate-400">group</span>
+                                                <span class="bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-md flex items-center gap-1 font-medium">
+                                                    <span class="material-symbols-outlined text-[14px] text-slate-400 dark:text-slate-500">group</span>
                                                     Max {{ $activity->capacity }}
                                                 </span>
                                             @endif
@@ -327,7 +327,7 @@
                                             <div class="flex flex-wrap gap-1.5">
                                                 @foreach(array_slice($vibeTagsRaw, 0, 3) as $tag)
                                                     <span
-                                                        class="px-2 py-0.5 rounded-md bg-ocean-50 text-ocean-700 text-[10px] font-semibold border border-ocean-100">
+                                                        class="px-2 py-0.5 rounded-md bg-ocean-50 dark:bg-ocean-900/50 text-ocean-700 dark:text-ocean-100 text-[10px] font-semibold border border-ocean-100 dark:border-ocean-800">
                                                         #{{ $tag }}
                                                     </span>
                                                 @endforeach
@@ -340,7 +340,7 @@
                                 <div class="p-5 pt-0 grid grid-cols-2 gap-2">
                                     <button type="button"
                                         @click="$store.preview.openActivity({{ json_encode($actPayload) }})"
-                                        class="w-full py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs transition-colors flex items-center justify-center gap-1">
+                                        class="w-full py-2.5 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs transition-colors flex items-center justify-center gap-1">
                                         <span class="material-symbols-outlined text-[15px]">visibility</span>
                                         <span>Details</span>
                                     </button>

@@ -1,7 +1,7 @@
 <x-frontend.layout title="Transfers & Travel Add-ons — SunnyTrips">
 
     <div x-data="{ activeDestId: '{{ request('destination_id') ?: 'all' }}', previewAddon: null, modalPax: 1 }"
-        class="{{ Auth::check() ? 'py-12' : 'pt-20 sm:pt-28 pb-12' }} bg-sand-50/70 text-slate-900 min-h-screen relative overflow-hidden">
+        class="{{ Auth::check() ? 'py-12' : 'pt-20 sm:pt-28 pb-12' }} bg-sand-50/70 dark:bg-slate-800/60 text-slate-900 dark:text-slate-100 min-h-screen relative overflow-hidden">
 
         {{-- Background Soft Ambient Mesh Glows --}}
         <div
@@ -15,17 +15,17 @@
 
             {{-- Header Banner --}}
             <div
-                class="bg-white border border-slate-200 rounded-3xl p-6 sm:p-10 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-3xl p-6 sm:p-10 shadow-sm flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                 <div class="space-y-2 max-w-xl">
                     <div
-                        class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-50 text-sky-700 text-xs font-bold uppercase tracking-widest border border-sky-200">
+                        class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-200 text-xs font-bold uppercase tracking-widest border border-sky-200 dark:border-sky-900/60">
                         <span class="material-symbols-outlined text-[16px] text-sky-600">extension</span>
                         <span>Full Transfers & Add-ons Catalog</span>
                     </div>
-                    <h1 class="text-3xl sm:text-4xl font-black text-slate-900 font-headline tracking-tight">
+                    <h1 class="text-3xl sm:text-4xl font-black text-slate-900 dark:text-slate-100 font-headline tracking-tight">
                         Transfers & Travel Add-ons
                     </h1>
-                    <p class="text-slate-500 text-xs sm:text-sm font-body max-w-xl leading-relaxed">
+                    <p class="text-slate-500 dark:text-slate-400 text-xs sm:text-sm font-body max-w-xl leading-relaxed">
                         Book all-in airport to hotel transfers, private speedboats, multicab shuttles, equipment
                         rentals, and island travel add-ons for a seamless vacation.
                     </p>
@@ -33,14 +33,14 @@
 
                 {{-- Location Filter Tabs --}}
                 <div
-                    class="flex items-center gap-2 overflow-x-auto max-w-full p-2 bg-slate-100/90 rounded-2xl border border-slate-200 shrink-0">
+                    class="flex items-center gap-2 overflow-x-auto max-w-full p-2 bg-slate-100/90 dark:bg-slate-800/90 rounded-2xl border border-slate-200 dark:border-slate-700 shrink-0">
                     <span
-                        class="text-[11px] font-bold text-slate-500 uppercase tracking-wider px-2 shrink-0 flex items-center gap-1">
-                        <span class="material-symbols-outlined text-[15px] text-slate-400">location_on</span>
+                        class="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider px-2 shrink-0 flex items-center gap-1">
+                        <span class="material-symbols-outlined text-[15px] text-slate-400 dark:text-slate-500">location_on</span>
                         <span>Location:</span>
                     </span>
                     <button type="button" @click="activeDestId = 'all'"
-                        :class="activeDestId === 'all' ? 'bg-sky-600 text-white font-extrabold shadow-xs border-sky-600' : 'bg-white text-slate-600 hover:bg-slate-200/80 hover:text-slate-900 font-semibold border-slate-200/80'"
+                        :class="activeDestId === 'all' ? 'bg-sky-600 text-white font-extrabold shadow-xs border-sky-600' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-200/80 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white font-semibold border-slate-200/80 dark:border-slate-700/80'"
                         class="px-3.5 py-1.5 rounded-xl text-xs transition-all shrink-0 border cursor-pointer">
                         All Islands ({{ $addons->count() }})
                     </button>
@@ -50,11 +50,11 @@
                         @endphp
                         @if($destAddonCount > 0)
                             <button type="button" @click="activeDestId = '{{ $dest->id }}'"
-                                :class="activeDestId === '{{ $dest->id }}' ? 'bg-sky-600 text-white font-extrabold shadow-xs border-sky-600' : 'bg-white text-slate-600 hover:bg-slate-200/80 hover:text-slate-900 font-semibold border-slate-200/80'"
+                                :class="activeDestId === '{{ $dest->id }}' ? 'bg-sky-600 text-white font-extrabold shadow-xs border-sky-600' : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-200/80 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white font-semibold border-slate-200/80 dark:border-slate-700/80'"
                                 class="px-3.5 py-1.5 rounded-xl text-xs transition-all shrink-0 flex items-center gap-1.5 border cursor-pointer">
                                 <span>{{ $dest->name }}</span>
                                 <span class="px-1.5 py-0.5 rounded-full text-[10px]"
-                                    :class="activeDestId === '{{ $dest->id }}' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'">
+                                    :class="activeDestId === '{{ $dest->id }}' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'">
                                     {{ $destAddonCount }}
                                 </span>
                             </button>
@@ -65,8 +65,8 @@
 
             {{-- Addons Grid --}}
             @if($addons->isEmpty())
-                <div class="bg-white p-12 rounded-3xl border border-slate-200 text-center text-slate-400 text-sm shadow-xs">
-                    <span class="material-symbols-outlined text-4xl text-slate-300 mb-2 block">extension_off</span>
+                <div class="bg-white dark:bg-slate-900 p-12 rounded-3xl border border-slate-200 dark:border-slate-700 text-center text-slate-400 dark:text-slate-500 text-sm shadow-xs">
+                    <span class="material-symbols-outlined text-4xl text-slate-300 dark:text-slate-600 mb-2 block">extension_off</span>
                     No transfers or add-ons listed yet. Check back soon!
                 </div>
             @else
@@ -102,17 +102,17 @@
                         @endphp
 
                         <div x-show="activeDestId === 'all' || String(activeDestId) === '{{ $addon->destination_id }}'"
-                            class="bg-white border border-slate-200 rounded-3xl p-6 shadow-xs hover:shadow-md hover:border-sky-300 transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between group">
+                            class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-3xl p-6 shadow-xs hover:shadow-md hover:border-sky-300 transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between group">
 
                             <div class="space-y-4">
                                 {{-- Header Badges --}}
                                 <div class="flex items-center justify-between gap-2">
                                     <span
-                                        class="px-2.5 py-1 rounded-full bg-sky-50 text-sky-700 text-[10px] font-bold uppercase tracking-wider border border-sky-200">
+                                        class="px-2.5 py-1 rounded-full bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-200 text-[10px] font-bold uppercase tracking-wider border border-sky-200 dark:border-sky-900/60">
                                         {{ $addon->type ?: 'Add-on Service' }}
                                     </span>
                                     @if($destName)
-                                        <span class="text-xs font-semibold text-slate-500 flex items-center gap-1">
+                                        <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1">
                                             <span class="material-symbols-outlined text-[14px] text-sky-500">location_on</span>
                                             <span>{{ $destName }}</span>
                                         </span>
@@ -122,30 +122,30 @@
                                 {{-- Title & Rate --}}
                                 <div class="space-y-1">
                                     <h3
-                                        class="text-lg font-bold text-slate-900 group-hover:text-sky-600 transition-colors font-headline">
+                                        class="text-lg font-bold text-slate-900 dark:text-slate-100 group-hover:text-sky-600 transition-colors font-headline">
                                         {{ $addon->name }}
                                     </h3>
                                     @if($lowestRate)
                                         <div class="text-xs font-extrabold text-emerald-600">
                                             From ₱{{ number_format($lowestRate, 2) }} <span
-                                                class="text-[10px] font-normal text-slate-400">/ pax</span>
+                                                class="text-[10px] font-normal text-slate-400 dark:text-slate-500">/ pax</span>
                                         </div>
                                     @endif
                                 </div>
 
                                 {{-- Description --}}
-                                <p class="text-xs text-slate-500 line-clamp-3 leading-relaxed">
+                                <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-3 leading-relaxed">
                                     {{ $addon->description ?: 'Hassle-free transfer and auxiliary travel service with full support.' }}
                                 </p>
 
                                 {{-- Key Inclusions Preview --}}
                                 @if(!empty($inclusionsRaw))
                                     <div class="space-y-1 pt-1">
-                                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Service
+                                        <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Service
                                             Inclusions:</span>
                                         <div class="space-y-1">
                                             @foreach(array_slice($inclusionsRaw, 0, 3) as $inc)
-                                                <div class="flex items-center gap-1.5 text-xs text-slate-700 font-medium">
+                                                <div class="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 font-medium">
                                                     <span
                                                         class="material-symbols-outlined text-[14px] text-emerald-500 shrink-0">check_circle</span>
                                                     <span class="line-clamp-1">{{ $inc }}</span>
@@ -162,9 +162,9 @@
                             </div>
 
                             {{-- Card Footer --}}
-                            <div class="pt-6 border-t border-slate-100 mt-4 grid grid-cols-2 gap-2">
+                            <div class="pt-6 border-t border-slate-100 dark:border-slate-800 mt-4 grid grid-cols-2 gap-2">
                                 <button type="button" @click="previewAddon = {{ json_encode($addonPayload) }};"
-                                    class="w-full py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs transition-colors flex items-center justify-center gap-1 cursor-pointer">
+                                    class="w-full py-2.5 px-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs transition-colors flex items-center justify-center gap-1 cursor-pointer">
                                     <span class="material-symbols-outlined text-[15px]">visibility</span>
                                     <span>Details</span>
                                 </button>
@@ -187,25 +187,25 @@
             x-cloak style="display: none;">
 
             <div @click.away="previewAddon = null"
-                class="bg-white border border-slate-200 rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative flex flex-col">
+                class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative flex flex-col">
 
                 {{-- Modal Header --}}
                 <div
-                    class="sticky top-0 bg-white/90 backdrop-blur-md px-6 py-4 border-b border-slate-200 flex items-center justify-between z-20">
+                    class="sticky top-0 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between z-20">
                     <div class="flex items-center gap-2">
                         <span class="material-symbols-outlined text-sky-600 text-xl">extension</span>
-                        <span class="text-xs font-bold text-slate-500 uppercase tracking-wider"
+                        <span class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider"
                             x-text="previewAddon?.type || 'Add-on'"></span>
                         <template x-if="previewAddon?.destination_name">
                             <span
-                                class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-sky-50 text-sky-700 text-[11px] font-bold border border-sky-200">
+                                class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-200 text-[11px] font-bold border border-sky-200 dark:border-sky-900/60">
                                 <span class="material-symbols-outlined text-[13px] text-sky-500">location_on</span>
                                 <span x-text="previewAddon.destination_name"></span>
                             </span>
                         </template>
                     </div>
                     <button @click="previewAddon = null"
-                        class="p-1 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors">
+                        class="p-1 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400 transition-colors">
                         <span class="material-symbols-outlined text-xl">close</span>
                     </button>
                 </div>
@@ -213,9 +213,9 @@
                 {{-- Modal Body --}}
                 <div class="p-6 space-y-6">
                     <div>
-                        <h2 class="text-xl sm:text-2xl font-black text-slate-900 font-headline"
+                        <h2 class="text-xl sm:text-2xl font-black text-slate-900 dark:text-slate-100 font-headline"
                             x-text="previewAddon?.name"></h2>
-                        <p class="text-xs sm:text-sm text-slate-500 mt-1 leading-relaxed"
+                        <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 leading-relaxed"
                             x-text="previewAddon?.description"></p>
                     </div>
 
@@ -223,23 +223,23 @@
                     <template x-if="previewAddon?.pricing_tiers && previewAddon.pricing_tiers.length > 0">
                         <div class="space-y-2">
                             <h4
-                                class="text-xs font-extrabold uppercase tracking-wider text-slate-400 flex items-center gap-1">
+                                class="text-xs font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1">
                                 <span class="material-symbols-outlined text-[15px] text-emerald-600">payments</span>
                                 Rate Tiers per Passenger Count
                             </h4>
-                            <div class="overflow-hidden border border-slate-200 rounded-2xl">
+                            <div class="overflow-hidden border border-slate-200 dark:border-slate-700 rounded-2xl">
                                 <table class="w-full text-xs text-left">
                                     <thead
-                                        class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+                                        class="bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider text-[10px]">
                                         <tr>
                                             <th class="px-4 py-2.5">Passenger Pax Range</th>
                                             <th class="px-4 py-2.5 text-right">Rate / Pax</th>
                                         </tr>
                                     </thead>
-                                    <tbody class="divide-y divide-slate-100">
+                                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
                                         <template x-for="(tier, idx) in previewAddon.pricing_tiers" :key="idx">
-                                            <tr class="hover:bg-slate-50/50">
-                                                <td class="px-4 py-2 font-medium text-slate-800">
+                                            <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/50">
+                                                <td class="px-4 py-2 font-medium text-slate-800 dark:text-slate-200">
                                                     <span
                                                         x-text="tier.min_pax === tier.max_pax ? tier.min_pax + ' Pax' : tier.min_pax + ' - ' + tier.max_pax + ' Pax'"></span>
                                                 </td>
@@ -258,7 +258,7 @@
                     {{-- Surcharges --}}
                     <template x-if="previewAddon?.surcharges && previewAddon.surcharges.length > 0">
                         <div
-                            class="space-y-2 bg-amber-50/80 border border-amber-200/80 p-4 rounded-2xl text-xs text-amber-900">
+                            class="space-y-2 bg-amber-50/80 dark:bg-amber-950/60 border border-amber-200/80 dark:border-amber-900/60 p-4 rounded-2xl text-xs text-amber-900 dark:text-amber-200">
                             <span class="font-bold block flex items-center gap-1">
                                 <span class="material-symbols-outlined text-[15px]">info</span>
                                 Optional Drop-off / Surcharges
@@ -277,35 +277,35 @@
 
                     {{-- Pax Selector Control --}}
                     <div
-                        class="flex items-center justify-between p-3.5 bg-sky-50/80 rounded-2xl border border-sky-200/80">
+                        class="flex items-center justify-between p-3.5 bg-sky-50/80 dark:bg-sky-950/60 rounded-2xl border border-sky-200/80 dark:border-sky-900/60">
                         <div class="flex items-center gap-2">
                             <span class="material-symbols-outlined text-sky-600">group</span>
                             <div>
-                                <span class="text-xs font-bold text-slate-800 block">Passenger / Traveler Count</span>
-                                <span class="text-[11px] text-slate-500">Tier rate updates automatically for selected
+                                <span class="text-xs font-bold text-slate-800 dark:text-slate-200 block">Passenger / Traveler Count</span>
+                                <span class="text-[11px] text-slate-500 dark:text-slate-400">Tier rate updates automatically for selected
                                     pax</span>
                             </div>
                         </div>
                         <div
-                            class="flex items-center gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-200 shadow-2xs">
+                            class="flex items-center gap-2 bg-white dark:bg-slate-900 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xs">
                             <button type="button" @click="modalPax = Math.max(1, modalPax - 1)"
                                 :disabled="modalPax <= 1"
-                                class="text-slate-600 font-bold hover:text-sky-600 disabled:opacity-40 cursor-pointer">-</button>
-                            <span class="text-xs font-black text-slate-900 w-6 text-center" x-text="modalPax"></span>
+                                class="text-slate-600 dark:text-slate-400 font-bold hover:text-sky-600 disabled:opacity-40 cursor-pointer">-</button>
+                            <span class="text-xs font-black text-slate-900 dark:text-slate-100 w-6 text-center" x-text="modalPax"></span>
                             <button type="button" @click="modalPax += 1"
-                                class="text-slate-600 font-bold hover:text-sky-600 cursor-pointer">+</button>
+                                class="text-slate-600 dark:text-slate-400 font-bold hover:text-sky-600 cursor-pointer">+</button>
                         </div>
                     </div>
 
                     {{-- Inclusions --}}
                     <template x-if="previewAddon?.inclusions && previewAddon.inclusions.length > 0">
                         <div class="space-y-2">
-                            <h4 class="text-xs font-extrabold uppercase tracking-wider text-slate-400">All Included
+                            <h4 class="text-xs font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">All Included
                                 Services</h4>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                 <template x-for="(inc, idx) in previewAddon.inclusions" :key="idx">
                                     <div
-                                        class="flex items-center gap-2 text-xs text-slate-700 bg-slate-50 px-3 py-2 rounded-xl border border-slate-200/80">
+                                        class="flex items-center gap-2 text-xs text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800 px-3 py-2 rounded-xl border border-slate-200/80 dark:border-slate-700/80">
                                         <span
                                             class="material-symbols-outlined text-[15px] text-emerald-500">check_circle</span>
                                         <span x-text="inc"></span>
@@ -318,9 +318,9 @@
 
                 {{-- Modal Footer --}}
                 <div
-                    class="sticky bottom-0 bg-slate-50 px-6 py-4 border-t border-slate-200 flex items-center justify-between gap-4">
+                    class="sticky bottom-0 bg-slate-50 dark:bg-slate-800 px-6 py-4 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between gap-4">
                     <button @click="previewAddon = null"
-                        class="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs transition-colors">
+                        class="px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 font-bold text-xs transition-colors">
                         Close Details
                     </button>
 

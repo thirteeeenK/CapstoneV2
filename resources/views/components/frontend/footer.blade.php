@@ -1,4 +1,4 @@
-<footer class="w-full pt-12 sm:pt-16 lg:pt-20 pb-8 sm:pb-12 px-4 sm:px-6 lg:px-8 bg-sand-50/80 border-t border-slate-200/80 font-body relative overflow-hidden">
+<footer class="w-full pt-12 sm:pt-16 lg:pt-20 pb-8 sm:pb-12 px-4 sm:px-6 lg:px-8 bg-sand-50/80 dark:bg-slate-950 border-t border-slate-200/80 dark:border-slate-800 font-body relative overflow-hidden">
     {{-- Soft Ambient Glow --}}
     <div class="absolute bottom-0 right-0 w-96 max-w-[100vw] h-96 bg-ocean-500/5 rounded-full blur-3xl pointer-events-none"></div>
 
@@ -7,13 +7,13 @@
 
             <!-- Brand Column -->
             <div class="md:col-span-5 lg:col-span-4 space-y-3.5">
-                <a href="{{ route('landing') }}" class="inline-block text-2xl sm:text-3xl font-headline font-black text-slate-900 tracking-tight">
+                <a href="{{ route('landing') }}" class="inline-block text-2xl sm:text-3xl font-headline font-black text-slate-900 dark:text-slate-100 tracking-tight">
                     Sunny<span class="text-ocean-600">Trips</span>
                 </a>
-                <p class="text-slate-500 text-xs sm:text-sm leading-relaxed max-w-sm">
+                <p class="text-slate-500 dark:text-slate-400 text-xs sm:text-sm leading-relaxed max-w-sm">
                     Redefining tropical exploration through curated luxury, intelligent recommendations, and seamless travel booking across the Philippine archipelago.
                 </p>
-                <div class="pt-1 flex items-center gap-2 text-xs font-semibold text-slate-500">
+                <div class="pt-1 flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400">
                     <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                     <span>AI-Powered Concierge Ready</span>
                 </div>
@@ -27,11 +27,11 @@
                 
                 <!-- Column: Explore -->
                 <div class="space-y-3 sm:space-y-4">
-                    <h4 class="font-headline text-slate-900 text-xs font-extrabold tracking-widest uppercase flex items-center gap-1.5">
+                    <h4 class="font-headline text-slate-900 dark:text-slate-100 text-xs font-extrabold tracking-widest uppercase flex items-center gap-1.5">
                         <span class="material-symbols-outlined text-[15px] text-ocean-600">explore</span>
                         <span>Explore</span>
                     </h4>
-                    <div class="flex flex-col gap-2.5 text-slate-600 text-xs sm:text-sm font-medium">
+                    <div class="flex flex-col gap-2.5 text-slate-600 dark:text-slate-400 text-xs sm:text-sm font-medium">
                         <a href="{{ route('destinations.index') }}" class="hover:text-ocean-600 transition-colors">Islands</a>
                         <a href="{{ route('hotels.index') }}" class="hover:text-ocean-600 transition-colors">Stays & Resorts</a>
                         <a href="{{ route('activities.index') }}" class="hover:text-ocean-600 transition-colors">Tours & Activities</a>
@@ -45,11 +45,11 @@
 
                 <!-- Column: Concierge -->
                 <div class="space-y-3 sm:space-y-4">
-                    <h4 class="font-headline text-slate-900 text-xs font-extrabold tracking-widest uppercase flex items-center gap-1.5">
+                    <h4 class="font-headline text-slate-900 dark:text-slate-100 text-xs font-extrabold tracking-widest uppercase flex items-center gap-1.5">
                         <span class="material-symbols-outlined text-[15px] text-ocean-600">support_agent</span>
                         <span>Concierge</span>
                     </h4>
-                    <div class="flex flex-col gap-2.5 text-slate-600 text-xs sm:text-sm font-medium">
+                    <div class="flex flex-col gap-2.5 text-slate-600 dark:text-slate-400 text-xs sm:text-sm font-medium">
                         <a href="{{ route('reviews.index') }}" class="hover:text-ocean-600 transition-colors">Traveler Reviews</a>
                         @auth
                             <a href="{{ route('dashboard') }}" class="hover:text-ocean-600 transition-colors">My Dashboard</a>
@@ -66,16 +66,16 @@
 
                 <!-- Column: The Office / HQ -->
                 <div class="col-span-2 sm:col-span-1 space-y-3 sm:space-y-4">
-                    <h4 class="font-headline text-slate-900 text-xs font-extrabold tracking-widest uppercase flex items-center gap-1.5">
+                    <h4 class="font-headline text-slate-900 dark:text-slate-100 text-xs font-extrabold tracking-widest uppercase flex items-center gap-1.5">
                         <span class="material-symbols-outlined text-[15px] text-ocean-600">business</span>
                         <span>The Office</span>
                     </h4>
-                    <p class="text-slate-600 text-xs sm:text-sm leading-relaxed">
+                    <p class="text-slate-600 dark:text-slate-400 text-xs sm:text-sm leading-relaxed">
                         Brgy. San Agustin,<br />
                         Pili, Camarines Sur,<br />
                         Philippines, 4418
                     </p>
-                    <div class="text-[11px] text-slate-500 font-medium">
+                    <div class="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
                         Daily Concierge: 8:00 AM – 8:00 PM PHT
                     </div>
                 </div>
@@ -85,21 +85,21 @@
         </div>
 
         {{-- Divider --}}
-        <hr class="border-slate-200/80" />
+        <hr class="border-slate-200/80 dark:border-slate-800" />
 
         {{-- Bottom Copyright & Legal Links --}}
-        <div class="flex flex-col-reverse sm:flex-row justify-between items-center gap-4 text-slate-400 text-xs font-medium text-center sm:text-left">
+        <div class="flex flex-col-reverse sm:flex-row justify-between items-center gap-4 text-slate-400 dark:text-slate-500 text-xs font-medium text-center sm:text-left">
             <p>© {{ date('Y') }} {{ config('app.name', 'SunnyTrips') }}. All rights reserved. Made for sun-seekers.</p>
             <div class="flex flex-wrap justify-center sm:justify-end gap-x-5 gap-y-2">
                 @php
                     $legalDocs = \App\Models\LegalDocument::orderBy('title')->get();
                 @endphp
                 @forelse($legalDocs as $doc)
-                    <a href="{{ route('legal.show', $doc->key) }}" class="hover:text-slate-700 transition-colors">{{ $doc->title }}</a>
+                    <a href="{{ route('legal.show', $doc->key) }}" class="hover:text-slate-700 dark:hover:text-slate-300 transition-colors">{{ $doc->title }}</a>
                 @empty
-                    <a href="{{ route('terms') }}" class="hover:text-slate-700 transition-colors">Terms of Service</a>
-                    <a href="{{ route('privacy-policy') }}" class="hover:text-slate-700 transition-colors">Privacy Policy</a>
-                    <a href="{{ route('ai-disclosure') }}" class="hover:text-slate-700 transition-colors">AI Disclosure</a>
+                    <a href="{{ route('terms') }}" class="hover:text-slate-700 dark:hover:text-slate-300 transition-colors">Terms of Service</a>
+                    <a href="{{ route('privacy-policy') }}" class="hover:text-slate-700 dark:hover:text-slate-300 transition-colors">Privacy Policy</a>
+                    <a href="{{ route('ai-disclosure') }}" class="hover:text-slate-700 dark:hover:text-slate-300 transition-colors">AI Disclosure</a>
                 @endforelse
             </div>
         </div>

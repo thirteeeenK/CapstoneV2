@@ -1,35 +1,36 @@
 <header x-data="{ mobileMenuOpen: false }" @keydown.escape.window="mobileMenuOpen = false"
     class="fixed top-0 w-full z-50 p-3 sm:p-6 transition-all duration-300">
     <nav id="frontend-nav"
-        class="mx-auto max-w-7xl bg-white/10 backdrop-blur-lg border border-white/50 shadow-lg shadow-sky-900/5 rounded-2xl sm:rounded-3xl flex justify-between items-center px-4 sm:px-8 py-2.5 sm:py-3.5 font-body tracking-tight transition-all">
+        class="mx-auto max-w-7xl bg-white/10 dark:bg-slate-950/50 backdrop-blur-lg border border-white/50 dark:border-slate-700/60 shadow-lg shadow-sky-900/5 rounded-2xl sm:rounded-3xl flex justify-between items-center px-4 sm:px-8 py-2.5 sm:py-3.5 font-body tracking-tight transition-all">
 
         <!-- Logo -->
         <a href="/" class="flex items-center gap-1.5 shrink-0 group">
             <span
-                class="text-lg sm:text-2xl font-black font-headline tracking-tight text-slate-900 drop-shadow-xs transition-transform duration-300 group-hover:scale-[1.02] whitespace-nowrap">
+                class="text-lg sm:text-2xl font-black font-headline tracking-tight text-slate-900 dark:text-white drop-shadow-xs transition-transform duration-300 group-hover:scale-[1.02] whitespace-nowrap">
                 Sunny<span class="text-ocean-600">Trips</span>
             </span>
         </a>
 
         <!-- Desktop Navigation Links -->
         <div
-            class="hidden md:flex items-center gap-1.5 bg-white/30 p-1.5 rounded-full border border-white/50 backdrop-blur-md">
+            class="hidden md:flex items-center gap-1.5 bg-white/30 dark:bg-slate-900/60 p-1.5 rounded-full border border-white/50 dark:border-slate-700/60 backdrop-blur-md">
             <a href="/#destinations" data-nav-target="destinations"
-                class="px-4 lg:px-5 py-2 text-slate-600 hover:bg-white/60 hover:text-sky-700 rounded-full font-semibold text-sm transition-all duration-200">Destinations</a>
+                class="px-4 lg:px-5 py-2 text-slate-600 dark:text-slate-300 hover:bg-white/60 dark:hover:bg-slate-800 hover:text-sky-700 dark:hover:text-sky-300 rounded-full font-semibold text-sm transition-all duration-200">Destinations</a>
             <a href="{{ route('activities.index') }}"
-                class="px-4 lg:px-5 py-2 text-slate-600 hover:bg-white/60 hover:text-sky-700 rounded-full font-semibold text-sm transition-all duration-200 {{ request()->routeIs('activities.*') ? 'nav-active' : '' }}">Experiences</a>
+                class="px-4 lg:px-5 py-2 text-slate-600 dark:text-slate-300 hover:bg-white/60 dark:hover:bg-slate-800 hover:text-sky-700 dark:hover:text-sky-300 rounded-full font-semibold text-sm transition-all duration-200 {{ request()->routeIs('activities.*') ? 'nav-active' : '' }}">Experiences</a>
             <a href="{{ route('packages.index') }}"
-                class="px-4 lg:px-5 py-2 text-slate-600 hover:bg-white/60 hover:text-sky-700 rounded-full font-semibold text-sm transition-all duration-200 {{ request()->routeIs('packages.*') ? 'nav-active' : '' }}">Packages</a>
+                class="px-4 lg:px-5 py-2 text-slate-600 dark:text-slate-300 hover:bg-white/60 dark:hover:bg-slate-800 hover:text-sky-700 dark:hover:text-sky-300 rounded-full font-semibold text-sm transition-all duration-200 {{ request()->routeIs('packages.*') ? 'nav-active' : '' }}">Packages</a>
             <a href="/#testimonials" data-nav-target="testimonials"
-                class="px-4 lg:px-5 py-2 text-slate-600 hover:bg-white/60 hover:text-sky-700 rounded-full font-semibold text-sm transition-all duration-200">Stories &amp; Reviews</a>
+                class="px-4 lg:px-5 py-2 text-slate-600 dark:text-slate-300 hover:bg-white/60 dark:hover:bg-slate-800 hover:text-sky-700 dark:hover:text-sky-300 rounded-full font-semibold text-sm transition-all duration-200">Stories &amp; Reviews</a>
         </div>
 
-        <!-- Right Cluster: Cart, Auth Buttons & Mobile Hamburger -->
+        <!-- Right Cluster: Theme, Cart, Auth Buttons & Mobile Hamburger -->
         <div class="flex items-center gap-1.5 sm:gap-3">
+            <x-frontend.theme-toggle />
             <!-- Basket Trigger -->
             <button onclick="window.dispatchEvent(new CustomEvent('open-cart-drawer'))" title="View Trip Basket"
                 aria-label="View Trip Basket"
-                class="p-2 sm:p-2.5 text-slate-700 hover:text-sky-600 hover:bg-white/60 rounded-xl sm:rounded-full transition relative flex items-center justify-center border border-transparent hover:border-white/60">
+                class="p-2 sm:p-2.5 text-slate-700 dark:text-slate-300 hover:text-sky-600 dark:hover:text-sky-300 hover:bg-white/60 dark:hover:bg-slate-800/80 rounded-xl sm:rounded-full transition relative flex items-center justify-center border border-transparent hover:border-white/60 dark:hover:border-slate-700">
                 <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
@@ -52,7 +53,7 @@
             <!-- Mobile Hamburger Toggle Button -->
             <button @click="mobileMenuOpen = !mobileMenuOpen" aria-label="Toggle navigation menu"
                 :aria-expanded="mobileMenuOpen.toString()"
-                class="md:hidden p-2 rounded-xl text-slate-800 hover:text-slate-900 bg-white/40 hover:bg-white/70 backdrop-blur-md border border-white/50 focus:outline-none flex items-center justify-center shadow-xs transition-colors">
+                class="md:hidden p-2 rounded-xl text-slate-800 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white bg-white/40 dark:bg-slate-900/60 hover:bg-white/70 dark:hover:bg-slate-800 backdrop-blur-md border border-white/50 dark:border-slate-700/60 focus:outline-none flex items-center justify-center shadow-xs transition-colors">
                 <span class="material-symbols-outlined text-[22px]"
                     x-text="mobileMenuOpen ? 'close' : 'menu'">menu</span>
             </button>
@@ -67,43 +68,49 @@
         x-transition:leave="transition ease-in duration-150"
         x-transition:leave-start="opacity-100 translate-y-0 scale-100"
         x-transition:leave-end="opacity-0 -translate-y-3 scale-[0.98]"
-        class="md:hidden mt-2 mx-auto max-w-7xl max-h-[calc(100dvh-5rem)] overflow-y-auto bg-white/80 backdrop-blur-xl border border-white/60 shadow-xl shadow-sky-900/10 rounded-2xl sm:rounded-3xl p-4 sm:p-5 space-y-4">
+        class="md:hidden mt-2 mx-auto max-w-7xl max-h-[calc(100dvh-5rem)] overflow-y-auto bg-white/80 dark:bg-slate-900/90 backdrop-blur-xl border border-white/60 dark:border-slate-700/60 shadow-xl shadow-sky-900/10 rounded-2xl sm:rounded-3xl p-4 sm:p-5 space-y-4">
 
         <!-- Navigation Links List -->
         <div class="space-y-1">
             <a href="/#destinations" @click="mobileMenuOpen = false"
-                class="flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-slate-700 hover:text-sky-700 hover:bg-white/60 font-bold text-sm transition-colors">
+                class="flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-slate-700 dark:text-slate-300 hover:text-sky-700 dark:hover:text-sky-300 hover:bg-white/60 dark:hover:bg-slate-800 font-bold text-sm transition-colors">
                 <span class="material-symbols-outlined text-[20px] text-sky-600">location_on</span>
                 <span>Destinations</span>
             </a>
 
             <a href="{{ route('activities.index') }}" @click="mobileMenuOpen = false"
-                class="flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-slate-700 hover:text-sky-700 hover:bg-white/60 font-bold text-sm transition-colors {{ request()->routeIs('activities.*') ? 'nav-active' : '' }}">
+                class="flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-slate-700 dark:text-slate-300 hover:text-sky-700 dark:hover:text-sky-300 hover:bg-white/60 dark:hover:bg-slate-800 font-bold text-sm transition-colors {{ request()->routeIs('activities.*') ? 'nav-active' : '' }}">
                 <span class="material-symbols-outlined text-[20px] text-sky-600">explore</span>
                 <span>Experiences & Tours</span>
             </a>
 
             <a href="{{ route('packages.index') }}" @click="mobileMenuOpen = false"
-                class="flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-slate-700 hover:text-sky-700 hover:bg-white/60 font-bold text-sm transition-colors {{ request()->routeIs('packages.*') ? 'nav-active' : '' }}">
+                class="flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-slate-700 dark:text-slate-300 hover:text-sky-700 dark:hover:text-sky-300 hover:bg-white/60 dark:hover:bg-slate-800 font-bold text-sm transition-colors {{ request()->routeIs('packages.*') ? 'nav-active' : '' }}">
                 <span class="material-symbols-outlined text-[20px] text-sky-600">card_travel</span>
                 <span>Tour Packages</span>
             </a>
 
             <a href="/#testimonials" @click="mobileMenuOpen = false"
-                class="flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-slate-700 hover:text-sky-700 hover:bg-white/60 font-bold text-sm transition-colors">
+                class="flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-slate-700 dark:text-slate-300 hover:text-sky-700 dark:hover:text-sky-300 hover:bg-white/60 dark:hover:bg-slate-800 font-bold text-sm transition-colors">
                 <span class="material-symbols-outlined text-[20px] text-sky-600">auto_stories</span>
                 <span>Stories &amp; Reviews</span>
             </a>
 
             <a href="{{ route('lucky.index') }}" @click="mobileMenuOpen = false"
-                class="flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-amber-800 bg-amber-50/70 hover:bg-amber-100/80 border border-amber-200/60 font-bold text-sm transition-colors">
-                <span class="material-symbols-outlined text-[20px] text-amber-600">casino</span>
+                class="flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-amber-800 dark:text-amber-200 bg-amber-50/70 dark:bg-amber-950/50 hover:bg-amber-100/80 dark:hover:bg-amber-950 border border-amber-200/60 dark:border-amber-900/60 font-bold text-sm transition-colors">
+                <span class="material-symbols-outlined text-[20px] text-amber-600 dark:text-amber-400">casino</span>
                 <span>I'm Feeling Lucky</span>
             </a>
         </div>
 
+        <!-- Appearance toggle -->
+        <div class="flex items-center justify-between px-3.5 py-1">
+            <span class="text-[11px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Appearance</span>
+            <x-frontend.theme-toggle />
+        </div>
+
         <!-- Auth Action Buttons inside Mobile Menu -->
-        <div class="pt-3 border-t border-white/50 grid grid-cols-2 gap-2.5">
+        <div class="pt-3 border-t border-white/50 dark:border-slate-700/60 grid grid-cols-2 gap-2.5">
             <a href="{{ route('login') }}"
                 class="flex items-center justify-center py-2.5 px-4 rounded-full font-bold text-xs sm:text-sm bg-gradient-to-br from-sky-500 to-sky-700 text-white shadow-md shadow-sky-500/30 hover:shadow-lg hover:shadow-sky-500/40 transition-all border border-sky-400/50">
                 Login

@@ -1,6 +1,6 @@
 <x-frontend.layout title="I'm Feeling Lucky | SunnyTrips">
     <div x-data="luckyManager()"
-        class="min-h-screen bg-sand-50/70 text-slate-900 font-body py-5 sm:py-8 lg:py-10 relative overflow-hidden">
+        class="min-h-screen bg-sand-50/70 dark:bg-slate-800/60 text-slate-900 dark:text-slate-100 font-body py-5 sm:py-8 lg:py-10 relative overflow-hidden">
 
         {{-- Background Soft Ambient Mesh Glows --}}
         <div
@@ -19,23 +19,23 @@
                     <span class="material-symbols-outlined text-[16px] text-ocean-600">auto_awesome</span>
                     <span>Smart Travel Generator</span>
                 </div> --}}
-                <h1 class="text-3xl sm:text-5xl font-black text-slate-900 font-headline tracking-tight">
+                <h1 class="text-3xl sm:text-5xl font-black text-slate-900 dark:text-slate-100 font-headline tracking-tight">
                     Instant Random Itineraries
                 </h1>
-                <p class="text-slate-500 text-xs sm:text-sm font-body leading-relaxed">
+                <p class="text-slate-500 dark:text-slate-400 text-xs sm:text-sm font-body leading-relaxed">
                     Generate an instant, curated trip package — hotel stay and experiences matched to your budget and
                     travel preferences.
                 </p>
             </div>
 
             {{-- Filter Control Bar — collapses itself once an itinerary exists so the result is what you land on --}}
-            <details x-bind:open="!itinerary" class="group bg-white rounded-3xl border border-slate-200/80 shadow-sm p-4 sm:p-6">
+            <details x-bind:open="!itinerary" class="group bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-700/80 shadow-sm p-4 sm:p-6">
                 <summary class="flex items-center gap-2 cursor-pointer list-none [&::-webkit-details-marker]:hidden">
                     <span class="w-1.5 h-5 bg-ocean-600 rounded-full"></span>
-                    <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500 font-headline">
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 font-headline">
                         Trip Preferences &amp; Budget Limits
                     </h2>
-                    <span class="ml-auto material-symbols-outlined text-[18px] text-slate-400 transition-transform group-open:rotate-180">expand_more</span>
+                    <span class="ml-auto material-symbols-outlined text-[18px] text-slate-400 dark:text-slate-500 transition-transform group-open:rotate-180">expand_more</span>
                 </summary>
 
                 <div class="mt-4 sm:mt-5">
@@ -44,12 +44,12 @@
                     {{-- Destination --}}
                     <div>
                         <label for="lucky-destination"
-                            class="block font-bold text-slate-700 mb-1 flex items-center gap-1">
+                            class="block font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
                             <span class="material-symbols-outlined text-[15px] text-ocean-600">location_on</span>
                             <span>Destination</span>
                         </label>
                         <select id="lucky-destination" x-model="filters.destination_id"
-                            class="w-full bg-slate-50 border border-slate-200 rounded-xl py-1.5 sm:py-2.5 px-3 text-base sm:text-xs font-medium text-slate-800 focus:bg-white focus:border-ocean-500 focus:outline-none transition-all cursor-pointer">
+                            class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-1.5 sm:py-2.5 px-3 text-base sm:text-xs font-medium text-slate-800 dark:text-slate-200 focus:bg-white dark:focus:bg-slate-900 focus:border-ocean-500 focus:outline-none transition-all cursor-pointer">
                             <option value="">Any Island</option>
                             @foreach($destinations as $destination)
                                 <option value="{{ $destination->id }}">{{ $destination->name }}</option>
@@ -59,27 +59,27 @@
 
                     {{-- Max Budget --}}
                     <div>
-                        <label for="lucky-budget" class="block font-bold text-slate-700 mb-1 flex items-center gap-1">
+                        <label for="lucky-budget" class="block font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
                             <span class="material-symbols-outlined text-[15px] text-ocean-600">payments</span>
                             <span>Max Budget</span>
                         </label>
                         <div class="relative">
                             <span
-                                class="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">₱</span>
+                                class="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 dark:text-slate-500">₱</span>
                             <input id="lucky-budget" type="number" min="500" step="500"
                                 x-model.number="filters.max_budget"
-                                class="w-full bg-slate-50 border border-slate-200 rounded-xl py-1.5 sm:py-2.5 pl-7 pr-3 text-base sm:text-xs font-medium text-slate-800 focus:bg-white focus:border-ocean-500 focus:outline-none transition-all">
+                                class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-1.5 sm:py-2.5 pl-7 pr-3 text-base sm:text-xs font-medium text-slate-800 dark:text-slate-200 focus:bg-white dark:focus:bg-slate-900 focus:border-ocean-500 focus:outline-none transition-all">
                         </div>
                     </div>
 
                     {{-- Trip Duration --}}
                     <div>
-                        <label for="lucky-nights" class="block font-bold text-slate-700 mb-1 flex items-center gap-1">
+                        <label for="lucky-nights" class="block font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
                             <span class="material-symbols-outlined text-[15px] text-ocean-600">calendar_month</span>
                             <span>Trip Duration</span>
                         </label>
                         <select id="lucky-nights" x-model.number="filters.nights"
-                            class="w-full bg-slate-50 border border-slate-200 rounded-xl py-1.5 sm:py-2.5 px-3 text-base sm:text-xs font-medium text-slate-800 focus:bg-white focus:border-ocean-500 focus:outline-none transition-all cursor-pointer">
+                            class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-1.5 sm:py-2.5 px-3 text-base sm:text-xs font-medium text-slate-800 dark:text-slate-200 focus:bg-white dark:focus:bg-slate-900 focus:border-ocean-500 focus:outline-none transition-all cursor-pointer">
                             <option value="1">1 night</option>
                             <option value="2">2 nights</option>
                             <option value="3">3 nights</option>
@@ -92,12 +92,12 @@
 
                     {{-- Travelers --}}
                     <div>
-                        <label for="lucky-pax" class="block font-bold text-slate-700 mb-1 flex items-center gap-1">
+                        <label for="lucky-pax" class="block font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
                             <span class="material-symbols-outlined text-[15px] text-ocean-600">group</span>
                             <span>Travelers</span>
                         </label>
                         <select id="lucky-pax" x-model.number="filters.pax"
-                            class="w-full bg-slate-50 border border-slate-200 rounded-xl py-1.5 sm:py-2.5 px-3 text-base sm:text-xs font-medium text-slate-800 focus:bg-white focus:border-ocean-500 focus:outline-none transition-all cursor-pointer">
+                            class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-1.5 sm:py-2.5 px-3 text-base sm:text-xs font-medium text-slate-800 dark:text-slate-200 focus:bg-white dark:focus:bg-slate-900 focus:border-ocean-500 focus:outline-none transition-all cursor-pointer">
                             <option value="1">1 traveler</option>
                             <option value="2">2 travelers</option>
                             <option value="3">3 travelers</option>
@@ -108,12 +108,12 @@
                     {{-- Hotel Category --}}
                     <div>
                         <label for="lucky-category"
-                            class="block font-bold text-slate-700 mb-1 flex items-center gap-1">
+                            class="block font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
                             <span class="material-symbols-outlined text-[15px] text-ocean-600">hotel</span>
                             <span>Hotel Style</span>
                         </label>
                         <select id="lucky-category" x-model="filters.hotel_category"
-                            class="w-full bg-slate-50 border border-slate-200 rounded-xl py-1.5 sm:py-2.5 px-3 text-base sm:text-xs font-medium text-slate-800 focus:bg-white focus:border-ocean-500 focus:outline-none transition-all cursor-pointer">
+                            class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-1.5 sm:py-2.5 px-3 text-base sm:text-xs font-medium text-slate-800 dark:text-slate-200 focus:bg-white dark:focus:bg-slate-900 focus:border-ocean-500 focus:outline-none transition-all cursor-pointer">
                             <option value="">Any Category</option>
                             <option value="budget">Budget (≤ ₱2,500/night)</option>
                             <option value="mid">Mid-range (₱2,500–₱6,000)</option>
@@ -124,13 +124,13 @@
                     {{-- Activity Count --}}
                     <div>
                         <label for="lucky-activities"
-                            class="block font-bold text-slate-700 mb-1 flex items-center gap-1">
+                            class="block font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
                             <span
                                 class="material-symbols-outlined text-[15px] text-ocean-600">format_list_bulleted</span>
                             <span>Activities Count</span>
                         </label>
                         <select id="lucky-activities" x-model.number="filters.activity_count"
-                            class="w-full bg-slate-50 border border-slate-200 rounded-xl py-1.5 sm:py-2.5 px-3 text-base sm:text-xs font-medium text-slate-800 focus:bg-white focus:border-ocean-500 focus:outline-none transition-all cursor-pointer">
+                            class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-1.5 sm:py-2.5 px-3 text-base sm:text-xs font-medium text-slate-800 dark:text-slate-200 focus:bg-white dark:focus:bg-slate-900 focus:border-ocean-500 focus:outline-none transition-all cursor-pointer">
                             <option value="1">1 Experience</option>
                             <option value="2">2 Experiences</option>
                             <option value="3">3 Experiences</option>
@@ -141,12 +141,12 @@
 
                     {{-- Activity Vibe --}}
                     <div>
-                        <label for="lucky-level" class="block font-bold text-slate-700 mb-1 flex items-center gap-1">
+                        <label for="lucky-level" class="block font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
                             <span class="material-symbols-outlined text-[15px] text-ocean-600">hiking</span>
                             <span>Activity Vibe</span>
                         </label>
                         <select id="lucky-level" x-model="filters.activity_level"
-                            class="w-full bg-slate-50 border border-slate-200 rounded-xl py-1.5 sm:py-2.5 px-3 text-base sm:text-xs font-medium text-slate-800 focus:bg-white focus:border-ocean-500 focus:outline-none transition-all cursor-pointer">
+                            class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-1.5 sm:py-2.5 px-3 text-base sm:text-xs font-medium text-slate-800 dark:text-slate-200 focus:bg-white dark:focus:bg-slate-900 focus:border-ocean-500 focus:outline-none transition-all cursor-pointer">
                             <option value="">Any Vibe</option>
                             <option value="Relaxing">Relaxing</option>
                             <option value="Sightseeing">Sightseeing</option>
@@ -158,12 +158,12 @@
 
                     {{-- Start Date --}}
                     <div>
-                        <label for="lucky-date" class="block font-bold text-slate-700 mb-1 flex items-center gap-1">
+                        <label for="lucky-date" class="block font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1">
                             <span class="material-symbols-outlined text-[15px] text-ocean-600">today</span>
                             <span>Start Date</span>
                         </label>
                         <input id="lucky-date" type="date" x-model="filters.start_date" :min="tomorrowStr"
-                            class="w-full bg-slate-50 border border-slate-200 rounded-xl py-1.5 sm:py-2.5 px-3 text-base sm:text-xs font-medium text-slate-800 focus:bg-white focus:border-ocean-500 focus:outline-none transition-all">
+                            class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl py-1.5 sm:py-2.5 px-3 text-base sm:text-xs font-medium text-slate-800 dark:text-slate-200 focus:bg-white dark:focus:bg-slate-900 focus:border-ocean-500 focus:outline-none transition-all">
                     </div>
                 </div>
                 </div>
@@ -185,7 +185,7 @@
 
                 <template x-if="error">
                     <div
-                        class="mt-4 text-xs font-semibold text-rose-700 bg-rose-50 border border-rose-200 rounded-xl px-4 py-3 max-w-md mx-auto flex items-center gap-2">
+                        class="mt-4 text-xs font-semibold text-rose-700 dark:text-rose-200 bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900/60 rounded-xl px-4 py-3 max-w-md mx-auto flex items-center gap-2">
                         <span class="material-symbols-outlined text-[16px] text-rose-600">error</span>
                         <span x-text="error"></span>
                     </div>
@@ -199,7 +199,7 @@
             {{-- Generated Itinerary Result --}}
             <template x-if="itinerary">
                 <div id="lucky-result"
-                    class="scroll-mt-16 sm:scroll-mt-8 bg-white rounded-3xl border border-slate-200/80 shadow-md overflow-hidden animate-fade-up">
+                    class="scroll-mt-16 sm:scroll-mt-8 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-700/80 shadow-md overflow-hidden animate-fade-up">
 
                     {{-- Destination Header --}}
                     <div class="relative bg-slate-900 text-white p-6 sm:p-8 overflow-hidden">
@@ -259,54 +259,54 @@
 
                         {{-- Hotel & Room Stay --}}
                         <div class="space-y-3">
-                            <div class="flex items-center gap-2 border-b border-slate-100 pb-2.5">
+                            <div class="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-2.5">
                                 <span class="material-symbols-outlined text-[18px] text-ocean-600">king_bed</span>
-                                <h3 class="font-headline text-xs font-bold text-slate-900 uppercase tracking-wider">
+                                <h3 class="font-headline text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider">
                                     Accommodation Details
                                 </h3>
                             </div>
 
                             <div
-                                class="flex flex-col sm:flex-row gap-4 bg-slate-50 rounded-2xl p-4 border border-slate-200/80 items-center sm:items-start">
+                                class="flex flex-col sm:flex-row gap-4 bg-slate-50 dark:bg-slate-800 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-700/80 items-center sm:items-start">
                                 <template x-if="itinerary.room.image || itinerary.hotel.image">
                                     <img :src="itinerary.room.image || itinerary.hotel.image"
                                         :alt="itinerary.hotel.hotel_name"
                                         onerror="this.onerror=null;this.src='{{ asset('images/placeholder.jpg') }}'"
-                                        class="w-full sm:w-40 h-36 sm:h-28 rounded-xl object-cover border border-slate-200 shrink-0">
+                                        class="w-full sm:w-40 h-36 sm:h-28 rounded-xl object-cover border border-slate-200 dark:border-slate-700 shrink-0">
                                 </template>
                                 <div class="flex-1 min-w-0 space-y-1.5">
                                     <p class="text-xs font-bold text-ocean-600 uppercase tracking-wider"
                                         x-text="itinerary.hotel.hotel_name"></p>
-                                    <h4 class="text-base font-bold text-slate-900 font-headline"
+                                    <h4 class="text-base font-bold text-slate-900 dark:text-slate-100 font-headline"
                                         x-text="itinerary.room.room_name"></h4>
 
                                     <div class="flex flex-wrap gap-1.5 pt-1">
                                         <template x-if="itinerary.hotel.type">
                                             <span
-                                                class="inline-flex items-center gap-1 rounded-md bg-white border border-slate-200 px-2 py-0.5 text-[10px] font-medium text-slate-700 capitalize"
+                                                class="inline-flex items-center gap-1 rounded-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-2 py-0.5 text-[10px] font-medium text-slate-700 dark:text-slate-300 capitalize"
                                                 x-text="itinerary.hotel.type"></span>
                                         </template>
                                         <template x-if="itinerary.room.bed_configuration">
                                             <span
-                                                class="inline-flex items-center gap-1 rounded-md bg-white border border-slate-200 px-2 py-0.5 text-[10px] font-medium text-slate-700">
+                                                class="inline-flex items-center gap-1 rounded-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-2 py-0.5 text-[10px] font-medium text-slate-700 dark:text-slate-300">
                                                 <span
-                                                    class="material-symbols-outlined text-[12px] text-slate-400">king_bed</span>
+                                                    class="material-symbols-outlined text-[12px] text-slate-400 dark:text-slate-500">king_bed</span>
                                                 <span x-text="itinerary.room.bed_configuration"></span>
                                             </span>
                                         </template>
                                         <span
-                                            class="inline-flex items-center gap-1 rounded-md bg-white border border-slate-200 px-2 py-0.5 text-[10px] font-medium text-slate-700">
+                                            class="inline-flex items-center gap-1 rounded-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-2 py-0.5 text-[10px] font-medium text-slate-700 dark:text-slate-300">
                                             <span
-                                                class="material-symbols-outlined text-[12px] text-slate-400">group</span>
+                                                class="material-symbols-outlined text-[12px] text-slate-400 dark:text-slate-500">group</span>
                                             <span x-text="'Up to ' + itinerary.room.max_occupancy + ' guests'"></span>
                                         </span>
                                     </div>
                                 </div>
                                 <div
-                                    class="text-left sm:text-right shrink-0 border-t sm:border-t-0 border-slate-200 pt-2 sm:pt-0 w-full sm:w-auto">
-                                    <span class="block text-[11px] text-slate-400 font-medium"
+                                    class="text-left sm:text-right shrink-0 border-t sm:border-t-0 border-slate-200 dark:border-slate-700 pt-2 sm:pt-0 w-full sm:w-auto">
+                                    <span class="block text-[11px] text-slate-400 dark:text-slate-500 font-medium"
                                         x-text="itinerary.room.formatted_nightly_rate + ' / night'"></span>
-                                    <span class="block text-lg font-black text-slate-900 font-headline mt-0.5"
+                                    <span class="block text-lg font-black text-slate-900 dark:text-slate-100 font-headline mt-0.5"
                                         x-text="'₱' + (Number(itinerary.room.nightly_rate) * Number(itinerary.nights)).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })"></span>
                                 </div>
                             </div>
@@ -314,26 +314,26 @@
 
                         {{-- Experiences List --}}
                         <div class="space-y-3">
-                            <div class="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                            <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
                                 <div class="flex items-center gap-2">
                                     <span class="material-symbols-outlined text-[18px] text-ocean-600">explore</span>
-                                    <h3 class="font-headline text-xs font-bold text-slate-900 uppercase tracking-wider">
+                                    <h3 class="font-headline text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider">
                                         Included Experiences
                                     </h3>
                                 </div>
                                 <span
-                                    class="text-xs font-bold text-ocean-600 bg-ocean-50 px-2.5 py-0.5 rounded-full border border-ocean-100"
+                                    class="text-xs font-bold text-ocean-600 bg-ocean-50 dark:bg-ocean-900/50 dark:text-ocean-100 px-2.5 py-0.5 rounded-full border border-ocean-100 dark:border-ocean-800"
                                     x-text="itinerary.activities.length + ' Activities'"></span>
                             </div>
 
                             <div class="grid grid-cols-1 gap-3">
                                 <template x-for="(activity, i) in itinerary.activities" :key="activity.id">
                                     <div
-                                        class="flex items-center gap-3.5 bg-slate-50 rounded-2xl p-4 border border-slate-200/80 hover:bg-slate-100/60 transition-colors">
+                                        class="flex items-center gap-3.5 bg-slate-50 dark:bg-slate-800 rounded-2xl p-4 border border-slate-200/80 dark:border-slate-700/80 hover:bg-slate-100/60 dark:hover:bg-slate-700 transition-colors">
                                         <template x-if="activity.image">
                                             <img :src="activity.image" :alt="activity.activity_name"
                                                 onerror="this.style.display='none'"
-                                                class="w-14 h-14 rounded-xl object-cover border border-slate-200 shrink-0">
+                                                class="w-14 h-14 rounded-xl object-cover border border-slate-200 dark:border-slate-700 shrink-0">
                                         </template>
                                         <template x-if="!activity.image">
                                             <span
@@ -341,33 +341,33 @@
                                                 x-text="i + 1"></span>
                                         </template>
                                         <div class="flex-1 min-w-0">
-                                            <p class="text-xs sm:text-sm font-bold text-slate-900 font-headline"
+                                            <p class="text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100 font-headline"
                                                 x-text="activity.activity_name"></p>
                                             <div class="flex flex-wrap gap-1.5 mt-1">
                                                 <span
-                                                    class="inline-flex items-center rounded-md bg-white border border-slate-200 px-2 py-0.5 text-[10px] font-medium text-slate-700 capitalize"
+                                                    class="inline-flex items-center rounded-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-2 py-0.5 text-[10px] font-medium text-slate-700 dark:text-slate-300 capitalize"
                                                     x-text="activity.category"></span>
                                                 <span
-                                                    class="inline-flex items-center rounded-md bg-white border border-slate-200 px-2 py-0.5 text-[10px] font-medium text-slate-700 capitalize"
+                                                    class="inline-flex items-center rounded-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-2 py-0.5 text-[10px] font-medium text-slate-700 dark:text-slate-300 capitalize"
                                                     x-text="activity.activity_level"></span>
                                                 <template x-if="activity.duration">
                                                     <span
-                                                        class="inline-flex items-center rounded-md bg-white border border-slate-200 px-2 py-0.5 text-[10px] font-medium text-slate-700"
+                                                        class="inline-flex items-center rounded-md bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-2 py-0.5 text-[10px] font-medium text-slate-700 dark:text-slate-300"
                                                         x-text="activity.duration"></span>
                                                 </template>
                                             </div>
                                         </div>
                                         <div class="text-right shrink-0">
                                             <template x-if="activity.is_per_person">
-                                                <span class="block text-[10px] text-slate-400 font-medium">for <span
+                                                <span class="block text-[10px] text-slate-400 dark:text-slate-500 font-medium">for <span
                                                         x-text="itinerary.pax"></span> pax</span>
                                             </template>
                                             <template x-if="!activity.is_per_person">
                                                 <span
-                                                    class="block text-[10px] text-slate-400 font-medium">flat group rate</span>
+                                                    class="block text-[10px] text-slate-400 dark:text-slate-500 font-medium">flat group rate</span>
                                             </template>
                                             <span
-                                                class="block text-xs sm:text-sm font-bold text-slate-900 font-headline mt-0.5"
+                                                class="block text-xs sm:text-sm font-bold text-slate-900 dark:text-slate-100 font-headline mt-0.5"
                                                 x-text="activity.formatted_rate"></span>
                                         </div>
                                     </div>

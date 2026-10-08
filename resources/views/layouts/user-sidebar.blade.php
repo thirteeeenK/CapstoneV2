@@ -1,21 +1,22 @@
 <div x-data="{ sidebarOpen: false }" @keydown.escape.window="sidebarOpen = false">
     {{-- Mobile Top Bar --}}
-    <header class="md:hidden sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 py-3 flex items-center justify-between shadow-xs transition-colors">
+    <header class="md:hidden sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-4 py-3 flex items-center justify-between shadow-xs transition-colors">
         <a href="{{ route('dashboard') }}" class="flex items-center gap-2">
-            <span class="font-headline font-black text-lg text-slate-900 tracking-tight">Sunny<span class="text-ocean-600">Trips</span></span>
+            <span class="font-headline font-black text-lg text-slate-900 dark:text-slate-100 tracking-tight">Sunny<span class="text-ocean-600">Trips</span></span>
         </a>
 
         <div class="flex items-center gap-1.5 sm:gap-2">
+            <x-frontend.theme-toggle />
             <button onclick="window.dispatchEvent(new CustomEvent('open-cart-drawer'))"
                     aria-label="Open Trip Basket"
-                    class="p-2 rounded-xl text-slate-700 hover:text-ocean-600 hover:bg-ocean-50 focus:outline-none flex items-center justify-center transition-colors">
+                    class="p-2 rounded-xl text-slate-700 dark:text-slate-300 hover:text-ocean-600 dark:hover:text-ocean-300 hover:bg-ocean-50 dark:hover:bg-slate-800 focus:outline-none flex items-center justify-center transition-colors">
                 <span class="material-symbols-outlined text-[22px]">shopping_basket</span>
             </button>
 
             <button @click="sidebarOpen = !sidebarOpen"
                     aria-label="Toggle Menu"
                     :aria-expanded="sidebarOpen.toString()"
-                    class="p-2 rounded-xl text-slate-700 hover:text-slate-900 hover:bg-slate-100 focus:outline-none flex items-center justify-center transition-colors">
+                    class="p-2 rounded-xl text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none flex items-center justify-center transition-colors">
                 <span class="material-symbols-outlined text-[24px]" x-text="sidebarOpen ? 'close' : 'menu'">menu</span>
             </button>
         </div>
@@ -36,34 +37,34 @@
 
     {{-- User Sidebar --}}
     <aside :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'"
-        class="h-screen w-72 max-w-[85vw] md:w-64 fixed left-0 top-0 bg-white border-r border-slate-200 flex flex-col py-5 sm:py-6 z-50 transition-transform duration-300 ease-in-out shadow-lg md:shadow-none">
+        class="h-screen w-72 max-w-[85vw] md:w-64 fixed left-0 top-0 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col py-5 sm:py-6 z-50 transition-transform duration-300 ease-in-out shadow-lg md:shadow-none">
 
         {{-- Brand Header --}}
         <div class="px-5 sm:px-6 mb-5 flex items-center justify-between">
             <div>
                 <a href="{{ route('dashboard') }}" class="flex items-center gap-1.5">
-                    <span class="font-headline font-black text-xl text-slate-900 tracking-tight">Sunny<span class="text-ocean-600">Trips</span></span>
+                    <span class="font-headline font-black text-xl text-slate-900 dark:text-slate-100 tracking-tight">Sunny<span class="text-ocean-600">Trips</span></span>
                 </a>
-                <p class="font-label text-[10.5px] uppercase tracking-[0.18em] text-ocean-700 font-extrabold mt-0.5 flex items-center gap-1.5">
+                <p class="font-label text-[10.5px] uppercase tracking-[0.18em] text-ocean-700 dark:text-ocean-300 font-extrabold mt-0.5 flex items-center gap-1.5">
                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                     <span>Traveler Portal</span>
                 </p>
             </div>
             <button @click="sidebarOpen = false" 
                     aria-label="Close navigation"
-                    class="md:hidden p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors">
+                    class="md:hidden p-1.5 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
                 <span class="material-symbols-outlined text-xl">close</span>
             </button>
         </div>
 
         {{-- Logged-in User Card Preview (Mobile & Desktop) --}}
-        <div class="mx-3.5 mb-4 p-3 rounded-2xl bg-sand-50/80 border border-sand-200/70 flex items-center gap-3">
+        <div class="mx-3.5 mb-4 p-3 rounded-2xl bg-sand-50/80 dark:bg-slate-800/60 border border-sand-200/70 dark:border-slate-700/60 flex items-center gap-3">
             <div class="w-9 h-9 rounded-xl bg-ocean-100 border border-ocean-200 text-ocean-800 font-headline font-extrabold text-sm flex items-center justify-center shrink-0">
                 {{ strtoupper(substr(Auth::user()->name ?? 'U', 0, 1)) }}
             </div>
             <div class="min-w-0 flex-1">
-                <p class="text-xs font-bold text-slate-800 truncate leading-tight">{{ Auth::user()->name }}</p>
-                <p class="text-[11px] text-slate-500 truncate leading-tight mt-0.5">{{ Auth::user()->email }}</p>
+                <p class="text-xs font-bold text-slate-800 dark:text-slate-100 truncate leading-tight">{{ Auth::user()->name }}</p>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400 truncate leading-tight mt-0.5">{{ Auth::user()->email }}</p>
             </div>
         </div>
 
@@ -94,7 +95,7 @@
         <nav class="flex-1 overflow-y-auto overscroll-contain px-3 space-y-5">
             @foreach ($navGroups as $groupLabel => $items)
                 <div>
-                    <h2 class="font-label px-3 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-2">
+                    <h2 class="font-label px-3 text-[11px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-2">
                         {{ $groupLabel }}
                     </h2>
                     <div class="space-y-1">
@@ -105,9 +106,9 @@
                             @endphp
                             <a href="{{ $item['href'] }}"
                                 @if($isCart) onclick="window.dispatchEvent(new CustomEvent('open-cart-drawer')); return false;" @endif
-                                class="flex items-center gap-3 w-full min-h-[42px] px-3 py-2 rounded-xl transition-all duration-200 group {{ $isActive ? 'bg-ocean-50 text-ocean-800 font-bold border border-ocean-200 shadow-xs' : 'text-slate-700 hover:bg-sand-50 hover:text-slate-950 font-bold' }}">
+                                class="flex items-center gap-3 w-full min-h-[42px] px-3 py-2 rounded-xl transition-all duration-200 group {{ $isActive ? 'bg-ocean-50 dark:bg-ocean-900/50 text-ocean-800 dark:text-ocean-100 font-bold border border-ocean-200 dark:border-ocean-800' : 'text-slate-700 dark:text-slate-300 hover:bg-sand-50 dark:hover:bg-slate-800 hover:text-slate-950 dark:hover:text-white font-bold' }}">
                                 <span
-                                    class="material-symbols-outlined text-[20px] shrink-0 transition-colors {{ $isActive ? 'text-ocean-600' : 'text-slate-500 group-hover:text-ocean-600' }}">
+                                    class="material-symbols-outlined text-[20px] shrink-0 transition-colors {{ $isActive ? 'text-ocean-600 dark:text-ocean-300' : 'text-slate-500 dark:text-slate-400 group-hover:text-ocean-600 dark:group-hover:text-ocean-300' }}">
                                     {{ $item['icon'] }}
                                 </span>
                                 <span class="font-body text-[13px] tracking-tight flex-1">
@@ -121,12 +122,17 @@
         </nav>
 
         {{-- Lower Left User Profile & Logout --}}
-        <div class="mt-auto px-4 pt-4 border-t border-slate-200 space-y-3">
+        <div class="mt-auto px-4 pt-4 border-t border-slate-200 dark:border-slate-800 space-y-3">
+            {{-- Appearance toggle --}}
+            <div class="flex items-center justify-between px-1">
+                <span class="font-label text-[11px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Appearance</span>
+                <x-frontend.theme-toggle />
+            </div>
             {{-- Logout Form Button positioned at lower left --}}
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
                 <button type="submit"
-                    class="w-full flex items-center justify-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold text-rose-600 bg-rose-50/80 hover:bg-rose-100 hover:text-rose-700 border border-rose-200/80 transition-all cursor-pointer">
+                    class="w-full flex items-center justify-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-bold text-rose-600 dark:text-rose-300 bg-rose-50/80 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-950 hover:text-rose-700 dark:hover:text-rose-200 border border-rose-200/80 dark:border-rose-900/60 transition-all cursor-pointer">
                     <span class="material-symbols-outlined text-[18px]">logout</span>
                     <span>Log Out</span>
                 </button>

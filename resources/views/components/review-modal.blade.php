@@ -20,17 +20,17 @@
             class="fixed inset-0 z-[70] flex items-start sm:items-center justify-center px-4 py-6 overflow-y-auto">
             <div class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm" @click="close()"></div>
 
-            <div class="relative w-full max-w-xl bg-white rounded-[1.75rem] shadow-2xl border border-sand-200 overflow-hidden">
+            <div class="relative w-full max-w-xl bg-white dark:bg-slate-900 rounded-[1.75rem] shadow-2xl border border-sand-200 dark:border-slate-700 overflow-hidden">
             {{-- Header --}}
-            <div class="px-7 sm:px-9 pt-5 pb-4 border-b border-sand-100 flex items-start justify-between gap-4">
+            <div class="px-7 sm:px-9 pt-5 pb-4 border-b border-sand-100 dark:border-slate-800 flex items-start justify-between gap-4">
                 <div>
                     <p class="font-label text-[10px] uppercase font-bold tracking-[0.25em] text-ocean-600">
                         SunnyTrips · Verified Guest Feedback
                     </p>
-                    <h3 class="font-headline text-lg font-bold text-slate-900 mt-1">Share your experience</h3>
+                    <h3 class="font-headline text-lg font-bold text-slate-900 dark:text-slate-100 mt-1">Share your experience</h3>
                 </div>
                 <button type="button" @click="close()"
-                    class="w-9 h-9 rounded-xl border border-sand-200 text-slate-400 hover:text-slate-700 hover:bg-sand-50 flex items-center justify-center transition cursor-pointer">
+                    class="w-9 h-9 rounded-xl border border-sand-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-sand-50 dark:hover:bg-slate-800 flex items-center justify-center transition cursor-pointer">
                     <span class="material-symbols-outlined text-[18px]">close</span>
                 </button>
             </div>
@@ -39,8 +39,8 @@
 
                 {{-- Loading --}}
                 <div x-show="loading" class="py-12 text-center">
-                    <div class="w-10 h-10 mx-auto rounded-full border-4 border-sand-200 border-t-ocean-500 animate-spin mb-4"></div>
-                    <p class="text-xs text-slate-500 font-medium">Checking your completed trips...</p>
+                    <div class="w-10 h-10 mx-auto rounded-full border-4 border-sand-200 dark:border-slate-700 border-t-ocean-500 animate-spin mb-4"></div>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Checking your completed trips...</p>
                 </div>
 
                 {{-- Error / no eligible bookings --}}
@@ -50,17 +50,17 @@
                             <div class="w-14 h-14 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-center mx-auto mb-4">
                                 <span class="material-symbols-outlined text-2xl text-rose-500">error</span>
                             </div>
-                            <h4 class="font-headline text-sm font-bold text-slate-900">Something went wrong</h4>
-                            <p class="text-xs text-slate-500 mt-2 max-w-xs mx-auto leading-relaxed" x-text="errorMessage"></p>
+                            <h4 class="font-headline text-sm font-bold text-slate-900 dark:text-slate-100">Something went wrong</h4>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-2 max-w-xs mx-auto leading-relaxed" x-text="errorMessage"></p>
                         </div>
                     </template>
                     <template x-if="!errorMessage">
                         <div>
-                            <div class="w-14 h-14 rounded-2xl bg-sand-100 border border-sand-200 flex items-center justify-center mx-auto mb-4">
-                                <span class="material-symbols-outlined text-2xl text-slate-400">verified</span>
+                            <div class="w-14 h-14 rounded-2xl bg-sand-100 dark:bg-slate-800 border border-sand-200 dark:border-slate-700 flex items-center justify-center mx-auto mb-4">
+                                <span class="material-symbols-outlined text-2xl text-slate-400 dark:text-slate-500">verified</span>
                             </div>
-                            <h4 class="font-headline text-sm font-bold text-slate-900">No reviewable trips yet</h4>
-                            <p class="text-xs text-slate-500 mt-2 max-w-xs mx-auto leading-relaxed">
+                            <h4 class="font-headline text-sm font-bold text-slate-900 dark:text-slate-100">No reviewable trips yet</h4>
+                            <p class="text-xs text-slate-500 dark:text-slate-400 mt-2 max-w-xs mx-auto leading-relaxed">
                                 Reviews unlock after a trip is marked completed. Check back once your journey finishes.
                             </p>
                         </div>
@@ -69,16 +69,16 @@
 
                 {{-- Step 1: choose booking (only when no bookingId preset and multiple bookings) --}}
                 <div x-show="!loading && !success && bookings.length > 0 && !selectedBooking && !presetBookingId">
-                    <p class="text-xs text-slate-500 mb-4">Choose the completed booking you'd like to review:</p>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">Choose the completed booking you'd like to review:</p>
                     <div class="space-y-3">
                         <template x-for="b in bookings" :key="b.booking_id">
                             <button type="button" @click="selectBooking(b)"
-                                class="w-full text-left p-4 rounded-2xl border border-sand-200 bg-white hover:border-ocean-300 hover:bg-ocean-50/40 transition group cursor-pointer">
+                                class="w-full text-left p-4 rounded-2xl border border-sand-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-ocean-300 hover:bg-ocean-50/40 transition group cursor-pointer">
                                 <div class="flex items-center justify-between gap-3">
                                     <div class="min-w-0">
-                                        <p class="font-headline text-sm font-bold text-slate-900"
+                                        <p class="font-headline text-sm font-bold text-slate-900 dark:text-slate-100"
                                             x-text="'Journal ' + b.booking_code"></p>
-                                        <p class="text-[11px] text-slate-500 mt-0.5 truncate"
+                                        <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate"
                                             x-text="b.reviewable_items.map(i => i.item_title).join(' · ')"></p>
                                     </div>
                                     <span class="material-symbols-outlined text-slate-300 group-hover:text-ocean-500 transition shrink-0">chevron_right</span>
@@ -92,46 +92,46 @@
                 <div x-show="!loading && !success && selectedBooking && !selectedItem">
                     <button type="button" @click="selectedBooking = null; selectedItem = null"
                         x-show="!presetBookingId"
-                        class="text-[11px] font-bold text-slate-400 hover:text-slate-700 flex items-center gap-1 mb-4 transition cursor-pointer">
+                        class="text-[11px] font-bold text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 flex items-center gap-1 mb-4 transition cursor-pointer">
                         <span class="material-symbols-outlined text-[14px]">arrow_back</span> Back
                     </button>
-                    <p class="text-xs text-slate-500 mb-4">
-                        Items in <strong x-text="'Journal ' + (selectedBooking?.booking_code || '')" class="text-slate-700"></strong> — review each separately:
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">
+                        Items in <strong x-text="'Journal ' + (selectedBooking?.booking_code || '')" class="text-slate-700 dark:text-slate-300"></strong> — review each separately:
                     </p>
                     <div class="space-y-3">
                         <template x-for="item in (selectedBooking?.reviewable_items || [])" :key="item.id">
                             <div>
                                 {{-- Unreviewed item --}}
                                 <button type="button" x-show="!item.is_reviewed" @click="selectItem(item)"
-                                    class="w-full text-left p-4 rounded-2xl border border-sand-200 bg-white hover:border-ocean-300 hover:bg-ocean-50/40 transition group cursor-pointer">
+                                    class="w-full text-left p-4 rounded-2xl border border-sand-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-ocean-300 hover:bg-ocean-50/40 transition group cursor-pointer">
                                     <div class="flex items-center justify-between gap-3">
                                         <div class="min-w-0">
-                                            <p class="font-headline text-sm font-bold text-slate-900" x-text="item.item_title"></p>
-                                            <p class="text-[11px] text-slate-500 mt-0.5" x-text="item.hotel_name || item.item_subtitle"></p>
+                                            <p class="font-headline text-sm font-bold text-slate-900 dark:text-slate-100" x-text="item.item_title"></p>
+                                            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5" x-text="item.hotel_name || item.item_subtitle"></p>
                                         </div>
                                         <span class="material-symbols-outlined text-slate-300 group-hover:text-ocean-500 transition shrink-0">chevron_right</span>
                                     </div>
                                 </button>
                                 {{-- Reviewed item --}}
                                 <div x-show="item.is_reviewed"
-                                    class="w-full text-left p-4 rounded-2xl border border-emerald-200 bg-emerald-50/50">
+                                    class="w-full text-left p-4 rounded-2xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50/50 dark:bg-emerald-950/60">
                                     <div class="flex items-center justify-between gap-3">
                                         <div class="min-w-0">
                                             <div class="flex items-center gap-2">
-                                                <p class="font-headline text-sm font-bold text-slate-900" x-text="item.item_title"></p>
-                                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200">
+                                                <p class="font-headline text-sm font-bold text-slate-900 dark:text-slate-100" x-text="item.item_title"></p>
+                                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-100 border border-emerald-200 dark:border-emerald-800">
                                                     <span class="material-symbols-outlined text-[12px]">check_circle</span>
                                                     Reviewed
                                                 </span>
                                             </div>
-                                            <p class="text-[11px] text-slate-500 mt-0.5" x-text="item.hotel_name || item.item_subtitle"></p>
+                                            <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5" x-text="item.hotel_name || item.item_subtitle"></p>
                                             <div x-show="item.existing_review" class="flex items-center gap-1.5 mt-1.5">
                                                 <template x-for="n in 5" :key="n">
                                                     <span class="material-symbols-outlined text-[14px]"
                                                         :class="n <= item.existing_review?.rating ? 'text-amber-400' : 'text-sand-300'"
                                                         style="font-variation-settings: 'FILL' 1">star</span>
                                                 </template>
-                                                <span class="text-[10px] text-slate-400 font-medium ml-1"
+                                                <span class="text-[10px] text-slate-400 dark:text-slate-500 font-medium ml-1"
                                                     x-text="item.existing_review?.rating + '/5'"></span>
                                             </div>
                                         </div>
@@ -149,22 +149,22 @@
                 {{-- Step 3: rating + comment form --}}
                 <div x-show="!loading && !success && selectedBooking && selectedItem && !showingReviewedItem" x-cloak>
                     <button type="button" @click="selectedItem = null"
-                        class="text-[11px] font-bold text-slate-400 hover:text-slate-700 flex items-center gap-1 mb-3 transition cursor-pointer">
+                        class="text-[11px] font-bold text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 flex items-center gap-1 mb-3 transition cursor-pointer">
                         <span class="material-symbols-outlined text-[14px]">arrow_back</span> Back to items
                     </button>
 
-                    <div class="rounded-2xl bg-sand-50 border border-sand-200 px-4 py-3 mb-4">
-                        <p class="font-label text-[9px] uppercase font-bold tracking-[0.15em] text-slate-400 mb-0.5">
+                    <div class="rounded-2xl bg-sand-50 dark:bg-slate-800/60 border border-sand-200 dark:border-slate-700 px-4 py-3 mb-4">
+                        <p class="font-label text-[9px] uppercase font-bold tracking-[0.15em] text-slate-400 dark:text-slate-500 mb-0.5">
                             <span x-text="selectedBooking?.booking_code || ''"></span> · Verified booking
                         </p>
-                        <p class="text-sm font-bold text-slate-900 font-headline"
+                        <p class="text-sm font-bold text-slate-900 dark:text-slate-100 font-headline"
                             x-text="selectedItem?.item_title || ''"></p>
-                        <p class="text-[11px] text-slate-500"
+                        <p class="text-[11px] text-slate-500 dark:text-slate-400"
                             x-text="(selectedItem?.hotel_name || selectedItem?.item_subtitle) || ''"></p>
                     </div>
 
                     <div class="mb-5">
-                        <p class="font-label text-[10px] uppercase font-bold tracking-[0.2em] text-slate-400 mb-2">Your rating</p>
+                        <p class="font-label text-[10px] uppercase font-bold tracking-[0.2em] text-slate-400 dark:text-slate-500 mb-2">Your rating</p>
                         <div class="flex items-center gap-1.5">
                             <template x-for="n in 5" :key="n">
                                 <button type="button"
@@ -176,17 +176,17 @@
                                     <span class="material-symbols-outlined text-[26px]" style="font-variation-settings: 'FILL' 1">star</span>
                                 </button>
                             </template>
-                            <span class="ml-3 font-headline text-sm font-bold text-slate-700" x-text="rating ? rating + ' / 5' : ''"></span>
+                            <span class="ml-3 font-headline text-sm font-bold text-slate-700 dark:text-slate-300" x-text="rating ? rating + ' / 5' : ''"></span>
                         </div>
                     </div>
 
                     <div class="mb-5">
-                        <p class="font-label text-[10px] uppercase font-bold tracking-[0.2em] text-slate-400 mb-2">Your feedback</p>
+                        <p class="font-label text-[10px] uppercase font-bold tracking-[0.2em] text-slate-400 dark:text-slate-500 mb-2">Your feedback</p>
                         <textarea x-model="comment" rows="3" maxlength="1000" placeholder="What made this stay or experience memorable?"
-                            class="w-full rounded-2xl border border-sand-200 bg-white px-5 py-3.5 text-sm text-slate-900 placeholder:text-slate-400 focus:border-ocean-400 focus:ring-ocean-100 resize-none"></textarea>
+                            class="w-full rounded-2xl border border-sand-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-5 py-3.5 text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:border-ocean-400 focus:ring-ocean-100 resize-none"></textarea>
                         <div class="flex items-center justify-between mt-2">
-                            <p class="text-[10px] text-slate-400" x-text="comment.length < 10 ? 'Minimum 10 characters.' : (1000 - comment.length) + ' characters remaining'"></p>
-                            <p class="text-[10px] font-bold" :class="comment.length >= 10 ? 'text-emerald-600' : 'text-slate-400'">
+                            <p class="text-[10px] text-slate-400 dark:text-slate-500" x-text="comment.length < 10 ? 'Minimum 10 characters.' : (1000 - comment.length) + ' characters remaining'"></p>
+                            <p class="text-[10px] font-bold" :class="comment.length >= 10 ? 'text-emerald-600' : 'text-slate-400 dark:text-slate-500'">
                                 <span x-show="comment.length >= 10">Ready to share</span>
                             </p>
                         </div>
@@ -194,21 +194,21 @@
 
                     {{-- Optional photos (3x3MB) --}}
                     <div class="mb-5">
-                        <p class="font-label text-[10px] uppercase font-bold tracking-[0.2em] text-slate-400 mb-2">Photos <span class="font-normal normal-case tracking-normal text-slate-400">(optional, up to 3 · 3MB each · JPG/PNG/WebP)</span></p>
+                        <p class="font-label text-[10px] uppercase font-bold tracking-[0.2em] text-slate-400 dark:text-slate-500 mb-2">Photos <span class="font-normal normal-case tracking-normal text-slate-400 dark:text-slate-500">(optional, up to 3 · 3MB each · JPG/PNG/WebP)</span></p>
                         <input x-ref="fileInput" type="file" accept="image/jpeg,image/png,image/webp" multiple class="hidden" @change="onFiles($event)">
                         <div @click="$refs.fileInput.click()"
                              @dragover.prevent="dragOver = true" @dragleave="dragOver = false" @drop.prevent="onDrop($event)"
-                             :class="dragOver ? 'border-ocean-400 bg-ocean-50' : 'border-sand-200 bg-white hover:border-ocean-200'"
+                              :class="dragOver ? 'border-ocean-400 bg-ocean-50 dark:bg-ocean-900/50' : 'border-sand-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-ocean-200'"
                              class="w-full rounded-2xl border-2 border-dashed px-4 py-4 flex flex-col items-center justify-center gap-1.5 cursor-pointer transition text-center">
-                            <span class="material-symbols-outlined text-[20px] text-slate-400">add_a_photo</span>
-                            <p class="text-[11px] font-bold text-slate-600">Click or drag photos here</p>
-                            <p class="text-[10px] text-slate-400" x-text="selectedFiles.length ? selectedFiles.length + '/3 selected' : 'No photos selected — reviews work without them'"></p>
+                             <span class="material-symbols-outlined text-[20px] text-slate-400 dark:text-slate-500">add_a_photo</span>
+                             <p class="text-[11px] font-bold text-slate-600 dark:text-slate-400">Click or drag photos here</p>
+                             <p class="text-[10px] text-slate-400 dark:text-slate-500" x-text="selectedFiles.length ? selectedFiles.length + '/3 selected' : 'No photos selected — reviews work without them'"></p>
                         </div>
                         <p x-show="imageError" x-cloak class="mt-2 text-[11px] font-semibold text-rose-600 bg-rose-50 border border-rose-100 rounded-xl px-3 py-2" x-text="imageError"></p>
                         <div x-show="previews.length" class="mt-3 grid grid-cols-3 gap-2">
                             <template x-for="(src, idx) in previews" :key="idx">
                                 <div class="relative group">
-                                    <img :src="src" class="w-full h-24 object-cover rounded-xl border border-sand-200">
+                                     <img :src="src" class="w-full h-24 object-cover rounded-xl border border-sand-200 dark:border-slate-700">
                                     <button type="button" @click="removeAt(idx)" class="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-slate-900 text-white flex items-center justify-center shadow cursor-pointer hover:bg-rose-600 transition">
                                         <span class="material-symbols-outlined text-[14px]">close</span>
                                     </button>
@@ -230,16 +230,16 @@
                 {{-- Viewing an already-reviewed item --}}
                 <div x-show="!loading && !success && showingReviewedItem" x-cloak>
                     <button type="button" @click="showingReviewedItem = null"
-                        class="text-[11px] font-bold text-slate-400 hover:text-slate-700 flex items-center gap-1 mb-5 transition cursor-pointer">
+                        class="text-[11px] font-bold text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 flex items-center gap-1 mb-5 transition cursor-pointer">
                         <span class="material-symbols-outlined text-[14px]">arrow_back</span> Back to items
                     </button>
 
-                    <div class="rounded-2xl bg-emerald-50 border border-emerald-200 px-5 py-4 mb-5">
+                    <div class="rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 px-5 py-4 mb-5">
                         <div class="flex items-center gap-2 mb-1">
                             <span class="material-symbols-outlined text-[16px] text-emerald-600">check_circle</span>
-                            <p class="font-label text-[10px] uppercase font-bold tracking-[0.15em] text-emerald-700">Review Submitted</p>
+                            <p class="font-label text-[10px] uppercase font-bold tracking-[0.15em] text-emerald-700 dark:text-emerald-100">Review Submitted</p>
                         </div>
-                        <p class="text-sm font-bold text-slate-900 font-headline"
+                        <p class="text-sm font-bold text-slate-900 dark:text-slate-100 font-headline"
                             x-text="showingReviewedItem?.item_title"></p>
                     </div>
 
@@ -249,29 +249,29 @@
                                 :class="n <= (showingReviewedItem?.existing_review?.rating || 0) ? 'text-amber-400' : 'text-sand-300'"
                                 style="font-variation-settings: 'FILL' 1">star</span>
                         </template>
-                        <span class="ml-2 font-headline text-sm font-bold text-slate-700"
+                        <span class="ml-2 font-headline text-sm font-bold text-slate-700 dark:text-slate-300"
                             x-text="(showingReviewedItem?.existing_review?.rating || 0) + ' / 5'"></span>
                     </div>
 
-                    <div class="rounded-2xl bg-sand-50 border border-sand-200 px-5 py-4">
-                        <p class="font-label text-[9px] uppercase font-bold tracking-[0.15em] text-slate-400 mb-1.5">Your comment</p>
-                        <p class="text-sm text-slate-700 leading-relaxed" x-text="showingReviewedItem?.existing_review?.comment"></p>
+                    <div class="rounded-2xl bg-sand-50 dark:bg-slate-800/60 border border-sand-200 dark:border-slate-700 px-5 py-4">
+                        <p class="font-label text-[9px] uppercase font-bold tracking-[0.15em] text-slate-400 dark:text-slate-500 mb-1.5">Your comment</p>
+                        <p class="text-sm text-slate-700 dark:text-slate-300 leading-relaxed" x-text="showingReviewedItem?.existing_review?.comment"></p>
                     </div>
                 </div>
 
                 {{-- Success state --}}
                 <div x-show="!loading && success" class="py-10 text-center">
-                    <div class="w-16 h-16 rounded-full bg-emerald-100 border border-emerald-200 flex items-center justify-center mx-auto mb-5">
+                    <div class="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 flex items-center justify-center mx-auto mb-5">
                         <span class="material-symbols-outlined text-3xl text-emerald-600">check_circle</span>
                     </div>
-                    <h4 class="font-headline text-lg font-bold text-slate-900">Review published!</h4>
-                    <p class="text-xs text-slate-500 mt-2 max-w-xs mx-auto leading-relaxed">
+                    <h4 class="font-headline text-lg font-bold text-slate-900 dark:text-slate-100">Review published!</h4>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-2 max-w-xs mx-auto leading-relaxed">
                         Thank you for helping fellow travelers. Our AI is analyzing your feedback to update the community summary.
                     </p>
                     <div class="mt-6 flex items-center justify-center gap-3">
                         <button type="button" @click="afterSuccess()"
                             x-show="selectedBooking && hasMoreUnreviewed()"
-                            class="px-6 py-3 rounded-2xl bg-white border border-sand-200 text-slate-900 font-bold text-xs hover:bg-sand-50 transition cursor-pointer">
+                            class="px-6 py-3 rounded-2xl bg-white dark:bg-slate-900 border border-sand-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 font-bold text-xs hover:bg-sand-50 dark:hover:bg-slate-800 transition cursor-pointer">
                             Review Another Item
                         </button>
                         <button type="button" @click="close()"

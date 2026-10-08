@@ -3,12 +3,12 @@
 
         <div class="mb-6 flex items-center justify-between">
             <div>
-                <div class="flex items-center gap-2 text-xs font-semibold text-slate-400 mb-1">
+                <div class="flex items-center gap-2 text-xs font-semibold text-slate-400 dark:text-slate-500 mb-1">
                     <a href="{{ route('booking.show', $booking->booking_code) }}" class="hover:text-sky-600">Booking</a>
                     <span>/</span>
-                    <span class="text-slate-800">Secure Payment</span>
+                    <span class=" text-slate-800 dark:text-slate-200">Secure Payment</span>
                 </div>
-                <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight font-headline">
+                <h1 class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-slate-100 tracking-tight font-headline">
                     Complete Your Payment
                 </h1>
             </div>
@@ -21,39 +21,39 @@
             </div>
         @endif
 
-        <div class="bg-white rounded-3xl border border-slate-200/80 shadow-md overflow-hidden">
-            <div class="p-6 sm:p-8 border-b border-slate-100 bg-gradient-to-r from-sky-50 to-indigo-50/60">
+        <div class="bg-white rounded-3xl border border-slate-200 dark:border-slate-700/80 shadow-md overflow-hidden">
+            <div class="p-6 sm:p-8 border-b border-slate-100 dark:border-slate-800 bg-gradient-to-r from-sky-50 to-indigo-50/60">
                 <div class="flex items-center justify-between flex-wrap gap-4">
                     <div>
-                        <p class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Booking Reference</p>
-                        <p class="text-2xl font-black text-slate-900 font-headline">{{ $booking->booking_code }}</p>
+                        <p class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">Booking Reference</p>
+                        <p class="text-2xl font-black text-slate-900 dark:text-slate-100 font-headline">{{ $booking->booking_code }}</p>
                     </div>
                     <div class="text-right">
-                        <p class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Amount Due</p>
-                        <p class="text-3xl font-black text-sky-900">₱{{ number_format((float)$booking->net_amount, 2) }}</p>
+                        <p class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 dark:text-slate-500">Amount Due</p>
+                        <p class="text-3xl font-black text-sky-900 dark:text-sky-100">₱{{ number_format((float)$booking->net_amount, 2) }}</p>
                     </div>
                 </div>
-                <div class="mt-4 flex items-center gap-2 text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+                <div class="mt-4 flex items-center gap-2 text-xs font-bold text-amber-700 dark:text-amber-100 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 rounded-xl px-3 py-2">
                     <span class="material-symbols-outlined text-[16px]">hourglass_bottom</span>
                     <span>Pay before {{ $booking->payment_deadline?->format('M j, Y g:i A') }} — otherwise this booking expires.</span>
                 </div>
             </div>
 
             <div class="p-6 sm:p-8 space-y-6">
-                <div class="flex items-center gap-3 text-xs text-slate-600 bg-slate-50 border border-slate-200/70 rounded-2xl p-4">
+                <div class="flex items-center gap-3 text-xs text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700/70 rounded-2xl p-4">
                     <span class="material-symbols-outlined text-emerald-600 shrink-0">lock</span>
                     <span>Payment is processed securely. Choose your preferred method below — once completed, your booking is immediately confirmed.</span>
                 </div>
 
                 {{-- ── Pay with Card (Stripe / Simulator) ── --}}
-                <div class="rounded-2xl border border-slate-200 bg-white p-5">
+                <div class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-5">
                     <div class="flex items-center gap-3 mb-3">
-                        <span class="w-9 h-9 rounded-xl bg-sky-50 text-sky-700 border border-sky-100 flex items-center justify-center">
+                        <span class="w-9 h-9 rounded-xl bg-sky-50 dark:bg-sky-950/60 text-sky-700 border border-sky-100 dark:border-sky-800 flex items-center justify-center">
                             <span class="material-symbols-outlined text-[18px]">credit_card</span>
                         </span>
                         <div>
-                            <p class="text-sm font-extrabold text-slate-900">Pay with Card</p>
-                            <p class="text-[11px] text-slate-500">Secure checkout via Stripe · also works in simulator mode</p>
+                            <p class="text-sm font-extrabold text-slate-900 dark:text-slate-100">Pay with Card</p>
+                            <p class="text-[11px] text-slate-500 dark:text-slate-400">Secure checkout via Stripe · also works in simulator mode</p>
                         </div>
                     </div>
                     <form action="{{ route('booking.pay.process', $booking->booking_code) }}" method="POST">
@@ -70,19 +70,19 @@
                 {{-- Divider --}}
                 <div class="flex items-center gap-3">
                     <div class="h-px flex-1 bg-slate-200"></div>
-                    <span class="text-[11px] font-bold uppercase tracking-widest text-slate-400">or</span>
+                    <span class="text-[11px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">or</span>
                     <div class="h-px flex-1 bg-slate-200"></div>
                 </div>
 
                 {{-- ── Pay with QRPH (GCash / GoTyme) ── --}}
-                <div class="rounded-2xl border border-emerald-200 bg-emerald-50/40 p-5">
+                <div class="rounded-2xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/60/40 p-5">
                     <div class="flex items-center gap-3 mb-3">
-                        <span class="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 border border-emerald-200 flex items-center justify-center">
+                        <span class="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 border border-emerald-200 dark:border-emerald-800 flex items-center justify-center">
                             <span class="material-symbols-outlined text-[18px]">qr_code_2</span>
                         </span>
                         <div>
-                            <p class="text-sm font-extrabold text-slate-900">Pay with QRPH</p>
-                            <p class="text-[11px] text-slate-600">Scan with GCash, GoTyme, Maya or any QRPH app — amount ₱{{ number_format((float)$booking->net_amount, 2) }} is embedded</p>
+                            <p class="text-sm font-extrabold text-slate-900 dark:text-slate-100">Pay with QRPH</p>
+                            <p class="text-[11px] text-slate-600 dark:text-slate-400">Scan with GCash, GoTyme, Maya or any QRPH app — amount ₱{{ number_format((float)$booking->net_amount, 2) }} is embedded</p>
                         </div>
                     </div>
                     <form action="{{ route('booking.pay.qrph', $booking->booking_code) }}" method="POST">
@@ -93,10 +93,10 @@
                             <span>Show QRPH QR · ₱{{ number_format((float)$booking->net_amount, 2) }}</span>
                         </button>
                     </form>
-                    <p class="text-[11px] text-center text-slate-500 mt-2">You'll see a scannable QR with the exact amount. With PayMongo keys configured it is a real GCash QR; otherwise it's a demo QR for the capstone.</p>
+                    <p class="text-[11px] text-center text-slate-500 dark:text-slate-400 mt-2">You'll see a scannable QR with the exact amount. With PayMongo keys configured it is a real GCash QR; otherwise it's a demo QR for the capstone.</p>
                 </div>
 
-                <p class="text-[11px] text-center text-slate-400 font-medium">
+                <p class="text-[11px] text-center text-slate-400 dark:text-slate-500 font-medium">
                     Payment can be retried from your booking page at any time before the deadline.
                 </p>
 

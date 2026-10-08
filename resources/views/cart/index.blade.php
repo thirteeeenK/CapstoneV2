@@ -65,16 +65,16 @@
 @endphp
 
 <x-frontend.layout title="Trip Basket | SunnyTrips" :hide-chat-widget="true">
-    <div x-data="cartPageManager({{ json_encode($initialItems) }}, {{ json_encode($groups) }})" class="min-h-screen bg-sand-50/70 font-body">
+    <div x-data="cartPageManager({{ json_encode($initialItems) }}, {{ json_encode($groups) }})" class="min-h-screen bg-sand-50/70 dark:bg-slate-800/60 font-body">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 {{ Auth::check() ? 'pt-5 sm:pt-8 lg:pt-10' : 'pt-20 sm:pt-28' }} pb-24 lg:pb-16">
             @if(session('error'))
-                <div class="mb-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3.5 flex items-start gap-3 text-sm text-rose-800 shadow-2xs">
+                <div class="mb-5 rounded-2xl border border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/60 px-4 py-3.5 flex items-start gap-3 text-sm text-rose-800 dark:text-rose-100 shadow-2xs">
                     <span class="material-symbols-outlined text-rose-600 text-xl shrink-0 mt-0.5">error</span>
                     <span class="font-semibold leading-relaxed">{{ session('error') }}</span>
                 </div>
             @endif
             @if(session('success'))
-                <div class="mb-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3.5 flex items-start gap-3 text-sm text-emerald-800 shadow-2xs">
+                <div class="mb-5 rounded-2xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/60 px-4 py-3.5 flex items-start gap-3 text-sm text-emerald-800 dark:text-emerald-100 shadow-2xs">
                     <span class="material-symbols-outlined text-emerald-600 text-xl shrink-0 mt-0.5">check_circle</span>
                     <span class="font-semibold leading-relaxed">{{ session('success') }}</span>
                 </div>
@@ -100,7 +100,7 @@
                 </div>
 
                 <a href="{{ Auth::check() ? route('dashboard') : route('destinations.index') }}"
-                   class="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-ocean-700 hover:text-ocean-900 transition group">
+                   class="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-ocean-700 dark:text-ocean-100 hover:text-ocean-900 transition group">
                     <svg class="w-4 h-4 transition-transform group-hover:-translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/>
                     </svg>
@@ -110,7 +110,7 @@
 
             {{-- Empty Basket State --}}
             <div x-show="items.length === 0" x-cloak
-                 class="bg-white rounded-3xl shadow-sm shadow-ocean-900/5 p-12 sm:p-16 text-center max-w-xl mx-auto my-12">
+                 class="bg-white dark:bg-slate-900 rounded-3xl shadow-sm shadow-ocean-900/5 p-12 sm:p-16 text-center max-w-xl mx-auto my-12">
                 <svg viewBox="0 0 96 96" fill="none" aria-hidden="true" class="w-28 h-28 mx-auto mb-6">
                     <circle cx="48" cy="48" r="45" class="stroke-sand-200" stroke-width="1.5"/>
                     <circle cx="48" cy="41" r="8" class="fill-ocean-200"/>
@@ -141,12 +141,12 @@
                 <div class="lg:col-span-2 space-y-4 sm:space-y-5">
 
                     {{-- Select All / Bulk Action Toolbar --}}
-                    <div class="bg-white rounded-2xl p-3 sm:p-3.5 border border-sand-200 shadow-xs flex flex-wrap items-center justify-between gap-3 select-none">
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl p-3 sm:p-3.5 border border-sand-200 dark:border-slate-700 shadow-xs flex flex-wrap items-center justify-between gap-3 select-none">
                         <label class="flex items-center gap-2.5 cursor-pointer">
                             <input type="checkbox"
                                    :checked="isAllSelected"
                                    @change="toggleSelectAll()"
-                                   class="w-4 h-4 sm:w-5 sm:h-5 rounded text-ocean-600 accent-ocean-600 border-sand-300 focus:ring-ocean-500 cursor-pointer">
+                                   class="w-4 h-4 sm:w-5 sm:h-5 rounded text-ocean-600 accent-ocean-600 border-sand-300 dark:border-slate-600 focus:ring-ocean-500 cursor-pointer">
                             <span class="font-headline font-bold text-xs sm:text-sm text-ink-900" x-text="isAllSelected ? 'Deselect All (' + totalCount + ' items)' : 'Select All (' + totalCount + ' items)'"></span>
                         </label>
                         <div class="flex items-center gap-3">
@@ -162,13 +162,13 @@
 
                     {{-- "I'm Feeling Lucky" Itinerary Groups --}}
                     <template x-for="group in displayGroups" :key="group.id">
-                        <section class="overflow-hidden rounded-2xl bg-white ring-1 ring-ocean-200 shadow-sm shadow-ocean-900/5">
+                        <section class="overflow-hidden rounded-2xl bg-white dark:bg-slate-900 ring-1 ring-ocean-200 shadow-sm shadow-ocean-900/5">
                             <div class="bg-gradient-to-r from-ocean-700 to-sky-500 px-4 sm:px-6 py-3 sm:py-4 flex flex-wrap items-center gap-3 sm:gap-4">
                                 <input type="checkbox"
                                        :checked="group.is_selected"
                                        @change="toggleGroup(group.id)"
                                        :aria-label="'Select or deselect the ' + group.title"
-                                       class="w-5 h-5 rounded bg-white accent-ocean-700 border-white/50 focus:ring-white cursor-pointer">
+                                       class="w-5 h-5 rounded bg-white dark:bg-slate-900 accent-ocean-700 border-white/50 focus:ring-white cursor-pointer">
                                 <div class="flex-1 min-w-0">
                                     <div class="flex flex-wrap items-center gap-2">
                                         <span class="inline-flex items-center gap-1 rounded-full bg-white/20 text-white border border-white/30 px-2 py-0.5 text-[10px] sm:text-[11px] font-bold tracking-wide uppercase">
@@ -191,7 +191,7 @@
                                     <span class="block font-display text-lg font-bold text-white" x-text="group.formatted_subtotal"></span>
                                 </div>
                             </div>
-                            <div class="divide-y divide-sand-200/80">
+                            <div class="divide-y divide-sand-200/80 dark:divide-slate-700/80">
                                 <template x-for="item in group.items" :key="item.id">
                                     @include('cart.partials.item-card')
                                 </template>
@@ -207,7 +207,7 @@
 
                 {{-- Right 1 Column: Summary Card --}}
                 <div class="lg:sticky lg:top-8">
-                    <div id="cart-summary" class="bg-white rounded-2xl shadow-md shadow-ocean-900/5 p-5 sm:p-6 space-y-5 scroll-mt-24 lg:scroll-mt-8">
+                    <div id="cart-summary" class="bg-white dark:bg-slate-900 rounded-2xl shadow-md shadow-ocean-900/5 p-5 sm:p-6 space-y-5 scroll-mt-24 lg:scroll-mt-8">
 
                         <h2 class="font-display text-lg font-bold text-ink-900">Booking Summary</h2>
 
@@ -222,15 +222,15 @@
                             </div>
                             <div class="flex justify-between items-center text-ink-500">
                                 <span>Service & booking fee</span>
-                                <span class="inline-flex items-center rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 px-2.5 py-0.5 text-xs font-semibold">
+                                <span class="inline-flex items-center rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-100 border border-emerald-100 dark:border-emerald-800 px-2.5 py-0.5 text-xs font-semibold">
                                     Waived (Promo)
                                 </span>
                             </div>
                         </div>
 
-                        <div class="pt-4 border-t border-sand-200 flex justify-between items-baseline">
+                        <div class="pt-4 border-t border-sand-200 dark:border-slate-700 flex justify-between items-baseline">
                             <span class="font-display text-sm font-bold text-ink-900">Estimated total</span>
-                            <span class="font-display text-2xl font-bold text-ocean-700" x-text="formattedSelectedSubtotal"></span>
+                            <span class="font-display text-2xl font-bold text-ocean-700 dark:text-ocean-100" x-text="formattedSelectedSubtotal"></span>
                         </div>
 
                         <a href="{{ route('checkout.index') }}" @click.prevent="proceedToCheckout()"
@@ -248,14 +248,14 @@
             </div>
 
             {{-- Mobile checkout bar: keeps the total + CTA reachable without scrolling the whole basket --}}
-            <div class="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t border-sand-200 bg-white/95 backdrop-blur px-4 py-3 shadow-[0_-4px_16px_rgba(15,23,42,0.06)]"
+            <div class="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t border-sand-200 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 backdrop-blur px-4 py-3 shadow-[0_-4px_16px_rgba(15,23,42,0.06)]"
                  x-show="items.length > 0" x-cloak>
                 <div class="flex items-center gap-3">
                     <a href="#cart-summary" class="flex-1 min-w-0 text-left">
                         <span class="block text-[11px] font-semibold text-ink-500">
                             <span x-text="selectedCount"></span> of <span x-text="totalCount"></span> selected
                         </span>
-                        <span class="block font-display text-lg font-bold text-ocean-700 truncate" x-text="formattedSelectedSubtotal"></span>
+                        <span class="block font-display text-lg font-bold text-ocean-700 dark:text-ocean-100 truncate" x-text="formattedSelectedSubtotal"></span>
                     </a>
                     <a href="{{ route('checkout.index') }}" @click.prevent="proceedToCheckout()"
                        class="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-ocean-600 hover:bg-ocean-500 active:bg-ocean-700 text-white text-sm font-semibold px-5 py-3 shadow-sm shadow-ocean-600/25 transition cursor-pointer">
