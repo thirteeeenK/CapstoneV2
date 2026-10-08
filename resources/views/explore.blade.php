@@ -102,8 +102,9 @@
                                x-text="selected.type === 'hotel' ? 'Hotel / Sanctuary Stay' : 'Activity / Experience'"></p>
                             <h2 class="text-lg font-black text-slate-900 font-headline" x-text="selected.name"></h2>
                             <p class="text-sm text-slate-500" x-text="selected.subtitle"></p>
-                            <template x-if="selected.image">
-                                <img :src="'/storage/' + selected.image" alt="" class="w-full h-40 object-cover rounded-xl">
+                            <template x-if="selectedImage()">
+                                <img :src="selectedImage()" :alt="selected.name" class="w-full h-40 object-cover rounded-xl" loading="lazy"
+                                     onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80'">
                             </template>
                             <div class="flex flex-wrap gap-2 text-xs">
                                 <template x-if="selected.distance_label">
@@ -320,6 +321,31 @@
                         const db = b.distance_km ?? Infinity;
                         return da - db;
                     });
+                },
+
+                selectedImage() {
+                    if (!this.selected) return '';
+                    const raw = this.selected.image
+                        || (Array.isArray(this.selected.images) && this.selected.images.length > 0 ? this.selected.images[0] : null)
+                        || this.selected.cover_image;
+                    return this.resolveMarkerImage(raw);
+                },
+
+                resolveMarkerImage(raw) {
+                    const fallback = 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=80';
+                    if (!raw || typeof raw !== 'string') return fallback;
+                    const path = raw.trim();
+                    if (!path) return fallback;
+                    if (path.startsWith('http://') || path.startsWith('https://') || path.startsWith('data:')) {
+                        return path;
+                    }
+                    if (path.startsWith('/storage/')) {
+                        return path;
+                    }
+                    if (path.startsWith('storage/')) {
+                        return '/' + path;
+                    }
+                    return '/storage/' + path.replace(/^\/+/, '');
                 },
 
                 select(m) {
