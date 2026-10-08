@@ -1,0 +1,241 @@
+{
+    "model": "models\/gemini-3.1-flash-lite",
+    "macro": {
+        "n": 25,
+        "faithfulness": 3.48,
+        "answer_relevancy": 3.8,
+        "answer_correctness": 3.36,
+        "correctness_n": 25
+    },
+    "cases": [
+        {
+            "id": "hotel-dest-boracay",
+            "model": "models\/gemini-3.1-flash-lite",
+            "faithfulness": 4,
+            "answer_relevancy": 4,
+            "answer_correctness": 4,
+            "reasoning": "The chatbot accurately identified the hotels in Eval Boracay from the retrieved records and correctly listed their details, matching all requirements in the reference answer."
+        },
+        {
+            "id": "hotel-dest-elnido-scope",
+            "model": "models\/gemini-3.1-flash-lite",
+            "faithfulness": 4,
+            "answer_relevancy": 4,
+            "answer_correctness": 4,
+            "reasoning": "The chatbot correctly identified the Eval Cliff Lodge as the only hotel in the retrieved records for Eval El Nido. It did not hallucinate any additional hotels despite the confusing phrasing about 'other cards'."
+        },
+        {
+            "id": "hotel-price-filter",
+            "model": "models\/gemini-3.1-flash-lite",
+            "faithfulness": 4,
+            "answer_relevancy": 4,
+            "answer_correctness": 4,
+            "reasoning": "The chatbot correctly identified Eval Palm Resort as an option under 5000 and listed the other available hotels from the records without inventing pricing for them."
+        },
+        {
+            "id": "hotel-hidden-exclusion",
+            "model": "models\/gemini-3.1-flash-lite",
+            "faithfulness": 4,
+            "answer_relevancy": 4,
+            "answer_correctness": 4,
+            "reasoning": "The chatbot correctly identified the hotels in Eval Boracay from the retrieved records and provided accurate details for the Eval Palm Resort. It directly addressed the user's request by listing the available options."
+        },
+        {
+            "id": "room-pax-search",
+            "model": "models\/gemini-3.1-flash-lite",
+            "faithfulness": 4,
+            "answer_relevancy": 4,
+            "answer_correctness": 4,
+            "reasoning": "The chatbot accurately identified all three rooms available for 2 pax in Eval Boracay as listed in the retrieved records, including their correct pricing."
+        },
+        {
+            "id": "room-pax-4",
+            "model": "models\/gemini-3.1-flash-lite",
+            "faithfulness": 2,
+            "answer_relevancy": 4,
+            "answer_correctness": 2,
+            "reasoning": "The chatbot incorrectly includes the Eval Flexible Room as an option for 4 pax, despite the retrieved record explicitly stating a maximum occupancy of 2 pax and that no extra guests are allowed."
+        },
+        {
+            "id": "room-null-occupancy",
+            "model": "models\/gemini-3.1-flash-lite",
+            "faithfulness": 2,
+            "answer_relevancy": 4,
+            "answer_correctness": 2,
+            "reasoning": "The chatbot incorrectly recommends the Eval Flexible Room, which the retrieved records explicitly state has a maximum occupancy of 2 pax and does not allow extra guests."
+        },
+        {
+            "id": "activity-dest-scope",
+            "model": "models\/gemini-3.1-flash-lite",
+            "faithfulness": 2,
+            "answer_relevancy": 4,
+            "answer_correctness": 3,
+            "reasoning": "The chatbot correctly identifies the Eval Paddle Tour from the records, but it hallucinates the existence of 'other cards' or 'alternatives' which were not present in the retrieved data."
+        },
+        {
+            "id": "activity-exact-name",
+            "model": "models\/gemini-3.1-flash-lite",
+            "faithfulness": 4,
+            "answer_relevancy": 4,
+            "answer_correctness": 4,
+            "reasoning": "The chatbot accurately extracted all relevant details from the provided record for the Eval Paddle Tour. Every claim made in the response is directly supported by the retrieved activity data."
+        },
+        {
+            "id": "package-search",
+            "model": "models\/gemini-3.1-flash-lite",
+            "faithfulness": 2,
+            "answer_relevancy": 4,
+            "answer_correctness": 3,
+            "reasoning": "The chatbot correctly identified the Eval Weekend Escape package but hallucinated the existence of 'other cards below' which were not present in the retrieved records. It also provided a contradictory total price calculation for 1 pax despite the record stating a minimum of 2 guests."
+        },
+        {
+            "id": "package-budget",
+            "model": "models\/gemini-3.1-flash-lite",
+            "faithfulness": 2,
+            "answer_relevancy": 4,
+            "answer_correctness": 2,
+            "reasoning": "The chatbot hallucinated the existence of 'other cards below' which were not present in the retrieved records. Additionally, it incorrectly calculated the total price for 1 pax as 12,000 despite the record stating a minimum of 2 guests."
+        },
+        {
+            "id": "package-exact-name",
+            "model": "models\/gemini-3.1-flash-lite",
+            "faithfulness": 4,
+            "answer_relevancy": 4,
+            "answer_correctness": 4,
+            "reasoning": "The chatbot accurately extracted the package details including duration, destination, inclusions, price, and guest requirements from the provided record. It correctly identified the package as requested by the user."
+        },
+        {
+            "id": "addon-search",
+            "model": "models\/gemini-3.1-flash-lite",
+            "faithfulness": 1,
+            "answer_relevancy": 2,
+            "answer_correctness": 2,
+            "reasoning": "The chatbot incorrectly claims it could not find a match despite the retrieved record explicitly listing 'Eval Airport Transfer' for 'Eval Boracay'. It contradicts the retrieved data by labeling a valid, relevant result as a non-match."
+        },
+        {
+            "id": "addon-exact-name",
+            "model": "models\/gemini-3.1-flash-lite",
+            "faithfulness": 4,
+            "answer_relevancy": 4,
+            "answer_correctness": 4,
+            "reasoning": "The chatbot accurately reflects the details provided in the retrieved record, including the service name, destination, inclusions, and pricing. It correctly identifies the transfer as a private option for the specified destination."
+        },
+        {
+            "id": "exact-hotel-name",
+            "model": "models\/gemini-3.1-flash-lite",
+            "faithfulness": 4,
+            "answer_relevancy": 4,
+            "answer_correctness": 4,
+            "reasoning": "The chatbot accurately identified the resort and its minimum price as stated in the retrieved records. It directly addressed the user's request for information about the specific hotel."
+        },
+        {
+            "id": "ordinal-hotel-second",
+            "model": "models\/gemini-3.1-flash-lite",
+            "faithfulness": 4,
+            "answer_relevancy": 4,
+            "answer_correctness": 1,
+            "reasoning": "The chatbot correctly identified that the requested information was missing from the retrieved records. It is marked as incorrect because it failed to surface the Eval Bay Hotel as required by the reference answer."
+        },
+        {
+            "id": "personalized-rerank",
+            "model": "models\/gemini-3.1-flash-lite",
+            "faithfulness": 4,
+            "answer_relevancy": 4,
+            "answer_correctness": 4,
+            "reasoning": "The chatbot accurately identified the hotels in Eval Boracay from the retrieved records and provided correct pricing for the Eval Palm Resort. All information provided is directly supported by the source material."
+        },
+        {
+            "id": "cebu-hotel-empty",
+            "model": "models\/gemini-3.1-flash-lite",
+            "faithfulness": 4,
+            "answer_relevancy": 4,
+            "answer_correctness": 4,
+            "reasoning": "The chatbot correctly identified that no records were retrieved for the requested location and honestly informed the user, which aligns perfectly with the reference answer."
+        },
+        {
+            "id": "cebu-room-empty",
+            "model": "models\/gemini-3.1-flash-lite",
+            "faithfulness": 4,
+            "answer_relevancy": 4,
+            "answer_correctness": 4,
+            "reasoning": "The chatbot correctly identified that no records were retrieved for the requested location and provided an honest response. It did not hallucinate any information and addressed the user's query directly."
+        },
+        {
+            "id": "cebu-package-empty",
+            "model": "models\/gemini-3.1-flash-lite",
+            "faithfulness": 4,
+            "answer_relevancy": 4,
+            "answer_correctness": 4,
+            "reasoning": "The chatbot correctly identified that no records were retrieved and honestly informed the user, which is the appropriate behavior when no information is available."
+        },
+        {
+            "id": "scope-switch-destination",
+            "model": "models\/gemini-3.1-flash-lite",
+            "faithfulness": 4,
+            "answer_relevancy": 4,
+            "answer_correctness": 4,
+            "reasoning": "The chatbot correctly identified the Eval Cliff Lodge as the only hotel in the retrieved records for Eval El Nido. While it mentions 'other cards below' which were not provided, the core recommendation is fully supported by the retrieved record."
+        },
+        {
+            "id": "scope-price-carryover",
+            "model": "models\/gemini-3.1-flash-lite",
+            "faithfulness": 4,
+            "answer_relevancy": 1,
+            "answer_correctness": 1,
+            "reasoning": "The chatbot provided irrelevant information about payment methods instead of addressing the room search query. Since no records were retrieved, the chatbot should have stated it could not find any rooms under 4000."
+        },
+        {
+            "id": "room-price-filter",
+            "model": "models\/gemini-3.1-flash-lite",
+            "faithfulness": 4,
+            "answer_relevancy": 4,
+            "answer_correctness": 4,
+            "reasoning": "The chatbot correctly identified both rooms under the 4000 price threshold provided in the retrieved records. The information provided matches the retrieved data exactly."
+        },
+        {
+            "id": "package-elnido-empty",
+            "model": "models\/gemini-3.1-flash-lite",
+            "faithfulness": 4,
+            "answer_relevancy": 4,
+            "answer_correctness": 4,
+            "reasoning": "The chatbot correctly identified that no records were retrieved and honestly informed the user, which is the appropriate behavior given the lack of data."
+        },
+        {
+            "id": "vague-hotel-request",
+            "model": "models\/gemini-3.1-flash-lite",
+            "faithfulness": 4,
+            "answer_relevancy": 4,
+            "answer_correctness": 4,
+            "reasoning": "The chatbot accurately listed the room options and their respective prices as provided in the retrieved records. It correctly identified rooms located in Eval Boracay."
+        }
+    ],
+    "skipped": [
+        "addon-dest-scope (judge returned invalid JSON twice)",
+        "ordinal-hotel-first (judge returned invalid JSON twice)",
+        "ordinal-room-second (judge returned invalid JSON twice)",
+        "wrong-dest-exclusion (judge returned invalid JSON twice)",
+        "cebu-activity-empty (judge returned invalid JSON twice)",
+        "cebu-addon-empty (judge returned invalid JSON twice)",
+        "scope-third-room (judge returned invalid JSON twice)",
+        "scope-second-hotel-price (judge returned invalid JSON twice)"
+    ],
+    "excluded": [
+        "itinerary-query",
+        "faq-payment",
+        "faq-payment-paraphrase",
+        "destinations-overview",
+        "general-talk",
+        "legal-query",
+        "support-handoff",
+        "availability-hotel",
+        "availability-rooms-dates",
+        "map-destination",
+        "map-hotel",
+        "weather-destination",
+        "weather-month",
+        "discount-query",
+        "legal-cancellation",
+        "legal-checkin-time",
+        "booking-status-empty"
+    ]
+}
