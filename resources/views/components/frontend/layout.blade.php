@@ -78,8 +78,25 @@
     @endunless
     
     <main class="{{ (!($hideNavFooter ?? false) && Auth::check()) ? 'md:ms-64 transition-all duration-300' : '' }}">
+        @if(session('account_deletion_requested'))
+            <div role="status" class="mx-auto max-w-3xl rounded-lg border border-ocean-200 bg-ocean-50 p-4 font-body text-sm text-ink-900">
+                {{ __('Your account is scheduled for permanent deletion in 5 days. Log in before the deadline to cancel deletion and recover your account.') }}
+            </div>
+        @endif
         {{ $slot }}
     </main>
+
+    @if(Auth::check() && session()->pull('account_recovered', false))
+        <dialog x-data x-init="$el.showModal()" x-on:click="if ($event.target === $el) $el.close()"
+            aria-labelledby="account-recovered-title" aria-describedby="account-recovered-description"
+            class="m-auto w-full max-w-md rounded-2xl bg-white p-6 text-ink-900 shadow-2xl backdrop:bg-ink-900/60 dark:bg-slate-900 dark:text-slate-100">
+            <h2 id="account-recovered-title" class="font-headline text-lg font-bold">{{ __('Account recovered') }}</h2>
+            <p id="account-recovered-description" class="mt-3 font-body text-sm leading-relaxed">{{ __('Welcome back! Your account has been recovered and your deletion request has been cancelled.') }}</p>
+            <form method="dialog" class="mt-6 flex justify-end">
+                <button autofocus class="rounded-lg bg-ocean-600 px-5 py-3 font-body text-sm font-bold text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ocean-600">{{ __('Continue') }}</button>
+            </form>
+        </dialog>
+    @endif
 
     @unless(($hideNavFooter ?? false) || Auth::check())
         <x-frontend.footer />

@@ -3,6 +3,8 @@
 namespace App\Http\Requests\Auth;
 
 use App\Models\FailedLoginAttempt;
+use App\Models\User;
+use App\Services\AccountDeletionService;
 use Illuminate\Auth\Events\Lockout;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
@@ -44,7 +46,14 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
+        $credentials = $this->only('email', 'password');
+        $credentials[] = fn ($query) => $query->withTrashed();
+
+        if (! Auth::attemptWhen(
+            $credentials,
+            fn (User $user): bool => app(AccountDeletionService::class)->recoverForLogin($user),
+            $this->boolean('remember'),
+        )) {
             RateLimiter::hit($this->throttleKey());
 
             Log::warning('auth.failed', [

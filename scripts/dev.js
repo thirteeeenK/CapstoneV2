@@ -20,11 +20,12 @@ const { result } = concurrently(
     [
         { command: 'php artisan serve --host=localhost', name: 'server' },
         { command: 'php artisan queue:listen --tries=1 --timeout=0', name: 'queue' },
+        { command: 'php artisan schedule:work', name: 'scheduler' },
         { command: 'npm run dev', name: 'vite' },
     ],
     {
         killOthers: ['failure', 'success'],
-        prefixColors: ['#93c5fd', '#c4b5fd', '#fb7185'],
+        prefixColors: ['#93c5fd', '#c4b5fd', '#fbbf24', '#fb7185'],
     }
 );
 
