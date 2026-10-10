@@ -5,7 +5,7 @@ use App\Http\Controllers\DestinationShowController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/destinations', [DestinationShowController::class, 'index'])->name('destinations.index');
-Route::get('/destinations/{id}', [DestinationShowController::class, 'show'])->name('destinations.show');
+Route::get('/destinations/{id}', [DestinationShowController::class, 'show'])->whereNumber('id')->name('destinations.show');
 
 Route::prefix('admin')->group(function () {
     Route::middleware(['auth:admin', 'no.cache', 'throttle:admin'])->group(function () {

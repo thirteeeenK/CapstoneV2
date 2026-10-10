@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Route;
 
 // Public Hotels Listing & Details
 Route::get('/hotels', [HotelShowController::class, 'index'])->name('hotels.index');
-Route::get('/hotels/{id}', [HotelShowController::class, 'show'])->name('hotels.show');
+Route::get('/hotels/{id}', [HotelShowController::class, 'show'])->whereNumber('id')->name('hotels.show');
 
 Route::prefix('admin')->group(function () {
     Route::middleware(['auth:admin', 'no.cache', 'throttle:admin'])->group(function () {
