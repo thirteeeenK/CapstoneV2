@@ -91,7 +91,7 @@ test('guest can send a chat message and get a response', function () {
         ->assertJson(['status' => 'success']);
 });
 
-test('catalog replies use verified room names when Gemini invents a room', function () {
+test('catalog replies reject invented room names while keeping verified cards', function () {
     Http::fake([
         '*embedContent*' => Http::response([
             'embedding' => ['values' => array_fill(0, 3072, 0.01)],
@@ -110,11 +110,12 @@ test('catalog replies use verified room names when Gemini invents a room', funct
     ]);
 
     $response->assertOk();
-    expect($response->json('reply'))->toContain('Deluxe Ocean View')
-        ->and($response->json('reply'))->not->toContain('Invented Royal Suite');
+    expect($response->json('reply'))->toContain('verified option')
+        ->and($response->json('reply'))->not->toContain('Invented Royal Suite')
+        ->and($response->json('retrieved_rooms.0.room_name'))->toBe('Deluxe Ocean View');
 });
 
-test('grounded AI hotel explanation passes through with the verified list', function () {
+test('grounded AI hotel explanation passes through without duplicating the verified cards', function () {
     $boracay = DestinationModel::factory()->create(['name' => 'Boracay']);
     $hotel = HotelModel::factory()->create([
         'hotel_name' => 'Canyon Hotels & Resorts Boracay',
@@ -140,10 +141,11 @@ test('grounded AI hotel explanation passes through with the verified list', func
     $response->assertOk();
     expect($response->json('reply'))->toContain('romantic')
         ->and($response->json('reply'))->toContain('Canyon Hotels & Resorts Boracay')
-        ->and($response->json('reply'))->toContain('Here are the options I found');
+        ->and($response->json('reply'))->not->toContain('Here are the options I found')
+        ->and($response->json('retrieved_hotels.0.hotel_name'))->toBe('Canyon Hotels & Resorts Boracay');
 });
 
-test('ungrounded AI hotel explanation is dropped but the verified list survives', function () {
+test('ungrounded AI hotel explanation is replaced by a neutral card pointer', function () {
     $boracay = DestinationModel::factory()->create(['name' => 'Boracay']);
     $hotel = HotelModel::factory()->create([
         'hotel_name' => 'Canyon Hotels & Resorts Boracay',
@@ -164,9 +166,10 @@ test('ungrounded AI hotel explanation is dropped but the verified list survives'
     ]);
 
     $response->assertOk();
-    expect($response->json('reply'))->toContain('Canyon Hotels & Resorts Boracay')
+    expect($response->json('reply'))->toContain('verified option')
         ->and($response->json('reply'))->not->toContain('Imaginary Palace Resort')
-        ->and($response->json('reply'))->not->toContain('99,999');
+        ->and($response->json('reply'))->not->toContain('99,999')
+        ->and($response->json('retrieved_hotels.0.hotel_name'))->toBe('Canyon Hotels & Resorts Boracay');
 });
 
 test('package inclusions question returns stored inclusions with the verified card', function () {
@@ -178,14 +181,18 @@ test('package inclusions question returns stored inclusions with the verified ca
         'embedding' => unitVectorString(0),
     ]);
 
-    mockGemini(unitVector(0), 'The Boracay Tipid Deal is a great value package!');
+    mockGemini(unitVector(0), 'The Boracay Tipid Deal includes Roundtrip transfers and an Island hopping tour. This convenient bundle keeps the core trip arrangements together.');
 
     $response = $this->postJson('/chat', [
         'message' => 'Boracay Tipid Deal full inclusions',
     ]);
 
     $response->assertOk();
-    expect($response->json('reply'))->toContain('Boracay Tipid Deal includes: Roundtrip transfers, Island hopping tour')
+    expect($response->json('reply'))->toContain("### Boracay Tipid Deal\n\n**Inclusions**\n\n- Roundtrip transfers\n- Island hopping tour")
+        ->and($response->json('reply'))->toContain('This convenient bundle keeps the core trip arrangements together.')
+        ->and(substr_count($response->json('reply'), 'Roundtrip transfers'))->toBe(1)
+        ->and(substr_count($response->json('reply'), 'Island hopping tour'))->toBe(1)
+        ->and($response->json('reply'))->not->toContain('Here are the options I found')
         ->and($response->json('retrieved_packages.0.name'))->toBe('Boracay Tipid Deal');
 });
 
@@ -222,7 +229,7 @@ test('hotel amenities question returns only stored featured amenities', function
     ]);
 
     $response->assertOk();
-    expect($response->json('reply'))->toContain('My Station Hotel amenities: Pool, Spa, Gym')
+    expect($response->json('reply'))->toContain("### My Station Hotel\n\n**Amenities**\n\n- Pool\n- Spa\n- Gym")
         ->and($response->json('retrieved_hotels.0.hotel_name'))->toBe('My Station Hotel');
 });
 
@@ -241,7 +248,8 @@ test('room amenities question returns only that room stored amenities', function
     ]);
 
     $response->assertOk();
-    expect($response->json('reply'))->toContain('Social Mixed Dormitory Bed amenities: Bunk beds, Lockers, WiFi');
+    expect($response->json('reply'))->toContain("### Social Mixed Dormitory Bed\n\n**Amenities**\n\n- Bunk beds\n- Lockers\n- WiFi")
+        ->and($response->json('reply'))->not->toContain('Here are the options I found');
 });
 
 test('fabricated Gemini inclusions cannot replace the deterministic field answer', function () {

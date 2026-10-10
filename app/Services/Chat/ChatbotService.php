@@ -561,6 +561,10 @@ class ChatbotService
             'Keep responses friendly, concise, and helpful.',
         ];
 
+        if (! empty($options['field'])) {
+            $rules[] = "The app displays the verified {$options['field']} field separately above your reply. Do NOT repeat, quote, list, or paraphrase those field values. Write only one short sentence explaining their practical value to the traveler.";
+        }
+
         $prompt = "{$header}\n\nRULES:\n- ".implode("\n- ", $rules)
             ."\n\n=== PREVIOUS RECOMMENDATIONS ===\n{$context}\n=== END PREVIOUS RECOMMENDATIONS ===\n\nFOLLOW-UP QUESTION: {$query}";
 
@@ -901,8 +905,9 @@ class ChatbotService
         $prompt = $this->buildPrompt('room-search', $context, $query, $user, $this->promptOptions($ordering, $scored, $constraints, $fieldIntent, 'room_name', 'room_id'));
         $cards = $this->formatRoomResults($scored, $constraints['pax'] ?? null, $constraints['nights'] ?? null);
         $reply = $this->stripRankFootnote($this->geminiChatResponse($prompt, $session));
-        $reply = $this->validateGroundedReply($reply, ['retrieved_rooms' => $cards]);
-        if ($lead = $this->fieldLead($fieldIntent, $scored) ?? $this->fieldMissingLead($fieldIntent, $scored)) {
+        $lead = $this->fieldLead($fieldIntent, $scored) ?? $this->fieldMissingLead($fieldIntent, $scored);
+        $reply = $this->validateGroundedReply($reply, ['retrieved_rooms' => $cards], $lead);
+        if ($lead) {
             $reply = $lead."\n\n".$reply;
         }
         if ($notice = $this->budgetNotice($scored, $constraints)) {
@@ -1290,8 +1295,9 @@ class ChatbotService
         $prompt = $this->buildPrompt('hotel-search', $context, $query, $user, $this->promptOptions($ordering, $scored, $constraints, $fieldIntent, 'hotel_name', 'hotel_id'));
         $cards = $this->formatHotelResults($scored);
         $reply = $this->stripRankFootnote($this->geminiChatResponse($prompt, $session));
-        $reply = $this->validateGroundedReply($reply, ['retrieved_hotels' => $cards]);
-        if ($lead = $this->fieldLead($fieldIntent, $scored) ?? $this->fieldMissingLead($fieldIntent, $scored)) {
+        $lead = $this->fieldLead($fieldIntent, $scored) ?? $this->fieldMissingLead($fieldIntent, $scored);
+        $reply = $this->validateGroundedReply($reply, ['retrieved_hotels' => $cards], $lead);
+        if ($lead) {
             $reply = $lead."\n\n".$reply;
         }
         if ($notice = $this->budgetNotice($scored, $constraints)) {
@@ -1543,12 +1549,21 @@ class ChatbotService
             return null;
         }
         if (count($scored) === 1) {
-            $value = $this->fieldValue($field, $scored[0]['item']);
+            $item = $scored[0]['item'];
+            $value = $this->fieldValue($field, $item);
             if ($value === null) {
                 return null;
             }
 
-            return $this->fieldItemName($scored[0]['item']).' '.$this->fieldVerb($field).': '.$value;
+            $name = $this->fieldItemName($item);
+            $list = $this->fieldListItems($field, $item);
+            if ($list !== []) {
+                $label = Str::headline($field);
+
+                return "### {$name}\n\n**{$label}**\n\n- ".implode("\n- ", $list);
+            }
+
+            return "### {$name}\n\n**".Str::headline($field).':** '.$value;
         }
         if ($field === 'price') {
             // ponytail: cards already list per-item prices; framing line only, no prose list duplicating them.
@@ -1568,6 +1583,37 @@ class ChatbotService
         $noun = $field === 'price' ? 'prices' : $field;
 
         return "Here are the {$noun} for each matching result:\n".implode("\n", $lines);
+    }
+
+    /**
+     * List-shaped catalog fields are rendered as Markdown bullets instead of
+     * one long comma-separated sentence. Values remain verbatim catalog data.
+     *
+     * @return string[]
+     */
+    protected function fieldListItems(string $field, mixed $item): array
+    {
+        $value = match (true) {
+            $item instanceof ActivityModel => match ($field) {
+                'inclusions' => $item->inclusions,
+                'exclusions' => $item->exclusions,
+                'itinerary' => $item->itinerary,
+                default => [],
+            },
+            $item instanceof RoomType && $field === 'amenities' => $item->room_amenities,
+            $item instanceof HotelModel && $field === 'amenities' => $item->featured_amenities,
+            $item instanceof Package && $field === 'inclusions' => $item->generic_inclusions,
+            default => [],
+        };
+
+        if (! is_array($value)) {
+            return [];
+        }
+
+        return array_values(array_filter(array_map(
+            fn (mixed $entry): ?string => $this->clean(is_scalar($entry) ? (string) $entry : null),
+            $value
+        )));
     }
 
     /**
@@ -2435,8 +2481,9 @@ class ChatbotService
             $reply = $this->activityDetailReply($scored[0]['item'], $constraints['pax'] ?? null);
         } else {
             $reply = $this->stripRankFootnote($this->geminiChatResponse($prompt, $session));
-            $reply = $this->validateGroundedReply($reply, ['retrieved_activities' => $cards]);
-            if ($lead = $this->fieldLead($fieldIntent, $scored) ?? $this->fieldMissingLead($fieldIntent, $scored)) {
+            $lead = $this->fieldLead($fieldIntent, $scored) ?? $this->fieldMissingLead($fieldIntent, $scored);
+            $reply = $this->validateGroundedReply($reply, ['retrieved_activities' => $cards], $lead);
+            if ($lead) {
                 $reply = $lead."\n\n".$reply;
             }
         }
@@ -2682,8 +2729,9 @@ class ChatbotService
         $prompt = $this->buildPrompt('package-search', $context, $query, $user, $this->promptOptions(null, $scored, $constraints, $fieldIntent, 'package_name', 'package_id'));
         $cards = $this->formatPackageResults($scored, $constraints['pax'] ?? null);
         $reply = $this->stripRankFootnote($this->geminiChatResponse($prompt, $session));
-        $reply = $this->validateGroundedReply($reply, ['retrieved_packages' => $cards]);
-        if ($lead = $this->fieldLead($fieldIntent, $scored) ?? $this->fieldMissingLead($fieldIntent, $scored)) {
+        $lead = $this->fieldLead($fieldIntent, $scored) ?? $this->fieldMissingLead($fieldIntent, $scored);
+        $reply = $this->validateGroundedReply($reply, ['retrieved_packages' => $cards], $lead);
+        if ($lead) {
             $reply = $lead."\n\n".$reply;
         }
         if ($notice = $this->budgetNotice($scored, $constraints)) {
@@ -4316,32 +4364,119 @@ class ChatbotService
 
     /**
      * Catalog records are the authority for customer-visible catalog facts.
-     * The item list is always rendered deterministically from verified card
-     * records (never model prose). A short AI-written explanation is allowed
-     * through only when every checkable fact in it grounds out: peso amounts
+     * Catalog items are rendered by the client from verified card records. A
+     * short AI-written explanation is allowed through only when every
+     * checkable fact in it grounds out: peso amounts
      * must have appeared in the retrieval context, bolded names must match
      * retrieved records, and at most two records may be named (more reads as
-     * an unverified list). Anything unverifiable falls back to the list alone.
+     * an unverified list). Anything unverifiable falls back to a neutral card
+     * pointer rather than duplicating card names and prices in prose.
      *
      * @param  array<string, mixed>  $reply  must carry retrieved_* card lists
      */
-    protected function validateGroundedReply(string $text, array $reply): string
+    protected function validateGroundedReply(string $text, array $reply, ?string $displayedFacts = null): string
     {
         if (! $this->replyHasRetrievedCards($reply)) {
             return $text;
         }
 
-        $list = $this->deterministicCardsReply($reply);
         $explanation = $this->groundedExplanation($text, $reply);
+        if ($explanation !== null && $displayedFacts !== null) {
+            $explanation = $this->withoutRepeatedFactSentences($explanation, $displayedFacts);
+        }
+        if ($explanation !== null && $displayedFacts === null && ! $this->mentionsRetrievedName($explanation, $reply)) {
+            $explanation .= "\n\n".$this->catalogCardsPointer($reply);
+        }
         if ($explanation === null) {
             Log::debug('catalog_reply_rendered_from_verified_records');
 
-            return $list;
+            return $displayedFacts === null ? $this->catalogCardsPointer($reply) : '';
         }
 
         Log::debug('catalog_reply_with_grounded_ai_explanation');
 
-        return $explanation."\n\n".$list;
+        return $explanation;
+    }
+
+    protected function withoutRepeatedFactSentences(string $text, string $displayedFacts): ?string
+    {
+        $factTokens = $this->significantWords($displayedFacts);
+        $sentences = preg_split('/(?<=[.!?])\s+/', trim($text)) ?: [];
+        $kept = array_filter($sentences, function (string $sentence) use ($factTokens): bool {
+            $sentenceTokens = $this->significantWords($sentence);
+            if ($sentenceTokens === []) {
+                return false;
+            }
+
+            $shared = array_intersect($sentenceTokens, $factTokens);
+
+            return count($shared) < 2 || count($shared) / count($sentenceTokens) < 0.35;
+        });
+
+        $cleaned = trim(implode(' ', $kept));
+
+        return $cleaned !== '' ? $cleaned : null;
+    }
+
+    /** @return string[] */
+    protected function significantWords(string $text): array
+    {
+        $words = preg_split('/[^\p{L}\p{N}]+/u', mb_strtolower(strip_tags($text))) ?: [];
+        $stopWords = ['this', 'that', 'with', 'from', 'your', 'their', 'below', 'above', 'includes', 'inclusions', 'amenities', 'package', 'activity', 'hotel', 'room'];
+
+        return array_values(array_unique(array_filter(
+            $words,
+            fn (string $word): bool => mb_strlen($word) >= 4 && ! in_array($word, $stopWords, true)
+        )));
+    }
+
+    /** @param array<string, mixed> $reply */
+    protected function catalogCardsPointer(array $reply): string
+    {
+        $count = 0;
+        foreach (['retrieved_rooms', 'retrieved_hotels', 'retrieved_activities', 'retrieved_packages', 'retrieved_addons'] as $key) {
+            $count += count($reply[$key] ?? []);
+        }
+
+        $name = $this->retrievedNames($reply)[0] ?? null;
+        $topMatch = $name !== null ? " **Top match:** {$name}." : '';
+
+        return $count === 1
+            ? "I found 1 verified option.{$topMatch} Review its details in the card below."
+            : "I found {$count} verified options.{$topMatch} Compare their details in the cards below.";
+    }
+
+    /** @param array<string, mixed> $reply */
+    protected function mentionsRetrievedName(string $text, array $reply): bool
+    {
+        $normalizedText = $this->normalizeToken($text);
+
+        foreach ($this->retrievedNames($reply) as $name) {
+            $normalizedName = $this->normalizeToken($name);
+            if ($normalizedName !== '' && str_contains($normalizedText, $normalizedName)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param  array<string, mixed>  $reply
+     * @return string[]
+     */
+    protected function retrievedNames(array $reply): array
+    {
+        $names = [];
+        foreach (['retrieved_rooms' => 'room_name', 'retrieved_hotels' => 'hotel_name', 'retrieved_activities' => 'activity_name', 'retrieved_packages' => 'name', 'retrieved_addons' => 'name'] as $key => $field) {
+            foreach ($reply[$key] ?? [] as $card) {
+                if (is_array($card) && ! empty($card[$field])) {
+                    $names[] = (string) $card[$field];
+                }
+            }
+        }
+
+        return $names;
     }
 
     /**
@@ -4417,46 +4552,6 @@ class ChatbotService
         }
 
         return $candidate;
-    }
-
-    /**
-     * Deterministic fallback: names + real prices straight from the
-     * retrieved cards, no model prose. Covers every retrieved_* group
-     * present; groups without a price field list names only.
-     *
-     * @param  array<string, mixed>  $reply
-     */
-    protected function deterministicCardsReply(array $reply): string
-    {
-        $lines = ['Here are the options I found:'];
-        $groups = [
-            'retrieved_rooms' => ['label' => 'Room', 'name' => 'room_name', 'price' => 'base_price', 'suffix' => '/night'],
-            'retrieved_hotels' => ['label' => 'Hotel', 'name' => 'hotel_name', 'price' => 'price_from', 'suffix' => '/night'],
-            'retrieved_activities' => ['label' => 'Activity', 'name' => 'activity_name', 'price' => 'rate', 'suffix' => ''],
-            'retrieved_packages' => ['label' => 'Package', 'name' => 'name', 'price' => 'price', 'suffix' => ''],
-            'retrieved_addons' => ['label' => 'Add-on', 'name' => 'name', 'price' => null, 'suffix' => ''],
-        ];
-        foreach ($groups as $key => $config) {
-            foreach ($reply[$key] ?? [] as $card) {
-                if (! is_array($card)) {
-                    continue;
-                }
-                $line = '- **'.($card[$config['name']] ?? 'Option').'**';
-                if (! empty($card['price_quote']['display'])) {
-                    $line .= ' — '.$card['price_quote']['display'];
-                } elseif ($config['price'] && isset($card[$config['price']])) {
-                    $price = $key === 'retrieved_activities'
-                        ? trim((string) $card[$config['price']])
-                        : '₱'.number_format((float) $card[$config['price']], 2).$config['suffix'];
-                    if ($price !== '') {
-                        $line .= ' — '.$price;
-                    }
-                }
-                $lines[] = $line;
-            }
-        }
-
-        return implode("\n", $lines);
     }
 
     /**
@@ -4537,9 +4632,7 @@ class ChatbotService
      */
     protected function alternativeCardsReply(string $notice, array $cards): string
     {
-        $list = str_replace('Here are the options I found:', 'Other options:', $this->deterministicCardsReply($cards));
-
-        return $notice."\n\n".$list."\n\nAsk about one of these options, or tell me which destination you would like to search.";
+        return $notice."\n\n".$this->catalogCardsPointer($cards).' Ask about one of these options, or tell me which destination you would like to search.';
     }
 
     /**

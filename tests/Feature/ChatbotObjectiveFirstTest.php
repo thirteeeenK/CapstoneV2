@@ -170,7 +170,8 @@ test('scuba inclusions reply leads with the database inclusions', function () {
 
     $response->assertOk();
     expect($response->json('reply'))
-        ->toStartWith('Discover Scuba Diving (DSD) includes: Scuba trainer, Gear rental, Boat transfer');
+        ->toStartWith("### Discover Scuba Diving (DSD)\n\n**Inclusions**\n\n- Scuba trainer\n- Gear rental\n- Boat transfer")
+        ->not->toContain('Here are the options I found');
 });
 
 test('ambiguous field query lists each activity with its field value', function () {
