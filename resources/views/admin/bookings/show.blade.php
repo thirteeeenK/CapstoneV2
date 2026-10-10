@@ -60,15 +60,23 @@
                             Cancel Booking
                         </button>
                     </form>
-                    <form action="{{ route('admin.bookings.mark-paid', $booking->id) }}" method="POST" class="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-xl p-1.5">
-                        @csrf
-                        <input type="text" name="payment_reference" placeholder="Manual reference (optional)"
-                               class="w-44 px-3 py-1.5 rounded-lg border border-emerald-200 text-xs font-bold text-slate-900 bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20">
-                        <button type="submit" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition flex items-center gap-1.5 cursor-pointer">
-                            <span class="material-symbols-outlined text-[16px]">payments</span>
-                            Mark as Paid
-                        </button>
-                    </form>
+                    @if($booking->gateway === 'gotyme' || $booking->payments->isNotEmpty())
+                        <a href="#gotyme-transfers" class="min-h-11 px-4 py-2 rounded-xl bg-sky-700 hover:bg-sky-800 text-white font-bold text-xs transition flex items-center gap-1.5">
+                            <span class="material-symbols-outlined text-[16px]">fact_check</span>
+                            Verify GoTyme Transfer
+                        </a>
+                    @else
+                        <form action="{{ route('admin.bookings.mark-paid', $booking->id) }}" method="POST" class="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-xl p-1.5">
+                            @csrf
+                            <label for="payment_reference" class="sr-only">Manual payment reference</label>
+                            <input id="payment_reference" type="text" name="payment_reference" placeholder="Manual reference (optional)"
+                                   class="w-44 px-3 py-1.5 rounded-lg border border-emerald-200 text-xs font-bold text-slate-900 bg-white focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20">
+                            <button type="submit" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition flex items-center gap-1.5 cursor-pointer">
+                                <span class="material-symbols-outlined text-[16px]">payments</span>
+                                Mark as Paid
+                            </button>
+                        </form>
+                    @endif
                 @elseif($booking->status === 'paid')
                     <form action="{{ route('admin.bookings.mark-completed', $booking->id) }}" method="POST">
                         @csrf
@@ -199,6 +207,65 @@
             </div>
         @endif
 
+        @if($booking->gateway === 'gotyme' || $booking->payments->isNotEmpty())
+            <section id="gotyme-transfers" class="scroll-mt-6 rounded-3xl border border-sky-200 bg-sky-50/60 p-5 sm:p-6" aria-labelledby="gotyme-transfers-heading">
+                <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                        <h2 id="gotyme-transfers-heading" class="font-headline text-lg font-black text-slate-900">GoTyme manual transfers</h2>
+                        <p class="mt-1 text-xs text-slate-600">Compare each reference and amount against the actual GoTyme account before verifying.</p>
+                    </div>
+                    <dl class="grid grid-cols-3 gap-3 text-right text-xs">
+                        <div><dt class="text-slate-500">Due</dt><dd class="font-black text-slate-900">₱{{ number_format($paymentSummary['due_cents'] / 100, 2) }}</dd></div>
+                        <div><dt class="text-slate-500">Verified</dt><dd class="font-black text-emerald-700">₱{{ number_format($paymentSummary['verified_cents'] / 100, 2) }}</dd></div>
+                        <div><dt class="text-slate-500">Balance</dt><dd class="font-black text-sky-800">₱{{ number_format($paymentSummary['remaining_cents'] / 100, 2) }}</dd></div>
+                    </dl>
+                </div>
+
+                @if($paymentSummary['overpayment_cents'] > 0)
+                    <div role="alert" class="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs font-bold text-rose-900">Overpayment detected: ₱{{ number_format($paymentSummary['overpayment_cents'] / 100, 2) }}. Review refund handling with the customer.</div>
+                @endif
+
+                @if($booking->payments->isEmpty())
+                    <p class="mt-5 rounded-2xl border border-dashed border-sky-300 bg-white p-4 text-sm text-slate-600">No transfer reference has been submitted yet.</p>
+                @else
+                    <div class="mt-5 space-y-4">
+                        @foreach($booking->payments as $payment)
+                            <article class="rounded-2xl border border-slate-200 bg-white p-4">
+                                <div class="flex flex-wrap items-start justify-between gap-3">
+                                    <div class="min-w-0">
+                                        <p class="break-all font-mono text-sm font-black text-slate-900">{{ $payment->sender_reference }}</p>
+                                        <p class="mt-1 text-xs text-slate-500">User reported ₱{{ number_format((float) $payment->claimed_amount, 2) }} · {{ $payment->submitted_at->format('M j, Y g:i A') }}</p>
+                                    </div>
+                                    <span class="rounded-full px-2.5 py-1 text-[10px] font-black uppercase tracking-wider {{ $payment->status === 'verified' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-900' }}">{{ $payment->status }}</span>
+                                </div>
+
+                                @if($payment->status === 'submitted' && $booking->status === 'approved')
+                                    <form action="{{ route('admin.bookings.mark-paid', $booking->id) }}" method="POST" class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,12rem)_minmax(0,1fr)_auto] sm:items-end">
+                                        @csrf
+                                        <input type="hidden" name="booking_payment_id" value="{{ $payment->id }}">
+                                        <div>
+                                            <label for="verified_amount_{{ $payment->id }}" class="block text-[11px] font-extrabold uppercase tracking-wider text-slate-500">Amount actually received</label>
+                                            <input id="verified_amount_{{ $payment->id }}" name="verified_amount" type="number" inputmode="decimal" required min="0.01" max="99999999.99" step="0.01" value="{{ old('booking_payment_id') == $payment->id ? old('verified_amount') : $payment->claimed_amount }}"
+                                                   class="mt-1 min-h-11 w-full rounded-xl border border-slate-300 px-3 text-base focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">
+                                        </div>
+                                        <div>
+                                            <label for="admin_note_{{ $payment->id }}" class="block text-[11px] font-extrabold uppercase tracking-wider text-slate-500">Verification note (optional)</label>
+                                            <input id="admin_note_{{ $payment->id }}" name="admin_note" type="text" maxlength="500" value="{{ old('booking_payment_id') == $payment->id ? old('admin_note') : '' }}" placeholder="e.g. Matched in GoTyme history"
+                                                   class="mt-1 min-h-11 w-full rounded-xl border border-slate-300 px-3 text-base focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">
+                                        </div>
+                                        <button type="submit" class="min-h-11 rounded-xl bg-emerald-700 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-800">Verify received amount</button>
+                                    </form>
+                                @elseif($payment->status === 'verified')
+                                    <p class="mt-3 text-xs font-semibold text-emerald-800">Verified amount: ₱{{ number_format((float) $payment->verified_amount, 2) }} by {{ $payment->verifiedByAdmin?->name ?? 'Admin' }} on {{ $payment->verified_at?->format('M j, Y g:i A') }}.</p>
+                                    @if($payment->admin_note)<p class="mt-1 text-xs text-slate-600">Note: {{ $payment->admin_note }}</p>@endif
+                                @endif
+                            </article>
+                        @endforeach
+                    </div>
+                @endif
+            </section>
+        @endif
+
         {{-- Contact & Manifest --}}
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div class="bg-white rounded-3xl p-6 border border-slate-200/80 shadow-xs">
@@ -251,7 +318,7 @@
                     <p class="mt-3 text-[11px] text-slate-400 font-mono">Gateway: {{ $booking->gateway }} / {{ $booking->gateway_reference }}</p>
                 @endif
                 @if($booking->payment_method)
-                    <p class="mt-1 text-[11px] text-slate-500">Method: <span class="font-bold text-slate-700">{{ $booking->payment_method === 'qrph' ? 'QRPH · GCash / GoTyme' : $booking->payment_method }}</span></p>
+                    <p class="mt-1 text-[11px] text-slate-500">Method: <span class="font-bold text-slate-700">{{ $booking->payment_method === 'qrph' ? 'QRPH · GCash / GoTyme' : ($booking->payment_method === 'gotyme' ? 'GoTyme QR · Manual' : $booking->payment_method) }}</span></p>
                 @endif
             </div>
 

@@ -19,6 +19,9 @@ Route::middleware(['auth', 'throttle:users'])->group(function () {
         Route::get('/{code}/pay/qrph', [BookingPaymentController::class, 'qrphShow'])->name('pay.qrph.show');
         Route::get('/{code}/pay/qrph/return', [BookingPaymentController::class, 'qrphReturn'])->name('pay.qrph.return');
         Route::post('/{code}/pay/qrph/confirm', [BookingPaymentController::class, 'qrphConfirm'])->name('pay.qrph.confirm');
+        Route::post('/{code}/pay/gotyme', [BookingPaymentController::class, 'goTymeInit'])->name('pay.gotyme');
+        Route::get('/{code}/pay/gotyme', [BookingPaymentController::class, 'goTymeShow'])->name('pay.gotyme.show');
+        Route::post('/{code}/pay/gotyme/submit', [BookingPaymentController::class, 'goTymeSubmit'])->name('pay.gotyme.submit');
         Route::post('/{code}/cancel', [BookingPaymentController::class, 'cancel'])->name('cancel');
         Route::post('/{code}/cancel/withdraw', [BookingPaymentController::class, 'withdrawCancellation'])->name('cancel.withdraw');
         Route::post('/{code}/rebook', [BookingPaymentController::class, 'rebook'])->name('rebook');

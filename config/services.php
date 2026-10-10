@@ -73,6 +73,12 @@ return [
         'city' => env('QRPH_CITY', 'Manila'),
     ],
 
+    'gotyme' => [
+        'qr_image' => env('GOTYME_QR_IMAGE', 'images/qr_gotyme.jpg'),
+        'account_name' => env('GOTYME_ACCOUNT_NAME'),
+        'account_number' => env('GOTYME_ACCOUNT_NUMBER'),
+    ],
+
     'openweather' => [
         'api_key' => env('OPENWEATHER_API_KEY'),
         'base_url' => env('OPENWEATHER_BASE_URL', 'https://api.openweathermap.org/data/2.5'),

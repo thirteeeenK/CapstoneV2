@@ -96,6 +96,27 @@
                     <p class="text-[11px] text-center text-slate-500 dark:text-slate-400 mt-2">You'll see a scannable QR with the exact amount. With PayMongo keys configured it is a real GCash QR; otherwise it's a demo QR for the capstone.</p>
                 </div>
 
+                {{-- ── Pay to personal GoTyme QR (manual verification) ── --}}
+                <div class="rounded-2xl border border-sky-200 bg-sky-50/70 p-5">
+                    <div class="flex items-center gap-3 mb-3">
+                        <span class="w-9 h-9 rounded-xl bg-sky-100 text-sky-700 border border-sky-200 flex items-center justify-center">
+                            <span class="material-symbols-outlined text-[18px]" aria-hidden="true">account_balance_wallet</span>
+                        </span>
+                        <div>
+                            <p class="text-sm font-extrabold text-slate-900">Pay to GoTyme QR</p>
+                            <p class="text-[11px] text-slate-600">Personal-account transfer · submit your reference for admin verification</p>
+                        </div>
+                    </div>
+                    <form action="{{ route('booking.pay.gotyme', $booking->booking_code) }}" method="POST">
+                        @csrf
+                        <button type="submit" class="flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl bg-sky-700 px-6 py-3.5 text-sm font-extrabold text-white shadow-lg shadow-sky-700/20 transition hover:bg-sky-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-700">
+                            <span class="material-symbols-outlined text-lg" aria-hidden="true">qr_code_scanner</span>
+                            <span>Show personal GoTyme QR</span>
+                        </button>
+                    </form>
+                    <p class="mt-2 text-center text-[11px] text-slate-500">Real bank transfer, but not automatically verified. Your booking remains awaiting payment until an admin confirms the received amount.</p>
+                </div>
+
                 <p class="text-[11px] text-center text-slate-400 dark:text-slate-500 font-medium">
                     Payment can be retried from your booking page at any time before the deadline.
                 </p>

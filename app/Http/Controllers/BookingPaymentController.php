@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\SubmitGoTymePaymentRequest;
 use App\Models\AdminModel;
 use App\Models\Booking;
 use App\Notifications\BookingCancellationRequested;
@@ -10,9 +11,12 @@ use App\Notifications\BookingPaid;
 use App\Services\BookingExpiryService;
 use App\Services\BookingRequestService;
 use App\Services\Payment\Drivers\QrphDriver;
+use App\Services\Payment\GoTymePaymentService;
 use App\Services\Payment\PaymentService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\View\View;
 
 class BookingPaymentController extends Controller
 {
@@ -25,7 +29,8 @@ class BookingPaymentController extends Controller
     public function __construct(
         PaymentService $paymentService,
         BookingExpiryService $expiryService,
-        BookingRequestService $bookingRequestService
+        BookingRequestService $bookingRequestService,
+        protected GoTymePaymentService $goTymePaymentService,
     ) {
         $this->paymentService = $paymentService;
         $this->expiryService = $expiryService;
@@ -47,6 +52,10 @@ class BookingPaymentController extends Controller
         if ($booking->status !== Booking::STATUS_APPROVED) {
             return redirect()->route('booking.show', $booking->booking_code)
                 ->with('error', 'This booking is not ready for payment.');
+        }
+
+        if ($this->goTymePaymentService->hasActiveTransfer($booking)) {
+            return redirect()->route('booking.pay.gotyme.show', $booking->booking_code);
         }
 
         return view('booking.pay', compact('booking'));
@@ -71,9 +80,20 @@ class BookingPaymentController extends Controller
 
         $gateway = $request->input('gateway');
 
-        if (! in_array($gateway, ['card', 'qrph'], true)) {
+        if (! in_array($gateway, ['card', 'qrph', 'gotyme'], true)) {
             return redirect()->route('booking.show', $booking->booking_code)
                 ->with('error', 'Please select a payment method before proceeding.');
+        }
+
+        if ($gateway === 'gotyme') {
+            $this->goTymePaymentService->initialize($booking);
+
+            return redirect()->route('booking.pay.gotyme.show', $booking->booking_code);
+        }
+
+        if ($this->goTymePaymentService->hasActiveTransfer($booking)) {
+            return redirect()->route('booking.pay.gotyme.show', $booking->booking_code)
+                ->with('error', 'A GoTyme transfer is already awaiting or has received verification. Continue there to avoid splitting payment methods.');
         }
 
         if ($gateway === 'qrph') {
@@ -282,6 +302,67 @@ class BookingPaymentController extends Controller
             ->with('success', 'Payment received via QRPH! Your booking is confirmed.');
     }
 
+    public function goTymeInit(string $bookingCode): RedirectResponse
+    {
+        $booking = $this->loadOwnedBooking($bookingCode);
+
+        if ($this->expiryService->expireIfDue($booking)) {
+            return redirect()->route('booking.show', $booking->booking_code)
+                ->with('error', 'This booking expired because payment was not completed within the 48-hour window.');
+        }
+
+        $this->goTymePaymentService->initialize($booking);
+
+        return redirect()->route('booking.pay.gotyme.show', $booking->booking_code);
+    }
+
+    public function goTymeShow(string $bookingCode): RedirectResponse|View
+    {
+        $booking = $this->loadOwnedBooking($bookingCode);
+
+        if ($this->expiryService->expireIfDue($booking)) {
+            return redirect()->route('booking.show', $booking->booking_code)
+                ->with('error', 'This booking expired because payment was not completed within the 48-hour window.');
+        }
+
+        if ($booking->status !== Booking::STATUS_APPROVED) {
+            return redirect()->route('booking.show', $booking->booking_code)
+                ->with('error', 'This booking is not ready for payment.');
+        }
+
+        if ($booking->gateway !== 'gotyme') {
+            $booking = $this->goTymePaymentService->initialize($booking);
+        }
+
+        $booking->load(['payments' => fn ($query) => $query->where('provider', 'gotyme')]);
+
+        return view('booking.gotyme', [
+            'booking' => $booking,
+            'paymentSummary' => $this->goTymePaymentService->summary($booking),
+            'goTyme' => config('services.gotyme'),
+        ]);
+    }
+
+    public function goTymeSubmit(SubmitGoTymePaymentRequest $request, string $bookingCode): RedirectResponse
+    {
+        $booking = $this->loadOwnedBooking($bookingCode);
+
+        if ($this->expiryService->expireIfDue($booking)) {
+            return redirect()->route('booking.show', $booking->booking_code)
+                ->with('error', 'This booking expired because payment was not completed within the 48-hour window.');
+        }
+
+        $validated = $request->validated();
+        $this->goTymePaymentService->submit(
+            $booking,
+            $validated['sender_ref'],
+            (string) $validated['claimed_amount']
+        );
+
+        return redirect()->route('booking.pay.gotyme.show', $booking->booking_code)
+            ->with('success', 'GoTyme transfer submitted — awaiting admin verification. Your balance changes only after verification.');
+    }
+
     /**
      * User requests cancellation (pending/approved → cancellation_requested).
      * Reason is required.
@@ -395,7 +476,7 @@ class BookingPaymentController extends Controller
      */
     protected function loadOwnedBooking(string $bookingCode): Booking
     {
-        $booking = Booking::with(['items', 'user', 'history'])
+        $booking = Booking::with(['items', 'user', 'history', 'payments'])
             ->where('booking_code', $bookingCode)
             ->first();
 

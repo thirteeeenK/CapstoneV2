@@ -356,7 +356,7 @@
                                   @submit="if (!chosen) { tried = true; $event.preventDefault(); }">
                                 @csrf
                                 <p class="font-label text-[10px] uppercase font-bold tracking-[0.15em] text-slate-400 dark:text-slate-500 mb-3">Select a payment method</p>
-                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                                     @if (!empty($gateways['card']))
                                         <label class="cursor-pointer rounded-2xl border-2 p-4 transition flex items-start gap-3"
                                                :class="chosen === 'card' ? 'border-sky-500 bg-sky-50/70 dark:bg-sky-950/60 shadow-sm' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-600'">
@@ -377,6 +377,14 @@
                                             </span>
                                         </label>
                                     @endif
+                                    <label class="cursor-pointer rounded-2xl border-2 p-4 transition flex items-start gap-3"
+                                           :class="chosen === 'gotyme' ? 'border-sky-500 bg-sky-50/70 dark:bg-sky-950/60 shadow-sm' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-600'">
+                                        <input type="radio" name="gateway" value="gotyme" x-model="chosen" @change="tried = false" class="mt-0.5 accent-sky-600 cursor-pointer">
+                                        <span>
+                                            <span class="flex items-center gap-1.5 text-sm font-extrabold text-slate-900 dark:text-slate-100"><span class="material-symbols-outlined text-[16px] text-sky-600">account_balance_wallet</span>GoTyme QR</span>
+                                            <span class="block text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Manual transfer · admin verified</span>
+                                        </span>
+                                    </label>
                                 </div>
                                 <p x-show="tried && !chosen" x-cloak style="display: none;" class="text-[11px] font-bold text-rose-600 mt-3 text-center">Please select a payment method before proceeding.</p>
                                 <button type="submit" class="mt-4 w-full px-6 py-3.5 rounded-2xl bg-slate-900 text-white font-bold text-sm hover:bg-slate-800 transition flex items-center justify-center gap-1.5 shadow-lg shadow-slate-900/20 cursor-pointer">
@@ -573,6 +581,8 @@
                                     <dd class="font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider">
                                         @if($booking->payment_method === 'qrph')
                                             <span class="inline-flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-emerald-600">qr_code_2</span> QRPH · GCash/GoTyme</span>
+                                        @elseif($booking->payment_method === 'gotyme')
+                                            <span class="inline-flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-sky-600">account_balance_wallet</span> GoTyme QR · Manual</span>
                                         @else
                                             {{ $booking->payment_method }}
                                         @endif
@@ -596,6 +606,16 @@
                                 <dd class="font-bold text-slate-900 dark:text-slate-100">{{ $booking->created_at->format('M j, Y') }}</dd>
                             </div>
                         </dl>
+                        @if ($booking->payment_method === 'gotyme' && $booking->status === 'approved')
+                            <div class="mt-4 rounded-xl bg-sky-50 p-3 text-xs text-sky-900">
+                                <p class="font-bold">GoTyme verification status</p>
+                                <p class="mt-1">Verified: ₱{{ number_format($paymentSummary['verified_cents'] / 100, 2) }} · Remaining: ₱{{ number_format($paymentSummary['remaining_cents'] / 100, 2) }}</p>
+                                @if ($paymentSummary['pending_claimed_cents'] > 0)
+                                    <p class="mt-1 font-semibold text-amber-800">A submitted transfer is still awaiting admin verification.</p>
+                                @endif
+                                <a href="{{ route('booking.pay.gotyme.show', $booking->booking_code) }}" class="mt-2 inline-flex min-h-11 items-center font-bold text-sky-700 underline">View GoTyme payment</a>
+                            </div>
+                        @endif
                     </section>
 
                     {{-- Lead traveler --}}

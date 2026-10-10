@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -141,6 +142,11 @@ class Booking extends Model
     public function attachments()
     {
         return $this->hasMany(BookingAttachment::class)->orderBy('id', 'desc');
+    }
+
+    public function payments(): HasMany
+    {
+        return $this->hasMany(BookingPayment::class)->orderByDesc('id');
     }
 
     /**

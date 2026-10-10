@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Booking;
 use App\Services\BookingExpiryService;
+use App\Services\Payment\GoTymePaymentService;
 use App\Services\Payment\PaymentService;
 use Illuminate\Http\Request;
 
@@ -13,8 +14,11 @@ class BookingConfirmationController extends Controller
 
     protected PaymentService $paymentService;
 
-    public function __construct(BookingExpiryService $expiryService, PaymentService $paymentService)
-    {
+    public function __construct(
+        BookingExpiryService $expiryService,
+        PaymentService $paymentService,
+        protected GoTymePaymentService $goTymePaymentService,
+    ) {
         $this->expiryService = $expiryService;
         $this->paymentService = $paymentService;
     }
@@ -34,6 +38,7 @@ class BookingConfirmationController extends Controller
         return view('booking.show', [
             'booking' => $booking,
             'gateways' => $this->paymentService->availableGateways(),
+            'paymentSummary' => $this->goTymePaymentService->summary($booking),
         ]);
     }
 
@@ -43,7 +48,7 @@ class BookingConfirmationController extends Controller
      */
     protected function loadOwnedBooking(string $bookingCode): Booking
     {
-        $booking = Booking::with(['items', 'user', 'history', 'reviews', 'attachments'])
+        $booking = Booking::with(['items', 'user', 'history', 'reviews', 'attachments', 'payments'])
             ->where('booking_code', $bookingCode)
             ->first();
 

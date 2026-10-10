@@ -27,6 +27,7 @@ use App\Notifications\BookingRequestReceived;
 use App\Notifications\NewGuestAccountCreated;
 use App\Services\AdminAuditService;
 use App\Services\BookingRequestService;
+use App\Services\Payment\GoTymePaymentService;
 use App\Services\RoomAvailabilityService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -43,8 +44,11 @@ class AdminBookingController extends Controller
 
     protected BookingRequestService $bookingRequestService;
 
-    public function __construct(RoomAvailabilityService $availabilityService, BookingRequestService $bookingRequestService)
-    {
+    public function __construct(
+        RoomAvailabilityService $availabilityService,
+        BookingRequestService $bookingRequestService,
+        protected GoTymePaymentService $goTymePaymentService,
+    ) {
         $this->availabilityService = $availabilityService;
         $this->bookingRequestService = $bookingRequestService;
     }
@@ -423,7 +427,7 @@ class AdminBookingController extends Controller
      */
     public function show($id)
     {
-        $booking = Booking::with(['items', 'user', 'reviewer', 'history', 'attachments'])
+        $booking = Booking::with(['items', 'user', 'reviewer', 'history', 'attachments', 'payments.verifiedByAdmin'])
             ->findOrFail($id);
 
         $flightHints = [];
@@ -447,7 +451,9 @@ class AdminBookingController extends Controller
             }
         }
 
-        return view('admin.bookings.show', compact('booking', 'roomAvailability', 'flightHints'));
+        $paymentSummary = $this->goTymePaymentService->summary($booking);
+
+        return view('admin.bookings.show', compact('booking', 'roomAvailability', 'flightHints', 'paymentSummary'));
     }
 
     /**
@@ -737,6 +743,40 @@ class AdminBookingController extends Controller
     {
         $booking = Booking::findOrFail($id);
         $oldValues = $booking->getOriginal();
+
+        if ($booking->gateway === 'gotyme' || $this->goTymePaymentService->hasActiveTransfer($booking)) {
+            $validated = $request->validate([
+                'booking_payment_id' => ['required', 'integer'],
+                'verified_amount' => ['required', 'numeric', 'min:0.01', 'max:99999999.99', 'decimal:0,2'],
+                'admin_note' => ['nullable', 'string', 'max:500'],
+            ]);
+
+            $admin = auth('admin')->user();
+            $result = $this->goTymePaymentService->verify(
+                $booking,
+                (int) $validated['booking_payment_id'],
+                (string) $validated['verified_amount'],
+                $admin,
+                $validated['admin_note'] ?? null,
+            );
+
+            $booking->refresh();
+            AdminAuditService::log($booking, $oldValues, $admin);
+
+            if ($result['completed']) {
+                BookingNotification::send($booking, new BookingPaid($booking));
+
+                $message = "Booking {$booking->booking_code} is fully paid via verified GoTyme transfer(s).";
+                if ($result['overpayment_cents'] > 0) {
+                    $message .= ' Review the ₱'.number_format($result['overpayment_cents'] / 100, 2).' overpayment.';
+                }
+
+                return redirect()->route('admin.bookings.show', $booking->id)->with('success', $message);
+            }
+
+            return redirect()->route('admin.bookings.show', $booking->id)
+                ->with('success', 'Transfer verified. Remaining balance: ₱'.number_format($result['remaining_cents'] / 100, 2).'.');
+        }
 
         $validated = $request->validate([
             'payment_reference' => 'nullable|string|max:100',
