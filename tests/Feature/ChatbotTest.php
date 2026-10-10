@@ -2244,7 +2244,7 @@ test('grounded generation uses the configured temperature', function () {
     expect(end($payloads)['generationConfig']['temperature'])->toEqual(0.7);
 });
 
-test('explicit destination ignores profile destination but bare recommendation is labeled personalized', function () {
+test('explicit destination ignores profile destination while bare recommendation keeps personalized trace mode', function () {
     $embedding = '['.implode(',', array_fill(0, 3072, '0.01')).']';
     $this->hotel->update(['embedding' => $embedding]);
     $elnido = DestinationModel::factory()->create(['name' => 'El Nido']);
@@ -2265,7 +2265,7 @@ test('explicit destination ignores profile destination but bare recommendation i
     $bare = $this->postJson('/chat', ['message' => 'Recommend a hotel']);
     $bare->assertOk();
     expect($bare->json('retrieved_hotels'))->not->toBeEmpty();
-    expect($bare->json('reply'))->toContain(ChatbotService::PERSONALIZED_LABEL);
+    expect($bare->json('reply'))->not->toContain('Personalized for your saved trip preferences.');
     expect($bare->json('trace.response_mode'))->toBe('personalized');
 
     $explicit = $this->postJson('/chat', ['message' => 'Find hotels in Boracay']);
@@ -2275,7 +2275,6 @@ test('explicit destination ignores profile destination but bare recommendation i
     foreach ($hotels as $hotel) {
         expect($hotel['destination'])->toBe('Boracay');
     }
-    expect($explicit->json('reply'))->not->toContain(ChatbotService::PERSONALIZED_LABEL);
     expect($explicit->json('trace.response_mode'))->toBe('grounded');
 });
 

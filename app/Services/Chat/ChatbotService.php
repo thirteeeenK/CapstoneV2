@@ -4066,9 +4066,9 @@ class ChatbotService
     }
 
     /**
-     * Mark a recommendation as personalized (with explainable label) only
-     * when the request lacks explicit factual constraints and the signed-in
-     * user has saved preferences. Returns [reply, mode].
+     * Mark a recommendation as personalized only when the request lacks
+     * explicit factual constraints and the signed-in user has saved
+     * preferences. Returns [reply, mode].
      */
     protected function decorateRecommendationReply(array $reply, string $intent, array $rawConstraints, ?User $user): array
     {
@@ -4078,7 +4078,6 @@ class ChatbotService
             || ! $this->replyHasRetrievedCards($reply)) {
             return [$reply, 'grounded'];
         }
-        $reply['reply'] = self::PERSONALIZED_LABEL."\n\n".($reply['reply'] ?? '');
         $reply['personalized'] = true;
 
         return [$reply, 'personalized'];
