@@ -189,6 +189,21 @@ it('updates a package with existing images without demanding a new image', funct
     expect($package->fresh()->images)->toBe(['packages/existing.png']);
 });
 
+it('renders a stored package image on the edit page without duplicating the storage prefix', function () {
+    $package = Package::factory()->create([
+        'destination_id' => $this->destination->id,
+        'name' => 'Image Preview Package',
+        'price' => 5999.00,
+        'images' => ['/storage/packages/existing image.png'],
+    ]);
+
+    $this->actingAs($this->admin, 'admin')
+        ->get(route('admin.packages.edit', $package->id))
+        ->assertOk()
+        ->assertSee('/storage/packages/existing%20image.png', false)
+        ->assertDontSee('/storage/storage/packages', false);
+});
+
 it('adds a package to the cart at min_pax with price times pax and no room fee', function () {
     $package = Package::factory()->create([
         'destination_id' => $this->destination->id,

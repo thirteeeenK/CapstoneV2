@@ -84,7 +84,7 @@
                     <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Upload New Image File</label>
                     @if(!empty($package->images) && is_array($package->images))
                         <div class="mb-2 flex items-center gap-2">
-                            <img src="{{ asset('storage/'.ltrim($package->images[0], '/')) }}" alt="Current package image" class="w-16 h-16 rounded-xl object-cover border border-slate-200">
+                            <img src="{{ App\Concerns\ResolvesImages::resolveImg($package->images[0], asset('images/placeholder.jpg')) }}" alt="Current package image" class="w-16 h-16 rounded-xl object-cover border border-slate-200">
                             <span class="text-[11px] text-slate-500 font-medium">Current image kept unless you upload or paste a new one.</span>
                         </div>
                     @endif

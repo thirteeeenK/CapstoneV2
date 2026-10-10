@@ -45,6 +45,7 @@ Route::prefix('admin')->group(function () {
             ->name('admin.two-factor.codes.regenerate');
 
         Route::delete('/two-factor', [TwoFactorSetupController::class, 'destroy'])
+            ->middleware('throttle:admin')
             ->name('admin.two-factor.destroy');
 
         Route::post('/logout', [AdminAuth::class, 'destroy'])->name('admin.logout');

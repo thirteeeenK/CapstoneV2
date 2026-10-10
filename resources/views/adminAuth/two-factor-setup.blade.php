@@ -102,13 +102,31 @@
                         <x-text-input
                             id="disable-password"
                             type="password"
-                            name="password"
+                            name="disable_password"
                             required
                             autocomplete="current-password"
                             placeholder="••••••••"
                         />
+                        <x-input-error :messages="$errors->get('disable_password')" />
+                    </div>
+                    <div>
+                        <x-input-label for="disable-code" :value="__('Authenticator or recovery code')" />
+                        <x-text-input
+                            id="disable-code"
+                            type="text"
+                            name="code"
+                            required
+                            autocomplete="one-time-code"
+                            placeholder="123456 or ABCDE-FGHIJ"
+                            aria-describedby="disable-code-hint"
+                        />
+                        <p id="disable-code-hint" class="mt-1 text-xs text-ink-500">
+                            Confirm this security change with your authenticator or one recovery code.
+                        </p>
+                        <x-input-error :messages="$errors->get('code')" />
                     </div>
                     <button type="submit"
+                        onclick="return confirm('Turn off two-factor authentication for your admin account?')"
                         class="w-full inline-flex justify-center rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-semibold text-red-700 hover:bg-red-100 transition-colors">
                         Turn off two-factor
                     </button>

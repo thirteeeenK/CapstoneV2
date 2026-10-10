@@ -213,6 +213,8 @@
                                                         class="text-[10px] font-bold text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700"
                                                         x-text="(room.max_occupancy || room.occupancy) + ' pax max'"></span>
                                                 </div>
+                                                <p x-show="room.price_updated_at" class="text-[10px] text-slate-500 dark:text-slate-400"
+                                                    x-text="'Price updated ' + room.price_updated_at"></p>
                                                 <template x-if="room.check_in_date && room.check_out_date">
                                                      <div class="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
                                                         <span
@@ -262,6 +264,8 @@
                                                         class="text-[10px] font-bold text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700 capitalize"
                                                         x-text="act.category"></span>
                                                 </div>
+                                                <p x-show="act.price_updated_at" class="text-[10px] text-slate-500 dark:text-slate-400"
+                                                    x-text="'Price updated ' + act.price_updated_at"></p>
                                                 <div class="flex gap-1.5 pt-1">
                                                     <button @click="$store.preview.openActivityById(act.id)"
                                                         class="flex-1 text-[11px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold px-2 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors font-headline cursor-pointer">Preview</button>
@@ -299,6 +303,8 @@
                                                         class="text-[11px] font-black text-ocean-700"
                                                         x-text="'From ₱' + new Intl.NumberFormat().format(hotel.price_from) + '/night'"></span>
                                                 </div>
+                                                <p x-show="hotel.price_updated_at" class="text-[10px] text-slate-500 dark:text-slate-400"
+                                                    x-text="'Price updated ' + hotel.price_updated_at"></p>
                                                 <a :href="'/hotels/' + hotel.id"
                                                     class="mt-1.5 block text-center text-[11px] bg-ocean-600 text-white font-bold px-2 py-1.5 rounded-lg hover:bg-ocean-700 transition-colors font-headline cursor-pointer">View
                                                     Hotel</a>
@@ -329,6 +335,8 @@
                                                         class="text-[10px] font-bold text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-700"
                                                         x-text="pkg.days + 'D/' + pkg.nights + 'N'"></span>
                                                 </div>
+                                                <p x-show="pkg.price_updated_at" class="text-[10px] text-slate-500 dark:text-slate-400"
+                                                    x-text="'Price updated ' + pkg.price_updated_at"></p>
                                                 <div class="flex gap-1.5 pt-1">
                                                     <button @click="$store.preview.openPackageById(pkg.id)"
                                                         class="flex-1 text-[11px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold px-2 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors font-headline cursor-pointer">Preview</button>

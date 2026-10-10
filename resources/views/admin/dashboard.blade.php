@@ -1,5 +1,35 @@
 <x-admin-layout>
     <div class="pb-12 font-body">
+        @if (session('two_factor_disabled'))
+            <div
+                x-data="{ open: true }"
+                x-show="open"
+                x-cloak
+                class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 px-4"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="two-factor-disabled-title"
+                @keydown.escape.window="open = false"
+            >
+                <div class="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl" @click.outside="open = false">
+                    <div class="flex items-start gap-4">
+                        <span class="material-symbols-outlined rounded-2xl bg-emerald-100 p-3 text-emerald-700" aria-hidden="true">verified_user</span>
+                        <div class="min-w-0 flex-1">
+                            <h2 id="two-factor-disabled-title" class="font-headline text-lg font-bold text-slate-900">Two-factor authentication disabled</h2>
+                            <p class="mt-2 text-sm leading-6 text-slate-600">{{ session('two_factor_disabled') }}</p>
+                        </div>
+                    </div>
+                    <button
+                        type="button"
+                        class="mt-6 w-full rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2"
+                        @click="open = false"
+                    >
+                        Continue to dashboard
+                    </button>
+                </div>
+            </div>
+        @endif
+
         <script id="dashboard-chart-data" type="application/json">{!! json_encode($chartData, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) !!}</script>
 
         {{-- Header --}}

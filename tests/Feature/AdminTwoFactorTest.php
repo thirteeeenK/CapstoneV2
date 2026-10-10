@@ -183,7 +183,63 @@ it('enrolls an admin via setup with password and TOTP', function () {
         ])->assertRedirect(route('admin.two-factor.setup'));
 
     expect($admin->refresh()->hasEnabledTwoFactor())->toBeTrue();
+    expect($admin->requiresTwoFactor())->toBeTrue();
     expect(session('admin_2fa_codes'))->toHaveCount(8);
+});
+
+it('lets an admin securely disable 2FA for their own account', function () {
+    [$admin, $secret] = twoFactorAdmin($this->service, 'mfa-disable@sunnytripstest.com');
+
+    $this->actingAs($admin, 'admin')
+        ->delete(route('admin.two-factor.destroy'), [
+            'disable_password' => 'password-secret-123',
+            'code' => currentTotp($this->google2fa, $this->service, $secret),
+        ])
+        ->assertRedirect(route('admin.dashboard'))
+        ->assertSessionHas('two_factor_disabled');
+
+    $admin->refresh();
+
+    expect($admin->requiresTwoFactor())->toBeFalse()
+        ->and($admin->hasEnabledTwoFactor())->toBeFalse()
+        ->and($admin->two_factor_secret)->toBeNull()
+        ->and($admin->two_factor_recovery_codes)->toBeNull();
+
+    $this->get(route('admin.dashboard'))
+        ->assertOk()
+        ->assertSee('Two-factor authentication disabled')
+        ->assertSee('Security &amp; 2FA', false);
+});
+
+it('does not disable 2FA with an invalid verification code', function () {
+    [$admin] = twoFactorAdmin($this->service, 'mfa-disable-invalid@sunnytripstest.com');
+
+    $this->actingAs($admin, 'admin')
+        ->delete(route('admin.two-factor.destroy'), [
+            'disable_password' => 'password-secret-123',
+            'code' => '000000',
+        ])
+        ->assertSessionHasErrors('code');
+
+    expect($admin->refresh()->requiresTwoFactor())->toBeTrue()
+        ->and($admin->hasEnabledTwoFactor())->toBeTrue();
+});
+
+it('logs in without a challenge after the admin has disabled 2FA', function () {
+    $admin = AdminModel::create([
+        'name' => 'MFA Disabled Admin',
+        'email' => 'mfa-disabled-login@sunnytripstest.com',
+        'password' => 'password-secret-123',
+        'two_factor_required' => false,
+    ]);
+
+    $this->post('/admin/login', [
+        'email' => $admin->email,
+        'password' => 'password-secret-123',
+    ])->assertRedirect(route('admin.dashboard'));
+
+    $this->assertAuthenticatedAs($admin, 'admin');
+    $this->get(route('admin.dashboard'))->assertOk();
 });
 
 it('rejects enrollment with a wrong password', function () {

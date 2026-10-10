@@ -1352,7 +1352,15 @@ class GeminiService
             return $dates;
         }
         try {
-            $logs = AdminAuditLog::where('auditable_type', $auditableType)
+            $modelType = match ($auditableType) {
+                'room' => RoomType::class,
+                'activity' => ActivityModel::class,
+                'package' => Package::class,
+                'addon' => AddOnModel::class,
+                default => $auditableType,
+            };
+
+            $logs = AdminAuditLog::whereIn('auditable_type', array_unique([$auditableType, $modelType]))
                 ->whereIn('auditable_id', $ids)
                 ->orderByDesc('created_at')
                 ->get(['auditable_id', 'new_values', 'created_at']);

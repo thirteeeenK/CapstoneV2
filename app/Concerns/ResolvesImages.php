@@ -14,8 +14,13 @@ trait ResolvesImages
             return $imgPath;
         }
 
-        // Normalize: strip leading storage/ or / and encode per-segment (spaces → %20 via rawurlencode)
+        // Public assets are not stored on the public disk and must not receive a /storage prefix.
         $clean = ltrim(str_replace('\\', '/', $imgPath), '/');
+        if (str_starts_with($clean, 'images/')) {
+            return asset($clean);
+        }
+
+        // Normalize stored paths and encode per-segment (spaces → %20 via rawurlencode).
         if (str_starts_with($clean, 'storage/')) {
             $clean = substr($clean, 8);
         }

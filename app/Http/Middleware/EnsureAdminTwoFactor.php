@@ -16,7 +16,7 @@ class EnsureAdminTwoFactor
     {
         $admin = Auth::guard('admin')->user();
 
-        if ($admin && ! $admin->hasEnabledTwoFactor()) {
+        if ($admin && $admin->requiresTwoFactor() && ! $admin->hasEnabledTwoFactor()) {
             if (
                 ! $request->routeIs('admin.two-factor.*') &&
                 ! $request->routeIs('admin.logout')

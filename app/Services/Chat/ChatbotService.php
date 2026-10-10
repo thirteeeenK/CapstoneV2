@@ -942,6 +942,7 @@ class ChatbotService
 
         $context = $this->gemini->extractPricingContext($context, $query);
         $prompt = $this->buildPrompt('addon-search', $context, $query, $user, ['explicit_scope' => $this->hasExplicitScope($constraints)]);
+        $priceDates = $this->priceDatesForScored($scored, 'addon', 'pricing_tiers');
         $cards = array_map(fn ($e) => [
             'id' => $e['item']->id,
             'name' => $e['item']->name,
@@ -952,6 +953,7 @@ class ChatbotService
             'over_by' => isset($e['over_by']) ? round((float) $e['over_by'], 2) : null,
             'fallback' => ! empty($e['fallback']),
             'price_quote' => $this->priceQuotes->for($e['item'], $constraints['pax'] ?? null),
+            'price_updated_at' => $priceDates[$e['item']->id] ?? null,
         ], $scored);
         $unmatched = $this->unmatchedNotice($query, $scored, $constraints, 'addons');
         if ($unmatched !== null) {
@@ -4029,6 +4031,8 @@ class ChatbotService
      */
     protected function finalizeBotReply(ChatSession $session, string $text, array $reply, ?string $intent, string $mode, array $constraints, bool $historyUsed, string $traceId): array
     {
+        [$text, $reply] = $this->appendPriceEffectiveNote($text, $reply);
+
         if (! isset($reply['retrieval_outcome']) && ($this->replyHasRetrievedCards($reply) || ! empty($reply['itinerary']) || ! empty($reply['weather']) || ! empty($reply['faq']))) {
             $reply['retrieval_outcome'] = RetrievalOutcome::make(RetrievalOutcome::Matched, 'verified_result_found');
         }
@@ -4052,6 +4056,45 @@ class ChatbotService
         $this->conversation->persist($session, 'bot', $text, $reply);
 
         return $reply;
+    }
+
+    /**
+     * Add a server-controlled effective-date note to every price-bearing reply.
+     * This keeps the RSC disclosure reliable even when the language model omits it.
+     *
+     * @return array{0: string, 1: array}
+     */
+    protected function appendPriceEffectiveNote(string $text, array $reply): array
+    {
+        $dates = [];
+
+        foreach (['retrieved_rooms', 'retrieved_hotels', 'retrieved_activities', 'retrieved_packages', 'retrieved_addons'] as $key) {
+            foreach ($reply[$key] ?? [] as $item) {
+                if (! empty($item['price_updated_at'])) {
+                    $dates[] = $item['price_updated_at'];
+                }
+            }
+        }
+
+        $dates = array_values(array_unique($dates));
+        usort($dates, fn (string $left, string $right): int => strtotime($left) <=> strtotime($right));
+
+        if ($dates === []) {
+            return [$text, $reply];
+        }
+
+        $note = count($dates) === 1
+            ? "Price information effective as of **{$dates[0]}**."
+            : "Prices shown were last updated between **{$dates[0]}** and **{$dates[array_key_last($dates)]}**; see each result card for its item date.";
+
+        if (! str_contains($text, 'Price information effective as of') && ! str_contains($text, 'Prices shown were last updated between')) {
+            $text = rtrim($text)."\n\n".$note;
+        }
+
+        $reply['reply'] = $text;
+        $reply['price_effective_note'] = $note;
+
+        return [$text, $reply];
     }
 
     protected function replyHasRetrievedCards(array $reply): bool
@@ -4658,6 +4701,8 @@ class ChatbotService
 
     protected function formatRoomResults(array $scored, ?int $pax = null, ?int $nights = null): array
     {
+        $priceDates = $this->priceDatesForScored($scored, 'room', 'base_price');
+
         return array_map(fn ($e) => [
             'id' => $e['item']->id,
             'room_name' => $e['item']->room_name,
@@ -4684,18 +4729,35 @@ class ChatbotService
             'combo_with' => $e['combo_with'] ?? null,
             'combo_pax' => isset($e['combo_pax']) ? (int) $e['combo_pax'] : null,
             'price_quote' => $this->priceQuotes->for($e['item'], $pax, $nights),
+            'price_updated_at' => $priceDates[$e['item']->id] ?? null,
         ], $scored);
     }
 
     protected function formatHotelResults(array $scored): array
     {
+        $priceDetails = [];
+        foreach ($scored as $entry) {
+            $room = $entry['item']->rooms()
+                ->where('is_shown', true)
+                ->orderBy('base_price')
+                ->orderBy('id')
+                ->first(['rooms.id', 'rooms.base_price', 'rooms.updated_at']);
+
+            $priceDetails[$entry['item']->id] = $room;
+        }
+        $roomIds = array_values(array_filter(array_map(fn ($room) => $room?->id, $priceDetails)));
+        $priceDates = $this->gemini->priceUpdatedDates('room', $roomIds, 'base_price');
+
         return array_map(fn ($e) => [
             'id' => $e['item']->id,
             'hotel_name' => $e['item']->hotel_name,
             'destination' => $e['item']->destination?->name ?? null,
             'destination_id' => $e['item']->destination_id ?? $e['item']->destination?->id ?? null,
             'type' => $e['item']->type,
-            'price_from' => $this->hotelPriceFrom($e['item']),
+            'price_from' => isset($priceDetails[$e['item']->id]) ? (float) $priceDetails[$e['item']->id]->base_price : null,
+            'price_updated_at' => isset($priceDetails[$e['item']->id])
+                ? ($priceDates[$priceDetails[$e['item']->id]->id] ?? $priceDetails[$e['item']->id]->updated_at?->format('M d, Y'))
+                : null,
             'image' => $this->firstImage($e['item']->images),
             'similarity_score' => round($e['score'], 4),
             'over_budget' => ! empty($e['over_budget']),
@@ -4706,6 +4768,8 @@ class ChatbotService
 
     protected function formatActivityResults(array $scored, ?int $pax = null): array
     {
+        $priceDates = $this->priceDatesForScored($scored, 'activity', 'rate');
+
         return array_map(fn ($e) => [
             'id' => $e['item']->id,
             'activity_name' => $e['item']->activity_name,
@@ -4720,11 +4784,14 @@ class ChatbotService
             'over_by' => isset($e['over_by']) ? round((float) $e['over_by'], 2) : null,
             'fallback' => ! empty($e['fallback']),
             'price_quote' => $this->priceQuotes->for($e['item'], $pax),
+            'price_updated_at' => $priceDates[$e['item']->id] ?? null,
         ], $scored);
     }
 
     protected function formatPackageResults(array $scored, ?int $pax = null): array
     {
+        $priceDates = $this->priceDatesForScored($scored, 'package', 'price');
+
         return array_map(fn ($e) => [
             'id' => $e['item']->id,
             'name' => $e['item']->name,
@@ -4743,7 +4810,27 @@ class ChatbotService
             'over_by' => isset($e['over_by']) ? round((float) $e['over_by'], 2) : null,
             'fallback' => ! empty($e['fallback']),
             'price_quote' => $this->priceQuotes->for($e['item'], $pax),
+            'price_updated_at' => $priceDates[$e['item']->id] ?? null,
         ], $scored);
+    }
+
+    /** @return array<int, string> */
+    protected function priceDatesForScored(array $scored, string $auditableType, string $priceField): array
+    {
+        $items = array_values(array_filter(array_map(fn ($entry) => $entry['item'] ?? null, $scored)));
+        $dates = $this->gemini->priceUpdatedDates(
+            $auditableType,
+            array_map(fn ($item) => $item->id, $items),
+            $priceField
+        );
+
+        foreach ($items as $item) {
+            if (! isset($dates[$item->id]) && $item->updated_at !== null) {
+                $dates[$item->id] = $item->updated_at->format('M d, Y');
+            }
+        }
+
+        return $dates;
     }
 
     protected function firstImage($images): ?string

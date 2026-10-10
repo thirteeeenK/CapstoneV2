@@ -1848,7 +1848,7 @@ test('guest at ten questions gets login and agency contact nudge on every reply'
 test('room context includes price last updated from admin audit log', function () {
     AdminAuditLog::create([
         'admin_id' => null,
-        'auditable_type' => 'room',
+        'auditable_type' => $this->room->getMorphClass(),
         'auditable_id' => $this->room->id,
         'old_values' => ['base_price' => 2000.00],
         'new_values' => ['base_price' => 2500.00],
@@ -1858,7 +1858,10 @@ test('room context includes price last updated from admin audit log', function (
         'message' => 'Find a beachfront room in Boracay',
     ]);
 
-    $response->assertOk()->assertJsonPath('status', 'success');
+    $response->assertOk()
+        ->assertJsonPath('status', 'success')
+        ->assertJsonPath('retrieved_rooms.0.price_updated_at', now()->format('M d, Y'));
+    expect($response->json('reply'))->toContain('Price information effective as of');
     Http::assertSent(fn (Request $r) => str_contains(json_encode($r->data()), 'Price last updated: '.now()->format('M d, Y')));
 });
 
@@ -1869,7 +1872,10 @@ test('room context falls back to updated_at when no audit history exists', funct
         'message' => 'Find a beachfront room in Boracay',
     ]);
 
-    $response->assertOk()->assertJsonPath('status', 'success');
+    $response->assertOk()
+        ->assertJsonPath('status', 'success')
+        ->assertJsonPath('retrieved_rooms.0.price_updated_at', $this->room->updated_at->format('M d, Y'));
+    expect($response->json('reply'))->toContain('Price information effective as of');
     Http::assertSent(fn (Request $r) => str_contains(json_encode($r->data()), 'Price last updated: '.$this->room->updated_at->format('M d, Y')));
 });
 
