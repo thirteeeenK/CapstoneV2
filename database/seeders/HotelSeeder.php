@@ -265,8 +265,8 @@ class HotelSeeder extends Seeder
                 ],
                 'hotel_description' => 'Near Bulabog Beach in Station 2, Happiness Hostel offers a bohemian vibe with both dorms and private rooms. It\'s a 2-minute walk to Bulabog and around 10 minutes to White Beach. The property has a small pool and an in-house restaurant with communal areas for socializing.',
                 'specific_address' => 'Station 2 / Bulabog',
-                'latitude' => 11.93433830,
-                'longitude' => 121.88810440,
+                'latitude' => 11.96700000,
+                'longitude' => 121.92950000,
                 'images' => [
                     'hotels/happiness-hotel/pool.jpg',
                     'hotels/happiness-hotel/happiness.jpg',
@@ -297,8 +297,8 @@ class HotelSeeder extends Seeder
                 ],
                 'hotel_description' => 'Located in Station 1, The Muse is a stylish beachfront hotel with easy access to White Beach. It features an indoor pool, restaurant, and modern rooms. The quieter beachfront location is perfect for relaxation, while still being near several restaurants.',
                 'specific_address' => 'Station 1',
-                'latitude' => 11.94501720,
-                'longitude' => 121.83352920,
+                'latitude' => 11.96990000,
+                'longitude' => 121.92280000,
                 'images' => [
                     'hotels/muse-hotel/muse.webp',
                     'hotels/muse-hotel/muse-lounge.webp',
@@ -332,8 +332,8 @@ class HotelSeeder extends Seeder
                 ],
                 'hotel_description' => 'Pangulasian Island is El Nido Resorts’ luxury island hideaway in Bacuit Bay, offering breathtaking views of both the sunrise and sunset.',
                 'specific_address' => 'Pangulasian Island, El Nido, 5313 Palawan',
-                'latitude' => 11.11315450,
-                'longitude' => 117.33355060,
+                'latitude' => 11.11611400,
+                'longitude' => 119.33141400,
                 'images' => [
                     'el-nido-hotels/pangulasian.jpg',
                     'el-nido-hotels/pangulasian-1.jpg',

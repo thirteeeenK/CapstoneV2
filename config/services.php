@@ -86,13 +86,17 @@ return [
     ],
 
     'routing' => [
+        // auto = OpenRouteService when its key is set, otherwise the self-hosted Valhalla.
+        'provider' => env('ROUTING_PROVIDER', 'auto'),
         'base_url' => env('VALHALLA_URL'),
+        'ors_api_key' => env('OPENROUTESERVICE'),
+        'ors_base_url' => env('ORS_BASE_URL', 'https://api.openrouteservice.org'),
         'default_mode' => env('ROUTING_DEFAULT_MODE', 'walking'),
         'graph_version' => env('ROUTING_GRAPH_VERSION', 'western-visayas-v1'),
         'timeout' => (int) env('ROUTING_TIMEOUT', 10),
         'cache_minutes' => (int) env('ROUTING_CACHE_MINUTES', 1440),
         'matrix_batch_size' => (int) env('ROUTING_MATRIX_BATCH_SIZE', 25),
-        'snap_radius_meters' => (int) env('ROUTING_SNAP_RADIUS_METERS', 150),
+        'snap_radius_meters' => (int) env('ROUTING_SNAP_RADIUS_METERS', 500),
     ],
 
 ];

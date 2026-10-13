@@ -7,7 +7,6 @@ use App\Models\CartItem;
 use App\Models\DestinationModel;
 use App\Models\HotelModel;
 use App\Models\RoomType;
-use App\Models\TouristAttraction;
 use App\Models\TripItinerary;
 use App\Models\TripPlan;
 use App\Notifications\TripItineraryReady;
@@ -73,9 +72,54 @@ it('keeps saved planner selections separate from the existing basket and dedupli
     $this->get(route('trip-planner.index'))->assertOk()->assertSee('Plan your island days');
 });
 
+it('returns rooms under their hotels and uses activities as the visit catalog', function () {
+    $activity = plannerActivity($this->destination);
+    $hiddenActivity = plannerActivity($this->destination, ['is_shown' => false]);
+    $foreignActivity = ActivityModel::factory()->create();
+
+    $catalog = $this->getJson(route('trip-planner.catalog', $this->destination))->assertOk()->json('data');
+
+    $activityIds = collect($catalog['activities'])->pluck('id')->all();
+    expect(array_keys($catalog))->toBe(['hotels', 'activities'])
+        ->and(collect($catalog['hotels'])->firstWhere('id', $this->hotel->id)['rooms'][0]['id'])->toBe($this->room->id)
+        ->and($activityIds)->toContain($activity->id)
+        ->and($activityIds)->not->toContain($hiddenActivity->id)
+        ->and($activityIds)->not->toContain($foreignActivity->id);
+});
+
+it('exposes pricing fields on room and activity listings for the planner estimate', function () {
+    $this->room->update(['base_price' => 4000, 'base_occupancy' => 2, 'extra_person_fee' => 750, 'max_occupancy' => 4]);
+    $activity = plannerActivity($this->destination, ['rate' => '₱1,500', 'capacity' => 'Up to 10']);
+
+    $catalog = $this->getJson(route('trip-planner.catalog', $this->destination))->assertOk()->json('data');
+    $roomListing = collect($catalog['hotels'])->firstWhere('id', $this->hotel->id)['rooms'][0];
+    $activityListing = collect($catalog['activities'])->firstWhere('id', $activity->id);
+
+    expect($roomListing)->toMatchArray(['base_price' => 4000.0, 'base_occupancy' => 2, 'extra_person_fee' => 750.0, 'max_pax' => 4])
+        ->and((float) $activityListing['rate_min'])->toBe(1500.0)
+        ->and($activityListing['per_person'])->toBeTrue();
+});
+
+it('inherits room dates from the selected hotel and keeps them synchronized', function () {
+    plannerAdd($this->plan, 'hotel', $this->hotel->id, ['check_in' => '2026-10-14', 'check_out' => '2026-10-16']);
+
+    $this->postJson(route('trip-planner.add', $this->plan), ['item_type' => 'room', 'item_id' => $this->room->id])
+        ->assertOk()
+        ->assertJsonPath('data.options.check_in', '2026-10-14')
+        ->assertJsonPath('data.options.check_out', '2026-10-16');
+
+    $response = $this->postJson(route('trip-planner.add', $this->plan), [
+        'item_type' => 'hotel', 'item_id' => $this->hotel->id, 'check_in' => '2026-10-15', 'check_out' => '2026-10-17',
+    ])->assertOk();
+    $room = collect($response->json('items'))->firstWhere('item_type', 'room');
+
+    expect($room['options'])->toMatchArray(['check_in' => '2026-10-15', 'check_out' => '2026-10-17']);
+});
+
 it('protects another users plan and its documents and rejects cross destination and hidden items', function () {
     $other = TripPlan::factory()->create();
     $this->getJson(route('trip-planner.show', $other))->assertNotFound();
+    $this->deleteJson(route('trip-planner.destroy', $other))->assertNotFound();
     $this->postJson(route('trip-planner.generate', $other))->assertNotFound();
     $itinerary = TripItinerary::factory()->create(['trip_plan_id' => $other->id]);
     $this->get(route('trip-planner.document', [$other, $itinerary]))->assertNotFound();
@@ -96,20 +140,76 @@ it('puts outdoor visits on a clear day and uses real route evidence in the strat
     $stops = collect($snapshot['days'])->flatMap(fn ($day) => $day['stops']);
     expect($stops->firstWhere('item_id', $outdoor->id)['date'])->toBe('2026-10-15')
         ->and($stops->firstWhere('item_id', $indoor->id)['date'])->toBe('2026-10-14')
-        ->and($stops->firstWhere('item_id', $outdoor->id)['reason'])->toContain('1.25 km', '10 minutes', 'forecast', '2026-10-14')
+        ->and($stops->firstWhere('item_id', $outdoor->id)['reason'])->toContain('1.25 km', '10 minutes', 'outdoor')
         ->and($snapshot['unscheduled'])->toBeEmpty()
         ->and($snapshot['days'][1]['legs'])->toHaveCount(2)
         ->and($snapshot['days'][1]['legs'][0]['geometry']['coordinates'])->toHaveCount(2);
 });
 
-it('retains unscheduled choices instead of inventing routes and blocks their cart transfer', function () {
+it('retains unscheduled choices instead of inventing routes and carts only the scheduled ones', function () {
+    $this->destination->update(['latitude' => null, 'longitude' => null]);
     plannerAdd($this->plan, 'room', $this->room->id);
     $activity = plannerActivity($this->destination, ['latitude' => null, 'longitude' => null]);
     plannerAdd($this->plan, 'activity', $activity->id);
     $itinerary = app(ItineraryService::class)->generate($this->plan->fresh());
     expect($itinerary->snapshot['unscheduled'][0]['name'])->toBe($activity->activity_name);
+    $this->postJson(route('trip-planner.transfer', [$this->plan, $itinerary]))->assertOk();
+    expect(CartItem::count())->toBe(1)
+        ->and(CartItem::where('item_type', 'room')->count())->toBe(1)
+        ->and(CartItem::where('item_type', 'activity')->count())->toBe(0);
+});
+
+it('explains an unschedulable choice as a missing map route when routing finds no path', function () {
+    $this->partialMock(RoutingService::class, function ($mock) {
+        $mock->shouldReceive('validPoint')->andReturn(true);
+        $mock->shouldReceive('matrix')->andReturnUsing(function ($sources, $targets) {
+            $nulls = array_fill(0, count($sources), array_fill(0, count($targets), null));
+
+            return ['status' => 'partial', 'distances' => $nulls, 'durations' => $nulls, 'mode' => 'walking'];
+        });
+        $mock->shouldReceive('route')->andReturn(['status' => 'ok', 'geometry' => null]);
+    });
+    plannerAdd($this->plan, 'room', $this->room->id);
+    $activity = plannerActivity($this->destination);
+    plannerAdd($this->plan, 'activity', $activity->id);
+    $itinerary = app(ItineraryService::class)->generate($this->plan->fresh());
+    expect($itinerary->snapshot['unscheduled'][0]['reason'])->toContain('map provider does not have a route');
+});
+
+it('blocks the cart transfer when no bookable choice could be scheduled', function () {
+    $this->destination->update(['latitude' => null, 'longitude' => null]);
+    plannerAdd($this->plan, 'hotel', $this->hotel->id);
+    $activity = plannerActivity($this->destination, ['latitude' => null, 'longitude' => null]);
+    plannerAdd($this->plan, 'activity', $activity->id);
+    $itinerary = app(ItineraryService::class)->generate($this->plan->fresh());
     $this->postJson(route('trip-planner.transfer', [$this->plan, $itinerary]))->assertUnprocessable();
     expect(CartItem::count())->toBe(0);
+});
+
+it('falls back to the destination center when an activity has no precise coordinates', function () {
+    $this->destination->update(['latitude' => 11.9686, 'longitude' => 121.923]);
+    $activity = plannerActivity($this->destination, ['latitude' => null, 'longitude' => null]);
+
+    $catalog = $this->getJson(route('trip-planner.catalog', $this->destination))->assertOk()->json('data');
+    $listing = collect($catalog['activities'])->firstWhere('id', $activity->id);
+    expect($listing['lat'])->toBe(11.9686)->and($listing['lng'])->toBe(121.923);
+
+    plannerAdd($this->plan, 'room', $this->room->id);
+    plannerAdd($this->plan, 'activity', $activity->id);
+    $itinerary = app(ItineraryService::class)->generate($this->plan->fresh());
+    $stops = collect($itinerary->snapshot['days'])->flatMap(fn ($day) => $day['stops']);
+    expect($itinerary->snapshot['unscheduled'])->toBeEmpty()
+        ->and($stops->firstWhere('item_id', $activity->id))->not->toBeNull();
+});
+
+it('generates a trip-specific strategic report with an overview section', function () {
+    plannerAdd($this->plan, 'room', $this->room->id);
+    plannerAdd($this->plan, 'activity', plannerActivity($this->destination)->id);
+    $itinerary = app(ItineraryService::class)->generate($this->plan->fresh());
+    $report = $itinerary->snapshot['report'];
+    expect(array_keys($report))->toBe(['overview', 'method', 'weather', 'travel', 'assumptions'])
+        ->and($report['overview'])->toContain('Boracay')
+        ->and(collect($report)->every(fn ($paragraph) => is_string($paragraph) && trim($paragraph) !== ''))->toBeTrue();
 });
 
 it('labels weather beyond the forecast horizon provisional and respects a fixed departure', function () {
@@ -215,22 +315,43 @@ it('offers protected print and PDF documents and queues itinerary email to the o
     if (($previewPath = getenv('PLANNER_PDF_PREVIEW_PATH')) !== false) {
         file_put_contents($previewPath, $document->getContent());
     }
+    $this->user->forceFill(['email_verified_at' => null])->save();
     Notification::fake([TripItineraryReady::class]);
     $this->postJson(route('trip-planner.email', [$this->plan, $itinerary]))->assertOk();
-    Notification::assertSentTo($this->user, TripItineraryReady::class);
+    Notification::assertSentTo($this->user, TripItineraryReady::class, fn (TripItineraryReady $notification) => $notification->itineraryId === $itinerary->id
+        && $notification->tripPlanId === $this->plan->id
+        && $notification->snapshot['destination'] === 'Boracay');
 });
 
-it('lets admins verify attraction scheduling and refuses malformed times', function () {
+it('lets admins verify activity scheduling and refuses malformed times', function () {
     $admin = AdminModel::create(['name' => 'Planner Admin', 'email' => 'planner-admin@example.com', 'password' => 'password']);
-    $attraction = TouristAttraction::factory()->create(['destination_id' => $this->destination->id]);
-    $this->patchJson(route('admin.planner-inventory.update', ['attraction', $attraction]), ['duration_minutes' => 120])->assertUnauthorized();
+    $activity = plannerActivity($this->destination);
+    $this->patchJson(route('admin.planner-inventory.update', ['activity', $activity]), ['duration_minutes' => 120])->assertUnauthorized();
     $this->actingAs($admin, 'admin');
     $this->get(route('admin.planner-inventory.index'))->assertOk()->assertSee('Planner inventory');
-    $this->patch(route('admin.planner-inventory.update', ['attraction', $attraction]), [
+    $this->patch(route('admin.planner-inventory.update', ['activity', $activity]), [
         'latitude' => 11.96, 'longitude' => 121.927, 'duration_minutes' => 120, 'environment' => 'outdoor', 'opens_at' => '08:00', 'closes_at' => '17:00', 'is_shown' => true,
     ])->assertRedirect();
-    expect($attraction->fresh()->scheduling['duration_minutes'])->toBe(120);
-    $this->patchJson(route('admin.planner-inventory.update', ['attraction', $attraction]), ['latitude' => 11.96, 'longitude' => 121.927, 'fixed_start_times' => '25:30'])->assertUnprocessable();
+    expect($activity->fresh()->scheduling['duration_minutes'])->toBe(120);
+    $this->patchJson(route('admin.planner-inventory.update', ['activity', $activity]), ['latitude' => 11.96, 'longitude' => 121.927, 'fixed_start_times' => '25:30'])->assertUnprocessable();
+});
+
+it('deletes a saved trip and its linked basket lines without deleting ordinary basket items', function () {
+    plannerAdd($this->plan, 'room', $this->room->id);
+    $activity = plannerActivity($this->destination);
+    plannerAdd($this->plan, 'activity', $activity->id);
+    $itinerary = app(ItineraryService::class)->generate($this->plan->fresh());
+    $this->postJson(route('trip-planner.transfer', [$this->plan, $itinerary]))->assertOk();
+    $ordinaryActivity = plannerActivity($this->destination);
+    $this->postJson(route('cart.add'), ['item_type' => 'activity', 'item_id' => $ordinaryActivity->id, 'quantity' => 1, 'selected_pax' => 1])->assertOk();
+
+    $this->deleteJson(route('trip-planner.destroy', $this->plan))->assertOk()
+        ->assertJsonPath('message', 'Saved trip deleted. Existing booking itineraries are preserved.');
+
+    $this->assertDatabaseMissing('trip_plans', ['id' => $this->plan->id]);
+    $this->assertDatabaseMissing('trip_itineraries', ['id' => $itinerary->id]);
+    expect(CartItem::query()->whereNotNull('trip_itinerary_id')->count())->toBe(0)
+        ->and(CartItem::query()->where('item_type', 'activity')->where('item_id', $ordinaryActivity->id)->count())->toBe(1);
 });
 
 it('preserves the itinerary and the purchased subset on the booking after checkout', function () {
@@ -244,5 +365,6 @@ it('preserves the itinerary and the purchased subset on the booking after checko
     ]);
     expect($booking->trip_itineraries)->toHaveCount(1)->and($booking->trip_itineraries[0]['booked_plan_item_ids'])->toHaveCount(1)
         ->and($booking->trip_itineraries[0]['days'])->toHaveCount(4);
+    $this->deleteJson(route('trip-planner.destroy', $this->plan))->assertOk();
     $this->get(route('booking.show', $booking->booking_code))->assertOk()->assertSee('Your saved itinerary');
 });

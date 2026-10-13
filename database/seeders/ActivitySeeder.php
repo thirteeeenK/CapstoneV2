@@ -360,8 +360,8 @@ class ActivitySeeder extends Seeder
                     'activities/OgpzwMtxbtkt7MYWb79KpgUW50z8G3gNlhmuT4xU.webp',
                 ],
                 'is_shown' => true,
-                'latitude' => 11.92800000,
-                'longitude' => 121.94600000,
+                'latitude' => 11.97677500,
+                'longitude' => 121.92891300,
                 'specific_address' => null,
             ],
 
@@ -388,8 +388,8 @@ class ActivitySeeder extends Seeder
                     'activities/DrBFIsdFqxpcxLxm75TbJBZKnhkjpnUXJE9fBer4.jpg',
                 ],
                 'is_shown' => true,
-                'latitude' => 11.92750000,
-                'longitude' => 121.94550000,
+                'latitude' => 11.97664700,
+                'longitude' => 121.92886400,
                 'specific_address' => null,
             ],
 

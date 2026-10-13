@@ -2551,6 +2551,89 @@ class GeminiService
     }
 
     /**
+     * Generates the per-trip "Strategic report" shown with a generated itinerary.
+     * Falls back to a deterministic trip-specific report when Gemini is
+     * unavailable or returns a malformed response.
+     *
+     * @param  array  $context  Compact itinerary snapshot (destination, dates, pax, mode, days, unscheduled, weather).
+     * @return array<string, string> Ordered report paragraphs keyed by section.
+     */
+    public function generateTripReport(array $context): array
+    {
+        $systemInstruction = $this->loadSystemPrompt('trip-strategic-report-prompt.md');
+        $prompt = "Trip Itinerary Snapshot (JSON):\n".json_encode($context, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+
+        $raw = $this->generateContent($systemInstruction, $prompt);
+
+        if ($raw) {
+            $decoded = json_decode($raw, true);
+            if (is_array($decoded)) {
+                $report = [];
+                foreach (['overview', 'method', 'weather', 'travel', 'assumptions'] as $key) {
+                    if (isset($decoded[$key]) && is_string($decoded[$key]) && trim($decoded[$key]) !== '') {
+                        $report[$key] = mb_substr(trim($decoded[$key]), 0, 600);
+                    }
+                }
+                if (count($report) === 5) {
+                    return $report;
+                }
+            }
+        }
+
+        return $this->fallbackTripReport($context);
+    }
+
+    /**
+     * Deterministic, trip-specific strategic report used when Gemini is
+     * unavailable. Varies by destination, dates, stops, travel and weather.
+     *
+     * @param  array  $context  Compact itinerary snapshot.
+     * @return array<string, string>
+     */
+    public function fallbackTripReport(array $context): array
+    {
+        $destination = (string) ($context['destination'] ?? 'the destination');
+        $start = (string) ($context['start_date'] ?? '');
+        $end = (string) ($context['end_date'] ?? '');
+        $pax = (int) ($context['pax'] ?? 0);
+        $mode = ($context['mode'] ?? 'walking') === 'driving' ? 'driving' : 'walking';
+        $days = is_array($context['days'] ?? null) ? $context['days'] : [];
+        $unscheduled = is_array($context['unscheduled'] ?? null) ? $context['unscheduled'] : [];
+
+        $stopCount = array_sum(array_map(fn ($day) => count($day['stops'] ?? []), $days));
+        $distance = round(array_sum(array_map(fn ($day) => (float) ($day['distance_km'] ?? 0), $days)), 2);
+        $travelMinutes = (int) array_sum(array_map(fn ($day) => (int) ($day['travel_minutes'] ?? 0), $days));
+        $provisionalDays = count(array_filter($days, fn ($day) => ! empty($day['provisional'])));
+        $dayCount = count($days);
+
+        $range = $start !== '' && $end !== '' ? " from {$start} to {$end}" : '';
+        $overview = "This plan covers your trip to {$destination}{$range} for {$pax} guest".($pax === 1 ? '' : 's')
+            .'. '.($stopCount > 0
+                ? "The planner scheduled {$stopCount} visit".($stopCount === 1 ? '' : 's').' across '.$dayCount.' day'.($dayCount === 1 ? '' : 's').'.'
+                : 'No visits could be scheduled yet; the days are reserved for arrival, departure or rest.');
+
+        $method = 'A greedy schedule favours lower forecast risk, then shorter directed route times and less crowded days. It is a practical heuristic for this trip, not proof of a globally optimal route.';
+
+        $weather = 'Forecasts apply to the '.$destination.' area in Asia/Manila time, using all overlapping 3-hour intervals for each visit. '
+            .($provisionalDays > 0
+                ? "{$provisionalDays} day".($provisionalDays === 1 ? ' is' : 's are').' provisional because a fresh forecast does not fully cover those visits.'
+                : 'Missing, expired or out-of-range forecasts remain provisional.');
+
+        $travel = $stopCount > 0
+            ? "Valhalla {$mode} estimates total about {$distance} km and {$travelMinutes} minutes of mapped travel, including return trips to your hotel. No live traffic, transport fares, boat journeys or operator safety clearance is inferred."
+            : 'Valhalla road/path estimates include return travel to the selected hotel. No live traffic, transport fares, boat journeys or operator safety clearance is inferred.';
+
+        $assumptions = 'A 15-minute buffer separates visits; lunch is reserved from 12:00 to 13:00. Unknown hours, durations and hotel times are disclosed with each visit. Only rooms and activities selected for checkout become booking requests.';
+        if ($unscheduled !== []) {
+            $names = array_slice(array_values(array_filter(array_map(fn ($item) => (string) ($item['name'] ?? ''), $unscheduled))), 0, 5);
+            $assumptions .= ' '.count($unscheduled).' choice'.(count($unscheduled) === 1 ? '' : 's').' could not be scheduled'
+                .($names !== [] ? ' ('.implode(', ', $names).')' : '').'; resolve '.(count($unscheduled) === 1 ? 'it' : 'these').' before adding the trip to your basket.';
+        }
+
+        return compact('overview', 'method', 'weather', 'travel', 'assumptions');
+    }
+
+    /**
      * Generates an AI consensus summary for an entity from its recent reviews.
      *
      * @param  Collection|array  $reviews  Collection of Review models (or arrays) to summarize.

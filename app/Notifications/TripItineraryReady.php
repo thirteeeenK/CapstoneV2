@@ -13,11 +13,21 @@ class TripItineraryReady extends Notification implements ShouldQueue
 {
     use Queueable;
 
+    /** @var array<string, mixed> */
+    public array $snapshot;
+
+    public int $itineraryId;
+
+    public int $tripPlanId;
+
     /**
      * Create a new notification instance.
      */
-    public function __construct(public TripItinerary $itinerary)
+    public function __construct(TripItinerary $itinerary)
     {
+        $this->snapshot = $itinerary->snapshot;
+        $this->itineraryId = $itinerary->id;
+        $this->tripPlanId = $itinerary->trip_plan_id;
         $this->afterCommit();
     }
 
@@ -36,8 +46,8 @@ class TripItineraryReady extends Notification implements ShouldQueue
      */
     public function toMail(object $notifiable): MailMessage
     {
-        $snapshot = $this->itinerary->snapshot;
-        $pdf = Pdf::loadView('trip-planner.document', ['itinerary' => $snapshot, 'reference' => 'Plan '.$this->itinerary->trip_plan_id])->setPaper('a4')->output();
+        $snapshot = $this->snapshot;
+        $pdf = Pdf::loadView('trip-planner.document', ['itinerary' => $snapshot, 'reference' => 'Plan '.$this->tripPlanId])->setPaper('a4')->output();
 
         return (new MailMessage)->subject('Your SunnyTrips itinerary · '.$snapshot['destination'])
             ->greeting('Hi '.$notifiable->name.',')->line('Your selected stays and visits are arranged by day in the attached itinerary, with route and weather explanations.')
@@ -54,7 +64,7 @@ class TripItineraryReady extends Notification implements ShouldQueue
     public function toArray(object $notifiable): array
     {
         return [
-            'itinerary_id' => $this->itinerary->id,
+            'itinerary_id' => $this->itineraryId,
         ];
     }
 }

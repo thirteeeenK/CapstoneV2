@@ -5,7 +5,7 @@ export default (config) => ({
     catalog: { hotels: [], activities: [] }, plan: null, selections: [], itinerary: null,
     tab: 'hotels', busy: false, error: '', notice: '', mapError: '', search: '', activeDay: 0, editing: null,
     title: '', startDate: '', endDate: '', pax: 2, mode: 'walking', optionIn: '', optionOut: '', optionDate: '', optionPax: 2, optionQuantity: 1,
-    map: null, layers: null, loadSequence: 0, activeHotelId: 0, savedPlanId: '', deleting: false, customStayDates: false,
+    map: null, layers: null, resizeObserver: null, loadSequence: 0, activeHotelId: 0, savedPlanId: '', deleting: false, customStayDates: false,
     reminders: config.emailPreferences.reminders, marketing: config.emailPreferences.marketing,
     async init() {
         try {
@@ -16,10 +16,18 @@ export default (config) => ({
                     script.onload = resolve; script.onerror = reject; document.head.append(script);
                 });
             }
-            this.map = L.map(this.$refs.map, { scrollWheelZoom: false }).setView([11.967, 121.925], 13);
+            const container = this.$refs.map;
+            // A stale stamp from a previous component instance would make L.map() throw
+            // "Map container is already initialized", so clear it instead of bailing out.
+            if (container._leaflet_id) { container._leaflet_id = undefined; container.innerHTML = ''; }
+            this.map = L.map(container, { scrollWheelZoom: false }).setView([11.967, 121.925], 13);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors', maxZoom: 19 })
                 .on('tileerror', () => { this.mapError = 'Map tiles are unavailable. You can still use the destination and listing controls.'; }).addTo(this.map);
             this.layers = L.featureGroup().addTo(this.map);
+            // Leaflet caches the container size; without this every resize leaves markers
+            // drawn at stale pixel positions, so they drift off their real coordinates.
+            this.resizeObserver = new ResizeObserver(() => { try { this.map?.invalidateSize(); } catch {} });
+            this.resizeObserver.observe(container);
         } catch { this.mapError = 'The map could not load. You can still plan from the listings.'; }
         if (this.destinationId) await this.chooseDestination(this.destinationId);
         else this.renderMap();
@@ -169,8 +177,37 @@ export default (config) => ({
     },
     async selectDay(index) { this.activeDay = index; this.renderMap(); },
     focusStop(stop) { if (this.map && stop.lat != null && stop.lng != null) this.map.flyTo([stop.lat, stop.lng], 16); },
+    peso(amount) { return '₱' + Number(amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); },
+    nightsBetween(from, to) {
+        if (!from || !to) return 1;
+        return Math.max(1, Math.round((new Date(to) - new Date(from)) / 86400000));
+    },
+    roomNightlyRate(listing, pax) {
+        const base = Number(listing?.base_price) || 0, basePax = Number(listing?.base_occupancy) || 2, fee = Number(listing?.extra_person_fee) || 0;
+        pax = Math.max(1, Number(pax) || basePax);
+        return pax > basePax ? base + (pax - basePax) * fee : base;
+    },
+    roomTotal(listing, pax, quantity, from, to) {
+        return this.roomNightlyRate(listing, pax) * this.nightsBetween(from, to) * Math.max(1, Number(quantity) || 1);
+    },
+    activityUnitRate(listing, pax) {
+        return (Number(pax) || 1) <= 1 ? (Number(listing?.rate_min) || 0) : (Number(listing?.rate_max) || 0);
+    },
+    activityTotal(listing, pax) {
+        pax = Math.max(1, Number(pax) || 1);
+        const unit = this.activityUnitRate(listing, pax);
+        return listing?.per_person ? unit * pax : unit;
+    },
+    dayPlan(day) {
+        const events = day?.events || [];
+        const arrival = events.filter(event => !event.departure).map(event => ({ event: true, label: event.name, assumed: event.assumed }));
+        const departure = events.filter(event => event.departure).map(event => ({ event: true, label: event.name, assumed: event.assumed }));
+        const stops = (day?.stops || []).map(stop => ({ event: false, stop }));
+        return [...arrival, ...stops, ...departure].map((item, index) => ({ ...item, num: index + 1 }));
+    },
     renderMap() {
-        if (!this.map || !this.layers) return;
+        if (!this.map || !this.layers || !this.$refs.map?.isConnected) return;
+        try { this.map.invalidateSize(); } catch {}
         this.layers.clearLayers();
         const addMarker = (item, label, onClick) => {
             if (item.lat == null || item.lng == null) return;
@@ -186,7 +223,9 @@ export default (config) => ({
             const day = this.itinerary.snapshot.days[this.activeDay];
             if (day?.hotel) addMarker(day.hotel, 'hotel');
             day?.stops.forEach((stop, index) => addMarker(stop, index + 1, () => this.focusStop(stop)));
-            day?.legs.forEach(leg => { if (leg.geometry) L.geoJSON(leg.geometry, { style: { color: '#0077a5', weight: 4, opacity: 0.8, dashArray: leg.return_to_hotel ? '6 6' : null } }).addTo(this.layers); });
+            try {
+                day?.legs.forEach(leg => { if (leg.geometry) L.geoJSON(leg.geometry, { style: { color: '#0077a5', weight: 4, opacity: 0.8, dashArray: leg.return_to_hotel ? '6 6' : null } }).addTo(this.layers); });
+            } catch { this.mapError = 'The mapped route could not be drawn. The day-by-day schedule and stops are still available.'; }
         } else {
             const destination = this.destination();
             if (destination) addMarker({ lat: destination.latitude, lng: destination.longitude, name: destination.name }, null);
@@ -194,7 +233,11 @@ export default (config) => ({
             visible.forEach(item => addMarker(item, null, () => item.type === 'hotel' ? this.chooseHotel(item) : this.edit(item)));
         }
         if (this.layers.getLayers().length) this.map.fitBounds(this.layers.getBounds(), { padding: [35, 35], maxZoom: 15 });
-        this.$nextTick(() => this.map.invalidateSize());
+        this.$nextTick(() => { try { this.map?.invalidateSize(); } catch {} });
     },
-    destroy() { this.map?.remove(); },
+    destroy() {
+        try { this.resizeObserver?.disconnect(); } catch {}
+        try { this.map?.remove(); } catch {}
+        this.resizeObserver = null; this.map = null; this.layers = null;
+    },
 });

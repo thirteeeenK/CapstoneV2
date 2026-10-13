@@ -11,18 +11,6 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('tourist_attractions', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('destination_id')->constrained('destinations')->cascadeOnDelete();
-            $table->string('name');
-            $table->text('description')->nullable();
-            $table->decimal('latitude', 10, 8)->nullable();
-            $table->decimal('longitude', 11, 8)->nullable();
-            $table->jsonb('scheduling')->nullable();
-            $table->boolean('is_shown')->default(true);
-            $table->index(['destination_id', 'is_shown']);
-            $table->timestamps();
-        });
         Schema::create('trip_plans', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
@@ -86,6 +74,5 @@ return new class extends Migration
         Schema::dropIfExists('trip_itineraries');
         Schema::dropIfExists('trip_plan_items');
         Schema::dropIfExists('trip_plans');
-        Schema::dropIfExists('tourist_attractions');
     }
 };

@@ -3,7 +3,7 @@
         <p class="text-xs uppercase tracking-widest font-bold text-ocean-700 dark:text-ocean-300">SunnyTrips · Saved trip plan</p>
         <h2 class="mt-2 font-headline text-xl font-bold">Your saved itinerary</h2>
         <p class="mt-2 text-sm text-slate-500">{{ $itinerary['title'] }} · {{ $itinerary['start_date'] }} to {{ $itinerary['end_date'] }}</p>
-        <p class="mt-3 text-sm text-slate-500">This is the plan saved at checkout. Your booking’s current item availability and status determine which services are confirmed. Self-guided attractions are not reservations.</p>
+        <p class="mt-3 text-sm text-slate-500">This is the plan saved at checkout. Your booking’s current item availability and status determine which rooms and activities are confirmed.</p>
         <div class="mt-4 flex flex-wrap gap-2">
             <a href="{{ route('booking.itinerary', [$booking->booking_code, $version]) }}" class="min-h-11 rounded-lg bg-ocean-700 px-4 py-2.5 text-sm font-bold text-white">Download itinerary PDF</a>
             <a href="{{ route('booking.itinerary', [$booking->booking_code, $version, 'print' => 1]) }}" target="_blank" rel="noopener" class="min-h-11 rounded-lg border border-sand-300 px-4 py-2.5 text-sm font-bold">Print itinerary</a>
@@ -16,7 +16,7 @@
                     <p class="mt-1 text-sm text-slate-600 dark:text-slate-300">{{ $room['quantity'] }} × {{ $room['name'] }} · {{ $room['pax'] }} guests · {{ $room['check_in'] }} to {{ $room['check_out'] }} · {{ in_array($room['plan_item_id'], $itinerary['booked_plan_item_ids'] ?? [], true) ? 'Included in booking request' : 'Planning choice only' }}</p>
                 @endforeach
                 <p class="mt-1 text-xs text-ocean-700 dark:text-ocean-300">{{ number_format($day['distance_km'], 2) }} km · {{ $day['travel_minutes'] }} min {{ $itinerary['mode'] }}, including return</p>
-                @foreach ($day['events'] as $event)<p class="mt-2 text-sm">{{ $event['time'] }} · {{ $event['name'] }}{{ $event['assumed'] ? ' (time assumed; confirm with hotel)' : '' }}</p>@endforeach
+                @foreach ($day['events'] as $event)<p class="mt-2 text-sm">{{ $event['time'] }} · {{ $event['name'] }}</p>@endforeach
                 @foreach ($day['stops'] as $stop)
                     @php
                         $booked = in_array($stop['plan_item_id'], $itinerary['booked_plan_item_ids'] ?? [], true);

@@ -5,8 +5,10 @@ test('map component emits select event instead of bindPopup View details', funct
     $html = view('components.frontend.map', ['markers' => $markers, 'center' => ['lat' => 12, 'lng' => 122], 'zoom' => 7])->render();
     expect($html)->toContain('sunnytrip:map-select')
         ->toContain('highlight')
-        ->toContain('setFilter');
-    expect($html)->not->toContain('View details →</a>');
+        ->toContain('setFilter')
+        ->toContain('M3 18V6m18');
+    expect($html)->not->toContain('View details →</a>')
+        ->not->toContain('el.style.transform');
 });
 
 test('map component strips blade comments so inline script parses', function () {

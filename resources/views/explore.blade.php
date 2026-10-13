@@ -409,7 +409,7 @@
             100% { transform: scale(2.2); opacity: 0; }
         }
         .map-pin-hover div { box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.25) !important; }
-        .map-pin-active div { box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.35), 0 4px 14px rgba(0, 0, 0, 0.25) !important; transform: rotate(-45deg) scale(1.12); }
+        .map-pin-active div { box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.35), 0 4px 14px rgba(0, 0, 0, 0.25) !important; }
         @media (prefers-reduced-motion: reduce) {
             .map-pin-hover div, .map-pin-active div { transition: none !important; }
         }

@@ -7,7 +7,6 @@ use App\Models\CartItem;
 use App\Models\DestinationModel;
 use App\Models\HotelModel;
 use App\Models\RoomType;
-use App\Models\TouristAttraction;
 use App\Models\TripItinerary;
 use App\Models\TripPlan;
 use App\Models\TripPlanItem;
@@ -26,7 +25,7 @@ class TripPlannerService
     {
         $hotels = HotelModel::query()->where('destination_id', $destination->id)->where('is_shown', true)
             ->with(['rooms' => fn ($q) => $q->where('is_shown', true)])->orderBy('hotel_name')->get();
-        $activities = ActivityModel::query()->where('destination_id', $destination->id)->where('is_shown', true)->orderBy('activity_name')->get();
+        $activities = ActivityModel::query()->where('destination_id', $destination->id)->where('is_shown', true)->with('destination')->orderBy('activity_name')->get();
 
         return [
             'hotels' => $hotels->map(function (HotelModel $hotel): array {
@@ -67,8 +66,7 @@ class TripPlannerService
         $query = match ($type) {
             'hotel' => HotelModel::query()->where('destination_id', $destinationId),
             'room' => RoomType::query()->with('hotel')->whereHas('hotel', fn ($q) => $q->where('destination_id', $destinationId)->where('is_shown', true)),
-            'activity' => ActivityModel::query()->where('destination_id', $destinationId),
-            'attraction' => TouristAttraction::query()->where('destination_id', $destinationId),
+            'activity' => ActivityModel::query()->where('destination_id', $destinationId)->with('destination'),
             default => throw ValidationException::withMessages(['item_type' => 'Choose a supported planner item.']),
         };
 
@@ -78,6 +76,9 @@ class TripPlannerService
     public function listing(string $type, Model $model): array
     {
         $location = $type === 'room' ? $model->hotel : $model;
+        [$latitude, $longitude] = $type === 'activity'
+            ? [$model->latitude_with_fallback, $model->longitude_with_fallback]
+            : [$location->latitude, $location->longitude];
 
         return [
             'type' => $type, 'id' => $model->id,
@@ -85,13 +86,19 @@ class TripPlannerService
                 'hotel' => $model->hotel_name, 'room' => $model->room_name, 'activity' => $model->activity_name, default => $model->name
             },
             'description' => (string) ($model->description ?? $model->hotel_description ?? ''),
-            'lat' => $location->latitude === null ? null : (float) $location->latitude,
-            'lng' => $location->longitude === null ? null : (float) $location->longitude,
+            'lat' => $latitude === null ? null : (float) $latitude,
+            'lng' => $longitude === null ? null : (float) $longitude,
             'image' => ! empty($model->images[0]) ? asset('storage/'.$model->images[0]) : null,
             'price' => $type === 'room' ? (float) $model->base_price : ($type === 'activity' ? $model->rate : null),
             'hotel_id' => $type === 'room' ? $model->hotel_id : ($type === 'hotel' ? $model->id : null),
             'hotel_name' => $type === 'room' ? $model->hotel->hotel_name : null,
             'max_pax' => $type === 'room' ? $model->max_occupancy : ($type === 'activity' ? $model->getMaxCapacityInt() : null),
+            'base_price' => $type === 'room' ? (float) $model->base_price : null,
+            'base_occupancy' => $type === 'room' ? (int) ($model->base_occupancy ?: 2) : null,
+            'extra_person_fee' => $type === 'room' ? (float) ($model->extra_person_fee ?: 0) : null,
+            'rate_min' => $type === 'activity' ? (float) $model->calculateRateForPax(1) : null,
+            'rate_max' => $type === 'activity' ? (float) $model->calculateRateForPax(2) : null,
+            'per_person' => $type === 'activity' ? $model->isPerPersonRate() : null,
             'scheduling' => (array) ($model->scheduling ?? []),
             'duration' => $type === 'activity' ? $model->duration : null,
         ];
@@ -185,15 +192,17 @@ class TripPlannerService
             if ($lockedPlan->start_date->lt(now('Asia/Manila')->startOfDay())) {
                 throw ValidationException::withMessages(['start_date' => 'This trip’s arrival date has passed. Start a new trip with future dates before booking.']);
             }
-            if (! empty($snapshot['unscheduled'])) {
-                throw ValidationException::withMessages(['itinerary' => 'Resolve the unscheduled choices before adding this itinerary to your Trip Basket.']);
-            }
             $items = $lockedPlan->items()->get();
             $bookable = $items->whereIn('item_type', ['room', 'activity']);
             if ($bookable->isEmpty()) {
                 throw ValidationException::withMessages(['items' => 'Select at least one room or bookable activity. A hotel base alone is a planning choice.']);
             }
+            $scheduledIds = collect($snapshot['days'])->flatMap(fn ($day) => $day['stops'])->pluck('plan_item_id')->all();
+            $transferred = 0;
             foreach ($bookable->sortBy('item_id') as $item) {
+                if ($item->item_type === 'activity' && ! in_array($item->id, $scheduledIds, true)) {
+                    continue;
+                }
                 $model = $this->inventory($item->item_type, $item->item_id, $plan->destination_id);
                 $options = $item->options;
                 if ($item->item_type === 'room') {
@@ -212,10 +221,14 @@ class TripPlannerService
                     'is_selected' => true, 'trip_itinerary_id' => $locked->id, 'trip_plan_item_id' => $item->id,
                     'notes' => 'Trip plan: '.$plan->title,
                 ]);
+                $transferred++;
+            }
+            if ($transferred === 0) {
+                throw ValidationException::withMessages(['items' => 'None of your bookable choices could be scheduled on the map yet. Switch to walking, change the dates, or adjust your choices, then generate again.']);
             }
             $locked->update(['transferred_at' => now()]);
 
-            return ['status' => 'added', 'count' => $bookable->count()];
+            return ['status' => 'added', 'count' => $transferred];
         });
     }
 }

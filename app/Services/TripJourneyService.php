@@ -119,8 +119,8 @@ class TripJourneyService
             'message' => $message, 'url' => $url, 'action' => $action, 'reference' => $booking->booking_code,
             'schedule' => in_array($kind, ['pre_trip', 'departure'], true) ? collect($snapshot['days'])->map(fn ($day) => ['label' => 'Day '.$day['day'].' · '.$day['date'],
                 'hotel' => $included->contains(fn ($item) => $item->item_type === 'room' && $item->hotel_name === ($day['hotel']['name'] ?? null)) ? $day['hotel']['name'] : null,
-                'visits' => collect($day['stops'])->filter(fn ($stop) => $stop['type'] === 'attraction' || in_array($stop['plan_item_id'], $includedIds, true))
-                    ->map(fn ($stop) => $stop['start'].' · '.$stop['name'].($stop['type'] === 'attraction' ? ' (self-guided)' : ''))->all()])->all() : [],
+                'visits' => collect($day['stops'])->filter(fn ($stop) => in_array($stop['plan_item_id'], $includedIds, true))
+                    ->map(fn ($stop) => $stop['start'].' · '.$stop['name'])->all()])->all() : [],
             'marketing' => $kind === 'repeat'];
     }
 

@@ -18,7 +18,10 @@ test('explore page renders with focus param and map apis', function () {
     expect($content)->toContain('setFilter');
     expect($content)->toContain('selectWithCard');
     expect($content)->toContain('cheapest_room_id');
-    expect($content)->toContain('openActivityById');
+    expect($content)->toContain('openActivityById')
+        ->toContain('M3 18V6m18')
+        ->not->toContain('el.style.transform')
+        ->not->toContain('transform: rotate(-45deg) scale(1.12)');
 });
 
 test('explore hotel marker exposes cheapest room id', function () {

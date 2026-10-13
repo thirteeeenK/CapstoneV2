@@ -63,7 +63,7 @@ class ActivityModel extends Model
             return (float) $this->latitude;
         }
 
-        return $this->destination ? (float) $this->destination->latitude : null;
+        return $this->destination?->latitude !== null ? (float) $this->destination->latitude : null;
     }
 
     public function getLongitudeWithFallbackAttribute(): ?float
@@ -72,7 +72,7 @@ class ActivityModel extends Model
             return (float) $this->longitude;
         }
 
-        return $this->destination ? (float) $this->destination->longitude : null;
+        return $this->destination?->longitude !== null ? (float) $this->destination->longitude : null;
     }
 
     public function packages()

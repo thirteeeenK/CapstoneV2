@@ -38,8 +38,8 @@ class ActivityCoordinatesSeeder extends Seeder
                 'Scuba Diving' => [11.9700, 121.9260],
 
                 // ATV / zipline on mainland Malay (Aklan)
-                'ATV' => [11.9280, 121.9460],
-                'Zipline' => [11.9275, 121.9455],
+                'ATV' => [11.976775, 121.928913],
+                'Zipline' => [11.976647, 121.928864],
 
                 // Traditional paraw sailing along White Beach
                 'Paraw Sailing (Private)' => [11.9658, 121.9255],

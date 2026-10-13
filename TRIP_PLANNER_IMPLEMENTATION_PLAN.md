@@ -10,7 +10,7 @@ Build a dedicated destination trip planner with its own saved selection basket. 
 
 Automate trip-end detection and reminders. Automate confirmed completion only when recorded service evidence supports it, retaining an admin exception/override process. Review eligibility should depend on the actual booked item and its fulfillment, rather than the date alone.
 
-Pilot Boracay first. The architecture should accept other destinations without hardcoded island names. Initial scope covers one destination per plan, multiple activities/attractions, multiple room units, and multiple sequential hotel stays with explicit dates. Cross-destination travel needs separate transfer data and is a later extension. Saved alternatives are allowed; only selected accommodation assignments become booking lines.
+Pilot Boracay first. The architecture should accept other destinations without hardcoded island names. Initial scope covers one destination per plan, multiple activities, multiple room units, and multiple sequential hotel stays with explicit dates. Cross-destination travel needs separate transfer data and is a later extension. Saved alternatives are allowed; only selected accommodation assignments become booking lines.
 
 The references establish the interaction/layout direction. They do not require restaurants, collaborative avatars, Google Maps, or the reference service's subscription features. Use SunnyTrips inventory and brand assets. Do not scrape the reference service or treat its screenshots as catalogue or route data.
 
@@ -58,7 +58,7 @@ Use current Sora headings, DM Sans body, ocean primary actions/route lines, sand
 ### Complete flow
 
 1. Click Boracay marker → destination workspace opens. Show trip title, dates, guest counts, arrival/departure times, transport preference, and optional budget/pace. Editing dates preserves saved choices and rechecks availability.
-2. Browse Stays, Activities, Attractions. Hotels expand to available room types; room quantities and occupancy are explicit. Catalogue cards have Add to planner, Added, View details, duration, estimated price, and weather/availability labels.
+2. Browse Hotels, Rooms and Activities. Selecting a hotel opens only its room types; room quantities and occupancy are explicit. Catalogue cards have Add to planner, Added, View details, duration, estimated price, and weather/availability labels.
 3. Dedicated planner basket holds accommodation assignments, chosen experiences, and saved alternatives. Show paid estimates separately from free stops and unpriced transfers. Choices autosave for authenticated users. Initial pilot follows existing authenticated explorer; optional guest drafting later uses a distinct planner session identity and a safe account-claim flow.
 4. Choose which stay is active for each date. Multiple rooms at one hotel can cover the same stay; alternative hotels do not become simultaneous bookings unless the user deliberately assigns them to different travelers. Detect gaps, overlaps, occupancy shortfalls, and infeasible hotel transfers.
 5. Click Generate itinerary → validate selections, read fresh-enough forecast, retrieve route matrix, and schedule selected stops. Show progress and actionable errors. Optional alternatives are suggested separately and require user acceptance.
@@ -66,7 +66,7 @@ Use current Sora headings, DM Sans body, ocean primary actions/route lines, sand
 7. A concise Why this plan summary is visible; each stop has expandable Why this time and order with measured route/forecast evidence. Explain uncertain dates/data without presenting unknown weather as favorable.
 8. Move a stop/day or pin a preferred time using accessible controls. Recalculate feasibility and explanations; do not retain reasoning for an obsolete order. Preserve locked choices and show conflicts. Weather updates propose a revision for approval; they do not silently change paid services.
 9. Resolve unscheduled required selections, missing critical metadata, and unavailable bookings before Add to Cart. Users may intentionally move a selection to alternatives or leave a non-critical unverified free stop provisional. No silent omissions or invented times.
-10. Add to Cart explicitly transfers bookable room/activity lines to the existing commercial basket as a planner group. Free attractions remain in the itinerary. Display the group, dates, totals, and a link back to its source plan. Repeated clicks/retries do not increase quantities.
+10. Add to Cart explicitly transfers bookable room/activity lines to the existing commercial basket as a planner group. Display the group, dates, totals, and a link back to its source plan. Repeated clicks/retries do not increase quantities.
 11. Checkout preserves existing request/approval/payment rules. Initial booking itinerary is labelled Proposed / awaiting availability approval. If approval excludes a stop, creates a timing change, or changes costs, show a revised proposal before confirmation/payment; do not email excluded services as confirmed.
 12. Booking details become the permanent itinerary home. PDF, print, and email use the accepted itinerary version and current booking/service state. The draft planner remains independently editable; it cannot rewrite an existing booking.
 
@@ -135,7 +135,6 @@ Proposed names are implementation targets, not changes already made. Use existin
 | `trip_plan_items` | Plan ownership, typed inventory reference, required/alternative state, quantity/pax, stay allocation, locked times/order and user notes. Nullable/restricted references preserve historical snapshots if catalogue items are removed. |
 | `trip_itineraries` | Immutable generated version: plan/revision, input fingerprint, schema/scheduler version, JSONB days/stops/legs/explanations/evidence, generation state and timestamp. Store full route geometry once per itinerary, not per email. |
 | `booking_itineraries` | Booking FK, source version, accepted snapshot/version, status, prior-version linkage, private PDF artifact metadata. Support multiple plans per booking and explicit revisions. Snapshot does not depend on the draft plan surviving. |
-| `tourist_attractions` | Curated destination sightseeing stops, real coordinates/entrance, duration/windows, environment/weather policy, images, visibility, information-only/free status. Paid services remain activity inventory; do not create a second booking/payment type. |
 | `email_preferences` | User/email preference identity, marketing opt-in provenance/time/version, journey preferences, unsubscribed and suppression state. Existing terms/privacy consent remains separate. |
 | `journey_messages` | Durable outbox: recipient, booking/plan, message type, scheduled time, semantic dedupe key, source revision, state, attempts, provider ID, sent/delivered/failed/suppressed timestamps, reason and short-lived claim/lease. |
 
@@ -145,7 +144,7 @@ Postgres uses typed FKs, indexes covering ownership and due work, timestamptz fo
 
 The cart bridge is a distinct method, not an unscoped call to ordinary `CartService::add`. Repeated transfer of the same version and selections is a no-op, not quantity increment. All bookable lines transfer atomically; partial failure leaves cart/planner consistent. Server recomputes prices and validates that every ID belongs to the plan's destination and current owner. Persist the selected itinerary and booking-item mapping before checkout deletes cart lines. Never trust a client-supplied report, route values or totals.
 
-Booking approval changes create a proposed revision and invalidate affected reminders/PDFs until accepted. Free attractions are labelled self-guided, and excluded/unavailable paid services are visibly identified. Rebooking generates a new plan/date validation and snapshot; it cannot clone old weather evidence as if current. Existing bookings without planner data retain today's page and review workflow until explicitly migrated.
+Booking approval changes create a proposed revision and invalidate affected reminders/PDFs until accepted. Excluded or unavailable services are visibly identified. Rebooking generates a new plan/date validation and snapshot; it cannot clone old weather evidence as if current. Existing bookings without planner data retain today's page and review workflow until explicitly migrated.
 
 ## 6. Journey email sequence
 
@@ -256,13 +255,13 @@ Exit: mode-correct real routes and correctly timed/weather-normalized data, incl
 
 ### Phase 2 — catalogue, selection and engine
 
-- `[NEW] app/Models/TripPlan.php`, `TripPlanItem.php`, `TripItinerary.php`, `TouristAttraction.php`, with useful factories and migrations for plan/items/versions/attractions and scheduling metadata.
+- `[NEW] app/Models/TripPlan.php`, `TripPlanItem.php`, `TripItinerary.php`, with useful factories and migrations for plan/items/versions and scheduling metadata on existing activities.
 - `[NEW] app/Http/Controllers/TripPlannerController.php`, `app/Http/Requests/StoreTripPlanRequest.php`, `GenerateTripItineraryRequest.php`, `app/Policies/TripPlanPolicy.php`.
 - `[NEW] app/Services/TripPlanner/TripPlanService.php`, `ItineraryScheduler.php`, `ItineraryExplainer.php`; `[NEW] app/Jobs/GenerateTripItineraryJob.php` only where measured work needs queued execution.
 - `[NEW] routes/tripPlannerRoute.php`; `[MODIFY] routes/web.php` to require it.
 - `[NEW] resources/views/trip-planner/index.blade.php`, `_catalogue.blade.php`, `_selections.blade.php`, `_itinerary.blade.php`, `_report.blade.php`.
 - `[MODIFY] resources/views/dashboard.blade.php`, explorer and shared room/activity preview actions for planner context; existing catalogue/cart actions retain current meaning.
-- `[MODIFY] admin hotel/activity forms and corresponding controllers for structured metadata; `[NEW] admin attraction controller/routes/views using current AJAX live-search pattern.
+- `[MODIFY] admin hotel/activity forms and corresponding controllers for structured metadata using the current AJAX live-search pattern.
 - `[NEW] tests/Feature/TripPlannerTest.php`, `TripPlannerAuthorizationTest.php`; `[NEW] tests/Unit/ItinerarySchedulerTest.php` for pure deterministic rules.
 
 Exit: all selected required stops accounted for, constraints respected, dedicated basket isolation, numbered map/list and evidence-based report.
@@ -331,7 +330,9 @@ Implementation was authorized after this plan was reviewed and the user chose Ra
 
 ## 13. Implementation state (13 October 2026)
 
-The branch now contains the saved planner at `/trip-planner`, its dedicated `trip_plans` / `trip_plan_items` basket, immutable `trip_itineraries`, hotel/room/activity/attraction catalog, explicit cart transfer, protected print/PDF exports, queued account email, booking snapshots, admin scheduling editor, journey outbox and fulfillment-backed completion. Hotel choices are route bases; rooms are reservations. Attractions remain self-guided choices. Existing bookings without itinerary snapshots keep their existing workflow.
+The branch now contains the saved planner at `/trip-planner`, its dedicated `trip_plans` / `trip_plan_items` basket, immutable `trip_itineraries`, hotel/room/activity catalog, explicit cart transfer, protected print/PDF exports, queued account email, booking snapshots, admin scheduling editor, journey outbox and fulfillment-backed completion. Hotel choices are route bases; rooms are reservations. Visit choices come from the existing activities table. Existing bookings without itinerary snapshots keep their existing workflow.
+
+The follow-up planner flow selects a hotel before showing that hotel's rooms. Hotel stays default to the trip dates, rooms inherit the stay dates, and editing a hotel keeps its selected rooms synchronized. Saved trips can be deleted with an explicit confirmation; linked planner basket lines are removed while snapshots already stored on bookings remain available. Manual itinerary email requires authentication but does not require email verification. Leaflet retains exclusive control of marker transforms through filtering and zoom, and accommodation markers use a bed symbol instead of the letter H.
 
 Scheduling is deterministic: directed Valhalla matrix times, fixed starts, visit durations, operating windows, hotel check-in/out assumptions, sequential hotel transfers, a lunch interval, buffers and return travel. Severe outdoor weather is screened; walking exposure before indoor visits is screened too. Forecasts must cover the complete interval and have fresh timestamps. Unknown or stale forecasts are provisional, never described as favorable weather. Impossible choices remain visible and prevent cart transfer until resolved. The report discloses heuristic limits, local times, assumptions, no live traffic/fare estimates and no operator safety clearance.
 
@@ -339,7 +340,7 @@ The original Haversine helper and straight-line travel rendering have been remov
 
 Valhalla is running in Railway project `gracious-dedication`, production environment, as a separate service with a persistent `/custom_files` volume. Its graph covers Western Visayas, including the Boracay pilot. Limits are 1 GB RAM / 1 vCPU with one server thread. Live verification returned a walking path of about 1.27 km / 15 minutes with 44 geometry points, and a different driving path. The graph took about 28 seconds to build; observed idle memory was about 0.36 GB, not a long-term cost estimate. At the user's later request, a public Railway domain was restored at `https://valhalla-production-4481.up.railway.app` so the local Laravel app can call it. The ignored local `.env` points there and `php artisan routing:check` passed with the 1.27 km walking route and 44 geometry points. The deployed app and worker remain configured for `http://valhalla.railway.internal:8080`. The public endpoint is unauthenticated and can receive outside traffic, so monitor usage while it is exposed. No paid routing subscription is required; Railway compute, storage and network usage remain billable.
 
-Admin → Planner Scheduling allows entrance/meeting coordinates, visit duration, indoor/outdoor classification, opening/closing times, fixed starts and hotel times to be verified. The optional attraction seeder adds names from the reference images with **no invented coordinates or hours**. Administrators must pin their real entrances before they can be scheduled. Do not silently increase the 150 m snap cutoff to make bad pins appear valid. The existing Henann sample pin failed this check during live testing and needs entrance verification.
+Admin → Planner Scheduling allows hotel and activity entrance/meeting coordinates, visit duration, indoor/outdoor classification, opening/closing times, fixed starts and hotel times to be verified. Administrators must pin real entrances before they can be scheduled. Do not silently increase the 150 m snap cutoff to make bad pins appear valid. The existing Henann sample pin failed this check during live testing and needs entrance verification.
 
 Booking snapshots record the booked subset alongside the full plan; cart edits to planner dates/guest counts are rejected at checkout so the stored itinerary cannot silently disagree with the purchased trip. Later planner edits never rewrite accepted snapshots. Included and excluded services remain distinguished on the booking page. Each day and protected PDF retain the selected room name, quantity, guest count and stay dates from that version. Overlapping room quantities across cart lines are checked together.
 

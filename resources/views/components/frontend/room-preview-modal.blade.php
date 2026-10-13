@@ -176,11 +176,15 @@
                 </div>
             </template>
 
-            {{-- Date Picker Section (store-driven; keyed by pickerEpoch to reset per room) --}}
-            <div class="pt-3 border-t border-slate-200 dark:border-slate-800" @date-range-changed.stop="$store.preview.setRoomDates($event.detail)">
+            {{-- Date Picker Section (store-driven; keyed by pickerEpoch to reset per room).
+                 Hidden in the trip planner, where stay dates come from the trip form. --}}
+            <div x-show="$store.preview.context !== 'planner'" class="pt-3 border-t border-slate-200 dark:border-slate-800" @date-range-changed.stop="$store.preview.setRoomDates($event.detail)">
                 <template x-for="n in [$store.preview.pickerEpoch]" :key="'drp-' + n">
                     <x-frontend.date-range-picker store-room />
                 </template>
+            </div>
+            <div x-show="$store.preview.context === 'planner'" class="pt-3 border-t border-slate-200 dark:border-slate-800 text-xs text-slate-500 dark:text-slate-400">
+                Stay dates follow your trip plan. Use <span class="font-semibold">Add to my trip</span> on the planner to include this room.
             </div>
 
         </div>
@@ -191,7 +195,7 @@
                 class="w-full sm:w-auto px-5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 font-bold text-xs hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
                 Close Preview
             </button>
-            <button type="button"
+            <button type="button" x-show="$store.preview.context !== 'planner'"
                 @click="$store.preview.addRoomToCart()"
                 :disabled="!$store.preview.roomDates.available || !$store.preview.roomDates.checkIn || !$store.preview.roomDates.checkOut"
                 :class="(!$store.preview.roomDates.available || !$store.preview.roomDates.checkIn || !$store.preview.roomDates.checkOut) ? 'opacity-50 cursor-not-allowed bg-slate-400' : 'bg-gradient-to-r from-sky-600 to-sky-700 hover:from-sky-500 hover:to-sky-600 shadow-md shadow-sky-600/20 hover:shadow-lg cursor-pointer'"

@@ -18,6 +18,7 @@ Alpine.store('preview', {
     loading: false,
     loadingActivity: false,
     loadingPackage: false,
+    context: null,
 
     get computedNightlyRate() {
         const target = this.room;
@@ -32,8 +33,9 @@ Alpine.store('preview', {
         return basePrice;
     },
 
-    openRoom(payload) {
+    openRoom(payload, context = null) {
         this.room = payload;
+        this.context = context;
         this.roomImgIndex = 0;
         this.pax = Number(payload.base_occupancy) || 2;
         this.roomDates = { checkIn: '', checkOut: '', nights: 0, available: true, availabilityMessage: '', subtotal: 0 };
@@ -42,15 +44,16 @@ Alpine.store('preview', {
 
     closeRoom() {
         this.room = null;
+        this.context = null;
     },
 
-    async openRoomById(id) {
+    async openRoomById(id, context = null) {
         this.loading = true;
         try {
             const res = await fetch(`/rooms/${id}/preview`, { headers: { 'Accept': 'application/json' } });
             if (!res.ok) throw new Error('room not found');
             const data = await res.json();
-            this.openRoom(data);
+            this.openRoom(data, context);
         } catch (err) {
             alert('This room is no longer available.');
         } finally {
@@ -84,23 +87,25 @@ Alpine.store('preview', {
         this.closeRoom();
     },
 
-    openActivity(payload) {
+    openActivity(payload, context = null) {
         this.activity = payload;
+        this.context = context;
         this.actImgIndex = 0;
         this.activityPax = 1;
     },
 
     closeActivity() {
         this.activity = null;
+        this.context = null;
     },
 
-    async openActivityById(id) {
+    async openActivityById(id, context = null) {
         this.loadingActivity = true;
         try {
             const res = await fetch(`/activities/${id}/preview`, { headers: { 'Accept': 'application/json' } });
             if (!res.ok) throw new Error('activity not found');
             const data = await res.json();
-            this.openActivity(data);
+            this.openActivity(data, context);
         } catch (err) {
             alert('This activity is no longer available.');
         } finally {
