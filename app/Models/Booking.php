@@ -82,9 +82,13 @@ class Booking extends Model
         'booked_by_admin_id',
         'booking_source',
         'is_walk_in',
+        'trip_itineraries',
+        'trip_end_override',
     ];
 
     protected $casts = [
+        'trip_itineraries' => 'array',
+        'trip_end_override' => 'datetime',
         'total_amount' => 'decimal:2',
         'discount_amount' => 'decimal:2',
         'tax_amount' => 'decimal:2',

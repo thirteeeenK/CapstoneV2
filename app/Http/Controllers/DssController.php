@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\DestinationModel;
 use App\Services\DistanceService;
 use App\Services\MapService;
+use App\Services\RoutingService;
 use App\Services\WeatherService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -65,6 +66,42 @@ class DssController extends Controller
         return response()->json([
             'data' => $this->map->allMarkers($lat, $lng),
         ]);
+    }
+
+    public function route(Request $request, RoutingService $routing): JsonResponse
+    {
+        $validated = $request->validate([
+            'from_lat' => ['required', 'numeric', 'between:-90,90'],
+            'from_lng' => ['required', 'numeric', 'between:-180,180'],
+            'to_lat' => ['required', 'numeric', 'between:-90,90'],
+            'to_lng' => ['required', 'numeric', 'between:-180,180'],
+            'mode' => ['sometimes', 'in:walking,driving'],
+        ]);
+
+        return response()->json(['data' => $routing->route(
+            ['lat' => (float) $validated['from_lat'], 'lng' => (float) $validated['from_lng']],
+            ['lat' => (float) $validated['to_lat'], 'lng' => (float) $validated['to_lng']],
+            $validated['mode'] ?? null,
+        )]);
+    }
+
+    public function distances(Request $request, RoutingService $routing): JsonResponse
+    {
+        $validated = $request->validate([
+            'lat' => ['required', 'numeric', 'between:-90,90'],
+            'lng' => ['required', 'numeric', 'between:-180,180'],
+            'targets' => ['required', 'array', 'min:1', 'max:100'],
+            'targets.*' => ['required', 'array:lat,lng'],
+            'targets.*.lat' => ['required', 'numeric', 'between:-90,90'],
+            'targets.*.lng' => ['required', 'numeric', 'between:-180,180'],
+            'mode' => ['sometimes', 'in:walking,driving'],
+        ]);
+
+        return response()->json(['data' => $routing->matrix(
+            [['lat' => (float) $validated['lat'], 'lng' => (float) $validated['lng']]],
+            $validated['targets'],
+            $validated['mode'] ?? null,
+        )]);
     }
 
     /**

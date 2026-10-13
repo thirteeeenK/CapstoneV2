@@ -553,21 +553,21 @@
                                                 From <span class="font-bold text-slate-900 dark:text-slate-100" x-text="r.hotel"></span>
                                                 to <span class="font-bold text-slate-900 dark:text-slate-100" x-text="r.activity"></span>
                                             </span>
-                                            <span class="font-black text-ocean-700 dark:text-ocean-100 shrink-0" x-text="'Approx. ~ ' + r.distance_label"></span>
+                                            <span class="font-black text-ocean-700 dark:text-ocean-100 shrink-0" x-text="r.distance_label + (r.duration_minutes != null ? ' · ' + r.duration_minutes + ' min walk' : '')"></span>
                                         </p>
                                     </template>
                                     <p x-show="userHotel" x-cloak class="flex items-center justify-between gap-2 bg-white/80 dark:bg-slate-900/80 px-3 py-1.5 rounded-lg border border-ocean-100/60 dark:border-ocean-800">
                                         <span class="truncate">
                                             From your current location to <span class="font-bold text-slate-900 dark:text-slate-100" x-text="userHotel?.hotel"></span>
                                         </span>
-                                        <span class="font-black text-ocean-700 dark:text-ocean-100 shrink-0" x-text="'Approx. ~ ' + userHotel?.distance_label"></span>
+                                        <span class="font-black text-ocean-700 dark:text-ocean-100 shrink-0" x-text="userHotel?.distance_label + (userHotel?.duration_minutes != null ? ' · ' + userHotel.duration_minutes + ' min walk' : '')"></span>
                                     </p>
                                 </div>
 
-                                {{-- Haversine Disclaimer Note --}}
+                                {{-- Network routing context --}}
                                 <div class="pt-2 border-t border-ocean-200/60 dark:border-ocean-800 flex items-start gap-1.5 text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
                                     <span class="material-symbols-outlined text-[13px] text-amber-600 shrink-0 mt-0.5">info</span>
-                                    <span><strong>Note:</strong> Distances shown are approximate straight-line (Haversine) estimates. Actual travel distance and duration may vary based on island terrain, road networks, or boat transport.</span>
+                                    <span><strong>Route information:</strong> Distances follow mapped walking paths. Times are estimates and exclude live traffic, weather delays, and boat transfers. Unreachable locations are marked unavailable.</span>
                                 </div>
                             </div>
                         </div>

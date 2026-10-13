@@ -18,6 +18,7 @@ Route::prefix('admin')->group(function () {
         Route::post('/bookings/{id}/cancel-request/deny', [AdminBookingController::class, 'denyCancellation'])->name('admin.bookings.cancel-request.deny');
         Route::post('/bookings/{id}/mark-paid', [AdminBookingController::class, 'markPaid'])->name('admin.bookings.mark-paid');
         Route::post('/bookings/{id}/mark-completed', [AdminBookingController::class, 'markCompleted'])->name('admin.bookings.mark-completed');
+        Route::patch('/bookings/{id}/trip-fulfillment', [AdminBookingController::class, 'updateTripFulfillment'])->name('admin.bookings.trip-fulfillment');
         Route::post('/bookings/{id}/mark-refunded', [AdminBookingController::class, 'markRefunded'])->name('admin.bookings.mark-refunded');
         Route::post('/bookings/{id}/send-password-reset', [AdminBookingController::class, 'sendPasswordReset'])->name('admin.bookings.send-password-reset');
         Route::post('/bookings/{id}/attachments', [AdminBookingController::class, 'uploadAttachment'])->name('admin.bookings.attachments.store');

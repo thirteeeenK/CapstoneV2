@@ -85,6 +85,9 @@ class ReviewService
         abort_unless($booking->status === Booking::STATUS_COMPLETED, 422, 'Only completed bookings can be reviewed.');
 
         if ($bookingItemId) {
+            $item = $booking->items()->whereKey($bookingItemId)->first();
+            abort_unless($item && array_key_exists($item->item_type, self::REVIEWABLE_ITEM_TYPES) && $item->availability_status !== 'unavailable', 422, 'Choose an included reviewable item from this booking.');
+            abort_if($booking->trip_itineraries && $item->fulfillment_status !== 'fulfilled', 422, 'This service has not been recorded as fulfilled.');
             abort_if(
                 Review::where('booking_id', $booking->id)->where('booking_item_id', $bookingItemId)->exists(),
                 422,
@@ -113,10 +116,13 @@ class ReviewService
         if (! $item) {
             $item = $booking->items()
                 ->whereIn('item_type', array_keys(self::REVIEWABLE_ITEM_TYPES))
+                ->where('availability_status', '!=', 'unavailable')
+                ->when($booking->trip_itineraries, fn ($q) => $q->where('fulfillment_status', 'fulfilled'))
                 ->first();
         }
 
         abort_unless($item !== null, 422, 'This booking has no reviewable items.');
+        $this->assertEligible($user, $booking, $item->id);
 
         $target = $this->resolveReviewableFromItem($item);
 
@@ -164,6 +170,9 @@ class ReviewService
         abort_unless($booking->status === Booking::STATUS_COMPLETED, 422, 'Only completed bookings can be reviewed.');
 
         if ($bookingItemId) {
+            $requestedItem = $booking->items()->whereKey($bookingItemId)->first();
+            abort_unless($requestedItem && array_key_exists($requestedItem->item_type, self::REVIEWABLE_ITEM_TYPES) && $requestedItem->availability_status !== 'unavailable', 422, 'Choose an included reviewable item from this booking.');
+            abort_if($booking->trip_itineraries && $requestedItem->fulfillment_status !== 'fulfilled', 422, 'This service has not been recorded as fulfilled.');
             abort_if(
                 Review::where('booking_id', $booking->id)->where('booking_item_id', $bookingItemId)->exists(),
                 422,
@@ -186,6 +195,8 @@ class ReviewService
         if (! $item) {
             $item = $booking->items()
                 ->whereIn('item_type', array_keys(self::REVIEWABLE_ITEM_TYPES))
+                ->where('availability_status', '!=', 'unavailable')
+                ->when($booking->trip_itineraries, fn ($q) => $q->where('fulfillment_status', 'fulfilled'))
                 ->whereNotIn('id', $reviewedItemIds)
                 ->first();
         }
@@ -308,7 +319,8 @@ class ReviewService
             ->get()
             ->map(function (Booking $booking) {
                 $items = $booking->items
-                    ->filter(fn ($item) => array_key_exists($item->item_type, self::REVIEWABLE_ITEM_TYPES))
+                    ->filter(fn ($item) => array_key_exists($item->item_type, self::REVIEWABLE_ITEM_TYPES) && $item->availability_status !== 'unavailable'
+                        && (! $booking->trip_itineraries || $item->fulfillment_status === 'fulfilled'))
                     ->map(function (BookingItem $item) {
                         $review = Review::where('booking_id', $item->booking_id)
                             ->where('booking_item_id', $item->id)

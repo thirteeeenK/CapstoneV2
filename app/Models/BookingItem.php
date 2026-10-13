@@ -34,9 +34,13 @@ class BookingItem extends Model
         'item_snapshot',
         'availability_status',
         'admin_note',
+        'fulfillment_status',
+        'fulfilled_at',
+        'fulfillment_admin_id',
     ];
 
     protected $casts = [
+        'fulfilled_at' => 'datetime',
         'check_in_date' => 'date',
         'check_out_date' => 'date',
         'unit_price' => 'decimal:2',

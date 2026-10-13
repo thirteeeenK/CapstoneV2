@@ -6,6 +6,7 @@ use App\Models\Booking;
 use App\Services\BookingExpiryService;
 use App\Services\Payment\GoTymePaymentService;
 use App\Services\Payment\PaymentService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
 class BookingConfirmationController extends Controller
@@ -60,5 +61,18 @@ class BookingConfirmationController extends Controller
         }
 
         return $booking;
+    }
+
+    public function itinerary(string $code, int $version, Request $request): mixed
+    {
+        $booking = $this->loadOwnedBooking($code);
+        $snapshot = $booking->trip_itineraries[$version] ?? null;
+        abort_unless(is_array($snapshot), 404);
+        $data = ['itinerary' => $snapshot, 'reference' => 'Booking '.$booking->booking_code.' · Saved itinerary'];
+        if ($request->boolean('print')) {
+            return view('trip-planner.document', $data);
+        }
+
+        return Pdf::loadView('trip-planner.document', $data)->setPaper('a4')->download('sunnytrips-'.$booking->booking_code.'-itinerary.pdf');
     }
 }

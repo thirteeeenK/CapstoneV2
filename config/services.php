@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'trip_journey' => ['enabled' => env('TRIP_JOURNEY_ENABLED', false)],
 
     /*
     |--------------------------------------------------------------------------
@@ -82,6 +83,16 @@ return [
     'openweather' => [
         'api_key' => env('OPENWEATHER_API_KEY'),
         'base_url' => env('OPENWEATHER_BASE_URL', 'https://api.openweathermap.org/data/2.5'),
+    ],
+
+    'routing' => [
+        'base_url' => env('VALHALLA_URL'),
+        'default_mode' => env('ROUTING_DEFAULT_MODE', 'walking'),
+        'graph_version' => env('ROUTING_GRAPH_VERSION', 'western-visayas-v1'),
+        'timeout' => (int) env('ROUTING_TIMEOUT', 10),
+        'cache_minutes' => (int) env('ROUTING_CACHE_MINUTES', 1440),
+        'matrix_batch_size' => (int) env('ROUTING_MATRIX_BATCH_SIZE', 25),
+        'snap_radius_meters' => (int) env('ROUTING_SNAP_RADIUS_METERS', 150),
     ],
 
 ];

@@ -85,6 +85,7 @@
         <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
 
             {{-- Journal masthead --}}
+            @include('trip-planner._booking-itinerary')
             <div class="flex items-center justify-between mb-5">
                 <p class="font-label text-[10px] uppercase font-bold tracking-[0.25em] text-slate-400 dark:text-slate-500">
                     SunnyTrips · Traveler Journal
@@ -302,7 +303,7 @@
                                         ->filter(fn($item) => in_array($item->item_type, $reviewableTypes))
                                         ->some(fn($item) => !$booking->reviews->contains('booking_item_id', $item->id));
                                 @endphp
-                                <div x-data="{ reviewed: @js(!$hasUnreviewed) }"
+                                <div id="booking-reviews" x-data="{ reviewed: @js(!$hasUnreviewed) }"
                                      x-on:booking-reviews-synced.window="reviewed = true">
                                     <template x-if="!reviewed">
                                         <div>

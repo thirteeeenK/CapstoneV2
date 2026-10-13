@@ -39,6 +39,8 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'trip_reminders_enabled' => 'boolean',
+            'trip_marketing_enabled' => 'boolean',
             'password' => 'hashed',
             'chatbot_flag_count' => 'integer',
             'banned_at' => 'datetime',

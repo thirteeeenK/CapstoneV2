@@ -33,9 +33,11 @@ class ActivityModel extends Model
         'latitude',
         'longitude',
         'specific_address',
+        'scheduling',
     ];
 
     protected $casts = [
+        'scheduling' => 'array',
         'vibe_tags' => 'array',
         'inclusions' => 'array',
         'exclusions' => 'array',

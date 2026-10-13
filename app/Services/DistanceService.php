@@ -3,36 +3,12 @@
 namespace App\Services;
 
 use App\Models\ActivityModel;
-use App\Models\DestinationModel;
 use App\Models\HotelModel;
 use Illuminate\Database\Eloquent\Collection;
 
 class DistanceService
 {
-    /**
-     * Earth mean radius in kilometers.
-     */
-    public const EARTH_RADIUS_KM = 6371.0;
-
-    /**
-     * Haversine great-circle distance in kilometers.
-     */
-    public function haversine(float $lat1, float $lng1, float $lat2, float $lng2): float
-    {
-        $lat1 = deg2rad($lat1);
-        $lng1 = deg2rad($lng1);
-        $lat2 = deg2rad($lat2);
-        $lng2 = deg2rad($lng2);
-
-        $dLat = $lat2 - $lat1;
-        $dLng = $lng2 - $lng1;
-
-        $a = sin($dLat / 2) ** 2
-            + cos($lat1) * cos($lat2) * sin($dLng / 2) ** 2;
-        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
-
-        return self::EARTH_RADIUS_KM * $c;
-    }
+    public function __construct(protected RoutingService $routing) {}
 
     /**
      * Format a distance (km) into a human-friendly label.
@@ -52,17 +28,20 @@ class DistanceService
      */
     public function withDistance(Collection $items, float $userLat, float $userLng): Collection
     {
-        return $items->map(function ($item) use ($userLat, $userLng) {
+        $items = $items->values();
+        $targets = $items->map(function ($item): array {
             [$lat, $lng] = $this->coordsOf($item);
-            if ($lat === null || $lng === null) {
-                $item->distance_km = null;
-                $item->distance_label = null;
 
-                return $item;
-            }
-            $km = $this->haversine($userLat, $userLng, (float) $lat, (float) $lng);
+            return ['lat' => $lat, 'lng' => $lng];
+        })->all();
+        $matrix = $this->routing->matrix([['lat' => $userLat, 'lng' => $userLng]], $targets);
+
+        return $items->map(function ($item, int $index) use ($matrix) {
+            $km = $matrix['distances'][0][$index] ?? null;
             $item->distance_km = $km;
-            $item->distance_label = $this->format($km);
+            $item->distance_label = $km !== null ? $this->format($km) : null;
+            $seconds = $matrix['durations'][0][$index] ?? null;
+            $item->duration_minutes = $seconds !== null ? (int) ceil($seconds / 60) : null;
 
             return $item;
         })->filter(fn ($item) => $item->distance_km !== null)
@@ -85,7 +64,7 @@ class DistanceService
     }
 
     /**
-     * Nearest activities to a given coordinate (uses destination fallback).
+     * Nearest activities with real meeting-point coordinates.
      */
     public function nearestActivities(float $userLat, float $userLng, int $limit = 5): Collection
     {
@@ -102,21 +81,9 @@ class DistanceService
      */
     public function coordsOf($entity): array
     {
-        if ($entity instanceof ActivityModel) {
-            return [(float) $entity->latitude_with_fallback, (float) $entity->longitude_with_fallback];
-        }
+        $lat = $entity->latitude;
+        $lng = $entity->longitude;
 
-        if ($entity instanceof DestinationModel) {
-            return [(float) $entity->latitude, (float) $entity->longitude];
-        }
-
-        if ($entity instanceof HotelModel) {
-            return [(float) $entity->latitude, (float) $entity->longitude];
-        }
-
-        $lat = $entity->latitude ?? $entity->destination?->latitude ?? null;
-        $lng = $entity->longitude ?? $entity->destination?->longitude ?? null;
-
-        return [(float) $lat, (float) $lng];
+        return [$lat !== null ? (float) $lat : null, $lng !== null ? (float) $lng : null];
     }
 }

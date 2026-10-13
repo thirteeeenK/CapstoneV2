@@ -30,6 +30,8 @@ class CartItem extends Model
         'is_selected',
         'notes',
         'lucky_group_id',
+        'trip_itinerary_id',
+        'trip_plan_item_id',
     ];
 
     protected $casts = [

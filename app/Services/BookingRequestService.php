@@ -7,6 +7,7 @@ use App\Models\BookingItem;
 use App\Models\CartItem;
 use App\Models\PassengerCategoryRule;
 use App\Models\RoomType;
+use App\Models\TripItinerary;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -148,16 +149,37 @@ class BookingRequestService
         $netAmount = max(0.00, $totalAmount - $discountAmount + $surchargeAmount - (float) ($validated['admin_discount_amount'] ?? 0) + (float) ($validated['admin_surcharge_amount'] ?? 0));
 
         return DB::transaction(function () use ($validated, $cartItems, $calculatedItemSubtotals, $bookingCode, $guestManifest, $totalAmount, $discountAmount, $surchargeAmount, $netAmount) {
-            $lockedCartItemCount = CartItem::query()
+            $lockedCartItems = CartItem::query()
                 ->whereIn('id', $cartItems->modelKeys())
                 ->lockForUpdate()
-                ->get(['id'])
-                ->count();
+                ->get()->keyBy('id');
 
-            if ($lockedCartItemCount !== $cartItems->count()) {
+            if ($lockedCartItems->count() !== $cartItems->count()) {
                 throw ValidationException::withMessages([
                     'cart' => ['Your Trip Basket changed while checkout was processing. Please review it and try again.'],
                 ]);
+            }
+            $plannerItineraries = TripItinerary::query()->whereIn('id', $cartItems->pluck('trip_itinerary_id')->filter()->unique())->get()->keyBy('id');
+            foreach ($cartItems as $item) {
+                $fields = ['quantity', 'selected_pax', 'check_in_date', 'check_out_date', 'is_selected', 'item_type', 'item_id', 'trip_itinerary_id'];
+                if (array_intersect_key($item->getRawOriginal(), array_flip($fields)) !== array_intersect_key($lockedCartItems[$item->id]->getRawOriginal(), array_flip($fields))) {
+                    throw ValidationException::withMessages(['cart' => 'Your Trip Basket changed during checkout. Review it and try again.']);
+                }
+                if ($item->trip_itinerary_id) {
+                    $itinerary = $plannerItineraries->get($item->trip_itinerary_id);
+                    abort_unless($itinerary, 422, 'The transferred itinerary is no longer available.');
+                    $selection = collect($itinerary->snapshot['selections'])->first(fn ($choice) => $choice['type'] === $item->item_type && $choice['item_id'] === $item->item_id);
+                    $options = $selection['options'] ?? [];
+                    $stop = collect($itinerary->snapshot['days'])->flatMap(fn ($day) => $day['stops'])->firstWhere('plan_item_id', $selection['plan_item_id'] ?? null);
+                    $expectedIn = $item->item_type === 'room' ? ($options['check_in'] ?? null) : ($stop['date'] ?? null);
+                    $expectedOut = $item->item_type === 'room' ? ($options['check_out'] ?? null) : null;
+                    $expectedQuantity = $item->item_type === 'room' ? ($options['quantity'] ?? null) : ($options['pax'] ?? null);
+                    if (! $selection || $item->check_in_date?->toDateString() !== $expectedIn || $item->check_out_date?->toDateString() !== $expectedOut
+                        || $item->quantity !== $expectedQuantity || $item->selected_pax !== ($options['pax'] ?? null)
+                        || $calculatedItemSubtotals[$item->id]['pax'] !== $item->selected_pax) {
+                        throw ValidationException::withMessages(['cart' => 'A planner item’s dates or guest count changed in the Trip Basket. Remove that version and transfer a newly generated plan to keep its itinerary accurate.']);
+                    }
+                }
             }
 
             foreach ($cartItems->where('item_type', 'room')->sortBy('item_id') as $item) {
@@ -180,7 +202,9 @@ class BookingRequestService
                     $item->check_out_date->copy()->startOfDay()
                 );
 
-                if ($availability['remaining'] < $item->quantity) {
+                $requested = $cartItems->where('item_type', 'room')->where('item_id', $item->item_id)
+                    ->filter(fn ($other) => $other->check_in_date && $other->check_out_date && $other->check_in_date->lt($item->check_out_date) && $other->check_out_date->gt($item->check_in_date))->sum('quantity');
+                if ($availability['remaining'] < $requested) {
                     throw ValidationException::withMessages([
                         'cart' => ["{$item->item_title} no longer has enough rooms available for your dates."],
                     ]);
@@ -231,10 +255,24 @@ class BookingRequestService
                         'location_name' => $item->location_name,
                         'image' => $item->item_image,
                         'room_option' => $item->room_option,
+                        'trip_itinerary_id' => $item->trip_itinerary_id,
+                        'trip_plan_item_id' => $item->trip_itinerary_id ? collect($plannerItineraries[$item->trip_itinerary_id]->snapshot['selections'])->first(fn ($choice) => $choice['type'] === $item->item_type && $choice['item_id'] === $item->item_id)['plan_item_id'] : null,
                     ],
                 ]);
             }
 
+            $snapshots = [];
+            foreach ($cartItems->whereNotNull('trip_itinerary_id')->groupBy('trip_itinerary_id') as $itineraryId => $group) {
+                $itinerary = $plannerItineraries[$itineraryId];
+                $snapshot = $itinerary->snapshot;
+                $snapshot['booked_plan_item_ids'] = $group->map(fn ($item) => collect($snapshot['selections'])->first(fn ($choice) => $choice['type'] === $item->item_type && $choice['item_id'] === $item->item_id)['plan_item_id'])->values()->all();
+                $snapshot['itinerary_id'] = $itinerary->id;
+                $snapshot['booked_at'] = now()->toIso8601String();
+                $snapshots[] = $snapshot;
+            }
+            if ($snapshots !== []) {
+                $booking->update(['trip_itineraries' => $snapshots]);
+            }
             CartItem::whereIn('id', $cartItems->pluck('id')->toArray())->delete();
 
             return $booking;

@@ -24,6 +24,8 @@ class HotelModel extends Model
         'images',
         'embedding',
         'is_shown',
+        'check_in_time',
+        'check_out_time',
     ];
 
     // I-cast natin ang embedding para maging array sa PHP side

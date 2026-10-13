@@ -20,6 +20,7 @@ use App\Models\UserPreference;
 use App\Services\DistanceService;
 use App\Services\GeminiService;
 use App\Services\RoomAvailabilityService;
+use App\Services\RoutingService;
 use App\Services\WeatherService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
@@ -84,6 +85,7 @@ class ChatbotService
         protected RoomAvailabilityService $availability,
         protected WeatherService $weather,
         protected DistanceService $distance,
+        protected RoutingService $routing,
         protected FaqService $faq,
         protected CatalogPriceQuote $priceQuotes,
     ) {}
@@ -3121,18 +3123,28 @@ class ChatbotService
             $coords1 = $this->getPlaceCoords($p1);
             $coords2 = $this->getPlaceCoords($p2);
             if ($coords1 && $coords2) {
-                $km = $this->distance->haversine($coords1['lat'], $coords1['lng'], $coords2['lat'], $coords2['lng']);
+                if (! $this->hasRoutingLocation($p1) || ! $this->hasRoutingLocation($p2)) {
+                    return ['reply' => 'This activity does not have a precise meeting-point location yet, so a travel route cannot be calculated.'];
+                }
+                $route = $this->routing->route($coords1, $coords2);
+                if (! $route['available']) {
+                    return ['reply' => 'A walking route between these locations is currently unavailable. The places may be disconnected, outside our routing coverage, or missing an accessible meeting point.'];
+                }
+                $km = $route['distance_km'];
                 $label = $this->distance->format($km);
                 $name1 = $p1['name'];
                 $name2 = $p2['name'];
 
                 return [
-                    'reply' => "{$name1} is approximately {$label} from {$name2}.",
+                    'reply' => "The walking route from {$name1} to {$name2} is {$label}, about {$route['duration_minutes']} minutes. Travel time is an estimate.",
                     'map' => [
                         'from' => ['name' => $name1, 'lat' => $coords1['lat'], 'lng' => $coords1['lng']],
                         'to' => ['name' => $name2, 'lat' => $coords2['lat'], 'lng' => $coords2['lng']],
                         'distance_km' => round($km, 2),
                         'distance_label' => $label,
+                        'duration_minutes' => $route['duration_minutes'],
+                        'geometry' => $route['geometry'],
+                        'travel_mode' => $route['mode'],
                     ],
                 ];
             }
@@ -3149,16 +3161,26 @@ class ChatbotService
 
                 if ($isUserDistance) {
                     if ($userLat !== null && $userLng !== null) {
-                        $km = $this->distance->haversine($userLat, $userLng, $coords['lat'], $coords['lng']);
+                        if (! $this->hasRoutingLocation($place)) {
+                            return ['reply' => 'This activity does not have a precise meeting-point location yet, so a travel route cannot be calculated.'];
+                        }
+                        $route = $this->routing->route(['lat' => $userLat, 'lng' => $userLng], $coords);
+                        if (! $route['available']) {
+                            return ['reply' => 'A walking route from your location is currently unavailable. Please check the destination coverage or meeting point; boat transfers require separate transport information.'];
+                        }
+                        $km = $route['distance_km'];
                         $label = $this->distance->format($km);
 
                         return [
-                            'reply' => "You are approximately {$label} from {$place['name']}.",
+                            'reply' => "The walking route from you to {$place['name']} is {$label}, about {$route['duration_minutes']} minutes. Travel time is an estimate.",
                             'map' => [
                                 'from' => ['lat' => $userLat, 'lng' => $userLng, 'label' => 'You'],
                                 'to' => ['name' => $place['name'], 'lat' => $coords['lat'], 'lng' => $coords['lng']],
                                 'distance_km' => round($km, 2),
                                 'distance_label' => $label,
+                                'duration_minutes' => $route['duration_minutes'],
+                                'geometry' => $route['geometry'],
+                                'travel_mode' => $route['mode'],
                             ],
                         ];
                     }
@@ -3206,6 +3228,16 @@ class ChatbotService
     /**
      * Get coordinates for a place array (type destination or hotel).
      */
+    private function hasRoutingLocation(array $place): bool
+    {
+        if ($place['type'] !== 'activity') {
+            return true;
+        }
+        $activity = $place['model'] ?? ActivityModel::where('activity_name', 'ILIKE', $place['name'])->first();
+
+        return $activity !== null && $activity->latitude !== null && $activity->longitude !== null;
+    }
+
     protected function getPlaceCoords(array $place): ?array
     {
         if ($place['type'] === 'destination') {

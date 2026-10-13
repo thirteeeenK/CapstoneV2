@@ -109,7 +109,7 @@ class CartService
 
         // Check if item already exists in cart with same type, id, and dates
         $query = CartItem::where('item_type', $itemType)
-            ->where('item_id', $itemId);
+            ->where('item_id', $itemId)->whereNull('trip_itinerary_id');
 
         if ($userId) {
             $query->where('user_id', $userId);

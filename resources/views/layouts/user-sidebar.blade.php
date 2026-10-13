@@ -82,6 +82,7 @@
                     ['route' => 'hotels.*', 'icon' => 'hotel', 'label' => 'Hotels & Sanctuaries', 'href' => route('hotels.index')],
                     ['route' => 'rooms.*', 'icon' => 'king_bed', 'label' => 'Rooms & Stays', 'href' => route('rooms.index')],
                     ['route' => 'activities.*', 'icon' => 'explore', 'label' => 'Activities & Tours', 'href' => route('activities.index')],
+                    ['route' => 'trip-planner.*', 'icon' => 'route', 'label' => 'Trip Planner', 'href' => route('trip-planner.index')],
                     ['route' => 'addons.*', 'icon' => 'extension', 'label' => 'Transfers & Add-ons', 'href' => route('addons.index')],
                     ['route' => 'packages.*', 'icon' => 'card_travel', 'label' => 'Tour Packages & Promos', 'href' => route('packages.index')],
                 ],

@@ -7,6 +7,7 @@
                     <h1 class="text-2xl sm:text-3xl font-black text-slate-900 dark:text-slate-100 font-headline tracking-tight">
                         Explore the Islands
                     </h1>
+                    <a href="{{ route('trip-planner.index') }}" class="mt-2 inline-flex min-h-11 items-center text-sm font-bold text-ocean-700 dark:text-ocean-300">Build a trip itinerary →</a>
                     <p class="text-slate-500 dark:text-slate-400 text-xs sm:text-sm font-body">
                         Every hotel, experience and destination across the Philippines — in one interactive view.
                     </p>
@@ -109,7 +110,7 @@
                             <div class="flex flex-wrap gap-2 text-xs">
                                 <template x-if="selected.distance_label">
                                     <span class="rounded-full bg-ocean-50 dark:bg-ocean-900/50 px-3 py-1 font-medium text-ocean-700 dark:text-ocean-100"
-                                          x-text="selected.distance_label + ' from you'"></span>
+                                          x-text="selected.distance_label + (selected.duration_minutes != null ? ' · ' + selected.duration_minutes + ' min walk' : '')"></span>
                                 </template>
                                 <template x-if="selected.rating">
                                     <span class="rounded-full bg-amber-50 dark:bg-amber-950/60 px-3 py-1 font-medium text-amber-700 dark:text-amber-200"
@@ -161,6 +162,7 @@
                 lineLayer: null,
                 markerLayers: new Map(),
                 selected: null,
+                routeRequest: 0,
                 userCoords: null,
                 userMarker: null,
                 locating: false,
@@ -231,7 +233,7 @@
                 async fetchDistances() {
                     const { lat, lng } = this.userCoords;
                     try {
-                        const res = await fetch('/api/dss/markers?lat=' + lat + '&lng=' + lng, {
+                        const res = await fetch(@json(route('api.dss.markers')) + '?lat=' + lat + '&lng=' + lng, {
                             headers: { 'Accept': 'application/json' }
                         });
                         const data = await res.json();
@@ -246,9 +248,9 @@
 
                 icons(type) {
                     if (type === 'hotel') return L.divIcon({
-                        className: 'leaflet-div-icon',
-                        html: '<div style="width:26px;height:26px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:#0ea5e9;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3);"></div>',
-                        iconSize: [26, 26], iconAnchor: [13, 26],
+                        className: 'sunnytrips-map-icon',
+                        html: '<div style="width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:#0077a5;color:white;border:2px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3);"><svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 18V6m18 12v-7a2 2 0 0 0-2-2h-7v7M3 16h18M3 9h6v7"/></svg></div>',
+                        iconSize: [26, 26], iconAnchor: [13, 13],
                     });
                     return L.divIcon({
                         className: 'leaflet-div-icon',
@@ -279,14 +281,6 @@
 
                     if (this.lineLayer) this.map.removeLayer(this.lineLayer);
                     this.lineLayer = L.layerGroup().addTo(this.map);
-                    if (this.userCoords) {
-                        this.markers.forEach((m) => {
-                            if (!m.lat || !m.lng) return;
-                            L.polyline([[this.userCoords.lat, this.userCoords.lng], [m.lat, m.lng]], {
-                                color: '#0ea5e9', weight: 2, dashArray: '6, 8', opacity: 0.5,
-                            }).addTo(this.lineLayer);
-                        });
-                    }
 
                     this.markerLayers = new Map();
                     const ordered = this.sortedMarkers();
@@ -354,13 +348,33 @@
                     if (layer) layer.openPopup();
                 },
 
-                selectWithCard(m) {
+                async selectWithCard(m) {
                     this.selected = m;
                     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
                     if (this.map && m.lat && m.lng) {
                         this.map.flyTo([m.lat, m.lng], 12, { animate: !reduced });
                     }
                     this.highlight(`${m.type}-${m.id}`, true);
+                    const request = ++this.routeRequest;
+                    this.lineLayer?.clearLayers();
+                    if (!this.userCoords) return;
+                    try {
+                        const params = new URLSearchParams({ from_lat: this.userCoords.lat, from_lng: this.userCoords.lng, to_lat: m.lat, to_lng: m.lng });
+                        const response = await fetch(@json(route('api.dss.route')) + '?' + params, { headers: { Accept: 'application/json' } });
+                        if (!response.ok) throw new Error('Route unavailable');
+                        const route = (await response.json()).data;
+                        if (request !== this.routeRequest) return;
+                        if (!route?.available) {
+                            this.geoError = 'A route is unavailable for this location or travel mode.';
+                            return;
+                        }
+                        this.geoError = null;
+                        m.distance_label = route.distance_km < 1 ? Math.round(route.distance_km * 1000) + ' m' : route.distance_km.toFixed(1) + ' km';
+                        m.duration_minutes = route.duration_minutes;
+                        L.geoJSON(route.geometry, { style: { color: '#0a78a8', weight: 3 } }).addTo(this.lineLayer);
+                    } catch (_) {
+                        if (request === this.routeRequest) this.geoError = 'Could not load the road route. Please try again.';
+                    }
                 },
 
                 setFilter(type) {
@@ -368,9 +382,8 @@
                         const show = type === 'all' || m.type === type;
                         const el = layer.getElement();
                         if (!el) return;
-                        el.style.transition = 'opacity 240ms ease-out, transform 240ms ease-out';
+                        el.style.transition = 'opacity 240ms ease-out';
                         el.style.opacity = show ? '1' : '0.14';
-                        el.style.transform = show ? 'scale(1)' : 'scale(0.82)';
                         el.style.pointerEvents = show ? 'auto' : 'none';
                     });
                 },

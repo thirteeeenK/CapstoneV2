@@ -48,9 +48,7 @@ class WeatherService
         $data = $this->fetchFromApi($destination->latitude, $destination->longitude);
 
         if ($data) {
-            $this->store($key, $data);
-
-            return $data;
+            return $this->store($key, $data);
         }
 
         // Slow path: serve stale cache from DB table.
@@ -71,9 +69,7 @@ class WeatherService
         $data = $this->fetchFromApi($lat, $lng);
 
         if ($data) {
-            $this->store($key, $data);
-
-            return $data;
+            return $this->store($key, $data);
         }
 
         return $this->staleFallback($key);
@@ -116,7 +112,10 @@ class WeatherService
                 ]);
 
             if ($response->successful()) {
-                return $response->json();
+                $data = $response->json();
+                if (is_array($data) && is_array($data['list'] ?? null)) {
+                    return $data;
+                }
             }
         } catch (\Throwable $e) {
             Log::warning('OpenWeather fetch failed: '.$e->getMessage());
@@ -136,9 +135,10 @@ class WeatherService
     /**
      * Persist fetched payload to both laravel cache and the weather_cache table.
      */
-    protected function store(string $key, array $data): void
+    protected function store(string $key, array $data): array
     {
         $now = now();
+        $data['_fetched_at'] = $now->toIso8601String();
         cache()->put($key, $data, $now->copy()->addMinutes($this->freshCacheMinutes));
 
         WeatherCache::updateOrCreate(
@@ -149,6 +149,8 @@ class WeatherService
                 'expires_at' => $now->copy()->addMinutes($this->freshCacheMinutes),
             ]
         );
+
+        return $data;
     }
 
     /**
@@ -165,9 +167,11 @@ class WeatherService
 
         // Serve stale data if within the stale TTL.
         if ($row->fetched_at && $row->fetched_at->gt(now()->subMinute($this->staleTtlMinutes))) {
-            cache()->put($key, $row->weather_data, now()->addMinutes($this->freshCacheMinutes));
+            $data = $row->weather_data;
+            $data['_fetched_at'] = $row->fetched_at->toIso8601String();
+            $data['_stale'] = true;
 
-            return $row->weather_data;
+            return $data;
         }
 
         return null;
@@ -179,32 +183,36 @@ class WeatherService
      */
     public function normalize(array $raw): array
     {
-        $lists = $raw['list'] ?? [];
+        $slots = $this->forecastSlots($raw);
 
-        if (empty($lists)) {
+        if ($slots === []) {
             return [
                 'current' => null,
                 'daily' => [],
-                'updated_at' => now()->toIso8601String(),
+                'updated_at' => $raw['_fetched_at'] ?? null,
+                'slots' => [], 'fetched_at' => $raw['_fetched_at'] ?? null, 'stale' => (bool) ($raw['_stale'] ?? false),
             ];
         }
 
         // Nearest 3-hour entry = "current".
-        $current = $this->snapshotFromEntry($lists[0]);
+        $current = $slots[0] ?? null;
 
         $daily = [];
-        foreach ($lists as $entry) {
-            $day = Carbon::parse($entry['dt_txt'] ?? null)->format('Y-m-d');
-            if ($day === false) {
-                continue;
+        foreach ($slots as $slot) {
+            $date = Carbon::parse($slot['time']);
+            $day = $date->format('Y-m-d');
+            if (! isset($daily[$day]) || abs($date->hour - 12) < abs(Carbon::parse($daily[$day]['time'])->hour - 12)) {
+                $daily[$day] = $slot;
             }
-            $daily[$day] ??= $this->snapshotFromEntry($entry);
         }
 
         return [
             'current' => $current,
             'daily' => array_values($daily),
             'summary_at' => $current['time'] ?? null,
+            'slots' => $slots,
+            'fetched_at' => $raw['_fetched_at'] ?? null,
+            'stale' => (bool) ($raw['_stale'] ?? false),
         ];
     }
 
@@ -215,22 +223,78 @@ class WeatherService
     {
         $weather = $entry['weather'][0] ?? [];
         $main = $entry['main'] ?? [];
+        $time = $this->entryTime($entry);
 
         return [
-            'time' => $entry['dt_txt'] ?? null,
+            'time' => $time?->toIso8601String(),
+            'timestamp' => $time?->timestamp,
             'temp' => round($main['temp'] ?? 0),
             'temp_min' => round($main['temp_min'] ?? ($main['temp'] ?? 0)),
             'temp_max' => round($main['temp_max'] ?? ($main['temp'] ?? 0)),
             'feels_like' => round($main['feels_like'] ?? ($main['temp'] ?? 0)),
             'humidity' => $main['humidity'] ?? null,
             'description' => $weather['description'] ?? null,
+            'weather_id' => $weather['id'] ?? null,
             'main' => $weather['main'] ?? null,
             'icon' => $weather['icon'] ?? null,
             'wind_speed' => $entry['wind']['speed'] ?? null,
-            'rain_1h' => $entry['rain']['1h'] ?? 0,
+            'rain_1h' => $entry['rain']['1h'] ?? ((float) ($entry['rain']['3h'] ?? 0) / 3),
+            'rain_3h' => $entry['rain']['3h'] ?? ((float) ($entry['rain']['1h'] ?? 0) * 3),
+            'rain_interval_hours' => 3,
+            'wind_gust' => $entry['wind']['gust'] ?? null,
             'pop' => $entry['pop'] ?? 0,
             'clouds' => $entry['clouds']['all'] ?? 0,
         ];
+    }
+
+    public function forecastSlots(array $raw): array
+    {
+        if (! is_array($raw['list'] ?? [])) {
+            return [];
+        }
+
+        return collect($raw['list'] ?? [])
+            ->filter(fn (mixed $entry) => is_array($entry) && $this->entryTime($entry) !== null)
+            ->map(fn (array $entry) => $this->snapshotFromEntry($entry))
+            ->sortBy('time')->values()->all();
+    }
+
+    public function forecastWindow(array $raw, Carbon $start, Carbon $end): array
+    {
+        return $this->windowFromSlots(['slots' => $this->forecastSlots($raw), 'stale' => (bool) ($raw['_stale'] ?? false), 'fetched_at' => $raw['_fetched_at'] ?? null], $start, $end);
+    }
+
+    public function windowFromSlots(array $forecast, Carbon $start, Carbon $end): array
+    {
+        $slots = array_values(array_filter($forecast['slots'], fn (array $slot) => $slot['timestamp'] < $end->timestamp && $start->timestamp < $slot['timestamp'] + 10800));
+        $coveredUntil = $start->timestamp;
+        foreach ($slots as $slot) {
+            if ($slot['timestamp'] > $coveredUntil) {
+                break;
+            }
+            $coveredUntil = $slot['timestamp'] + 10800;
+        }
+
+        return [
+            'covered' => $end->gt($start) && $coveredUntil >= $end->timestamp,
+            'stale' => $forecast['stale'],
+            'fetched_at' => $forecast['fetched_at'],
+            'slots' => $slots,
+        ];
+    }
+
+    private function entryTime(array $entry): ?Carbon
+    {
+        if (empty($entry['dt_txt']) && empty($entry['dt'])) {
+            return null;
+        }
+        try {
+            $time = isset($entry['dt']) ? Carbon::createFromTimestampUTC((int) $entry['dt']) : Carbon::parse($entry['dt_txt'], 'UTC');
+
+            return $time->setTimezone('Asia/Manila');
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     /**
@@ -306,7 +370,10 @@ class WeatherService
             if (! $dtTxt) {
                 continue;
             }
-            $date = substr($dtTxt, 0, 10);
+            $date = $this->entryTime($entry)?->format('Y-m-d');
+            if ($date === null) {
+                continue;
+            }
             $byDate[$date][] = $entry;
         }
 
@@ -328,7 +395,7 @@ class WeatherService
             $dayTemps = [];
             foreach ($entries as $e) {
                 $pops[] = (float) ($e['pop'] ?? 0);
-                $rains[] = (float) ($e['rain']['1h'] ?? $e['rain']['3h'] ?? 0);
+                $rains[] = (float) ($e['rain']['1h'] ?? ((float) ($e['rain']['3h'] ?? 0) / 3));
                 $winds[] = (float) ($e['wind']['speed'] ?? 0);
                 if (isset($e['main']['temp'])) {
                     $dayTemps[] = (float) $e['main']['temp'];

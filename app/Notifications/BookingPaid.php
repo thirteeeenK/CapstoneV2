@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 
@@ -13,7 +14,7 @@ class BookingPaid extends BookingNotification
     {
         $booking = $this->booking;
 
-        return (new MailMessage)
+        $message = (new MailMessage)
             ->subject("Payment Confirmed — {$booking->booking_code}")
             ->greeting("Hi {$booking->contact_name},")
             ->line("Your payment for booking **{$booking->booking_code}** has been confirmed. Your reservation is now **paid and confirmed**.")
@@ -21,6 +22,14 @@ class BookingPaid extends BookingNotification
             ->line('Your official booking voucher is available below.')
             ->action('View Booking Voucher', route('booking.show', $booking->booking_code))
             ->line('We look forward to hosting you. Thank you for traveling with SunnyTrips!');
+        if (! empty($booking->trip_itineraries)) {
+            $snapshot = $booking->trip_itineraries[0];
+            $message->line('Your saved itinerary and route/weather explanations are attached. Current item availability and booking status apply.')
+                ->attachData(Pdf::loadView('trip-planner.document', ['itinerary' => $snapshot, 'reference' => 'Booking '.$booking->booking_code])->setPaper('a4')->output(),
+                    'sunnytrips-itinerary.pdf', ['mime' => 'application/pdf']);
+        }
+
+        return $message;
     }
 
     protected function message(): string

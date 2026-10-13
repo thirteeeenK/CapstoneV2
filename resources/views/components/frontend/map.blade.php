@@ -106,10 +106,10 @@
                 tiles.addTo(map);
 
                 const hotelIcon = L.divIcon({
-                    className: 'leaflet-div-icon',
-                    html: '<div style="width:24px;height:24px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:#0ea5e9;border:2px solid #fff;box-shadow:0 2px 4px rgba(0,0,0,.3);"></div>',
+                    className: 'sunnytrips-map-icon',
+                    html: '<div style="width:24px;height:24px;border-radius:50%;display:grid;place-items:center;background:#0077a5;color:white;border:2px solid #fff;box-shadow:0 2px 4px rgba(0,0,0,.3);"><svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 18V6m18 12v-7a2 2 0 0 0-2-2h-7v7M3 16h18M3 9h6v7"/></svg></div>',
                     iconSize: [24, 24],
-                    iconAnchor: [12, 24],
+                    iconAnchor: [12, 12],
                 });
 
                 const activityIcon = L.divIcon({
@@ -186,9 +186,8 @@
                     markerLayers.forEach((l, i) => {
                         const show = type === 'all' || l.originalMarker.type === type;
                         const el = l.getElement(); if (!el) return;
-                        el.style.transition = `opacity 240ms ease-out ${i * 18}ms, transform 240ms ease-out ${i * 18}ms`;
+                        el.style.transition = `opacity 240ms ease-out ${i * 18}ms`;
                         el.style.opacity = show ? '1' : '0.14';
-                        el.style.transform = show ? 'scale(1)' : 'scale(0.82)';
                         el.style.pointerEvents = show ? 'auto' : 'none';
                     });
                 }
@@ -258,7 +257,22 @@
                 }
 
                 // Shared handling for a resolved user location.
-                function applyLocation(coords) {
+                let routeRequest = 0;
+                let distanceRequest = 0;
+
+                async function fetchRoadRoute(from, to) {
+                    const params = new URLSearchParams({ from_lat: from.lat, from_lng: from.lng, to_lat: to.lat, to_lng: to.lng });
+                    try {
+                        const response = await fetch(@json(route('api.dss.route')) + '?' + params, { headers: { Accept: 'application/json' } });
+                        if (!response.ok) return null;
+                        const result = (await response.json()).data;
+                        return result?.available ? result : null;
+                    } catch (_) {
+                        return null;
+                    }
+                }
+
+                async function applyLocation(coords) {
                     userCoords = coords;
 
                     if (routeMode) {
@@ -272,34 +286,27 @@
                         if (hotel) {
                             const hotelM = hotel.originalMarker;
                             if (userHotelLineLayer) map.removeLayer(userHotelLineLayer);
-                            userHotelLineLayer = L.polyline([[coords.lat, coords.lng], [hotelM.lat, hotelM.lng]], {
-                                color: '#0ea5e9', weight: 2, dashArray: '6, 8', opacity: 0.5,
-                            }).addTo(map);
-
-                            const km = haversineKm(coords.lat, coords.lng, hotelM.lat, hotelM.lng);
+                            const request = ++routeRequest;
+                            const roadRoute = await fetchRoadRoute(coords, hotelM);
+                            if (request !== routeRequest) return;
+                            if (roadRoute) {
+                                userHotelLineLayer = L.geoJSON(roadRoute.geometry, { style: { color: '#0a78a8', weight: 3 } }).addTo(map);
+                            }
                             window.dispatchEvent(new CustomEvent('sunnytrip:user-hotel-distance', {
                                 detail: {
                                     hotel: hotelM.name,
-                                    distance_km: km,
-                                    distance_label: formatKm(km),
+                                    distance_km: roadRoute?.distance_km ?? null,
+                                    distance_label: roadRoute ? formatKm(roadRoute.distance_km) : 'Route unavailable',
+                                    duration_minutes: roadRoute?.duration_minutes ?? null,
                                 },
                             }));
                         }
                         return;
                     }
 
-                    computeDistances(coords.lat, coords.lng);
+                    await computeDistances(coords.lat, coords.lng);
                     drawUserAndLines(coords.lat, coords.lng);
                     dispatchResults();
-                }
-
-                function haversineKm(lat1, lng1, lat2, lng2) {
-                    const R = 6371;
-                    const dLat = (lat2 - lat1) * Math.PI / 180;
-                    const dLng = (lng2 - lng1) * Math.PI / 180;
-                    const a = Math.sin(dLat / 2) ** 2 +
-                        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2;
-                    return 2 * R * Math.asin(Math.sqrt(a));
                 }
 
                 function formatKm(km) {
@@ -308,13 +315,25 @@
                     return (v % 1 === 0 ? v.toFixed(0) : v.toFixed(1)) + ' km';
                 }
 
-                function computeDistances(lat, lng) {
-                    markerLayers.forEach((layer) => {
+                async function computeDistances(lat, lng) {
+                    const request = ++distanceRequest;
+                    const layers = markerLayers.filter((layer) => layer.originalMarker.lat != null && layer.originalMarker.lng != null);
+                    let matrix = null;
+                    try {
+                        const response = await fetch(@json(route('api.dss.distances')), {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-TOKEN': @json(csrf_token()) },
+                            body: JSON.stringify({ lat, lng, targets: layers.map(({ originalMarker: m }) => ({ lat: m.lat, lng: m.lng })) }),
+                        });
+                        if (response.ok) matrix = (await response.json()).data;
+                    } catch (_) { /* Show unavailable distances without an estimate. */ }
+                    if (request !== distanceRequest) return;
+                    layers.forEach((layer, index) => {
                         const m = layer.originalMarker;
-                        if (!m.lat || !m.lng) return;
-                        const km = haversineKm(lat, lng, m.lat, m.lng);
+                        const km = matrix?.distances?.[0]?.[index] ?? null;
                         m.distance_km = km;
-                        m.distance_label = formatKm(km);
+                        m.distance_label = km !== null ? formatKm(km) : null;
+                        m.duration_minutes = matrix?.durations?.[0]?.[index] != null ? Math.ceil(matrix.durations[0][index] / 60) : null;
                         if (routeMode) {
                             layer.setPopupContent(buildPopupHtml(m));
                         } else {
@@ -331,13 +350,6 @@
 
                     if (linesLayer) map.removeLayer(linesLayer);
                     linesLayer = L.layerGroup().addTo(map);
-                    markerLayers.forEach((layer) => {
-                        const m = layer.originalMarker;
-                        if (!m.lat || !m.lng) return;
-                        L.polyline([[lat, lng], [m.lat, m.lng]], {
-                            color: '#0ea5e9', weight: 2, dashArray: '6, 8', opacity: 0.5,
-                        }).addTo(linesLayer);
-                    });
 
                     const pts = [[lat, lng], ...markerLayers
                         .map((l) => l.originalMarker)
@@ -402,17 +414,13 @@
 
                     if (!routeMode) {
                         if (userCoords) {
-                            computeDistances(userCoords.lat, userCoords.lng);
-                            drawUserAndLines(userCoords.lat, userCoords.lng);
-                            dispatchResults();
+                            applyLocation(userCoords);
                             return;
                         }
 
                         locateFromBrowser((coords) => {
                             userCoords = coords;
-                            computeDistances(coords.lat, coords.lng);
-                            drawUserAndLines(coords.lat, coords.lng);
-                            dispatchResults();
+                            applyLocation(coords);
                         });
                         return;
                     }
@@ -422,26 +430,27 @@
 
                 // Route mode: draw a line from the hotel (first marker) to the
                 // chosen activity and report the hotel->activity distance.
-                function drawHotelRoute(layer) {
+                async function drawHotelRoute(layer) {
                     const hotel = markerLayers.find((l) => l.originalMarker.type === 'hotel');
                     if (!hotel) return;
                     const hotelM = hotel.originalMarker;
                     const m = layer.originalMarker;
 
                     if (routeLineLayer) map.removeLayer(routeLineLayer);
-                    routeLineLayer = L.polyline([[hotelM.lat, hotelM.lng], [m.lat, m.lng]], {
-                        color: '#f97316', weight: 2.5, dashArray: '6, 8', opacity: 0.9,
-                    }).addTo(map);
-
-                    map.fitBounds(L.latLngBounds([[hotelM.lat, hotelM.lng], [m.lat, m.lng]]).pad(0.25), { animate: true, maxZoom: 13 });
-
-                    const km = haversineKm(hotelM.lat, hotelM.lng, m.lat, m.lng);
+                    const request = ++routeRequest;
+                    const roadRoute = await fetchRoadRoute(hotelM, m);
+                    if (request !== routeRequest) return;
+                    if (roadRoute) {
+                        routeLineLayer = L.geoJSON(roadRoute.geometry, { style: { color: '#e85e37', weight: 3 } }).addTo(map);
+                        map.fitBounds(routeLineLayer.getBounds().pad(0.25), { animate: true, maxZoom: 16 });
+                    }
                     window.dispatchEvent(new CustomEvent('sunnytrip:hotel-route', {
                         detail: {
                             hotel: hotelM.name,
                             activity: m.name,
-                            distance_km: km,
-                            distance_label: formatKm(km),
+                            distance_km: roadRoute?.distance_km ?? null,
+                            distance_label: roadRoute ? formatKm(roadRoute.distance_km) : 'Route unavailable',
+                            duration_minutes: roadRoute?.duration_minutes ?? null,
                         },
                     }));
                 }
@@ -507,7 +516,6 @@
 
         .map-pin-active div {
             box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.35), 0 4px 14px rgba(0, 0, 0, 0.25) !important;
-            transform: rotate(-45deg) scale(1.12);
         }
 
         .map-pin-hover div {

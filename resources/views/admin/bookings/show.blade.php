@@ -18,6 +18,22 @@
     @endphp
 
     <div class="pb-12 font-body space-y-6">
+        @if($booking->trip_itineraries && in_array($booking->status, ['paid', 'cancellation_denied'], true))
+            <details class="rounded-xl border border-ocean-200 bg-white dark:bg-slate-900 p-5"><summary class="min-h-11 py-2 font-headline font-bold cursor-pointer">Trip completion &amp; fulfillment evidence</summary>
+                <p class="mt-2 text-sm text-slate-500">Record actual hotel stays and activity attendance. The scheduler completes a booking only after every included service is fulfilled and its end date has passed by 24 hours. Keep no-shows pending for admin review.</p>
+                <form action="{{ route('admin.bookings.trip-fulfillment', $booking->id) }}" method="POST" class="mt-4 space-y-4">@csrf @method('PATCH')
+                    @foreach($booking->items->reject(fn($item) => $item->availability_status === 'unavailable') as $item)
+                        <div><label for="fulfilled-{{ $item->id }}" class="block text-sm font-semibold mb-1">{{ $item->item_title }}</label><select id="fulfilled-{{ $item->id }}" name="items[{{ $item->id }}]" class="rounded-lg border-slate-300 dark:bg-slate-800"><option value="pending" @selected($item->fulfillment_status === 'pending')>Pending verification</option><option value="fulfilled" @selected($item->fulfillment_status === 'fulfilled')>Fulfilled / attendance verified</option><option value="no_show" @selected($item->fulfillment_status === 'no_show')>No-show / not fulfilled</option></select></div>
+                    @endforeach
+                    <div><label for="trip-extension" class="block text-sm font-semibold mb-1">Extended trip end (optional, Asia/Manila)</label><input id="trip-extension" name="trip_end_override" type="datetime-local" value="{{ $booking->trip_end_override?->timezone('Asia/Manila')->format('Y-m-d\TH:i') }}" class="rounded-lg border-slate-300 dark:bg-slate-800"></div>
+                    <div><label for="fulfillment-evidence" class="block text-sm font-semibold mb-1">Evidence / operator confirmation notes</label><textarea id="fulfillment-evidence" name="evidence_note" required minlength="10" maxlength="1000" class="w-full rounded-lg border-slate-300 dark:bg-slate-800"></textarea></div>
+                    <button type="submit" class="min-h-11 rounded-lg bg-ocean-700 text-white px-4 py-3 font-bold">Save fulfillment record</button>
+                </form>
+                <form action="{{ route('admin.bookings.mark-completed', $booking->id) }}" method="POST" class="mt-5 border-t pt-4 space-y-3">@csrf
+                    <label for="completion-note" class="block text-sm font-semibold">Manual completion override reason</label><input id="completion-note" name="completion_note" required minlength="10" maxlength="1000" class="w-full rounded-lg border-slate-300 dark:bg-slate-800"><button type="submit" class="min-h-11 rounded-lg border border-ocean-700 px-4 py-2 font-bold text-ocean-700">Complete verified trip now</button>
+                </form>
+            </details>
+        @endif
 
         {{-- Header --}}
         <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
@@ -78,6 +94,7 @@
                         </form>
                     @endif
                 @elseif($booking->status === 'paid')
+                    @if(! $booking->trip_itineraries)
                     <form action="{{ route('admin.bookings.mark-completed', $booking->id) }}" method="POST">
                         @csrf
                         <button type="submit" class="px-4 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs transition flex items-center gap-1.5 cursor-pointer">
@@ -85,6 +102,7 @@
                             Mark Completed
                         </button>
                     </form>
+                    @endif
                     <form action="{{ route('admin.bookings.mark-refunded', $booking->id) }}" method="POST"
                           onsubmit="return confirm('Refund booking {{ $booking->booking_code }}? Payment status will become refunded.')">
                         @csrf

@@ -13,6 +13,7 @@ class MapService
     public function __construct(
         protected DistanceService $distance,
         protected WeatherService $weather,
+        protected RoutingService $routing,
     ) {}
 
     /**
@@ -21,9 +22,9 @@ class MapService
      */
     public function destinationMarkers(float $userLat = 0, float $userLng = 0): array
     {
-        return DestinationModel::withCount(['hotels', 'activities'])
+        $markers = DestinationModel::withCount(['hotels', 'activities'])
             ->get()
-            ->map(function (DestinationModel $destination) use ($userLat, $userLng) {
+            ->map(function (DestinationModel $destination) {
                 $weather = $this->weather->summaryForDestination($destination);
 
                 $coverImage = ResolvesImages::resolveImg(
@@ -41,8 +42,8 @@ class MapService
                     'activity_count' => $destination->activities_count,
                     'weather' => $weather['current'] ?? null,
                     'url' => $destination->hotels_count > 0 ? '/hotels?destination='.$destination->id : null,
-                    'distance_km' => $userLat ? round($this->distance->haversine($userLat, $userLng, (float) $destination->latitude, (float) $destination->longitude), 2) : null,
-                    'distance_label' => $userLat && $destination->latitude ? $this->distance->format($this->distance->haversine($userLat, $userLng, (float) $destination->latitude, (float) $destination->longitude)) : null,
+                    'distance_km' => null,
+                    'distance_label' => null,
                     'cover_image' => $coverImage,
                     'image' => $coverImage,
                     'images' => [$coverImage],
@@ -52,6 +53,8 @@ class MapService
             ->filter(fn ($m) => $m['lat'] && $m['lng'])
             ->values()
             ->all();
+
+        return $this->withRouteDistances($markers, $userLat, $userLng);
     }
 
     /**
@@ -62,11 +65,11 @@ class MapService
         $hotels = HotelModel::where('is_shown', true)
             ->whereNotNull('latitude')
             ->whereNotNull('longitude')
-            ->with(['destination', 'rooms'])
+            ->with(['destination', 'rooms', 'reviewSummary'])
             ->get();
 
         $activities = ActivityModel::where('is_shown', true)
-            ->with('destination')
+            ->with(['destination', 'reviewSummary'])
             ->get();
 
         $markers = [];
@@ -79,7 +82,7 @@ class MapService
             $markers[] = $this->activityMarker($activity, $userLat, $userLng);
         }
 
-        return array_values(array_filter($markers, fn ($m) => $m['lat'] && $m['lng']));
+        return $this->withRouteDistances(array_values(array_filter($markers, fn ($m) => $m['lat'] && $m['lng'])), $userLat, $userLng);
     }
 
     /**
@@ -91,18 +94,20 @@ class MapService
         $userLng = (float) $hotel->longitude;
 
         $activities = ActivityModel::where('is_shown', true)
-            ->with('destination')
+            ->where('destination_id', $hotel->destination_id)
+            ->with(['destination', 'reviewSummary'])
             ->get();
 
-        $nearbyActivities = $activities
+        $nearbyActivities = $this->distance->withDistance($activities
             ->filter(fn (ActivityModel $activity) => $activity->latitude !== null && $activity->longitude !== null)
-            ->filter(function (ActivityModel $activity) use ($userLat, $userLng) {
-                return $this->distance->haversine($userLat, $userLng, (float) $activity->latitude, (float) $activity->longitude) <= 15;
-            })
-            ->sortBy(function (ActivityModel $activity) use ($userLat, $userLng) {
-                return $this->distance->haversine($userLat, $userLng, (float) $activity->latitude, (float) $activity->longitude);
-            })
+            ->values(), $userLat, $userLng)
+            ->filter(fn (ActivityModel $activity) => $activity->distance_km <= 15)
             ->values();
+
+        if (! $this->routing->configured()) {
+            $nearbyActivities = $activities->filter(fn (ActivityModel $activity) => $activity->latitude !== null && $activity->longitude !== null)
+                ->sortBy('activity_name')->values();
+        }
 
         // Activities without coordinates can't be ranked by proximity. Include
         // those from the hotel's own destination so the UI can say "no
@@ -126,16 +131,15 @@ class MapService
         return [
             'center' => $this->hotelMarker($hotel, $userLat, $userLng),
             'hotel' => $this->hotelMarker($hotel, $userLat, $userLng),
-            'activities' => $nearbyActivities
+            'activities' => $this->withRouteDistances($nearbyActivities
                 ->map(fn (ActivityModel $activity) => $this->activityMarker($activity, $userLat, $userLng))
-                ->all(),
+                ->all(), $userLat, $userLng),
             'activityModels' => $nearbyActivities->all(),
         ];
     }
 
     protected function hotelMarker(HotelModel $hotel, float $userLat, float $userLng): array
     {
-        $km = $this->distance->haversine($userLat, $userLng, (float) $hotel->latitude, (float) $hotel->longitude);
         $cheapest = $hotel->rooms->where('is_shown', true)->min('base_price');
         $cheapestRoom = $hotel->rooms->where('is_shown', true)->sortBy('base_price')->first();
 
@@ -151,8 +155,8 @@ class MapService
             'review_count' => $hotel->reviewSummary?->total_reviews ?? 0,
             'image' => ResolvesImages::resolveImg(collect($hotel->images ?? [])->first()),
             'url' => '/hotels/'.$hotel->id,
-            'distance_km' => $userLat ? round($km, 2) : null,
-            'distance_label' => $userLat ? $this->distance->format($km) : null,
+            'distance_km' => null,
+            'distance_label' => null,
             'images' => collect($hotel->images ?? [])->map(fn ($i) => ResolvesImages::resolveImg($i))->values()->all(),
             'cheapest_price' => $cheapest !== null ? (float) $cheapest : null,
             'cheapest_room_id' => $cheapestRoom?->id,
@@ -190,8 +194,6 @@ class MapService
             ];
         }
 
-        $km = $this->distance->haversine($userLat, $userLng, $lat, $lng);
-
         return [
             'type' => 'activity',
             'id' => $activity->id,
@@ -206,8 +208,8 @@ class MapService
             'review_count' => $activity->reviewSummary?->total_reviews ?? 0,
             'image' => ResolvesImages::resolveActivityImage(collect($activity->images ?? [])->first(), $activity->activity_name, $activity->category),
             'url' => null,
-            'distance_km' => $userLat ? round($km, 2) : null,
-            'distance_label' => $userLat ? $this->distance->format($km) : null,
+            'distance_km' => null,
+            'distance_label' => null,
             'no_location' => false,
             'images' => collect($activity->images ?? [])->map(fn ($i) => ResolvesImages::resolveActivityImage($i, $activity->activity_name, $activity->category))->values()->all(),
             'vibe_tags' => array_values(array_slice((array) ($activity->vibe_tags ?? []), 0, 3)),
@@ -215,9 +217,26 @@ class MapService
         ];
     }
 
-    /**
-     * Compute a sensible default map center from a set of markers.
-     */
+    public function withRouteDistances(array $markers, float $lat, float $lng, ?string $mode = null): array
+    {
+        if ($lat === 0.0 && $lng === 0.0) {
+            return $markers;
+        }
+        $matrix = $this->routing->matrix([['lat' => $lat, 'lng' => $lng]], array_map(fn (array $marker) => ['lat' => $marker['lat'], 'lng' => $marker['lng']], $markers), $mode);
+        foreach ($markers as $index => &$marker) {
+            $km = $matrix['distances'][0][$index] ?? null;
+            $seconds = $matrix['durations'][0][$index] ?? null;
+            $marker['distance_km'] = $km;
+            $marker['distance_label'] = $km !== null ? $this->distance->format($km) : null;
+            $marker['duration_minutes'] = $seconds !== null ? (int) ceil($seconds / 60) : null;
+            $marker['route_status'] = $km !== null ? 'ok' : $matrix['status'];
+            $marker['travel_mode'] = $matrix['mode'];
+        }
+        unset($marker);
+
+        return $markers;
+    }
+
     public function centerOf(array $markers): array
     {
         if (empty($markers)) {

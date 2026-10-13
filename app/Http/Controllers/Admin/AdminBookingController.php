@@ -29,6 +29,7 @@ use App\Services\AdminAuditService;
 use App\Services\BookingRequestService;
 use App\Services\Payment\GoTymePaymentService;
 use App\Services\RoomAvailabilityService;
+use App\Services\TripJourneyService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -803,12 +804,21 @@ class AdminBookingController extends Controller
     /**
      * Mark a paid booking as completed.
      */
-    public function markCompleted($id)
+    public function markCompleted(Request $request, $id)
     {
         $booking = Booking::findOrFail($id);
         $oldValues = $booking->getOriginal();
 
-        $updated = $booking->transitionTo(Booking::STATUS_COMPLETED, [Booking::STATUS_PAID], [], 'Marked completed by admin.');
+        $note = 'Marked completed by admin.';
+        if ($booking->trip_itineraries) {
+            $request->validate(['completion_note' => ['required', 'string', 'min:10', 'max:1000']]);
+            $included = $booking->items()->where('availability_status', '!=', 'unavailable')->get();
+            if ($included->isEmpty() || $included->contains(fn ($item) => $item->fulfillment_status !== 'fulfilled')) {
+                return back()->with('error', 'Record fulfillment for every included service before completing this planner booking.');
+            }
+            $note .= ' '.$request->string('completion_note');
+        }
+        $updated = $booking->transitionTo(Booking::STATUS_COMPLETED, [Booking::STATUS_PAID], [], $note);
 
         if (! $updated) {
             return back()->with('error', 'Only paid bookings can be marked completed.');
@@ -818,6 +828,38 @@ class AdminBookingController extends Controller
 
         return redirect()->route('admin.bookings.show', $booking->id)
             ->with('success', "Booking {$booking->booking_code} marked as completed.");
+    }
+
+    public function updateTripFulfillment(Request $request, int $id)
+    {
+        $validated = $request->validate(['items' => ['required', 'array', 'max:100'], 'items.*' => ['required', 'in:pending,fulfilled,no_show'],
+            'evidence_note' => ['required', 'string', 'min:10', 'max:1000'], 'trip_end_override' => ['nullable', 'date_format:Y-m-d\TH:i']]);
+        DB::transaction(function () use ($id, $validated) {
+            $booking = Booking::query()->lockForUpdate()->with('items')->findOrFail($id);
+            abort_unless($booking->trip_itineraries && in_array($booking->status, ['paid', 'cancellation_denied'], true), 422, 'Only active paid planner bookings can record fulfillment.');
+            $oldBooking = $booking->getOriginal();
+            if (! empty($validated['trip_end_override'])) {
+                $booking->trip_end_override = null;
+                $dates = app(TripJourneyService::class)->dates($booking);
+                $override = Carbon::parse($validated['trip_end_override'], 'Asia/Manila');
+                abort_if($dates && $override->lt($dates['end']), 422, 'An extension must not shorten the booked trip.');
+                $booking->trip_end_override = $override;
+            } else {
+                $booking->trip_end_override = null;
+            }
+            $booking->save();
+            foreach ($validated['items'] as $itemId => $status) {
+                $item = $booking->items->firstWhere('id', (int) $itemId);
+                abort_unless($item && $item->availability_status !== 'unavailable', 422, 'Choose only included items from this booking.');
+                $old = $item->getOriginal();
+                $item->update(['fulfillment_status' => $status, 'fulfilled_at' => $status === 'fulfilled' ? now() : null, 'fulfillment_admin_id' => auth('admin')->id()]);
+                AdminAuditService::log($item, $old);
+            }
+            $booking->history()->create(['from_status' => $booking->status, 'to_status' => $booking->status, 'actor_type' => 'admin', 'actor_id' => auth('admin')->id(), 'note' => 'Fulfillment evidence: '.$validated['evidence_note']]);
+            AdminAuditService::log($booking, $oldBooking);
+        });
+
+        return back()->with('success', 'Fulfillment evidence and trip extension saved. Automatic completion waits until the trip end plus 24 hours.');
     }
 
     /**

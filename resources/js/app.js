@@ -3,10 +3,12 @@ import Alpine from 'alpinejs';
 import focus from '@alpinejs/focus';
 import './thinking-orb';
 import './preview-modal';
+import tripPlanner from './trip-planner';
 
 window.Alpine = Alpine;
 
 Alpine.plugin(focus);
+Alpine.data('tripPlanner', tripPlanner);
 
 Alpine.data('dateRangePicker', (config = {}) => ({
     roomId: config.roomId,

@@ -10,6 +10,7 @@ Route::middleware(['auth', 'throttle:users'])->group(function () {
 
     Route::prefix('bookings')->name('booking.')->group(function () {
         Route::get('/{code}', [BookingConfirmationController::class, 'show'])->name('show');
+        Route::get('/{code}/itinerary/{version}', [BookingConfirmationController::class, 'itinerary'])->whereNumber('version')->name('itinerary');
         Route::get('/{code}/pay', [BookingPaymentController::class, 'show'])->name('pay');
         Route::post('/{code}/pay', [BookingPaymentController::class, 'pay'])->name('pay.process');
         Route::get('/{code}/pay/return', [BookingPaymentController::class, 'return'])->name('pay.return');
