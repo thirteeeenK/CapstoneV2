@@ -87,7 +87,7 @@ window.cartSuccessModal = function() {
                 <h3 class="font-display text-lg font-bold tracking-tight text-ink-900"
                     x-text="alreadyInCart ? 'Already in Your Basket' : 'Added to your trip basket'"></h3>
                 <p class="text-xs text-ink-500 mt-1 font-medium"
-                    x-text="alreadyInCart ? (customMessage || 'This package is already in your Trip Basket. Adjust the traveler count from your cart.') : 'This piece of your journey is ready when you are.'"></p>
+                    x-text="customMessage || (alreadyInCart ? 'This package is already in your Trip Basket. Adjust the traveler count from your cart.' : 'This piece of your journey is ready when you are.')"></p>
             </div>
 
             {{-- Item Details Body --}}

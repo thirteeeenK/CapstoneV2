@@ -42,6 +42,11 @@
                     </div>
                 </div>
                 <div class="px-5 sm:px-8 pt-5">
+                    <section x-show="destinationId" x-cloak aria-label="Destination weather forecast" :aria-busy="weatherLoading" class="mb-5">
+                        <p x-show="weatherLoading" role="status" class="text-sm text-slate-500 dark:text-slate-400 py-3">Loading destination forecast…</p>
+                        <p x-show="weatherError" x-text="weatherError" role="status" class="text-sm text-slate-500 dark:text-slate-400 py-3"></p>
+                        <div x-html="weatherHtml"></div>
+                    </section>
                     <p x-show="error" x-cloak x-text="error" role="alert" class="mb-4 rounded-lg bg-rose-50 text-rose-800 p-3 text-sm"></p>
                     <p x-show="notice" x-cloak x-text="notice" role="status" class="mb-4 rounded-lg bg-ocean-50 text-ocean-900 p-3 text-sm"></p>
                     <p x-show="busy" x-cloak role="status" class="mb-3 text-sm text-ocean-700 dark:text-ocean-300">Saving or checking routes and weather…</p>
@@ -94,12 +99,12 @@
                     <div x-show="tab === 'itinerary'" x-cloak>
                         <template x-if="itinerary"><div>
                             <h2 class="font-headline text-xl font-bold">Your day-by-day Suggested Itinerary</h2>
-                            <p class="mt-1 text-sm text-slate-500">This is a suggested plan — feel free to follow it as it is, or adjust the order and timing to suit your own pace.</p>
+                            <p class="mt-1 text-sm text-slate-500">This is a suggested plan. Weather, travel times and activity availability may change. Recheck conditions and confirm details with providers before departure.</p>
                             <div class="mt-4 flex flex-wrap gap-2">
                                 <a :href="documentUrl()" class="min-h-11 rounded-lg border border-sand-300 px-4 py-2.5 text-sm font-bold">Download PDF</a>
                                 <a :href="documentUrl(true)" target="_blank" rel="noopener" class="min-h-11 rounded-lg border border-sand-300 px-4 py-2.5 text-sm font-bold">Print view</a>
                                 <button type="button" @click="email()" :disabled="busy" class="min-h-11 rounded-lg border border-sand-300 px-4 py-2.5 text-sm font-bold">Email itinerary</button>
-                                <button type="button" @click="transfer()" :disabled="busy" class="min-h-11 rounded-lg bg-ocean-700 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50" x-text="itinerary.transferred_at ? 'Added to Cart' : 'Add to Cart'"></button>
+                                <button type="button" @click="transfer()" :disabled="busy" class="min-h-11 rounded-lg bg-ocean-700 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50">Add to Trip Basket</button>
                                 <a href="{{ route('cart.index') }}" class="min-h-11 px-3 py-2.5 text-sm font-bold text-ocean-700 dark:text-ocean-300">Open Trip Basket →</a>
                             </div>
                             <template x-for="(day, index) in itinerary.snapshot.days" :key="day.date">
@@ -152,7 +157,7 @@
             <aside id="planner-map" aria-label="Trip map" class="scroll-mt-16 lg:sticky lg:top-0 lg:self-start">
                 <p x-show="mapError" x-cloak x-text="mapError" role="status" class="p-3 bg-amber-50 text-amber-900 text-sm"></p>
                 <div x-ref="map" class="h-80 sm:h-96 lg:h-[calc(100dvh-3rem)] z-0" aria-label="Destination and itinerary route map"></div>
-                <p class="p-3 text-xs text-slate-500 bg-white dark:bg-slate-950">Click a destination to explore. Select a day to show numbered stops and actual mapped routes. The same choices are available in the list.</p>
+                <p class="p-3 text-xs text-slate-500 bg-white dark:bg-slate-950">All scheduled days appear on the map. D1·2 means Day 1, item 2 in your itinerary. Events at the same location share a pin. Select a day to highlight its route.</p>
             </aside>
         </div>
         <div x-show="editing" x-cloak x-trap.inert.noscroll="editing" @keydown.escape.window="editing = null" class="fixed inset-0 z-[90] bg-ink-900/50 flex items-center justify-center p-4">

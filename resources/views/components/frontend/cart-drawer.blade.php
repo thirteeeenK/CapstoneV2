@@ -185,7 +185,7 @@ function cartDrawer() {
 
         get displayGroups() {
             return this.groups.map(g => {
-                const gItems = this.items.filter(i => i.lucky_group_id === g.id);
+                const gItems = this.items.filter(i => i.group_id === g.id);
                 const selected = gItems.filter(i => i.is_selected);
                 const subtotal = selected.reduce((sum, i) => sum + Number(i.subtotal), 0);
                 return {
@@ -199,7 +199,7 @@ function cartDrawer() {
         },
 
         get ungroupedItems() {
-            return this.items.filter(i => !i.lucky_group_id);
+            return this.items.filter(i => !i.group_id);
         },
 
         initDrawer() {

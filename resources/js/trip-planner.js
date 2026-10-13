@@ -1,11 +1,20 @@
 const hotelSymbol = '<svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18V6m18 12v-7a2 2 0 0 0-2-2h-7v7M3 16h18M3 9h6v7"/><path d="M5 11h2"/></svg>';
 
-export default (config) => ({
+export default (config) => {
+    // Leaflet relies on object identity when attaching/removing event listeners.
+    // Keep its mutable instances outside Alpine's deep reactive proxies.
+    let map = null;
+    let layers = null;
+    let resizeObserver = null;
+    let pageShowHandler = null;
+
+    return {
     destinations: config.destinations, savedPlans: config.plans, destinationId: Number(config.destination || 0),
     catalog: { hotels: [], activities: [] }, plan: null, selections: [], itinerary: null,
+    weatherHtml: '', weatherLoading: false, weatherError: '', weatherSequence: 0,
     tab: 'hotels', busy: false, error: '', notice: '', mapError: '', search: '', activeDay: 0, editing: null,
     title: '', startDate: '', endDate: '', pax: 2, mode: 'walking', optionIn: '', optionOut: '', optionDate: '', optionPax: 2, optionQuantity: 1,
-    map: null, layers: null, resizeObserver: null, loadSequence: 0, activeHotelId: 0, savedPlanId: '', deleting: false, customStayDates: false,
+    viewportSignature: '', loadSequence: 0, activeHotelId: 0, savedPlanId: '', deleting: false, customStayDates: false,
     reminders: config.emailPreferences.reminders, marketing: config.emailPreferences.marketing,
     async init() {
         try {
@@ -17,17 +26,31 @@ export default (config) => ({
                 });
             }
             const container = this.$refs.map;
-            // A stale stamp from a previous component instance would make L.map() throw
-            // "Map container is already initialized", so clear it instead of bailing out.
-            if (container._leaflet_id) { container._leaflet_id = undefined; container.innerHTML = ''; }
-            this.map = L.map(container, { scrollWheelZoom: false }).setView([11.967, 121.925], 13);
+            if (container.sunnyTripsResizeFrame) cancelAnimationFrame(container.sunnyTripsResizeFrame);
+            container.sunnyTripsResizeObserver?.disconnect();
+            if (container.sunnyTripsPageShowHandler) window.removeEventListener('pageshow', container.sunnyTripsPageShowHandler);
+            if (container.sunnyTripsMap) {
+                container.sunnyTripsMap.stop();
+                container.sunnyTripsMap.remove();
+            }
+            map = L.map(container, { scrollWheelZoom: false }).setView([11.967, 121.925], 13);
+            container.sunnyTripsMap = map;
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors', maxZoom: 19 })
-                .on('tileerror', () => { this.mapError = 'Map tiles are unavailable. You can still use the destination and listing controls.'; }).addTo(this.map);
-            this.layers = L.featureGroup().addTo(this.map);
-            // Leaflet caches the container size; without this every resize leaves markers
-            // drawn at stale pixel positions, so they drift off their real coordinates.
-            this.resizeObserver = new ResizeObserver(() => { try { this.map?.invalidateSize(); } catch {} });
-            this.resizeObserver.observe(container);
+                .on('tileerror', () => { this.mapError = 'Map tiles are unavailable. You can still use the destination and listing controls.'; }).addTo(map);
+            layers = L.featureGroup().addTo(map);
+            resizeObserver = new ResizeObserver(() => this.scheduleMapResize());
+            resizeObserver.observe(container);
+            container.sunnyTripsResizeObserver = resizeObserver;
+            pageShowHandler = () => {
+                const restoredDestinationId = Number(this.$root.querySelector('#planner-destination')?.value || 0);
+                if (!this.plan && restoredDestinationId && restoredDestinationId !== Number(this.destinationId)) {
+                    this.chooseDestination(restoredDestinationId);
+                } else {
+                    this.scheduleMapResize();
+                }
+            };
+            container.sunnyTripsPageShowHandler = pageShowHandler;
+            window.addEventListener('pageshow', pageShowHandler);
         } catch { this.mapError = 'The map could not load. You can still plan from the listings.'; }
         if (this.destinationId) await this.chooseDestination(this.destinationId);
         else this.renderMap();
@@ -45,18 +68,35 @@ export default (config) => ({
     async chooseDestination(id) {
         if (this.busy || this.plan) return;
         this.destinationId = Number(id); this.error = ''; this.title = 'Trip to ' + (this.destination()?.name || 'the islands');
+        this.loadWeather(this.destinationId);
         const sequence = ++this.loadSequence;
         try {
             const body = await this.api('/catalog/' + id);
             if (sequence !== this.loadSequence) return;
             this.catalog = body.data; this.renderMap();
-        } catch (error) { this.error = error.message; }
+        } catch (error) { console.error('Trip planner destination failed', error); this.error = error.message; }
     },
     async run(action) {
         if (this.busy) return;
         this.busy = true; this.error = ''; this.notice = '';
         try { await action(); } catch (error) { this.error = error.message; }
         finally { this.busy = false; }
+    },
+    async loadWeather(id) {
+        const sequence = ++this.weatherSequence;
+        this.weatherHtml = ''; this.weatherError = '';
+        this.weatherLoading = Boolean(Number(id));
+        if (!Number(id)) return;
+        try {
+            const response = await fetch(config.base + '/weather/' + Number(id), { headers: { Accept: 'text/html' } });
+            if (!response.ok) throw new Error('Forecast unavailable. Please try again later.');
+            const html = await response.text();
+            if (sequence === this.weatherSequence) this.weatherHtml = html;
+        } catch {
+            if (sequence === this.weatherSequence) this.weatherError = 'Forecast unavailable. Please try again later.';
+        } finally {
+            if (sequence === this.weatherSequence) this.weatherLoading = false;
+        }
     },
     async create() {
         await this.run(async () => {
@@ -72,6 +112,7 @@ export default (config) => ({
             this.plan = body.data; this.selections = body.data.items; this.itinerary = body.itinerary;
             this.savedPlanId = String(this.plan.id);
             this.destinationId = Number(this.plan.destination_id); this.title = this.plan.title;
+            this.loadWeather(this.destinationId);
             this.startDate = this.plan.start_date.slice(0, 10); this.endDate = this.plan.end_date.slice(0, 10);
             this.pax = this.plan.pax; this.mode = this.plan.mode;
             this.catalog = (await this.api('/catalog/' + this.destinationId)).data;
@@ -164,8 +205,12 @@ export default (config) => ({
     async transfer() {
         await this.run(async () => {
             const body = await this.api('/plans/' + this.plan.id + '/itineraries/' + this.itinerary.id + '/cart', 'POST');
-            this.notice = body.data.status === 'already_transferred' ? 'This version has already been added to your Trip Basket.' : 'Added to your Trip Basket. Continue there to review prices and request booking.';
+            this.notice = body.data.status === 'already_transferred' ? 'This itinerary still has items in your Trip Basket. Remove its remaining items before adding it again.' : 'Added to your Trip Basket. Continue there to review prices and request booking.';
             this.itinerary.transferred_at = new Date().toISOString(); window.dispatchEvent(new CustomEvent('cart-updated'));
+            window.dispatchEvent(new CustomEvent('show-cart-modal', { detail: {
+                alreadyInCart: body.data.status === 'already_transferred',
+                message: body.data.status === 'already_transferred' ? this.notice : this.title + ' · ' + body.data.count + ' item(s) added to your Trip Basket.',
+            } }));
         });
     },
     documentUrl(print = false) { return this.itinerary ? config.base + '/plans/' + this.plan.id + '/itineraries/' + this.itinerary.id + '/document' + (print ? '?print=1' : '') : '#'; },
@@ -176,7 +221,7 @@ export default (config) => ({
         await this.run(async () => { this.notice = (await this.api('/email-preferences', 'PATCH', { reminders: this.reminders, marketing: this.marketing })).message; });
     },
     async selectDay(index) { this.activeDay = index; this.renderMap(); },
-    focusStop(stop) { if (this.map && stop.lat != null && stop.lng != null) this.map.flyTo([stop.lat, stop.lng], 16); },
+    focusStop(stop) { if (map && stop.lat != null && stop.lng != null) map.flyTo([stop.lat, stop.lng], 16); },
     peso(amount) { return '₱' + Number(amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); },
     nightsBetween(from, to) {
         if (!from || !to) return 1;
@@ -205,39 +250,97 @@ export default (config) => ({
         const stops = (day?.stops || []).map(stop => ({ event: false, stop }));
         return [...arrival, ...stops, ...departure].map((item, index) => ({ ...item, num: index + 1 }));
     },
+    itineraryMarkers() {
+        const markers = new Map();
+        for (const [dayIndex, day] of (this.itinerary?.snapshot.days || []).entries()) {
+            for (const item of this.dayPlan(day)) {
+                const location = item.event ? day.hotel : item.stop;
+                if (location?.lat == null || location?.lng == null) continue;
+                const lat = Number(location.lat), lng = Number(location.lng);
+                if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
+                const key = lat + ':' + lng;
+                if (!markers.has(key)) markers.set(key, { lat, lng, labels: [], names: [], dayIndex });
+                const marker = markers.get(key);
+                marker.labels.push('D' + day.day + '·' + item.num);
+                marker.names.push('Day ' + day.day + ' · ' + item.num + ' · ' + (item.event ? item.label : item.stop.name));
+            }
+        }
+        return Array.from(markers.values()).map(marker => ({ ...marker, name: marker.names.join('\n') }));
+    },
+    scheduleMapResize() {
+        const container = this.$refs.map;
+        if (!map || !container?.isConnected) return;
+        if (container.sunnyTripsResizeFrame) cancelAnimationFrame(container.sunnyTripsResizeFrame);
+        container.sunnyTripsResizeFrame = requestAnimationFrame(() => {
+            container.sunnyTripsResizeFrame = null;
+            if (map && this.$refs.map?.isConnected) map.invalidateSize({ pan: false, debounceMoveend: true });
+        });
+    },
     renderMap() {
-        if (!this.map || !this.layers || !this.$refs.map?.isConnected) return;
-        try { this.map.invalidateSize(); } catch {}
-        this.layers.clearLayers();
+        if (!map || !layers || !this.$refs.map?.isConnected) return;
+        map.stop();
+        map.invalidateSize({ pan: false, debounceMoveend: true });
+        layers.clearLayers();
+        const viewportParts = [this.destinationId, this.tab, this.activeDay];
         const addMarker = (item, label, onClick) => {
             if (item.lat == null || item.lng == null) return;
-            const accommodation = label === 'hotel' || item.type === 'hotel' || item.type === 'room';
-            const options = label || accommodation ? { title: item.name, alt: item.name, icon: L.divIcon({ className: 'planner-map-icon', html: '<span class="planner-map-number">' + (accommodation ? hotelSymbol : label) + '</span>', iconSize: [32, 32], iconAnchor: [16, 16] }) } : { title: item.name, alt: item.name };
-            const marker = L.marker([item.lat, item.lng], options).addTo(this.layers);
+            const latitude = Number(item.lat);
+            const longitude = Number(item.lng);
+            if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return;
+            const accommodation = label === 'hotel' || (!label && (item.type === 'hotel' || item.type === 'room'));
+            const grouped = Array.isArray(label);
+            const width = grouped ? Math.max(48, ...label.map(text => text.length * 8 + 12)) : 32;
+            const height = grouped ? label.length * 20 + 12 : 32;
+            const content = accommodation ? hotelSymbol : (grouped ? label.map(text => '<span>' + text + '</span>').join('') : label);
+            const options = label || accommodation ? { title: item.name, alt: item.name, icon: L.divIcon({ className: 'planner-map-icon', html: '<span class="planner-map-number"' + (grouped ? ' style="width:' + width + 'px;height:' + height + 'px;border-radius:12px;line-height:20px"' : '') + '>' + content + '</span>', iconSize: [width, height], iconAnchor: [width / 2, height / 2] }) } : { title: item.name, alt: item.name };
+            const marker = L.marker([latitude, longitude], options).addTo(layers);
             const tooltip = document.createElement('span'); tooltip.textContent = item.name;
             marker.bindTooltip(tooltip); if (onClick) marker.on('click', onClick);
+            viewportParts.push(item.type || label || 'destination', item.id || item.name, latitude, longitude);
         };
         if (!this.destinationId) {
             this.destinations.forEach(item => addMarker({ lat: item.latitude, lng: item.longitude, name: item.name }, null, () => this.chooseDestination(item.id)));
         } else if (this.itinerary && this.tab === 'itinerary') {
-            const day = this.itinerary.snapshot.days[this.activeDay];
-            if (day?.hotel) addMarker(day.hotel, 'hotel');
-            day?.stops.forEach((stop, index) => addMarker(stop, index + 1, () => this.focusStop(stop)));
+            this.itineraryMarkers().forEach(marker => addMarker(marker, marker.labels, () => { this.selectDay(marker.dayIndex); this.focusStop(marker); }));
             try {
-                day?.legs.forEach(leg => { if (leg.geometry) L.geoJSON(leg.geometry, { style: { color: '#0077a5', weight: 4, opacity: 0.8, dashArray: leg.return_to_hotel ? '6 6' : null } }).addTo(this.layers); });
+                this.itinerary.snapshot.days.forEach((day, index) => {
+                    day.legs?.forEach(leg => { if (leg.geometry) L.geoJSON(leg.geometry, { style: { color: '#0077a5', weight: index === this.activeDay ? 4 : 3, opacity: index === this.activeDay ? 0.85 : 0.35, dashArray: leg.return_to_hotel ? '6 6' : null } }).addTo(layers); });
+                });
             } catch { this.mapError = 'The mapped route could not be drawn. The day-by-day schedule and stops are still available.'; }
         } else {
-            const destination = this.destination();
-            if (destination) addMarker({ lat: destination.latitude, lng: destination.longitude, name: destination.name }, null);
             const visible = this.tab === 'selections' ? this.allListings().filter(item => this.selected(item)) : this.listings();
-            visible.forEach(item => addMarker(item, null, () => item.type === 'hotel' ? this.chooseHotel(item) : this.edit(item)));
+            if (this.tab === 'rooms' && this.activeHotel()) {
+                addMarker(this.activeHotel(), 'hotel');
+            } else {
+                visible.forEach(item => addMarker(item, null, () => item.type === 'hotel' ? this.chooseHotel(item) : this.edit(item)));
+            }
+            const destination = this.destination();
+            if (!layers.getLayers().length && destination) addMarker({ lat: destination.latitude, lng: destination.longitude, name: destination.name }, null);
         }
-        if (this.layers.getLayers().length) this.map.fitBounds(this.layers.getBounds(), { padding: [35, 35], maxZoom: 15 });
-        this.$nextTick(() => { try { this.map?.invalidateSize(); } catch {} });
+        const viewportSignature = viewportParts.join('|');
+        if (layers.getLayers().length && viewportSignature !== this.viewportSignature) {
+            map.fitBounds(layers.getBounds(), { padding: [35, 35], maxZoom: 15, animate: false });
+        }
+        this.viewportSignature = viewportSignature;
+        this.scheduleMapResize();
     },
     destroy() {
-        try { this.resizeObserver?.disconnect(); } catch {}
-        try { this.map?.remove(); } catch {}
-        this.resizeObserver = null; this.map = null; this.layers = null;
+        this.weatherSequence++;
+        const container = this.$refs.map;
+        if (container?.sunnyTripsResizeFrame) cancelAnimationFrame(container.sunnyTripsResizeFrame);
+        if (container?.sunnyTripsResizeObserver === resizeObserver) {
+            container.sunnyTripsResizeObserver.disconnect();
+            delete container.sunnyTripsResizeObserver;
+        }
+        if (container?.sunnyTripsPageShowHandler === pageShowHandler) {
+            window.removeEventListener('pageshow', container.sunnyTripsPageShowHandler);
+            delete container.sunnyTripsPageShowHandler;
+        }
+        map?.stop();
+        map?.remove();
+        if (container?.sunnyTripsMap === map) delete container.sunnyTripsMap;
+        if (container) delete container.sunnyTripsResizeFrame;
+        resizeObserver = null; pageShowHandler = null; map = null; layers = null;
     },
-});
+    };
+};

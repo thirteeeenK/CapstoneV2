@@ -9,6 +9,7 @@ use App\Models\BookingItem;
 use App\Models\CartItem;
 use App\Models\Package;
 use App\Models\RoomType;
+use App\Models\TripItinerary;
 use App\Services\CartService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -107,13 +108,15 @@ class CartController extends Controller
     }
 
     /**
-     * Build the "I'm Feeling Lucky" group metadata map for the cart payload.
+     * Build itinerary group metadata for the basket page and drawer.
      */
     protected function buildGroups($items): array
     {
         $groups = [];
-        $grouped = $items->filter(fn ($item) => ! empty($item->lucky_group_id))
-            ->groupBy('lucky_group_id');
+        $grouped = $items->filter(fn ($item) => $item->basket_group_id !== null)
+            ->groupBy('basket_group_id');
+        $itineraries = TripItinerary::query()->whereIn('id', $items->pluck('trip_itinerary_id')->filter()->unique())
+            ->select(['id', 'trip_plan_id'])->with('plan:id,title')->get()->keyBy('id');
 
         foreach ($grouped as $groupId => $groupItems) {
             $roomItem = $groupItems->first(fn ($i) => $i->item_type === 'room');
@@ -129,12 +132,14 @@ class CartController extends Controller
             $selectedItems = $groupItems->where('is_selected', true);
             $subtotal = $selectedItems->sum(fn ($item) => $item->subtotal);
             $isChat = str_starts_with((string) $groupId, 'ch');
+            $isPlanner = str_starts_with((string) $groupId, 'tp-');
+            $plannerTitle = $isPlanner ? $itineraries->get($groupItems->first()->trip_itinerary_id)?->plan?->title : null;
 
             $groups[] = [
                 'id' => $groupId,
-                'title' => implode(' — ', $titleParts).($isChat ? ' Itinerary' : ' Surprise Itinerary'),
-                'label' => $isChat ? 'Chat Itinerary' : "I'm Feeling Lucky",
-                'icon' => $isChat ? 'route' : 'casino',
+                'title' => $isPlanner ? ($plannerTitle ?: implode(' — ', $titleParts).' Itinerary') : implode(' — ', $titleParts).($isChat ? ' Itinerary' : ' Surprise Itinerary'),
+                'label' => $isPlanner ? 'Trip Planner' : ($isChat ? 'Chat Itinerary' : "I'm Feeling Lucky"),
+                'icon' => $isPlanner || $isChat ? 'route' : 'casino',
                 'destination_name' => $destinationName,
                 'nights' => $nights,
                 'item_count' => $groupItems->count(),
@@ -180,6 +185,7 @@ class CartController extends Controller
                     'is_expired' => $item->isExpired(),
                     'notes' => $item->notes,
                     'lucky_group_id' => $item->lucky_group_id,
+                    'group_id' => $item->basket_group_id,
                     'title' => $item->item_title,
                     'subtitle' => $item->item_subtitle,
                     'hotel_name' => $item->hotel_name,
@@ -333,11 +339,14 @@ class CartController extends Controller
     }
 
     /**
-     * Toggle selection for every item in an "I'm Feeling Lucky" group at once.
+     * Toggle selection for every item in a basket itinerary group at once.
      */
     public function toggleGroup(Request $request, $groupId)
     {
-        $total = $this->getCartQuery($request)->where('lucky_group_id', $groupId)->count();
+        $isPlanner = preg_match('/^tp-([1-9][0-9]*)$/', (string) $groupId, $matches) === 1;
+        $column = $isPlanner ? 'trip_itinerary_id' : 'lucky_group_id';
+        $value = $isPlanner ? $matches[1] : $groupId;
+        $total = $this->getCartQuery($request)->where($column, $value)->count();
         if ($total === 0) {
             return response()->json([
                 'success' => false,
@@ -346,14 +355,14 @@ class CartController extends Controller
         }
 
         $selected = $this->getCartQuery($request)
-            ->where('lucky_group_id', $groupId)
+            ->where($column, $value)
             ->where('is_selected', true)
             ->count();
 
         $target = $selected !== $total;
 
         $this->getCartQuery($request)
-            ->where('lucky_group_id', $groupId)
+            ->where($column, $value)
             ->update(['is_selected' => $target]);
 
         return $this->data($request);

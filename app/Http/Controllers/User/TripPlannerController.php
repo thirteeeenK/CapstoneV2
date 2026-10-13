@@ -3,14 +3,15 @@
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
-use App\Models\DestinationModel;
 use App\Models\CartItem;
+use App\Models\DestinationModel;
 use App\Models\TripItinerary;
 use App\Models\TripPlan;
 use App\Models\TripPlanItem;
 use App\Notifications\TripItineraryReady;
 use App\Services\ItineraryService;
 use App\Services\TripPlannerService;
+use App\Services\WeatherService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -34,6 +35,14 @@ class TripPlannerController extends Controller
     public function catalog(DestinationModel $destination, TripPlannerService $planner): JsonResponse
     {
         return response()->json(['data' => $planner->catalog($destination)]);
+    }
+
+    public function weather(DestinationModel $destination, WeatherService $weather): View
+    {
+        return view('trip-planner._weather', [
+            'destination' => $destination,
+            'summary' => $weather->summaryForDestination($destination),
+        ]);
     }
 
     public function store(Request $request): JsonResponse

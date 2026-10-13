@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 Route::middleware(['auth', 'throttle:dss'])->prefix('trip-planner')->name('trip-planner.')->group(function () {
     Route::get('/', [TripPlannerController::class, 'index'])->name('index');
     Route::get('/catalog/{destination}', [TripPlannerController::class, 'catalog'])->name('catalog');
+    Route::get('/weather/{destination}', [TripPlannerController::class, 'weather'])->name('weather');
     Route::post('/plans', [TripPlannerController::class, 'store'])->name('store');
     Route::patch('/email-preferences', [TripPlannerController::class, 'preferences'])->name('preferences');
     Route::get('/plans/{plan}', [TripPlannerController::class, 'show'])->name('show');

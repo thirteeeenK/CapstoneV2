@@ -182,10 +182,12 @@ class TripPlannerService
             if ($locked->trip_plan_id !== $plan->id || $locked->revision !== $lockedPlan->revision) {
                 throw ValidationException::withMessages(['itinerary' => 'Generate a new itinerary after changing your selections.']);
             }
-            if ($locked->transferred_at || $plan->itineraries()->where('revision', $locked->revision)->whereNotNull('transferred_at')->exists()) {
+            $basketItineraryIds = CartItem::query()->where('user_id', $request->user()->id)
+                ->whereIn('trip_itinerary_id', $plan->itineraries()->select('id'))->pluck('trip_itinerary_id')->unique();
+            if ($plan->itineraries()->whereIn('id', $basketItineraryIds)->where('revision', $locked->revision)->exists()) {
                 return ['status' => 'already_transferred'];
             }
-            if (CartItem::query()->where('user_id', $request->user()->id)->whereIn('trip_itinerary_id', $plan->itineraries()->select('id'))->exists()) {
+            if ($basketItineraryIds->isNotEmpty()) {
                 throw ValidationException::withMessages(['cart' => 'An earlier version is still in your Trip Basket. Remove it before transferring this version.']);
             }
             $snapshot = $locked->snapshot;

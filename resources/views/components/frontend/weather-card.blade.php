@@ -1,4 +1,4 @@
-@props(['summary' => null])
+@props(['summary' => null, 'showDates' => false])
 
 <div class="rounded-2xl border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-900 shadow-xs p-4 sm:p-5">
     @if (!$summary)
@@ -52,7 +52,7 @@
                 @foreach (array_slice($summary['daily'], 0, 5) as $day)
                     <div class="flex flex-col items-center gap-0.5 bg-slate-50/70 dark:bg-slate-800/70 p-1.5 rounded-lg border border-slate-100 dark:border-slate-800 text-center">
                         <p class="text-[10px] font-semibold text-slate-500 dark:text-slate-400">
-                            {{ \Illuminate\Support\Carbon::parse($day['time'])->format('D') }}
+                            {{ \Illuminate\Support\Carbon::parse($day['time'])->timezone('Asia/Manila')->format($showDates ? 'D, M j' : 'D') }}
                         </p>
                         @if ($day['icon'])
                             <img src="https://openweathermap.org/img/wn/{{ $day['icon'] }}.png"

@@ -41,6 +41,7 @@
             'check_in_date' => $item->check_in_date ? \Illuminate\Support\Carbon::parse($item->check_in_date)->format('Y-m-d') : null,
             'check_out_date' => $item->check_out_date ? \Illuminate\Support\Carbon::parse($item->check_out_date)->format('Y-m-d') : null,
             'lucky_group_id' => $item->lucky_group_id,
+            'group_id' => $item->basket_group_id,
             'title' => $item->item_title,
             'subtitle' => $item->item_subtitle,
             'hotel_name' => $item->hotel_name,
@@ -160,7 +161,7 @@
                         </div>
                     </div>
 
-                    {{-- "I'm Feeling Lucky" Itinerary Groups --}}
+                    {{-- Itinerary Groups --}}
                     <template x-for="group in displayGroups" :key="group.id">
                         <section class="overflow-hidden rounded-2xl bg-white dark:bg-slate-900 ring-1 ring-ocean-200 shadow-sm shadow-ocean-900/5">
                             <div class="bg-gradient-to-r from-ocean-700 to-sky-500 px-4 sm:px-6 py-3 sm:py-4 flex flex-wrap items-center gap-3 sm:gap-4">
@@ -278,7 +279,7 @@
 
             get displayGroups() {
                 return this.groups.map(g => {
-                    const gItems = this.items.filter(i => i.lucky_group_id === g.id);
+                    const gItems = this.items.filter(i => i.group_id === g.id);
                     const selected = gItems.filter(i => i.is_selected);
                     const subtotal = selected.reduce((sum, i) => sum + Number(i.subtotal), 0);
                     return {
@@ -294,7 +295,7 @@
             },
 
             get ungroupedItems() {
-                return this.items.filter(i => !i.lucky_group_id);
+                return this.items.filter(i => !i.group_id);
             },
 
             get selectedItems() {
@@ -537,7 +538,7 @@
                     const data = await res.json();
                     if (data.success) {
                         this.items = this.items.filter(i => i.id !== itemId);
-                        this.groups = this.groups.filter(g => this.items.some(i => i.lucky_group_id === g.id));
+                        this.groups = this.groups.filter(g => this.items.some(i => i.group_id === g.id));
                         window.dispatchEvent(new CustomEvent('cart-updated'));
                     }
                 } catch (err) {

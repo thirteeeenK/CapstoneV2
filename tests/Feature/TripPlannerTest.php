@@ -87,6 +87,35 @@ it('returns rooms under their hotels and uses activities as the visit catalog', 
         ->and($activityIds)->not->toContain($foreignActivity->id);
 });
 
+it('shows a dated destination forecast with a planning disclaimer and cache status', function () {
+    $this->partialMock(WeatherService::class, function ($mock) {
+        $mock->shouldReceive('summaryForDestination')->once()->andReturn([
+            'current' => ['time' => '2026-10-14T09:00:00+08:00', 'temp' => 28, 'description' => 'light rain', 'pop' => 0.75, 'icon' => null],
+            'daily' => [
+                ['time' => '2026-10-14T12:00:00+08:00', 'temp' => 28, 'icon' => null],
+                ['time' => '2026-10-15T12:00:00+08:00', 'temp' => 29, 'icon' => null],
+            ],
+            'fetched_at' => '2026-10-13T08:00:00+08:00', 'stale' => true,
+            'slots' => [['time' => '2026-10-15T12:00:00+08:00']],
+        ]);
+    });
+
+    $this->get(route('trip-planner.weather', $this->destination))->assertOk()
+        ->assertSee('Weather forecast · Boracay')->assertSee('light rain')->assertSee('75% rain')
+        ->assertSee('Wed, Oct 14')->assertSee('Thu, Oct 15')->assertSee('Updated Oct 13, 8:00 AM')
+        ->assertSee('Showing a cached forecast')->assertSee('Later trip dates do not have a forecast yet.')
+        ->assertSee('Forecasts are estimates and may change.');
+});
+
+it('shows an unavailable weather state without inventing forecast values', function () {
+    $this->partialMock(WeatherService::class, fn ($mock) => $mock->shouldReceive('summaryForDestination')->once()->andReturn(null));
+
+    $this->get(route('trip-planner.weather', $this->destination))->assertOk()
+        ->assertSee('Weather forecast unavailable right now.')->assertDontSee('0°C')
+        ->assertSee('Forecasts are estimates and may change.');
+    $this->get(route('trip-planner.index'))->assertOk()->assertSee('Destination weather forecast');
+});
+
 it('exposes pricing fields on room and activity listings for the planner estimate', function () {
     $this->room->update(['base_price' => 4000, 'base_occupancy' => 2, 'extra_person_fee' => 750, 'max_occupancy' => 4]);
     $activity = plannerActivity($this->destination, ['rate' => '₱1,500', 'capacity' => 'Up to 10']);
@@ -259,6 +288,71 @@ it('groups nearby visits and does not transfer a regenerated unchanged revision 
     $regenerated = app(ItineraryService::class)->generate($this->plan->fresh());
     $this->postJson(route('trip-planner.transfer', [$this->plan, $regenerated]))->assertOk()->assertJsonPath('data.status', 'already_transferred');
     expect(CartItem::count())->toBe(3);
+});
+
+it('allows adding a previously transferred itinerary again after clearing the basket', function () {
+    plannerAdd($this->plan, 'room', $this->room->id);
+    plannerAdd($this->plan, 'activity', plannerActivity($this->destination)->id);
+    $itinerary = app(ItineraryService::class)->generate($this->plan->fresh());
+    $this->postJson(route('trip-planner.transfer', [$this->plan, $itinerary]))->assertOk()->assertJsonPath('data.count', 2);
+    $this->postJson(route('cart.clear'))->assertOk();
+    expect(CartItem::count())->toBe(0)->and($itinerary->fresh()->transferred_at)->not->toBeNull();
+
+    $this->postJson(route('trip-planner.transfer', [$this->plan, $itinerary]))->assertOk()
+        ->assertJsonPath('data.status', 'added')->assertJsonPath('data.count', 2);
+
+    expect(CartItem::where('trip_itinerary_id', $itinerary->id)->count())->toBe(2);
+    $this->postJson(route('trip-planner.transfer', [$this->plan, $itinerary]))->assertOk()->assertJsonPath('data.status', 'already_transferred');
+    expect(CartItem::count())->toBe(2);
+});
+
+it('protects a partially removed planner group and allows an unchanged regeneration after its last item is removed', function () {
+    plannerAdd($this->plan, 'room', $this->room->id);
+    plannerAdd($this->plan, 'activity', plannerActivity($this->destination)->id);
+    $itinerary = app(ItineraryService::class)->generate($this->plan->fresh());
+    $this->postJson(route('trip-planner.transfer', [$this->plan, $itinerary]))->assertOk();
+    $items = CartItem::where('trip_itinerary_id', $itinerary->id)->get();
+    $this->deleteJson(route('cart.remove', $items[0]->id))->assertOk();
+    $this->postJson(route('trip-planner.transfer', [$this->plan, $itinerary]))->assertOk()->assertJsonPath('data.status', 'already_transferred');
+    expect(CartItem::count())->toBe(1);
+    $this->deleteJson(route('cart.remove', $items[1]->id))->assertOk();
+    $regenerated = app(ItineraryService::class)->generate($this->plan->fresh());
+
+    $this->postJson(route('trip-planner.transfer', [$this->plan, $regenerated]))->assertOk()
+        ->assertJsonPath('data.status', 'added')->assertJsonPath('data.count', 2);
+
+    expect(CartItem::where('trip_itinerary_id', $regenerated->id)->count())->toBe(2);
+});
+
+it('groups planner basket items separately from regular and lucky items and scopes group selection to the owner', function () {
+    $this->plan->update(['title' => 'My Boracay itinerary']);
+    plannerAdd($this->plan, 'room', $this->room->id);
+    $activity = plannerActivity($this->destination);
+    plannerAdd($this->plan, 'activity', $activity->id);
+    $itinerary = app(ItineraryService::class)->generate($this->plan->fresh());
+    $this->postJson(route('trip-planner.transfer', [$this->plan, $itinerary]))->assertOk();
+    $regular = CartItem::factory()->create(['user_id' => $this->user->id, 'item_type' => 'activity', 'item_id' => $activity->id]);
+    $lucky = CartItem::factory()->create(['user_id' => $this->user->id, 'item_type' => 'activity', 'item_id' => $activity->id, 'lucky_group_id' => '12345678-1234-1234-1234-123456789012']);
+    $groupId = 'tp-'.$itinerary->id;
+
+    $basket = $this->getJson(route('cart.data'))->assertOk()->json();
+
+    $plannerGroup = collect($basket['groups'])->firstWhere('id', $groupId);
+    expect($plannerGroup['label'])->toBe('Trip Planner')
+        ->and($plannerGroup['title'])->toBe('My Boracay itinerary')
+        ->and($plannerGroup['item_count'])->toBe(2)
+        ->and(collect($basket['items'])->where('group_id', $groupId))->toHaveCount(2)
+        ->and(collect($basket['items'])->firstWhere('id', $regular->id)['group_id'])->toBeNull();
+    expect(collect($basket['groups'])->firstWhere('id', $lucky->lucky_group_id)['label'])->toBe("I'm Feeling Lucky");
+    $this->get(route('cart.index'))->assertSee('My Boracay itinerary')->assertSee('Trip Planner');
+    $this->postJson(route('cart.toggle-group', $groupId))->assertOk();
+    expect(CartItem::where('trip_itinerary_id', $itinerary->id)->where('is_selected', true)->count())->toBe(0)
+        ->and($regular->fresh()->is_selected)->toBeTrue()
+        ->and($lucky->fresh()->is_selected)->toBeTrue();
+    $this->postJson(route('cart.toggle-group', $groupId))->assertOk();
+    expect(CartItem::where('trip_itinerary_id', $itinerary->id)->where('is_selected', true)->count())->toBe(2);
+    $this->actingAs(onboardedUser())->postJson(route('cart.toggle-group', $groupId))->assertNotFound();
+    expect(CartItem::where('trip_itinerary_id', $itinerary->id)->where('is_selected', true)->count())->toBe(2);
 });
 
 it('invalidates transfer after edits and keeps earlier snapshots immutable', function () {

@@ -63,6 +63,11 @@ class CartItem extends Model
         return $this->morphTo('itemable', 'item_type', 'item_id');
     }
 
+    public function getBasketGroupIdAttribute(): ?string
+    {
+        return $this->trip_itinerary_id ? 'tp-'.$this->trip_itinerary_id : ($this->lucky_group_id ?: null);
+    }
+
     /**
      * Get hotel name if applicable.
      */
