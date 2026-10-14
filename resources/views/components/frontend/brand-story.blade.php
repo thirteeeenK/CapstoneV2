@@ -24,9 +24,9 @@
                             <span class="material-symbols-outlined text-primary text-2xl" data-icon="verified_user">verified_user</span>
                         </div>
                         <div class="space-y-1">
-                            <h4 class="font-headline text-lg font-bold text-slate-900 dark:text-slate-100">Unrivaled Privacy</h4>
+                            <h4 class="font-headline text-lg font-bold text-slate-900 dark:text-slate-100">Picks That Fit You</h4>
                             <p class="text-slate-500 dark:text-slate-400 text-xs md:text-sm leading-relaxed max-w-xl">
-                                Access to exclusive estates and private islands that never appear on public booking platforms. Enjoy absolute discretion and custom-tailored exclusivity.
+                                Tell us your vibes, amenities, and traveler type once. SunnyTrips AI-ranks stays and experiences for you and shows why each pick matches.
                             </p>
                         </div>
                     </div>
@@ -37,9 +37,9 @@
                             <span class="material-symbols-outlined text-primary text-2xl" data-icon="support_agent">support_agent</span>
                         </div>
                         <div class="space-y-1">
-                            <h4 class="font-headline text-lg font-bold text-slate-900 dark:text-slate-100">Concierge Anywhere</h4>
+                            <h4 class="font-headline text-lg font-bold text-slate-900 dark:text-slate-100">Plan and Book in One Basket</h4>
                             <p class="text-slate-500 dark:text-slate-400 text-xs md:text-sm leading-relaxed max-w-xl">
-                                Your personal navigator is available 24/7, from coordinating complex flight logistics to arranging private sunset yacht charters.
+                                Build hotels, rooms, activities, add-ons, and packages in your Trip Basket, then check out securely in one flow.
                             </p>
                         </div>
                     </div>
@@ -50,9 +50,9 @@
                             <span class="material-symbols-outlined text-primary text-2xl" data-icon="eco">eco</span>
                         </div>
                         <div class="space-y-1">
-                            <h4 class="font-headline text-lg font-bold text-slate-900 dark:text-slate-100">Conscious Luxury</h4>
+                            <h4 class="font-headline text-lg font-bold text-slate-900 dark:text-slate-100">Help When You Need It</h4>
                             <p class="text-slate-500 dark:text-slate-400 text-xs md:text-sm leading-relaxed max-w-xl">
-                                Partnering exclusively with eco-certified resorts and local communities that protect local marine sanctuaries and preserve the pristine nature of the archipelago.
+                                Ask the AI chat for availability, itineraries, and Philippine destination help, with human support handoff when you need it.
                             </p>
                         </div>
                     </div>
