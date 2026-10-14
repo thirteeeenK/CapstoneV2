@@ -68,6 +68,10 @@ trait ResolvesImages
             return 'https://images.unsplash.com/photo-1567899378494-47b22a2ae96a?auto=format&fit=crop&w=800&q=80';
         }
 
+        if (str_contains($haystack, 'indoor') || str_contains($haystack, 'museum') || str_contains($haystack, 'gallery') || str_contains($haystack, 'workshop')) {
+            return 'https://images.unsplash.com/photo-1554907984-15263bfd63bd?auto=format&fit=crop&w=800&q=80';
+        }
+
         return 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=800&q=80';
     }
 
@@ -89,6 +93,7 @@ trait ResolvesImages
         $c = strtolower($category ?? '');
 
         $map = [
+            'meeting_room' => ['indoor'],
             'scuba_diving' => ['water', 'ocean', 'sea', 'snorkel', 'dive'],
             'hiking' => ['hik', 'trek', 'nature', 'eco'],
             'museum' => ['cultur', 'histor', 'heritage'],

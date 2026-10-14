@@ -78,6 +78,7 @@
                             <option value="Diving" {{ old('category') == 'Diving' ? 'selected' : '' }}>Diving</option>
                             <option value="Adventure" {{ old('category') == 'Adventure' ? 'selected' : '' }}>Adventure</option>
                             <option value="Sailing" {{ old('category') == 'Sailing' ? 'selected' : '' }}>Sailing</option>
+                            <option value="Indoor" {{ old('category') == 'Indoor' ? 'selected' : '' }}>Indoor</option>
                             <option value="Other" {{ old('category') == 'Other' ? 'selected' : '' }}>Other</option>
                         </select>
                     </div>
@@ -95,7 +96,6 @@
                             <option value="Adventure" {{ old('activity_level') == 'Adventure' ? 'selected' : '' }}>Adventure - Moderate physical activity & excitement</option>
                             <option value="Extreme" {{ old('activity_level') == 'Extreme' ? 'selected' : '' }}>Extreme - High-adrenaline speed or heights</option>
                             <option value="Underwater" {{ old('activity_level') == 'Underwater' ? 'selected' : '' }}>Underwater - Beneath the water surface</option>
-                            <option value="Indoor" {{ old('activity_level') == 'Indoor' ? 'selected' : '' }}>Indoor - Museums, workshops, spas & shows</option>
                         </select>
                     </div>
 

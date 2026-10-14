@@ -106,12 +106,6 @@
                                         Sightseeing
                                     </span>
                                     @break
-                                @case('Indoor')
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-violet-50 text-violet-700 border border-violet-200/60">
-                                        <span class="inline-block w-1.5 h-1.5 rounded-full bg-violet-500 mr-1.5"></span>
-                                        Indoor
-                                    </span>
-                                    @break
                                 @default
                                     <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/60">
                                         <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span>

@@ -71,7 +71,7 @@
                         <select id="category" name="category" required
                                 class="w-full bg-slate-50 border border-slate-300 rounded-md px-3 py-2 text-xs text-slate-900 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all">
                             <option value="">Select Category...</option>
-                            @foreach(['Island Hopping', 'Land Tour', 'Water Activity', 'Diving', 'Adventure', 'Sailing', 'Other'] as $cat)
+                            @foreach(['Island Hopping', 'Land Tour', 'Water Activity', 'Diving', 'Adventure', 'Sailing', 'Indoor', 'Other'] as $cat)
                                 <option value="{{ $cat }}" {{ old('category', $activity->category) == $cat ? 'selected' : '' }}>{{ $cat }}</option>
                             @endforeach
                         </select>
@@ -90,7 +90,6 @@
                             <option value="Adventure" {{ old('activity_level', $activity->activity_level) == 'Adventure' ? 'selected' : '' }}>Adventure</option>
                             <option value="Extreme" {{ old('activity_level', $activity->activity_level) == 'Extreme' ? 'selected' : '' }}>Extreme</option>
                             <option value="Underwater" {{ old('activity_level', $activity->activity_level) == 'Underwater' ? 'selected' : '' }}>Underwater</option>
-                            <option value="Indoor" {{ old('activity_level', $activity->activity_level) == 'Indoor' ? 'selected' : '' }}>Indoor</option>
                         </select>
                     </div>
 
