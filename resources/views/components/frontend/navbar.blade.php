@@ -20,9 +20,9 @@
                 class="px-4 lg:px-5 py-2 text-slate-600 dark:text-slate-300 hover:bg-white/60 dark:hover:bg-slate-800 hover:text-sky-700 dark:hover:text-sky-300 rounded-full font-semibold text-sm transition-all duration-200 {{ request()->routeIs('activities.*') ? 'nav-active' : '' }}">Experiences</a>
             <a href="{{ route('packages.index') }}"
                 class="px-4 lg:px-5 py-2 text-slate-600 dark:text-slate-300 hover:bg-white/60 dark:hover:bg-slate-800 hover:text-sky-700 dark:hover:text-sky-300 rounded-full font-semibold text-sm transition-all duration-200 {{ request()->routeIs('packages.*') ? 'nav-active' : '' }}">Packages</a>
-            <a href="{{ route('trip-planner.index') }}" class="px-4 py-2 text-slate-600 dark:text-slate-300 hover:bg-white/60 dark:hover:bg-slate-800 rounded-full font-semibold text-sm {{ request()->routeIs('trip-planner.*') ? 'nav-active' : '' }}">Trip Planner</a>
             <a href="/#testimonials" data-nav-target="testimonials"
-                class="px-4 lg:px-5 py-2 text-slate-600 dark:text-slate-300 hover:bg-white/60 dark:hover:bg-slate-800 hover:text-sky-700 dark:hover:text-sky-300 rounded-full font-semibold text-sm transition-all duration-200">Stories &amp; Reviews</a>
+                class="px-4 lg:px-5 py-2 text-slate-600 dark:text-slate-300 hover:bg-white/60 dark:hover:bg-slate-800 hover:text-sky-700 dark:hover:text-sky-300 rounded-full font-semibold text-sm transition-all duration-200">Stories
+                &amp; Reviews</a>
         </div>
 
         <!-- Right Cluster: Theme, Cart, Auth Buttons & Mobile Hamburger -->
@@ -73,7 +73,9 @@
 
         <!-- Navigation Links List -->
         <div class="space-y-1">
-            <a href="{{ route('trip-planner.index') }}" @click="mobileMenuOpen = false" class="flex items-center gap-3 px-3.5 py-3 rounded-2xl text-slate-700 dark:text-slate-300 font-bold text-sm"><span class="material-symbols-outlined text-ocean-600">route</span>Trip Planner</a>
+            <a href="{{ route('trip-planner.index') }}" @click="mobileMenuOpen = false"
+                class="flex items-center gap-3 px-3.5 py-3 rounded-2xl text-slate-700 dark:text-slate-300 font-bold text-sm"><span
+                    class="material-symbols-outlined text-ocean-600">route</span>Trip Planner</a>
             <a href="/#destinations" @click="mobileMenuOpen = false"
                 class="flex items-center gap-3 px-3.5 py-2.5 rounded-2xl text-slate-700 dark:text-slate-300 hover:text-sky-700 dark:hover:text-sky-300 hover:bg-white/60 dark:hover:bg-slate-800 font-bold text-sm transition-colors">
                 <span class="material-symbols-outlined text-[20px] text-sky-600">location_on</span>
@@ -107,7 +109,8 @@
 
         <!-- Appearance toggle -->
         <div class="flex items-center justify-between px-3.5 py-1">
-            <span class="text-[11px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Appearance</span>
+            <span
+                class="text-[11px] font-extrabold text-slate-400 dark:text-slate-500 uppercase tracking-wider">Appearance</span>
             <x-frontend.theme-toggle />
         </div>
 
