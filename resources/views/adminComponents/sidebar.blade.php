@@ -35,7 +35,7 @@
                 ['route' => 'view-listings', 'icon' => 'hotel', 'label' => 'Show Hotel Listing', 'href' => route('view-listings')],
                 ['route' => 'admin.packages.*', 'icon' => 'card_travel', 'label' => 'Tour Packages & Promos', 'href' => route('admin.packages.index')],
                 ['route' => 'admin.activities.*', 'icon' => 'explore', 'label' => 'Activities & Tours', 'href' => Route::has('admin.activities.index') ? route('admin.activities.index') : '#'],
-                ['route' => 'admin.planner-inventory.*', 'icon' => 'route', 'label' => 'Planner Scheduling', 'href' => route('admin.planner-inventory.index')],
+                ['route' => 'admin.planner-inventory.*', 'icon' => 'route', 'label' => 'Planner Scheduling & Locations', 'href' => route('admin.planner-inventory.index')],
                 ['route' => 'admin.addons.*', 'icon' => 'extension', 'label' => 'Transfers and Add-ons', 'href' => route('admin.addons.index')],
             ],
             'Legal' => [
@@ -63,7 +63,7 @@
                             $isActive = request()->routeIs($item['route']);
                         @endphp
                         <a href="{{ $item['href'] }}"
-                            class="flex items-center gap-3 w-full h-10 px-3 rounded-xl transition-all duration-200 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ocean-500 {{ $isActive ? 'bg-ocean-50 text-ocean-800 font-bold border border-ocean-200 shadow-xs' : 'text-slate-700 hover:bg-sand-50 hover:text-slate-950 font-bold' }}">
+                            class="flex items-center gap-3 w-full {{ $item['route'] === 'admin.planner-inventory.*' ? 'min-h-10 py-2' : 'h-10' }} px-3 rounded-xl transition-all duration-200 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ocean-500 {{ $isActive ? 'bg-ocean-50 text-ocean-800 font-bold border border-ocean-200 shadow-xs' : 'text-slate-700 hover:bg-sand-50 hover:text-slate-950 font-bold' }}">
                             <span
                                 class="material-symbols-outlined text-[20px] shrink-0 transition-colors {{ $isActive ? 'text-ocean-600 font-bold' : 'text-slate-500 group-hover:text-ocean-600' }}">
                                 {{ $item['icon'] }}

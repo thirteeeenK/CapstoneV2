@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\ActivityModel;
+use App\Models\AdminAuditLog;
 use App\Models\AdminModel;
 use App\Models\Booking;
 use App\Models\CartItem;
@@ -596,12 +597,152 @@ it('lets admins verify activity scheduling and refuses malformed times', functio
     $activity = plannerActivity($this->destination);
     $this->patchJson(route('admin.planner-inventory.update', ['activity', $activity]), ['duration_minutes' => 120])->assertUnauthorized();
     $this->actingAs($admin, 'admin');
-    $this->get(route('admin.planner-inventory.index'))->assertOk()->assertSee('Planner inventory');
+    $this->get(route('admin.planner-inventory.index'))->assertOk()->assertSee('Planner Scheduling &amp; Locations', false);
     $this->patch(route('admin.planner-inventory.update', ['activity', $activity]), [
         'latitude' => 11.96, 'longitude' => 121.927, 'duration_minutes' => 120, 'environment' => 'outdoor', 'opens_at' => '08:00', 'closes_at' => '17:00', 'is_shown' => true,
     ])->assertRedirect();
     expect($activity->fresh()->scheduling['duration_minutes'])->toBe(120);
     $this->patchJson(route('admin.planner-inventory.update', ['activity', $activity]), ['latitude' => 11.96, 'longitude' => 121.927, 'fixed_start_times' => '25:30'])->assertUnprocessable();
+});
+
+it('admin planner scheduling saves preserve catalog visibility and audit only permitted changes', function (string $type, bool $visible, bool $submitVisibility) {
+    $admin = AdminModel::create(['name' => 'Scheduling Admin', 'email' => 'scheduling-admin@example.com', 'password' => 'password']);
+    $this->actingAs($admin, 'admin');
+    $listing = $type === 'hotel' ? $this->hotel : plannerActivity($this->destination);
+    $listing->update(['is_shown' => $visible]);
+    $payload = ['latitude' => 11.97, 'longitude' => 121.93] + ($type === 'hotel'
+        ? ['check_in_time' => '16:00', 'check_out_time' => '10:00']
+        : ['duration_minutes' => 120, 'environment' => 'indoor', 'opens_at' => '08:00', 'closes_at' => '17:00', 'fixed_start_times' => '09:00, 14:30', 'includes_lunch' => true]);
+    if ($submitVisibility) {
+        $payload['is_shown'] = ! $visible;
+    }
+
+    $this->patch(route('admin.planner-inventory.update', [$type, $listing]), $payload)->assertRedirect();
+
+    $saved = $listing->fresh();
+    expect($saved->is_shown)->toBe($visible)->and((float) $saved->latitude)->toBe(11.97)->and((float) $saved->longitude)->toBe(121.93);
+    if ($type === 'hotel') {
+        expect(substr($saved->check_in_time, 0, 5))->toBe('16:00')->and(substr($saved->check_out_time, 0, 5))->toBe('10:00');
+    } else {
+        expect($saved->scheduling)->toMatchArray(['duration_minutes' => 120, 'environment' => 'indoor', 'fixed_start_times' => ['09:00', '14:30'], 'includes_lunch' => true]);
+    }
+    $audit = AdminAuditLog::where('auditable_type', $listing->getMorphClass())->where('auditable_id', $listing->id)->latest('id')->firstOrFail();
+    expect($audit->admin_id)->toBe($admin->id)->and($audit->new_values)->toHaveKey('latitude')->not->toHaveKey('is_shown');
+})->with(['hotel', 'activity'])->with([true, false])->with([true, false]);
+
+it('admin planner scheduling links to Inventory outside AJAX results and removes the visibility input', function (string $type) {
+    $admin = AdminModel::create(['name' => 'Scheduling Admin', 'email' => 'scheduling-admin@example.com', 'password' => 'password']);
+    $this->actingAs($admin, 'admin');
+    if ($type === 'activity') {
+        plannerActivity($this->destination);
+    }
+    $response = $this->get(route('admin.planner-inventory.index', ['type' => $type]))
+        ->assertSee('Planner Scheduling &amp; Locations', false)->assertSee('Search hotels or activities')
+        ->assertSee('Catalog visibility: Visible')->assertDontSee('name="is_shown"', false)
+        ->assertSee(route('admin.inventory.index', ['tab' => $type === 'hotel' ? 'hotels' : 'activities']));
+
+    $previous = libxml_use_internal_errors(true);
+    try {
+        $document = new DOMDocument;
+        $document->loadHTML($response->getContent());
+        $xpath = new DOMXPath($document);
+        expect($xpath->query('//a[contains(normalize-space(.), "Manage visibility in Inventory")]')->length)->toBe(1)
+            ->and($xpath->query('//div[@x-ref="results"]//a[contains(normalize-space(.), "Manage visibility in Inventory")]')->length)->toBe(0);
+    } finally {
+        libxml_clear_errors();
+        libxml_use_internal_errors($previous);
+    }
+})->with(['hotel', 'activity']);
+
+it('admin planner scheduling keeps AJAX search pagination and reflects visibility changes from Inventory', function (string $type) {
+    $admin = AdminModel::create(['name' => 'Scheduling Admin', 'email' => 'scheduling-admin@example.com', 'password' => 'password']);
+    $this->actingAs($admin, 'admin');
+    $nameColumn = $type === 'hotel' ? 'hotel_name' : 'activity_name';
+    $factory = $type === 'hotel' ? HotelModel::factory() : ActivityModel::factory();
+    $listing = $factory->create(['destination_id' => $this->destination->id, $nameColumn => 'Scheduling Match 00', 'is_shown' => true]);
+    foreach (range(1, 10) as $number) {
+        $factory->create(['destination_id' => $this->destination->id, $nameColumn => 'Scheduling Match '.sprintf('%02d', $number)]);
+    }
+    $this->postJson(route('admin.inventory.toggle-visibility'), ['type' => $type, 'id' => $listing->id, 'is_shown' => false])->assertOk();
+    expect($listing->fresh()->is_shown)->toBeFalse();
+
+    $this->withHeader('X-Requested-With', 'XMLHttpRequest')->get(route('admin.planner-inventory.index', ['type' => $type, 'search' => 'Scheduling Match']))
+        ->assertSee('id="listings-results"', false)->assertSee('Catalog visibility: Hidden')
+        ->assertSee(route('admin.planner-inventory.update', [$type, $listing]))->assertDontSee('name="is_shown"', false)
+        ->assertSee('page=2', false)->assertDontSee('Search hotels or activities');
+})->with(['hotel', 'activity']);
+
+it('admin planner scheduling validation failures preserve scheduling location and visibility', function (array $invalid, string $field) {
+    $admin = AdminModel::create(['name' => 'Scheduling Admin', 'email' => 'scheduling-admin@example.com', 'password' => 'password']);
+    $this->actingAs($admin, 'admin');
+    $activity = plannerActivity($this->destination, ['is_shown' => false]);
+    $before = $activity->fresh()->only(['latitude', 'longitude', 'scheduling', 'is_shown']);
+
+    $this->patchJson(route('admin.planner-inventory.update', ['activity', $activity]), $invalid + ['latitude' => 11.96, 'longitude' => 121.927, 'is_shown' => true])
+        ->assertUnprocessable()->assertJsonValidationErrors($field);
+
+    expect($activity->fresh()->only(['latitude', 'longitude', 'scheduling', 'is_shown']))->toBe($before);
+})->with([
+    'invalid fixed departure' => [['fixed_start_times' => '25:30'], 'fixed_start_times'],
+    'closing before opening' => [['opens_at' => '17:00', 'closes_at' => '08:00'], 'closes_at'],
+    'invalid coordinate' => [['latitude' => 91], 'latitude'],
+]);
+
+it('admin scheduling destination filters combine with name search category and pagination', function (string $type) {
+    $admin = AdminModel::create(['name' => 'Scheduling Admin', 'email' => 'scheduling-admin@example.com', 'password' => 'password']);
+    $this->actingAs($admin, 'admin');
+    $other = DestinationModel::factory()->create(['name' => 'Other Island']);
+    $nameColumn = $type === 'hotel' ? 'hotel_name' : 'activity_name';
+    $factory = $type === 'hotel' ? HotelModel::factory() : ActivityModel::factory();
+    foreach (range(1, 11) as $number) {
+        $factory->create(['destination_id' => $this->destination->id, $nameColumn => 'Filtered Listing '.sprintf('%02d', $number), 'is_shown' => false]);
+    }
+    $foreign = $factory->create(['destination_id' => $other->id, $nameColumn => 'Filtered Foreign Island']);
+    $filters = ['type' => $type, 'destination_id' => $this->destination->id, 'search' => 'Filtered'];
+    $response = $this->get(route('admin.planner-inventory.index', $filters))
+        ->assertSee('Destination')->assertSee('All destinations')->assertSee('Other Island')->assertSee('Catalog visibility: Hidden')
+        ->assertDontSee($foreign->{$nameColumn})->assertSee('Showing 1–10 of 11')
+        ->assertSee(route('admin.inventory.index', ['tab' => $type === 'hotel' ? 'hotels' : 'activities', 'destination_id' => $this->destination->id]));
+    expect($response->viewData('listings')->total())->toBe(11);
+    $page = $this->withHeader('X-Requested-With', 'XMLHttpRequest')->get(route('admin.planner-inventory.index', $filters + ['page' => 2]))
+        ->assertSee('Showing 11–11 of 11')->assertSee('Filtered Listing 11')->assertDontSee('Filtered Listing 01');
+    expect($page->viewData('listings')->count())->toBe(1);
+    $this->get(route('admin.planner-inventory.index', ['type' => $type, 'search' => 'Filtered']))->assertSee($foreign->{$nameColumn});
+})->with(['hotel', 'activity']);
+
+it('admin scheduling rejects invalid destination filters and returns contextual empty results', function (string $destination) {
+    $admin = AdminModel::create(['name' => 'Scheduling Admin', 'email' => 'scheduling-admin@example.com', 'password' => 'password']);
+    $this->actingAs($admin, 'admin');
+    $this->getJson(route('admin.planner-inventory.index', ['destination_id' => $destination]))
+        ->assertUnprocessable()->assertJsonValidationErrors('destination_id');
+    $this->get(route('admin.planner-inventory.index', ['destination_id' => $this->destination->id, 'search' => 'Does not match']))
+        ->assertSee('No matching hotels or activities')->assertSee('Clear filters');
+})->with(['not-an-id', '-1', '999999999']);
+
+it('admin scheduling keeps validation values errors and the open editor scoped to the failed listing', function () {
+    $admin = AdminModel::create(['name' => 'Scheduling Admin', 'email' => 'scheduling-admin@example.com', 'password' => 'password']);
+    $this->actingAs($admin, 'admin');
+    $first = plannerActivity($this->destination, ['activity_name' => 'Schedule A']);
+    $second = plannerActivity($this->destination, ['activity_name' => 'Schedule B']);
+    $url = route('admin.planner-inventory.index', ['destination_id' => $this->destination->id]);
+    $this->from($url)->patch(route('admin.planner-inventory.update', ['activity', $first]), [
+        'listing_type' => 'activity', 'listing_id' => $first->id, 'latitude' => 11.96, 'longitude' => 121.927, 'duration_minutes' => 99, 'fixed_start_times' => '25:30',
+    ])->assertRedirect($url);
+
+    $response = $this->get($url)->assertSee('aria-invalid="true"', false);
+    $previous = libxml_use_internal_errors(true);
+    try {
+        $document = new DOMDocument;
+        $document->loadHTML($response->getContent());
+        $xpath = new DOMXPath($document);
+        expect($xpath->query('//input[@id="activity-'.$first->id.'-duration_minutes"]')->item(0)->getAttribute('value'))->toBe('99')
+            ->and($xpath->query('//input[@id="activity-'.$second->id.'-duration_minutes"]')->item(0)->getAttribute('value'))->toBe('60')
+            ->and($xpath->query('//details[@open]')->length)->toBe(1);
+    } finally {
+        libxml_clear_errors();
+        libxml_use_internal_errors($previous);
+    }
+    expect($first->fresh()->scheduling['duration_minutes'])->toBe(60);
 });
 
 it('deletes a saved trip and its linked basket lines without deleting ordinary basket items', function () {
