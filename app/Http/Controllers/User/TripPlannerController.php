@@ -10,6 +10,7 @@ use App\Models\TripPlan;
 use App\Models\TripPlanItem;
 use App\Notifications\TripItineraryReady;
 use App\Services\ItineraryService;
+use App\Services\TripBookingDatePolicy;
 use App\Services\TripPlannerService;
 use App\Services\WeatherService;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -22,13 +23,14 @@ use Illuminate\View\View;
 
 class TripPlannerController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request, TripBookingDatePolicy $dates): View
     {
         return view('trip-planner.index', [
             'destinations' => DestinationModel::query()->orderBy('name')->get(['id', 'name', 'latitude', 'longitude']),
             'plans' => TripPlan::query()->where('user_id', $request->user()->id)->latest('updated_at')->limit(20)->get(),
             'initialDestination' => $request->integer('destination'),
             'emailPreferences' => ['reminders' => (bool) $request->user()->trip_reminders_enabled, 'marketing' => (bool) $request->user()->trip_marketing_enabled],
+            'datePolicy' => $dates->frontendConfig(),
         ]);
     }
 
@@ -45,16 +47,16 @@ class TripPlannerController extends Controller
         ]);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(Request $request, TripBookingDatePolicy $dates): JsonResponse
     {
         $data = $request->validate([
             'destination_id' => ['required', 'integer', 'exists:destinations,id'],
             'title' => ['required', 'string', 'max:150'],
-            'start_date' => ['required', 'date_format:Y-m-d', 'after_or_equal:today'],
+            'start_date' => ['required', 'date_format:Y-m-d', 'after_or_equal:'.$dates->minimumArrivalDate()],
             'end_date' => ['required', 'date_format:Y-m-d', 'after:start_date'],
             'pax' => ['required', 'integer', 'between:1,20'],
             'mode' => ['required', 'in:walking,driving'],
-        ]);
+        ], ['start_date.after_or_equal' => $dates->message()]);
         if (Carbon::parse($data['start_date'])->diffInDays(Carbon::parse($data['end_date'])) > 29) {
             throw ValidationException::withMessages(['end_date' => 'Plan up to 30 calendar days at a time.']);
         }

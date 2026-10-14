@@ -3,7 +3,7 @@
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
         <style>.planner-map-icon{display:grid;place-items:center}.planner-map-number{box-sizing:border-box;display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:#006b91;color:white;border:2px solid white;font:700 14px 'DM Sans',sans-serif;box-shadow:0 2px 8px #0003}.planner-map-pending{background:#fdfaf4;color:#b45309;border:2px dashed #b45309;box-shadow:none}</style>
     @endpush
-    <div x-data="tripPlanner({ destinations: @js($destinations), plans: @js($plans), destination: @js($initialDestination), emailPreferences: @js($emailPreferences), base: @js(route('trip-planner.index')), csrf: @js(csrf_token()) })"
+    <div x-data="tripPlanner({ destinations: @js($destinations), plans: @js($plans), destination: @js($initialDestination), emailPreferences: @js($emailPreferences), datePolicy: @js($datePolicy), base: @js(route('trip-planner.index')), csrf: @js(csrf_token()) })"
          class="mx-auto max-w-screen-2xl bg-sand-50 text-ink-900 dark:bg-slate-900 dark:text-slate-100 font-body">
         <div class="grid lg:grid-cols-2">
             <section class="min-w-0 border-r border-sand-200 dark:border-slate-700">
@@ -21,7 +21,7 @@
                         <button type="button" @click="newTrip()" :disabled="busy" class="min-h-11 px-3 text-sm font-bold text-ocean-700 dark:text-ocean-300">New trip</button>
                         <button x-ref="deleteTrigger" type="button" x-show="plan" x-cloak @click="deleting = true; $nextTick(() => $refs.deleteCancel.focus())" :disabled="busy" class="min-h-11 px-3 text-sm font-bold text-rose-700 dark:text-rose-300">Delete saved trip</button>
                     </div>
-                    <form x-show="!plan" @submit.prevent="create()" class="mt-5 space-y-4">
+                    <form x-ref="tripForm" x-show="!plan" @submit.prevent="create()" class="mt-5 space-y-4 scroll-mt-8">
                         <div><label for="planner-destination" class="block text-sm font-semibold mb-1">Destination</label>
                             <select id="planner-destination" x-model="destinationId" @change="chooseDestination($event.target.value)" required class="w-full rounded-lg border-sand-300 dark:bg-slate-800">
                                 <option value="">Choose an island, or click its map marker</option>
@@ -30,9 +30,10 @@
                         </div>
                         <div><label for="trip-title" class="block text-sm font-semibold mb-1">Trip name</label><input id="trip-title" x-model="title" maxlength="150" required class="w-full rounded-lg border-sand-300 dark:bg-slate-800"></div>
                         <div class="grid grid-cols-2 gap-3">
-                            <div><label for="trip-start" class="block text-sm font-semibold mb-1">Arrival date</label><input id="trip-start" type="date" x-model="startDate" min="{{ now('Asia/Manila')->toDateString() }}" required class="w-full min-w-0 rounded-lg border-sand-300 dark:bg-slate-800"></div>
+                            <div><label for="trip-start" class="block text-sm font-semibold mb-1">Arrival date</label><input id="trip-start" type="date" x-model="startDate" min="{{ $datePolicy['minimumArrival'] }}" :min="minimumArrival" @focus="refreshMinimumArrival()" aria-describedby="trip-arrival-hint" required class="w-full min-w-0 rounded-lg border-sand-300 dark:bg-slate-800"></div>
                             <div><label for="trip-end" class="block text-sm font-semibold mb-1">Departure date</label><input id="trip-end" type="date" x-model="endDate" :min="startDate" required class="w-full min-w-0 rounded-lg border-sand-300 dark:bg-slate-800"></div>
                         </div>
+                        <p id="trip-arrival-hint" class="text-xs leading-relaxed text-slate-600 dark:text-slate-300" x-text="'Choose an arrival on or after ' + minimumArrival + ' (two calendar days ahead in Philippine time).'"></p>
                         <div>
                             <label for="trip-mode" class="block text-sm font-semibold mb-1">Getting around</label>
                             <select id="trip-mode" x-model="mode" class="w-full rounded-lg border-sand-300 dark:bg-slate-800">
@@ -57,23 +58,26 @@
                     </section>
                     <p x-show="error" x-cloak x-text="error" role="alert" class="mb-4 rounded-lg bg-rose-50 text-rose-800 p-3 text-sm"></p>
                     <p x-show="notice" x-cloak x-text="notice" role="status" class="mb-4 rounded-lg bg-ocean-50 text-ocean-900 p-3 text-sm"></p>
+                    <p id="trip-booking-date-hint" x-show="plan && arrivalTooSoon(startDate)" x-cloak x-text="arrivalHint()" role="status" class="mb-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-200"></p>
                     <p x-show="busy" x-cloak role="status" class="mb-3 text-sm text-ocean-700 dark:text-ocean-300">Saving or checking routes and weather…</p>
                     <nav aria-label="Trip planner sections" class="flex gap-1 overflow-x-auto border-b border-sand-200 dark:border-slate-700">
                         <template x-for="section in ['hotels', 'rooms', 'activities', 'selections', 'itinerary']" :key="section">
-                            <button type="button" @click="tab = section; renderMap()" :disabled="busy" :aria-current="tab === section ? 'page' : null" :class="tab === section ? 'border-ocean-700 text-ocean-700 dark:text-ocean-300' : 'border-transparent text-slate-500'" class="min-h-11 shrink-0 border-b-2 px-3 py-3 text-sm font-bold capitalize disabled:opacity-50" x-text="section === 'selections' ? 'My choices (' + selections.length + ')' : section"></button>
+                            <button type="button" @click="setSection(section)" :disabled="busy" :aria-current="tab === section ? 'page' : null" :class="tab === section ? 'border-ocean-700 text-ocean-700 dark:text-ocean-300' : 'border-transparent text-slate-500'" class="min-h-11 shrink-0 border-b-2 px-3 py-3 text-sm font-bold capitalize disabled:opacity-50" x-text="section === 'selections' ? 'My choices (' + selections.length + ')' : section"></button>
                         </template>
                     </nav>
                 </div>
                 <div class="p-5 sm:p-8">
                     <div x-show="!['itinerary', 'selections'].includes(tab)">
                         <div x-show="tab === 'rooms'" class="mb-5">
-                            <h2 class="font-headline font-bold" x-text="activeHotel() ? 'Rooms at ' + activeHotel().name : 'Select a hotel first'"></h2>
+                            <h2 x-ref="roomsHeading" tabindex="-1" class="font-headline font-bold scroll-mt-8 focus-visible:outline-ocean-600" x-text="activeHotel() ? 'Rooms at ' + activeHotel().name : 'Select a hotel first'"></h2>
+                            <p x-show="activeHotel()?.description" class="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300 line-clamp-3" x-text="descriptionText(activeHotel())"></p>
                             <p class="mt-1 text-sm text-slate-500">Rooms inherit your hotel stay dates. Guest counts and room quantities can be adjusted below.</p>
-                            <button type="button" @click="tab = 'hotels'; search = ''; renderMap()" class="min-h-11 py-2 text-sm font-bold text-ocean-700 dark:text-ocean-300">Choose a hotel</button>
+                            <p x-show="activeHotel() && !activeHotel().rooms.length" class="mt-2 text-sm text-slate-600 dark:text-slate-300">No room types are currently listed for this hotel.</p>
+                            <button type="button" @click="setSection('hotels')" :disabled="busy" class="min-h-11 py-2 text-sm font-bold text-ocean-700 dark:text-ocean-300 disabled:opacity-50">Choose a hotel</button>
                         </div>
-                        <label for="listing-search" class="sr-only">Search places</label><input id="listing-search" x-model="search" @input.debounce.250ms="renderMap()" placeholder="Search places or hotels" type="search" class="w-full rounded-lg border-sand-300 dark:bg-slate-800 mb-5">
+                        <label for="listing-search" class="sr-only">Search places</label><input id="listing-search" x-model="search" @input.debounce.250ms="searchListings()" :disabled="busy" placeholder="Search places or hotels" type="search" class="w-full rounded-lg border-sand-300 dark:bg-slate-800 mb-5">
                         <p x-show="!destinationId" class="text-sm text-slate-500">Choose a destination to explore its listings.</p>
-                        <p x-show="destinationId && listings().length === 0" class="text-sm text-slate-500">No matching listings are available in this category.</p>
+                        <p x-show="destinationId && listings().length === 0 && !(tab === 'rooms' && activeHotel() && !activeHotel().rooms.length)" class="text-sm text-slate-500" x-text="tab === 'rooms' && activeHotel() ? 'No rooms match your search.' : 'No matching listings are available in this category.'"></p>
                         <template x-for="listing in listings()" :key="listing.type + ':' + listing.id">
                             <article class="flex gap-4 border-b border-sand-200 dark:border-slate-700 py-5 first:pt-0">
                                 <img x-show="listing.image" :src="listing.image" alt="" class="hidden sm:block w-24 h-24 shrink-0 rounded-lg object-cover" loading="lazy">
@@ -112,7 +116,7 @@
                                 <a :href="documentUrl()" class="min-h-11 rounded-lg border border-sand-300 px-4 py-2.5 text-sm font-bold">Download PDF</a>
                                 <a :href="documentUrl(true)" target="_blank" rel="noopener" class="min-h-11 rounded-lg border border-sand-300 px-4 py-2.5 text-sm font-bold">Print view</a>
                                 <button type="button" @click="email()" :disabled="busy" class="min-h-11 rounded-lg border border-sand-300 px-4 py-2.5 text-sm font-bold">Email itinerary</button>
-                                <button type="button" @click="transfer()" :disabled="busy" class="min-h-11 rounded-lg bg-ocean-700 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50">Add to Trip Basket</button>
+                            <button type="button" @click="transfer()" :disabled="busy || arrivalTooSoon(startDate)" aria-describedby="trip-booking-date-hint" class="min-h-11 rounded-lg bg-ocean-700 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50">Add to Trip Basket</button>
                                 <a href="{{ route('cart.index') }}" class="min-h-11 px-3 py-2.5 text-sm font-bold text-ocean-700 dark:text-ocean-300">Open Trip Basket →</a>
                             </div>
                             <template x-for="(day, index) in itinerary.snapshot.days" :key="day.date">
@@ -165,7 +169,10 @@
             </section>
             <aside id="planner-map" aria-label="Trip map" class="scroll-mt-16 lg:sticky lg:top-0 lg:self-start">
                 <p x-show="mapError" x-cloak x-text="mapError" role="status" class="p-3 bg-amber-50 text-amber-900 text-sm"></p>
-                <div x-ref="map" class="h-80 sm:h-96 lg:h-[calc(100dvh-3rem)] z-0" aria-label="Destination and itinerary route map"></div>
+                <div class="relative isolate">
+                    <div x-ref="map" tabindex="-1" class="h-80 sm:h-96 lg:h-[calc(100dvh-3rem)] z-0" aria-label="Destination and itinerary route map"></div>
+                    @include('trip-planner._map-preview')
+                </div>
                 <div class="p-3 bg-white dark:bg-slate-950 border-t border-sand-200 dark:border-slate-700">
                     <p x-show="routeNotice" x-cloak x-text="routeNotice" role="status" class="mb-3 rounded-lg bg-amber-50 dark:bg-amber-950/40 p-2.5 text-xs text-amber-900 dark:text-amber-200"></p>
                     <h2 class="text-xs font-bold uppercase tracking-widest text-ocean-700 dark:text-ocean-300">Map key</h2>
@@ -197,11 +204,12 @@
                     <div x-show="editing?.type === 'activity'">
                         <label class="block text-sm mb-1">Travelers joining this activity</label>
                         <div class="flex items-center gap-3">
-                            <button type="button" @click="optionPax = Math.max(1, Number(optionPax) - 1)" :disabled="Number(optionPax) <= 1" aria-label="Fewer travelers" class="min-h-11 min-w-11 rounded-lg border border-sand-300 dark:border-slate-600 text-xl font-bold disabled:opacity-40">−</button>
+                            <button type="button" @click="adjustActivityPax(-1)" :disabled="Number(optionPax) <= 1" aria-label="Fewer travelers" class="min-h-11 min-w-11 rounded-lg border border-sand-300 dark:border-slate-600 text-xl font-bold disabled:opacity-40">−</button>
                             <span class="w-10 text-center text-lg font-bold" x-text="optionPax" aria-live="polite"></span>
-                            <button type="button" @click="optionPax = Math.min(editing?.max_pax || 20, Number(optionPax) + 1)" :disabled="Number(optionPax) >= (editing?.max_pax || 20)" aria-label="More travelers" class="min-h-11 min-w-11 rounded-lg border border-sand-300 dark:border-slate-600 text-xl font-bold disabled:opacity-40">+</button>
+                            <button type="button" @click="adjustActivityPax(1)" :disabled="Number(optionPax) >= activityLimit(editing)" aria-label="More travelers" class="min-h-11 min-w-11 rounded-lg border border-sand-300 dark:border-slate-600 text-xl font-bold disabled:opacity-40">+</button>
                         </div>
-                        <p class="text-xs text-slate-500 mt-1">Not everyone has to join — set how many travelers will go (up to <span x-text="editing?.max_pax || 20"></span>).</p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1" x-text="activityLimit(editing) === 1 ? 'This activity currently allows 1 traveler per choice.' : 'Not everyone has to join — choose up to ' + activityLimit(editing) + ' travelers.'"></p>
+                        <p x-show="Number(optionPax) > activityLimit(editing)" role="status" class="mt-2 text-sm text-amber-800 dark:text-amber-300">The saved traveler count exceeds the current limit. Reduce it before saving.</p>
                     </div>
                     <div x-show="editing?.type === 'room'"><label for="choice-qty" class="block text-sm mb-1">Number of rooms</label><input id="choice-qty" type="number" x-model.number="optionQuantity" min="1" max="20" class="w-full rounded-lg border-sand-300 dark:bg-slate-800"></div>
                     <div x-show="editing?.type === 'room'" class="rounded-lg bg-sand-100 dark:bg-slate-800 p-3 text-sm">

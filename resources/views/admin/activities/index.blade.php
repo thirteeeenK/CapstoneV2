@@ -136,7 +136,7 @@
                 </form>
             </div>
 
-            <!-- Activity Level Filter Tabs (5 Levels) -->
+            <!-- Activity Level Filter Tabs (6 Levels) -->
             <div class="pt-2 border-t border-slate-100 flex items-center gap-2 overflow-x-auto">
                 <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider mr-1 flex items-center gap-1 shrink-0">
                     <span class="material-symbols-outlined text-[16px] text-slate-400">signal_cellular_alt</span>
@@ -150,7 +150,7 @@
                     All Levels
                 </a>
 
-                @foreach(['Relaxing' => 'emerald', 'Sightseeing' => 'sky', 'Adventure' => 'amber', 'Extreme' => 'rose', 'Underwater' => 'cyan'] as $lvl => $color)
+                @foreach(['Relaxing' => 'emerald', 'Sightseeing' => 'sky', 'Adventure' => 'amber', 'Extreme' => 'rose', 'Underwater' => 'cyan', 'Indoor' => 'violet'] as $lvl => $color)
                     <a href="{{ route('admin.activities.index', array_filter(['level' => $lvl, 'destination_id' => $selectedDestinationId, 'search' => $search, 'category' => $selectedCategory])) }}"
                        @click.prevent="setLevel('{{ $lvl }}')"
                        :class="level === '{{ $lvl }}' ? 'bg-ocean-600 text-white font-bold shadow-xs' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'"

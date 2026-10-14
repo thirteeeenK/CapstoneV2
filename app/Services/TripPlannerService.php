@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Concerns\ResolvesImages;
 use App\Models\ActivityModel;
 use App\Models\CartItem;
 use App\Models\DestinationModel;
@@ -19,7 +20,9 @@ use Illuminate\Validation\ValidationException;
 
 class TripPlannerService
 {
-    public function __construct(private RoomAvailabilityService $availability, private CartService $cart) {}
+    use ResolvesImages;
+
+    public function __construct(private RoomAvailabilityService $availability, private CartService $cart, private TripBookingDatePolicy $dates) {}
 
     public function catalog(DestinationModel $destination): array
     {
@@ -88,7 +91,10 @@ class TripPlannerService
             'description' => (string) ($model->description ?? $model->hotel_description ?? ''),
             'lat' => $latitude === null ? null : (float) $latitude,
             'lng' => $longitude === null ? null : (float) $longitude,
-            'image' => ! empty($model->images[0]) ? asset('storage/'.$model->images[0]) : null,
+            'image' => $type === 'activity'
+                ? self::resolveActivityImage($model->images[0] ?? null, $model->activity_name, $model->category)
+                : self::resolveImg($model->images[0] ?? null),
+            'image_is_fallback' => empty($model->images[0]),
             'price' => $type === 'room' ? (float) $model->base_price : ($type === 'activity' ? $model->rate : null),
             'hotel_id' => $type === 'room' ? $model->hotel_id : ($type === 'hotel' ? $model->id : null),
             'hotel_name' => $type === 'room' ? $model->hotel->hotel_name : null,
@@ -145,7 +151,7 @@ class TripPlannerService
     {
         $type = $data['item_type'];
         $quantity = (int) ($data['quantity'] ?? 1);
-        $pax = (int) ($data['pax'] ?? $plan->pax);
+        $pax = (int) ($data['pax'] ?? ($type === 'activity' ? 1 : $plan->pax));
         $options = ['quantity' => $quantity, 'pax' => $pax];
         if (in_array($type, ['hotel', 'room'], true)) {
             $hotelStay = $type === 'room' ? $plan->items()->where('item_type', 'hotel')->where('item_id', $model->hotel_id)->first()?->options : null;
@@ -191,9 +197,7 @@ class TripPlannerService
                 throw ValidationException::withMessages(['cart' => 'An earlier version is still in your Trip Basket. Remove it before transferring this version.']);
             }
             $snapshot = $locked->snapshot;
-            if ($lockedPlan->start_date->lt(now('Asia/Manila')->startOfDay())) {
-                throw ValidationException::withMessages(['start_date' => 'This trip’s arrival date has passed. Start a new trip with future dates before booking.']);
-            }
+            $this->dates->assertBookableArrival($lockedPlan->start_date->toDateString());
             $items = $lockedPlan->items()->get();
             $bookable = $items->whereIn('item_type', ['room', 'activity']);
             if ($bookable->isEmpty()) {

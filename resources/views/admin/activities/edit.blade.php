@@ -90,6 +90,7 @@
                             <option value="Adventure" {{ old('activity_level', $activity->activity_level) == 'Adventure' ? 'selected' : '' }}>Adventure</option>
                             <option value="Extreme" {{ old('activity_level', $activity->activity_level) == 'Extreme' ? 'selected' : '' }}>Extreme</option>
                             <option value="Underwater" {{ old('activity_level', $activity->activity_level) == 'Underwater' ? 'selected' : '' }}>Underwater</option>
+                            <option value="Indoor" {{ old('activity_level', $activity->activity_level) == 'Indoor' ? 'selected' : '' }}>Indoor</option>
                         </select>
                     </div>
 

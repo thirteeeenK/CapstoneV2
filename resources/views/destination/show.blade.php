@@ -193,7 +193,7 @@
                 </div>
 
                 @if($destination->activities->isNotEmpty())
-                    {{-- Activity Filter Toolbar (5 Levels & Search) --}}
+                    {{-- Activity Filter Toolbar (6 Levels & Search) --}}
                     <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-700/80 rounded-2xl p-4 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
                         <div class="relative w-full sm:w-72">
                             <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 text-[18px]">search</span>
@@ -216,7 +216,7 @@
                                 All
                             </button>
 
-                            @foreach(['Relaxing' => '🧘', 'Sightseeing' => '🗺️', 'Adventure' => '🏔️', 'Extreme' => '⚡', 'Underwater' => '🤿'] as $lvl => $icon)
+                            @foreach(['Relaxing' => '🧘', 'Sightseeing' => '🗺️', 'Adventure' => '🏔️', 'Extreme' => '⚡', 'Underwater' => '🤿', 'Indoor' => '🏛️'] as $lvl => $icon)
                                 <button type="button" @click="levelFilter = '{{ $lvl }}'"
                                     :class="levelFilter === '{{ $lvl }}' ? 'bg-sky-600 text-white font-bold shadow-xs' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 font-medium'"
                                     class="px-2.5 py-1 rounded-xl text-xs transition-all cursor-pointer shrink-0 flex items-center gap-1">

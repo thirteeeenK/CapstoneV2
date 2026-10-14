@@ -9,13 +9,36 @@ use App\Models\PassengerCategoryRule;
 use App\Models\RoomType;
 use App\Models\TripItinerary;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class BookingRequestService
 {
-    public function __construct(private readonly RoomAvailabilityService $roomAvailabilityService) {}
+    public function __construct(private readonly RoomAvailabilityService $roomAvailabilityService, private readonly TripBookingDatePolicy $dates) {}
+
+    /**
+     * @param  Collection<int, CartItem>  $cartItems
+     * @param  Collection<int, TripItinerary>|null  $itineraries
+     */
+    public function assertPlannerArrivalDates(Collection $cartItems, ?Collection $itineraries = null): void
+    {
+        $ids = $cartItems->pluck('trip_itinerary_id')->filter()->unique();
+        if ($ids->isEmpty()) {
+            return;
+        }
+        $itineraries ??= TripItinerary::query()->with('plan')->whereIn('id', $ids)->get()->keyBy('id');
+        foreach ($ids as $id) {
+            $itinerary = $itineraries->get($id);
+            if (! $itinerary) {
+                throw ValidationException::withMessages(['start_date' => 'The transferred trip is no longer available. Remove it from the Trip Basket and start a new trip.']);
+            }
+            $snapshot = (array) $itinerary->snapshot;
+            $arrival = array_key_exists('start_date', $snapshot) ? $snapshot['start_date'] : $itinerary->plan?->start_date?->toDateString();
+            $this->dates->assertBookableArrival(is_string($arrival) ? $arrival : null);
+        }
+    }
 
     /**
      * Get the active (selected) cart query for the user/session.
@@ -159,7 +182,8 @@ class BookingRequestService
                     'cart' => ['Your Trip Basket changed while checkout was processing. Please review it and try again.'],
                 ]);
             }
-            $plannerItineraries = TripItinerary::query()->whereIn('id', $cartItems->pluck('trip_itinerary_id')->filter()->unique())->get()->keyBy('id');
+            $plannerItineraries = TripItinerary::query()->with('plan')->whereIn('id', $cartItems->pluck('trip_itinerary_id')->filter()->unique())->get()->keyBy('id');
+            $this->assertPlannerArrivalDates($lockedCartItems, $plannerItineraries);
             foreach ($cartItems as $item) {
                 $fields = ['quantity', 'selected_pax', 'check_in_date', 'check_out_date', 'is_selected', 'item_type', 'item_id', 'trip_itinerary_id'];
                 if (array_intersect_key($item->getRawOriginal(), array_flip($fields)) !== array_intersect_key($lockedCartItems[$item->id]->getRawOriginal(), array_flip($fields))) {

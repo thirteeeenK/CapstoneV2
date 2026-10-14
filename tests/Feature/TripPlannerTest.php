@@ -13,6 +13,7 @@ use App\Notifications\TripItineraryReady;
 use App\Services\BookingRequestService;
 use App\Services\ItineraryService;
 use App\Services\RoutingService;
+use App\Services\TripBookingDatePolicy;
 use App\Services\TripPlannerService;
 use App\Services\WeatherService;
 use Illuminate\Http\Request;
@@ -65,6 +66,101 @@ function plannerActivity(DestinationModel $destination, array $attributes = []):
         'duration' => '1 hour', 'scheduling' => ['duration_minutes' => 60, 'opens_at' => '09:00', 'closes_at' => '18:00', 'environment' => 'outdoor']]);
 }
 
+it('renders the moving arrival minimum using Manila calendar days with a UTC app timezone', function (string $instant, string $minimum) {
+    config(['app.timezone' => 'UTC']);
+    $this->travelTo(Carbon::parse($instant));
+
+    expect(app(TripBookingDatePolicy::class)->minimumArrivalDate())->toBe($minimum);
+    $this->get(route('trip-planner.index'))->assertSee('min="'.$minimum.'"', false)->assertSee('two calendar days ahead');
+})->with([
+    'before Manila midnight' => ['2026-10-14 15:59:59 UTC', '2026-10-16'],
+    'after Manila midnight' => ['2026-10-14 16:00:00 UTC', '2026-10-17'],
+    'year rollover' => ['2026-12-31 16:00:00 UTC', '2027-01-03'],
+    'leap day' => ['2028-02-27 10:00:00 Asia/Manila', '2028-02-29'],
+]);
+
+it('rejects new trip arrivals earlier than two calendar days with no plan created', function (string $arrival) {
+    $this->travelTo(Carbon::parse('2026-10-14 10:00', 'Asia/Manila'));
+
+    $this->postJson(route('trip-planner.store'), ['destination_id' => $this->destination->id, 'title' => 'Too soon',
+        'start_date' => $arrival, 'end_date' => '2026-10-18', 'pax' => 2, 'mode' => 'walking'])
+        ->assertUnprocessable()->assertJsonValidationErrors('start_date')->assertSee('2026-10-16');
+
+    expect(TripPlan::count())->toBe(1);
+})->with(['2026-10-13', '2026-10-14', '2026-10-15']);
+
+it('accepts the earliest arrival and preserves departure ordering and trip duration validation', function () {
+    $this->travelTo(Carbon::parse('2026-10-14 23:59', 'Asia/Manila'));
+    $payload = ['destination_id' => $this->destination->id, 'title' => 'Eligible trip', 'start_date' => '2026-10-16',
+        'end_date' => '2026-10-18', 'pax' => 2, 'mode' => 'walking'];
+
+    $this->postJson(route('trip-planner.store'), $payload)->assertCreated()->assertJsonPath('data.start_date', '2026-10-16');
+    $this->postJson(route('trip-planner.store'), array_replace($payload, ['end_date' => '2026-10-16']))
+        ->assertUnprocessable()->assertJsonValidationErrors('end_date');
+    $this->postJson(route('trip-planner.store'), array_replace($payload, ['end_date' => '2026-11-16']))
+        ->assertUnprocessable()->assertJsonValidationErrors('end_date');
+});
+
+it('keeps old plans readable but rejects a new transfer inside the arrival lead time', function () {
+    plannerAdd($this->plan, 'room', $this->room->id);
+    $itinerary = app(ItineraryService::class)->generate($this->plan->fresh());
+
+    $this->getJson(route('trip-planner.show', $this->plan))->assertOk();
+    $this->postJson(route('trip-planner.transfer', [$this->plan, $itinerary]))
+        ->assertUnprocessable()->assertJsonValidationErrors('start_date');
+
+    expect(CartItem::count())->toBe(0)->and($itinerary->fresh()->transferred_at)->toBeNull();
+});
+
+it('rechecks an aged planner basket on both checkout GET and direct POST without booking side effects', function () {
+    $this->travelTo(Carbon::parse('2026-10-12 10:00', 'Asia/Manila'));
+    plannerAdd($this->plan, 'room', $this->room->id);
+    $itinerary = app(ItineraryService::class)->generate($this->plan->fresh());
+    $this->postJson(route('trip-planner.transfer', [$this->plan, $itinerary]))->assertOk();
+    $this->travelTo(Carbon::parse('2026-10-13 10:00', 'Asia/Manila'));
+    Notification::fake();
+
+    $this->get(route('checkout.index'))->assertRedirect(route('cart.index'))->assertSessionHas('error');
+    $this->postJson(route('checkout.process'), ['contact_name' => 'Planner Guest', 'contact_email' => $this->user->email, 'contact_phone' => '09123456789'])
+        ->assertUnprocessable()->assertJsonValidationErrors('start_date');
+    $this->postJson(route('trip-planner.transfer', [$this->plan, $itinerary]))->assertOk()->assertJsonPath('data.status', 'already_transferred');
+
+    expect(Booking::count())->toBe(0)->and(CartItem::count())->toBe(1);
+    Notification::assertNothingSent();
+});
+
+it('uses the original trip arrival for activity only planner bookings and ignores deselected groups', function () {
+    $this->travelTo(Carbon::parse('2026-10-12 10:00', 'Asia/Manila'));
+    plannerAdd($this->plan, 'hotel', $this->hotel->id);
+    plannerAdd($this->plan, 'activity', plannerActivity($this->destination)->id, ['date' => '2026-10-15']);
+    $itinerary = app(ItineraryService::class)->generate($this->plan->fresh());
+    $this->postJson(route('trip-planner.transfer', [$this->plan, $itinerary]))->assertOk();
+    $this->travelTo(Carbon::parse('2026-10-13 10:00', 'Asia/Manila'));
+
+    $this->postJson(route('checkout.process'), ['contact_name' => 'Planner Guest', 'contact_email' => $this->user->email, 'contact_phone' => '09123456789'])
+        ->assertUnprocessable()->assertJsonValidationErrors('start_date');
+    CartItem::query()->update(['is_selected' => false]);
+    app(BookingRequestService::class)->assertPlannerArrivalDates(CartItem::query()->where('is_selected', true)->get());
+    expect(Booking::count())->toBe(0)->and(CartItem::count())->toBe(1);
+});
+
+it('supports legacy snapshot dates through the plan and rejects malformed snapshot arrival dates', function () {
+    $this->travelTo(Carbon::parse('2026-10-12 10:00', 'Asia/Manila'));
+    plannerAdd($this->plan, 'room', $this->room->id);
+    $itinerary = app(ItineraryService::class)->generate($this->plan->fresh());
+    $this->postJson(route('trip-planner.transfer', [$this->plan, $itinerary]))->assertOk();
+    $snapshot = $itinerary->snapshot;
+    unset($snapshot['start_date']);
+    $itinerary->update(['snapshot' => $snapshot]);
+    $service = app(BookingRequestService::class);
+    $items = CartItem::all();
+
+    $service->assertPlannerArrivalDates($items);
+    $snapshot['start_date'] = '2026-02-30';
+    $itinerary->update(['snapshot' => $snapshot]);
+    expect(fn () => $service->assertPlannerArrivalDates($items))->toThrow(ValidationException::class);
+});
+
 it('keeps saved planner selections separate from the existing basket and deduplicates choices', function () {
     $this->getJson(route('trip-planner.show', $this->plan))->assertJsonPath('data.start_date', '2026-10-14')->assertJsonPath('data.end_date', '2026-10-17');
     $this->postJson(route('trip-planner.add', $this->plan), ['item_type' => 'room', 'item_id' => $this->room->id])->assertOk();
@@ -72,7 +168,8 @@ it('keeps saved planner selections separate from the existing basket and dedupli
     expect($this->plan->items()->count())->toBe(1)->and(CartItem::count())->toBe(0);
     $this->get(route('trip-planner.index'))->assertOk()->assertSee('Plan your island days')
         ->assertSee('Getting around')->assertSee('By vehicle', false)->assertSee('Map key')
-        ->assertSee('straight-line estimate', false);
+        ->assertSee('straight-line estimate', false)->assertSee('Close map preview')
+        ->assertSee('Add to My Trip')->assertSee('View rooms')->assertSee('Set trip dates');
 });
 
 it('returns rooms under their hotels and uses activities as the visit catalog', function () {
@@ -88,6 +185,71 @@ it('returns rooms under their hotels and uses activities as the visit catalog', 
         ->and($activityIds)->toContain($activity->id)
         ->and($activityIds)->not->toContain($hiddenActivity->id)
         ->and($activityIds)->not->toContain($foreignActivity->id);
+});
+
+it('defaults activities to one traveler and retains explicit choices and hotel room defaults', function () {
+    $this->plan->update(['pax' => 3]);
+    $activity = plannerActivity($this->destination, ['capacity' => 'Up to 6']);
+
+    $this->postJson(route('trip-planner.add', $this->plan), ['item_type' => 'activity', 'item_id' => $activity->id])
+        ->assertOk()->assertJsonPath('data.options.pax', 1);
+    $this->postJson(route('trip-planner.add', $this->plan), ['item_type' => 'activity', 'item_id' => $activity->id, 'pax' => 2, 'date' => '2026-10-15'])
+        ->assertOk()->assertJsonPath('data.options.pax', 2)->assertJsonPath('data.options.date', '2026-10-15');
+    $this->postJson(route('trip-planner.add', $this->plan), ['item_type' => 'hotel', 'item_id' => $this->hotel->id])
+        ->assertOk()->assertJsonPath('data.options.pax', 3);
+    $this->postJson(route('trip-planner.add', $this->plan), ['item_type' => 'room', 'item_id' => $this->room->id])
+        ->assertOk()->assertJsonPath('data.options.pax', 3);
+    expect($this->plan->items()->where('item_type', 'activity')->first()->options)->toMatchArray(['pax' => 2, 'date' => '2026-10-15']);
+});
+
+it('rejects increasing a one traveler activity without changing its saved choice or revision', function () {
+    $activity = plannerActivity($this->destination, ['capacity' => '1']);
+    $this->postJson(route('trip-planner.add', $this->plan), ['item_type' => 'activity', 'item_id' => $activity->id])
+        ->assertOk()->assertJsonPath('data.options.pax', 1);
+    $revision = $this->plan->fresh()->revision;
+
+    $this->postJson(route('trip-planner.add', $this->plan), ['item_type' => 'activity', 'item_id' => $activity->id, 'pax' => 2])
+        ->assertUnprocessable()->assertJsonValidationErrors('pax');
+
+    expect($this->plan->fresh()->revision)->toBe($revision)
+        ->and($this->plan->items()->sole()->options['pax'])->toBe(1);
+});
+
+it('resolves planner catalog images for supported stored path formats', function (string $stored, string $expectedPath) {
+    $this->hotel->update(['images' => [$stored]]);
+    $this->room->update(['images' => [$stored]]);
+    $activity = plannerActivity($this->destination, ['images' => [$stored]]);
+
+    $catalog = $this->getJson(route('trip-planner.catalog', $this->destination))->assertOk()->json('data');
+    $hotel = collect($catalog['hotels'])->firstWhere('id', $this->hotel->id);
+    $activityListing = collect($catalog['activities'])->firstWhere('id', $activity->id);
+    $expected = str_starts_with($expectedPath, 'http') ? $expectedPath : asset($expectedPath);
+
+    expect($hotel)->toMatchArray(['image' => $expected, 'image_is_fallback' => false]);
+    expect($hotel['rooms'][0])->toMatchArray(['image' => $expected, 'image_is_fallback' => false]);
+    expect($activityListing)->toMatchArray(['image' => $expected, 'image_is_fallback' => false]);
+})->with([
+    'public disk' => ['hotels/photo.jpg', 'storage/hotels/photo.jpg'],
+    'absolute https' => ['https://example.com/photo.jpg', 'https://example.com/photo.jpg'],
+    'absolute http' => ['http://example.com/photo.jpg', 'http://example.com/photo.jpg'],
+    'public asset' => ['images/photo.jpg', 'images/photo.jpg'],
+    'storage prefix' => ['storage/hotels/photo.jpg', 'storage/hotels/photo.jpg'],
+    'encoded segments' => ['hotels/Beach Room.jpg', 'storage/hotels/Beach%20Room.jpg'],
+    'windows separators' => ['hotels\\Beach Room.jpg', 'storage/hotels/Beach%20Room.jpg'],
+]);
+
+it('labels existing image fallbacks when hotel and activity uploads are missing', function () {
+    $this->hotel->update(['images' => []]);
+    $activity = plannerActivity($this->destination, ['activity_name' => 'Sunset Cruise', 'images' => []]);
+
+    $catalog = $this->getJson(route('trip-planner.catalog', $this->destination))->assertOk()->json('data');
+    $hotel = collect($catalog['hotels'])->firstWhere('id', $this->hotel->id);
+    $activityListing = collect($catalog['activities'])->firstWhere('id', $activity->id);
+
+    expect($hotel)->toMatchArray(['image' => 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80', 'image_is_fallback' => true]);
+    expect($activityListing)->toMatchArray(['image' => 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=800&q=80', 'image_is_fallback' => true]);
+    $this->get(route('trip-planner.index'))->assertSee('Illustrative image; no uploaded photo available.')
+        ->assertSee('Adds 1 traveler.')->assertSee('Photo unavailable.')->assertSee('dismissMapPreview()', false);
 });
 
 it('shows a dated destination forecast with a planning disclaimer and cache status', function () {
@@ -179,6 +341,7 @@ it('puts outdoor visits on a clear day and uses real route evidence in the strat
 });
 
 it('retains unscheduled choices instead of inventing routes and carts only the scheduled ones', function () {
+    $this->travelTo(Carbon::parse('2026-10-12 10:00', 'Asia/Manila'));
     $this->destination->update(['latitude' => null, 'longitude' => null]);
     plannerAdd($this->plan, 'room', $this->room->id);
     $activity = plannerActivity($this->destination, ['latitude' => null, 'longitude' => null]);
@@ -209,6 +372,7 @@ it('explains an unschedulable choice as a missing map route when routing finds n
 });
 
 it('blocks the cart transfer when no bookable choice could be scheduled', function () {
+    $this->travelTo(Carbon::parse('2026-10-12 10:00', 'Asia/Manila'));
     $this->destination->update(['latitude' => null, 'longitude' => null]);
     plannerAdd($this->plan, 'hotel', $this->hotel->id);
     $activity = plannerActivity($this->destination, ['latitude' => null, 'longitude' => null]);
@@ -265,9 +429,10 @@ it('rejects overlapping hotels and out of range stays', function () {
 });
 
 it('transfers each version once with its scheduled dates and keeps normal cart dedupe separate', function () {
+    $this->travelTo(Carbon::parse('2026-10-12 10:00', 'Asia/Manila'));
     plannerAdd($this->plan, 'room', $this->room->id);
     $activity = plannerActivity($this->destination);
-    plannerAdd($this->plan, 'activity', $activity->id);
+    plannerAdd($this->plan, 'activity', $activity->id, ['pax' => 2]);
     $itinerary = app(ItineraryService::class)->generate($this->plan->fresh());
     $this->postJson(route('trip-planner.transfer', [$this->plan, $itinerary]))->assertOk()->assertJsonPath('data.status', 'added');
     $this->postJson(route('trip-planner.transfer', [$this->plan, $itinerary]))->assertOk()->assertJsonPath('data.status', 'already_transferred');
@@ -277,6 +442,7 @@ it('transfers each version once with its scheduled dates and keeps normal cart d
 });
 
 it('groups nearby visits and does not transfer a regenerated unchanged revision twice', function () {
+    $this->travelTo(Carbon::parse('2026-10-12 10:00', 'Asia/Manila'));
     plannerAdd($this->plan, 'room', $this->room->id);
     $first = plannerActivity($this->destination);
     $second = plannerActivity($this->destination);
@@ -294,6 +460,7 @@ it('groups nearby visits and does not transfer a regenerated unchanged revision 
 });
 
 it('allows adding a previously transferred itinerary again after clearing the basket', function () {
+    $this->travelTo(Carbon::parse('2026-10-12 10:00', 'Asia/Manila'));
     plannerAdd($this->plan, 'room', $this->room->id);
     plannerAdd($this->plan, 'activity', plannerActivity($this->destination)->id);
     $itinerary = app(ItineraryService::class)->generate($this->plan->fresh());
@@ -310,6 +477,7 @@ it('allows adding a previously transferred itinerary again after clearing the ba
 });
 
 it('protects a partially removed planner group and allows an unchanged regeneration after its last item is removed', function () {
+    $this->travelTo(Carbon::parse('2026-10-12 10:00', 'Asia/Manila'));
     plannerAdd($this->plan, 'room', $this->room->id);
     plannerAdd($this->plan, 'activity', plannerActivity($this->destination)->id);
     $itinerary = app(ItineraryService::class)->generate($this->plan->fresh());
@@ -328,6 +496,7 @@ it('protects a partially removed planner group and allows an unchanged regenerat
 });
 
 it('groups planner basket items separately from regular and lucky items and scopes group selection to the owner', function () {
+    $this->travelTo(Carbon::parse('2026-10-12 10:00', 'Asia/Manila'));
     $this->plan->update(['title' => 'My Boracay itinerary']);
     plannerAdd($this->plan, 'room', $this->room->id);
     $activity = plannerActivity($this->destination);
@@ -367,6 +536,7 @@ it('invalidates transfer after edits and keeps earlier snapshots immutable', fun
 });
 
 it('rejects checkout when a transferred planner line has been changed in the cart', function () {
+    $this->travelTo(Carbon::parse('2026-10-12 10:00', 'Asia/Manila'));
     plannerAdd($this->plan, 'room', $this->room->id);
     $itinerary = app(ItineraryService::class)->generate($this->plan->fresh());
     $this->postJson(route('trip-planner.transfer', [$this->plan, $itinerary]))->assertOk();
@@ -378,6 +548,7 @@ it('rejects checkout when a transferred planner line has been changed in the car
 });
 
 it('preserves cart provenance when the user removes a choice from a later draft', function () {
+    $this->travelTo(Carbon::parse('2026-10-12 10:00', 'Asia/Manila'));
     plannerAdd($this->plan, 'room', $this->room->id);
     $itinerary = app(ItineraryService::class)->generate($this->plan->fresh());
     $originalId = $this->plan->items()->first()->id;
@@ -434,6 +605,7 @@ it('lets admins verify activity scheduling and refuses malformed times', functio
 });
 
 it('deletes a saved trip and its linked basket lines without deleting ordinary basket items', function () {
+    $this->travelTo(Carbon::parse('2026-10-12 10:00', 'Asia/Manila'));
     plannerAdd($this->plan, 'room', $this->room->id);
     $activity = plannerActivity($this->destination);
     plannerAdd($this->plan, 'activity', $activity->id);
@@ -452,6 +624,7 @@ it('deletes a saved trip and its linked basket lines without deleting ordinary b
 });
 
 it('preserves the itinerary and the purchased subset on the booking after checkout', function () {
+    $this->travelTo(Carbon::parse('2026-10-12 10:00', 'Asia/Manila'));
     plannerAdd($this->plan, 'room', $this->room->id);
     plannerAdd($this->plan, 'activity', plannerActivity($this->destination)->id);
     $itinerary = app(ItineraryService::class)->generate($this->plan->fresh());

@@ -53,6 +53,12 @@ class CheckoutController extends Controller
             return redirect()->route('cart.index');
         }
 
+        try {
+            $this->bookingRequestService->assertPlannerArrivalDates($cartItems);
+        } catch (ValidationException $exception) {
+            return redirect()->route('cart.index')->with('error', $exception->validator->errors()->first());
+        }
+
         // Past-date guard: block checkout if any *selected* room has expired check-in (< today)
         $expiredSelected = $cartItems->filter(fn ($item) => $item->isExpired());
         if ($expiredSelected->isNotEmpty()) {

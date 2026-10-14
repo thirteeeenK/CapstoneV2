@@ -112,7 +112,7 @@
                         All Levels
                     </button>
 
-                    @foreach(['Relaxing' => '🧘', 'Sightseeing' => '🗺️', 'Adventure' => '🏔️', 'Extreme' => '⚡', 'Underwater' => '🤿'] as $lvl => $icon)
+                    @foreach(['Relaxing' => '🧘', 'Sightseeing' => '🗺️', 'Adventure' => '🏔️', 'Extreme' => '⚡', 'Underwater' => '🤿', 'Indoor' => '🏛️'] as $lvl => $icon)
                         <button type="button" @click="levelFilter = '{{ $lvl }}'"
                             :class="levelFilter === '{{ $lvl }}' ? 'bg-sky-600 text-white font-extrabold shadow-xs' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 font-semibold'"
                             class="px-2.5 sm:px-3 py-1.5 rounded-xl text-xs transition-all cursor-pointer flex items-center gap-1">

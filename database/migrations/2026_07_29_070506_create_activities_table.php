@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('destination_id')->constrained('destinations')->onDelete('cascade');
             $table->string('activity_name');
             $table->string('category'); // e.g., Island Hopping, Land Tour, Water Activity, Diving, Adventure, Sailing, Other
-            $table->string('activity_level'); // e.g., Relaxing, Sightseeing, Adventure, Extreme, Underwater
+            $table->string('activity_level'); // e.g., Relaxing, Sightseeing, Adventure, Extreme, Underwater, Indoor
             $table->string('rate'); // e.g., ₱850/person, ₱2,000, ₱200–₱300/person
             $table->string('duration')->nullable(); // e.g., 3 Hours, Half Day, Full Day, 15 Mins
             $table->string('capacity')->nullable(); // e.g., 1–6 Pax, Max 10 Guests

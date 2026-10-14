@@ -153,6 +153,7 @@
                             <option value="Adventure">Adventure</option>
                             <option value="Extreme">Extreme</option>
                             <option value="Underwater">Underwater</option>
+                            <option value="Indoor">Indoor</option>
                         </select>
                     </div>
 

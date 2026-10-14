@@ -11,6 +11,13 @@ export default (config) => {
     let layers = null;
     let resizeObserver = null;
     let pageShowHandler = null;
+    let previewTrigger = null;
+    let previewSession = 0;
+    let dateTimer = null;
+    let dateRefreshHandler = null;
+    const clockStartedAt = Date.now();
+    const serverClock = Date.parse(config.datePolicy?.serverNow || '');
+    const previewMarkers = new Map();
 
     return {
     destinations: config.destinations, savedPlans: config.plans, destinationId: Number(config.destination || 0),
@@ -19,8 +26,18 @@ export default (config) => {
     tab: 'hotels', busy: false, error: '', notice: '', mapError: '', routeNotice: '', search: '', activeDay: 0, editing: null,
     title: '', startDate: '', endDate: '', pax: 2, mode: 'walking', optionIn: '', optionOut: '', optionDate: '', optionPax: 2, optionQuantity: 1,
     viewportSignature: '', loadSequence: 0, activeHotelId: 0, savedPlanId: '', deleting: false, customStayDates: false,
+    previewPlaces: [], previewKey: '', previewError: '', previewStatus: '', previewImageFailed: false,
+    itineraryMapContext: false, catalogLoading: false,
     reminders: config.emailPreferences.reminders, marketing: config.emailPreferences.marketing,
+    minimumArrival: config.datePolicy?.minimumArrival || '',
     async init() {
+        this.refreshMinimumArrival();
+        if (config.datePolicy) {
+            dateRefreshHandler = () => this.refreshMinimumArrival();
+            dateTimer = window.setInterval(dateRefreshHandler, 30000);
+            window.addEventListener('focus', dateRefreshHandler);
+            document.addEventListener('visibilitychange', dateRefreshHandler);
+        }
         try {
             if (!window.L) {
                 await new Promise((resolve, reject) => {
@@ -42,10 +59,12 @@ export default (config) => {
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap contributors', maxZoom: 19 })
                 .on('tileerror', () => { this.mapError = 'Map tiles are unavailable. You can still use the destination and listing controls.'; }).addTo(map);
             layers = L.featureGroup().addTo(map);
+            map.on?.('click', () => this.dismissMapPreview(false));
             resizeObserver = new ResizeObserver(() => this.scheduleMapResize());
             resizeObserver.observe(container);
             container.sunnyTripsResizeObserver = resizeObserver;
             pageShowHandler = () => {
+                this.refreshMinimumArrival();
                 const restoredDestinationId = Number(this.$root.querySelector('#planner-destination')?.value || 0);
                 if (!this.plan && restoredDestinationId && restoredDestinationId !== Number(this.destinationId)) {
                     this.chooseDestination(restoredDestinationId);
@@ -71,14 +90,19 @@ export default (config) => {
     destination() { return this.destinations.find(item => Number(item.id) === Number(this.destinationId)); },
     async chooseDestination(id) {
         if (this.busy || this.plan) return;
+        this.closeMapPreview(false); this.itineraryMapContext = false; this.activeHotelId = 0; this.search = ''; this.tab = 'hotels';
+        this.catalog = { hotels: [], activities: [] };
         this.destinationId = Number(id); this.error = ''; this.title = 'Trip to ' + (this.destination()?.name || 'the islands');
         this.loadWeather(this.destinationId);
         const sequence = ++this.loadSequence;
+        this.catalogLoading = Boolean(this.destinationId); this.renderMap();
+        if (!this.destinationId) return;
         try {
             const body = await this.api('/catalog/' + id);
             if (sequence !== this.loadSequence) return;
             this.catalog = body.data; this.renderMap();
-        } catch (error) { console.error('Trip planner destination failed', error); this.error = error.message; }
+        } catch (error) { if (sequence === this.loadSequence) { console.error('Trip planner destination failed', error); this.error = error.message; } }
+        finally { if (sequence === this.loadSequence) this.catalogLoading = false; }
     },
     async run(action) {
         if (this.busy) return;
@@ -103,6 +127,10 @@ export default (config) => {
         }
     },
     async create() {
+        this.refreshMinimumArrival();
+        if (this.minimumArrival && this.startDate && this.startDate < this.minimumArrival) {
+            this.error = this.arrivalHint(); return;
+        }
         await this.run(async () => {
             this.plan = (await this.api('/plans', 'POST', { destination_id: this.destinationId, title: this.title,
                 start_date: this.startDate, end_date: this.endDate, pax: Number(this.pax), mode: this.mode })).data;
@@ -112,14 +140,16 @@ export default (config) => {
     },
     async openPlan(id) {
         await this.run(async () => {
+            this.loadSequence++; this.catalogLoading = false; this.closeMapPreview(false); this.itineraryMapContext = false; this.search = ''; this.editing = null;
             const body = await this.api('/plans/' + id);
+            const catalog = await this.api('/catalog/' + body.data.destination_id);
             this.plan = body.data; this.selections = body.data.items; this.itinerary = body.itinerary;
             this.savedPlanId = String(this.plan.id);
             this.destinationId = Number(this.plan.destination_id); this.title = this.plan.title;
             this.loadWeather(this.destinationId);
             this.startDate = this.plan.start_date.slice(0, 10); this.endDate = this.plan.end_date.slice(0, 10);
             this.pax = this.plan.pax; this.mode = this.plan.mode;
-            this.catalog = (await this.api('/catalog/' + this.destinationId)).data;
+            this.catalog = catalog.data;
             const room = this.selections.find(item => item.item_type === 'room');
             this.activeHotelId = room ? this.allListings().find(item => item.type === 'room' && item.id === room.item_id)?.hotel_id || 0 : this.selections.find(item => item.item_type === 'hotel')?.item_id || 0;
             if (this.itinerary?.revision !== this.plan.revision) this.itinerary = null;
@@ -127,9 +157,12 @@ export default (config) => {
         });
     },
     newTrip() {
+        const reloadCatalog = this.catalogLoading;
+        this.loadSequence++; this.catalogLoading = false; this.closeMapPreview(false); this.itineraryMapContext = false; this.search = '';
         this.plan = null; this.selections = []; this.itinerary = null; this.tab = 'hotels'; this.error = ''; this.notice = '';
         this.savedPlanId = ''; this.activeHotelId = 0; this.editing = null; this.deleting = false;
         this.title = 'Trip to ' + (this.destination()?.name || 'the islands'); this.renderMap();
+        if (reloadCatalog && !this.busy) this.chooseDestination(this.destinationId);
     },
     listings(type = this.tab) {
         const list = type === 'rooms' ? (this.activeHotel()?.rooms || []) : (this.catalog[type] || []);
@@ -137,21 +170,136 @@ export default (config) => {
     },
     allListings() { return [...this.catalog.hotels, ...this.catalog.hotels.flatMap(hotel => hotel.rooms), ...this.catalog.activities]; },
     activeHotel() { return this.catalog.hotels.find(hotel => hotel.id === Number(this.activeHotelId)); },
-    async chooseHotel(listing) {
+    viewHotelRooms(listing, focus = false) {
+        const hotel = this.catalog.hotels.find(item => item.id === Number(listing?.hotel_id || listing?.id));
+        if (!hotel) return;
+        this.activeHotelId = hotel.id; this.tab = 'rooms'; this.search = '';
+        this.renderMap(true);
+        if (focus) this.$nextTick(() => this.$refs.roomsHeading?.focus());
+    },
+    setSection(section) {
+        if (this.busy) return;
+        this.closeMapPreview(false); this.itineraryMapContext = false; this.tab = section; this.search = ''; this.renderMap();
+    },
+    searchListings() {
+        this.closeMapPreview(false); this.itineraryMapContext = false; this.renderMap();
+    },
+    placeKey(place) { return place.type + ':' + place.id; },
+    mapPlace(listing) {
+        if (listing.type === 'room') {
+            return this.catalog.hotels.find(hotel => hotel.id === Number(listing.hotel_id))
+                || { type: 'hotel', id: listing.hotel_id, name: listing.hotel_name || listing.name, lat: listing.lat, lng: listing.lng };
+        }
+        return listing;
+    },
+    previewListing() {
+        return this.allListings().find(listing => this.placeKey(listing) === this.previewKey) || null;
+    },
+    previewPlace() { return this.previewPlaces.find(place => this.placeKey(place) === this.previewKey) || null; },
+    openMapPreview(places, marker = null, event = null) {
+        if (this.busy || this.catalogLoading) return;
+        const unique = new Map();
+        for (const listing of places) {
+            const place = this.mapPlace(listing);
+            if (place.id && ['hotel', 'activity'].includes(place.type)) {
+                unique.set(this.placeKey(place), { type: place.type, id: place.id, name: place.name });
+            }
+        }
+        if (!unique.size) return;
+        const element = marker?.getElement?.();
+        const keyboard = event?.originalEvent ? /^key/.test(event.originalEvent.type) : Boolean(element && element === document.activeElement);
+        previewTrigger = marker;
+        this.previewPlaces = Array.from(unique.values()); this.previewKey = ''; this.previewError = ''; this.previewStatus = '';
+        this.itineraryMapContext = Boolean(this.itinerary && (this.tab === 'itinerary' || this.itineraryMapContext));
+        if (this.previewPlaces.length === 1) this.selectMapPlace(this.previewPlaces[0]);
+        if (keyboard) this.$nextTick?.(() => this.$refs.previewHeading?.focus());
+    },
+    selectMapPlace(place) {
+        if (this.busy) return;
+        previewSession++;
+        this.previewKey = this.placeKey(place); this.previewImageFailed = false; this.previewError = ''; this.previewStatus = 'Previewing ' + place.name + '.';
+        const listing = this.previewListing();
+        if (listing?.type === 'hotel') this.viewHotelRooms(listing);
+    },
+    closeMapPreview(restoreFocus = true) {
+        previewSession++;
+        const key = this.previewKey || (this.previewPlaces[0] ? this.placeKey(this.previewPlaces[0]) : '');
+        const element = previewTrigger?.getElement?.();
+        this.previewPlaces = []; this.previewKey = ''; this.previewError = ''; this.previewStatus = ''; this.previewImageFailed = false;
+        if (restoreFocus) {
+            const target = element?.isConnected ? element : previewMarkers.get(key)?.getElement?.();
+            (target || this.$refs.map)?.focus?.({ preventScroll: true });
+        }
+        previewTrigger = null;
+    },
+    dismissMapPreview(restoreFocus = true) {
+        if (!this.previewPlaces.length) return;
+        const key = this.previewKey || this.placeKey(this.previewPlaces[0]);
+        const hotel = this.previewPlace()?.type === 'hotel';
+        this.closeMapPreview(false);
+        if (hotel) {
+            this.tab = 'hotels'; this.search = ''; this.itineraryMapContext = false; this.renderMap(true);
+        }
+        if (restoreFocus) (previewMarkers.get(key)?.getElement?.() || this.$refs.map)?.focus?.({ preventScroll: true });
+    },
+    previewImages() {
+        const image = this.previewListing()?.image;
+        return image ? [{ url: image, key: this.previewKey }] : [];
+    },
+    markPreviewImageFailed(image) {
+        if (image.key === this.previewKey && image.url === this.previewListing()?.image) this.previewImageFailed = true;
+    },
+    async addMapChoice() {
+        if (this.busy) return;
+        const listing = this.previewListing();
+        if (!listing || !this.plan) return;
+        if (this.selected(listing)) { this.edit(listing); return; }
+        const key = this.previewKey;
+        const session = previewSession;
+        this.previewError = '';
+        if (listing.type === 'hotel') {
+            await this.chooseHotel(listing, session);
+        } else {
+            await this.run(async () => {
+                const body = await this.api('/plans/' + this.plan.id + '/items', 'POST', {
+                    item_type: 'activity', item_id: listing.id, pax: 1, quantity: 1,
+                });
+                this.applyChoice(body); this.notice = listing.name + ' added to your trip. Edit its choice to adjust travelers or set a visit date.';
+                this.renderMap(true);
+            });
+        }
+        if (this.previewKey === key && previewSession === session) {
+            this.previewError = this.error;
+            this.previewStatus = this.error ? '' : listing.name + ' added to your trip.';
+        }
+    },
+    hotelFromPrice(hotel) {
+        const prices = (hotel?.rooms || []).map(room => room.price).filter(price => price != null && Number.isFinite(Number(price)));
+        return prices.length ? Math.min(...prices.map(Number)) : null;
+    },
+    descriptionText(listing) { return String(listing?.description || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim(); },
+    revealTripForm() {
+        this.$refs.tripForm?.scrollIntoView?.({ block: 'start', behavior: 'auto' });
+        this.$root.querySelector('#planner-destination')?.focus();
+    },
+    async chooseHotel(listing, session = null) {
         if (!this.plan) { this.error = 'Save your trip dates first, then select a hotel.'; return; }
         await this.run(async () => {
             if (!this.selected(listing)) {
                 const body = await this.api('/plans/' + this.plan.id + '/items', 'POST', { item_type: 'hotel', item_id: listing.id });
                 this.applyChoice(body);
             }
-            this.activeHotelId = listing.id; this.tab = 'rooms'; this.search = '';
-            this.notice = 'Choose a room at ' + listing.name + '. Your stay uses the trip dates; edit the hotel in My choices for a different stay.';
-            this.renderMap();
+            if (session === null || session === previewSession) {
+                this.viewHotelRooms(listing);
+                this.notice = 'Choose a room at ' + listing.name + '. Edit the hotel in My choices to adjust its stay dates.';
+            } else {
+                this.renderMap(true); this.notice = listing.name + ' saved to your trip.';
+            }
         });
     },
     applyChoice(body) {
         this.selections = body.items;
-        if (this.plan.revision !== body.revision) this.itinerary = null;
+        if (this.plan.revision !== body.revision) { this.itinerary = null; this.itineraryMapContext = false; }
         this.plan.revision = body.revision;
     },
     async deletePlan() {
@@ -163,16 +311,17 @@ export default (config) => {
             window.dispatchEvent(new CustomEvent('cart-updated'));
         });
     },
-    selected(listing) { return this.selections.some(item => item.item_type === listing.type && item.item_id === listing.id); },
+    selected(listing) { return Boolean(listing && this.selections.some(item => item.item_type === listing.type && item.item_id === listing.id)); },
     selectionName(item) { return this.allListings().find(listing => listing.type === item.item_type && listing.id === item.item_id)?.name || 'Unavailable listing'; },
     edit(listing) {
         if (!this.plan) { this.error = 'Save your trip dates first, then add choices.'; return; }
+        this.previewError = '';
         const existing = this.selections.find(item => item.item_type === listing.type && item.item_id === listing.id);
         const hotelStay = this.selections.find(item => item.item_type === 'hotel' && item.item_id === listing.hotel_id);
         this.editing = listing; this.optionIn = hotelStay?.options.check_in || existing?.options.check_in || this.startDate;
         this.optionOut = hotelStay?.options.check_out || existing?.options.check_out || this.endDate; this.optionDate = existing?.options.date || '';
         this.customStayDates = this.optionIn !== this.startDate || this.optionOut !== this.endDate;
-        this.optionPax = existing?.options.pax || this.pax; this.optionQuantity = existing?.options.quantity || 1;
+        this.optionPax = existing?.options.pax || (listing.type === 'activity' ? 1 : this.pax); this.optionQuantity = existing?.options.quantity || 1;
         this.$nextTick(() => this.$refs.choiceHeading?.focus());
     },
     editSelection(item) {
@@ -180,6 +329,9 @@ export default (config) => {
         if (listing) this.edit(listing); else this.error = 'This listing is no longer available. Remove it and select another.';
     },
     async saveChoice() {
+        if (this.editing?.type === 'activity' && (Number(this.optionPax) < 1 || Number(this.optionPax) > this.activityLimit(this.editing))) {
+            this.error = 'Choose between 1 and ' + this.activityLimit(this.editing) + ' traveler(s) for this activity.'; return;
+        }
         await this.run(async () => {
             const type = this.editing.type;
             if (type === 'hotel' && !this.customStayDates) { this.optionIn = this.startDate; this.optionOut = this.endDate; }
@@ -197,16 +349,19 @@ export default (config) => {
         await this.run(async () => {
             const body = await this.api('/plans/' + this.plan.id + '/items/' + item.id, 'DELETE');
             this.selections = this.selections.filter(choice => choice.id !== item.id);
-            this.plan.revision = body.revision; this.itinerary = null; this.renderMap();
+            this.plan.revision = body.revision; this.itinerary = null; this.itineraryMapContext = false; this.renderMap();
         });
     },
     async generate() {
         await this.run(async () => {
+            this.closeMapPreview(false); this.itineraryMapContext = false;
             this.itinerary = (await this.api('/plans/' + this.plan.id + '/generate', 'POST')).data;
             this.activeDay = 0; this.tab = 'itinerary'; this.renderMap(); this.notice = 'Itinerary saved. Review the schedule and its explanation.';
         });
     },
     async transfer() {
+        this.refreshMinimumArrival();
+        if (this.arrivalTooSoon(this.startDate)) { this.error = this.arrivalHint(); return; }
         await this.run(async () => {
             const body = await this.api('/plans/' + this.plan.id + '/itineraries/' + this.itinerary.id + '/cart', 'POST');
             this.notice = body.data.status === 'already_transferred' ? 'This itinerary still has items in your Trip Basket. Remove its remaining items before adding it again.' : 'Added to your Trip Basket. Continue there to review prices and request booking.';
@@ -224,8 +379,11 @@ export default (config) => {
     async saveEmailPreferences() {
         await this.run(async () => { this.notice = (await this.api('/email-preferences', 'PATCH', { reminders: this.reminders, marketing: this.marketing })).message; });
     },
-    async selectDay(index) { this.activeDay = index; this.renderMap(); },
-    focusStop(stop) { if (map && stop.lat != null && stop.lng != null) map.flyTo([stop.lat, stop.lng], 16); },
+    async selectDay(index, preserveViewport = false) { this.activeDay = index; this.renderMap(preserveViewport); },
+    focusStop(stop) {
+        const lat = Number(stop.lat), lng = Number(stop.lng);
+        if (map && stop.lat != null && stop.lng != null && Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180) map.flyTo([lat, lng], 16);
+    },
     peso(amount) { return '₱' + Number(amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); },
     nightsBetween(from, to) {
         if (!from || !to) return 1;
@@ -241,6 +399,24 @@ export default (config) => {
     },
     activityUnitRate(listing, pax) {
         return (Number(pax) || 1) <= 1 ? (Number(listing?.rate_min) || 0) : (Number(listing?.rate_max) || 0);
+    },
+    activityLimit(listing) {
+        const capacity = Number(listing?.max_pax);
+        return Number.isFinite(capacity) && capacity >= 1 ? Math.min(20, Math.floor(capacity)) : 20;
+    },
+    refreshMinimumArrival(timestamp = null) {
+        if (!config.datePolicy) return;
+        const now = timestamp ?? (Number.isFinite(serverClock) ? serverClock + Date.now() - clockStartedAt : Date.now());
+        const parts = new Intl.DateTimeFormat('en-US', { timeZone: config.datePolicy.timeZone, year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date(now));
+        const part = type => parts.find(item => item.type === type).value;
+        const date = new Date(Date.UTC(Number(part('year')), Number(part('month')) - 1, Number(part('day')) + config.datePolicy.leadDays));
+        this.minimumArrival = date.toISOString().slice(0, 10);
+    },
+    arrivalTooSoon(date) { return Boolean(this.minimumArrival && date && date < this.minimumArrival); },
+    arrivalHint() { return 'Arrival must be at least two calendar days ahead in Philippine time. The earliest arrival is ' + this.minimumArrival + '. Start a new trip with eligible dates if needed.'; },
+    adjustActivityPax(change) {
+        const current = Math.max(1, Number(this.optionPax) || 1);
+        this.optionPax = change < 0 ? Math.max(1, current - 1) : (current < this.activityLimit(this.editing) ? current + 1 : current);
     },
     activityTotal(listing, pax) {
         pax = Math.max(1, Number(pax) || 1);
@@ -263,13 +439,27 @@ export default (config) => {
                 const lat = Number(location.lat), lng = Number(location.lng);
                 if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
                 const key = lat + ':' + lng;
-                if (!markers.has(key)) markers.set(key, { lat, lng, labels: [], names: [], dayIndex });
+                if (!markers.has(key)) markers.set(key, { lat, lng, labels: [], names: [], places: [], dayIndex });
                 const marker = markers.get(key);
                 marker.labels.push('D' + day.day + '·' + item.num);
                 marker.names.push('Day ' + day.day + ' · ' + item.num + ' · ' + (item.event ? item.label : item.stop.name));
+                const place = this.itineraryPlace(location, item.event);
+                if (place && !marker.places.some(existing => this.placeKey(existing) === this.placeKey(place))) marker.places.push(place);
             }
         }
         return Array.from(markers.values()).map(marker => ({ ...marker, name: marker.names.join('\n') }));
+    },
+    itineraryPlace(location, hotel = false) {
+        if (hotel) {
+            return location?.hotel_id ? { type: 'hotel', id: location.hotel_id, name: location.name } : null;
+        }
+        const choice = this.selections.find(item => item.id === location?.plan_item_id)
+            || this.itinerary?.snapshot.selections?.find(item => item.plan_item_id === location?.plan_item_id);
+        const type = location?.type || choice?.item_type || choice?.type;
+        const id = location?.item_id || choice?.item_id;
+        if (!type || !id) return null;
+        const listing = this.allListings().find(item => item.type === type && item.id === Number(id));
+        return listing ? this.mapPlace(listing) : { type, id, name: location.name };
     },
     /** The hotel the trip is anchored on, used to connect unplaced picks. */
     baseHotel() {
@@ -316,18 +506,19 @@ export default (config) => {
             if (map && this.$refs.map?.isConnected) map.invalidateSize({ pan: false, debounceMoveend: true });
         });
     },
-    renderMap() {
+    renderMap(preserveViewport = false) {
         if (!map || !layers || !this.$refs.map?.isConnected) return;
         map.stop();
         map.invalidateSize({ pan: false, debounceMoveend: true });
         layers.clearLayers();
+        previewMarkers.clear();
         this.routeNotice = '';
         const viewportParts = [this.destinationId, this.tab, this.activeDay];
-        const addMarker = (item, label, onClick, variant = '') => {
+        const addMarker = (item, label, onClick, variant = '', places = []) => {
             if (item.lat == null || item.lng == null) return;
             const latitude = Number(item.lat);
             const longitude = Number(item.lng);
-            if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return;
+            if (!Number.isFinite(latitude) || !Number.isFinite(longitude) || Math.abs(latitude) > 90 || Math.abs(longitude) > 180) return;
             const accommodation = label === 'hotel' || (!label && (item.type === 'hotel' || item.type === 'room'));
             const grouped = Array.isArray(label);
             const width = grouped ? Math.max(48, ...label.map(text => text.length * 8 + 12)) : 32;
@@ -336,14 +527,38 @@ export default (config) => {
             const options = label || accommodation ? { title: item.name, alt: item.name, icon: L.divIcon({ className: 'planner-map-icon', html: '<span class="planner-map-number' + (variant ? ' planner-map-' + variant : '') + '"' + (grouped ? ' style="width:' + width + 'px;height:' + height + 'px;border-radius:12px;line-height:20px"' : '') + '>' + content + '</span>', iconSize: [width, height], iconAnchor: [width / 2, height / 2] }) } : { title: item.name, alt: item.name };
             const marker = L.marker([latitude, longitude], options).addTo(layers);
             const tooltip = document.createElement('span'); tooltip.textContent = item.name;
-            marker.bindTooltip(tooltip); if (onClick) marker.on('click', onClick);
+            marker.bindTooltip(tooltip); if (onClick) marker.on('click', event => onClick(marker, event));
+            for (const place of places) previewMarkers.set(this.placeKey(place), marker);
             viewportParts.push(item.type || label || 'destination', item.id || item.name, latitude, longitude);
             return marker;
         };
         if (!this.destinationId) {
             this.destinations.forEach(item => addMarker({ lat: item.latitude, lng: item.longitude, name: item.name }, null, () => this.chooseDestination(item.id)));
-        } else if (this.itinerary && this.tab === 'itinerary') {
-            this.itineraryMarkers().forEach(marker => addMarker(marker, marker.labels, () => { this.selectDay(marker.dayIndex); this.focusStop(marker); }));
+        } else if (this.itinerary && (this.tab === 'itinerary' || this.itineraryMapContext)) {
+            const scheduled = this.itineraryMarkers();
+            const pending = this.unscheduledMarkers();
+            const pendingGroups = new Map();
+            pending.forEach(item => {
+                const key = item.lat + ':' + item.lng;
+                if (!pendingGroups.has(key)) pendingGroups.set(key, []);
+                pendingGroups.get(key).push(item);
+            });
+            scheduled.forEach(item => {
+                const key = item.lat + ':' + item.lng;
+                const sharedPending = pendingGroups.get(key) || [];
+                for (const pick of sharedPending) {
+                    const place = this.itineraryPlace(pick);
+                    if (place && !item.places.some(existing => this.placeKey(existing) === this.placeKey(place))) item.places.push(place);
+                }
+                if (sharedPending.length) {
+                    item.labels.push('?');
+                    item.name += '\n' + sharedPending.map(pick => pick.name + ' · Not placed on a day. ' + pick.reason).join('\n');
+                }
+                addMarker(item, item.labels, (marker, event) => {
+                if (this.busy) return;
+                this.openMapPreview(item.places, marker, event); this.selectDay(item.dayIndex, true); this.focusStop(item);
+                }, '', item.places);
+            });
             let approximate = 0;
             let drawn = 0;
             try {
@@ -374,10 +589,13 @@ export default (config) => {
                 });
             } catch { this.mapError = 'The mapped route could not be drawn. The day-by-day schedule and stops are still available.'; }
             const base = this.baseHotel();
-            const pending = this.unscheduledMarkers();
-            pending.forEach(item => {
-                const marker = addMarker(item, '?', null, 'pending');
-                marker?.bindTooltip(this.tooltipFor([item.name, 'Not placed on a day. ' + item.reason]), { sticky: true });
+            pendingGroups.forEach((items, key) => {
+                const item = { ...items[0], name: items.map(pick => pick.name).join('\n') };
+                if (!scheduled.some(stop => stop.lat + ':' + stop.lng === key)) {
+                    const places = items.map(pick => this.itineraryPlace(pick)).filter(Boolean);
+                    const marker = addMarker(item, '?', (marker, event) => this.openMapPreview(places, marker, event), 'pending', places);
+                    marker?.bindTooltip(this.tooltipFor(items.map(pick => pick.name + ' · Not placed on a day. ' + pick.reason)), { sticky: true });
+                }
                 if (base) {
                     L.geoJSON({ type: 'LineString', coordinates: [[Number(base.lng), Number(base.lat)], [item.lng, item.lat]] },
                         { style: { color: '#6b7280', weight: 2, opacity: 0.45, dashArray: '2 8' } }).addTo(layers);
@@ -390,22 +608,44 @@ export default (config) => {
         } else {
             const visible = this.tab === 'selections' ? this.allListings().filter(item => this.selected(item)) : this.listings();
             if (this.tab === 'rooms' && this.activeHotel()) {
-                addMarker(this.activeHotel(), 'hotel');
+                const hotel = this.activeHotel();
+                addMarker(hotel, 'hotel', (marker, event) => this.openMapPreview([hotel], marker, event), '', [hotel]);
             } else {
-                visible.forEach(item => addMarker(item, null, () => item.type === 'hotel' ? this.chooseHotel(item) : this.edit(item)));
+                const places = new Map();
+                visible.forEach(item => {
+                    const place = this.mapPlace(item);
+                    places.set(this.placeKey(place), place);
+                });
+                const grouped = new Map();
+                places.forEach(item => {
+                    if (item.lat == null || item.lng == null || !Number.isFinite(Number(item.lat)) || !Number.isFinite(Number(item.lng))) return;
+                    const key = Number(item.lat) + ':' + Number(item.lng);
+                    if (!grouped.has(key)) grouped.set(key, []);
+                    grouped.get(key).push(item);
+                });
+                grouped.forEach(items => {
+                    const item = { ...items[0], name: items.map(place => place.name).join('\n') };
+                    addMarker(item, items.length > 1 ? String(items.length) : null, (marker, event) => this.openMapPreview(items, marker, event), '', items);
+                });
             }
             const destination = this.destination();
             if (!layers.getLayers().length && destination) addMarker({ lat: destination.latitude, lng: destination.longitude, name: destination.name }, null);
         }
         const viewportSignature = viewportParts.join('|');
-        if (layers.getLayers().length && viewportSignature !== this.viewportSignature) {
+        if (!preserveViewport && layers.getLayers().length && viewportSignature !== this.viewportSignature) {
             map.fitBounds(layers.getBounds(), { padding: [35, 35], maxZoom: 15, animate: false });
         }
         this.viewportSignature = viewportSignature;
         this.scheduleMapResize();
     },
     destroy() {
-        this.weatherSequence++;
+        if (dateTimer !== null) window.clearInterval(dateTimer);
+        if (dateRefreshHandler) {
+            window.removeEventListener('focus', dateRefreshHandler);
+            document.removeEventListener('visibilitychange', dateRefreshHandler);
+        }
+        dateTimer = null; dateRefreshHandler = null;
+        this.weatherSequence++; this.loadSequence++; this.closeMapPreview(false); this.itineraryMapContext = false;
         const container = this.$refs.map;
         if (container?.sunnyTripsResizeFrame) cancelAnimationFrame(container.sunnyTripsResizeFrame);
         if (container?.sunnyTripsResizeObserver === resizeObserver) {
@@ -421,6 +661,7 @@ export default (config) => {
         if (container?.sunnyTripsMap === map) delete container.sunnyTripsMap;
         if (container) delete container.sunnyTripsResizeFrame;
         resizeObserver = null; pageShowHandler = null; map = null; layers = null;
+        previewMarkers.clear();
     },
     };
 };
