@@ -11,6 +11,12 @@ use Illuminate\Validation\ValidationException;
 
 class ItineraryService
 {
+    /**
+     * A route end further than this from the coordinate it was asked for gets a
+     * dashed connector, so the drawn line still reaches its own map marker.
+     */
+    private const CONNECTOR_THRESHOLD_METERS = 100;
+
     public function __construct(private RoutingService $routing, private WeatherService $weather, private TripPlannerService $planner, private GeminiService $gemini) {}
 
     public function generate(TripPlan $plan): TripItinerary
@@ -83,12 +89,14 @@ class ItineraryService
                 if ($departing) {
                     $travel = $matrix['durations'][$departing['point_index']][$stay['point_index']] ?? null;
                     if ($travel === null) {
-                        $unscheduled[] = ['plan_item_id' => $stay['plan_item_id'], 'type' => $stay['type'], 'name' => $stay['name'], 'reason' => 'The hotel change has no verified land route. Arrange the transfer before scheduling this day.'];
+                        $unscheduled[] = ['plan_item_id' => $stay['plan_item_id'], 'type' => $stay['type'], 'name' => $stay['name'],
+                            'lat' => $stay['lat'], 'lng' => $stay['lng'], 'reason' => 'The hotel change has no verified land route. Arrange the transfer before scheduling this day.'];
                         $stay = null;
                     } else {
                         $transfer = $this->leg($departing, $stay, $matrix, $plan->mode);
                         if ($transfer['geometry_status'] === 'unsupported_transfer') {
-                            $unscheduled[] = ['plan_item_id' => $stay['plan_item_id'], 'type' => $stay['type'], 'name' => $stay['name'], 'reason' => 'The hotel change requires ferry travel, which needs a separate operator timetable and transfer booking.'];
+                            $unscheduled[] = ['plan_item_id' => $stay['plan_item_id'], 'type' => $stay['type'], 'name' => $stay['name'],
+                                'lat' => $stay['lat'], 'lng' => $stay['lng'], 'reason' => 'The hotel change requires ferry travel, which needs a separate operator timetable and transfer booking.'];
                             $stay = null;
                             $days[] = ['day' => count($days) + 1, 'date' => $key, 'label' => $date->format('l, F j'), 'hotel' => null, 'cursor' => $start, 'end' => $end, 'previous' => null, 'events' => [], 'stops' => [], 'legs' => [], 'distance_km' => 0, 'travel_minutes' => 0];
 
@@ -125,9 +133,10 @@ class ItineraryService
                     $routable = collect($stays)->contains(fn ($stay) => ($matrix['durations'][$stay['point_index']][$choice['point_index']] ?? null) !== null
                         && ($matrix['durations'][$choice['point_index']][$stay['point_index']] ?? null) !== null);
                     $unscheduled[] = ['plan_item_id' => $choice['plan_item_id'], 'type' => $choice['type'], 'name' => $choice['name'],
+                        'lat' => $choice['lat'], 'lng' => $choice['lng'],
                         'reason' => ! $this->routing->validPoint($choice['point'])
                             ? 'We do not have an exact location for this yet, so we could not map it. You can still add it to your trip and arrange it with your hotel or a local operator.'
-                            : (in_array($matrix['status'] ?? '', ['not_configured', 'unavailable'], true)
+                            : (in_array($matrix['status'] ?? '', ['not_configured', 'unavailable', 'rate_limited'], true)
                                 ? 'Our map service is temporarily unavailable, so we could not plot a route. Your choices are saved — generate again in a little while.'
                                 : (! $routable
                                     ? 'Our map provider does not have a route to this spot yet, so we could not place it on a day. You can still add it to your trip and arrange it with your hotel or a local operator.'
@@ -158,8 +167,8 @@ class ItineraryService
                 'assumptions' => $choice['scheduling']['assumptions'],
             ];
             $day['legs'][] = $leg;
-            $day['distance_km'] += $leg['distance_km'];
-            $day['travel_minutes'] += $leg['duration_minutes'];
+            $day['distance_km'] += $leg['distance_km'] ?? 0;
+            $day['travel_minutes'] += $leg['duration_minutes'] ?? 0;
             $day['cursor'] = $best['finish']->copy()->addMinutes(15);
             $day['previous'] = $choice;
             unset($choices[$choice['plan_item_id']]);
@@ -170,8 +179,8 @@ class ItineraryService
                 $leg = $this->leg($day['previous'], $day['hotel'], $matrix, $plan->mode);
                 $leg['return_to_hotel'] = true;
                 $day['legs'][] = $leg;
-                $day['distance_km'] += $leg['distance_km'];
-                $day['travel_minutes'] += $leg['duration_minutes'];
+                $day['distance_km'] += $leg['distance_km'] ?? 0;
+                $day['travel_minutes'] += $leg['duration_minutes'] ?? 0;
             }
             if ($day['hotel']) {
                 $day['hotel'] = array_intersect_key($day['hotel'], array_flip(['name', 'hotel_id', 'lat', 'lng', 'options', 'times_assumed', 'rooms']));
@@ -320,14 +329,45 @@ class ItineraryService
         ];
     }
 
+    /**
+     * A drawable leg between two points. Geometry resolves in three tiers so a
+     * scheduled stop is never left without a visible line:
+     *   road            - the routed road or trail geometry;
+     *   road + connector - the routed geometry plus dashed stubs where the road
+     *                      graph snapped far from the real coordinate;
+     *   straight_line    - a direct line when the graph cannot connect them at
+     *                      all, which is a visual aid only and never a distance.
+     *
+     * @return array{from: string, to: string, mode: string, distance_km: float|null, duration_minutes: int|null,
+     *     geometry: array|null, geometry_status: string, geometry_kind: string, connectors: list<array>}
+     */
     private function leg(array $from, array $to, array $matrix, string $mode): array
     {
         $route = $this->routing->route($from['point'], $to['point'], $mode);
+        $distance = $matrix['distances'][$from['point_index']][$to['point_index']] ?? null;
+        $seconds = $matrix['durations'][$from['point_index']][$to['point_index']] ?? null;
+        $geometry = $route['geometry'];
+        $connectors = [];
+        if ($geometry === null) {
+            $geometry = $this->routing->straightLine($from['point'], $to['point']);
+            $kind = $geometry === null ? 'none' : 'straight_line';
+        } else {
+            $kind = 'road';
+            $coordinates = $geometry['coordinates'];
+            foreach ([[$from, $route['snap_offset_from_meters'] ?? null, $coordinates[0]],
+                [$to, $route['snap_offset_to_meters'] ?? null, $coordinates[count($coordinates) - 1]]] as [$point, $offset, $snapped]) {
+                if ($offset !== null && $offset > self::CONNECTOR_THRESHOLD_METERS) {
+                    $connectors[] = $this->routing->straightLine($point['point'], ['lat' => $snapped[1], 'lng' => $snapped[0]]);
+                    $kind = 'road_with_connector';
+                }
+            }
+        }
 
         return ['from' => $from['name'], 'to' => $to['name'], 'mode' => $mode,
-            'distance_km' => $matrix['distances'][$from['point_index']][$to['point_index']] ?? 0,
-            'duration_minutes' => (int) ceil(($matrix['durations'][$from['point_index']][$to['point_index']] ?? 0) / 60),
-            'geometry' => $route['geometry'], 'geometry_status' => $route['status']];
+            'distance_km' => $distance === null ? null : (float) $distance,
+            'duration_minutes' => $seconds === null ? null : (int) ceil($seconds / 60),
+            'geometry' => $geometry, 'geometry_status' => $route['status'],
+            'geometry_kind' => $kind, 'connectors' => array_values(array_filter($connectors))];
     }
 
     private function reason(array $choice, array $previous, array $candidate, array $leg, string $mode): string

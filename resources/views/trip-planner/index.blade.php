@@ -1,7 +1,7 @@
 <x-frontend.layout title="Trip Planner — SunnyTrips">
     @push('head')
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-        <style>.planner-map-icon{display:grid;place-items:center}.planner-map-number{box-sizing:border-box;display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:#006b91;color:white;border:2px solid white;font:700 14px 'DM Sans',sans-serif;box-shadow:0 2px 8px #0003}</style>
+        <style>.planner-map-icon{display:grid;place-items:center}.planner-map-number{box-sizing:border-box;display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:#006b91;color:white;border:2px solid white;font:700 14px 'DM Sans',sans-serif;box-shadow:0 2px 8px #0003}.planner-map-pending{background:#fdfaf4;color:#b45309;border:2px dashed #b45309;box-shadow:none}</style>
     @endpush
     <div x-data="tripPlanner({ destinations: @js($destinations), plans: @js($plans), destination: @js($initialDestination), emailPreferences: @js($emailPreferences), base: @js(route('trip-planner.index')), csrf: @js(csrf_token()) })"
          class="mx-auto max-w-screen-2xl bg-sand-50 text-ink-900 dark:bg-slate-900 dark:text-slate-100 font-body">
@@ -33,11 +33,19 @@
                             <div><label for="trip-start" class="block text-sm font-semibold mb-1">Arrival date</label><input id="trip-start" type="date" x-model="startDate" min="{{ now('Asia/Manila')->toDateString() }}" required class="w-full min-w-0 rounded-lg border-sand-300 dark:bg-slate-800"></div>
                             <div><label for="trip-end" class="block text-sm font-semibold mb-1">Departure date</label><input id="trip-end" type="date" x-model="endDate" :min="startDate" required class="w-full min-w-0 rounded-lg border-sand-300 dark:bg-slate-800"></div>
                         </div>
+                        <div>
+                            <label for="trip-mode" class="block text-sm font-semibold mb-1">Getting around</label>
+                            <select id="trip-mode" x-model="mode" class="w-full rounded-lg border-sand-300 dark:bg-slate-800">
+                                <option value="walking">On foot — short hops around town</option>
+                                <option value="driving">By vehicle — tricycle, van or car</option>
+                            </select>
+                            <p class="text-xs text-slate-500 mt-1">Island stops are often several kilometres apart. Pick a vehicle when your choices are spread out, otherwise the planner runs out of daylight and leaves them unscheduled.</p>
+                        </div>
                         <button type="submit" :disabled="busy || !destinationId" class="min-h-11 rounded-lg bg-ocean-700 px-5 py-3 font-bold text-white disabled:opacity-50">Save trip &amp; choose places</button>
                     </form>
                     <div x-show="plan" x-cloak class="mt-5 border-l-4 border-ocean-600 pl-4">
                         <h2 class="font-headline text-xl font-bold" x-text="title"></h2>
-                        <p class="mt-1 text-sm text-slate-600 dark:text-slate-400" x-text="startDate + ' → ' + endDate + ' · getting around on foot'"></p>
+                        <p class="mt-1 text-sm text-slate-600 dark:text-slate-400" x-text="startDate + ' → ' + endDate + ' · ' + (mode === 'driving' ? 'getting around by vehicle' : 'getting around on foot')"></p>
                         <p class="mt-2 text-xs text-slate-500">Your planner saves each choice.</p>
                     </div>
                 </div>
@@ -109,7 +117,7 @@
                             </div>
                             <template x-for="(day, index) in itinerary.snapshot.days" :key="day.date">
                                 <section class="mt-7 border-t border-sand-200 dark:border-slate-700 pt-5">
-                                    <button type="button" @click="selectDay(index)" class="w-full text-left min-h-11"><h3 class="font-headline text-lg font-bold" x-text="'Day ' + day.day + ' · ' + day.label"></h3><p class="text-xs text-ocean-700 dark:text-ocean-300 mt-1" x-text="Number(day.distance_km).toFixed(2) + ' km · ' + day.travel_minutes + ' min ' + mode + ', including return'"></p></button>
+                                    <button type="button" @click="selectDay(index)" class="w-full text-left min-h-11"><h3 class="font-headline text-lg font-bold" x-text="'Day ' + day.day + ' · ' + day.label"></h3><p class="text-xs text-ocean-700 dark:text-ocean-300 mt-1" x-text="Number(day.distance_km).toFixed(2) + ' km · ' + day.travel_minutes + ' min ' + (mode === 'driving' ? 'by vehicle' : 'on foot') + ', including return'"></p></button>
                                     <p x-show="day.hotel" class="mt-2 text-sm font-semibold text-slate-700 dark:text-slate-200" x-text="'Hotel: ' + (day.hotel?.name || '')"></p>
                                     <template x-for="room in day.hotel?.rooms || []" :key="room.plan_item_id"><p class="mt-1 text-sm text-slate-600 dark:text-slate-300" x-text="'Room: ' + room.quantity + ' × ' + room.name + ' · ' + room.pax + ' guests · ' + room.check_in + ' to ' + room.check_out"></p></template>
                                     <template x-for="item in dayPlan(day)" :key="item.num">
@@ -122,7 +130,8 @@
                                                 <template x-if="!item.event">
                                                     <div>
                                                         <button type="button" @click="selectDay(index); focusStop(item.stop)" class="text-left min-h-11"><p class="text-xs font-semibold text-ocean-700 dark:text-ocean-300" x-text="item.stop.start + '–' + item.stop.end"></p><h4 class="font-headline font-bold mt-1" x-text="item.stop.name"></h4></button>
-                                                        <p class="text-xs text-slate-500 mt-2" x-text="Number(item.stop.travel.distance_km).toFixed(2) + ' km · ' + item.stop.travel.duration_minutes + ' min from ' + item.stop.travel.from"></p>
+                                                        <p class="text-xs text-slate-500 mt-2" x-text="item.stop.travel.distance_km != null ? Number(item.stop.travel.distance_km).toFixed(2) + ' km · ' + item.stop.travel.duration_minutes + ' min from ' + item.stop.travel.from : 'Travel time from ' + item.stop.travel.from + ' is not available'"></p>
+                                                        <p x-show="item.stop.travel.geometry_kind === 'straight_line'" class="text-xs text-amber-700 dark:text-amber-300 mt-1">Shown as a straight line on the map — no mapped road connects these two stops, so arrange a boat or transfer.</p>
                                                         <p class="mt-2 text-sm" :class="item.stop.weather.provisional ? 'text-amber-700 dark:text-amber-300' : 'text-ocean-700 dark:text-ocean-300'" x-text="item.stop.weather.description"></p>
                                                         <details class="mt-3"><summary class="cursor-pointer text-sm font-bold text-ocean-700 dark:text-ocean-300 min-h-11 py-2">Why this time and order?</summary><p class="text-sm leading-relaxed text-slate-600 dark:text-slate-400" x-text="item.stop.reason"></p></details>
                                                     </div>
@@ -135,7 +144,7 @@
                             </template>
                             <div x-show="itinerary.snapshot.unscheduled.length" class="mt-7 border-t border-sand-200 dark:border-slate-700 pt-5">
                                 <h3 class="font-headline text-lg font-bold">Other picks to arrange yourself</h3>
-                                <p class="mt-1 text-sm text-slate-500">We couldn't fit these onto a specific day automatically, so they aren't plotted on the map. You can still add them to your trip and sort out the timing yourself — your scheduled days are unaffected.</p>
+                                <p class="mt-1 text-sm text-slate-500">We couldn't fit these onto a specific day automatically. They still appear on the map as hollow pins so you can see where they are, and you can add them to your trip and sort out the timing yourself — your scheduled days are unaffected.</p>
                                 <template x-for="item in itinerary.snapshot.unscheduled" :key="item.plan_item_id">
                                     <div class="mt-4 rounded-lg bg-sand-100 dark:bg-slate-800 p-3">
                                         <p class="font-semibold text-sm" x-text="item.name"></p>
@@ -157,7 +166,18 @@
             <aside id="planner-map" aria-label="Trip map" class="scroll-mt-16 lg:sticky lg:top-0 lg:self-start">
                 <p x-show="mapError" x-cloak x-text="mapError" role="status" class="p-3 bg-amber-50 text-amber-900 text-sm"></p>
                 <div x-ref="map" class="h-80 sm:h-96 lg:h-[calc(100dvh-3rem)] z-0" aria-label="Destination and itinerary route map"></div>
-                <p class="p-3 text-xs text-slate-500 bg-white dark:bg-slate-950">All scheduled days appear on the map. D1·2 means Day 1, item 2 in your itinerary. Events at the same location share a pin. Select a day to highlight its route.</p>
+                <div class="p-3 bg-white dark:bg-slate-950 border-t border-sand-200 dark:border-slate-700">
+                    <p x-show="routeNotice" x-cloak x-text="routeNotice" role="status" class="mb-3 rounded-lg bg-amber-50 dark:bg-amber-950/40 p-2.5 text-xs text-amber-900 dark:text-amber-200"></p>
+                    <h2 class="text-xs font-bold uppercase tracking-widest text-ocean-700 dark:text-ocean-300">Map key</h2>
+                    <ul class="mt-2 space-y-1.5 text-xs text-slate-500 dark:text-slate-400">
+                        <li class="flex items-center gap-2"><svg viewBox="0 0 40 8" class="h-2 w-10 shrink-0 text-ocean-600 dark:text-ocean-300" aria-hidden="true"><line x1="1" y1="4" x2="39" y2="4" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg><span>A mapped road or trail route. Each day has its own colour.</span></li>
+                        <li class="flex items-center gap-2"><svg viewBox="0 0 40 8" class="h-2 w-10 shrink-0 text-ocean-600 dark:text-ocean-300" aria-hidden="true"><line x1="1" y1="4" x2="39" y2="4" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-dasharray="3 9"/></svg><span>A straight-line estimate: no mapped road connects those stops, so a boat or arranged transfer is needed.</span></li>
+                        <li class="flex items-center gap-2"><svg viewBox="0 0 40 8" class="h-2 w-10 shrink-0 text-ocean-600 dark:text-ocean-300" aria-hidden="true"><line x1="1" y1="4" x2="39" y2="4" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-dasharray="1 6"/></svg><span>A connector bridging the gap between the mapped road and the exact spot.</span></li>
+                        <li class="flex items-center gap-2"><svg viewBox="0 0 40 8" class="h-2 w-10 shrink-0 text-ocean-600 dark:text-ocean-300" aria-hidden="true"><line x1="1" y1="4" x2="39" y2="4" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-dasharray="6 6"/></svg><span>The return trip to your hotel.</span></li>
+                        <li class="flex items-center gap-2"><span aria-hidden="true" class="grid h-5 w-5 shrink-0 place-items-center rounded-full border-2 border-dashed border-amber-700 bg-sand-50 text-[10px] font-bold text-amber-700">?</span><span>A pick we could not fit onto a day. Its grey line just points back to your hotel.</span></li>
+                    </ul>
+                    <p class="mt-3 text-xs text-slate-500 dark:text-slate-400">All scheduled days appear on the map. D1·2 means Day 1, item 2 in your itinerary. Events at the same location share a pin. Select a day, or a route line, to highlight it.</p>
+                </div>
             </aside>
         </div>
         <div x-show="editing" x-cloak x-trap.inert.noscroll="editing" @keydown.escape.window="editing = null" class="fixed inset-0 z-[90] bg-ink-900/50 flex items-center justify-center p-4">

@@ -41,7 +41,13 @@ test('reactive planner keeps Leaflet instances raw through destination marker cl
         },
         divIcon(options) { return options; },
         geoJSON(geometry, options) {
-            return { addTo(group) { assert.equal(group, currentLayers); routes.push({ geometry, options }); } };
+            const line = {
+                geometry, options,
+                addTo(group) { assert.equal(group, currentLayers); routes.push(this); return this; },
+                bindTooltip(content) { this.tooltip = content; return this; },
+                on(event, callback) { if (event === 'click') this.click = callback; return this; },
+            };
+            return line;
         },
         marker(coordinates, options) {
             const marker = {
@@ -57,7 +63,7 @@ test('reactive planner keeps Leaflet instances raw through destination marker cl
     try {
         globalThis.L = leaflet;
         globalThis.window = { L: leaflet, addEventListener() {}, removeEventListener() {} };
-        globalThis.document = { createElement: () => ({ textContent: '' }) };
+        globalThis.document = { createElement: () => ({ textContent: '', style: {}, children: [], append(...nodes) { this.children.push(...nodes); } }) };
         globalThis.ResizeObserver = class { observe() {} disconnect() {} };
         globalThis.requestAnimationFrame = () => 1;
         globalThis.cancelAnimationFrame = () => {};
@@ -90,11 +96,12 @@ test('reactive planner keeps Leaflet instances raw through destination marker cl
             ['D1·1', 'D4·1'], ['D1·2'], ['D1·3'], ['D3·1'], ['D3·2'],
         ]);
         assert.equal(routes.length, 2, 'routes from both scheduled days must be drawn');
-        assert.equal(routes[0].options.style.opacity, 0.85);
-        assert.equal(routes[1].options.style.opacity, 0.35);
+        assert.equal(routes[0].options.style.opacity, 0.9);
+        assert.equal(routes[1].options.style.opacity, 0.3);
+        assert.notEqual(routes[0].options.style.color, routes[1].options.style.color, 'each day needs its own colour');
         await planner.selectDay(2);
         assert.equal(markers.length, 5, 'selecting a day must not hide the other days');
-        assert.equal(routes[1].options.style.opacity, 0.85);
+        assert.equal(routes[1].options.style.opacity, 0.9);
         planner.destroy();
     } finally {
         for (const [key, value] of originalGlobals) {
@@ -191,5 +198,104 @@ test('weather widget fails gracefully without blocking the trip planner', async 
         assert.equal(planner.error, '');
     } finally {
         globalThis.fetch = originalFetch;
+    }
+});
+
+test('every scheduled stop gets a visible line and unplaced picks stay on the map', async () => {
+    const originalGlobals = new Map(['window', 'document', 'L', 'ResizeObserver', 'requestAnimationFrame', 'cancelAnimationFrame'].map(key => [key, globalThis[key]]));
+    const container = { isConnected: true };
+    const markers = [];
+    const routes = [];
+    let currentMap;
+    let currentLayers;
+    const leaflet = {
+        map() { currentMap = { setView() { return this; }, stop() {}, invalidateSize() {}, fitBounds() {}, remove() {} }; return currentMap; },
+        tileLayer() { return { on() { return this; }, addTo() {} }; },
+        featureGroup() {
+            currentLayers = {
+                addTo() { return this; },
+                clearLayers() { markers.length = 0; routes.length = 0; },
+                getLayers: () => markers,
+                getBounds: () => markers.map(marker => marker.coordinates),
+            };
+            return currentLayers;
+        },
+        divIcon(options) { return options; },
+        geoJSON(geometry, options) {
+            return {
+                geometry, options,
+                addTo(group) { assert.equal(group, currentLayers); routes.push(this); return this; },
+                bindTooltip(content) { this.tooltip = content; return this; },
+                on(event, callback) { if (event === 'click') this.click = callback; return this; },
+            };
+        },
+        marker(coordinates, options) {
+            return {
+                coordinates, options,
+                addTo(group) { assert.equal(group, currentLayers); markers.push(this); return this; },
+                bindTooltip(content) { this.tooltip = content; return this; },
+                on() { return this; },
+            };
+        },
+    };
+
+    try {
+        globalThis.L = leaflet;
+        globalThis.window = { L: leaflet, addEventListener() {}, removeEventListener() {} };
+        globalThis.document = { createElement: () => ({ textContent: '', style: {}, children: [], append(...nodes) { this.children.push(...nodes); } }) };
+        globalThis.ResizeObserver = class { observe() {} disconnect() {} };
+        globalThis.requestAnimationFrame = callback => { callback(); return 1; };
+        globalThis.cancelAnimationFrame = () => {};
+        const planner = tripPlanner({ destinations: [], plans: [], destination: 0, emailPreferences: {} });
+        planner.$refs = { map: container };
+        await planner.init();
+
+        const hotel = { name: 'Hotel', lat: 11.96, lng: 121.92 };
+        planner.destinationId = 2;
+        planner.tab = 'itinerary';
+        planner.itinerary = { snapshot: {
+            days: [{ day: 1, hotel, events: [{ name: 'Check in at Hotel', departure: false }], stops: [{ name: 'Taraw Cliff', lat: 11.9612, lng: 121.9215 }], legs: [
+                { from: 'Hotel', to: 'Taraw Cliff', mode: 'walking', distance_km: 2.4, duration_minutes: 31,
+                    geometry_kind: 'road_with_connector',
+                    geometry: { type: 'LineString', coordinates: [[121.918, 11.955], [121.9215, 11.9612]] },
+                    connectors: [{ type: 'LineString', coordinates: [[121.92, 11.96], [121.918, 11.955]] }] },
+                { from: 'Taraw Cliff', to: 'Hotel', mode: 'walking', distance_km: null, duration_minutes: null,
+                    geometry_kind: 'straight_line', return_to_hotel: true, connectors: [],
+                    geometry: { type: 'LineString', coordinates: [[121.9215, 11.9612], [121.92, 11.96]] } },
+            ] }],
+            unscheduled: [
+                { plan_item_id: 9, name: 'Island Hopping A', lat: 11.18, lng: 119.39, reason: 'No mapped route.' },
+                { plan_item_id: 10, name: 'Unlocated tour', lat: null, lng: null, reason: 'No coordinates.' },
+            ],
+        } };
+        planner.renderMap();
+
+        // Both legs, the connector stub and the line back to the unplaced pick.
+        assert.equal(routes.length, 4);
+        assert.equal(routes[0].options.style.dashArray, null, 'a mapped road leg stays solid');
+        assert.equal(routes[1].options.style.dashArray, '1 6', 'the connector stub is dotted');
+        assert.equal(routes[1].options.style.color, routes[0].options.style.color, 'a connector keeps its day colour');
+        assert.equal(routes[2].options.style.dashArray, '3 9', 'a straight-line estimate is dashed');
+        assert.deepEqual(routes[3].geometry.coordinates, [[121.92, 11.96], [119.39, 11.18]]);
+        assert.ok(routes.every(route => route.tooltip || route.options.style.dashArray), 'every drawn line is explained or marked approximate');
+        assert.equal(typeof routes[0].click, 'function', 'clicking a route selects its day');
+
+        // The hotel check-in, the stop and the pick that could not be placed.
+        assert.equal(markers.length, 3);
+        const pending = markers[2];
+        assert.deepEqual(pending.coordinates, [11.18, 119.39]);
+        assert.match(pending.options.icon.html, /planner-map-pending/);
+        assert.match(planner.routeNotice, /1 of 2 route lines are straight-line estimates/);
+        assert.match(planner.routeNotice, /1 pick\(s\) could not be placed/);
+
+        planner.tab = 'hotels';
+        planner.renderMap();
+        assert.equal(planner.routeNotice, '', 'the notice clears when the route is not on screen');
+        planner.destroy();
+    } finally {
+        for (const [key, value] of originalGlobals) {
+            if (value === undefined) delete globalThis[key];
+            else globalThis[key] = value;
+        }
     }
 });

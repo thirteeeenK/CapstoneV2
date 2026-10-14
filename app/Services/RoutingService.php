@@ -94,14 +94,22 @@ class RoutingService
             'geometry' => $geometry,
             'snapped_waypoints' => $response['waypoints'] ?? [],
             'graph_version' => config('services.routing.graph_version'),
-        ];
+        ] + $this->snapOffsets($from, $to, $geometry['coordinates']);
     }
 
     private function routeOrs(array $from, array $to, string $mode): array
     {
-        $response = $this->orsRequest('directions/'.$this->orsProfile($mode).'/geojson', [
-            'coordinates' => [[(float) $from['lng'], (float) $from['lat']], [(float) $to['lng'], (float) $to['lat']]],
-        ]);
+        $endpoint = 'directions/'.$this->orsProfile($mode).'/geojson';
+        $coordinates = [[(float) $from['lng'], (float) $from['lat']], [(float) $to['lng'], (float) $to['lat']]];
+        $radius = max(1, (int) config('services.routing.snap_radius_meters', 500));
+        $response = $this->orsRequest($endpoint, ['coordinates' => $coordinates, 'radiuses' => [$radius, $radius]]);
+        // ORS answers 2010 ("no routable point within the radius") for beach landings,
+        // pier meeting points and island resorts. Retry once with unlimited snapping so
+        // the leg can still be drawn; the reported snap offset tells the caller how far
+        // the drawn line starts from the real coordinate.
+        if (($response['_error'] ?? null) === 'no_route' && config('services.routing.snap_retry_unlimited', true)) {
+            $response = $this->orsRequest($endpoint, ['coordinates' => $coordinates, 'radiuses' => [-1, -1]]);
+        }
         if (isset($response['_error'])) {
             return $this->unavailable($response['_error'], $mode);
         }
@@ -130,7 +138,7 @@ class RoutingService
             'geometry' => $geometry,
             'snapped_waypoints' => [],
             'graph_version' => 'openrouteservice',
-        ];
+        ] + $this->snapOffsets($from, $to, $geometry['coordinates']);
     }
 
     /**
@@ -148,34 +156,39 @@ class RoutingService
             return ['available' => false, 'status' => 'partial', 'distances' => $distances, 'durations' => $durations, 'mode' => $mode, 'provider' => 'ors'];
         }
 
-        $locations = [];
-        foreach ([...array_values($validSources), ...array_values($validTargets)] as $point) {
-            $locations[] = [(float) $point['lng'], (float) $point['lat']];
-        }
-        if (count($locations) > 50) {
-            return ['available' => false, 'status' => 'invalid_request', 'distances' => $distances, 'durations' => $durations, 'mode' => $mode, 'provider' => 'ors'];
-        }
-        $offset = count($validSources);
-        $response = $this->orsRequest('matrix/'.$this->orsProfile($mode), [
-            'locations' => $locations,
-            'sources' => range(0, $offset - 1),
-            'destinations' => range($offset, count($locations) - 1),
-            'metrics' => ['distance', 'duration'],
-            'units' => 'km',
-        ]);
-        if (isset($response['_error']) || ! is_array($response['distances'] ?? null) || ! is_array($response['durations'] ?? null)) {
-            return ['available' => false, 'status' => $response['_error'] ?? 'invalid_response', 'distances' => $distances, 'durations' => $durations, 'mode' => $mode, 'provider' => 'ors'];
-        }
+        // ORS caps the locations in one matrix request, so walk the pairs in
+        // chunks that fit instead of abandoning the whole matrix.
+        $batchSize = max(1, min(25, (int) config('services.routing.matrix_batch_size', 25)));
+        foreach (array_chunk($validSources, $batchSize, true) as $sourceChunk) {
+            foreach (array_chunk($validTargets, $batchSize, true) as $targetChunk) {
+                $locations = [];
+                foreach ([...array_values($sourceChunk), ...array_values($targetChunk)] as $point) {
+                    $locations[] = [(float) $point['lng'], (float) $point['lat']];
+                }
+                $offset = count($sourceChunk);
+                $response = $this->orsRequest('matrix/'.$this->orsProfile($mode), [
+                    'locations' => $locations,
+                    'sources' => range(0, $offset - 1),
+                    'destinations' => range($offset, count($locations) - 1),
+                    'metrics' => ['distance', 'duration'],
+                    'units' => 'km',
+                ]);
+                if (isset($response['_error']) || ! is_array($response['distances'] ?? null) || ! is_array($response['durations'] ?? null)) {
+                    $status = $response['_error'] ?? 'invalid_response';
 
-        foreach (array_keys($validSources) as $row => $sourceIndex) {
-            foreach (array_keys($validTargets) as $column => $targetIndex) {
-                $distance = $response['distances'][$row][$column] ?? null;
-                $duration = $response['durations'][$row][$column] ?? null;
-                if ($this->validNumber($distance) && $this->validNumber($duration)) {
-                    $distances[$sourceIndex][$targetIndex] = (float) $distance;
-                    $durations[$sourceIndex][$targetIndex] = (float) $duration;
-                } else {
-                    $status = 'partial';
+                    continue;
+                }
+                foreach (array_keys($sourceChunk) as $row => $sourceIndex) {
+                    foreach (array_keys($targetChunk) as $column => $targetIndex) {
+                        $distance = $response['distances'][$row][$column] ?? null;
+                        $duration = $response['durations'][$row][$column] ?? null;
+                        if ($this->validNumber($distance) && $this->validNumber($duration)) {
+                            $distances[$sourceIndex][$targetIndex] = (float) $distance;
+                            $durations[$sourceIndex][$targetIndex] = (float) $duration;
+                        } else {
+                            $status = 'partial';
+                        }
+                    }
                 }
             }
         }
@@ -303,7 +316,64 @@ class RoutingService
 
     private function unavailable(string $status, string $mode): array
     {
-        return ['available' => false, 'status' => $status, 'provider' => $this->provider(), 'mode' => $mode, 'distance_km' => null, 'duration_seconds' => null, 'duration_minutes' => null, 'geometry' => null];
+        return ['available' => false, 'status' => $status, 'provider' => $this->provider(), 'mode' => $mode, 'distance_km' => null,
+            'duration_seconds' => null, 'duration_minutes' => null, 'geometry' => null, 'snap_offset_from_meters' => null, 'snap_offset_to_meters' => null];
+    }
+
+    /**
+     * How far each end of a drawn route sits from the coordinate that was asked
+     * for. A large offset means the road graph snapped to a different landmass,
+     * so the drawn line will not reach its own marker without a connector.
+     *
+     * @param  list<list<float>>  $coordinates
+     * @return array{snap_offset_from_meters: float|null, snap_offset_to_meters: float|null}
+     */
+    private function snapOffsets(array $from, array $to, array $coordinates): array
+    {
+        $first = $coordinates[0];
+        $last = $coordinates[count($coordinates) - 1];
+
+        return [
+            'snap_offset_from_meters' => $this->haversineMeters($from, ['lng' => $first[0], 'lat' => $first[1]]),
+            'snap_offset_to_meters' => $this->haversineMeters($to, ['lng' => $last[0], 'lat' => $last[1]]),
+        ];
+    }
+
+    /**
+     * Straight line between two points, for a leg the road graph cannot connect.
+     * It is a visual aid only and deliberately carries no distance or duration:
+     * a boat crossing or arranged transfer is not a road leg and must never be
+     * reported as one.
+     *
+     * @return array{type: string, coordinates: list<list<float>>}|null
+     */
+    public function straightLine(array $from, array $to): ?array
+    {
+        if (! $this->validPoint($from) || ! $this->validPoint($to)) {
+            return null;
+        }
+
+        return ['type' => 'LineString', 'coordinates' => [
+            [(float) $from['lng'], (float) $from['lat']],
+            [(float) $to['lng'], (float) $to['lat']],
+        ]];
+    }
+
+    /**
+     * Great-circle metres between two points. Used to measure how far a route
+     * was snapped, never to stand in for a road distance.
+     */
+    public function haversineMeters(array $from, array $to): ?float
+    {
+        if (! $this->validPoint($from) || ! $this->validPoint($to)) {
+            return null;
+        }
+        $latitudeDelta = deg2rad((float) $to['lat'] - (float) $from['lat']);
+        $longitudeDelta = deg2rad((float) $to['lng'] - (float) $from['lng']);
+        $arc = sin($latitudeDelta / 2) ** 2
+            + cos(deg2rad((float) $from['lat'])) * cos(deg2rad((float) $to['lat'])) * sin($longitudeDelta / 2) ** 2;
+
+        return round(6371000 * 2 * asin(min(1.0, sqrt($arc))), 1);
     }
 
     /**
@@ -334,6 +404,14 @@ class RoutingService
             ])->connectTimeout(3)->timeout(max(1, (int) config('services.routing.timeout', 10)))
                 ->post($baseUrl.'/v2/'.$endpoint, $payload);
             if (! $response->successful()) {
+                if ($response->status() === 429) {
+                    // Quota or burst limit. Back off for the window the API asks for,
+                    // otherwise every remaining leg of a generation fails silently.
+                    $retryAfter = (int) $response->header('Retry-After');
+                    Cache::put($cooldownKey, true, now()->addSeconds(max(15, min(300, $retryAfter ?: 60))));
+
+                    return ['_error' => 'rate_limited'];
+                }
                 if ($response->serverError()) {
                     Cache::put($cooldownKey, true, now()->addSeconds(15));
                 }

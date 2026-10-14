@@ -72,6 +72,7 @@
             $navGroups = [
                 'Main Navigation' => [
                     ['route' => 'dashboard', 'icon' => 'space_dashboard', 'label' => 'Dashboard', 'href' => route('dashboard')],
+                    ['route' => 'trip-planner.*', 'icon' => 'route', 'label' => 'Trip Planner', 'href' => route('trip-planner.index')],
                     ['route' => 'lucky.*', 'icon' => 'casino', 'label' => "I'm Feeling Lucky", 'href' => route('lucky.index')],
                     ['route' => 'cart.*', 'icon' => 'shopping_basket', 'label' => 'My Trip Basket', 'href' => route('cart.index'), 'drawer' => true],
                     ['route' => 'booking.*', 'icon' => 'auto_stories', 'label' => 'My Bookings', 'href' => route('booking.index')],
@@ -82,7 +83,6 @@
                     ['route' => 'hotels.*', 'icon' => 'hotel', 'label' => 'Hotels & Sanctuaries', 'href' => route('hotels.index')],
                     ['route' => 'rooms.*', 'icon' => 'king_bed', 'label' => 'Rooms & Stays', 'href' => route('rooms.index')],
                     ['route' => 'activities.*', 'icon' => 'explore', 'label' => 'Activities & Tours', 'href' => route('activities.index')],
-                    ['route' => 'trip-planner.*', 'icon' => 'route', 'label' => 'Trip Planner', 'href' => route('trip-planner.index')],
                     ['route' => 'addons.*', 'icon' => 'extension', 'label' => 'Transfers & Add-ons', 'href' => route('addons.index')],
                     ['route' => 'packages.*', 'icon' => 'card_travel', 'label' => 'Tour Packages & Promos', 'href' => route('packages.index')],
                 ],

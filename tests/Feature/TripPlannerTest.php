@@ -17,6 +17,7 @@ use App\Services\TripPlannerService;
 use App\Services\WeatherService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 
@@ -69,7 +70,9 @@ it('keeps saved planner selections separate from the existing basket and dedupli
     $this->postJson(route('trip-planner.add', $this->plan), ['item_type' => 'room', 'item_id' => $this->room->id])->assertOk();
     $this->postJson(route('trip-planner.add', $this->plan), ['item_type' => 'room', 'item_id' => $this->room->id])->assertOk();
     expect($this->plan->items()->count())->toBe(1)->and(CartItem::count())->toBe(0);
-    $this->get(route('trip-planner.index'))->assertOk()->assertSee('Plan your island days');
+    $this->get(route('trip-planner.index'))->assertOk()->assertSee('Plan your island days')
+        ->assertSee('Getting around')->assertSee('By vehicle', false)->assertSee('Map key')
+        ->assertSee('straight-line estimate', false);
 });
 
 it('returns rooms under their hotels and uses activities as the visit catalog', function () {
@@ -461,4 +464,85 @@ it('preserves the itinerary and the purchased subset on the booking after checko
         ->and($booking->trip_itineraries[0]['days'])->toHaveCount(4);
     $this->deleteJson(route('trip-planner.destroy', $this->plan))->assertOk();
     $this->get(route('booking.show', $booking->booking_code))->assertOk()->assertSee('Your saved itinerary');
+});
+
+/**
+ * Replaces the default routing double, keeping a reachable matrix so stops still
+ * get scheduled while the per-leg geometry comes back exactly as given.
+ */
+function plannerRouting(array $route): void
+{
+    test()->partialMock(RoutingService::class, function ($mock) use ($route) {
+        $mock->shouldReceive('matrix')->andReturnUsing(function ($sources, $targets) {
+            $distances = $durations = [];
+            foreach ($sources as $i => $source) {
+                foreach ($targets as $j => $target) {
+                    $valid = isset($source['lat'], $target['lat']);
+                    $distances[$i][$j] = $valid ? ($i === $j ? 0 : 1.25) : null;
+                    $durations[$i][$j] = $valid ? ($i === $j ? 0 : 600) : null;
+                }
+            }
+
+            return ['status' => 'ok', 'distances' => $distances, 'durations' => $durations, 'mode' => 'walking'];
+        });
+        $mock->shouldReceive('route')->andReturn($route);
+    });
+}
+
+function plannerLegs(TripItinerary $itinerary): Collection
+{
+    return collect($itinerary->snapshot['days'])->flatMap(fn (array $day) => $day['legs']);
+}
+
+it('draws a straight line for a scheduled stop the road graph cannot connect', function () {
+    plannerRouting(['status' => 'no_route', 'geometry' => null]);
+    plannerAdd($this->plan, 'room', $this->room->id);
+    plannerAdd($this->plan, 'activity', plannerActivity($this->destination)->id);
+    $legs = plannerLegs(app(ItineraryService::class)->generate($this->plan->fresh()));
+    expect($legs)->not->toBeEmpty();
+    $legs->each(function (array $leg) {
+        expect($leg['geometry_kind'])->toBe('straight_line')
+            ->and($leg['geometry']['type'])->toBe('LineString')
+            ->and($leg['geometry']['coordinates'])->toHaveCount(2)
+            ->and($leg['distance_km'])->toBe(1.25);
+    });
+});
+
+it('connects a route to its own marker when the road graph snapped far away', function () {
+    plannerRouting(['status' => 'ok', 'snap_offset_from_meters' => 745.5, 'snap_offset_to_meters' => 3.3,
+        'geometry' => ['type' => 'LineString', 'coordinates' => [[121.918, 11.955], [121.925, 11.965]]]]);
+    plannerAdd($this->plan, 'room', $this->room->id);
+    plannerAdd($this->plan, 'activity', plannerActivity($this->destination)->id);
+    $legs = plannerLegs(app(ItineraryService::class)->generate($this->plan->fresh()));
+    expect($legs)->not->toBeEmpty();
+    $legs->each(function (array $leg) {
+        expect($leg['geometry_kind'])->toBe('road_with_connector')
+            ->and($leg['connectors'])->toHaveCount(1)
+            ->and($leg['connectors'][0]['coordinates'][1])->toBe([121.918, 11.955]);
+    });
+});
+
+it('keeps an ordinary road leg undecorated when it already reaches both points', function () {
+    plannerAdd($this->plan, 'room', $this->room->id);
+    plannerAdd($this->plan, 'activity', plannerActivity($this->destination)->id);
+    $legs = plannerLegs(app(ItineraryService::class)->generate($this->plan->fresh()));
+    expect($legs)->not->toBeEmpty();
+    $legs->each(fn (array $leg) => expect($leg['geometry_kind'])->toBe('road')->and($leg['connectors'])->toBe([]));
+});
+
+it('carries coordinates on unscheduled picks so the map can still place them', function () {
+    $this->partialMock(RoutingService::class, function ($mock) {
+        $mock->shouldReceive('matrix')->andReturnUsing(function ($sources, $targets) {
+            $nulls = array_fill(0, count($sources), array_fill(0, count($targets), null));
+
+            return ['status' => 'partial', 'distances' => $nulls, 'durations' => $nulls, 'mode' => 'walking'];
+        });
+        $mock->shouldReceive('route')->andReturn(['status' => 'no_route', 'geometry' => null]);
+    });
+    plannerAdd($this->plan, 'room', $this->room->id);
+    plannerAdd($this->plan, 'activity', plannerActivity($this->destination)->id);
+    $unscheduled = app(ItineraryService::class)->generate($this->plan->fresh())->snapshot['unscheduled'];
+    expect($unscheduled)->not->toBeEmpty()
+        ->and((float) $unscheduled[0]['lat'])->toBe(11.965)
+        ->and((float) $unscheduled[0]['lng'])->toBe(121.925);
 });

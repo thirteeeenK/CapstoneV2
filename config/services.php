@@ -97,6 +97,10 @@ return [
         'cache_minutes' => (int) env('ROUTING_CACHE_MINUTES', 1440),
         'matrix_batch_size' => (int) env('ROUTING_MATRIX_BATCH_SIZE', 25),
         'snap_radius_meters' => (int) env('ROUTING_SNAP_RADIUS_METERS', 500),
+        // OpenRouteService refuses a point further than its snapping radius from a
+        // mapped way. Beach landings and island meeting points fail that test, so a
+        // second attempt with unlimited snapping keeps the leg drawable.
+        'snap_retry_unlimited' => (bool) env('ROUTING_SNAP_RETRY_UNLIMITED', true),
     ],
 
 ];

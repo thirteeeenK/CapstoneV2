@@ -1,3 +1,7 @@
+// One colour per itinerary day so overlapping days stay readable. Brand palette
+// only, and no purple, per the SunnyTrips colour rules.
+const dayColors = ['#0a78a8', '#e85e37', '#0f766e', '#085e85', '#b45309', '#15803d', '#be123c'];
+
 const hotelSymbol = '<svg aria-hidden="true" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18V6m18 12v-7a2 2 0 0 0-2-2h-7v7M3 16h18M3 9h6v7"/><path d="M5 11h2"/></svg>';
 
 export default (config) => {
@@ -12,7 +16,7 @@ export default (config) => {
     destinations: config.destinations, savedPlans: config.plans, destinationId: Number(config.destination || 0),
     catalog: { hotels: [], activities: [] }, plan: null, selections: [], itinerary: null,
     weatherHtml: '', weatherLoading: false, weatherError: '', weatherSequence: 0,
-    tab: 'hotels', busy: false, error: '', notice: '', mapError: '', search: '', activeDay: 0, editing: null,
+    tab: 'hotels', busy: false, error: '', notice: '', mapError: '', routeNotice: '', search: '', activeDay: 0, editing: null,
     title: '', startDate: '', endDate: '', pax: 2, mode: 'walking', optionIn: '', optionOut: '', optionDate: '', optionPax: 2, optionQuantity: 1,
     viewportSignature: '', loadSequence: 0, activeHotelId: 0, savedPlanId: '', deleting: false, customStayDates: false,
     reminders: config.emailPreferences.reminders, marketing: config.emailPreferences.marketing,
@@ -267,6 +271,42 @@ export default (config) => {
         }
         return Array.from(markers.values()).map(marker => ({ ...marker, name: marker.names.join('\n') }));
     },
+    /** The hotel the trip is anchored on, used to connect unplaced picks. */
+    baseHotel() {
+        const day = (this.itinerary?.snapshot.days || []).find(day => day.hotel?.lat != null && day.hotel?.lng != null);
+        return day ? day.hotel : null;
+    },
+    /**
+     * Picks the planner could not fit onto a day. They still have coordinates,
+     * so they belong on the map as pending pins rather than disappearing.
+     */
+    unscheduledMarkers() {
+        return (this.itinerary?.snapshot.unscheduled || [])
+            .filter(item => item.lat != null && item.lng != null && Number.isFinite(Number(item.lat)) && Number.isFinite(Number(item.lng)))
+            .map(item => ({ ...item, lat: Number(item.lat), lng: Number(item.lng) }));
+    },
+    /** Tooltip lines for one leg, including how exact its drawn line is. */
+    legTooltip(leg, dayNumber) {
+        const lines = ['Day ' + dayNumber + ' - ' + leg.from + ' to ' + leg.to];
+        lines.push(leg.distance_km != null && leg.duration_minutes != null
+            ? Number(leg.distance_km).toFixed(2) + ' km, ' + leg.duration_minutes + ' min by ' + (leg.mode === 'driving' ? 'vehicle' : 'foot')
+            : 'Travel distance and time are not available for this leg.');
+        if (leg.geometry_kind === 'straight_line') lines.push('Straight line only: there is no mapped road route, so a boat or arranged transfer is needed.');
+        if (leg.geometry_kind === 'road_with_connector') lines.push('The dotted ends bridge the gap between the mapped road and the exact spot.');
+        if (leg.return_to_hotel) lines.push('Return to your hotel.');
+        return lines;
+    },
+    /** Leaflet tooltips take a node; build one line per row without raw HTML. */
+    tooltipFor(lines) {
+        const wrapper = document.createElement('span');
+        for (const line of lines) {
+            const row = document.createElement('span');
+            row.style.display = 'block';
+            row.textContent = line;
+            wrapper.append(row);
+        }
+        return wrapper;
+    },
     scheduleMapResize() {
         const container = this.$refs.map;
         if (!map || !container?.isConnected) return;
@@ -281,8 +321,9 @@ export default (config) => {
         map.stop();
         map.invalidateSize({ pan: false, debounceMoveend: true });
         layers.clearLayers();
+        this.routeNotice = '';
         const viewportParts = [this.destinationId, this.tab, this.activeDay];
-        const addMarker = (item, label, onClick) => {
+        const addMarker = (item, label, onClick, variant = '') => {
             if (item.lat == null || item.lng == null) return;
             const latitude = Number(item.lat);
             const longitude = Number(item.lng);
@@ -292,21 +333,60 @@ export default (config) => {
             const width = grouped ? Math.max(48, ...label.map(text => text.length * 8 + 12)) : 32;
             const height = grouped ? label.length * 20 + 12 : 32;
             const content = accommodation ? hotelSymbol : (grouped ? label.map(text => '<span>' + text + '</span>').join('') : label);
-            const options = label || accommodation ? { title: item.name, alt: item.name, icon: L.divIcon({ className: 'planner-map-icon', html: '<span class="planner-map-number"' + (grouped ? ' style="width:' + width + 'px;height:' + height + 'px;border-radius:12px;line-height:20px"' : '') + '>' + content + '</span>', iconSize: [width, height], iconAnchor: [width / 2, height / 2] }) } : { title: item.name, alt: item.name };
+            const options = label || accommodation ? { title: item.name, alt: item.name, icon: L.divIcon({ className: 'planner-map-icon', html: '<span class="planner-map-number' + (variant ? ' planner-map-' + variant : '') + '"' + (grouped ? ' style="width:' + width + 'px;height:' + height + 'px;border-radius:12px;line-height:20px"' : '') + '>' + content + '</span>', iconSize: [width, height], iconAnchor: [width / 2, height / 2] }) } : { title: item.name, alt: item.name };
             const marker = L.marker([latitude, longitude], options).addTo(layers);
             const tooltip = document.createElement('span'); tooltip.textContent = item.name;
             marker.bindTooltip(tooltip); if (onClick) marker.on('click', onClick);
             viewportParts.push(item.type || label || 'destination', item.id || item.name, latitude, longitude);
+            return marker;
         };
         if (!this.destinationId) {
             this.destinations.forEach(item => addMarker({ lat: item.latitude, lng: item.longitude, name: item.name }, null, () => this.chooseDestination(item.id)));
         } else if (this.itinerary && this.tab === 'itinerary') {
             this.itineraryMarkers().forEach(marker => addMarker(marker, marker.labels, () => { this.selectDay(marker.dayIndex); this.focusStop(marker); }));
+            let approximate = 0;
+            let drawn = 0;
             try {
                 this.itinerary.snapshot.days.forEach((day, index) => {
-                    day.legs?.forEach(leg => { if (leg.geometry) L.geoJSON(leg.geometry, { style: { color: '#0077a5', weight: index === this.activeDay ? 4 : 3, opacity: index === this.activeDay ? 0.85 : 0.35, dashArray: leg.return_to_hotel ? '6 6' : null } }).addTo(layers); });
+                    const active = index === this.activeDay;
+                    const color = dayColors[index % dayColors.length];
+                    day.legs?.forEach(leg => {
+                        if (!leg.geometry) return;
+                        const straight = leg.geometry_kind === 'straight_line';
+                        drawn++;
+                        if (straight) approximate++;
+                        // A straight line is an estimate, so it stays dashed and thinner
+                        // than a real road route even on the day being viewed.
+                        const line = L.geoJSON(leg.geometry, { style: {
+                            color, weight: active ? (straight ? 3 : 4) : 3,
+                            opacity: active ? (straight ? 0.7 : 0.9) : 0.3,
+                            dashArray: straight ? '3 9' : (leg.return_to_hotel ? '6 6' : null),
+                        } }).addTo(layers);
+                        line.bindTooltip(this.tooltipFor(this.legTooltip(leg, day.day)), { sticky: true });
+                        line.on('click', () => this.selectDay(index));
+                        // Dotted stubs close the gap when the road graph snapped the leg
+                        // away from the real coordinate, so the line reaches its pin.
+                        (leg.connectors || []).forEach(connector => L.geoJSON(connector, {
+                            style: { color, weight: 2, opacity: active ? 0.8 : 0.3, dashArray: '1 6' },
+                        }).addTo(layers));
+                        viewportParts.push(leg.geometry_kind, leg.from, leg.to);
+                    });
                 });
             } catch { this.mapError = 'The mapped route could not be drawn. The day-by-day schedule and stops are still available.'; }
+            const base = this.baseHotel();
+            const pending = this.unscheduledMarkers();
+            pending.forEach(item => {
+                const marker = addMarker(item, '?', null, 'pending');
+                marker?.bindTooltip(this.tooltipFor([item.name, 'Not placed on a day. ' + item.reason]), { sticky: true });
+                if (base) {
+                    L.geoJSON({ type: 'LineString', coordinates: [[Number(base.lng), Number(base.lat)], [item.lng, item.lat]] },
+                        { style: { color: '#6b7280', weight: 2, opacity: 0.45, dashArray: '2 8' } }).addTo(layers);
+                }
+            });
+            const notices = [];
+            if (approximate) notices.push(approximate + ' of ' + drawn + ' route lines are straight-line estimates — no mapped road connects those stops, so arrange a boat or transfer.');
+            if (pending.length) notices.push(pending.length + ' pick(s) could not be placed on a day; they show as hollow pins linked to your hotel.');
+            this.routeNotice = notices.join(' ');
         } else {
             const visible = this.tab === 'selections' ? this.allListings().filter(item => this.selected(item)) : this.listings();
             if (this.tab === 'rooms' && this.activeHotel()) {

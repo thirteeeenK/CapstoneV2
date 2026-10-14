@@ -146,3 +146,78 @@ it('rejects a provider geometry that is not a coordinate array', function () {
     Http::fake(['routing.test/route*' => Http::response($fixture)]);
     expect(app(RoutingService::class)->route(['lat' => 11.9, 'lng' => 121.9], ['lat' => 12, 'lng' => 122])['status'])->toBe('invalid_response');
 });
+
+function orsGeojson(array $coordinates): array
+{
+    return ['features' => [[
+        'geometry' => ['type' => 'LineString', 'coordinates' => $coordinates],
+        'properties' => ['summary' => ['distance' => 12630, 'duration' => 9000]],
+    ]]];
+}
+
+it('retries an unroutable island point with unlimited snapping before giving up', function () {
+    config(['services.routing.ors_api_key' => 'test-key', 'services.routing.snap_radius_meters' => 500]);
+    Cache::flush();
+    $payloads = [];
+    Http::fake(function (Request $request) use (&$payloads) {
+        $payloads[] = json_decode($request->body(), true);
+
+        return count($payloads) === 1
+            ? Http::response(['error' => ['code' => 2010]], 404)
+            : Http::response(orsGeojson([[119.32485, 11.11799], [119.39277, 11.17962]]));
+    });
+    $route = app(RoutingService::class)->route(['lat' => 11.11611, 'lng' => 119.33141], ['lat' => 11.1796, 'lng' => 119.3928]);
+    expect($route['status'])->toBe('ok')
+        ->and($route['provider'])->toBe('ors')
+        ->and($payloads[0]['radiuses'])->toBe([500, 500])
+        ->and($payloads[1]['radiuses'])->toBe([-1, -1]);
+});
+
+it('reports how far each end of a drawn route was snapped from the real coordinate', function () {
+    config(['services.routing.ors_api_key' => 'test-key']);
+    Cache::flush();
+    Http::fake(['*' => Http::response(orsGeojson([[119.32485, 11.11799], [119.39277, 11.17962]]))]);
+    $route = app(RoutingService::class)->route(['lat' => 11.11611, 'lng' => 119.33141], ['lat' => 11.17962, 'lng' => 119.39277]);
+    expect($route['snap_offset_from_meters'])->toBeGreaterThan(100)
+        ->and($route['snap_offset_to_meters'])->toBe(0.0);
+});
+
+it('backs off for the window openrouteservice asks for instead of hammering a rate limit', function () {
+    config(['services.routing.ors_api_key' => 'test-key']);
+    Cache::flush();
+    Http::fake(['*' => Http::response(['error' => 'quota exceeded'], 429, ['Retry-After' => '30'])]);
+    $service = app(RoutingService::class);
+    expect($service->route(['lat' => 11.9, 'lng' => 121.9], ['lat' => 11.95, 'lng' => 121.95])['status'])->toBe('rate_limited')
+        ->and($service->route(['lat' => 11.8, 'lng' => 121.8], ['lat' => 11.85, 'lng' => 121.85])['status'])->toBe('unavailable');
+    Http::assertSentCount(1);
+});
+
+it('chunks a large openrouteservice matrix instead of dropping every distance', function () {
+    config(['services.routing.ors_api_key' => 'test-key', 'services.routing.matrix_batch_size' => 25]);
+    Cache::flush();
+    Http::fake(function (Request $request) {
+        $payload = json_decode($request->body(), true);
+        expect($payload)->not->toHaveKey('radiuses');
+
+        return Http::response([
+            'distances' => array_fill(0, count($payload['sources']), array_fill(0, count($payload['destinations']), 2.5)),
+            'durations' => array_fill(0, count($payload['sources']), array_fill(0, count($payload['destinations']), 900.0)),
+        ]);
+    });
+    $targets = array_map(fn (int $index) => ['lat' => 11.9 + $index / 1000, 'lng' => 121.9], range(0, 59));
+    $matrix = app(RoutingService::class)->matrix([['lat' => 11.9, 'lng' => 121.9]], $targets);
+    expect($matrix['status'])->toBe('ok')
+        ->and($matrix['distances'][0])->toHaveCount(60)
+        ->and($matrix['distances'][0][59])->toBe(2.5)
+        ->and($matrix['durations'][0][59])->toBe(900.0);
+    Http::assertSentCount(3);
+});
+
+it('offers a straight line as a drawing aid without inventing a road distance', function () {
+    $service = app(RoutingService::class);
+    expect($service->straightLine(['lat' => 11.96, 'lng' => 121.92], ['lat' => 11.97, 'lng' => 121.93]))
+        ->toBe(['type' => 'LineString', 'coordinates' => [[121.92, 11.96], [121.93, 11.97]]])
+        ->and($service->straightLine(['lat' => null, 'lng' => null], ['lat' => 11.97, 'lng' => 121.93]))->toBeNull()
+        ->and($service->haversineMeters(['lat' => 11.96, 'lng' => 121.92], ['lat' => 11.96, 'lng' => 121.92]))->toBe(0.0)
+        ->and($service->haversineMeters(['lat' => 11.96, 'lng' => 121.92], ['lat' => 11.97, 'lng' => 121.92]))->toBeGreaterThan(1000);
+});
