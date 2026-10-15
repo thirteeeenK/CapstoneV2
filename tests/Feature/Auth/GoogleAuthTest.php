@@ -2,7 +2,6 @@
 
 use App\Models\User;
 use App\Models\UserPreference;
-use Illuminate\Support\Facades\Hash;
 use Laravel\Socialite\Contracts\Provider;
 use Laravel\Socialite\Facades\Socialite;
 use Laravel\Socialite\Two\InvalidStateException;
@@ -141,6 +140,7 @@ test('a returning traveler is matched on google id even after changing their ema
     $existing = User::factory()->create([
         'email' => 'new-address@example.com',
         'google_id' => 'google-sub-10294',
+        'email_verified_at' => null,
     ]);
 
     fakeGoogleCallback(googleProfile(['email' => 'juan@example.com']));
@@ -151,7 +151,16 @@ test('a returning traveler is matched on google id even after changing their ema
     $this->assertAuthenticatedAs($existing);
 
     expect($existing->refresh()->email)->toBe('new-address@example.com')
+        ->and($existing->email_verified_at)->toBeNull()
         ->and(User::count())->toBe(1);
+});
+
+test('google email matching cannot replace a different linked identity', function () {
+    $user = User::factory()->create(['email' => 'juan@example.com', 'google_id' => 'original-google']);
+    fakeGoogleCallback(googleProfile());
+    $this->get(route('auth.google.callback'))->assertRedirect(route('login'))->assertSessionHas('error');
+    expect($user->fresh()->google_id)->toBe('original-google');
+    $this->assertGuest();
 });
 
 test('a google profile with an unverified email cannot claim an account', function () {
@@ -208,7 +217,7 @@ test('an account inside the deletion grace window is recovered by google sign-in
     $this->assertAuthenticatedAs($existing);
 });
 
-test('a google-only traveler can set a password without confirming an old one', function () {
+test('a google-only traveler cannot set a password using only the application session', function () {
     $user = onboardedUser(['password' => null, 'google_id' => 'google-sub-10294']);
 
     $response = $this->actingAs($user)->put(route('password.update'), [
@@ -216,10 +225,8 @@ test('a google-only traveler can set a password without confirming an old one', 
         'password_confirmation' => 'brand-new-password',
     ]);
 
-    $response->assertSessionHasNoErrors()->assertRedirect();
-
-    expect(Hash::check('brand-new-password', $user->refresh()->password))->toBeTrue()
-        ->and($user->hasPassword())->toBeTrue();
+    $response->assertSessionHasErrors('confirmation');
+    expect($user->fresh()->password)->toBeNull();
 });
 
 test('google onboarding starts fresh after an admin permanently deletes the previous customer', function () {

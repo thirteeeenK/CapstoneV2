@@ -37,7 +37,7 @@ Route::middleware(['auth', 'throttle:users'])->group(function () {
     Route::match(['get', 'post'], '/onboarding/skip', [OnboardingController::class, 'skip'])->name('onboarding.skip');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::patch('/profile', [ProfileController::class, 'update'])->middleware('throttle:account-security')->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
@@ -53,6 +53,7 @@ Route::get('/check', [ConnectionController::class, 'checkConnection'])->middlewa
 
 require __DIR__.'/auth.php';
 require __DIR__.'/socialAuthRoute.php';
+require __DIR__.'/accountSecurityRoute.php';
 require __DIR__.'/adminAuth.php';
 require __DIR__.'/adminSettingsRoute.php';
 require __DIR__.'/destinationRoute.php';

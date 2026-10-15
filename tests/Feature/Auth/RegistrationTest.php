@@ -1,5 +1,13 @@
 <?php
 
+use App\Services\TurnstileService;
+
+beforeEach(function () {
+    $this->mock(TurnstileService::class, function ($mock) {
+        $mock->shouldReceive('verify')->andReturnNull();
+    });
+});
+
 test('registration screen can be rendered', function () {
     $response = $this->get('/register');
 

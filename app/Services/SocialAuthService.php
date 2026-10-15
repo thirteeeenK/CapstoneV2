@@ -50,7 +50,7 @@ class SocialAuthService
 
         // Google has already proven ownership of the address, so an account that
         // never confirmed its email does not need to be asked again.
-        if ($user->email_verified_at === null) {
+        if ($user->email_verified_at === null && mb_strtolower($user->email) === $this->normalizedEmail($googleUser)) {
             $user->email_verified_at = now();
         }
 

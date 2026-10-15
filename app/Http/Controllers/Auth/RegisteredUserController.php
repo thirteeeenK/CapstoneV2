@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\RegistrationAbuseService;
+use App\Services\TurnstileService;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -28,7 +30,7 @@ class RegisteredUserController extends Controller
      *
      * @throws ValidationException
      */
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, TurnstileService $turnstile, RegistrationAbuseService $abuse): RedirectResponse
     {
         $request->validate([
             'name' => ['required', 'string', 'max:100'],
@@ -43,6 +45,9 @@ class RegisteredUserController extends Controller
             'privacy_accepted' => ['required', 'accepted'],
             'ai_disclosure_accepted' => ['required', 'accepted'],
         ]);
+
+        $turnstile->verify($request->input('cf-turnstile-response'));
+        $abuse->reserve($request->ip());
 
         $user = User::create([
             'name' => $request->name,

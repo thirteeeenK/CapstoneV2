@@ -69,6 +69,24 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(30)->by('users:'.$key);
         });
 
+        RateLimiter::for('registration', fn (Request $request) => [
+            Limit::perMinute(5)->by('registration:minute:'.$request->ip()),
+            Limit::perHour(20)->by('registration:hour:'.$request->ip()),
+        ]);
+
+        RateLimiter::for('account-security', function (Request $request) {
+            $email = $request->input('email');
+            if ($request->routeIs('profile.update') && is_string($email)
+                && mb_strtolower(trim($email)) === mb_strtolower($request->user()->email)) {
+                return Limit::none();
+            }
+
+            return [
+                Limit::perMinute(5)->by('account-security:minute:'.$request->user()->id),
+                Limit::perHour(20)->by('account-security:hour:'.$request->user()->id),
+            ];
+        });
+
         // -- ADMIN AREA ACTIONS (CRUD, bookings, user management, uploads) --
         RateLimiter::for('admin', function (Request $request) {
             $key = $request->user('admin')?->getAuthIdentifier() ?: $request->ip();
