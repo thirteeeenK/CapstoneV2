@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Services\AccountDeletionService;
+use App\Services\RegistrationAbuseService;
 use App\Services\SocialAuthService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -36,7 +37,7 @@ class GoogleAuthController extends Controller
     /**
      * Receive the traveler back from Google and put them into a session.
      */
-    public function callback(Request $request): RedirectResponse
+    public function callback(Request $request, RegistrationAbuseService $abuse): RedirectResponse
     {
         if (! $this->isConfigured()) {
             return $this->unavailable();
@@ -68,6 +69,9 @@ class GoogleAuthController extends Controller
         $existing = $this->socialAuth->findExistingForGoogle($googleUser);
 
         if ($existing) {
+            if (filled($existing->google_id) && $existing->google_id !== $googleUser->getId()) {
+                return redirect()->route('login')->with('error', 'Please use the Google account already linked to this profile.');
+            }
             if (! $this->deletionService->recoverForLogin($existing)) {
                 return redirect()->route('login')
                     ->with('error', 'That account has been closed. Please create a new one to continue.');
@@ -81,6 +85,7 @@ class GoogleAuthController extends Controller
             $user = $this->socialAuth->linkGoogleAccount($existing, $googleUser);
             $isNewAccount = false;
         } else {
+            $abuse->reserve($request->ip());
             $user = $this->socialAuth->createFromGoogle($googleUser, $request);
             $isNewAccount = true;
         }

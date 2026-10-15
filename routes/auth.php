@@ -15,7 +15,7 @@ Route::middleware(['guest', 'throttle:users'])->group(function () {
     Route::get('register', [RegisteredUserController::class, 'create'])
         ->name('register');
 
-    Route::post('register', [RegisteredUserController::class, 'store']);
+    Route::post('register', [RegisteredUserController::class, 'store'])->middleware('throttle:registration');
 
     Route::get('login', [AuthenticatedSessionController::class, 'create'])
         ->name('login');
@@ -54,7 +54,7 @@ Route::middleware('auth')->group(function () {
         ->middleware('throttle:users');
 
     Route::put('password', [PasswordController::class, 'update'])
-        ->middleware('throttle:users')
+        ->middleware(['throttle:users', 'throttle:account-security'])
         ->name('password.update');
 
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])

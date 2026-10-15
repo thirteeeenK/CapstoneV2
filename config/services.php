@@ -1,6 +1,12 @@
 <?php
 
 return [
+
+    'turnstile' => [
+        'site_key' => env('TURNSTILE_SITE_KEY'),
+        'secret_key' => env('TURNSTILE_SECRET_KEY'),
+        'hostname' => env('TURNSTILE_EXPECTED_HOSTNAME'),
+    ],
     'trip_journey' => ['enabled' => env('TRIP_JOURNEY_ENABLED', false)],
 
     /*
@@ -43,6 +49,7 @@ return [
         // `?:` rather than an env() default, because a present-but-blank
         // GOOGLE_REDIRECT_URI= line yields '' and would skip the default.
         'redirect' => env('GOOGLE_REDIRECT_URI') ?: '/auth/google/callback',
+        'reauth_redirect' => env('GOOGLE_REAUTH_REDIRECT_URI') ?: '/account-security/google/callback',
     ],
 
     'gemini' => [

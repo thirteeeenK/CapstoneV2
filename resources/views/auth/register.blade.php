@@ -21,6 +21,7 @@
     {{-- ── Register Form ── --}}
     <form id="register-form" method="POST" action="{{ route('register') }}" class="space-y-4" novalidate>
         @csrf
+        <input type="hidden" name="cf-turnstile-response" id="registration-turnstile-response">
 
         {{-- Name & Email — side by side on sm+ --}}
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -146,12 +147,83 @@
 
             const progressBar = document.getElementById('consent-progress');
             const progressCount = document.getElementById('consent-count');
+            const registrationForm = document.getElementById('register-form');
+            const challengeResponse = document.getElementById('registration-turnstile-response');
+            const challengeStatus = document.getElementById('registration-security-status');
+            let submitting = false;
+            let scriptLoading = false;
+            let widgetId;
+
+            function challengeResult(token, message) {
+                challengeResponse.value = token;
+                challengeStatus.textContent = message;
+                updateModalSubmitButton();
+            }
+
+            function renderChallenge() {
+                if (!window.turnstile || widgetId !== undefined) return;
+                const sitekey = @js(config('services.turnstile.site_key'));
+                if (!sitekey) {
+                    challengeResult('', 'Registration is temporarily unavailable. Please try again later.');
+                    return;
+                }
+                widgetId = window.turnstile.render('#registration-security-check', {
+                    sitekey, action: 'register', 'response-field': false,
+                    size: window.matchMedia('(max-width: 479px)').matches ? 'compact' : 'normal',
+                    callback: token => challengeResult(token, 'Security check complete.'),
+                    'expired-callback': () => challengeResult('', 'Security check expired. Please complete it again.'),
+                    'error-callback': () => challengeResult('', 'Security check could not load. Retry the check or reload the page.'),
+                });
+            }
+            window.registrationTurnstileReady = renderChallenge;
+
+            function loadChallengeScript() {
+                if (scriptLoading || window.turnstile) return;
+                scriptLoading = true;
+                const challengeScript = document.createElement('script');
+                challengeScript.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?onload=registrationTurnstileReady&render=explicit';
+                challengeScript.async = true;
+                challengeScript.onload = () => { scriptLoading = false; };
+                challengeScript.onerror = () => {
+                    scriptLoading = false;
+                    challengeScript.remove();
+                    challengeResult('', 'Security check could not load. Check your connection and retry.');
+                };
+                document.head.appendChild(challengeScript);
+            }
+
+            window.addEventListener('open-modal', event => {
+                if (event.detail === 'confirm-submit-modal') requestAnimationFrame(renderChallenge);
+            });
+            document.getElementById('registration-security-retry').addEventListener('click', () => {
+                challengeResult('', 'Checking your connection…');
+                if (window.turnstile && widgetId !== undefined) window.turnstile.reset(widgetId);
+                else if (window.turnstile) renderChallenge();
+                else loadChallengeScript();
+            });
+            registrationForm.addEventListener('submit', event => {
+                if (submitting || !challengeResponse.value || modalSubmitBtn.disabled) {
+                    event.preventDefault();
+                    return;
+                }
+                submitting = true;
+                modalSubmitBtn.disabled = true;
+                modalSubmitBtn.textContent = 'Creating account…';
+            });
+            window.addEventListener('pageshow', event => {
+                if (event.persisted) {
+                    submitting = false;
+                    modalSubmitBtn.textContent = 'Create account';
+                    challengeResult('', 'Please complete a fresh security check.');
+                    if (window.turnstile && widgetId !== undefined) window.turnstile.reset(widgetId);
+                }
+            });
 
             // Enable/disable the modal's Create account button based on all required consents.
             function updateModalSubmitButton() {
                 const checked = Array.from(consentCheckboxes).filter(checkbox => checkbox.checked);
                 const allChecked = checked.length === consentCheckboxes.length;
-                modalSubmitBtn.disabled = !allChecked;
+                modalSubmitBtn.disabled = submitting || !allChecked || !challengeResponse.value;
 
                 if (progressBar && progressCount) {
                     const pct = consentCheckboxes.length ? Math.round((checked.length / consentCheckboxes.length) * 100) : 0;
@@ -172,9 +244,11 @@
                 return errorEl && errorEl.textContent.trim().length > 0;
             });
 
-            if (hasConsentErrors) {
+            if (hasConsentErrors || @js($errors->has('cf-turnstile-response'))) {
                 window.dispatchEvent(new CustomEvent('open-modal', { detail: 'confirm-submit-modal' }));
             }
+
+            loadChallengeScript();
         });
     </script>
 
@@ -334,6 +408,13 @@
                 <div data-error-for="ai_disclosure_accepted" class="px-1">
                     <x-input-error :messages="$errors->get('ai_disclosure_accepted')" />
                 </div>
+            </div>
+
+            <div class="mt-4 space-y-2">
+                <div id="registration-security-check"></div>
+                <p id="registration-security-status" role="status" aria-live="polite" class="font-body text-sm text-ink-600 dark:text-slate-300">Complete the security check before creating your account.</p>
+                <x-input-error :messages="$errors->get('cf-turnstile-response')" />
+                <button type="button" id="registration-security-retry" class="text-sm font-semibold text-ocean-600 underline dark:text-ocean-400">Retry security check</button>
             </div>
 
             {{-- Footer --}}

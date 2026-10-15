@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
+use App\Services\AccountSecurityService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -13,12 +15,10 @@ class PasswordController extends Controller
     /**
      * Update the user's password.
      *
-     * Accounts created through Google sign-in have no password to confirm, so
-     * for them this is a first-time "set a password" instead of a change. The
-     * session itself is the proof of identity in that case, exactly as it is
-     * for the rest of the profile page.
+     * Google-only accounts must confirm their linked identity before adding
+     * their first password; the application session alone is insufficient.
      */
-    public function update(Request $request): RedirectResponse
+    public function update(Request $request, AccountSecurityService $security): RedirectResponse
     {
         $hasPassword = $request->user()->hasPassword();
 
@@ -27,10 +27,15 @@ class PasswordController extends Controller
             'password' => ['required', Password::defaults(), 'confirmed'],
         ]);
 
-        $request->user()->update([
-            'password' => Hash::make($validated['password']),
-        ]);
+        if ($hasPassword) {
+            $request->user()->update(['password' => Hash::make($validated['password'])]);
+        } else {
+            $security->consume($request, 'set-password', $request->input('confirmation_id'), function (User $user) use ($validated): void {
+                $user->update(['password' => Hash::make($validated['password'])]);
+            });
+        }
 
-        return back()->with('status', $hasPassword ? 'password-updated' : 'password-created');
+        return ($hasPassword ? back() : to_route('profile.edit'))
+            ->with('status', $hasPassword ? 'password-updated' : 'password-created');
     }
 }

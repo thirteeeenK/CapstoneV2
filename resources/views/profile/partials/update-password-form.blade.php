@@ -1,9 +1,13 @@
 @php($hasPassword = $user->hasPassword())
 
 <div class="max-w-2xl">
-    <form method="post" action="{{ route('password.update') }}" class="space-y-6">
+    <form method="post" action="{{ $hasPassword ? route('password.update') : route('account-security.start') }}" class="space-y-6">
         @csrf
-        @method('put')
+        @if ($hasPassword)
+            @method('put')
+        @else
+            <input type="hidden" name="purpose" value="set-password">
+        @endif
 
         @if ($hasPassword)
             <div>
@@ -13,17 +17,16 @@
                 <x-input-error :messages="$errors->updatePassword->get('current_password')" class="mt-2" />
             </div>
         @else
-            {{-- Google sign-in accounts have no password yet, so there is nothing
-                 to confirm. Setting one adds email + password as a second way in. --}}
+            {{-- Google-only accounts confirm their linked identity before adding a password. --}}
             <div class="flex items-start gap-3 rounded-2xl border border-ocean-100 dark:border-ocean-800 bg-ocean-50 dark:bg-ocean-900/40 px-4 py-3">
                 <span class="material-symbols-outlined text-ocean-600 dark:text-ocean-200 text-[20px] shrink-0">info</span>
                 <p class="font-body text-xs text-ink-600 dark:text-slate-300 leading-relaxed">
-                    You signed up with Google, so you don't have a password yet. Set one here if you'd
-                    also like to sign in with your email address — your Google sign-in keeps working either way.
+                    You signed up with Google, so you don't have a password yet. Confirm with your linked Google account before setting one. Your Google sign-in will keep working.
                 </p>
             </div>
         @endif
 
+        @if ($hasPassword)
         <div>
             <x-input-label for="update_password_password" :value="$hasPassword ? __('New password') : __('Password')" />
             <x-text-input id="update_password_password" name="password" type="password"
@@ -38,10 +41,11 @@
             <x-input-error :messages="$errors->updatePassword->get('password_confirmation')" class="mt-2" />
         </div>
 
+        @endif
         <div class="flex items-center gap-4 pt-2">
             <button type="submit"
                 class="inline-flex items-center justify-center gap-2 rounded-lg bg-ocean-600 px-6 py-3 text-sm font-bold text-white tracking-wide transition-all duration-150 hover:bg-ocean-700 focus:outline-none focus:ring-2 focus:ring-ocean-400/40 focus:ring-offset-1 active:bg-ocean-800 cursor-pointer">
-                {{ $hasPassword ? __('Update password') : __('Set password') }}
+                {{ $hasPassword ? __('Update password') : __('Set password — confirm with Google') }}
             </button>
 
             @if (in_array(session('status'), ['password-updated', 'password-created'], true))
