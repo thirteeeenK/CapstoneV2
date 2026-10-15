@@ -11,6 +11,14 @@
         </div>
     @endsession
 
+    {{-- Error flash (e.g. an abandoned or failed Google sign-in) --}}
+    @session('error')
+        <div class="mb-6 flex items-start gap-3 rounded-lg border border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-950/60 px-4 py-3 text-sm font-medium text-rose-800 dark:text-rose-100">
+            <span class="material-symbols-outlined text-rose-600 dark:text-rose-400 shrink-0" style="font-size:18px">error</span>
+            <span>{{ session('error') }}</span>
+        </div>
+    @endsession
+
     {{-- Page heading --}}
     <div class="mb-6">
         <h1 class="font-headline text-[1.625rem] font-semibold text-ink-900 dark:text-slate-100 leading-tight">
@@ -108,6 +116,10 @@
                 <span class="bg-sand-50 dark:bg-slate-800 px-3 text-xs text-ink-400 dark:text-slate-500">or</span>
             </div>
         </div>
+
+        {{-- Google sign-in. Creates the account on first use, which is why the
+             consent notice ships with the button. --}}
+        <x-google-button label="Continue with Google" />
 
         {{-- Register link --}}
         <p class="text-center text-[13px] text-ink-500 dark:text-slate-400">

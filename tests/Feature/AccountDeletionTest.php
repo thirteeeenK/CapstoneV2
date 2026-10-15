@@ -82,6 +82,23 @@ test('requesting deletion revokes remembered access and existing sessions', func
     $this->assertDatabaseMissing('sessions', ['id' => 'other-device']);
 });
 
+test('the deletion notice is a modal on the landing page, not a banner above the hero', function () {
+    $user = onboardedUser();
+
+    $this->actingAs($user)->delete('/profile', ['password' => 'password'])->assertRedirect('/');
+
+    // The notice is confirmed to a signed-out visitor, so it must not be gated on auth.
+    $this->assertGuest();
+
+    $landing = $this->get('/')->assertOk();
+    $landing->assertSee('<dialog', false);
+    $landing->assertSee('account-deletion-title', false);
+    $landing->assertSee('Log in to cancel');
+
+    // Flashed once: a refresh of the landing page no longer shows it.
+    $this->get('/')->assertOk()->assertDontSee('account-deletion-title', false);
+});
+
 test('a recovered account survives its original deletion deadline', function () {
     $this->freezeTime();
     $user = User::factory()->create(['deleted_at' => now()->subDays(4)]);

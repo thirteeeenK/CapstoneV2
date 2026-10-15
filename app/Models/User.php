@@ -13,6 +13,7 @@ use Illuminate\Notifications\Notifiable;
 
 #[Fillable([
     'name', 'email', 'phone_number', 'address', 'password',
+    'google_id', 'avatar',
     'chatbot_flag_count', 'ban_reason', 'ban_level', 'banned_at', 'ban_expires_at',
     'terms_accepted_at', 'privacy_accepted_at', 'ai_disclosure_accepted_at',
     'terms_version', 'privacy_version', 'ai_disclosure_version',
@@ -49,6 +50,24 @@ class User extends Authenticatable
             'privacy_accepted_at' => 'datetime',
             'ai_disclosure_accepted_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Accounts created through Google never pick a password, so every flow that
+     * re-authenticates with one (password change, account deletion) has to ask
+     * for something else instead.
+     */
+    public function hasPassword(): bool
+    {
+        return filled($this->password);
+    }
+
+    /**
+     * Whether this account can sign in through Google.
+     */
+    public function hasGoogleAccount(): bool
+    {
+        return filled($this->google_id);
     }
 
     /**

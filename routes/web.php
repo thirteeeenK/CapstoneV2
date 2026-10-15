@@ -52,6 +52,7 @@ Route::middleware(['auth', 'throttle:users'])->group(function () {
 Route::get('/check', [ConnectionController::class, 'checkConnection'])->middleware('throttle:users');
 
 require __DIR__.'/auth.php';
+require __DIR__.'/socialAuthRoute.php';
 require __DIR__.'/adminAuth.php';
 require __DIR__.'/destinationRoute.php';
 require __DIR__.'/hotelRoute.php';

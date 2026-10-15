@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
 use App\Services\AccountDeletionService;
+use Closure;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -40,14 +41,32 @@ class ProfileController extends Controller
 
     /**
      * Delete the user's account.
+     *
+     * Google sign-in accounts have no password to confirm, so they type their
+     * own email address instead. The step exists to make the action deliberate
+     * rather than to re-authenticate, which the session already did.
      */
     public function destroy(Request $request, AccountDeletionService $deletionService): RedirectResponse
     {
-        $request->validateWithBag('userDeletion', [
-            'password' => ['required', 'current_password'],
-        ]);
-
         $user = $request->user();
+
+        if ($user->hasPassword()) {
+            $request->validateWithBag('userDeletion', [
+                'password' => ['required', 'current_password'],
+            ]);
+        } else {
+            $request->validateWithBag('userDeletion', [
+                'confirm_email' => [
+                    'required',
+                    'string',
+                    function (string $attribute, mixed $value, Closure $fail) use ($user): void {
+                        if (mb_strtolower(trim((string) $value)) !== mb_strtolower($user->email)) {
+                            $fail('That email address does not match this account.');
+                        }
+                    },
+                ],
+            ]);
+        }
 
         $deletionService->requestDeletion($user);
 

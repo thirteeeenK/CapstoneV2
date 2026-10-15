@@ -1,3 +1,5 @@
+@php($hasPassword = $user->hasPassword())
+
 <div class="max-w-2xl">
     <button type="button" x-data=""
         x-on:click.prevent="$dispatch('open-modal', 'confirm-user-deletion')"
@@ -21,17 +23,30 @@
                     </h3>
                     <p class="text-sm font-body text-ink-500 dark:text-slate-400 leading-relaxed">
                         {{ __('You will be logged out and your account will be scheduled for permanent deletion in 5 days. If you change your mind, simply log in before the 5 days are over to cancel deletion and recover your account. After that deadline, recovery is no longer possible.') }}
-                        {{ __('Enter your current password to confirm.') }}
+                        {{ $hasPassword
+                            ? __('Enter your current password to confirm.')
+                            : __('Type your email address to confirm.') }}
                     </p>
                 </div>
             </div>
 
-            <div class="mt-6">
-                <x-input-label for="password" value="{{ __('Password') }}" />
-                <x-text-input id="password" name="password" type="password" class="mt-1.5 block w-full"
-                    placeholder="{{ __('Enter your current password') }}" autocomplete="current-password" />
-                <x-input-error :messages="$errors->userDeletion->get('password')" class="mt-2" />
-            </div>
+            @if ($hasPassword)
+                <div class="mt-6">
+                    <x-input-label for="password" value="{{ __('Password') }}" />
+                    <x-text-input id="password" name="password" type="password" class="mt-1.5 block w-full"
+                        placeholder="{{ __('Enter your current password') }}" autocomplete="current-password" />
+                    <x-input-error :messages="$errors->userDeletion->get('password')" class="mt-2" />
+                </div>
+            @else
+                {{-- Google sign-in accounts hold no password, so retyping the
+                     address on the account is the deliberate-action check. --}}
+                <div class="mt-6">
+                    <x-input-label for="confirm_email" value="{{ __('Email address') }}" />
+                    <x-text-input id="confirm_email" name="confirm_email" type="email" class="mt-1.5 block w-full"
+                        placeholder="{{ $user->email }}" autocomplete="off" />
+                    <x-input-error :messages="$errors->userDeletion->get('confirm_email')" class="mt-2" />
+                </div>
+            @endif
 
             <div class="mt-6 flex justify-end gap-3">
                 <button type="button" x-on:click="$dispatch('close')"

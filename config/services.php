@@ -35,6 +35,16 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+        // A leading-slash value is resolved against APP_URL by Socialite, so the
+        // same default works on localhost and in production without an override.
+        // `?:` rather than an env() default, because a present-but-blank
+        // GOOGLE_REDIRECT_URI= line yields '' and would skip the default.
+        'redirect' => env('GOOGLE_REDIRECT_URI') ?: '/auth/google/callback',
+    ],
+
     'gemini' => [
         'api_key' => env('GEMINI_API_KEY'),
         'embedding_model' => env('EMBEDDING_MODEL', 'models/text-embedding-001'),
