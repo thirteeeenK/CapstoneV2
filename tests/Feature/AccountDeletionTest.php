@@ -4,7 +4,8 @@ use App\Models\User;
 use App\Models\UserPreference;
 use Illuminate\Support\Facades\DB;
 
-test('login within five days restores the account and shows recovery once', function () {
+test('login within five days restores the account and shows recovery once', function (bool $gracePeriod) {
+    config(['auth.account_deletion_grace_period' => $gracePeriod]);
     $this->freezeTime();
     $user = onboardedUser(['deleted_at' => now()->subDays(5)->addSecond()]);
 
@@ -16,7 +17,7 @@ test('login within five days restores the account and shows recovery once', func
     $this->assertNotSoftDeleted($user);
     $this->get('/profile')->assertOk()->assertSee('Account recovered');
     $this->get('/profile')->assertOk()->assertDontSee('account-recovered-title');
-});
+})->with(['grace enabled' => true, 'previously scheduled deletion with grace disabled' => false]);
 
 test('expired accounts cannot recover even before cleanup runs', function (int $secondsPastDeadline) {
     $this->freezeTime();
@@ -108,4 +109,41 @@ test('a recovered account survives its original deletion deadline', function () 
     $this->artisan('accounts:delete-expired')->assertSuccessful();
 
     $this->assertNotSoftDeleted($user);
+});
+
+test('disabling the grace period permanently deletes the account and revokes access immediately', function () {
+    config(['auth.account_deletion_grace_period' => false]);
+    $user = onboardedUser(['remember_token' => 'old-token']);
+    UserPreference::create(['user_id' => $user->id]);
+    DB::table('sessions')->insert([
+        'id' => 'other-device', 'user_id' => $user->id, 'payload' => '', 'last_activity' => now()->timestamp,
+    ]);
+    DB::table('password_reset_tokens')->insert([
+        'email' => $user->email, 'token' => 'old-reset-token', 'created_at' => now(),
+    ]);
+    $this->actingAs($user)->get('/profile')
+        ->assertOk()
+        ->assertSee('Your account will be permanently deleted immediately.')
+        ->assertDontSee('5-day grace period');
+
+    $this->delete('/profile', ['password' => 'password'])
+        ->assertRedirect('/')
+        ->assertSessionHas('account_permanently_deleted', true);
+
+    $this->assertGuest();
+    $this->assertDatabaseMissing('users', ['id' => $user->id]);
+    $this->assertDatabaseMissing('user_preferences', ['user_id' => $user->id]);
+    $this->assertDatabaseMissing('sessions', ['user_id' => $user->id]);
+    $this->assertDatabaseMissing('password_reset_tokens', ['email' => $user->email]);
+    $this->get('/')->assertOk()
+        ->assertSee('Account permanently deleted')
+        ->assertSee('It can no longer be recovered.')
+        ->assertDontSee('Log in to cancel');
+    $this->get('/')->assertOk()->assertDontSee('account-deletion-title', false);
+});
+
+test('guests cannot delete accounts when the grace period is disabled', function () {
+    config(['auth.account_deletion_grace_period' => false]);
+
+    $this->delete('/profile', ['password' => 'password'])->assertRedirect('/login');
 });

@@ -75,6 +75,8 @@ class ProfileController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return Redirect::to('/')->with('account_deletion_requested', true);
+        return Redirect::to('/')
+            ->with('account_deletion_requested', true)
+            ->with('account_permanently_deleted', ! config('auth.account_deletion_grace_period'));
     }
 }

@@ -369,6 +369,15 @@
                                         </template>
                                         <p class="font-black text-ocean-600 font-headline text-xs pt-1 border-t border-slate-200 dark:border-slate-700"
                                             x-text="'Total: ' + msg.itinerary.formatted_grand_total"></p>
+                                        <p x-show="itineraryBudgetLabel(msg.itinerary)"
+                                            class="text-[11px] font-bold"
+                                            :class="{
+                                                'text-emerald-700 dark:text-emerald-400': msg.itinerary.budget_check?.status === 'within',
+                                                'text-amber-700 dark:text-amber-400': msg.itinerary.budget_check?.status === 'slightly_over',
+                                                'text-slate-500 dark:text-slate-400': msg.itinerary.budget_check?.status === 'under_target',
+                                                'text-red-600 dark:text-red-400': msg.itinerary.budget_check?.status === 'over',
+                                            }"
+                                            x-text="itineraryBudgetLabel(msg.itinerary)"></p>
                                         <div class="grid grid-cols-2 gap-1.5 pt-1">
                                             <button type="button" @click="addItineraryToBasket(msg.itinerary)"
                                                 class="col-span-2 bg-slate-900 text-white font-bold px-2 py-1.5 rounded-lg hover:bg-slate-800 transition-colors text-[11px] font-headline cursor-pointer flex items-center justify-center gap-1">
@@ -883,7 +892,8 @@
                     }
 
                     if (res.status === 403 && data.status === 'blocked') {
-                        this.addMessage('bot', data.reply || 'Your message was blocked by our safety system.', {});
+                        this.addMessage('bot', data.reply || 'Your message was blocked by our safety system.',
+                            data.suggested_actions?.length ? { suggested_actions: data.suggested_actions } : {});
                         return;
                     }
 
@@ -959,6 +969,19 @@
             addToBasket(type, id, opts) {
                 if (typeof window.addToCart === 'function') {
                     window.addToCart(type, id, opts);
+                }
+            },
+
+            itineraryBudgetLabel(itin) {
+                const check = itin?.budget_check;
+                if (!check || !check.budget) return '';
+                const peso = (amount) => '₱' + Number(Math.abs(amount)).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                switch (check.status) {
+                    case 'within': return 'Within budget · ' + check.percent + '% of ' + peso(check.budget);
+                    case 'slightly_over': return 'Slightly over budget · ' + peso(check.delta) + ' over ' + peso(check.budget);
+                    case 'under_target': return peso(check.delta) + ' under your ' + peso(check.budget) + ' budget';
+                    case 'over': return 'Over budget · ' + peso(check.delta) + ' over ' + peso(check.budget);
+                    default: return '';
                 }
             },
 

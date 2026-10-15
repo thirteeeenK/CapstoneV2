@@ -84,19 +84,24 @@
     {{-- Deletion is confirmed to a signed-out visitor, since ProfileController@destroy
          logs them out before redirecting here — so this one is not gated on auth. --}}
     @if(session()->pull('account_deletion_requested', false))
+        @php($permanentlyDeleted = session()->pull('account_permanently_deleted', false))
         <dialog x-data x-init="$el.showModal()" x-on:click="if ($event.target === $el) $el.close()"
             aria-labelledby="account-deletion-title" aria-describedby="account-deletion-description"
             class="m-auto w-full max-w-md rounded-2xl bg-white p-6 text-ink-900 shadow-2xl backdrop:bg-ink-900/60 dark:bg-slate-900 dark:text-slate-100">
-            <h2 id="account-deletion-title" class="font-headline text-lg font-bold">{{ __('Account scheduled for deletion') }}</h2>
+            <h2 id="account-deletion-title" class="font-headline text-lg font-bold">{{ $permanentlyDeleted ? __('Account permanently deleted') : __('Account scheduled for deletion') }}</h2>
             <p id="account-deletion-description" class="mt-3 font-body text-sm leading-relaxed">
-                {{ __('Your account is scheduled for permanent deletion in :days days. Log in before the deadline to cancel deletion and recover your account.', ['days' => \App\Services\AccountDeletionService::GRACE_DAYS]) }}
+                {{ $permanentlyDeleted
+                    ? __('Your account has been permanently deleted. It can no longer be recovered.')
+                    : __('Your account is scheduled for permanent deletion in :days days. Log in before the deadline to cancel deletion and recover your account.', ['days' => \App\Services\AccountDeletionService::GRACE_DAYS]) }}
             </p>
             <div class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
                 <form method="dialog" class="contents">
                     <button class="rounded-lg border border-sand-200 px-5 py-3 font-body text-sm font-semibold text-ink-600 hover:bg-sand-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ocean-600 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">{{ __('Close') }}</button>
                 </form>
-                <a href="{{ route('login') }}" autofocus
-                    class="rounded-lg bg-ocean-600 px-5 py-3 text-center font-body text-sm font-bold text-white hover:bg-ocean-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ocean-600">{{ __('Log in to cancel') }}</a>
+                @unless($permanentlyDeleted)
+                    <a href="{{ route('login') }}" autofocus
+                        class="rounded-lg bg-ocean-600 px-5 py-3 text-center font-body text-sm font-bold text-white hover:bg-ocean-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ocean-600">{{ __('Log in to cancel') }}</a>
+                @endunless
             </div>
         </dialog>
     @endif

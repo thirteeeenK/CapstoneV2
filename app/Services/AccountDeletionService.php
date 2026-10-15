@@ -16,10 +16,16 @@ class AccountDeletionService
             $lockedUser = User::query()->lockForUpdate()->findOrFail($user->id);
             $lockedUser->setRememberToken(null);
             $lockedUser->save();
-            $lockedUser->delete();
             DB::table('sessions')->where('user_id', $user->id)->delete();
             DB::table('password_reset_tokens')->where('email', $user->email)->delete();
-            Log::info('account.deletion_requested', ['user_id' => $user->id]);
+
+            if (config('auth.account_deletion_grace_period')) {
+                $lockedUser->delete();
+                Log::info('account.deletion_requested', ['user_id' => $user->id]);
+            } else {
+                $lockedUser->forceDelete();
+                Log::info('account.permanently_deleted', ['user_id' => $user->id]);
+            }
         });
     }
 

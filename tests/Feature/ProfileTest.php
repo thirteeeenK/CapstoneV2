@@ -66,7 +66,8 @@ test('user can schedule their account deletion', function () {
     $response->assertSessionHas('account_deletion_requested', true);
 });
 
-test('correct password must be provided to delete account', function () {
+test('correct password must be provided to delete account', function (bool $gracePeriod) {
+    config(['auth.account_deletion_grace_period' => $gracePeriod]);
     $user = onboardedUser();
 
     $response = $this
@@ -81,4 +82,4 @@ test('correct password must be provided to delete account', function () {
         ->assertRedirect('/profile');
 
     $this->assertNotNull($user->fresh());
-});
+})->with(['grace enabled' => true, 'grace disabled' => false]);

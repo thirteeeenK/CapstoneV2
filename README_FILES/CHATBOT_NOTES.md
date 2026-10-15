@@ -34,9 +34,11 @@ ChatbotService::handle (app/Services/Chat/ChatbotService.php:33)
    ├─ 3. Active support ticket? → bypass Gemini, stream admin replies
    ├─ 4. isFollowUpQuery()?    → answer from PREVIOUS RECOMMENDATIONS only (no new search)
    ├─ 5. FaqService::findBestMatch()? → short-circuit with canned FAQ answer
-   ├─ 6. IntentRouter::classify()      → pick 1 of 9 intents
+   ├─ 6. IntentRouter::classify()      → pick 1 of 16 intents
+   ├─ 6b. IntentRouter::compoundIntents() → 2+ separate asks? run each handler,
+   │       stitch the replies into sections (see §4 "Multi-intent requests")
    ├─ 7. IntentRouter::extractConstraints() → regex-parse pax, budget, destination, dates
-   ├─ 8. dispatch to the matching handler  (match statement, ChatbotService.php:87)
+   ├─ 8. dispatch to the matching handler  (match statement in handle())
    │      • handler retrieves DB rows (RAG) and builds context text
    └─ 9. Gemini generateChatResponse(system prompt + 6-turn history + prompt)
         │
@@ -97,23 +99,62 @@ Without the hybrid step, step 2 would return rooms from *every* destination and 
 
 ---
 
-## 4. The 9 intents
+## 4. The 16 intents
 
-`IntentRouter::classify()` (IntentRouter.php:51) checks intents in a **fixed priority order** (first match wins), because phrases overlap ("best resort near a beach with rooms"). Detection is keyword/regex-based — no LLM call for classification.
+`IntentRouter::classify()` checks intents in a **fixed priority order** (first match wins), because phrases overlap ("best resort near a beach with rooms"). Detection is keyword/regex-based — no LLM call for classification. (The original design had 9 intents; #1–5, #10 and #12 below were added later.)
 
 | # | Intent | Trigger examples | Retrieval | Handler |
 |---|--------|------------------|-----------|---------|
-| 1 | `WEATHER_QUERY` | "weather in Boracay", "ulan ba sa El Nido?", "typhoon" | Live `WeatherService` (OpenWeather) by destination | `handleWeatherQuery` (:655) |
-| 2 | `MAP_QUERY` | "where is X", "how far is A from B", "saan ang..." | `DistanceService::haversine` for 2 places; coords for 1 | `handleMapQuery` (:608) |
-| 3 | `AVAILABILITY_QUERY` | "available May 3-5", "check availability", "may bakante?" (must include a date) | **Hybrid** `searchRoomsHybrid` + `RoomAvailabilityService::check` per room | `handleAvailabilityQuery` (:550) |
-| 4 | `ITINERARY_QUERY` | "plan a trip", "3-day itinerary", "sample itinerary" | Deterministic builder: picks 1 hotel + room (≤50% budget), up to 4 activities (≤80% of remaining), pre-computes totals | `handleItineraryQuery` (:523) → `buildItineraryContext` (GeminiService.php:1841) |
-| 5 | `PACKAGE_SEARCH` | "packages", "promo", "deal", "tipid" | **Plain RAG** `searchPackages` (SQL `<=>`), then date-validity filter | `handlePackageSearch` (:491) |
-| 6 | `ROOM_SEARCH` | "room", "suite", "villa", "ocean view", "kwarto" | **Hybrid** `searchRoomsHybrid` (+ price-intent re-sort if "cheapest"/"luxury") | `handleRoomSearch` (:343) |
-| 7 | `HOTEL_SEARCH` | "hotel", "resort", "stay at", "best hotel" | **Plain RAG** `searchHotels` (only constraint honored: `hotel_id` if a hotel name is named) | `handleHotelSearch` (:374) |
-| 8 | `ACTIVITY_SEARCH` | "activities", "island hopping", "things to do", "pasyalan" | **Plain RAG** `searchActivities` | `handleActivitySearch` (:473) |
-| 9 | `GENERAL_TALK` | anything else (also any message containing a travel keyword but no specific intent → falls through to `ROOM_SEARCH`) | No retrieval — system prompt only | `handleGeneralChat` (:697) |
+| 1 | `SUPPORT_AGENT` | "talk to a human", "real agent", "totoong tao" | None — offers the human-agent handoff | `handleSupportAgentRequest` |
+| 2 | `OUT_OF_SCOPE` | "write me C++ code", "solve 2+2", "write an essay about…" (coding always; math/homework/essays only when the message has no travel words — checked again just before the `GENERAL_TALK` fallback) | None — fixed graceful decline + travel suggestion pills (no Gemini call) | `handleOutOfScope` |
+| 3 | `LEGAL_QUERY` | "privacy policy", "terms and conditions", "contact number" | Canned text + legal page links (no Gemini call) | `handleLegalQuery` |
+| 4 | `BOOKING_STATUS` | "status of my booking", "booking code ST-…" | The logged-in user's own bookings (guests are asked to log in) | `handleBookingStatus` |
+| 5 | `DESTINATIONS_OVERVIEW` | "what destinations do you have", "about SunnyTrips" | Destination list from the DB | `handleDestinationsOverview` |
+| 6 | `WEATHER_QUERY` | "weather in Boracay", "ulan ba sa El Nido?", "typhoon" | Live `WeatherService` (OpenWeather) by destination | `handleWeatherQuery` |
+| 7 | `MAP_QUERY` | "where is X", "how far is A from B", "saan ang..." | `DistanceService` / `RoutingService` for 2 places; coords for 1 | `handleMapQuery` |
+| 8 | `AVAILABILITY_QUERY` | "available May 3-5", "check availability", "may bakante?" (must include a date or "check") | **Hybrid** `searchRoomsHybrid` + `RoomAvailabilityService::check` per room | `handleAvailabilityQuery` |
+| 9 | `ITINERARY_QUERY` | "plan a trip", "3-day itinerary", "sample itinerary" | Deterministic, budget-fitted builder (see "Itinerary budget fitting" below) | `handleItineraryQuery` → `buildItineraryContext` |
+| 10 | `DISCOUNT_QUERY` | "discount", "senior discount", "foreigner surcharge" | Discount FAQ + live passenger-discount rules | `handleDiscountQuery` |
+| 11 | `PACKAGE_SEARCH` | "packages", "promo", "deal", "tipid" | **Plain RAG** `searchPackages` (SQL `<=>`), then date-validity filter | `handlePackageSearch` |
+| 12 | `ADDON_SEARCH` | "add-ons", "airport transfer", "pickup" | **Plain RAG** `searchAddOns` | `handleAddOnSearch` |
+| 13 | `ROOM_SEARCH` | "room", "suite", "villa", "ocean view", "kwarto" | **Hybrid** `searchRoomsHybrid` (+ price-intent re-sort if "cheapest"/"luxury") | `handleRoomSearch` |
+| 14 | `HOTEL_SEARCH` | "hotel", "resort", "stay at", "best hotel" | **Plain RAG** `searchHotels` | `handleHotelSearch` |
+| 15 | `ACTIVITY_SEARCH` | "activities", "island hopping", "things to do", "pasyalan" | **Plain RAG** `searchActivities` | `handleActivitySearch` |
+| 16 | `GENERAL_TALK` | anything else (also any message containing a travel keyword but no specific intent → falls through to `ROOM_SEARCH`) | No retrieval — system prompt only | `handleGeneralChat` |
 
-Fallback logic at IntentRouter.php:87-89: if no specific intent matched but the message contains a travel keyword (`isTravelQuery`), it defaults to `ROOM_SEARCH`.
+Fallback logic: if no specific intent matched but the message contains a travel keyword (`isTravelQuery`), it defaults to `ROOM_SEARCH`. A keyword miss can also be rescued by semantic catalog routing (`GeminiService::resolveSemanticCatalog`).
+
+### Multi-intent requests
+
+`classify()` picks **one** intent, so on its own "a nice place in Boracay **and** some extreme activities" would answer only the hotel half. Before the single-intent dispatch, `IntentRouter::compoundIntents()` checks whether the message contains **separate asks**:
+
+1. Split the message at joiners (`and`, `plus`, `also`, `tsaka`, `pati`, `, `, `;`, sentence ends). "with" is not a joiner, so "resort with snorkeling" stays one ask.
+2. Detect intents with **strict** per-category keywords (`COMPOUND_SIGNAL_PATTERNS`). The loose `classify()` fallbacks such as "family", "pool", or Tagalog "araw" (= day) are not used here, because they would split plain asks into extra sections.
+3. Decompose only when **2+ clauses** carry signals for **2+ distinct intents**. A human-agent request never decomposes because the handoff is terminal. Itinerary absorbs stays and activities, and availability absorbs rooms.
+
+`ChatbotService::handleMultiIntent()` then runs each intent's existing handler on a **focused sub-query** from `compoundSubQueries()`: that intent's clauses, the shared clauses, and the destination added back. This means pricing, budget notices, grounding validation, and the Gemini prompt only ever see their own ask. The replies are stitched under `### Where to stay` / `### Things to do` / … headings, and the cards are merged into one payload, which the widget already renders together. Pax, dates, and destination are shared across sections; budget stays with the clause that stated it. A section with no matches keeps its "nothing found" reply rather than being dropped. When a stay and activities are both shown, the reply ends with a **Build my itinerary** suggestion. An off-topic clause ("…and write me a python script") is not dropped either: the travel sections are answered and one closing line declines the rest. Follow-ups, refinements, and "yes, search" affirmatives are handled before this step and never decompose.
+
+### Itinerary budget fitting
+
+The AI never picks the itinerary or adds up its cost. `GeminiService::buildItineraryContext` does both, and the AI only narrates the result.
+
+- **Search:** every available room is tried against every activity set. Sets range from one activity per day (maximum 4) down to none, and a requested activity is always included. The catalog is small, so this exact search is instant; above 20 activities the pool is thinned to an evenly spread price ladder.
+- **Budget reading** (`IntentRouter::detectBudgetMode`): "₱20,000 budget" or "around 20k" is a **target**, and the plan may land within **±5%** (₱19,000–₱21,000). "under ₱20,000", "max 15k" or "20k lang" is a **ceiling**, and the plan aims for **95–100%** and never goes over.
+- **Ranking:**
+  1. Inside the band and at or under budget.
+  2. Inside the band but up to 5% over (target budgets only), flagged *slightly over budget*.
+  3. Below the band: the highest-value plan, with an explanation and a suggestion for the leftover money.
+  4. Above the band: the cheapest plan, explaining why (cheapest stay, or the requested activity).
+  - Ties go to the fullest day plan, then the total closest to the budget (in 1% steps), then the most varied activities, then the better stay.
+- **No budget:** a value plan (fullest, most varied, cheapest), and the reply asks for a budget. There is no silent ₱20,000 default.
+- **Verdict and breakdown:** `ChatbotService::itineraryBudgetNotice()` writes the verdict, and `itineraryCostBreakdown()` lists room rate × nights, each activity and the total against the budget whenever the plan misses the band. Both are written by the server. The itinerary payload carries `budget_check` (status, delta, percent, band, explanation facts), and the chat card shows it as a coloured budget line.
+
+### Graceful declines
+
+Off-topic requests and override attempts get a fixed, friendly decline instead of whatever the model improvises. The decline names the task it can't do ("I can't seem to help with writing code"), never mentions prompts or rules, and pivots to travel with suggestion pills built from the live destination list.
+
+- **`OUT_OF_SCOPE`:** coding is detected everywhere. "php" is excluded because it's also the peso, and "promo code" or "wifi code" are not coding. Math, homework and essay requests are only declined when the message has no travel words, so "divide the cost for 4 people" still goes through. Coding requests are declined before any follow-up heuristic can pass them to the model.
+- **Override attempts:** `ChatbotModerationPolicy::patterns()` catches rephrasings the literal terms miss ("disregard the system prompts", "do what I tell you", "pretend you are ChatGPT"). Each pattern requires an AI-control object or an AI persona, so "ignore the previous hotel" or "act as my tour guide" are not caught. The blocked reply (still a 403 `blocked` response) uses the same graceful decline. Logged-in users' attempts are still filed as abuse reports, and the reply ends with "This message was logged for administrator review."
 
 ### Price-intent sorting (rooms/hotels only)
 
@@ -209,7 +250,7 @@ Guests and users can request a real support agent; the bot is **bypassed** while
 - 15 messages/day/IP, and 5 messages/60s burst. Over-limit → 429 with signup prompt. Logged-in users are unlimited (they get `throttle:ai` only).
 
 **Abuse guard** — `ChatbotService::checkAbuse` (:312):
-- **Guests:** keyword blocklist (NSFW, threats, injection patterns like "ignore previous instructions", "you are now DAN"). Blocked → 403, no DB record.
+- **Guests:** keyword blocklist plus phrase patterns (NSFW, threats, injection like "ignore previous instructions", "disregard the system prompts", "you are now DAN"). Blocked → 403, no DB record. Injection blocks reply with the graceful decline + travel pills (see §4 "Graceful declines").
 - **Authenticated users:** `GeminiService::detectAbuseAndGuard` (:1519) — same categories, but **logged to `ChatbotAbuseReport`** and `chatbot_flag_count` incremented; repeated flags can lead to a ban (`isBanned()` short-circuits first).
 
 **Prompt-injection defense** — layered:
@@ -225,7 +266,7 @@ Guests and users can request a real support agent; the bot is **bypassed** while
 |---|---|
 | `routes/chatRoute.php` | All chat routes + throttle middleware |
 | `app/Http/Controllers/ChatbotController.php` | HTTP layer: chat, history, handoff, poll |
-| `app/Services/Chat/ChatbotService.php` | Orchestrator: `handle()` pipeline, all 9 intent handlers, follow-up logic, prompt builder |
+| `app/Services/Chat/ChatbotService.php` | Orchestrator: `handle()` pipeline, all 16 intent handlers, multi-intent stitching, graceful declines, itinerary budget verdicts, follow-up logic, prompt builder |
 | `app/Services/Chat/IntentRouter.php` | Intent classification + constraint extraction |
 | `app/Services/Chat/ConversationManager.php` | Session resolve/claim, 6-turn history, message persistence |
 | `app/Services/Chat/FaqService.php` | Lexical→semantic FAQ matching |
@@ -238,14 +279,17 @@ Guests and users can request a real support agent; the bot is **bypassed** while
 | `app/Services/DistanceService.php` | Haversine distance for map queries |
 | `resources/views/components/frontend/chat-widget.blade.php` | Alpine.js widget (cards, modals, date pickers, polling, Add to Trip Basket) |
 
-**Tests:** `tests/Feature/IntentRouterTest.php`, `tests/Feature/ChatbotTest.php` (includes handoff/guest-limit coverage), `tests/Feature/ChatbotCacheTest.php`, `tests/Feature/FaqServiceTest.php`.
+**Tests:** `tests/Feature/IntentRouterTest.php`, `tests/Feature/ChatbotTest.php` (includes handoff/guest-limit coverage), `tests/Feature/ChatbotMultiIntentTest.php` (compound asks), `tests/Feature/ChatbotCacheTest.php`, `tests/Feature/FaqServiceTest.php`.
 
 ---
 
 ## 12. Quick memory hooks
 
 - **Hybrid RAG = vector ranking + SQL constraint filtering.** Rooms/availability are hybrid; hotels/activities/packages are pure vector RAG. That's the one sentence that explains the whole design.
-- **9 intents, checked in order:** weather → map → availability → itinerary → package → room → hotel → activity → general.
+- **16 intents, checked in order:** support agent → out-of-scope (coding) → legal → booking status → destinations overview → weather → map → availability → itinerary → discount → package → add-on → room → hotel → activity → out-of-scope (math/essays, no travel words) → general.
+- **Itineraries are budget-fitted by code, not the AI:** "₱X budget" lands within ±5%, "under ₱X" stays at 95–100%, and anything outside the band is explained with a cost breakdown.
+- **Decline explicitly:** off-topic and override attempts get "I can't seem to help with …" + a travel pivot, never just a redirect.
+- **Compound asks fan out:** "hotel and activities" runs both handlers and stitches the sections — never answer one half and drop the other.
 - **Everything Gemini says must come from `DATABASE RESULTS`** in that turn. Follow-ups use `PREVIOUS RECOMMENDATIONS` instead.
 - **Cosine similarity = dot product on normalized vectors (PHP)** for hotels/rooms/activities; **`1 − cosine distance (SQL `<=>`)** for packages/FAQs. Same metric, two implementations.
 - **FAQ answer < Gemini call** — common questions short-circuit before the LLM.
