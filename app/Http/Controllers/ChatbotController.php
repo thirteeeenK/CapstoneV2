@@ -50,10 +50,11 @@ class ChatbotController extends Controller
             );
 
         if (! empty($result['blocked'])) {
-            return response()->json([
+            return response()->json(array_filter([
                 'status' => 'blocked',
                 'reply' => $result['response'],
-            ], 403);
+                'suggested_actions' => $result['suggested_actions'] ?? null,
+            ], fn ($value) => $value !== null), 403);
         }
 
         if (! $user && ($result['status'] ?? null) === 'success' && ($result['control'] ?? null) === 'ai' && isset($result['reply'])) {

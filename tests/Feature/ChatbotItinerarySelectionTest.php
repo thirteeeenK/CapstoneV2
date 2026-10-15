@@ -92,7 +92,7 @@ test('available room wins over a blocked cheaper room', function () {
     expect($response->json('itinerary.hotel.name'))->toBe('Open Midway Hotel');
 });
 
-test('cheaper total wins when scores tie', function () {
+test('an unreachable budget upgrades to the better stay instead of the cheapest', function () {
     itineraryHotel($this->destination->id, 'First Pricey Inn', 2500);
     itineraryHotel($this->destination->id, 'Second Budget Inn', 2000);
 
@@ -101,7 +101,8 @@ test('cheaper total wins when scores tie', function () {
     ]);
 
     $response->assertOk()->assertJsonPath('status', 'success');
-    expect($response->json('itinerary.hotel.name'))->toBe('Second Budget Inn');
+    expect($response->json('itinerary.hotel.name'))->toBe('First Pricey Inn')
+        ->and($response->json('itinerary.budget_check.status'))->toBe('under_target');
 });
 
 test('over-budget picks cheapest with a deterministic notice', function () {

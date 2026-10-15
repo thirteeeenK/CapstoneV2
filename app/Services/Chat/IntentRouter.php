@@ -44,6 +44,49 @@ class IntentRouter
 
     public const LEGAL_QUERY = 'LEGAL_QUERY';
 
+    /**
+     * A non-travel task SunnyBot declines gracefully without calling the
+     * model (writing code, math or homework, essays).
+     */
+    public const OUT_OF_SCOPE = 'OUT_OF_SCOPE';
+
+    /**
+     * Programming vocabulary: always off-topic, even next to travel words
+     * ("a python script to scrape hotel prices"). "php" is left out on
+     * purpose — it is also the peso — and a bare "hello world" stays a
+     * greeting unless it asks for code.
+     */
+    protected const CODING_PATTERNS = [
+        '/(?<![\w+])c\+\+(?![\w+])|(?<![\w#])c#(?![\w#])/u',
+        '/\b(?:python|javascript|typescript|html|css|sql|kotlin|golang|laravel|node\.?js|powershell|matlab)\b/u',
+        '/\bjava\s+(?:code|program|class|script|function|app)\b/u',
+        '/\b(?:source\s+code|programming|coding|leetcode|regex|regular\s+expression|compiler|debug(?:ging)?|syntax\s+error|stack\s+trace)\b/u',
+        '/\b(?:write|create|generate|make|build|give)\s+(?:me\s+)?(?:a\s+|an\s+|some\s+|the\s+)?(?:\S+\s+){0,3}?code\b/u',
+        '/\b(?:write|create|make|generate|give|print|code)\b.{0,40}\bhello\s+world\b|\bhello\s+world\b.{0,20}\b(?:code|program|script|app)\b/u',
+    ];
+
+    /**
+     * Travel "codes" that must never read as programming ("promo code",
+     * "the code for the wifi").
+     */
+    protected const NON_PROGRAMMING_CODE = '/\b(?:promo|discount|booking|confirmation|reference|reservation|voucher|coupon|gift|referral|access|verification|otp|qr|zip|postal|area|country|dress|tracking|door|pin|room|wifi|wi-fi|flight|hotel|ticket|transaction|payment|gcash|bank)\s+codes?\b|\bcodes?\s+(?:for|of|to)\s+(?:the\s+|my\s+|our\s+)?(?:wifi|wi-fi|door|room|safe|gate|locker|parking|discount|promo|voucher|booking)\b/u';
+
+    /**
+     * Math and homework asks. Only off-topic when the message carries no
+     * travel signal ("2+2" yes; "divide the cost for 4 people" no).
+     */
+    protected const MATH_PATTERNS = [
+        '/\b(?:solve|equations?|algebra|calculus|derivatives?|integrals?|trigonometry|geometry|arithmetic|factorial|square\s+root|homework|assignment|quiz|exam)\b/u',
+        '/\d+(?:\.\d+)?\s*[\+\*\/×÷^]\s*\d+(?:\.\d+)?/u',
+        '/\bwhat(?:\'s|\s+is)\s+\d+(?:\.\d+)?\s*(?:plus|minus|times|divided\s+by|multiplied\s+by)\s*\d+/u',
+    ];
+
+    /**
+     * Non-travel writing asks. Only off-topic without a travel signal, so
+     * "write a caption for my Boracay trip" still reaches the model.
+     */
+    protected const WRITING_PATTERN = '/\b(?:write|compose|draft|make)\s+(?:me\s+)?(?:a\s+|an\s+|my\s+|the\s+)?(?:\S+\s+){0,2}?(?:essay|poem|story|song|lyrics|letter|speech|report|resume|cv|cover\s+letter|article|research\s+paper|thesis|novel|reaction\s+paper)\b/u';
+
     protected array $travelKeywords = [
         'hotel',
         'hotels',
@@ -235,6 +278,10 @@ class IntentRouter
             return self::SUPPORT_AGENT;
         }
 
+        if ($this->outOfScopeTopic($query, strongOnly: true) !== null) {
+            return self::OUT_OF_SCOPE;
+        }
+
         if ($this->hasLegalIntent($lower)) {
             return self::LEGAL_QUERY;
         }
@@ -318,7 +365,72 @@ class IntentRouter
             return self::ROOM_SEARCH;
         }
 
+        if ($this->outOfScopeTopic($query) !== null) {
+            return self::OUT_OF_SCOPE;
+        }
+
         return self::GENERAL_TALK;
+    }
+
+    /**
+     * The kind of non-travel task a message asks for, or null. Coding is
+     * off-topic everywhere; math/homework and essay-style writing only when
+     * the message has no travel signal, so trip arithmetic and travel
+     * writing still reach the normal pipeline. $strongOnly limits the check
+     * to coding (used where travel context cannot be trusted to gate).
+     *
+     * @return 'coding'|'math'|'writing'|null
+     */
+    public function outOfScopeTopic(string $query, bool $strongOnly = false): ?string
+    {
+        $lower = mb_strtolower($query);
+        $codeText = (string) preg_replace(self::NON_PROGRAMMING_CODE, ' ', $lower);
+        foreach (self::CODING_PATTERNS as $pattern) {
+            if (preg_match($pattern, $codeText)) {
+                return 'coding';
+            }
+        }
+
+        if ($strongOnly || $this->hasTravelSignal($query)) {
+            return null;
+        }
+
+        foreach (self::MATH_PATTERNS as $pattern) {
+            if (preg_match($pattern, $lower)) {
+                return 'math';
+            }
+        }
+
+        return preg_match(self::WRITING_PATTERN, $lower) ? 'writing' : null;
+    }
+
+    /**
+     * True when a message mentions anything travel-related: a travel
+     * keyword, a catalog keyword, or a known destination.
+     */
+    protected function hasTravelSignal(string $query): bool
+    {
+        return $this->isTravelQuery($query)
+            || $this->hasExplicitCatalogIntent($query)
+            || $this->extractDestinationName($query) !== null;
+    }
+
+    /**
+     * How a stated budget should be read: a hard ceiling ("under ₱20,000",
+     * "max 15k", "20k lang") or a target to plan around ("₱20,000 budget",
+     * "budget of 20k", "around 20k").
+     *
+     * @return 'ceiling'|'target'
+     */
+    public function detectBudgetMode(string $query): string
+    {
+        $ceilingBeforeAmount = '/\b(?:under|below|less\s+than|lower\s+than|not\s+more\s+than|no\s+more\s+than|not\s+over|not\s+exceeding|max(?:imum)?|at\s+most|up\s+to|within|hanggang)\s*(?:of\s+|is\s+|[:=]\s*)?(?:₱|php|peso|p(?=\s*\d))?\s*\d/iu';
+        $ceilingAfterAmount = '/\d[\d,.]*\s*k?\s*(?:pesos?|php)?\s+(?:max(?:imum)?|at\s+most|only|lang|tops)\b/iu';
+        $ceilingNoun = '/\b(?:max(?:imum)?|limited)\s+budget\b|\bbudget\s+(?:limit|cap|ceiling)\b/iu';
+
+        return preg_match($ceilingBeforeAmount, $query) || preg_match($ceilingAfterAmount, $query) || preg_match($ceilingNoun, $query)
+            ? 'ceiling'
+            : 'target';
     }
 
     /**
@@ -413,6 +525,7 @@ class IntentRouter
         $constraints = [
             'pax' => null,
             'max_price' => null,
+            'budget_mode' => null,
             'destination_id' => null,
             'destination_name' => null,
             'hotel_id' => null,
@@ -448,17 +561,22 @@ class IntentRouter
             $constraints['pax'] = 1;
         }
 
-        if (preg_match('/(?:(?:under|below|less\s*than|max|maximum|budget\s*(?:of|is)?))\s*(?:₱|php|peso)?\s*(\d[\d,]{0,8})\b(?!\s*k\b)/i', $query, $m)) {
+        // "P20,000" is a common way to write pesos; a count after "max"
+        // ("max 4 guests", "max 2 nights") is never a price.
+        if (preg_match('/(?:(?:under|below|less\s*than|max|maximum|budget\s*(?:of|is|[:=])?))\s*(?:₱|php|peso|p(?=\s*\d))?\s*(\d[\d,]{0,8})\b(?!\s*(?:k|pax|persons?|people|guests?|adults?|kids|children|occupants?|tao|nights?|days?|rooms?|beds?|hours?)\b)/i', $query, $m)) {
             $constraints['max_price'] = (int) str_replace(',', '', $m[1]);
         }
         if (preg_match('/(?:₱|php|peso)?\s*(\d[\d,]{1,8})(?!\s*k\b)\s*(?:budget|max|pesos)/i', $query, $m)) {
             $constraints['max_price'] = (int) str_replace(',', '', $m[1]);
         }
-        if (! $constraints['max_price'] && preg_match('/(?:under|below|less\s*than|max|maximum|budget|around|approx(?:imate(?:ly)?)?)\s*(?:of\s*)?(?:₱|php|peso)?\s*(\d+(?:\.\d+)?)\s*k\b/i', $query, $m)) {
+        if (! $constraints['max_price'] && preg_match('/(?:under|below|less\s*than|max|maximum|budget|around|approx(?:imate(?:ly)?)?)\s*(?:of\s*)?(?:₱|php|peso|p(?=\s*\d))?\s*(\d+(?:\.\d+)?)\s*k\b/i', $query, $m)) {
             $constraints['max_price'] = (int) ((float) $m[1] * 1000);
         }
         if (! $constraints['max_price'] && preg_match('/(\d+(?:\.\d+)?)\s*k\s*(?:budget|max|per\s*(?:head|person|pax))?\b/i', $query, $m)) {
             $constraints['max_price'] = (int) ((float) $m[1] * 1000);
+        }
+        if ($constraints['max_price']) {
+            $constraints['budget_mode'] = $this->detectBudgetMode($query);
         }
 
         if (preg_match('/(\d+)[-\s]*(?:nights?|gabi)\b/i', $query, $m)) {
@@ -1466,6 +1584,200 @@ class IntentRouter
         return $this->hasActivityIntent($lower)
             || $this->hasPackageIntent($lower)
             || $this->hasAddOnIntent($lower);
+    }
+
+    /**
+     * Strict per-category signals used only for multi-intent decomposition.
+     * classify() keeps its looser fallbacks (amenity words like "family" or
+     * "pool", Tagalog "araw" = day); those must not fire here, or a plain
+     * single ask would fan out into extra sections.
+     */
+    protected const COMPOUND_SIGNAL_PATTERNS = [
+        self::LEGAL_QUERY => '/\b(privacy(\s+polic\w*)?|terms\s+(and|&)\s+conditions|terms\s+of\s+(service|use)|contact\s+(us|info|information|number|details?)|hotline)\b/u',
+        self::DESTINATIONS_OVERVIEW => '/\b(what|which)\s+destinations?\b|\b(about|what\s+is)\s+sunnytrips\b/u',
+        self::WEATHER_QUERY => '/\b(weather|forecast|rain|rainy|typhoon|bagyo|ulan|panahon|temperature|climate|monsoon)\b/u',
+        self::MAP_QUERY => '/\b(how\s+far|distance|directions?|how\s+(do\s+i|to|can\s+i)\s+get\s+(to|there)|gaano\s+kalayo|nasaan)\b/u',
+        self::ITINERARY_QUERY => '/\b(itinerary|itineraries|itenerary|trip\s+plan|travel\s+plan|plan\s+(a|my|our)\s+(trip|vacation|holiday|bakasyon)|day[-\s]by[-\s]day)\b/u',
+        self::DISCOUNT_QUERY => '/\b(discounts?|discounted)\b/u',
+        self::PACKAGE_SEARCH => '/\b(packages?|promos?|bundles?|all[-\s]in|all[-\s]inclusive)\b/u',
+        self::ADDON_SEARCH => '/\b(add[-\s]?ons?|transfers?|pick[-\s]?ups?)\b/u',
+        self::ROOM_SEARCH => '/\b(rooms?|suites?|villas?|kwarto|kuwarto)\b/u',
+        self::HOTEL_SEARCH => '/\b(hotels?|resorts?|accommodations?|lodging|hostels?|inns?|tuluyan|matutulugan|(place|places|somewhere)\s+to\s+(stay|sleep)|where\s+to\s+stay|(nice|good|cozy|cheap|affordable|romantic|quiet|relaxing|budget)\s+places?\b(?!\s+to\s+(visit|go|see|explore|eat)))\b/u',
+        self::ACTIVITY_SEARCH => '/\b(activit(y|ies)|tours?|things\s+to\s+do|attractions?|adventures?|sightseeing|experiences?|island\s+hopping|diving|scuba|snorkell?ing|hiking|trekking|surfing|kayak(ing)?|zipline|atv|parasail(ing)?|jet\s*ski|banana\s+boat|cliff\s+(jumping|diving)|sunset\s+cruise|pasyalan|gawain|libangan)\b/u',
+    ];
+
+    /**
+     * Every intent a compound message asks for ("a nice place in Boracay and
+     * some extreme activities"), in classify() priority order. Empty unless
+     * the message splits into 2+ clauses that carry signals for 2+ distinct
+     * intents, so single asks keep the regular classify() path. A human-agent
+     * request is never decomposed (the handoff is terminal), and intents a
+     * richer handler already covers are folded into it: an itinerary includes
+     * stays and activities, an availability check includes the rooms. An
+     * off-topic clause ("and write me a python script") joins as
+     * OUT_OF_SCOPE so it is declined instead of silently dropped; weak
+     * off-topic asks ("solve 2+2") are gated by the travel words elsewhere
+     * in the message, so they are read clause by clause.
+     *
+     * @return list<string>
+     */
+    public function compoundIntents(string $query): array
+    {
+        if ($this->hasSupportAgentIntent(mb_strtolower($query))) {
+            return [];
+        }
+
+        $clauseSignals = array_map(fn (string $clause): array => $this->compoundSignals($clause), $this->splitCompoundClauses($query));
+        if (count(array_filter($clauseSignals)) < 2) {
+            return [];
+        }
+
+        $intents = $this->compoundSignals($query);
+        if (! in_array(self::OUT_OF_SCOPE, $intents, true) && in_array(self::OUT_OF_SCOPE, array_merge(...$clauseSignals), true)) {
+            $intents[] = self::OUT_OF_SCOPE;
+        }
+        if (in_array(self::ITINERARY_QUERY, $intents, true)) {
+            $intents = array_diff($intents, [self::ROOM_SEARCH, self::HOTEL_SEARCH, self::ACTIVITY_SEARCH]);
+        }
+        if (in_array(self::AVAILABILITY_QUERY, $intents, true)) {
+            $intents = array_diff($intents, [self::ROOM_SEARCH, self::HOTEL_SEARCH]);
+        }
+        $intents = array_values($intents);
+
+        return count($intents) >= 2 ? $intents : [];
+    }
+
+    /**
+     * One focused sub-query per compound intent: the clauses that ask for it
+     * plus the shared clauses that name no intent ("we're 2 pax", "next
+     * week"). The destination is re-attached when its clause went elsewhere,
+     * so "a hotel in Boracay and some tours" searches tours in Boracay too.
+     * Each section's handler and prompt then see only its own ask, never the
+     * other half of the message.
+     *
+     * @param  list<string>  $intents
+     * @return array<string, string>
+     */
+    public function compoundSubQueries(string $query, array $intents): array
+    {
+        $clauses = $this->splitCompoundClauses($query);
+        $destination = $this->extractDestinationName($query);
+
+        $subQueries = [];
+        foreach ($intents as $intent) {
+            $parts = [];
+            foreach ($clauses as $clause) {
+                $owners = $this->compoundSignalOwners($this->compoundSignals($clause), $intents);
+                if ($owners === [] || in_array($intent, $owners, true)) {
+                    $parts[] = $clause;
+                }
+            }
+            $subQuery = $parts !== [] ? implode(', ', $parts) : $query;
+            if ($intent !== self::OUT_OF_SCOPE && $destination !== null && $this->extractDestinationName($subQuery) === null) {
+                $subQuery .= ' in '.$destination;
+            }
+            $subQueries[$intent] = $subQuery;
+        }
+
+        return $subQueries;
+    }
+
+    /**
+     * Split a message at the joiners between separate asks. "with" is not a
+     * joiner ("room with pool" is one ask), and commas only split when
+     * followed by a space so "₱5,000" stays whole.
+     *
+     * @return list<string>
+     */
+    public function splitCompoundClauses(string $query): array
+    {
+        $parts = preg_split(
+            '/\s+(?:and|plus|also|as\s+well\s+as|then|tsaka|at\s+saka|saka|pati(?:\s+na)?)\s+|\s*[,;](?=\s)|\s+[&+]\s+|[.?!]+(?=\s|$)/iu',
+            $query
+        ) ?: [];
+
+        return array_values(array_filter(array_map('trim', $parts), fn (string $part): bool => $part !== ''));
+    }
+
+    /**
+     * Strict intent signals present in a text, in classify() priority order.
+     * Room and hotel collapse into one accommodation intent; "tour package"
+     * is a package ask, not an activity ask.
+     *
+     * @return list<string>
+     */
+    protected function compoundSignals(string $text): array
+    {
+        $lower = mb_strtolower($text);
+        $patterns = self::COMPOUND_SIGNAL_PATTERNS;
+        $signals = [];
+
+        if (preg_match($patterns[self::LEGAL_QUERY], $lower)) {
+            $signals[] = self::LEGAL_QUERY;
+        }
+        if ($this->hasBookingStatusIntent($lower)) {
+            $signals[] = self::BOOKING_STATUS;
+        }
+        foreach ([self::DESTINATIONS_OVERVIEW, self::WEATHER_QUERY, self::MAP_QUERY] as $intent) {
+            if (preg_match($patterns[$intent], $lower)) {
+                $signals[] = $intent;
+            }
+        }
+        if ($this->hasAvailabilityIntent($lower)) {
+            $signals[] = self::AVAILABILITY_QUERY;
+        }
+        foreach ([self::ITINERARY_QUERY, self::DISCOUNT_QUERY, self::PACKAGE_SEARCH, self::ADDON_SEARCH] as $intent) {
+            if (preg_match($patterns[$intent], $lower)) {
+                $signals[] = $intent;
+            }
+        }
+        if (preg_match($patterns[self::ROOM_SEARCH], $lower)) {
+            $signals[] = self::ROOM_SEARCH;
+        } elseif (preg_match($patterns[self::HOTEL_SEARCH], $lower)) {
+            $signals[] = self::HOTEL_SEARCH;
+        }
+        $activityText = (string) preg_replace('/\b(tour|travel|vacation|holiday)\s+(packages?|promos?|deals?)\b/u', ' ', $lower);
+        if (preg_match($patterns[self::ACTIVITY_SEARCH], $activityText)) {
+            $signals[] = self::ACTIVITY_SEARCH;
+        }
+        if ($this->outOfScopeTopic($text) !== null) {
+            $signals[] = self::OUT_OF_SCOPE;
+        }
+
+        return $signals;
+    }
+
+    /**
+     * Map a clause's raw signals onto the final compound intents. Folded
+     * intents route to the handler that absorbed them, and room/hotel are
+     * interchangeable (one accommodation section).
+     *
+     * @param  list<string>  $signals
+     * @param  list<string>  $intents
+     * @return list<string>
+     */
+    protected function compoundSignalOwners(array $signals, array $intents): array
+    {
+        $accommodation = [self::ROOM_SEARCH, self::HOTEL_SEARCH];
+        $owners = [];
+        foreach ($signals as $signal) {
+            if (in_array($signal, $intents, true)) {
+                $owners[] = $signal;
+
+                continue;
+            }
+            $candidates = in_array($signal, $accommodation, true)
+                ? [...$accommodation, self::AVAILABILITY_QUERY, self::ITINERARY_QUERY]
+                : ($signal === self::ACTIVITY_SEARCH ? [self::ITINERARY_QUERY] : []);
+            foreach ($candidates as $candidate) {
+                if (in_array($candidate, $intents, true)) {
+                    $owners[] = $candidate;
+                    break;
+                }
+            }
+        }
+
+        return array_values(array_unique($owners));
     }
 
     protected function hasActivityIntent(string $lower): bool

@@ -264,7 +264,8 @@ test('a google-only traveler deletes their account by typing their email address
     expect(User::withTrashed()->find($user->id)->trashed())->toBeTrue();
 });
 
-test('a google-only traveler cannot delete their account with the wrong email address', function () {
+test('a google-only traveler cannot delete their account with the wrong email address', function (bool $gracePeriod) {
+    config(['auth.account_deletion_grace_period' => $gracePeriod]);
     $user = onboardedUser(['password' => null, 'google_id' => 'google-sub-10294']);
 
     $this->actingAs($user)
@@ -273,6 +274,33 @@ test('a google-only traveler cannot delete their account with the wrong email ad
 
     expect($user->fresh()->trashed())->toBeFalse();
     $this->assertAuthenticated();
+})->with(['grace enabled' => true, 'grace disabled' => false]);
+
+test('google sign-in starts onboarding again after immediate account deletion', function () {
+    config(['auth.account_deletion_grace_period' => false]);
+    $user = onboardedUser([
+        'email' => 'juan@example.com', 'password' => null, 'google_id' => 'google-sub-10294',
+    ]);
+    UserPreference::create(['user_id' => $user->id]);
+    $this->actingAs($user)
+        ->delete(route('profile.destroy'), ['confirm_email' => $user->email])
+        ->assertSessionHasNoErrors()
+        ->assertRedirect('/');
+    $this->assertGuest();
+    $this->assertDatabaseMissing('users', ['id' => $user->id]);
+    $this->assertDatabaseMissing('user_preferences', ['user_id' => $user->id]);
+    fakeGoogleCallback(googleProfile());
+
+    $this->get(route('auth.google.callback'))
+        ->assertRedirect(route('onboarding.index'))
+        ->assertSessionMissing('account_recovered');
+
+    $newUser = User::where('google_id', 'google-sub-10294')->sole();
+    $this->assertAuthenticatedAs($newUser);
+    expect($newUser->id)->not->toBe($user->id);
+    expect($newUser->preferences_embedding)->toBeNull();
+    $this->assertDatabaseMissing('user_preferences', ['user_id' => $newUser->id]);
+    $this->get(route('onboarding.index'))->assertOk();
 });
 
 test('the profile page offers a google-only traveler a password instead of a change', function () {

@@ -17,7 +17,11 @@ beforeEach(function () {
 test('classifies general greeting as GENERAL_TALK', function () {
     expect($this->router->classify('Hello there'))->toBe(IntentRouter::GENERAL_TALK);
     expect($this->router->classify('Kamusta po'))->toBe(IntentRouter::GENERAL_TALK);
-    expect($this->router->classify('What is 2+2?'))->toBe(IntentRouter::GENERAL_TALK);
+});
+
+test('classifies non-travel tasks as OUT_OF_SCOPE', function () {
+    expect($this->router->classify('What is 2+2?'))->toBe(IntentRouter::OUT_OF_SCOPE);
+    expect($this->router->classify('create me a c++ hello world code'))->toBe(IntentRouter::OUT_OF_SCOPE);
 });
 
 test('classifies room search correctly', function () {
