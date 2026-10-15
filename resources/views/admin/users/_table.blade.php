@@ -58,6 +58,9 @@
                             </td>
 
                             <td class="px-3 py-3 text-xs whitespace-nowrap">
+                                @if($u->trashed())
+                                    <span class="mb-2 block text-xs font-bold text-coral-700">Pending deletion — {{ $u->deleted_at->copy()->addDays(\App\Services\AccountDeletionService::GRACE_DAYS)->timezone('Asia/Manila')->format('M d, Y g:i A') }} PHT</span>
+                                @endif
                                 @if($u->isPermanentlyBanned())
                                     <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-rose-600 text-white border border-rose-700">
                                         <span class="material-symbols-outlined text-[13px]">block</span> Banned
@@ -72,7 +75,7 @@
                                     </span>
                                 @else
                                     <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                        <span class="material-symbols-outlined text-[13px]">check_circle</span> Active
+                                        <span class="material-symbols-outlined text-[13px]">check_circle</span> {{ $u->trashed() ? 'No moderation restrictions' : 'Active' }}
                                     </span>
                                 @endif
                             </td>
@@ -91,12 +94,16 @@
 
                             <td class="px-3 py-3 whitespace-nowrap text-xs">
                                 <div class="flex items-center gap-2">
+                                    <button type="button" x-data x-on:click="$dispatch('delete-customer', { url: @js(route('admin.users.destroy', $u->id)), id: {{ $u->id }}, name: @js($u->name), tab: typeof tab === 'undefined' ? 'all' : tab, search: typeof search === 'undefined' ? '' : search })"
+                                        class="inline-flex min-h-[44px] items-center rounded-lg border border-coral-200 bg-coral-50 px-3 text-xs font-semibold text-coral-700 hover:bg-coral-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-coral-600">Delete account</button>
+                                    @unless($u->trashed())
                                     <a href="{{ route('admin.bookings.create', ['user_id' => $u->id]) }}"
                                        class="inline-flex items-center gap-1 h-8 px-2.5 rounded bg-sky-50 border border-sky-200 hover:bg-sky-100 text-sky-700 font-medium transition-colors shadow-xs"
                                        title="Create a booking on behalf of {{ $u->name }}">
                                         <span class="material-symbols-outlined text-[16px]">add_shopping_cart</span>
                                         Book
                                     </a>
+                                    @endunless
 
                                     <a href="{{ route('admin.users.show', $u->id) }}"
                                        class="inline-flex items-center gap-1 h-8 px-3 rounded bg-white border border-ocean-300 hover:border-ocean-600 text-ocean-600 hover:bg-ocean-50 font-medium transition-colors shadow-sm">
@@ -104,7 +111,7 @@
                                         View Logs
                                     </a>
 
-                                    @if($u->ban_level)
+                                    @if($u->ban_level && ! $u->trashed())
                                         <form action="{{ route('admin.users.unban', $u->id) }}" method="POST" class="inline">
                                             @csrf
                                             <button type="submit" @if($u->isWarned()) onclick="return confirm('Remove warning for {{ $u->name }}?')" @else onclick="return confirm('Restore normal access for {{ $u->name }}? This will also clear any IP ban for their last known IP.')" @endif

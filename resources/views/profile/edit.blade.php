@@ -53,7 +53,9 @@
                             </div>
                             <div class="space-y-0.5">
                                 <h2 class="font-headline font-bold text-lg text-ink-900 dark:text-slate-100 tracking-tight">Delete account</h2>
-                                <p class="font-body text-xs text-ink-500 dark:text-slate-400">{{ __('Your account will be permanently deleted after a 5-day grace period. Log in within those 5 days to cancel deletion and recover your account.') }}</p>
+                                <p class="font-body text-xs text-ink-500 dark:text-slate-400">{{ app(\App\Services\SystemSettingsService::class)->gracePeriodEnabled()
+                                    ? __('Your account will be permanently deleted after a 5-day grace period. Log in within those 5 days to cancel deletion and recover your account.')
+                                    : __('Your account will be permanently deleted immediately. This cannot be undone.') }}</p>
                             </div>
                         </div>
                         @include('profile.partials.delete-user-form')

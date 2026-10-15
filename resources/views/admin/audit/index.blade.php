@@ -36,13 +36,23 @@
                                     $new = $log->new_values ?? [];
                                     $typeLower = strtolower($log->auditable_type);
                                     $typeLabel = 'Record';
-                                    if (str_contains($typeLower, 'package')) $typeLabel = 'Package';
+                                    if (str_contains($typeLower, 'systemsetting')) $typeLabel = 'Settings';
+                                    elseif (str_contains($typeLower, 'package')) $typeLabel = 'Package';
                                     elseif (str_contains($typeLower, 'booking')) $typeLabel = 'Booking';
                                     elseif (str_contains($typeLower, 'ipban') || str_contains($typeLower, 'ip_ban')) $typeLabel = 'IP Ban';
                                     elseif (str_contains($typeLower, 'abuse') || str_contains($typeLower, 'report')) $typeLabel = 'Report';
                                     elseif (str_contains($typeLower, 'user')) $typeLabel = 'User';
 
-                                    if (empty($old)) { $action = 'Created'; $badge = 'bg-emerald-50 text-emerald-700 border-emerald-200'; }
+                                    if (isset($new['action'])) {
+                                        $action = match ($new['action']) {
+                                            'settings_updated' => 'Settings updated',
+                                            'account_deletion_scheduled' => 'Account deletion scheduled',
+                                            'account_permanently_deleted' => 'Account permanently deleted',
+                                            default => 'Updated',
+                                        };
+                                        $badge = 'bg-sky-50 text-sky-700 border-sky-200';
+                                    }
+                                    elseif (empty($old)) { $action = 'Created'; $badge = 'bg-emerald-50 text-emerald-700 border-emerald-200'; }
                                     elseif (!empty($old) && empty($new)) { $action = 'Deleted'; $badge = 'bg-rose-50 text-rose-700 border-rose-200'; }
                                     elseif (isset($new['ban_level']) || isset($old['ban_level'])) {
                                         $newLevel = $new['ban_level'] ?? null;
@@ -58,6 +68,7 @@
                                     else { $action = 'Updated'; $badge = 'bg-sky-50 text-sky-700 border-sky-200'; }
 
                                     $targetLabel = $typeLabel . ' #' . $log->auditable_id;
+                                    if ($typeLabel === 'Settings') $targetLabel .= ' — ' . ucfirst($new['section'] ?? '');
                                     if ($typeLabel === 'Package') {
                                         $name = $new['name'] ?? $old['name'] ?? null;
                                         if ($name) $targetLabel .= ' — ' . $name;

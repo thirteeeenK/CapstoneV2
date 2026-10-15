@@ -871,6 +871,10 @@
                     const data = await res.json();
 
                     if (res.status === 429 && data.status === 'guest_limit_reached') {
+                        if (data.limit_type === 'minute') {
+                            this.addMessage('bot', data.reply, {});
+                            return;
+                        }
                         this.showLockPanel(data.reply);
                         this.loginUrl = data.login_url || this.loginUrl;
                         this.registerUrl = data.register_url || this.registerUrl;
@@ -1147,6 +1151,8 @@
                             localStorage.setItem('sunnytrips_chat_session', data.session_token);
                         }
                         this.startHandoffPolling();
+                    } else if (data.status === 'support_unavailable') {
+                        this.addMessage('bot', data.message + '\n' + data.office_hours, {});
                     }
                 } catch (err) {
                     console.error('Handoff request error:', err);

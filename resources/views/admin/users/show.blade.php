@@ -3,6 +3,10 @@
 @section('title', 'User Moderation Details | SunnyTrips Admin')
 
 @section('content')
+    @if($user->trashed())
+        <p role="status" class="mb-4 rounded-xl border border-coral-200 bg-coral-50 p-4 text-sm text-coral-700">Pending deletion. Original deadline: {{ $user->deleted_at->copy()->addDays(\App\Services\AccountDeletionService::GRACE_DAYS)->timezone('Asia/Manila')->format('M d, Y g:i A') }} PHT. Moderation status is separate from account recovery.</p>
+    @endif
+    @include('admin.users._delete_account_modal')
     <div class="pb-12 space-y-6">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
@@ -14,14 +18,18 @@
                 <p class="text-xs text-slate-500 mt-1">Review account profile details and full AI chatbot safety incident logs for <strong>{{ $user->name }}</strong>.</p>
             </div>
 
-            <div class="flex items-center gap-3">
+            <div class="flex flex-wrap items-center gap-3">
+                <button type="button" x-data x-on:click="$dispatch('delete-customer', { url: @js(route('admin.users.destroy', $user->id)), id: {{ $user->id }}, name: @js($user->name), tab: @js($user->trashed() ? 'pending' : 'all'), search: '' })"
+                    class="min-h-[44px] rounded-lg border border-coral-200 bg-coral-50 px-4 text-xs font-bold text-coral-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-coral-600">Delete account</button>
+                @unless($user->trashed())
                 <a href="{{ route('admin.bookings.create', ['user_id' => $user->id]) }}"
                    class="inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-ocean-600 hover:bg-ocean-700 text-white text-xs font-semibold shadow-sm transition-colors cursor-pointer">
                     <span class="material-symbols-outlined text-[18px]">add_shopping_cart</span>
                     Book on Behalf
                 </a>
+                @endunless
 
-                @if($user->ban_level)
+                @if($user->ban_level && ! $user->trashed())
                     <form action="{{ route('admin.users.unban', $user->id) }}" method="POST">
                         @csrf
                         <button type="submit" @if($user->isWarned()) onclick="return confirm('Remove warning for {{ $user->name }}?')" @else onclick="return confirm('Restore normal access for {{ $user->name }}?')" @endif
@@ -32,7 +40,7 @@
                     </form>
                 @endif
 
-                @if($user->chatbot_flag_count > 0)
+                @if($user->chatbot_flag_count > 0 && ! $user->trashed())
                     <form action="{{ route('admin.users.clear-flags', $user->id) }}" method="POST">
                         @csrf
                         <button type="submit" onclick="return confirm('Clear all chatbot abuse flags for {{ $user->name }}? This will mark all pending reports as dismissed.')"
@@ -43,7 +51,7 @@
                     </form>
                 @endif
 
-                @if(!$user->isPermanentlyBanned() && !$user->isTemporarilyBanned())
+                @if(!$user->trashed() && !$user->isPermanentlyBanned() && !$user->isTemporarilyBanned())
                     <div x-data="{ openBanModal: false, level: 'temporary' }">
                         <button @click="openBanModal = true" type="button"
                                 class="inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-sm transition-colors cursor-pointer">

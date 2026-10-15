@@ -22,7 +22,9 @@
                         Are you sure you want to delete your account?
                     </h3>
                     <p class="text-sm font-body text-ink-500 dark:text-slate-400 leading-relaxed">
-                        {{ __('You will be logged out and your account will be scheduled for permanent deletion in 5 days. If you change your mind, simply log in before the 5 days are over to cancel deletion and recover your account. After that deadline, recovery is no longer possible.') }}
+                        {{ app(\App\Services\SystemSettingsService::class)->gracePeriodEnabled()
+                            ? __('You will be logged out and your account will be scheduled for permanent deletion in 5 days. If you change your mind, simply log in before the 5 days are over to cancel deletion and recover your account. After that deadline, recovery is no longer possible.')
+                            : __('You will be logged out and your account will be permanently deleted immediately. This cannot be undone.') }}
                         {{ $hasPassword
                             ? __('Enter your current password to confirm.')
                             : __('Type your email address to confirm.') }}

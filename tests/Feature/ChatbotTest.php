@@ -16,6 +16,7 @@ use App\Models\IpBan;
 use App\Models\Package;
 use App\Models\RoomType;
 use App\Models\SupportInquiry;
+use App\Models\SystemSetting;
 use App\Models\UserPreference;
 use App\Services\Chat\ChatbotModerationPolicy;
 use App\Services\Chat\ChatbotService;
@@ -2423,4 +2424,22 @@ test('supplier contact question labels SunnyTrips contact details clearly', func
 
     $response->assertOk()->assertJsonPath('retrieval_outcome.reason', 'supplier_contact_unavailable');
     expect($response->json('reply'))->toContain('does not list')->toContain('belong to SUNNYTRIPS');
+});
+
+test('contact replies and guest reminders use the saved business details', function () {
+    $business = config('system_settings.business');
+    $business['display_name'] = 'Island Support Team';
+    $business['support_email'] = 'help@island.example';
+    $business['phone'] = '09123450000';
+    SystemSetting::factory()->create(['section' => 'business', 'values' => $business]);
+    $session = ChatSession::create(['session_token' => 'updated-contact-details']);
+    for ($index = 0; $index < 10; $index++) {
+        $session->messages()->create(['sender' => 'user', 'message' => 'Previous question '.$index]);
+    }
+
+    $response = $this->postJson('/chat', ['message' => 'How do I contact SunnyTrips?', 'session_token' => $session->session_token]);
+
+    $response->assertOk();
+    expect($response->json('reply'))->toContain('Island Support Team', 'help@island.example', '09123450000', "You're chatting as a guest")
+        ->not->toContain('09682447153', 'sunnytrips01@gmail.com');
 });

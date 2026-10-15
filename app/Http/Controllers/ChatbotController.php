@@ -7,7 +7,9 @@ use App\Models\ChatSession;
 use App\Models\SupportInquiry;
 use App\Services\Chat\ChatbotService;
 use App\Services\Chat\ConversationManager;
+use App\Services\Support\SupportAvailabilityService;
 use App\Services\Support\SupportQueueService;
+use App\Services\SystemSettingsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -16,8 +18,6 @@ class ChatbotController extends Controller
     private const WARNING_MARKER = '⚠️ Account notice:';
 
     private const GUEST_NUDGE_THRESHOLD = 10;
-
-    private const GUEST_NUDGE = ChatbotService::GUEST_NUDGE;
 
     public function __construct(
         protected ChatbotService $chatbot,
@@ -90,7 +90,13 @@ class ChatbotController extends Controller
     {
         $questionCount = $session->messages()->where('sender', 'user')->count();
 
-        return $questionCount >= self::GUEST_NUDGE_THRESHOLD ? self::GUEST_NUDGE : null;
+        if ($questionCount < self::GUEST_NUDGE_THRESHOLD) {
+            return null;
+        }
+        $settings = app(SystemSettingsService::class);
+
+        return $settings->revision('business') === 0 ? ChatbotService::GUEST_NUDGE
+            : "You're chatting as a guest — log in or register for the full experience. For more inquiries, contact ".$settings->businessContact().'.';
     }
 
     public function active(Request $request): JsonResponse
@@ -208,6 +214,15 @@ class ChatbotController extends Controller
 
         $session = $this->conversation->resolveSession($token, $request->user());
         $inquiry = $this->supportQueue->requestHandoff($session);
+
+        if (! $inquiry) {
+            $availability = app(SupportAvailabilityService::class);
+
+            return response()->json([
+                'status' => 'support_unavailable', 'message' => $availability->status()['message'],
+                'office_hours' => $availability->summary(),
+            ]);
+        }
 
         return response()->json([
             'status' => 'success',

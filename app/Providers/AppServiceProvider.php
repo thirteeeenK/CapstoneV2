@@ -8,6 +8,8 @@ use App\Models\AddOnModel;
 use App\Models\HotelModel;
 use App\Models\Package;
 use App\Models\RoomType;
+use App\Services\Support\SupportAvailabilityService;
+use App\Services\SystemSettingsService;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Relations\Relation;
@@ -16,6 +18,7 @@ use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -25,6 +28,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        $this->app->scoped(SystemSettingsService::class);
         // SA LARAVEL 12 TOOO!! WALA NA TO SA LARAVEL 13
         // Blueprint::macro('vector',function(string $column, int $dimensions){
         //     return $this->addColumn('vector', $column, ['dimensions' => $dimensions]);
@@ -37,6 +41,11 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Event::listen(Registered::class, SeedDemoBookingsListener::class);
+
+        View::composer('components.frontend.footer', function (\Illuminate\View\View $view): void {
+            $view->with('business', app(SystemSettingsService::class)->section('business'))
+                ->with('supportHours', app(SupportAvailabilityService::class)->summary());
+        });
 
         Relation::morphMap([
             'hotel' => HotelModel::class,
@@ -103,7 +112,7 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('chat-guest', function (Request $request) {
             $key = $request->user()?->getAuthIdentifier() ?: $request->ip();
 
-            return Limit::perMinute(5)->by('chat-guest:'.$key);
+            return Limit::perMinute(app(SystemSettingsService::class)->section('chatbot')['minute_limit'])->by('chat-guest:'.$key);
         });
 
         // -- PAYMENT WEBHOOK (IP based; forged requests fail signature check) --

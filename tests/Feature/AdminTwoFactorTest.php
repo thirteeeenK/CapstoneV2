@@ -208,7 +208,7 @@ it('lets an admin securely disable 2FA for their own account', function () {
     $this->get(route('admin.dashboard'))
         ->assertOk()
         ->assertSee('Two-factor authentication disabled')
-        ->assertSee('Security &amp; 2FA', false);
+        ->assertSee('Settings');
 });
 
 it('does not disable 2FA with an invalid verification code', function () {
@@ -279,4 +279,56 @@ it('expires a stale pending challenge', function () {
     ])->assertSessionHasErrors('code');
 
     $this->assertGuest('admin');
+});
+
+it('shows enabled two factor management inside settings', function () {
+    [$admin] = twoFactorAdmin($this->service, 'settings-enabled@sunnytripstest.com');
+
+    $this->actingAs($admin, 'admin')->get(route('admin.settings.index'))
+        ->assertOk()->assertSee('Authenticator is on')
+        ->assertSee(route('admin.two-factor.codes.regenerate'))
+        ->assertSee(route('admin.two-factor.destroy'))
+        ->assertSee('Turn off two-factor')->assertDontSee('Turn on two-factor');
+});
+
+it('enables two factor from settings and returns there with recovery codes', function () {
+    $admin = settingsAdmin();
+    $this->actingAs($admin, 'admin')->get(route('admin.settings.index'))->assertOk();
+    $secret = $this->service->decryptSecret(session('admin_2fa_setup_secret'));
+
+    $this->post(route('admin.two-factor.confirm'), [
+        'password' => 'password', 'code' => currentTotp($this->google2fa, $this->service, $secret),
+        'return_to_settings' => 1,
+    ])->assertRedirect(route('admin.settings.index').'#security')->assertSessionHasNoErrors();
+
+    expect($admin->refresh()->hasEnabledTwoFactor())->toBeTrue();
+    expect(session('admin_2fa_codes'))->toHaveCount(8);
+    $this->get(route('admin.settings.index'))->assertOk()->assertSee('Recovery codes — save these now');
+});
+
+it('regenerates recovery codes from settings only for the signed in admin', function () {
+    [$admin] = twoFactorAdmin($this->service, 'settings-regenerate@sunnytripstest.com');
+    [$other] = twoFactorAdmin($this->service, 'settings-other@sunnytripstest.com');
+    $oldCodes = $admin->two_factor_recovery_codes;
+    $otherCodes = $other->two_factor_recovery_codes;
+
+    $this->actingAs($admin, 'admin')->post(route('admin.two-factor.codes.regenerate'), [
+        'password' => 'password-secret-123', 'return_to_settings' => 1,
+    ])->assertRedirect(route('admin.settings.index').'#security')->assertSessionHasNoErrors();
+
+    expect($admin->refresh()->two_factor_recovery_codes)->not->toBe($oldCodes);
+    expect($other->refresh()->two_factor_recovery_codes)->toBe($otherCodes);
+    expect(session('admin_2fa_codes'))->toHaveCount(8);
+});
+
+it('disables two factor from settings with password and TOTP then returns to security', function () {
+    [$admin, $secret] = twoFactorAdmin($this->service, 'settings-disable@sunnytripstest.com');
+
+    $this->actingAs($admin, 'admin')->delete(route('admin.two-factor.destroy'), [
+        'disable_password' => 'password-secret-123',
+        'code' => currentTotp($this->google2fa, $this->service, $secret), 'return_to_settings' => 1,
+    ])->assertRedirect(route('admin.settings.index').'#security')->assertSessionHas('two_factor_disabled');
+
+    expect($admin->refresh()->hasEnabledTwoFactor())->toBeFalse();
+    $this->get(route('admin.settings.index'))->assertOk()->assertSee('Two-factor authentication disabled')->assertSee('Turn on two-factor');
 });

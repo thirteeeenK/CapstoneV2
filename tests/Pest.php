@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\AdminModel;
 use App\Models\User;
 use App\Services\GeminiService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -58,6 +59,14 @@ function onboardedUser(array $attributes = []): User
     $user->save();
 
     return $user;
+}
+
+function settingsAdmin(array $attributes = []): AdminModel
+{
+    return AdminModel::create(array_merge([
+        'name' => 'Settings Admin', 'email' => fake()->unique()->safeEmail(),
+        'password' => 'password', 'two_factor_required' => false,
+    ], $attributes));
 }
 
 function unitVectorString(int $hotIndex, int $dims = 3072): string

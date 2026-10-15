@@ -8,7 +8,7 @@
             <!-- Brand Column -->
             <div class="md:col-span-5 lg:col-span-4 space-y-3.5">
                 <a href="{{ route('landing') }}" class="inline-block text-2xl sm:text-3xl font-headline font-black text-slate-900 dark:text-slate-100 tracking-tight">
-                    Sunny<span class="text-ocean-600">Trips</span>
+                    {{ $business['display_name'] }}
                 </a>
                 <p class="text-slate-500 dark:text-slate-400 text-xs sm:text-sm leading-relaxed max-w-sm">
                     Redefining tropical exploration through curated luxury, intelligent recommendations, and seamless travel booking across the Philippine archipelago.
@@ -71,12 +71,17 @@
                         <span>The Office</span>
                     </h4>
                     <p class="text-slate-600 dark:text-slate-400 text-xs sm:text-sm leading-relaxed">
-                        Brgy. San Agustin,<br />
-                        Pili, Camarines Sur,<br />
-                        Philippines, 4418
+                        <span class="whitespace-pre-line">{{ $business['address'] }}</span>
                     </p>
                     <div class="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                        Daily Concierge: 8:00 AM – 8:00 PM PHT
+                        {{ $supportHours }}
+                    </div>
+                    <div class="flex flex-col gap-2 break-words text-xs text-slate-600 dark:text-slate-400">
+                        @if($business['support_email'])<a href="mailto:{{ $business['support_email'] }}" class="hover:text-ocean-600">{{ $business['support_email'] }}</a>@endif
+                        @if($business['phone'])<a href="tel:{{ preg_replace('/[^+0-9]/', '', $business['phone']) }}" class="hover:text-ocean-600">{{ $business['phone'] }}</a>@endif
+                        @foreach(['facebook_url' => 'Facebook', 'instagram_url' => 'Instagram', 'website_url' => 'Website'] as $key => $label)
+                            @if($business[$key])<a href="{{ $business[$key] }}" rel="noopener noreferrer" target="_blank" class="hover:text-ocean-600">{{ $label }}</a>@endif
+                        @endforeach
                     </div>
                 </div>
 
@@ -89,7 +94,7 @@
 
         {{-- Bottom Copyright & Legal Links --}}
         <div class="flex flex-col-reverse sm:flex-row justify-between items-center gap-4 text-slate-400 dark:text-slate-500 text-xs font-medium text-center sm:text-left">
-            <p>© {{ date('Y') }} {{ config('app.name', 'SunnyTrips') }}. All rights reserved. Made for sun-seekers.</p>
+            <p>© {{ date('Y') }} {{ $business['display_name'] }}. All rights reserved. Made for sun-seekers.</p>
             <div class="flex flex-wrap justify-center sm:justify-end gap-x-5 gap-y-2">
                 @php
                     $legalDocs = \App\Models\LegalDocument::orderBy('title')->get();

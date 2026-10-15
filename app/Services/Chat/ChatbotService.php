@@ -21,6 +21,8 @@ use App\Services\DistanceService;
 use App\Services\GeminiService;
 use App\Services\RoomAvailabilityService;
 use App\Services\RoutingService;
+use App\Services\Support\SupportAvailabilityService;
+use App\Services\SystemSettingsService;
 use App\Services\WeatherService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
@@ -813,7 +815,7 @@ class ChatbotService
 
         return [
             'blocked' => true,
-            'response' => 'You have been temporarily blocked from chatting due to repeated messages. Please try again later or contact SUNNYTRIPS TRAVEL SERVICES at 09682447153.',
+            'response' => 'You have been temporarily blocked from chatting due to repeated messages. Please try again later or contact '.app(SystemSettingsService::class)->businessContact().'.',
         ];
     }
 
@@ -3732,6 +3734,14 @@ class ChatbotService
      */
     protected function handleSupportAgentRequest(): array
     {
+        $availability = app(SupportAvailabilityService::class);
+        if (! $availability->status()['available']) {
+            $business = app(SystemSettingsService::class)->section('business');
+
+            return ['reply' => $availability->status()['message'].' '.$availability->summary()
+                .($business['support_email'] ? ' Contact: '.$business['support_email'] : '')];
+        }
+
         return [
             'reply' => "Of course — tap the button below and I'll connect you to a human agent from our team. You can also use **Talk to Admin** at the top of this chat at any time.\n\nWhile you wait, feel free to type your question here so the agent has the context when they join.",
             'suggested_actions' => [
@@ -3747,6 +3757,7 @@ class ChatbotService
     protected function handleLegalQuery(string $message): array
     {
         $lower = mb_strtolower($message);
+        $contact = app(SystemSettingsService::class)->businessContact();
 
         $wantsPrivacy = (bool) preg_match('/\bprivacy\b/', $lower);
         $wantsTerms = (bool) preg_match('/\bterms\b|\bconditions\b/', $lower);
@@ -3757,14 +3768,14 @@ class ChatbotService
             $hotelName = $this->intentRouter->extractHotelName($message);
             if ($hotelName) {
                 return [
-                    'reply' => "Our catalog does not list the owner or direct contact details for {$hotelName}. The following details belong to SUNNYTRIPS TRAVEL SERVICES, which can help verify supplier information: sunnytrips01@gmail.com or 09682447153. Address: Pili, Camarines Sur.",
+                    'reply' => "Our catalog does not list the owner or direct contact details for {$hotelName}. The following details belong to {$contact}. Our team can help verify supplier information.",
                     'legal' => ['topic' => 'supplier_contact_unavailable'],
                     'retrieval_outcome' => RetrievalOutcome::make(RetrievalOutcome::NoMatch, 'supplier_contact_unavailable'),
                 ];
             }
 
             return [
-                'reply' => "You can reach SUNNYTRIPS TRAVEL SERVICES at sunnytrips01@gmail.com or 09682447153. Address: Pili, Camarines Sur.\n\nFor data requests, see our [Privacy Policy](/privacy-policy).",
+                'reply' => "You can reach {$contact}.\n\nFor data requests, see our [Privacy Policy](/privacy-policy).",
                 'legal' => ['topic' => 'contact'],
             ];
         }
@@ -3789,7 +3800,7 @@ class ChatbotService
         }
 
         return [
-            'reply' => 'I can share our [Terms and Conditions](/terms-and-conditions), [Privacy Policy](/privacy-policy), or [AI Usage Disclosure](/ai-disclosure) — which one would you like? For anything else, reach us at sunnytrips01@gmail.com / 09682447153.',
+            'reply' => 'I can share our [Terms and Conditions](/terms-and-conditions), [Privacy Policy](/privacy-policy), or [AI Usage Disclosure](/ai-disclosure) — which one would you like? For anything else, contact '.$contact.'.',
             'legal' => ['topic' => 'menu'],
         ];
     }
@@ -4259,11 +4270,10 @@ class ChatbotService
         // Strip the guest nudge from prior bot turns: it is appended at
         // response time and persisted, so without this Gemini sees its own
         // sign-off in history and echoes it (doubled nudge).
-        $suffix = "\n\n".self::GUEST_NUDGE;
         foreach ($history as &$turn) {
             $text = $turn['parts'][0]['text'] ?? null;
-            if (is_string($text) && str_ends_with($text, $suffix)) {
-                $turn['parts'][0]['text'] = substr($text, 0, -strlen($suffix));
+            if (is_string($text)) {
+                $turn['parts'][0]['text'] = preg_replace("/\n\nYou're chatting as a guest — [^\r\n]*$/u", '', $text);
             }
         }
         unset($turn);

@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use App\Models\UserPreference;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Socialite\Contracts\Provider;
 use Laravel\Socialite\Facades\Socialite;
@@ -219,6 +220,26 @@ test('a google-only traveler can set a password without confirming an old one', 
 
     expect(Hash::check('brand-new-password', $user->refresh()->password))->toBeTrue()
         ->and($user->hasPassword())->toBeTrue();
+});
+
+test('google onboarding starts fresh after an admin permanently deletes the previous customer', function () {
+    $user = onboardedUser(['email' => 'juan@example.com', 'password' => null, 'google_id' => 'google-sub-10294']);
+    UserPreference::create(['user_id' => $user->id]);
+    $this->actingAs(settingsAdmin(), 'admin')->delete(route('admin.users.destroy', $user->id), [
+        'mode' => 'permanent', 'confirm_email' => $user->email, 'reason' => 'Reset onboarding test',
+    ])->assertSessionHasNoErrors();
+    $this->assertDatabaseMissing('users', ['id' => $user->id]);
+    $this->app['auth']->shouldUse('web');
+    fakeGoogleCallback(googleProfile());
+
+    $this->get(route('auth.google.callback'))->assertRedirect(route('onboarding.index'));
+
+    $freshUser = User::where('google_id', 'google-sub-10294')->sole();
+    $this->assertAuthenticatedAs($freshUser);
+    expect($freshUser->id)->not->toBe($user->id);
+    expect($freshUser->preferences_embedding)->toBeNull();
+    $this->assertDatabaseMissing('user_preferences', ['user_id' => $freshUser->id]);
+    $this->get(route('onboarding.index'))->assertOk();
 });
 
 test('a traveler with a password still has to confirm it before changing it', function () {

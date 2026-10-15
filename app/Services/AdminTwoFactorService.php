@@ -2,10 +2,12 @@
 
 namespace App\Services;
 
+use App\Models\AdminModel;
 use BaconQrCode\Renderer\Image\SvgImageBackEnd;
 use BaconQrCode\Renderer\ImageRenderer;
 use BaconQrCode\Renderer\RendererStyle\RendererStyle;
 use BaconQrCode\Writer;
+use Illuminate\Contracts\Session\Session;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -19,6 +21,26 @@ class AdminTwoFactorService
     public function generateSecret(): string
     {
         return $this->google2fa->generateSecretKey();
+    }
+
+    /** @return array{enabled: bool, codes: array<int, string>, qrSvg?: string, manualKey?: string} */
+    public function setupViewData(AdminModel $admin, Session $session): array
+    {
+        if ($admin->hasEnabledTwoFactor()) {
+            return ['enabled' => true, 'codes' => $session->get('admin_2fa_codes', [])];
+        }
+        $secret = $this->decryptSecret($session->get('admin_2fa_setup_secret'));
+        if ($secret === null) {
+            $secret = $this->generateSecret();
+            $session->put('admin_2fa_setup_secret', $this->encryptSecret($secret));
+        }
+
+        return [
+            'enabled' => false,
+            'qrSvg' => $this->qrCodeSvg($this->qrCodeUrl($admin->email, $secret)),
+            'manualKey' => $secret,
+            'codes' => [],
+        ];
     }
 
     public function qrCodeUrl(string $email, string $secret): string

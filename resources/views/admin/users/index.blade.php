@@ -61,6 +61,9 @@
             <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                 <!-- Status Tabs -->
                 <div class="flex items-center gap-2 flex-wrap">
+                    <a href="{{ route('admin.users.index', ['tab' => 'pending']) }}" @click.prevent="setTab('pending')"
+                        :class="tab === 'pending' ? 'bg-coral-50 text-coral-700 border-coral-300' : 'bg-white text-slate-600 border-slate-200'"
+                        class="rounded-xl border px-3 py-2 text-xs font-semibold">Pending deletion</a>
                     <span
                         class="text-xs font-semibold text-slate-500 uppercase tracking-wider mr-1 flex items-center gap-1 shrink-0">
                         <span class="material-symbols-outlined text-[16px] text-slate-400">filter_list</span>
@@ -123,6 +126,8 @@
             @include('admin.users._table', compact('users'))
         </div>
     </div>
+
+    @include('admin.users._delete_account_modal')
 
     <style>
         [x-cloak] {

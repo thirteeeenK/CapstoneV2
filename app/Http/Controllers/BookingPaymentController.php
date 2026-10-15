@@ -8,6 +8,7 @@ use App\Models\Booking;
 use App\Notifications\BookingCancellationRequested;
 use App\Notifications\BookingNotification;
 use App\Notifications\BookingPaid;
+use App\Services\AdminNotificationService;
 use App\Services\BookingExpiryService;
 use App\Services\BookingRequestService;
 use App\Services\Payment\Drivers\QrphDriver;
@@ -404,7 +405,7 @@ class BookingPaymentController extends Controller
             $admins = AdminModel::all();
             if ($admins->isNotEmpty()) {
                 foreach ($admins as $admin) {
-                    $admin->notify(new BookingCancellationRequested($booking->fresh()));
+                    $admin->notify(new BookingCancellationRequested($booking->fresh(), includeMail: false));
                 }
             }
         } catch (\Throwable $e) {
@@ -414,6 +415,8 @@ class BookingPaymentController extends Controller
                 'exception' => $e->getMessage(),
             ]);
         }
+
+        app(AdminNotificationService::class)->send('cancellation_requested', $booking->fresh());
 
         return redirect()->route('booking.show', $booking->booking_code)
             ->with('success', 'Cancellation requested. Our team will review your request and reply with a decision.');

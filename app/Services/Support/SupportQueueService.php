@@ -6,6 +6,7 @@ use App\Models\ChatMessage;
 use App\Models\ChatSession;
 use App\Models\SupportInquiry;
 use App\Models\User;
+use App\Services\AdminNotificationService;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -87,7 +88,7 @@ class SupportQueueService
         });
     }
 
-    public function requestHandoff(ChatSession $session): SupportInquiry
+    public function requestHandoff(ChatSession $session): ?SupportInquiry
     {
         $existing = SupportInquiry::where('chat_session_id', $session->id)
             ->whereIn('status', [SupportInquiry::STATUS_PENDING, SupportInquiry::STATUS_HUMAN_ACTIVE])
@@ -97,6 +98,10 @@ class SupportQueueService
             return $existing;
         }
 
+        if (! app(SupportAvailabilityService::class)->status()['available']) {
+            return null;
+        }
+
         $ticket = 'TKT-'.now()->format('Ymd').'-'.strtoupper(substr(bin2hex(random_bytes(3)), 0, 4));
 
         while (SupportInquiry::where('ticket_number', $ticket)->exists()) {
@@ -104,14 +109,19 @@ class SupportQueueService
         }
 
         try {
-            return SupportInquiry::create([
-                'ticket_number' => $ticket,
-                'chat_session_id' => $session->id,
-                'user_id' => $session->user_id,
-                'status' => SupportInquiry::STATUS_PENDING,
-                'initiated_by' => SupportInquiry::INITIATED_BY_USER,
-                'requested_at' => now(),
-            ]);
+            return DB::transaction(function () use ($session, $ticket): SupportInquiry {
+                $inquiry = SupportInquiry::create([
+                    'ticket_number' => $ticket,
+                    'chat_session_id' => $session->id,
+                    'user_id' => $session->user_id,
+                    'status' => SupportInquiry::STATUS_PENDING,
+                    'initiated_by' => SupportInquiry::INITIATED_BY_USER,
+                    'requested_at' => now(),
+                ]);
+                app(AdminNotificationService::class)->send('support_requested', $inquiry);
+
+                return $inquiry;
+            });
         } catch (UniqueConstraintViolationException) {
             // Concurrent request won the race — return its ticket.
             return SupportInquiry::where('chat_session_id', $session->id)

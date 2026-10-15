@@ -7,6 +7,7 @@ namespace App\Services\Payment;
 use App\Models\AdminModel;
 use App\Models\Booking;
 use App\Models\BookingPayment;
+use App\Services\AdminNotificationService;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -63,6 +64,8 @@ final class GoTymePaymentService
                         'submitted_at' => now()->toIso8601String(),
                     ]),
                 ])->save();
+
+                app(AdminNotificationService::class)->send('payment_submitted', $lockedBooking);
 
                 return $payment;
             });

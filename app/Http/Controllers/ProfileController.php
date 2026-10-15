@@ -68,13 +68,14 @@ class ProfileController extends Controller
             ]);
         }
 
-        $deletionService->requestDeletion($user);
+        $permanentlyDeleted = $deletionService->requestDeletion($user);
 
         Auth::logout();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return Redirect::to('/')->with('account_deletion_requested', true);
+        return Redirect::to('/')->with('account_deletion_requested', true)
+            ->with('account_permanently_deleted', $permanentlyDeleted);
     }
 }

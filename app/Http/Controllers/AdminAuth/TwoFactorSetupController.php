@@ -20,30 +20,7 @@ class TwoFactorSetupController extends Controller
      */
     public function create(Request $request): View
     {
-        $admin = $request->user('admin');
-
-        if ($admin->hasEnabledTwoFactor()) {
-            return view('adminAuth.two-factor-setup', [
-                'enabled' => true,
-                'codes' => $request->session()->get('admin_2fa_codes', []),
-            ]);
-        }
-
-        $secret = $this->twoFactor->decryptSecret($request->session()->get('admin_2fa_setup_secret'));
-
-        if ($secret === null) {
-            $secret = $this->twoFactor->generateSecret();
-            $request->session()->put('admin_2fa_setup_secret', $this->twoFactor->encryptSecret($secret));
-        }
-
-        $otpauthUrl = $this->twoFactor->qrCodeUrl($admin->email, $secret);
-
-        return view('adminAuth.two-factor-setup', [
-            'enabled' => false,
-            'qrSvg' => $this->twoFactor->qrCodeSvg($otpauthUrl),
-            'manualKey' => $secret,
-            'codes' => [],
-        ]);
+        return view('adminAuth.two-factor-setup', $this->twoFactor->setupViewData($request->user('admin'), $request->session()));
     }
 
     /**
@@ -93,7 +70,7 @@ class TwoFactorSetupController extends Controller
 
         Log::info('admin.mfa.enabled', ['admin_id' => $admin->getKey(), 'ip' => $request->ip()]);
 
-        return redirect()->route('admin.two-factor.setup')->with('success', 'Two-factor authentication is now protecting your account. Save these recovery codes — each works once.');
+        return $this->settingsRedirect($request, 'admin.two-factor.setup')->with('success', 'Two-factor authentication is now protecting your account. Save these recovery codes — each works once.');
     }
 
     /**
@@ -153,7 +130,7 @@ class TwoFactorSetupController extends Controller
 
         Log::warning('admin.mfa.disabled', ['admin_id' => $admin->getKey(), 'ip' => $request->ip()]);
 
-        return redirect()->route('admin.dashboard')->with('two_factor_disabled', 'Two-factor authentication was turned off for your account. You can turn it on again at any time.');
+        return $this->settingsRedirect($request, 'admin.dashboard')->with('two_factor_disabled', 'Two-factor authentication was turned off for your account. You can turn it on again at any time.');
     }
 
     /**
@@ -185,6 +162,13 @@ class TwoFactorSetupController extends Controller
 
         Log::info('admin.mfa.codes-regenerated', ['admin_id' => $admin->getKey(), 'ip' => $request->ip()]);
 
-        return redirect()->route('admin.two-factor.setup')->with('success', 'New recovery codes issued. Your old codes no longer work.');
+        return $this->settingsRedirect($request, 'admin.two-factor.setup')->with('success', 'New recovery codes issued. Your old codes no longer work.');
+    }
+
+    private function settingsRedirect(Request $request, string $fallback): RedirectResponse
+    {
+        return $request->boolean('return_to_settings')
+            ? redirect()->to(route('admin.settings.index').'#security')
+            : redirect()->route($fallback);
     }
 }

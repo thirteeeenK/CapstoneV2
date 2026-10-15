@@ -3,12 +3,15 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\DeleteCustomerAccountRequest;
 use App\Models\ChatbotAbuseReport;
 use App\Models\IpBan;
 use App\Models\User;
 use App\Notifications\AccountModerationNotice;
+use App\Services\AccountDeletionService;
 use App\Services\AdminAuditService;
 use App\Services\Support\SupportQueueService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -30,6 +33,10 @@ class RegisteredUserController extends Controller
         $search = $request->query('search');
 
         $query = User::withCount('abuseReports');
+
+        if ($tab === 'pending') {
+            $query->onlyTrashed();
+        }
 
         if ($tab === 'flagged') {
             $query->where('chatbot_flag_count', '>', 0);
@@ -88,13 +95,29 @@ class RegisteredUserController extends Controller
      */
     public function show($id)
     {
-        $user = User::findOrFail($id);
+        $user = User::withTrashed()->findOrFail($id);
         $abuseReports = ChatbotAbuseReport::with('admin')
             ->where('user_id', $id)
             ->orderBy('id', 'desc')
             ->get();
 
         return view('admin.users.show', compact('user', 'abuseReports'));
+    }
+
+    public function destroy(DeleteCustomerAccountRequest $request, int $id, AccountDeletionService $deletion): RedirectResponse
+    {
+        $user = User::withTrashed()->findOrFail($id);
+        $permanent = $deletion->requestDeletion(
+            $user,
+            $request->validated('mode') === 'scheduled',
+            $request->user('admin'),
+            $request->validated('reason'),
+            $request->validated('confirm_email'),
+        );
+
+        return redirect()->route('admin.users.index', array_filter([
+            'tab' => $request->validated('tab'), 'search' => $request->validated('search'),
+        ]))->with('success', $permanent ? 'Customer account permanently deleted. Booking and payment history has been retained.' : 'Customer account scheduled for deletion. The customer may recover it before the original five-day deadline.');
     }
 
     /**

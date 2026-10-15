@@ -45,7 +45,7 @@
                 ['route' => 'admin.reviews.*', 'icon' => 'reviews', 'label' => 'Reviews & Sentiment', 'href' => route('admin.reviews.index')],
             ],
             'Account' => [
-                ['route' => 'admin.two-factor.*', 'icon' => 'security', 'label' => 'Security & 2FA', 'href' => route('admin.two-factor.setup')],
+                ['route' => 'admin.settings.*', 'icon' => 'settings', 'label' => 'Settings', 'href' => route('admin.settings.index')],
             ],
         ];
     @endphp

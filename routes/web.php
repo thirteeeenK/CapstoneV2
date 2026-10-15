@@ -54,6 +54,7 @@ Route::get('/check', [ConnectionController::class, 'checkConnection'])->middlewa
 require __DIR__.'/auth.php';
 require __DIR__.'/socialAuthRoute.php';
 require __DIR__.'/adminAuth.php';
+require __DIR__.'/adminSettingsRoute.php';
 require __DIR__.'/destinationRoute.php';
 require __DIR__.'/hotelRoute.php';
 require __DIR__.'/roomRoute.php';

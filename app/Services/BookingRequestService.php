@@ -299,6 +299,8 @@ class BookingRequestService
             }
             CartItem::whereIn('id', $cartItems->pluck('id')->toArray())->delete();
 
+            app(AdminNotificationService::class)->send('booking_requested', $booking);
+
             return $booking;
         });
     }
