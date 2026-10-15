@@ -4,8 +4,10 @@ use App\Models\User;
 use App\Services\RegistrationAbuseService;
 use Illuminate\Contracts\Cache\Lock;
 use Illuminate\Contracts\Cache\LockTimeoutException;
+use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Laravel\Socialite\Contracts\Provider;
 use Laravel\Socialite\Facades\Socialite;
 use Laravel\Socialite\Two\User as GoogleUser;
@@ -54,6 +56,7 @@ test('registration limits malformed submissions before calling cloudflare', func
 });
 
 test('verified registration preserves consent and onboarding', function () {
+    Log::spy();
     Http::fake(['challenges.cloudflare.com/*' => Http::response([
         'success' => true, 'hostname' => 'sunnytripsv2.up.railway.app', 'action' => 'register',
     ])]);
@@ -61,6 +64,62 @@ test('verified registration preserves consent and onboarding', function () {
     $this->assertAuthenticated();
     $this->assertDatabaseHas('users', ['email' => 'traveler@example.com', 'terms_version' => config('legal.documents.terms.version')]);
     Http::assertSentCount(1);
+    Http::assertSent(fn (Request $request): bool => $request->method() === 'POST'
+        && $request->url() === 'https://challenges.cloudflare.com/turnstile/v0/siteverify'
+        && $request['secret'] === 'test-secret'
+        && $request['response'] === 'test-token');
+    Log::shouldHaveReceived('info')->once()->with('auth.turnstile.verified', [
+        'hostname' => 'sunnytripsv2.up.railway.app', 'action' => 'register',
+    ]);
+});
+
+test('provider rejection logs only safe diagnostic fields', function () {
+    Log::spy();
+    Http::fake(['challenges.cloudflare.com/*' => Http::response([
+        'success' => false,
+        'error-codes' => ['invalid-input-secret', 'timeout-or-duplicate', 'untrusted-sensitive-value', ['nested-sensitive-value'], 123],
+        'secret' => 'must-not-be-logged',
+    ])]);
+
+    $this->post('/register', protectedRegistration())->assertSessionHasErrors('cf-turnstile-response');
+    expect(User::count())->toBe(0);
+    Log::shouldHaveReceived('notice')->once()->with('auth.turnstile.rejected', [
+        'http_status' => 200, 'provider_success' => false,
+        'hostname_matches' => false, 'action_matches' => false,
+        'error_codes' => ['invalid-input-secret', 'timeout-or-duplicate'],
+    ]);
+    Log::shouldNotHaveReceived('info', ['auth.turnstile.verified', Mockery::any()]);
+});
+
+test('an unsuccessful siteverify http response cannot authorize registration', function (int $status) {
+    Http::fake(['challenges.cloudflare.com/*' => Http::response([
+        'success' => true, 'hostname' => 'sunnytripsv2.up.railway.app', 'action' => 'register',
+    ], $status)]);
+
+    $this->post('/register', protectedRegistration())->assertSessionHasErrors('cf-turnstile-response');
+    expect(User::count())->toBe(0);
+})->with([400, 503]);
+
+test('a provider reported replay cannot create another account', function () {
+    $seenTokens = [];
+    Http::fake(['challenges.cloudflare.com/*' => function (Request $request) use (&$seenTokens) {
+        $token = $request['response'];
+        if (in_array($token, $seenTokens, true)) {
+            return Http::response(['success' => false, 'error-codes' => ['timeout-or-duplicate']]);
+        }
+        $seenTokens[] = $token;
+
+        return Http::response(['success' => true, 'hostname' => 'sunnytripsv2.up.railway.app', 'action' => 'register']);
+    }]);
+
+    $this->post('/register', protectedRegistration())->assertRedirect(route('onboarding.index'));
+    $this->post(route('logout'))->assertRedirect('/');
+    $this->post('/register', protectedRegistration(['email' => 'second@example.com']))
+        ->assertSessionHasErrors('cf-turnstile-response');
+
+    expect(User::count())->toBe(1);
+    $this->assertDatabaseMissing('users', ['email' => 'second@example.com']);
+    Http::assertSentCount(2);
 });
 
 test('provider connectivity and malformed responses fail closed', function (bool $connectionFails) {
