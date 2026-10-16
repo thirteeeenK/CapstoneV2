@@ -20,6 +20,10 @@ Route::middleware(['auth', 'throttle:users'])->group(function () {
         Route::get('/{code}/pay/qrph', [BookingPaymentController::class, 'qrphShow'])->name('pay.qrph.show');
         Route::get('/{code}/pay/qrph/return', [BookingPaymentController::class, 'qrphReturn'])->name('pay.qrph.return');
         Route::post('/{code}/pay/qrph/confirm', [BookingPaymentController::class, 'qrphConfirm'])->name('pay.qrph.confirm');
+        Route::post('/{code}/pay/paymongo', [BookingPaymentController::class, 'paymongoInit'])->name('pay.paymongo');
+        Route::get('/{code}/pay/paymongo', [BookingPaymentController::class, 'paymongoShow'])->name('pay.paymongo.show');
+        Route::get('/{code}/pay/paymongo/return', [BookingPaymentController::class, 'paymongoReturn'])->name('pay.paymongo.return');
+        Route::post('/{code}/pay/paymongo/confirm', [BookingPaymentController::class, 'paymongoConfirm'])->name('pay.paymongo.confirm');
         Route::post('/{code}/pay/gotyme', [BookingPaymentController::class, 'goTymeInit'])->name('pay.gotyme');
         Route::get('/{code}/pay/gotyme', [BookingPaymentController::class, 'goTymeShow'])->name('pay.gotyme.show');
         Route::post('/{code}/pay/gotyme/submit', [BookingPaymentController::class, 'goTymeSubmit'])->name('pay.gotyme.submit');

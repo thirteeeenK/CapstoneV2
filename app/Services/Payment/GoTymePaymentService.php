@@ -16,9 +16,10 @@ final class GoTymePaymentService
 {
     public function initialize(Booking $booking): Booking
     {
-        return DB::transaction(function () use ($booking): Booking {
+        return app(PaymentService::class)->withBookingLock($booking->id, fn (): Booking => DB::transaction(function () use ($booking): Booking {
             $lockedBooking = Booking::query()->lockForUpdate()->findOrFail($booking->getKey());
             $this->ensureApproved($lockedBooking);
+            app(PaymentService::class)->assertCanSelectGateway($lockedBooking, 'gotyme');
 
             $lockedBooking->forceFill([
                 'gateway' => 'gotyme',
@@ -31,15 +32,16 @@ final class GoTymePaymentService
             ])->save();
 
             return $lockedBooking;
-        });
+        }));
     }
 
     public function submit(Booking $booking, string $senderReference, string $claimedAmount): BookingPayment
     {
         try {
-            return DB::transaction(function () use ($booking, $senderReference, $claimedAmount): BookingPayment {
+            return app(PaymentService::class)->withBookingLock($booking->id, fn (): BookingPayment => DB::transaction(function () use ($booking, $senderReference, $claimedAmount): BookingPayment {
                 $lockedBooking = Booking::query()->lockForUpdate()->findOrFail($booking->getKey());
                 $this->ensureApproved($lockedBooking);
+                app(PaymentService::class)->assertCanSelectGateway($lockedBooking, 'gotyme');
 
                 $trimmedReference = trim($senderReference);
                 $payment = $lockedBooking->payments()->create([
@@ -68,7 +70,7 @@ final class GoTymePaymentService
                 app(AdminNotificationService::class)->send('payment_submitted', $lockedBooking);
 
                 return $payment;
-            });
+            }));
         } catch (QueryException $exception) {
             if ($exception->getCode() === '23505' || str_contains($exception->getMessage(), 'booking_payments_provider_normalized_reference_unique')) {
                 throw ValidationException::withMessages([

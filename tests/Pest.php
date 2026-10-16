@@ -1,9 +1,11 @@
 <?php
 
 use App\Models\AdminModel;
+use App\Models\QrphPaymentAttempt;
 use App\Models\User;
 use App\Services\GeminiService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 /*
@@ -50,6 +52,72 @@ expect()->extend('toBeOne', function () {
 function something()
 {
     // ..
+}
+
+/** @return array<string, mixed> */
+function paymongoIntentFixture(QrphPaymentAttempt $attempt, string $status = 'awaiting_next_action'): array
+{
+    $attributes = [
+        'amount' => $attempt->amount, 'currency' => 'PHP', 'livemode' => $attempt->livemode,
+        'status' => $status, 'client_key' => 'fixture_client_key',
+        'metadata' => ['booking_code' => $attempt->booking->booking_code, 'attempt_id' => $attempt->uuid],
+        'next_action' => ['code' => [
+            'id' => $attempt->qr_code_id ?? 'qr_fixture',
+            'image_url' => $attempt->qr_image ?? 'data:image/png;base64,'.base64_encode('fixture'),
+            'test_url' => 'https://secure-authentication.paymongo.com/fixture',
+        ]],
+        'payments' => [],
+    ];
+    if ($status === 'succeeded') {
+        $attributes['payments'][] = [
+            'id' => 'pay_fixture'.$attempt->id, 'type' => 'payment',
+            'attributes' => [
+                'status' => 'paid', 'payment_intent_id' => $attempt->intent_id,
+                'amount' => $attempt->amount, 'currency' => 'PHP', 'livemode' => $attempt->livemode,
+                'source' => ['id' => $attempt->method_id, 'type' => 'qrph'],
+            ],
+        ];
+    }
+
+    return ['data' => ['id' => $attempt->intent_id ?? ($attempt->livemode ? 'pi_livefixture' : 'pi_fixture'), 'type' => 'payment_intent', 'attributes' => $attributes]];
+}
+
+function fakePaymongoCreation(): void
+{
+    Http::fake(function ($request) {
+        $attempt = QrphPaymentAttempt::latest('id')->firstOrFail();
+        if ($request->url() === 'https://api.paymongo.com/v1/payment_methods') {
+            return Http::response([
+                'data' => ['id' => 'pm_fixture', 'type' => 'payment_method', 'attributes' => ['type' => 'qrph']],
+            ]);
+        }
+        if ($request->url() === 'https://api.paymongo.com/v1/payment_intents') {
+            return Http::response(paymongoIntentFixture($attempt, 'awaiting_payment_method'));
+        }
+        if (str_starts_with($request->url(), 'https://api.paymongo.com/v1/payment_intents/') && str_ends_with($request->url(), '/attach')) {
+            return Http::response(paymongoIntentFixture($attempt));
+        }
+        throw new LogicException('Unexpected HTTP request in QR Ph fixture.');
+    });
+}
+
+/** @return array{0: string, 1: array<string, string>} */
+function paymongoWebhookFixture(QrphPaymentAttempt $attempt, string $type = 'payment.paid', string $eventId = 'evt_fixture'): array
+{
+    $resource = $type === 'qrph.expired'
+        ? ['id' => $attempt->qr_code_id, 'type' => 'qrph', 'attributes' => ['payment_intent_id' => $attempt->intent_id]]
+        : paymongoIntentFixture($attempt, 'succeeded')['data']['attributes']['payments'][0];
+    if ($type === 'payment.failed') {
+        $resource['attributes']['status'] = 'failed';
+    }
+    $payload = json_encode(['data' => ['id' => $eventId, 'type' => 'event', 'attributes' => [
+        'type' => $type, 'livemode' => $attempt->livemode, 'data' => $resource,
+    ]]], JSON_THROW_ON_ERROR);
+    $timestamp = now()->timestamp;
+    $signature = hash_hmac('sha256', $timestamp.'.'.$payload, config('services.'.($attempt->livemode ? 'paymongo' : 'qrph').'.webhook_secret'));
+    $field = $attempt->livemode ? 'li' : 'te';
+
+    return [$payload, ['CONTENT_TYPE' => 'application/json', 'HTTP_PAYMONGO_SIGNATURE' => "t={$timestamp},{$field}={$signature}"]];
 }
 
 function onboardedUser(array $attributes = []): User

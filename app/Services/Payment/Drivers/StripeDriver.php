@@ -3,6 +3,7 @@
 namespace App\Services\Payment\Drivers;
 
 use App\Models\Booking;
+use App\Services\Payment\PaymentGatewayException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -45,16 +46,16 @@ class StripeDriver implements PaymentDriver
         if ($response->failed()) {
             Log::error('Stripe checkout session creation failed', [
                 'booking' => $booking->booking_code,
-                'response' => $response->body(),
+                'http_status' => $response->status(),
             ]);
-            throw new \RuntimeException('Could not create Stripe checkout session: '.$response->json('error.message', 'unknown error'));
+            throw new PaymentGatewayException('Card checkout could not be started. Please try again shortly or choose another method.');
         }
 
         $session = $response->json();
 
         return [
-            'url' => $session['url'] ?? throw new \RuntimeException('Stripe returned no checkout URL.'),
-            'reference' => $session['id'] ?? 'cs_'.uniqid(),
+            'url' => $session['url'] ?? throw new PaymentGatewayException('Card checkout is temporarily unavailable.'),
+            'reference' => $session['id'] ?? throw new PaymentGatewayException('Card checkout is temporarily unavailable.'),
         ];
     }
 
@@ -99,7 +100,7 @@ class StripeDriver implements PaymentDriver
             ->get('https://api.stripe.com/v1/checkout/sessions/'.$reference);
 
         if ($response->failed()) {
-            Log::warning('Stripe session retrieval failed', ['reference' => $reference, 'response' => $response->body()]);
+            Log::warning('Stripe session retrieval failed', ['reference' => $reference, 'http_status' => $response->status()]);
 
             return false;
         }

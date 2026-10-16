@@ -357,7 +357,17 @@
                                   @submit="if (!chosen) { tried = true; $event.preventDefault(); }">
                                 @csrf
                                 <p class="font-label text-[10px] uppercase font-bold tracking-[0.15em] text-slate-400 dark:text-slate-500 mb-3">Select a payment method</p>
-                                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    @if (!empty($gateways['paymongo']))
+                                        <label class="cursor-pointer rounded-2xl border-2 p-4 transition flex items-start gap-3"
+                                               :class="chosen === 'paymongo' ? 'border-ocean-500 bg-ocean-50 dark:bg-ocean-950 shadow-sm' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-ocean-400'">
+                                            <input type="radio" name="gateway" value="paymongo" x-model="chosen" @change="tried = false" class="mt-0.5 accent-ocean-600 cursor-pointer">
+                                            <span>
+                                                <span class="block text-sm font-extrabold text-slate-900 dark:text-slate-100">PayMongo QR Ph — Live</span>
+                                                <span class="block text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Bank or wallet payment · automatically verified</span>
+                                            </span>
+                                        </label>
+                                    @endif
                                     @if (!empty($gateways['card']))
                                         <label class="cursor-pointer rounded-2xl border-2 p-4 transition flex items-start gap-3"
                                                :class="chosen === 'card' ? 'border-sky-500 bg-sky-50/70 dark:bg-sky-950/60 shadow-sm' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-600'">
@@ -373,11 +383,12 @@
                                                :class="chosen === 'qrph' ? 'border-emerald-500 bg-emerald-50/70 dark:bg-emerald-950/60 shadow-sm' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-600'">
                                             <input type="radio" name="gateway" value="qrph" x-model="chosen" @change="tried = false" class="mt-0.5 accent-emerald-600 cursor-pointer">
                                             <span>
-                                                <span class="flex items-center gap-1.5 text-sm font-extrabold text-slate-900 dark:text-slate-100"><span class="material-symbols-outlined text-[16px] text-emerald-600">qr_code_2</span>QRPH</span>
-                                                <span class="block text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">GCash · GoTyme · Maya — scan to pay</span>
+                                                <span class="flex items-center gap-1.5 text-sm font-extrabold text-slate-900 dark:text-slate-100"><span class="material-symbols-outlined text-[16px] text-emerald-600">qr_code_2</span>QR Ph Sandbox</span>
+                                                <span class="block text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Test authentication · no banking-app scan</span>
                                             </span>
                                         </label>
                                     @endif
+                                    @if (!empty($gateways['gotyme']))
                                     <label class="cursor-pointer rounded-2xl border-2 p-4 transition flex items-start gap-3"
                                            :class="chosen === 'gotyme' ? 'border-sky-500 bg-sky-50/70 dark:bg-sky-950/60 shadow-sm' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-slate-300 dark:hover:border-slate-600'">
                                         <input type="radio" name="gateway" value="gotyme" x-model="chosen" @change="tried = false" class="mt-0.5 accent-sky-600 cursor-pointer">
@@ -386,6 +397,7 @@
                                             <span class="block text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Manual transfer · admin verified</span>
                                         </span>
                                     </label>
+                                    @endif
                                 </div>
                                 <p x-show="tried && !chosen" x-cloak style="display: none;" class="text-[11px] font-bold text-rose-600 mt-3 text-center">Please select a payment method before proceeding.</p>
                                 <button type="submit" class="mt-4 w-full px-6 py-3.5 rounded-2xl bg-slate-900 text-white font-bold text-sm hover:bg-slate-800 transition flex items-center justify-center gap-1.5 shadow-lg shadow-slate-900/20 cursor-pointer">
@@ -580,8 +592,10 @@
                                 <div class="flex items-center justify-between gap-2">
                                     <dt class="text-slate-400 dark:text-slate-500 font-medium">Method</dt>
                                     <dd class="font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider">
-                                        @if($booking->payment_method === 'qrph')
-                                            <span class="inline-flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-emerald-600">qr_code_2</span> QRPH · GCash/GoTyme</span>
+                                        @if($booking->payment_method === 'paymongo')
+                                            <span class="inline-flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-emerald-600">qr_code_2</span> PayMongo QR Ph · Live</span>
+                                        @elseif($booking->payment_method === 'qrph')
+                                            <span class="inline-flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-emerald-600">qr_code_2</span> QR Ph · Sandbox</span>
                                         @elseif($booking->payment_method === 'gotyme')
                                             <span class="inline-flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-sky-600">account_balance_wallet</span> GoTyme QR · Manual</span>
                                         @else
