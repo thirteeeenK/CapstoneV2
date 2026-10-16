@@ -6,7 +6,9 @@ use App\Models\Booking;
 use App\Models\PaymentWebhookEvent;
 use App\Notifications\BookingNotification;
 use App\Notifications\BookingPaid;
+use App\Services\Payment\PaymentGatewayException;
 use App\Services\Payment\PaymentService;
+use App\Services\Payment\QrphPaymentService;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -33,6 +35,19 @@ class PaymentWebhookController extends Controller
     public function handle(string $gateway, Request $request)
     {
         $event = $this->paymentService->handleWebhook($gateway, $request);
+
+        if (in_array($gateway, ['qrph', 'paymongo'], true)) {
+            if (! $event) {
+                return response('invalid or unsupported event', Response::HTTP_BAD_REQUEST);
+            }
+            try {
+                QrphPaymentService::forGateway($gateway)->webhook($event);
+            } catch (PaymentGatewayException) {
+                return response('event could not be processed', Response::HTTP_SERVICE_UNAVAILABLE);
+            }
+
+            return response('ok', Response::HTTP_OK);
+        }
 
         if (! $event) {
             return response('ignored', Response::HTTP_OK);

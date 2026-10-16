@@ -11,9 +11,10 @@ use App\Notifications\BookingPaid;
 use App\Services\AdminNotificationService;
 use App\Services\BookingExpiryService;
 use App\Services\BookingRequestService;
-use App\Services\Payment\Drivers\QrphDriver;
 use App\Services\Payment\GoTymePaymentService;
+use App\Services\Payment\PaymentGatewayException;
 use App\Services\Payment\PaymentService;
+use App\Services\Payment\QrphPaymentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -59,7 +60,9 @@ class BookingPaymentController extends Controller
             return redirect()->route('booking.pay.gotyme.show', $booking->booking_code);
         }
 
-        return view('booking.pay', compact('booking'));
+        $gateways = $this->paymentService->availableGateways();
+
+        return view('booking.pay', compact('booking', 'gateways'));
     }
 
     /**
@@ -81,15 +84,13 @@ class BookingPaymentController extends Controller
 
         $gateway = $request->input('gateway');
 
-        if (! in_array($gateway, ['card', 'qrph', 'gotyme'], true)) {
+        if (! in_array($gateway, ['card', 'qrph', 'gotyme', 'paymongo'], true)) {
             return redirect()->route('booking.show', $booking->booking_code)
                 ->with('error', 'Please select a payment method before proceeding.');
         }
 
         if ($gateway === 'gotyme') {
-            $this->goTymePaymentService->initialize($booking);
-
-            return redirect()->route('booking.pay.gotyme.show', $booking->booking_code);
+            return $this->goTymeInit($bookingCode);
         }
 
         if ($this->goTymePaymentService->hasActiveTransfer($booking)) {
@@ -98,20 +99,18 @@ class BookingPaymentController extends Controller
         }
 
         if ($gateway === 'qrph') {
-            $this->paymentService->createQrphPayment($booking);
-
-            return redirect()->route('booking.pay.qrph.show', $booking->booking_code);
+            return $this->qrphInit($bookingCode);
         }
 
-        // Card chosen — drop any stale QRPH session so the selected method wins.
-        if ($booking->gateway === 'qrph') {
-            $booking->gateway = null;
-            $booking->gateway_reference = null;
-            $booking->payment_url = null;
-            $booking->save();
+        if ($gateway === 'paymongo') {
+            return $this->paymongoInit($bookingCode);
         }
 
-        $result = $this->paymentService->createPayment($booking);
+        try {
+            $result = $this->paymentService->createCardPayment($booking);
+        } catch (PaymentGatewayException $exception) {
+            return redirect()->route('booking.show', $booking->booking_code)->with('error', $exception->getMessage());
+        }
 
         return redirect()->away($result['url']);
     }
@@ -122,6 +121,7 @@ class BookingPaymentController extends Controller
     public function simulatorShow($bookingCode)
     {
         $booking = $this->loadOwnedBooking($bookingCode);
+        abort_unless(! app()->isProduction() && $booking->gateway === 'simulator', 404);
 
         if ($this->expiryService->expireIfDue($booking)) {
             return redirect()->route('booking.show', $booking->booking_code)
@@ -142,6 +142,7 @@ class BookingPaymentController extends Controller
     public function simulatorConfirm($bookingCode)
     {
         $booking = $this->loadOwnedBooking($bookingCode);
+        abort_unless(! app()->isProduction() && $booking->gateway === 'simulator', 404);
 
         if ($this->expiryService->expireIfDue($booking)) {
             return redirect()->route('booking.show', $booking->booking_code)
@@ -165,6 +166,11 @@ class BookingPaymentController extends Controller
     public function return($bookingCode)
     {
         $booking = $this->loadOwnedBooking($bookingCode);
+        if (in_array($booking->gateway, ['qrph', 'paymongo'], true)) {
+            return $this->confirmQrPayment($bookingCode, $booking->gateway);
+        }
+
+        abort_if(app()->isProduction() && $booking->gateway === 'simulator', 404);
 
         if ($booking->status === Booking::STATUS_APPROVED && $this->paymentService->verifyReturn($booking)) {
             $this->markAsPaid($booking);
@@ -173,134 +179,117 @@ class BookingPaymentController extends Controller
         return redirect()->route('booking.show', $booking->booking_code);
     }
 
-    // ───────────────────────── QRPH (GCash / GoTyme) ─────────────────────────
-
-    /**
-     * Start a QRPH payment session (PayMongo or demo fallback).
-     */
-    public function qrphInit($bookingCode)
+    public function qrphInit(string $bookingCode): RedirectResponse
     {
-        $booking = $this->loadOwnedBooking($bookingCode);
-
-        if ($this->expiryService->expireIfDue($booking)) {
-            return redirect()->route('booking.show', $booking->booking_code)
-                ->with('error', 'This booking expired because payment was not completed within the 48-hour window.');
-        }
-
-        if ($booking->status !== Booking::STATUS_APPROVED) {
-            return redirect()->route('booking.show', $booking->booking_code)
-                ->with('error', 'This booking is not ready for payment.');
-        }
-
-        $this->paymentService->createQrphPayment($booking);
-
-        return redirect()->route('booking.pay.qrph.show', $booking->booking_code);
+        return $this->startQrPayment($bookingCode, 'qrph');
     }
 
-    /**
-     * Show the QRPH QR (real PayMongo QR Ph image or demo EMVCo string).
-     */
-    public function qrphShow($bookingCode)
+    public function paymongoInit(string $bookingCode): RedirectResponse
     {
-        $booking = $this->loadOwnedBooking($bookingCode);
-
-        if ($this->expiryService->expireIfDue($booking)) {
-            return redirect()->route('booking.show', $booking->booking_code)
-                ->with('error', 'This booking expired because payment was not completed within the 48-hour window.');
-        }
-
-        if ($booking->status !== Booking::STATUS_APPROVED) {
-            return redirect()->route('booking.show', $booking->booking_code)
-                ->with('error', 'This booking is not ready for payment.');
-        }
-
-        // Ensure a QRPH session exists (idempotent)
-        if ($booking->gateway !== 'qrph' || ! $booking->gateway_reference || ! $booking->payment_url) {
-            $this->paymentService->createQrphPayment($booking->fresh());
-            $booking->refresh();
-        }
-
-        $qrContent = app(QrphDriver::class)->qrContent($booking);
-        // Live QR Ph bookings have a pi_ reference and a base64 image
-        $isDemo = str_starts_with($booking->gateway_reference ?? '', 'QRPH-')
-            || str_starts_with($booking->gateway_reference ?? '', 'DEMO-')
-            || (! str_starts_with($qrContent, 'data:image') && ! str_starts_with($qrContent, 'https://'));
-        // If the reference is pi_ we are definitely live even if the heuristic above misfires
-        if (str_starts_with($booking->gateway_reference ?? '', 'pi_')) {
-            $isDemo = false;
-        }
-        $qrIsImage = str_starts_with($qrContent, 'data:image') || str_starts_with($qrContent, 'https://');
-        $qrTestUrl = $booking->gateway_data['test_url'] ?? null;
-
-        return view('booking.qrph', compact('booking', 'qrContent', 'isDemo', 'qrIsImage', 'qrTestUrl'));
+        return $this->startQrPayment($bookingCode, 'paymongo');
     }
 
-    /**
-     * Return URL after PayMongo (kept for legacy / direct-link safety).
-     * Polls the PaymentIntent — only marks paid when PayMongo confirms.
-     */
-    public function qrphReturn($bookingCode)
+    private function startQrPayment(string $bookingCode, string $gateway): RedirectResponse
     {
         $booking = $this->loadOwnedBooking($bookingCode);
+        try {
+            $result = QrphPaymentService::forGateway($gateway)->create($booking);
 
-        if ($booking->status === Booking::STATUS_APPROVED) {
-            if ($this->paymentService->verifyReturn($booking)) {
-                $booking->payment_method = 'qrph';
-                $booking->save();
-                $this->markAsPaid($booking);
-
-                return redirect()->route('booking.show', $booking->booking_code)
-                    ->with('success', 'Payment received via QRPH! Your booking is confirmed.');
-            }
-
-            // Not yet paid — keep the QR on screen so the user can scan and retry
-            return redirect()->route('booking.pay.qrph.show', $booking->booking_code)
-                ->with('error', 'Payment not yet confirmed — scan the QR in your GoTyme / GCash / Maya app, complete the payment, then tap "I\'ve completed the payment" to confirm.');
+            return redirect()->to($result['url']);
+        } catch (PaymentGatewayException $exception) {
+            return redirect()->route('booking.show', $booking->booking_code)->with('error', $exception->getMessage());
         }
-
-        return redirect()->route('booking.show', $booking->booking_code);
     }
 
-    /**
-     * Poll-on-button confirm: verifies with PayMongo for live (pi_) bookings,
-     * instantly confirms demo (QRPH-*) bookings. Chosen per user request.
-     */
-    public function qrphConfirm($bookingCode)
+    public function qrphShow(string $bookingCode): View|RedirectResponse
+    {
+        return $this->showQrPayment($bookingCode, 'qrph');
+    }
+
+    public function paymongoShow(string $bookingCode): View|RedirectResponse
+    {
+        return $this->showQrPayment($bookingCode, 'paymongo');
+    }
+
+    private function showQrPayment(string $bookingCode, string $gateway): View|RedirectResponse
     {
         $booking = $this->loadOwnedBooking($bookingCode);
-
-        if ($this->expiryService->expireIfDue($booking)) {
-            return redirect()->route('booking.show', $booking->booking_code)
-                ->with('error', 'This booking expired because payment was not completed within the 48-hour window.');
-        }
-
         if ($booking->status !== Booking::STATUS_APPROVED) {
+            return redirect()->route('booking.show', $booking->booking_code);
+        }
+
+        if ($booking->isPaymentDeadlinePassed()) {
             return redirect()->route('booking.show', $booking->booking_code)
-                ->with('error', 'This booking is not ready for payment.');
+                ->with('error', 'The booking payment deadline has passed. Contact support if you already paid.');
         }
 
-        // Demo refs are instantly confirmable (no PayMongo key / offline)
-        if (str_starts_with($booking->gateway_reference ?? '', 'QRPH-') || str_starts_with($booking->gateway_reference ?? '', 'DEMO-')) {
-            $booking->payment_method = 'qrph';
-            $booking->save();
-            $this->markAsPaid($booking);
+        $attempt = QrphPaymentService::forGateway($gateway)->latest($booking);
+        if (! $attempt || ! $attempt->qr_image) {
+            return redirect()->route('booking.pay', $booking->booking_code)
+                ->with('error', 'Create a QR Ph payment from this page to continue.');
+        }
 
+        $qrExpired = $attempt->expires_at?->isPast() || in_array($attempt->status, ['expired', 'cancelled', 'failed'], true);
+
+        return view('booking.qrph', compact('booking', 'attempt', 'qrExpired', 'gateway'));
+    }
+
+    public function qrphReturn(string $bookingCode): RedirectResponse
+    {
+        return $this->qrphConfirm($bookingCode);
+    }
+
+    public function qrphConfirm(string $bookingCode): RedirectResponse
+    {
+        return $this->confirmQrPayment($bookingCode, 'qrph');
+    }
+
+    public function paymongoReturn(string $bookingCode): RedirectResponse
+    {
+        return $this->confirmQrPayment($bookingCode, 'paymongo');
+    }
+
+    public function paymongoConfirm(string $bookingCode): RedirectResponse
+    {
+        return $this->confirmQrPayment($bookingCode, 'paymongo');
+    }
+
+    private function confirmQrPayment(string $bookingCode, string $gateway): RedirectResponse
+    {
+        $booking = $this->loadOwnedBooking($bookingCode);
+        if ($booking->payment_status === Booking::PAYMENT_PAID) {
+            return redirect()->route('booking.show', $booking->booking_code);
+        }
+        $service = QrphPaymentService::forGateway($gateway);
+        $attempt = $service->latest($booking);
+        if (! $attempt || ! $attempt->intent_id) {
             return redirect()->route('booking.show', $booking->booking_code)
-                ->with('success', 'Payment received via QRPH! Your booking is confirmed.');
+                ->with('error', 'There is no verifiable QR Ph payment for this booking.');
         }
 
-        // Live pi_ — poll PayMongo; only mark paid when PayMongo says succeeded
-        if (! $this->paymentService->verifyReturn($booking)) {
-            return redirect()->route('booking.pay.qrph.show', $booking->booking_code)
-                ->with('error', 'Payment not yet confirmed — please scan the QR in your GoTyme / GCash / Maya app, complete the payment, then try again. If your wallet had insufficient balance, the transaction would have been declined.');
+        try {
+            $attempt = $service->check($attempt);
+        } catch (PaymentGatewayException $exception) {
+            return redirect()->route('booking.pay.'.$gateway.'.show', $booking->booking_code)
+                ->with('error', $exception->getMessage());
         }
 
-        $booking->payment_method = 'qrph';
-        $booking->save();
-        $this->markAsPaid($booking);
+        if ($attempt->status === 'paid') {
+            return redirect()->route('booking.show', $booking->booking_code)
+                ->with('success', 'QR Ph payment confirmed. Your booking is now paid.');
+        }
+        if ($attempt->status === 'review_required') {
+            return redirect()->route('booking.show', $booking->booking_code)
+                ->with('error', 'A payment was received and needs support review. Please do not pay again.');
+        }
 
-        return redirect()->route('booking.show', $booking->booking_code)
-            ->with('success', 'Payment received via QRPH! Your booking is confirmed.');
+        return redirect()->route('booking.pay.'.$gateway.'.show', $booking->booking_code)
+            ->with('error', match ($attempt->status) {
+                'expired' => 'This QR code has expired. If you already paid, contact support before trying again.',
+                'failed' => 'The payment attempt failed. Check your bank or wallet before trying again.',
+                'cancelled' => 'This payment was cancelled. It has not confirmed your booking.',
+                default => 'Payment is still pending. Complete payment in your banking app, then check again shortly.',
+            });
     }
 
     public function goTymeInit(string $bookingCode): RedirectResponse
@@ -312,7 +301,11 @@ class BookingPaymentController extends Controller
                 ->with('error', 'This booking expired because payment was not completed within the 48-hour window.');
         }
 
-        $this->goTymePaymentService->initialize($booking);
+        try {
+            $this->goTymePaymentService->initialize($booking);
+        } catch (PaymentGatewayException $exception) {
+            return redirect()->route('booking.show', $booking->booking_code)->with('error', $exception->getMessage());
+        }
 
         return redirect()->route('booking.pay.gotyme.show', $booking->booking_code);
     }
@@ -332,7 +325,11 @@ class BookingPaymentController extends Controller
         }
 
         if ($booking->gateway !== 'gotyme') {
-            $booking = $this->goTymePaymentService->initialize($booking);
+            try {
+                $booking = $this->goTymePaymentService->initialize($booking);
+            } catch (PaymentGatewayException $exception) {
+                return redirect()->route('booking.show', $booking->booking_code)->with('error', $exception->getMessage());
+            }
         }
 
         $booking->load(['payments' => fn ($query) => $query->where('provider', 'gotyme')]);
@@ -354,11 +351,15 @@ class BookingPaymentController extends Controller
         }
 
         $validated = $request->validated();
-        $this->goTymePaymentService->submit(
-            $booking,
-            $validated['sender_ref'],
-            (string) $validated['claimed_amount']
-        );
+        try {
+            $this->goTymePaymentService->submit(
+                $booking,
+                $validated['sender_ref'],
+                (string) $validated['claimed_amount']
+            );
+        } catch (PaymentGatewayException $exception) {
+            return redirect()->route('booking.show', $booking->booking_code)->with('error', $exception->getMessage());
+        }
 
         return redirect()->route('booking.pay.gotyme.show', $booking->booking_code)
             ->with('success', 'GoTyme transfer submitted — awaiting admin verification. Your balance changes only after verification.');

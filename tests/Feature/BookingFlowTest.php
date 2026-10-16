@@ -249,6 +249,7 @@ it('expires approved bookings after the 48-hour window', function () {
 });
 
 it('marks a booking paid through the simulator', function () {
+    config()->set('services.payment.provider', 'simulator');
     addRoomToCart($this->user, $this->room);
     $this->actingAs($this->user)->post(route('checkout.process'), [
         'contact_name' => 'Juan Dela Cruz',
@@ -260,6 +261,7 @@ it('marks a booking paid through the simulator', function () {
     $booking = Booking::first();
     $booking->status = 'approved';
     $booking->payment_deadline = now()->addHours(48);
+    $booking->gateway = 'simulator';
     $booking->save();
 
     $this->actingAs($this->user)->post(route('booking.pay.simulator.confirm', $booking->booking_code))

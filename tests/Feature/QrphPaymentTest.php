@@ -1,435 +1,186 @@
 <?php
 
 use App\Models\Booking;
-use App\Models\RoomType;
+use App\Models\QrphPaymentAttempt;
 use App\Notifications\BookingPaid;
-use App\Services\Payment\Drivers\QrphDriver;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
-use Illuminate\Support\Str;
 
 beforeEach(function () {
-    Notification::fake();
-
-    $this->room = RoomType::factory()->create([
-        'base_price' => 1500.00,
-        'total_rooms' => 5,
-    ]);
-
-    $this->user = onboardedUser();
+    config()->set('services.payment.provider', 'auto');
+    config()->set('services.stripe.secret_key', 'sk_test_stripe_fixture');
+    config()->set('services.paymongo.secret_key', 'sk_live_paymongo_fixture');
+    config()->set('services.qrph.mode', 'test');
+    config()->set('services.qrph.secret_key', 'sk_test_fixture');
+    config()->set('services.qrph.webhook_secret', 'fixture_webhook_secret');
 });
 
-it('shows QRPH option on the payment page for an approved booking', function () {
-    $booking = Booking::factory()->approved()->create([
-        'user_id' => $this->user->id,
-        'net_amount' => '3000.00',
-    ]);
-
-    $this->actingAs($this->user)->get(route('booking.pay', $booking->booking_code))
-        ->assertOk()
-        ->assertSee('Pay with QRPH', false)
-        ->assertSee('GCash', false)
-        ->assertSee('GoTyme', false)
-        ->assertSee('Show QRPH QR', false)
-        ->assertSee('₱3,000.00', false);
+it('shows sandbox QR Ph alongside Stripe, manual GoTyme and live PayMongo', function () {
+    $user = onboardedUser();
+    $booking = Booking::factory()->approved()->for($user)->create(['net_amount' => '3000.00']);
+    $this->actingAs($user)->get(route('booking.pay', $booking->booking_code))
+        ->assertOk()->assertSee('QR Ph Sandbox')->assertSee('₱3,000.00', false)
+        ->assertSee('Pay with Card')->assertSee('Pay to GoTyme QR')->assertSee('PayMongo QR Ph — Live');
 });
 
-it('creates a QRPH session and shows a scannable QR with the actual amount', function () {
-    $booking = Booking::factory()->approved()->create([
-        'user_id' => $this->user->id,
-        'net_amount' => '4525.50',
-        'payment_deadline' => now()->addHours(48),
-    ]);
+it('creates a PayMongo session with the exact centavo amount and stores a pending QR', function () {
+    $user = onboardedUser();
+    $booking = Booking::factory()->approved()->for($user)->create(['net_amount' => '4525.50']);
+    fakePaymongoCreation();
 
-    $this->actingAs($this->user)->post(route('booking.pay.qrph', $booking->booking_code))
+    $this->actingAs($user)->post(route('booking.pay.qrph', $booking->booking_code))
         ->assertRedirect(route('booking.pay.qrph.show', $booking->booking_code));
 
-    $booking->refresh();
-    expect($booking->gateway)->toBe('qrph')
-        ->and($booking->gateway_reference)->toStartWith('QRPH-')
-        ->and($booking->payment_url)->not->toBeNull();
-
-    $show = $this->actingAs($this->user)->get(route('booking.pay.qrph.show', $booking->booking_code));
-    $show->assertOk()
-        ->assertSee('QRPH — GCash / GoTyme', false)
-        ->assertSee('₱4,525.50', false)
-        ->assertSee($booking->gateway_reference, false);
-
-    // QR content should embed the booking code and amount (demo EMVCo)
-    $driver = app(QrphDriver::class);
-    $qr = $driver->qrContent($booking);
-    expect($qr)->toContain($booking->booking_code)
-        ->and($qr)->toContain('4525.50');
+    $attempt = QrphPaymentAttempt::firstOrFail();
+    expect($booking->fresh())->gateway->toBe('qrph')->gateway_reference->toBe('pi_fixture')->payment_status->toBe('unpaid');
+    expect($attempt)->amount->toBe(452550)->status->toBe('pending')->livemode->toBeFalse();
+    Http::assertSentCount(3);
+    Http::assertSent(fn ($request) => $request->url() === 'https://api.paymongo.com/v1/payment_intents'
+        && $request['data']['attributes']['amount'] === 452550
+        && $request['data']['attributes']['payment_method_allowed'] === ['qrph']
+        && $request->hasHeader('Idempotency-Key', $attempt->uuid.'-intent'));
+    $this->actingAs($user)->get(route('booking.pay.qrph.show', $booking->booking_code))
+        ->assertOk()->assertSee('₱4,525.50', false)->assertSee('data:image/png;base64', false)->assertSee('Test mode');
 });
 
-it('marks a booking paid via QRPH confirm and sets payment_method to qrph', function () {
-    $booking = Booking::factory()->approved()->create([
-        'user_id' => $this->user->id,
-        'net_amount' => '2000.00',
-    ]);
+it('marks the correct booking paid after verifying a matching paid QR Ph payment', function () {
+    Notification::fake();
+    $user = onboardedUser();
+    $booking = Booking::factory()->approved()->for($user)->create();
+    $attempt = QrphPaymentAttempt::factory()->for($booking)->create();
+    Http::fake(['api.paymongo.com/v1/payment_intents/'.$attempt->intent_id => Http::response(paymongoIntentFixture($attempt, 'succeeded'))]);
 
-    $this->actingAs($this->user)->post(route('booking.pay.qrph', $booking->booking_code));
-
-    $this->actingAs($this->user)->post(route('booking.pay.qrph.confirm', $booking->booking_code))
+    $this->actingAs($user)->post(route('booking.pay.qrph.confirm', $booking->booking_code))
         ->assertRedirect(route('booking.show', $booking->booking_code));
-
-    $booking->refresh();
-    expect($booking->status)->toBe('paid')
-        ->and($booking->payment_status)->toBe('paid')
-        ->and($booking->payment_method)->toBe('qrph')
-        ->and($booking->gateway)->toBe('qrph')
-        ->and($booking->paid_at)->not->toBeNull();
-
-    Notification::assertSentTo($this->user, BookingPaid::class);
+    expect($booking->fresh())->status->toBe('paid')->payment_status->toBe('paid')
+        ->payment_method->toBe('qrph')->payment_reference->toBe('pay_fixture'.$attempt->id);
+    expect($attempt->fresh())->status->toBe('paid')->confirmed_at->not->toBeNull();
+    Notification::assertSentToTimes($user, BookingPaid::class, 1);
 });
 
-it('verifies QRPH return via PayMongo when configured and marks paid', function () {
-    // Without PAYMONGO_SECRET_KEY the driver falls back to demo (qrContent verifies as true)
-    // So the return path should still mark paid via verifyReturn (demo refs return true)
-    $booking = Booking::factory()->approved()->create([
-        'user_id' => $this->user->id,
-    ]);
-    $booking->gateway = 'qrph';
-    $booking->gateway_reference = 'QRPH-TEST1234';
-    $booking->payment_url = app(QrphDriver::class)->qrContent($booking);
-    $booking->save();
-
-    $this->actingAs($this->user)->get(route('booking.pay.qrph.return', $booking->booking_code))
-        ->assertRedirect(route('booking.show', $booking->booking_code));
-
-    // In demo mode verifyReturn returns true for QRPH-* refs, so it marks paid
-    expect($booking->fresh()->status)->toBe('paid');
+it('does not confirm legacy demo references on a QR Ph return', function () {
+    $user = onboardedUser();
+    $booking = Booking::factory()->approved()->for($user)->create(['gateway' => 'qrph', 'gateway_reference' => 'QRPH-TEST1234']);
+    $this->actingAs($user)->get(route('booking.pay.qrph.return', $booking->booking_code))
+        ->assertRedirect(route('booking.show', $booking->booking_code))->assertSessionHas('error');
+    expect($booking->fresh()->payment_status)->toBe('unpaid');
+    Http::assertNothingSent();
 });
 
-it('rejects QRPH confirm when booking is not approved', function () {
-    $booking = Booking::factory()->create([
-        'user_id' => $this->user->id,
-        'status' => 'pending',
-    ]);
-
-    $this->actingAs($this->user)->post(route('booking.pay.qrph.confirm', $booking->booking_code))
-        ->assertRedirect(route('booking.show', $booking->booking_code))
-        ->assertSessionHas('error');
-
+it('rejects QR Ph creation and confirmation for a booking that is not approved', function () {
+    $user = onboardedUser();
+    $booking = Booking::factory()->for($user)->create();
+    $this->actingAs($user)->post(route('booking.pay.qrph', $booking->booking_code))->assertSessionHas('error');
+    $this->post(route('booking.pay.qrph.confirm', $booking->booking_code))->assertSessionHas('error');
     expect($booking->fresh()->status)->toBe('pending');
+    Http::assertNothingSent();
 });
 
-it('does not treat a PayMongo source chargeable webhook as a completed payment', function () {
-    $secret = 'whsec_test_source_chargeable';
-    config()->set('services.qrph.webhook_secret', $secret);
-
-    $payload = json_encode([
-        'id' => 'evt_source_chargeable',
-        'type' => 'source.chargeable',
-        'data' => [
-            'id' => 'src_test',
-            'attributes' => [
-                'status' => 'chargeable',
-                'type' => 'gcash',
-                'metadata' => ['booking_code' => 'ST-2026-TEST1'],
-            ],
-        ],
-    ], JSON_THROW_ON_ERROR);
-    $timestamp = time();
-    $signature = hash_hmac('sha256', $timestamp.'.'.$payload, $secret);
-    $request = Request::create('/webhook/payment/qrph', 'POST', [], [], [], [
-        'HTTP_PAYMONGO_SIGNATURE' => "t={$timestamp},v1={$signature}",
-    ], $payload);
-    $eventData = [];
-
-    expect((new QrphDriver)->verifyWebhook($payload, $request, $eventData))->toBeFalse();
+it('never treats source chargeable as a completed QR Ph payment', function () {
+    $attempt = QrphPaymentAttempt::factory()->create();
+    [$body, $headers] = paymongoWebhookFixture($attempt, 'source.chargeable');
+    $this->call('POST', '/webhook/payment/qrph', [], [], [], $headers, $body)->assertBadRequest();
+    expect($attempt->booking->fresh()->payment_status)->toBe('unpaid');
 });
 
-it('exposes the QR content amount correctly for the actual booking total', function () {
-    $booking = Booking::factory()->approved()->create([
-        'user_id' => $this->user->id,
-        'net_amount' => '789.00',
-    ]);
-
-    $this->actingAs($this->user)->post(route('booking.pay.qrph', $booking->booking_code));
-    $booking->refresh();
-
-    $driver = new QrphDriver;
-    $qr = $driver->qrContent($booking);
-
-    // The QR string must be scannable and contain the exact amount with 2 decimals
-    expect($qr)->toContain('789.00');
-
-    // And the QR page should display that amount
-    $this->actingAs($this->user)->get(route('booking.pay.qrph.show', $booking->booking_code))
-        ->assertSee('₱789.00', false);
+it('keeps fractional and small booking amounts exact without rounding to another charge', function () {
+    $user = onboardedUser();
+    $booking = Booking::factory()->approved()->for($user)->create(['net_amount' => '789.01']);
+    fakePaymongoCreation();
+    $this->actingAs($user)->post(route('booking.pay.qrph', $booking->booking_code))->assertRedirect();
+    expect(QrphPaymentAttempt::firstOrFail()->amount)->toBe(78901);
+    $this->get(route('booking.pay.qrph.show', $booking->booking_code))->assertSee('₱789.01', false);
 });
 
-it('shows payment method as QRPH on the booking confirmation after paid via QRPH', function () {
-    $booking = Booking::factory()->approved()->create([
-        'user_id' => $this->user->id,
-        'net_amount' => '1500.00',
-    ]);
-    $this->actingAs($this->user)->post(route('booking.pay.qrph', $booking->booking_code));
-    $this->actingAs($this->user)->post(route('booking.pay.qrph.confirm', $booking->booking_code));
-
-    $this->actingAs($this->user)->get(route('booking.show', $booking->booking_code))
-        ->assertOk()
-        ->assertSee('QRPH', false);
+it('shows QRPH as the payment method on the verified booking confirmation', function () {
+    Notification::fake();
+    $user = onboardedUser();
+    $booking = Booking::factory()->approved()->for($user)->create();
+    $attempt = QrphPaymentAttempt::factory()->for($booking)->create();
+    Http::fake(['api.paymongo.com/v1/payment_intents/'.$attempt->intent_id => Http::response(paymongoIntentFixture($attempt, 'succeeded'))]);
+    $this->actingAs($user)->post(route('booking.pay.qrph.confirm', $booking->booking_code));
+    $this->get(route('booking.show', $booking->booking_code))->assertOk()->assertSee('QRPH');
 });
 
-it('shows the gateway selector on the booking page for approved bookings', function () {
-    config()->set('services.stripe.secret_key', 'sk_test_dummy');
-
-    $booking = Booking::factory()->approved()->create([
-        'user_id' => $this->user->id,
-        'net_amount' => '2500.00',
-    ]);
-
-    $this->actingAs($this->user)->get(route('booking.show', $booking->booking_code))
-        ->assertOk()
-        ->assertSee('Select a payment method', false)
-        ->assertSee('name="gateway" value="card"', false)
+it('keeps all four payment choices visible when Stripe and live PayMongo are configured', function () {
+    config()->set('services.stripe.secret_key', 'sk_test_fixture');
+    $user = onboardedUser();
+    $booking = Booking::factory()->approved()->for($user)->create();
+    $this->actingAs($user)->get(route('booking.show', $booking->booking_code))->assertOk()
         ->assertSee('name="gateway" value="qrph"', false)
-        ->assertSee('Proceed to Payment', false);
+        ->assertSee('name="gateway" value="card"', false)->assertSee('name="gateway" value="gotyme"', false)
+        ->assertSee('name="gateway" value="paymongo"', false);
 });
 
 it('rejects proceeding to payment without selecting a gateway', function () {
-    $booking = Booking::factory()->approved()->create([
-        'user_id' => $this->user->id,
-    ]);
-
-    $this->actingAs($this->user)->post(route('booking.pay.process', $booking->booking_code), [])
+    $user = onboardedUser();
+    $booking = Booking::factory()->approved()->for($user)->create();
+    $this->actingAs($user)->post(route('booking.pay.process', $booking->booking_code), [])
         ->assertRedirect(route('booking.show', $booking->booking_code))
         ->assertSessionHas('error', 'Please select a payment method before proceeding.');
-
-    expect($booking->fresh()->status)->toBe('approved')
-        ->and($booking->fresh()->gateway_reference)->toBeNull();
+    expect($booking->fresh()->gateway_reference)->toBeNull();
 });
 
-it('routes to the QRPH page when qrph gateway is selected on proceed', function () {
-    $booking = Booking::factory()->approved()->create([
-        'user_id' => $this->user->id,
-        'net_amount' => '3200.00',
-    ]);
-
-    $this->actingAs($this->user)->post(route('booking.pay.process', $booking->booking_code), ['gateway' => 'qrph'])
+it('routes a selected QR Ph gateway through the existing booking checkout', function () {
+    $user = onboardedUser();
+    $booking = Booking::factory()->approved()->for($user)->create();
+    fakePaymongoCreation();
+    $this->actingAs($user)->post(route('booking.pay.process', $booking->booking_code), ['gateway' => 'qrph'])
         ->assertRedirect(route('booking.pay.qrph.show', $booking->booking_code));
-
-    expect($booking->fresh()->gateway)->toBe('qrph')
-        ->and($booking->fresh()->gateway_reference)->toStartWith('QRPH-');
+    expect($booking->fresh()->gateway_reference)->toBe('pi_fixture');
 });
 
-it('starts a card session when card gateway is selected on proceed', function () {
-    config()->set('services.stripe.secret_key', null);
-
-    $booking = Booking::factory()->approved()->create([
-        'user_id' => $this->user->id,
-    ]);
-    // Stale QRPH session from an earlier attempt must be dropped when card is chosen
-    $booking->gateway = 'qrph';
-    $booking->gateway_reference = 'QRPH-STALE1';
-    $booking->payment_url = '00020101...stale';
-    $booking->save();
-
-    $response = $this->actingAs($this->user)->post(route('booking.pay.process', $booking->booking_code), ['gateway' => 'card']);
-
-    // Stripe not configured in tests → simulator driver, internal redirect
-    $booking->refresh();
-    expect($booking->gateway)->toBe('simulator')
-        ->and($booking->gateway_reference)->not->toBe('QRPH-STALE1');
-
-    $location = $response->headers->get('Location');
-    expect($location)->toContain($booking->booking_code);
+it('refuses another checkout without discarding an active live PayMongo reference', function () {
+    $user = onboardedUser();
+    $booking = Booking::factory()->approved()->for($user)->create(['gateway' => 'paymongo', 'gateway_reference' => 'pi_existing']);
+    QrphPaymentAttempt::factory()->for($booking)->create(['livemode' => true, 'intent_id' => 'pi_existing']);
+    $this->actingAs($user)->post(route('booking.pay.process', $booking->booking_code), ['gateway' => 'card'])->assertSessionHas('error');
+    expect($booking->fresh()->gateway_reference)->toBe('pi_existing');
+    Http::assertNothingSent();
 });
 
-// ── Live PayMongo QR Ph (GoTyme-scannable, poll-on-button) ──
-
-it('creates a real PayMongo QR Ph image in test mode and the QR is GoTyme-scannable', function () {
-    config()->set('services.qrph.secret_key', 'sk_test_fakesandbox_secret');
-    config()->set('services.stripe.secret_key', null);
-
-    $booking = Booking::factory()->approved()->create([
-        'user_id' => $this->user->id,
-        'net_amount' => '2850.75',
-    ]);
-
-    $piId = 'pi_'.Str::random(16);
-    $pmId = 'pm_'.Str::random(16);
-    $clientKey = $piId.'_client_'.Str::random(12);
-    $qrImage = 'data:image/png;base64,'.base64_encode('fake-qr-'.Str::random(32));
-
-    Http::fake(function ($request) use ($piId, $pmId, $clientKey, $qrImage, $booking) {
-        $url = $request->url();
-
-        if ($url === 'https://api.paymongo.com/v1/payment_intents' && $request->method() === 'POST') {
-            return Http::response([
-                'data' => [
-                    'id' => $piId,
-                    'type' => 'payment_intent',
-                    'attributes' => [
-                        'amount' => 285075,
-                        'currency' => 'PHP',
-                        'status' => 'awaiting_payment_method',
-                        'client_key' => $clientKey,
-                        'payment_method_allowed' => ['qrph'],
-                        'metadata' => ['booking_code' => $booking->booking_code],
-                    ],
-                ],
-            ], 200);
-        }
-
-        if ($url === 'https://api.paymongo.com/v1/payment_methods' && $request->method() === 'POST') {
-            return Http::response([
-                'data' => [
-                    'id' => $pmId,
-                    'type' => 'payment_method',
-                    'attributes' => ['type' => 'qrph'],
-                ],
-            ], 200);
-        }
-
-        if (str_contains($url, '/payment_intents/'.$piId.'/attach')) {
-            return Http::response([
-                'data' => [
-                    'id' => $piId,
-                    'type' => 'payment_intent',
-                    'attributes' => [
-                        'status' => 'awaiting_next_action',
-                        'next_action' => [
-                            'code' => [
-                                'id' => 'qr_'.Str::random(16),
-                                'amount' => 285075,
-                                'image_url' => $qrImage,
-                                'test_url' => 'https://secure-authentication.paymongo.com/sources?id=src_'.Str::random(16).'&code_id=qr_'.Str::random(16),
-                            ],
-                        ],
-                    ],
-                ],
-            ], 200);
-        }
-
-        return Http::response(['errors' => [['detail' => 'unexpected']]], 404);
-    });
-
-    // Proceed with QRPH → should hit PayMongo QR Ph flow, store pi_ + base64 image
-    $this->actingAs($this->user)->post(route('booking.pay.process', $booking->booking_code), ['gateway' => 'qrph'])
-        ->assertRedirect(route('booking.pay.qrph.show', $booking->booking_code));
-
-    $booking->refresh();
-    expect($booking->gateway)->toBe('qrph')
-        ->and($booking->gateway_reference)->toBe($piId)
-        ->and($booking->payment_url)->toBe($qrImage)
-        ->and($booking->payment_url)->toStartWith('data:image/png;base64,')
-        ->and($booking->gateway_data['test_url'] ?? null)->toContain('secure-authentication.paymongo.com');
-
-    // The QR page should now show Live QR Ph badge and render the image (GoTyme-scannable)
-    $show = $this->actingAs($this->user)->get(route('booking.pay.qrph.show', $booking->booking_code));
-    $show->assertOk()
-        ->assertSee('Live — PayMongo QR Ph', false)
-        ->assertSee('GoTyme-scannable', false)
-        ->assertSee('data:image/png;base64', false)
-        ->assertSee('₱2,850.75', false)
-        ->assertSee('Open PayMongo test authentication page', false);
-
-    // qrContent for a live booking is exactly the QR image
-    $driver = app(QrphDriver::class);
-    expect($driver->qrContent($booking))->toBe($qrImage);
-
-    Http::assertSent(function ($request) use ($booking) {
-        if ($request->url() !== 'https://api.paymongo.com/v1/payment_intents' || $request->method() !== 'POST') {
-            return false;
-        }
-        $data = $request->data();
-
-        return ($data['data']['attributes']['amount'] ?? null) === 285075
-            && ($data['data']['attributes']['currency'] ?? null) === 'PHP'
-            && ($data['data']['attributes']['payment_method_allowed'] ?? null) === ['qrph']
-            && ($data['data']['attributes']['metadata']['booking_code'] ?? null) === $booking->booking_code;
-    });
-
-    Http::assertSent(function ($request) {
-        return $request->url() === 'https://api.paymongo.com/v1/payment_methods'
-            && ($request->data()['data']['attributes']['type'] ?? null) === 'qrph';
-    });
+it('labels sandbox QR images accurately and presents only the safe test authentication link', function () {
+    $user = onboardedUser();
+    $booking = Booking::factory()->approved()->for($user)->create();
+    $attempt = QrphPaymentAttempt::factory()->for($booking)->create(['test_url' => 'https://secure-authentication.paymongo.com/fixture']);
+    $this->actingAs($user)->get(route('booking.pay.qrph.show', $booking->booking_code))
+        ->assertOk()->assertSee('Test mode')->assertSee('Do not scan or pay this QR code')
+        ->assertSee('Open PayMongo test authentication page')->assertDontSee('Live payment')
+        ->assertDontSee('sk_test_fixture')->assertDontSee('fixture_client_key');
+    Http::assertNothingSent();
 });
 
-it('confirms a PayMongo QR Ph payment via poll-on-button when PayMongo says succeeded', function () {
-    config()->set('services.qrph.secret_key', 'sk_test_fakesandbox_secret');
-
-    $booking = Booking::factory()->approved()->create([
-        'user_id' => $this->user->id,
-    ]);
-    $piId = 'pi_'.Str::random(16);
-    $booking->gateway = 'qrph';
-    $booking->gateway_reference = $piId;
-    $booking->payment_url = 'data:image/png;base64,'.base64_encode('fake-qr');
-    $booking->save();
-
-    Http::fake([
-        "api.paymongo.com/v1/payment_intents/{$piId}" => Http::response([
-            'data' => [
-                'id' => $piId,
-                'attributes' => ['status' => 'succeeded'],
-            ],
-        ], 200),
-    ]);
-
-    $this->actingAs($this->user)->post(route('booking.pay.qrph.confirm', $booking->booking_code))
-        ->assertRedirect(route('booking.show', $booking->booking_code));
-
-    expect($booking->fresh()->status)->toBe('paid')
-        ->and($booking->fresh()->payment_method)->toBe('qrph');
+it('makes repeated payment confirmation a no-op with one history entry and notification', function () {
+    Notification::fake();
+    $user = onboardedUser();
+    $booking = Booking::factory()->approved()->for($user)->create();
+    $attempt = QrphPaymentAttempt::factory()->for($booking)->create();
+    Http::fake(['api.paymongo.com/v1/payment_intents/'.$attempt->intent_id => Http::response(paymongoIntentFixture($attempt, 'succeeded'))]);
+    $this->actingAs($user)->post(route('booking.pay.qrph.confirm', $booking->booking_code))->assertRedirect();
+    $this->post(route('booking.pay.qrph.confirm', $booking->booking_code))->assertRedirect();
+    expect($booking->history()->where('to_status', 'paid')->count())->toBe(1);
+    Notification::assertSentToTimes($user, BookingPaid::class, 1);
+    Http::assertSentCount(1);
 });
 
-it('does not mark paid when PayMongo still shows awaiting_next_action on poll', function () {
-    config()->set('services.qrph.secret_key', 'sk_test_fakesandbox_secret');
-
-    $booking = Booking::factory()->approved()->create([
-        'user_id' => $this->user->id,
-    ]);
-    $piId = 'pi_'.Str::random(16);
-    $booking->gateway = 'qrph';
-    $booking->gateway_reference = $piId;
-    $booking->payment_url = 'data:image/png;base64,'.base64_encode('fake-qr');
-    $booking->save();
-
-    Http::fake([
-        "api.paymongo.com/v1/payment_intents/{$piId}" => Http::response([
-            'data' => [
-                'id' => $piId,
-                'attributes' => ['status' => 'awaiting_next_action'],
-            ],
-        ], 200),
-    ]);
-
-    $this->actingAs($this->user)->post(route('booking.pay.qrph.confirm', $booking->booking_code))
-        ->assertRedirect(route('booking.pay.qrph.show', $booking->booking_code))
-        ->assertSessionHas('error');
-
+it('keeps an awaiting-next-action QR Ph payment unpaid', function () {
+    $user = onboardedUser();
+    $booking = Booking::factory()->approved()->for($user)->create();
+    $attempt = QrphPaymentAttempt::factory()->for($booking)->create();
+    Http::fake(['api.paymongo.com/v1/payment_intents/'.$attempt->intent_id => Http::response(paymongoIntentFixture($attempt))]);
+    $this->actingAs($user)->post(route('booking.pay.qrph.confirm', $booking->booking_code))
+        ->assertRedirect(route('booking.pay.qrph.show', $booking->booking_code))->assertSessionHas('error');
     expect($booking->fresh()->status)->toBe('approved');
+    expect($attempt->fresh()->status)->toBe('pending');
 });
 
-it('confirms a PayMongo QR Ph payment on return polling when succeeded', function () {
-    config()->set('services.qrph.secret_key', 'sk_test_fakesandbox_secret');
-
-    $booking = Booking::factory()->approved()->create([
-        'user_id' => $this->user->id,
-    ]);
-    $piId = 'pi_'.Str::random(16);
-    $booking->gateway = 'qrph';
-    $booking->gateway_reference = $piId;
-    $booking->payment_url = 'data:image/png;base64,'.base64_encode('fake-qr');
-    $booking->save();
-
-    Http::fake([
-        "api.paymongo.com/v1/payment_intents/{$piId}" => Http::response([
-            'data' => [
-                'id' => $piId,
-                'attributes' => ['status' => 'succeeded'],
-            ],
-        ], 200),
-    ]);
-
-    $this->actingAs($this->user)->get(route('booking.pay.qrph.return', $booking->booking_code))
-        ->assertRedirect(route('booking.show', $booking->booking_code));
-
-    expect($booking->fresh()->status)->toBe('paid')
-        ->and($booking->fresh()->payment_method)->toBe('qrph');
+it('verifies payment on return using the stored intent rather than browser query parameters', function () {
+    Notification::fake();
+    $user = onboardedUser();
+    $booking = Booking::factory()->approved()->for($user)->create();
+    $attempt = QrphPaymentAttempt::factory()->for($booking)->create();
+    Http::fake(['api.paymongo.com/v1/payment_intents/'.$attempt->intent_id => Http::response(paymongoIntentFixture($attempt, 'succeeded'))]);
+    $this->actingAs($user)->get(route('booking.pay.qrph.return', $booking->booking_code).'?status=paid&payment_intent_id=pi_attacker')->assertRedirect();
+    expect($booking->fresh()->status)->toBe('paid');
+    Http::assertSentCount(1);
 });

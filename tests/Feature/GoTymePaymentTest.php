@@ -9,6 +9,7 @@ use App\Notifications\BookingPaid;
 use Illuminate\Support\Facades\Notification;
 
 beforeEach(function (): void {
+    config()->set('services.payment.provider', 'auto');
     Notification::fake();
     config()->set('services.gotyme', [
         'qr_image' => 'images/qr_gotyme.jpg',

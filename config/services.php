@@ -72,7 +72,7 @@ return [
     ],
 
     'payment' => [
-        // 'auto' | 'stripe' | 'simulator'
+        // Default resolution does not hide or replace explicitly selected methods.
         'provider' => env('PAYMENT_PROVIDER', 'auto'),
     ],
 
@@ -83,12 +83,18 @@ return [
     ],
 
     'qrph' => [
-        'provider' => env('QRPH_PROVIDER', 'paymongo'),
-        'secret_key' => env('PAYMONGO_SECRET_KEY'),
+        'mode' => 'test',
+        'secret_key' => env('PAYMONGO_TEST_SECRET_KEY') ?: env('PAYMONGO_SECRET_KEY'),
+        'webhook_secret' => env('PAYMONGO_TEST_WEBHOOK_SECRET'),
+        'expiry_seconds' => 1800,
+    ],
+
+    'paymongo' => [
+        'mode' => 'live',
+        'secret_key' => env('PAYMONGO_LIVE_SECRET_KEY') ?: env('PAYMONGO_SECRET_KEY'),
         'webhook_secret' => env('PAYMONGO_WEBHOOK_SECRET'),
-        'merchant_name' => env('QRPH_MERCHANT_NAME', 'SunnyTrips'),
-        'merchant_account' => env('QRPH_MERCHANT_ACCOUNT', ''),
-        'city' => env('QRPH_CITY', 'Manila'),
+        'webhook_url' => env('PAYMONGO_WEBHOOK_URL'),
+        'expiry_seconds' => 1800,
     ],
 
     'gotyme' => [
