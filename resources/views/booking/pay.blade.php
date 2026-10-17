@@ -13,15 +13,15 @@
             </div>
             @if ($gateways['paymongo'])
                 <div class="space-y-3">
-                    <h2 class="font-headline text-lg font-bold text-ink-900 dark:text-white">PayMongo QR Ph — Live</h2>
-                    <p class="text-sm leading-relaxed text-slate-600 dark:text-slate-300">Pay the exact amount with a participating bank or wallet. Your booking is confirmed after PayMongo verifies payment.</p>
+                    <h2 class="font-headline text-lg font-bold text-ink-900 dark:text-white">PayMongo QR Ph — {{ app(\App\Services\Payment\PaymentEnvironmentResolver::class)->isLive() ? 'Live' : 'Sandbox' }}</h2>
+                    <p class="text-sm leading-relaxed text-slate-600 dark:text-slate-300">{{ app(\App\Services\Payment\PaymentEnvironmentResolver::class)->isLive() ? 'Pay the exact amount with a participating bank or wallet. Your booking is confirmed after PayMongo verifies payment.' : 'Use PayMongo’s test authentication page to simulate payment. Do not scan or pay this QR code with a banking app.' }}</p>
                     <form action="{{ route('booking.pay.paymongo', $booking->booking_code) }}" method="POST">
                         @csrf
                         <button type="submit" class="min-h-11 w-full rounded-2xl bg-ocean-700 px-6 py-3 text-sm font-bold text-white hover:bg-ocean-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ocean-700">Pay with PayMongo QR Ph</button>
                     </form>
                 </div>
             @else
-                <p role="status" class="text-sm text-slate-700 dark:text-slate-200">Live PayMongo QR Ph is temporarily unavailable. Please choose another payment method.</p>
+                <p role="status" class="text-sm text-slate-700 dark:text-slate-200">PayMongo QR Ph is temporarily unavailable in {{ app(\App\Services\Payment\PaymentEnvironmentResolver::class)->isLive() ? 'live' : 'test' }} mode. Please choose another payment method.</p>
             @endif
             @if ($gateways['qrph'])
                 <div class="space-y-3">

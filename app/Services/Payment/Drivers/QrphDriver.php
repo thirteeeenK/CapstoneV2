@@ -6,6 +6,7 @@ namespace App\Services\Payment\Drivers;
 
 use App\Models\Booking;
 use App\Models\QrphPaymentAttempt;
+use App\Services\Payment\PaymentEnvironmentResolver;
 use App\Services\Payment\PaymentGatewayException;
 use App\Services\Payment\QrphPaymentService;
 use Illuminate\Http\Client\ConnectionException;
@@ -29,12 +30,12 @@ class QrphDriver implements PaymentDriver
 
     public function livemode(): bool
     {
-        return $this->name() === 'paymongo';
+        return app(PaymentEnvironmentResolver::class)->gatewayIsLive($this->name());
     }
 
     protected function configuration(string $key): mixed
     {
-        return config('services.'.$this->name().'.'.$key);
+        return app(PaymentEnvironmentResolver::class)->qrConfiguration($this->name(), $key);
     }
 
     public function qrContent(Booking $booking): string
@@ -56,7 +57,8 @@ class QrphDriver implements PaymentDriver
             'payment_method_allowed' => ['qrph'],
             'capture_type' => 'automatic',
             'description' => 'SunnyTrips '.$booking->booking_code,
-            'metadata' => ['booking_code' => $booking->booking_code, 'attempt_id' => $attempt->uuid],
+            'metadata' => array_filter(['booking_code' => $booking->booking_code, 'attempt_id' => $attempt->uuid,
+                'payment_request_id' => $attempt->booking_payment_request_id ? (string) $attempt->booking_payment_request_id : null]),
         ], $attempt->uuid.'-intent');
     }
 
@@ -86,6 +88,14 @@ class QrphDriver implements PaymentDriver
         }
 
         return $this->request('GET', '/payment_intents/'.$reference);
+    }
+
+    public function cancel(string $reference, string $idempotencyKey): void
+    {
+        if (! preg_match('/^pi_[A-Za-z0-9]+$/D', $reference)) {
+            throw new PaymentGatewayException('The payment intent reference is invalid.');
+        }
+        $this->request('POST', '/payment_intents/'.$reference.'/cancel', [], $idempotencyKey);
     }
 
     /**

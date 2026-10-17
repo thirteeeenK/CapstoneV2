@@ -79,7 +79,7 @@
             <div class="bg-white rounded-3xl border border-slate-200/80 shadow-xs p-5">
                 <p class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Revenue</p>
                 <p class="text-2xl font-black text-emerald-700 mt-1">₱{{ number_format($collected, 2) }}</p>
-                <p class="text-[11px] text-slate-500 mt-1">Collected (paid) · +₱{{ number_format($estimated, 2) }} awaiting payment</p>
+                <p class="text-[11px] text-slate-500 mt-1">Net collected after refunds · +₱{{ number_format($estimated, 2) }} awaiting payment</p>
             </div>
             <div class="bg-white rounded-3xl border border-slate-200/80 shadow-xs p-5">
                 <p class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Avg Booking Value</p>
@@ -161,7 +161,7 @@
                                     <span class="text-[10px] font-black text-white">{{ $row->bookings }}</span>
                                 </div>
                             </div>
-                            <span class="w-28 shrink-0 text-right text-[11px] font-bold text-emerald-700">₱{{ number_format($row->collected + $row->estimated, 2) }}</span>
+                            <span class="w-28 shrink-0 text-right text-[11px] font-bold text-emerald-700">₱{{ number_format($row->collected, 2) }}</span>
                         </div>
                     @endforeach
                 </div>

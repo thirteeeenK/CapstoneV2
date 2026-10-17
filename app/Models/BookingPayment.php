@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['booking_id', 'provider', 'sender_reference', 'normalized_reference', 'claimed_amount', 'verified_amount', 'status', 'submitted_at', 'verified_at', 'verified_by_admin_id', 'admin_note'])]
+#[Fillable(['booking_id', 'booking_payment_request_id', 'provider', 'sender_reference', 'normalized_reference', 'claimed_amount', 'verified_amount', 'status', 'submitted_at', 'verified_at', 'verified_by_admin_id', 'admin_note'])]
 class BookingPayment extends Model
 {
     /** @use HasFactory<BookingPaymentFactory> */

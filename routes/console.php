@@ -11,5 +11,6 @@ Artisan::command('inspire', function () {
 Schedule::command('bookings:expire')->hourly();
 Schedule::command('payments:reconcile-qrph')->everyMinute()->withoutOverlapping();
 Schedule::command('payments:reconcile-qrph --gateway=qrph')->everyMinute()->withoutOverlapping();
+Schedule::command('payments:process')->everyMinute()->withoutOverlapping();
 Schedule::command('trips:process-journey')->hourly()->withoutOverlapping()->when(fn () => config('services.trip_journey.enabled'));
 Schedule::command('accounts:delete-expired')->everyMinute()->withoutOverlapping();

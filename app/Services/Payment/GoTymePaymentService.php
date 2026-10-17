@@ -7,6 +7,7 @@ namespace App\Services\Payment;
 use App\Models\AdminModel;
 use App\Models\Booking;
 use App\Models\BookingPayment;
+use App\Models\BookingPaymentRequest;
 use App\Services\AdminNotificationService;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
@@ -19,9 +20,13 @@ final class GoTymePaymentService
         return app(PaymentService::class)->withBookingLock($booking->id, fn (): Booking => DB::transaction(function () use ($booking): Booking {
             $lockedBooking = Booking::query()->lockForUpdate()->findOrFail($booking->getKey());
             $this->ensureApproved($lockedBooking);
+            if ($lockedBooking->payment_plan_version === 2) {
+                app(BookingPaymentPolicy::class)->assertCollectible($lockedBooking);
+            }
             app(PaymentService::class)->assertCanSelectGateway($lockedBooking, 'gotyme');
 
             $lockedBooking->forceFill([
+                'payment_environment' => app(PaymentEnvironmentResolver::class)->mode(),
                 'gateway' => 'gotyme',
                 'gateway_reference' => 'GOTYME-'.$lockedBooking->booking_code,
                 'payment_method' => 'gotyme',
@@ -41,11 +46,21 @@ final class GoTymePaymentService
             return app(PaymentService::class)->withBookingLock($booking->id, fn (): BookingPayment => DB::transaction(function () use ($booking, $senderReference, $claimedAmount): BookingPayment {
                 $lockedBooking = Booking::query()->lockForUpdate()->findOrFail($booking->getKey());
                 $this->ensureApproved($lockedBooking);
+                $collection = null;
+                if ($lockedBooking->payment_plan_version === 2) {
+                    app(BookingPaymentPolicy::class)->assertCollectible($lockedBooking);
+                    $collection = BookingPaymentRequest::where('booking_id', $lockedBooking->id)
+                        ->where('gateway', 'gotyme')->whereIn('status', ['creating', 'pending'])->lockForUpdate()->first();
+                    if (! $collection) {
+                        throw new PaymentGatewayException('Choose the amount to pay before submitting a GoTyme transfer.');
+                    }
+                }
                 app(PaymentService::class)->assertCanSelectGateway($lockedBooking, 'gotyme');
 
                 $trimmedReference = trim($senderReference);
                 $payment = $lockedBooking->payments()->create([
                     'provider' => 'gotyme',
+                    'booking_payment_request_id' => $collection?->id,
                     'sender_reference' => $trimmedReference,
                     'normalized_reference' => $this->normalizeReference($trimmedReference),
                     'claimed_amount' => $claimedAmount,
@@ -53,7 +68,10 @@ final class GoTymePaymentService
                     'submitted_at' => now(),
                 ]);
 
+                $collection?->update(['status' => 'awaiting_verification']);
+
                 $lockedBooking->forceFill([
+                    'payment_environment' => app(PaymentEnvironmentResolver::class)->mode(),
                     'gateway' => 'gotyme',
                     'gateway_reference' => 'GOTYME-'.$lockedBooking->booking_code,
                     'payment_method' => 'gotyme',
@@ -112,6 +130,13 @@ final class GoTymePaymentService
             ])->save();
 
             $summary = $this->summary($lockedBooking);
+            if ($payment->booking_payment_request_id) {
+                $collection = BookingPaymentRequest::findOrFail($payment->booking_payment_request_id);
+                app(BookingPaymentAccountingService::class)->receipt($collection, 'manual-'.$payment->id, BookingPaymentPolicy::cents($verifiedAmount), null, $admin);
+                $summary = app(BookingPaymentAccountingService::class)->summary($lockedBooking->fresh());
+
+                return ['completed' => $summary['remaining_cents'] === 0] + $summary;
+            }
             $completed = $summary['remaining_cents'] === 0;
 
             if ($completed) {
@@ -144,6 +169,9 @@ final class GoTymePaymentService
      */
     public function summary(Booking $booking): array
     {
+        if ($booking->payment_plan_version === 2) {
+            return app(BookingPaymentAccountingService::class)->summary($booking);
+        }
         $verified = (string) $booking->payments()
             ->where('provider', 'gotyme')
             ->where('status', BookingPayment::STATUS_VERIFIED)
@@ -167,6 +195,11 @@ final class GoTymePaymentService
 
     public function hasActiveTransfer(Booking $booking): bool
     {
+        if ($booking->payment_plan_version === 2) {
+            return BookingPaymentRequest::where('booking_id', $booking->id)->where('gateway', 'gotyme')
+                ->whereIn('status', BookingPaymentRequest::ACTIVE)->exists();
+        }
+
         return $booking->payments()
             ->where('provider', 'gotyme')
             ->whereIn('status', [BookingPayment::STATUS_SUBMITTED, BookingPayment::STATUS_VERIFIED])
@@ -175,6 +208,7 @@ final class GoTymePaymentService
 
     private function ensureApproved(Booking $booking): void
     {
+        app(PaymentEnvironmentResolver::class)->assertBooking($booking);
         if ($booking->status !== Booking::STATUS_APPROVED) {
             throw ValidationException::withMessages([
                 'payment' => 'Only approved bookings awaiting payment can use GoTyme.',

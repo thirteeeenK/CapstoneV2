@@ -85,6 +85,9 @@
                 <option value="pending" {{ $status === 'pending' ? 'selected' : '' }}>Pending review</option>
                 <option value="approved" {{ $status === 'approved' ? 'selected' : '' }}>Approved (awaiting payment)</option>
                 <option value="cancellation_requested" {{ $status === 'cancellation_requested' ? 'selected' : '' }}>Cancellation requests</option>
+                <option value="reserved" @selected($status === 'reserved')>Reserved · Deposit paid</option>
+                <option value="overdue" @selected($status === 'overdue')>Payment overdue / review</option>
+                <option value="awaiting_deposit" @selected($status === 'awaiting_deposit')>Awaiting reservation deposit</option>
                 <option value="paid" {{ $status === 'paid' ? 'selected' : '' }}>Paid</option>
                 <option value="completed" {{ $status === 'completed' ? 'selected' : '' }}>Completed</option>
                 <option value="rejected" {{ $status === 'rejected' ? 'selected' : '' }}>Rejected</option>

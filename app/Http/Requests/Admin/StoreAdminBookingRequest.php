@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Admin;
 
 use App\Models\RoomType;
+use App\Services\TripBookingDatePolicy;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -38,14 +39,16 @@ class StoreAdminBookingRequest extends FormRequest
             'items.*.item_id' => ['required', 'integer'],
             'items.*.quantity' => ['required', 'integer', 'min:1', 'max:50'],
             'items.*.selected_pax' => ['required', 'integer', 'min:1', 'max:100'],
-            'items.*.check_in_date' => ['nullable', 'date'],
-            'items.*.check_out_date' => ['nullable', 'date'],
+            'items.*.check_in_date' => ['nullable', 'date_format:Y-m-d'],
+            'items.*.check_out_date' => ['nullable', 'date_format:Y-m-d'],
             'guest_manifest' => ['nullable', 'array'],
             'guest_manifest.*.full_name' => ['nullable', 'string', 'max:150'],
             'guest_manifest.*.category' => ['nullable', 'string', 'max:50'],
             'admin_discount_amount' => ['nullable', 'numeric', 'min:0', 'max:999999'],
             'admin_surcharge_amount' => ['nullable', 'numeric', 'min:0', 'max:999999'],
             'price_adjustment_reason' => ['nullable', 'string', 'max:500'],
+            'payment_deadline_override' => ['nullable', 'date', 'after:now'],
+            'payment_environment' => ['nullable', app()->isProduction() ? 'in:live' : 'in:live,test'],
             'initial_status' => ['required', 'string', 'in:pending,approved,paid'],
             'payment_method' => ['nullable', 'required_if:initial_status,paid', 'string', 'max:50'],
             'payment_reference' => ['nullable', 'string', 'max:100'],
@@ -79,8 +82,6 @@ class StoreAdminBookingRequest extends FormRequest
                 $validator->errors()->add('price_adjustment_reason', 'A reason is required when applying an admin discount or surcharge.');
             }
 
-            $today = today()->format('Y-m-d');
-
             foreach ((array) $this->input('items', []) as $index => $item) {
                 $type = $item['item_type'] ?? null;
                 $checkIn = $item['check_in_date'] ?? null;
@@ -100,8 +101,8 @@ class StoreAdminBookingRequest extends FormRequest
                     continue;
                 }
 
-                if ($checkIn < $today) {
-                    $validator->errors()->add("items.{$index}.check_in_date", 'Room check-in date cannot be in the past.');
+                if ($checkIn < app(TripBookingDatePolicy::class)->minimumArrivalDate()) {
+                    $validator->errors()->add("items.{$index}.check_in_date", app(TripBookingDatePolicy::class)->message());
                 }
 
                 $room = RoomType::find($item['item_id'] ?? null);

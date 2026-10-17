@@ -11,7 +11,7 @@ use Illuminate\Validation\ValidationException;
 
 class SystemSettingsService
 {
-    public const SECTIONS = ['business', 'accounts', 'support', 'chatbot', 'notifications'];
+    public const SECTIONS = ['business', 'accounts', 'payments', 'support', 'chatbot', 'notifications'];
 
     /** @var Collection<string, SystemSetting>|null */
     private ?Collection $records = null;
@@ -58,7 +58,7 @@ class SystemSettingsService
     public function save(string $section, array $values, int $revision, AdminModel $admin): void
     {
         $this->defaults($section);
-        $values = $this->normalize($section, $values);
+        $values = $this->normalize($section, array_replace($this->section($section), $values));
 
         DB::transaction(function () use ($section, $values, $revision, $admin): void {
             // ON CONFLICT avoids aborting a PostgreSQL transaction on concurrent first saves.

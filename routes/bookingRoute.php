@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\BookingConfirmationController;
+use App\Http\Controllers\BookingInstallmentController;
 use App\Http\Controllers\BookingPaymentController;
 use App\Http\Controllers\User\MyBookingsController;
 use Illuminate\Support\Facades\Route;
@@ -11,6 +12,11 @@ Route::middleware(['auth', 'throttle:users'])->group(function () {
     Route::prefix('bookings')->name('booking.')->group(function () {
         Route::get('/{code}', [BookingConfirmationController::class, 'show'])->name('show');
         Route::get('/{code}/itinerary/{version}', [BookingConfirmationController::class, 'itinerary'])->whereNumber('version')->name('itinerary');
+        Route::post('/{code}/installments', [BookingInstallmentController::class, 'store'])->name('installment.store');
+        Route::get('/{code}/payments/{uuid}', [BookingInstallmentController::class, 'show'])->whereUuid('uuid')->name('installment.show');
+        Route::post('/{code}/payments/{uuid}/confirm', [BookingInstallmentController::class, 'confirm'])->whereUuid('uuid')->name('installment.confirm');
+        Route::post('/{code}/payments/{uuid}/cancel', [BookingInstallmentController::class, 'cancel'])->whereUuid('uuid')->name('installment.cancel');
+        Route::post('/{code}/payments/{uuid}/resume', [BookingInstallmentController::class, 'resume'])->whereUuid('uuid')->name('installment.resume');
         Route::get('/{code}/pay', [BookingPaymentController::class, 'show'])->name('pay');
         Route::post('/{code}/pay', [BookingPaymentController::class, 'pay'])->name('pay.process');
         Route::get('/{code}/pay/return', [BookingPaymentController::class, 'return'])->name('pay.return');

@@ -4,8 +4,8 @@
 
 @section('content')
     @php
-        $titles = ['business' => 'Business information', 'accounts' => 'Account deletion', 'support' => 'Support availability', 'chatbot' => 'Guest chatbot limits', 'notifications' => 'Admin email notifications'];
-        $descriptions = ['business' => 'Contact details shown to travelers.', 'accounts' => 'Choose how new customer deletion requests are handled.', 'support' => 'Control when travelers can request a human agent.', 'chatbot' => 'Manage the message allowance for visitors who are not signed in.', 'notifications' => 'Choose which operational emails your team receives.'];
+        $titles = ['business' => 'Business information', 'accounts' => 'Account deletion', 'payments' => 'Booking & payments', 'support' => 'Support availability', 'chatbot' => 'Guest chatbot limits', 'notifications' => 'Admin email notifications'];
+        $descriptions = ['business' => 'Contact details shown to travelers.', 'accounts' => 'Choose how new customer deletion requests are handled.', 'payments' => 'Set payment windows for new approvals. Existing bookings keep their agreed deadlines.', 'support' => 'Control when travelers can request a human agent.', 'chatbot' => 'Manage the message allowance for visitors who are not signed in.', 'notifications' => 'Choose which operational emails your team receives.'];
     @endphp
     <div class="mx-auto max-w-5xl pb-12 font-body">
         <div class="mb-8">
@@ -62,7 +62,26 @@
                                     <textarea id="business-address" name="values[address]" maxlength="500" rows="3" class="mt-1 w-full rounded-lg border-slate-300 text-sm focus:border-ocean-500 focus:ring-ocean-500">{{ $values['address'] ?? '' }}</textarea>
                                 </div>
                                 <p class="text-xs leading-relaxed text-slate-500">Social links must start with https://. Empty optional contact fields are hidden. Mail sender details and sign-in branding are managed separately.</p>
+                            @elseif($section === 'payments')
+                                <div class="rounded-xl bg-ocean-50 p-4 text-sm text-ocean-900">
+                                    Customers can pay in full or reserve with a fixed 50% deposit when their payment deadlines and booking total allow it.
+                                </div>
+                                <input type="hidden" name="values[installments_enabled]" value="0">
+                                <label class="flex min-h-11 items-center gap-3">
+                                    <input type="checkbox" name="values[installments_enabled]" value="1" @checked($values['installments_enabled']) class="rounded border-slate-300 text-ocean-700">
+                                    <span class="text-sm font-semibold">Offer full payment or 50% deposit on new approvals</span>
+                                </label>
+                                <input type="hidden" name="values[service_cutoff_hours]" value="{{ $values['service_cutoff_hours'] }}">
+                                @foreach(['initial_window_hours' => ['Initial payment window after reservation submission (hours)', 1, 720], 'deposit_min_advance_days' => ['Deposit allowed only when booked more than this many days ahead', 1, 90], 'balance_lead_days' => ['Remaining balance due before trip or fixed service (days)', 1, 90], 'undated_balance_days' => ['Balance window after approval for bookings without travel dates (days)', 1, 90]] as $field => [$label, $minimum, $maximum])
+                                    <div>
+                                        <x-input-label :for="'payments-'.$field" :value="$label" />
+                                        <x-text-input :id="'payments-'.$field" type="number" :name="'values['.$field.']'" :value="$values[$field]" :min="$minimum" :max="$maximum" step="1" required class="mt-1 block w-full" :aria-describedby="'payments-'.$field.'-error'" />
+                                        <x-input-error :id="'payments-'.$field.'-error'" :messages="$errors->get('values.'.$field)" class="mt-1" />
+                                    </div>
+                                @endforeach
+                                <p class="text-xs leading-relaxed text-slate-500">New hotel arrivals must be at least two Philippine calendar days ahead. Dated bookings submitted within the deposit threshold, including exactly that many days ahead, require full payment. Initial payment is due within the submission window and before check-in; short-notice stays have a shorter window. Hotel check-in time is used when available, with 9 AM as the date-only fallback. Undated activities retain the balance window after approval. Existing approved terms are preserved; QR expiry does not extend a deadline.</p>
                             @elseif($section === 'accounts')
+
                                 <fieldset class="space-y-3">
                                     <legend class="mb-3 text-sm font-semibold text-slate-800">When a customer deletes their account</legend>
                                     <label class="flex items-start gap-3 rounded-xl border border-slate-200 p-4">
@@ -125,7 +144,7 @@
             <section id="security" aria-labelledby="security-title" class="scroll-mt-24 p-5 sm:p-8">
                 <div class="grid gap-6 lg:grid-cols-3">
                     <div>
-                        <p aria-hidden="true" class="mb-2 font-label text-xs font-bold text-ocean-600">06</p>
+                        <p aria-hidden="true" class="mb-2 font-label text-xs font-bold text-ocean-600">07</p>
                         <h2 id="security-title" class="font-headline text-lg font-bold text-ink-900">Security &amp; 2FA</h2>
                         <p class="mt-2 text-sm leading-relaxed text-slate-500">Manage two-factor authentication and recovery codes for your own admin account.</p>
                     </div>

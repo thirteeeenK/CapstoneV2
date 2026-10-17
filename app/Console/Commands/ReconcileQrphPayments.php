@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Console\Commands;
 
 use App\Models\QrphPaymentAttempt;
+use App\Services\Payment\PaymentEnvironmentResolver;
 use App\Services\Payment\PaymentGatewayException;
 use App\Services\Payment\QrphPaymentService;
 use Illuminate\Console\Attributes\Description;
@@ -30,7 +31,7 @@ class ReconcileQrphPayments extends Command
         $attempts = QrphPaymentAttempt::query()
             ->whereNotNull('intent_id')
             ->whereNotIn('status', ['paid', 'review_required'])
-            ->where('livemode', $gateway === 'paymongo')
+            ->where('livemode', app(PaymentEnvironmentResolver::class)->gatewayIsLive($gateway))
             ->orderByRaw('last_checked_at ASC NULLS FIRST')->orderBy('id')
             ->limit(max(1, min(500, (int) $this->option('limit'))))->get();
         $failed = false;

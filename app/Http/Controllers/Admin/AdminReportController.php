@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
 use App\Services\GeminiService;
+use App\Services\Payment\BookingPaymentAccountingService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -90,8 +91,21 @@ class AdminReportController extends Controller
             ->get();
 
         $totalBookings = $query->clone()->count();
-        $collected = (float) $query->clone()->where('payment_status', Booking::PAYMENT_PAID)->sum('net_amount');
-        $estimated = (float) $query->clone()->where('status', Booking::STATUS_APPROVED)->sum('net_amount');
+        $accounting = app(BookingPaymentAccountingService::class);
+        $collected = $accounting->collectedBetween($from, $to, $status);
+        $series = $accounting->collectionSeries($from, $to, $status);
+        $daily = $daily->keyBy('day');
+        foreach ($series as $day => $amount) {
+            if (! $daily->has($day)) {
+                $daily->put($day, (object) ['day' => $day, 'bookings' => 0, 'estimated' => 0]);
+            }
+            $daily->get($day)->collected = $amount;
+        }
+        foreach ($daily as $row) {
+            $row->collected = $series[(string) $row->day] ?? 0;
+        }
+        $daily = $daily->sortByDesc('day')->values();
+        $estimated = $accounting->outstandingFor($query->clone()->where('status', Booking::STATUS_APPROVED));
         $avgValue = $totalBookings > 0 ? round((float) $query->clone()->avg('net_amount'), 2) : 0.00;
 
         $statusCounts = $query->clone()

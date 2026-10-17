@@ -1,6 +1,14 @@
 <?php
 
 return [
+    'payments' => [
+        'installments_enabled' => false,
+        'initial_window_hours' => 48,
+        'deposit_min_advance_days' => 7,
+        'balance_lead_days' => 2,
+        'undated_balance_days' => 7,
+        'service_cutoff_hours' => 24,
+    ],
     'business' => [
         'display_name' => env('APP_NAME', 'SunnyTrips'),
         'support_email' => 'sunnytrips01@gmail.com',

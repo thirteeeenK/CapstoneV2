@@ -20,7 +20,7 @@ it('shows sandbox QR Ph alongside Stripe, manual GoTyme and live PayMongo', func
     $booking = Booking::factory()->approved()->for($user)->create(['net_amount' => '3000.00']);
     $this->actingAs($user)->get(route('booking.pay', $booking->booking_code))
         ->assertOk()->assertSee('QR Ph Sandbox')->assertSee('₱3,000.00', false)
-        ->assertSee('Pay with Card')->assertSee('Pay to GoTyme QR')->assertSee('PayMongo QR Ph — Live');
+        ->assertSee('Pay with Card')->assertSee('Pay to GoTyme QR')->assertSee('PayMongo QR Ph — Sandbox');
 });
 
 it('creates a PayMongo session with the exact centavo amount and stores a pending QR', function () {

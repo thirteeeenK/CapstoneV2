@@ -25,10 +25,7 @@ class BookingRequestService
     public function assertPlannerArrivalDates(Collection $cartItems, ?Collection $itineraries = null): void
     {
         $ids = $cartItems->pluck('trip_itinerary_id')->filter()->unique();
-        if ($ids->isEmpty()) {
-            return;
-        }
-        $itineraries ??= TripItinerary::query()->with('plan')->whereIn('id', $ids)->get()->keyBy('id');
+        $itineraries ??= $ids->isEmpty() ? collect() : TripItinerary::query()->with('plan')->whereIn('id', $ids)->get()->keyBy('id');
         foreach ($ids as $id) {
             $itinerary = $itineraries->get($id);
             if (! $itinerary) {
@@ -37,6 +34,9 @@ class BookingRequestService
             $snapshot = (array) $itinerary->snapshot;
             $arrival = array_key_exists('start_date', $snapshot) ? $snapshot['start_date'] : $itinerary->plan?->start_date?->toDateString();
             $this->dates->assertBookableArrival(is_string($arrival) ? $arrival : null);
+        }
+        foreach ($cartItems->where('item_type', 'room') as $roomItem) {
+            $this->dates->assertBookableArrival($roomItem->check_in_date?->toDateString(), 'check_in_date');
         }
     }
 
@@ -235,10 +235,12 @@ class BookingRequestService
                 }
             }
 
+            $roomTimes = RoomType::with('hotel')->whereIn('id', $cartItems->where('item_type', 'room')->pluck('item_id'))->get()->mapWithKeys(fn ($room) => [$room->id => $room->hotel?->check_in_time]);
             $booking = Booking::create([
                 'booking_code' => $bookingCode,
                 'user_id' => auth()->id(),
                 'status' => Booking::STATUS_PENDING,
+                'payment_policy' => ['request_policy_revision' => 3, 'minimum_arrival_days' => TripBookingDatePolicy::LEAD_DAYS, 'initial_window_hours' => app(SystemSettingsService::class)->section('payments')['initial_window_hours']],
                 'total_amount' => $totalAmount,
                 'discount_amount' => $discountAmount,
                 'tax_amount' => $surchargeAmount,
@@ -273,6 +275,7 @@ class BookingRequestService
                         : 1,
                     'subtotal' => $finalSubtotal,
                     'item_snapshot' => [
+                        'check_in_time' => $item->item_type === 'room' ? $roomTimes->get($item->item_id) : null,
                         'title' => $item->item_title,
                         'subtitle' => $item->item_subtitle,
                         'hotel_name' => $item->hotel_name,
@@ -289,6 +292,7 @@ class BookingRequestService
             foreach ($cartItems->whereNotNull('trip_itinerary_id')->groupBy('trip_itinerary_id') as $itineraryId => $group) {
                 $itinerary = $plannerItineraries[$itineraryId];
                 $snapshot = $itinerary->snapshot;
+                $snapshot['start_date'] ??= $itinerary->plan?->start_date?->toDateString();
                 $snapshot['booked_plan_item_ids'] = $group->map(fn ($item) => collect($snapshot['selections'])->first(fn ($choice) => $choice['type'] === $item->item_type && $choice['item_id'] === $item->item_id)['plan_item_id'])->values()->all();
                 $snapshot['itinerary_id'] = $itinerary->id;
                 $snapshot['booked_at'] = now()->toIso8601String();

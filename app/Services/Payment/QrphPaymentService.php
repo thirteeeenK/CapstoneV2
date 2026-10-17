@@ -5,18 +5,22 @@ declare(strict_types=1);
 namespace App\Services\Payment;
 
 use App\Models\Booking;
+use App\Models\BookingPaymentRequest;
 use App\Models\PaymentWebhookEvent;
 use App\Models\QrphPaymentAttempt;
 use App\Notifications\BookingNotification;
 use App\Notifications\BookingPaid;
 use App\Services\Payment\Drivers\PaymongoDriver;
 use App\Services\Payment\Drivers\QrphDriver;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 final class QrphPaymentService
 {
+    private ?BookingPaymentRequest $collection = null;
+
     public function __construct(private readonly QrphDriver $driver) {}
 
     public static function forGateway(string $gateway): self
@@ -34,8 +38,10 @@ final class QrphPaymentService
     }
 
     /** @return array{url: string, reference: string, gateway: string, qr_string: string} */
-    public function create(Booking $booking): array
+    public function create(Booking $booking, ?BookingPaymentRequest $collection = null): array
     {
+        $this->collection = $collection;
+
         return $this->locked($booking->id, function () use ($booking): array {
             $booking->refresh();
             $this->ensurePayable($booking);
@@ -72,13 +78,14 @@ final class QrphPaymentService
                     $booking = Booking::query()->lockForUpdate()->findOrFail($booking->id);
                     $this->ensurePayable($booking);
                     app(PaymentService::class)->assertCanSelectGateway($booking, $this->driver->name());
-                    if (! $this->latest($booking) && $booking->gateway === $this->driver->name()
+                    if (! $this->collection && ! $this->latest($booking) && $booking->gateway === $this->driver->name()
                         && str_starts_with((string) $booking->gateway_reference, 'pi_')) {
                         throw new PaymentGatewayException('Your existing payment needs support review before a new QR can be created.');
                     }
 
                     return QrphPaymentAttempt::create([
                         'uuid' => (string) Str::uuid(), 'booking_id' => $booking->id,
+                        'booking_payment_request_id' => $this->collection?->id,
                         'amount' => $this->amount($booking), 'currency' => 'PHP',
                         'livemode' => $this->driver->livemode(), 'status' => 'creating',
                     ]);
@@ -160,6 +167,7 @@ final class QrphPaymentService
                     'status' => 'pending',
                 ])->save();
                 $lockedBooking->forceFill([
+                    'payment_environment' => app(PaymentEnvironmentResolver::class)->mode(),
                     'gateway' => $this->driver->name(), 'gateway_reference' => $attempt->intent_id,
                     'payment_url' => $image, 'gateway_data' => ['qrph_attempt_id' => $attempt->id],
                 ])->save();
@@ -172,11 +180,16 @@ final class QrphPaymentService
     public function latest(Booking $booking): ?QrphPaymentAttempt
     {
         return QrphPaymentAttempt::where('booking_id', $booking->id)
+            ->when($this->collection, fn ($query) => $query->where('booking_payment_request_id', $this->collection->id))
             ->where('livemode', $this->driver->livemode())->latest('id')->first();
     }
 
     public function check(QrphPaymentAttempt $attempt): QrphPaymentAttempt
     {
+        if ($attempt->livemode !== $this->driver->livemode()) {
+            throw new PaymentGatewayException('This payment belongs to another environment and requires review.');
+        }
+
         return $this->locked($attempt->booking_id, fn (): QrphPaymentAttempt => $this->checkUnlocked($attempt->refresh()));
     }
 
@@ -263,6 +276,15 @@ final class QrphPaymentService
             if (in_array($locked->status, ['paid', 'review_required'], true)) {
                 return;
             }
+            if ($locked->booking_payment_request_id) {
+                $request = BookingPaymentRequest::findOrFail($locked->booking_payment_request_id);
+                $paidAt = isset($payment['attributes']['paid_at']) && is_numeric($payment['attributes']['paid_at'])
+                    ? Carbon::createFromTimestamp((int) $payment['attributes']['paid_at']) : null;
+                $receipt = app(BookingPaymentAccountingService::class)->receipt($request, $payment['id'], $locked->amount, $paidAt);
+                $locked->update(['payment_id' => $payment['id'], 'status' => $receipt->allocated ? 'paid' : 'review_required', 'confirmed_at' => now(), 'last_checked_at' => now()]);
+
+                return;
+            }
             $canConfirm = $booking->status === Booking::STATUS_APPROVED
                 && $booking->payment_status !== Booking::PAYMENT_PAID
                 && ! $booking->isPaymentDeadlinePassed()
@@ -338,6 +360,9 @@ final class QrphPaymentService
 
     public function amount(Booking $booking): int
     {
+        if ($this->collection) {
+            return $this->collection->amount;
+        }
         [$whole, $fraction] = array_pad(explode('.', (string) $booking->net_amount, 2), 2, '');
 
         return ((int) $whole * 100) + (int) str_pad($fraction, 2, '0');
@@ -345,6 +370,19 @@ final class QrphPaymentService
 
     private function ensurePayable(Booking $booking): void
     {
+        if ($this->collection) {
+            app(BookingPaymentPolicy::class)->assertCollectible($booking);
+            if ($this->collection->booking_id !== $booking->id || $this->collection->gateway !== $this->driver->name()
+                || $this->collection->livemode !== $this->driver->livemode()
+                || ! in_array($this->collection->fresh()->status, ['creating', 'pending'], true)) {
+                throw new PaymentGatewayException('This collection is not eligible for QR Ph payment.');
+            }
+
+            return;
+        }
+        if ($booking->payment_plan_version === 2) {
+            throw new PaymentGatewayException('Choose full payment or a deposit from the payment page.');
+        }
         if ($booking->status !== Booking::STATUS_APPROVED || $booking->isPaymentDeadlinePassed()
             || $booking->payment_status !== Booking::PAYMENT_UNPAID || $this->amount($booking) < 100) {
             throw new PaymentGatewayException('This booking is not eligible for QR Ph payment. Please contact support.');
@@ -360,6 +398,12 @@ final class QrphPaymentService
     /** @return array{url: string, reference: string, gateway: string, qr_string: string} */
     private function result(QrphPaymentAttempt $attempt, Booking $booking): array
     {
+        if ($attempt->booking_payment_request_id) {
+            $request = BookingPaymentRequest::findOrFail($attempt->booking_payment_request_id);
+
+            return ['url' => route('booking.installment.show', [$booking->booking_code, $request->uuid]), 'reference' => (string) $attempt->intent_id, 'gateway' => $this->driver->name(), 'qr_string' => (string) $attempt->qr_image];
+        }
+
         return [
             'url' => route($attempt->status === 'paid' ? 'booking.show' : $this->showRoute(), $booking->booking_code),
             'reference' => (string) $attempt->intent_id, 'gateway' => $this->driver->name(), 'qr_string' => (string) $attempt->qr_image,

@@ -14,9 +14,10 @@
         'roomId' => $roomId,
         'basePrice' => (float) $basePrice,
         'storeRoom' => (bool) $storeRoom,
+        'minimumArrival' => app(\App\Services\TripBookingDatePolicy::class)->minimumArrivalDate(),
     ]) . ')';
     if ($dynamicRoomId !== null) {
-        $configExpr = 'dateRangePicker({ roomId: (' . $dynamicRoomId . '), basePrice: (' . ($dynamicBasePrice ?? '0') . ') })';
+        $configExpr = 'dateRangePicker({ roomId: (' . $dynamicRoomId . '), basePrice: (' . ($dynamicBasePrice ?? '0') . '), minimumArrival: ' . json_encode(app(\App\Services\TripBookingDatePolicy::class)->minimumArrivalDate()) . ' })';
     }
 @endphp
 
@@ -49,6 +50,7 @@
 
         <input type="hidden" name="{{ $checkInName }}" :value="checkIn">
         <input type="hidden" name="{{ $checkOutName }}" :value="checkOut">
+        <p class="mt-2 text-xs text-slate-500 dark:text-slate-400">Earliest new check-in: {{ app(\App\Services\TripBookingDatePolicy::class)->minimumArrivalDate() }} (Philippine time), two calendar days ahead.</p>
     </div>
 
     {{-- Live Summary & Availability Status Badge --}}

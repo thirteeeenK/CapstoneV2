@@ -3,6 +3,10 @@
 @section('title', 'Booking ' . $booking->booking_code . ' | SunnyTrips Admin')
 
 @section('content')
+    @if($booking->payment_plan_version === 2)
+        @include('booking._payment-summary')
+        @include('admin.bookings._payment-admin')
+    @endif
     @php
         $statusStyles = [
             'pending' => 'bg-amber-50 text-amber-700 border-amber-200',
@@ -81,7 +85,7 @@
                             <span class="material-symbols-outlined text-[16px]">fact_check</span>
                             Verify GoTyme Transfer
                         </a>
-                    @else
+                    @elseif($booking->payment_plan_version !== 2)
                         <form action="{{ route('admin.bookings.mark-paid', $booking->id) }}" method="POST" class="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-xl p-1.5">
                             @csrf
                             <label for="payment_reference" class="sr-only">Manual payment reference</label>
@@ -103,6 +107,7 @@
                         </button>
                     </form>
                     @endif
+                    @if($booking->payment_plan_version !== 2)
                     <form action="{{ route('admin.bookings.mark-refunded', $booking->id) }}" method="POST"
                           onsubmit="return confirm('Refund booking {{ $booking->booking_code }}? Payment status will become refunded.')">
                         @csrf
@@ -111,6 +116,7 @@
                             Mark Refunded
                         </button>
                     </form>
+                    @endif
                 @endif
             </div>
         </div>
@@ -381,7 +387,16 @@
                 @endif
             </div>
 
-            <form action="{{ route('admin.bookings.approve', $booking->id) }}" method="POST">
+            <form action="{{ route('admin.bookings.approve', $booking->id) }}" method="POST" x-data="{ submitting: false }" @submit="submitting = true">
+                @if($errors->any())
+                    <div role="alert" tabindex="-1" x-init="$el.focus(); $el.scrollIntoView({ block: 'center' })" class="mb-4 rounded-xl border border-rose-300 bg-rose-50 p-4 text-sm text-rose-900">
+                        <p class="font-bold">Booking could not be approved. Review the following:</p>
+                        <ul class="mt-2 list-disc pl-5">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>
+                    </div>
+                @endif
+                @if($booking->status === 'pending')
+                    @include('admin.bookings._payment-approval', ['deadlineInputId' => 'approval-payment-deadline'])
+                @endif
                 @csrf
                 <div class="divide-y divide-slate-100">
                     @foreach($booking->items as $item)
@@ -393,10 +408,11 @@
                         <div class="py-4 {{ $isUnavailable ? 'opacity-60' : '' }}">
                             <div class="flex items-start gap-4">
                                 @if($booking->status === 'pending')
+                                    <input type="hidden" name="items[{{ $item->id }}][include]" value="0">
                                     <input type="checkbox"
                                            name="items[{{ $item->id }}][include]"
                                            value="1"
-                                           {{ $isUnavailable ? '' : 'checked' }}
+                                           @checked(old('items.'.$item->id.'.include', ! $isUnavailable))
                                            class="mt-1.5 w-4 h-4 accent-sky-600 cursor-pointer"
                                            onchange="this.closest('div').parentElement.classList.toggle('opacity-60', !this.checked)">
                                 @endif
@@ -450,12 +466,12 @@
                                         <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
                                             <div>
                                                 <label class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block mb-1">Quantity</label>
-                                                <input type="number" name="items[{{ $item->id }}][quantity]" min="1" max="50" value="{{ $item->quantity }}"
+                                                <input type="number" name="items[{{ $item->id }}][quantity]" min="1" max="50" value="{{ old('items.'.$item->id.'.quantity', $item->quantity) }}"
                                                        class="w-full px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">
                                             </div>
                                             <div>
                                                 <label class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block mb-1">Admin note (for unavailable items)</label>
-                                                <input type="text" name="items[{{ $item->id }}][admin_note]" value="{{ $item->admin_note }}"
+                                                <input type="text" name="items[{{ $item->id }}][admin_note]" value="{{ old('items.'.$item->id.'.admin_note', $item->admin_note) }}"
                                                        placeholder="e.g. Activity sold out for this date"
                                                        class="w-full px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">
                                             </div>
@@ -530,11 +546,11 @@
                         <div class="pt-3">
                             <label class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block mb-1">Admin notes to customer (optional)</label>
                             <textarea name="admin_notes" rows="2" placeholder="e.g. Room upgraded to a higher floor at no extra cost."
-                                      class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20"></textarea>
+                                      class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">{{ old('admin_notes') }}</textarea>
                         </div>
-                        <button type="submit" class="mt-4 w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-700 text-white font-extrabold text-xs transition-all hover:from-emerald-500 hover:to-teal-600 cursor-pointer shadow-lg shadow-emerald-600/25 flex items-center justify-center gap-2">
+                        <button type="submit" :disabled="submitting" class="mt-4 w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-700 text-white font-extrabold text-xs transition-all hover:from-emerald-500 hover:to-teal-600 cursor-pointer shadow-lg shadow-emerald-600/25 flex items-center justify-center gap-2 disabled:opacity-60">
                             <span class="material-symbols-outlined text-lg">verified</span>
-                            Approve Booking & Open 48-Hour Payment Window
+                            <span x-text="submitting ? 'Approving booking…' : 'Approve Booking & Save Payment Deadline'">Approve Booking &amp; Save Payment Deadline</span>
                         </button>
                         <p class="text-[10px] text-center text-slate-400 font-medium pt-2">
                             Approving sends the customer an email with a secure payment link.

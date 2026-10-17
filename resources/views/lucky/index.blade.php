@@ -427,12 +427,8 @@
                 error: null,
                 itinerary: null,
 
-                // Earliest bookable start is tomorrow — same-day stays are blocked.
                 get tomorrowStr() {
-                    const d = new Date();
-                    d.setDate(d.getDate() + 1);
-
-                    return d.toISOString().split('T')[0];
+                    return '{{ app(\App\Services\TripBookingDatePolicy::class)->minimumArrivalDate() }}';
                 },
 
                 async shuffle() {

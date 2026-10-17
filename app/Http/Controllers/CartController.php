@@ -11,6 +11,7 @@ use App\Models\Package;
 use App\Models\RoomType;
 use App\Models\TripItinerary;
 use App\Services\CartService;
+use App\Services\TripBookingDatePolicy;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
@@ -436,6 +437,9 @@ class CartController extends Controller
                 'room_option' => 'nullable|string|in:shared,separate',
                 'notes' => 'nullable|string',
             ]);
+            if ($cartItem->item_type === 'room' && array_key_exists('check_in_date', $validated)) {
+                app(TripBookingDatePolicy::class)->assertBookableArrival($validated['check_in_date'], 'check_in_date');
+            }
 
             if (isset($validated['quantity'])) {
                 $newQty = (int) $validated['quantity'];
@@ -503,6 +507,8 @@ class CartController extends Controller
             }
 
             return redirect()->back()->with('success', 'Cart updated.');
+        } catch (ValidationException $e) {
+            throw $e;
         } catch (\Exception $e) {
             Log::error('Cart update error: '.$e->getMessage());
             if ($request->wantsJson() || $request->ajax() || $request->header('Accept') === 'application/json' || $request->expectsJson()) {

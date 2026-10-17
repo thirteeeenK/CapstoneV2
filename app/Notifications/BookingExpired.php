@@ -16,7 +16,7 @@ class BookingExpired extends BookingNotification
         return (new MailMessage)
             ->subject("Booking Expired — {$booking->booking_code}")
             ->greeting("Hi {$booking->contact_name},")
-            ->line("Booking **{$booking->booking_code}** expired because payment was not completed within the 48-hour window.")
+            ->line("Booking **{$booking->booking_code}** expired because payment was not completed by the agreed payment deadline.")
             ->line('Your reserved dates have been released back to inventory. You can rebook anytime.')
             ->action('Rebook Your Trip', route('booking.show', $booking->booking_code))
             ->line('Thank you. — SunnyTrips Team');

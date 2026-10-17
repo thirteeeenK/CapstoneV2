@@ -174,19 +174,44 @@
                             <strong class="text-slate-900">{{ $booking->contact_email }}</strong>
                             the moment your reservation is approved.
                         </p>
+                        @if (($booking->payment_policy['request_policy_revision'] ?? null) === 3)
+                            @php
+                                $submissionDeadline = app(\App\Services\Payment\BookingPaymentPolicy::class)->initialWindowEnd($booking)->timezone('Asia/Manila');
+                            @endphp
+                            <p class="text-sm text-slate-900 mt-3 max-w-xl mx-auto" @if($submissionDeadline->isPast()) role="alert" @endif>
+                                @if ($submissionDeadline->isPast())
+                                    The payment window measured from submission has elapsed. This request needs admin review; payment remains unavailable until approval with valid terms.
+                                @else
+                                    Your {{ $booking->payment_policy['initial_window_hours'] }}-hour payment window starts at submission and ends {{ $submissionDeadline->format('M j, Y g:i A') }} (Philippine time). Approval does not restart it. The deadline may be earlier to keep payment before check-in. Payment opens after approval.
+                                @endif
+                            </p>
+                        @endif
                     @elseif ($status === 'approved')
                         <div class="w-20 h-20 mx-auto mb-6 rounded-2xl bg-white/40 backdrop-blur-md border border-white/60 flex items-center justify-center shadow-inner rotate-3">
                             <span class="material-symbols-outlined text-[34px] text-sky-900">{{ $t['icon'] }}</span>
                         </div>
                         <h1 class="text-3xl sm:text-4xl font-black tracking-tight text-slate-900 font-headline">
-                            All clear — your dates are reserved
+                            {{ $booking->deposit_secured_at ? 'Your deposit is verified — your reservation is secured' : 'Your booking is approved — payment is next' }}
                         </h1>
                         <p class="text-sm sm:text-[15px] text-slate-800/80 mt-3 max-w-xl mx-auto font-medium leading-relaxed">
+                            @if($booking->payment_plan_version === 2)
+                                @if($booking->balance_overdue_at || $booking->isPaymentDeadlinePassed())
+                                    Your payment deadline has passed. Contact support to review the reservation. Any verified payments remain recorded below.
+                                @elseif($booking->deposit_secured_at)
+                                    Pay your remaining balance of <strong>₱{{ number_format($paymentSummary['remaining_cents']/100, 2) }}</strong>
+                                    by <strong>{{ $booking->balance_due_at?->timezone('Asia/Manila')->format('M j, Y · g:i A') }}</strong> (Philippine time).
+                                @else
+                                    {{ ($booking->payment_policy['deposit_eligible'] ?? false) ? 'Pay in full or pay the 50% reservation deposit' : 'Complete full payment' }}
+                                    by <strong>{{ $booking->payment_deadline?->timezone('Asia/Manila')->format('M j, Y · g:i A') }}</strong> (Philippine time).
+                                    Your payment options and any deposit restrictions are explained below.
+                                @endif
+                            @else
                             Every item in your journal checked out. Complete payment of
                             <strong class="text-slate-900">₱{{ number_format((float)$booking->net_amount, 2) }}</strong>
                             before
                             <strong class="text-slate-900">{{ $booking->payment_deadline?->format('M j, Y · g:i A') }}</strong>
                             to lock in your reservation.
+                            @endif
                         </p>
                     @elseif ($paidOrDone)
                         <div class="mx-auto mb-6 w-32 h-32 -rotate-6 rounded-[1.4rem] border-4 border-double border-white/80 bg-white/20 backdrop-blur-md flex flex-col items-center justify-center shadow-lg">
@@ -272,7 +297,7 @@
                                 </p>
                             @else
                                 <p class="text-sm sm:text-[15px] text-slate-800/70 mt-3 max-w-xl mx-auto font-medium leading-relaxed">
-                                    Payment wasn't completed within the 48-hour window, so the dates were released. You can rebook anytime — your items are ready to go back in the basket.
+                                    Payment wasn't completed by the agreed payment deadline, so the dates were released. You can rebook anytime — your items are ready to go back in the basket.
                                 </p>
                             @endif
                     @endif
@@ -327,7 +352,11 @@
                 </div>
             </section>
 
-            @if ($status === 'approved')
+            @if($booking->payment_plan_version === 2)
+                @include('booking._payment-summary')
+            @endif
+
+            @if ($status === 'approved' && $booking->payment_plan_version !== 2)
                 <section class="mt-6 bg-white dark:bg-slate-900 rounded-[2rem] border border-sand-200/80 dark:border-slate-700/80 shadow-sm overflow-hidden">
                     <div class="p-6 sm:p-8">
                         <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
@@ -363,7 +392,7 @@
                                                :class="chosen === 'paymongo' ? 'border-ocean-500 bg-ocean-50 dark:bg-ocean-950 shadow-sm' : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-ocean-400'">
                                             <input type="radio" name="gateway" value="paymongo" x-model="chosen" @change="tried = false" class="mt-0.5 accent-ocean-600 cursor-pointer">
                                             <span>
-                                                <span class="block text-sm font-extrabold text-slate-900 dark:text-slate-100">PayMongo QR Ph — Live</span>
+                                                <span class="block text-sm font-extrabold text-slate-900 dark:text-slate-100">PayMongo QR Ph — {{ app(\App\Services\Payment\PaymentEnvironmentResolver::class)->isLive() ? 'Live' : 'Sandbox' }}</span>
                                                 <span class="block text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">Bank or wallet payment · automatically verified</span>
                                             </span>
                                         </label>
@@ -449,7 +478,11 @@
                                             <p class="text-xs text-slate-500 dark:text-slate-400">
                                                 @if($item->check_in_date && $item->check_out_date)
                                                     {{ date('M j, Y', strtotime($item->check_in_date)) }} – {{ date('M j, Y', strtotime($item->check_out_date)) }}
-                                                    <span class="text-slate-400">· {{ $item->nights }} {{ Str::plural('night', $item->nights) }}</span>
+                                                    @if($item->item_type === 'room')
+                                                        <span class="text-slate-400">· {{ $item->nights }} {{ Str::plural('night', $item->nights) }}</span>
+                                                    @endif
+                                                @elseif($item->item_type === 'activity')
+                                                    Date chosen by traveler
                                                 @else
                                                     {{ $item->item_subtitle }}
                                                 @endif
@@ -518,7 +551,7 @@
                                 ['label' => 'Request received', 'desc' => 'Your journal landed on our desk.', 'state' => 'done'],
                                 ['label' => 'Availability check', 'desc' => 'Crew verifies dates, rooms & tours.', 'state' => $status === 'pending' ? 'current' : 'done'],
                                 ['label' => 'Approved & notified', 'desc' => 'You\'ll get an email with your payment link.', 'state' => $status === 'pending' ? 'todo' : 'done'],
-                                ['label' => 'Pay to confirm', 'desc' => 'Settle the balance within 48 hours.', 'state' => $status === 'pending' ? 'todo' : 'current'],
+                                ['label' => 'Pay to confirm', 'desc' => 'Pay before the agreed payment deadline.', 'state' => $status === 'pending' ? 'todo' : 'current'],
                             ];
                         @endphp
                         <section class="bg-white dark:bg-slate-900 rounded-3xl border border-sand-200/80 dark:border-slate-700/80 shadow-xs p-6 sm:p-8">
@@ -593,9 +626,9 @@
                                     <dt class="text-slate-400 dark:text-slate-500 font-medium">Method</dt>
                                     <dd class="font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider">
                                         @if($booking->payment_method === 'paymongo')
-                                            <span class="inline-flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-emerald-600">qr_code_2</span> PayMongo QR Ph · Live</span>
+                                            <span class="inline-flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-emerald-600">qr_code_2</span> PayMongo QR Ph · {{ $booking->payment_environment === 'test' ? 'Sandbox' : 'Live' }}</span>
                                         @elseif($booking->payment_method === 'qrph')
-                                            <span class="inline-flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-emerald-600">qr_code_2</span> QR Ph · Sandbox</span>
+                                            <span class="inline-flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-emerald-600">qr_code_2</span> QRPH · Sandbox</span>
                                         @elseif($booking->payment_method === 'gotyme')
                                             <span class="inline-flex items-center gap-1"><span class="material-symbols-outlined text-[14px] text-sky-600">account_balance_wallet</span> GoTyme QR · Manual</span>
                                         @else
@@ -604,10 +637,13 @@
                                     </dd>
                                 </div>
                             @endif
-                            @if ($booking->payment_deadline)
+                            @php
+                                $outstandingDeadline = $booking->deposit_secured_at ? $booking->balance_due_at : $booking->payment_deadline;
+                            @endphp
+                            @if ($outstandingDeadline)
                                 <div class="flex items-center justify-between gap-2">
-                                    <dt class="text-slate-400 dark:text-slate-500 font-medium">Deadline</dt>
-                                    <dd class="font-bold text-slate-900 dark:text-slate-100">{{ $booking->payment_deadline->format('M j · g:i A') }}</dd>
+                                    <dt class="text-slate-400 dark:text-slate-500 font-medium">{{ $booking->deposit_secured_at ? 'Balance due' : 'Initial payment due' }}</dt>
+                                    <dd class="font-bold text-slate-900 dark:text-slate-100">{{ $outstandingDeadline->timezone('Asia/Manila')->format('M j · g:i A') }} PHT</dd>
                                 </div>
                             @endif
                             @if ($booking->gateway_reference)

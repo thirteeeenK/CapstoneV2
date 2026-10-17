@@ -6,9 +6,11 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\StoreAdminBookingRequest;
 use App\Models\ActivityModel;
 use App\Models\AddOnModel;
+use App\Models\AdminModel;
 use App\Models\Booking;
 use App\Models\BookingAttachment;
 use App\Models\BookingItem;
+use App\Models\BookingPaymentRequest;
 use App\Models\BookingStatusHistory;
 use App\Models\DestinationModel;
 use App\Models\Package;
@@ -22,13 +24,20 @@ use App\Notifications\BookingCancelled;
 use App\Notifications\BookingDocumentAdded;
 use App\Notifications\BookingNotification;
 use App\Notifications\BookingPaid;
+use App\Notifications\BookingPaymentDue;
 use App\Notifications\BookingRejected;
 use App\Notifications\BookingRequestReceived;
 use App\Notifications\NewGuestAccountCreated;
 use App\Services\AdminAuditService;
 use App\Services\BookingRequestService;
+use App\Services\Payment\BookingPaymentAccountingService;
+use App\Services\Payment\BookingPaymentPolicy;
 use App\Services\Payment\GoTymePaymentService;
+use App\Services\Payment\InstallmentPaymentService;
+use App\Services\Payment\PaymentGatewayException;
 use App\Services\RoomAvailabilityService;
+use App\Services\SystemSettingsService;
+use App\Services\TripBookingDatePolicy;
 use App\Services\TripJourneyService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -75,7 +84,13 @@ class AdminBookingController extends Controller
         $allStatuses = ['pending', 'approved', 'paid', 'completed', 'rejected', 'cancelled', 'expired', 'cancellation_requested', 'cancellation_denied'];
 
         if ($status) {
-            if ($status === 'closed') {
+            if ($status === 'reserved') {
+                $query->where('status', 'approved')->whereNotNull('deposit_secured_at')->whereNull('balance_overdue_at');
+            } elseif ($status === 'overdue') {
+                $query->whereNotNull('balance_overdue_at');
+            } elseif ($status === 'awaiting_deposit') {
+                $query->where('status', 'approved')->where('payment_plan_version', 2)->whereNull('deposit_secured_at');
+            } elseif ($status === 'closed') {
                 $query->whereIn('status', ['rejected', 'cancelled', 'expired', 'completed', 'cancellation_denied']);
             } elseif (in_array($status, $allStatuses, true)) {
                 $query->where('status', $status);
@@ -289,6 +304,7 @@ class AdminBookingController extends Controller
                     'nights' => $nights,
                     'subtotal' => $lineSubtotal,
                     'availability_status' => BookingItem::AVAIL_AVAILABLE,
+                    'item_snapshot' => ['check_in_time' => $type === 'room' ? $room->hotel?->check_in_time : null],
                 ];
             }
 
@@ -324,6 +340,7 @@ class AdminBookingController extends Controller
             $bookingCode = $this->bookingRequestService->generateBookingCode();
 
             $bookingData = [
+                'payment_policy' => ['request_policy_revision' => 3, 'minimum_arrival_days' => TripBookingDatePolicy::LEAD_DAYS, 'initial_window_hours' => app(SystemSettingsService::class)->section('payments')['initial_window_hours']],
                 'booking_code' => $bookingCode,
                 'user_id' => $userId,
                 'status' => $initialStatus,
@@ -351,7 +368,7 @@ class AdminBookingController extends Controller
 
             if ($initialStatus === Booking::STATUS_APPROVED) {
                 $bookingData['approved_at'] = now();
-                $bookingData['payment_deadline'] = now()->addHours(48);
+                $bookingData['payment_deadline'] = now()->addHours(app(SystemSettingsService::class)->section('payments')['initial_window_hours']);
                 $bookingData['reviewed_by_admin_id'] = auth('admin')->id();
             } elseif ($initialStatus === Booking::STATUS_PAID) {
                 $bookingData['approved_at'] = now();
@@ -365,6 +382,10 @@ class AdminBookingController extends Controller
             foreach ($calculatedItems as $cItem) {
                 $cItem['booking_id'] = $booking->id;
                 BookingItem::create($cItem);
+            }
+
+            if ($initialStatus === Booking::STATUS_APPROVED) {
+                $booking->forceFill(app(BookingPaymentPolicy::class)->approvalData($booking, $validated['payment_deadline_override'] ?? null, $validated['payment_environment'] ?? 'live'))->save();
             }
 
             // 7. Audit Logging & Status History
@@ -453,8 +474,9 @@ class AdminBookingController extends Controller
         }
 
         $paymentSummary = $this->goTymePaymentService->summary($booking);
+        $paymentTransactions = $booking->payment_plan_version === 2 ? $booking->paymentTransactions()->get() : collect();
 
-        return view('admin.bookings.show', compact('booking', 'roomAvailability', 'flightHints', 'paymentSummary'));
+        return view('admin.bookings.show', compact('booking', 'roomAvailability', 'flightHints', 'paymentSummary', 'paymentTransactions'));
     }
 
     /**
@@ -478,6 +500,8 @@ class AdminBookingController extends Controller
             'admin_discount_amount' => 'nullable|numeric|min:0|max:999999',
             'admin_surcharge_amount' => 'nullable|numeric|min:0|max:999999',
             'price_adjustment_reason' => 'nullable|string|max:500',
+            'payment_deadline_override' => 'nullable|date|after:now',
+            'payment_environment' => app()->isProduction() ? 'nullable|in:live' : 'nullable|in:live,test',
         ]);
 
         $adminDiscount = (float) ($validated['admin_discount_amount'] ?? 0);
@@ -574,7 +598,7 @@ class AdminBookingController extends Controller
                     'price_adjustment_reason' => $booking->price_adjustment_reason,
                     'price_adjusted_at' => $booking->price_adjusted_at,
                     'approved_at' => now(),
-                    'payment_deadline' => now()->addHours(48),
+                    ...app(BookingPaymentPolicy::class)->approvalData($booking, $validated['payment_deadline_override'] ?? null, $validated['payment_environment'] ?? 'live'),
                     'reviewed_by_admin_id' => auth('admin')->id(),
                     'admin_notes' => $validated['admin_notes'] ?? null,
                 ],
@@ -595,7 +619,7 @@ class AdminBookingController extends Controller
 
         return redirect()->route('admin.bookings.show', $booking->id)->with(
             'success',
-            "Booking {$booking->booking_code} approved. Payment window of 48 hours opened".
+            "Booking {$booking->booking_code} approved. Payment deadline saved".
             ($totals['excluded'] > 0 ? " ({$totals['excluded']} item(s) excluded)." : '.')
         );
     }
@@ -716,7 +740,7 @@ class AdminBookingController extends Controller
         $adminMessage = trim($validated['admin_message']);
 
         $updated = $booking->transitionTo(
-            Booking::STATUS_CANCELLATION_DENIED,
+            $booking->payment_plan_version === 2 && in_array($booking->cancellation_requested_from, ['pending', 'approved'], true) ? $booking->cancellation_requested_from : Booking::STATUS_CANCELLATION_DENIED,
             [Booking::STATUS_CANCELLATION_REQUESTED],
             [
                 'cancellation_reason' => $adminMessage,
@@ -740,10 +764,67 @@ class AdminBookingController extends Controller
     /**
      * Manually mark a booking as paid (simulator/manual fallback).
      */
+    public function allocatePaymentReceipt(Request $request, int $id)
+    {
+        $booking = Booking::findOrFail($id);
+        abort_unless($booking->payment_plan_version === 2, 422);
+        $data = $request->validate(['receipt_id' => ['required', 'integer'], 'reason' => ['required', 'string', 'min:5', 'max:500']]);
+        $receipt = $booking->paymentTransactions()->findOrFail($data['receipt_id']);
+        try {
+            app(BookingPaymentAccountingService::class)->allocateReviewedReceipt($receipt, auth('admin')->user(), $data['reason']);
+            AdminAuditService::recordAction($booking, 'payment_review_resolved', [], $data, auth('admin')->user());
+        } catch (PaymentGatewayException $exception) {
+            return back()->with('error', $exception->getMessage());
+        }
+
+        return back()->with('success', 'Reviewed receipt allocated and booking balance updated.');
+    }
+
+    public function extendPaymentDeadline(Request $request, int $id)
+    {
+        $data = $request->validate(['deadline' => ['required', 'date', 'after:now'], 'reason' => ['required', 'string', 'min:5', 'max:500']]);
+        DB::transaction(function () use ($id, $data): void {
+            $booking = Booking::query()->lockForUpdate()->findOrFail($id);
+            abort_unless($booking->status === Booking::STATUS_APPROVED, 422, 'Only active approved bookings can have their deadline extended.');
+            $field = $booking->deposit_secured_at ? 'balance_due_at' : 'payment_deadline';
+            $deadline = Carbon::parse($data['deadline'], 'Asia/Manila');
+            $service = $booking->payment_policy['service_start'] ?? null;
+            if (($booking->{$field} && $deadline->lte($booking->{$field})) || ($service && $deadline->gte(Carbon::parse($service)))
+                || ($field === 'payment_deadline' && $booking->balance_due_at && $deadline->gte($booking->balance_due_at))) {
+                throw ValidationException::withMessages(['deadline' => 'Choose a later deadline before travel and within the balance deadline.']);
+            }
+            $old = $booking->getOriginal();
+            $booking->forceFill([$field => $deadline->copy()->timezone(config('app.timezone')), 'balance_overdue_at' => null])->save();
+            BookingPaymentRequest::where('booking_id', $booking->id)->whereIn('status', ['creating', 'pending', 'awaiting_verification', 'processing'])->update(['due_at' => $deadline->toIso8601String()]);
+            AdminAuditService::log($booking, $old);
+            $booking->history()->create(['from_status' => $booking->status, 'to_status' => $booking->status, 'note' => 'Payment deadline extended: '.$data['reason'], 'actor_type' => AdminModel::class, 'actor_id' => auth('admin')->id()]);
+            DB::afterCommit(fn () => BookingNotification::send($booking, new BookingPaymentDue($booking, 'extended')));
+        });
+
+        return back()->with('success', 'Deadline extended. The customer has been notified.');
+    }
+
     public function markPaid(Request $request, $id)
     {
         $booking = Booking::findOrFail($id);
         $oldValues = $booking->getOriginal();
+        if ($booking->payment_plan_version === 2 && ! $request->filled('booking_payment_id')) {
+            $data = $request->validate([
+                'verified_amount' => ['required', 'numeric', 'decimal:0,2', 'min:0.01', 'max:99999999.99'],
+                'payment_reference' => ['required', 'string', 'max:100'],
+                'admin_note' => ['required', 'string', 'min:5', 'max:500'],
+            ]);
+            try {
+                $collection = app(InstallmentPaymentService::class)->prepare($booking, $booking->deposit_secured_at ? 'balance' : 'full', 'cash');
+                app(BookingPaymentAccountingService::class)->receipt($collection, 'cash-'.$data['payment_reference'], BookingPaymentPolicy::cents((string) $data['verified_amount']), null, auth('admin')->user());
+                $collection->update(['checkout_url' => null]);
+                AdminAuditService::recordAction($booking, 'offline_payment_verified', [], $data, auth('admin')->user());
+            } catch (PaymentGatewayException $exception) {
+                return back()->with('error', $exception->getMessage());
+            }
+
+            return back()->with('success', 'Verified receipt recorded. The balance has been recalculated.');
+        }
 
         if ($booking->gateway === 'gotyme' || $this->goTymePaymentService->hasActiveTransfer($booking)) {
             $validated = $request->validate([
@@ -765,7 +846,9 @@ class AdminBookingController extends Controller
             AdminAuditService::log($booking, $oldValues, $admin);
 
             if ($result['completed']) {
-                BookingNotification::send($booking, new BookingPaid($booking));
+                if ($booking->payment_plan_version !== 2) {
+                    BookingNotification::send($booking, new BookingPaid($booking));
+                }
 
                 $message = "Booking {$booking->booking_code} is fully paid via verified GoTyme transfer(s).";
                 if ($result['overpayment_cents'] > 0) {
@@ -807,6 +890,7 @@ class AdminBookingController extends Controller
     public function markCompleted(Request $request, $id)
     {
         $booking = Booking::findOrFail($id);
+        abort_if($booking->payment_plan_version === 2 && $booking->payment_status !== Booking::PAYMENT_PAID, 422, 'The booking must be fully paid before completion.');
         $oldValues = $booking->getOriginal();
 
         $note = 'Marked completed by admin.';
@@ -836,6 +920,7 @@ class AdminBookingController extends Controller
             'evidence_note' => ['required', 'string', 'min:10', 'max:1000'], 'trip_end_override' => ['nullable', 'date_format:Y-m-d\TH:i']]);
         DB::transaction(function () use ($id, $validated) {
             $booking = Booking::query()->lockForUpdate()->with('items')->findOrFail($id);
+            abort_if($booking->payment_plan_version === 2 && $booking->payment_status !== Booking::PAYMENT_PAID, 422, 'Full payment is required before fulfillment.');
             abort_unless($booking->trip_itineraries && in_array($booking->status, ['paid', 'cancellation_denied'], true), 422, 'Only active paid planner bookings can record fulfillment.');
             $oldBooking = $booking->getOriginal();
             if (! empty($validated['trip_end_override'])) {
@@ -869,6 +954,23 @@ class AdminBookingController extends Controller
     {
         $booking = Booking::findOrFail($id);
         $oldValues = $booking->getOriginal();
+        if ($booking->payment_plan_version === 2) {
+            $data = $request->validate([
+                'receipt_id' => ['required', 'integer'],
+                'refund_amount' => ['required', 'numeric', 'decimal:0,2', 'min:0.01', 'max:99999999.99'],
+                'refund_reference' => ['required', 'string', 'max:100'],
+                'refund_note' => ['required', 'string', 'min:5', 'max:500'],
+            ]);
+            $receipt = $booking->paymentTransactions()->where('kind', 'receipt')->findOrFail($data['receipt_id']);
+            try {
+                app(BookingPaymentAccountingService::class)->recordRefund($booking, $receipt, BookingPaymentPolicy::cents((string) $data['refund_amount']), 'refund-'.$data['refund_reference'], auth('admin')->user(), $data['refund_note']);
+                AdminAuditService::recordAction($booking, 'external_refund_recorded', [], $data, auth('admin')->user());
+            } catch (PaymentGatewayException $exception) {
+                return back()->with('error', $exception->getMessage());
+            }
+
+            return back()->with('success', 'External refund recorded. No transfer was initiated by SunnyTrips.');
+        }
 
         if ($booking->payment_status !== Booking::PAYMENT_PAID) {
             return back()->with('error', 'Only paid bookings can be refunded.');

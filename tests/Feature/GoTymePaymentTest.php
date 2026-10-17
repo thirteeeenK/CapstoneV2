@@ -27,6 +27,7 @@ beforeEach(function (): void {
 });
 
 it('shows the personal GoTyme option and configured QR details', function (): void {
+    productionPaymentContext();
     $booking = Booking::factory()->approved()->create([
         'user_id' => $this->user->id,
         'net_amount' => '9991.00',

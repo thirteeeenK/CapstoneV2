@@ -33,13 +33,14 @@ class BookingConfirmationController extends Controller
 
         if ($this->expiryService->expireIfDue($booking)) {
             return redirect()->route('booking.show', $booking->booking_code)
-                ->with('error', 'This booking expired because payment was not completed within the 48-hour window.');
+                ->with('error', 'This booking expired because payment was not completed by the agreed payment deadline.');
         }
 
         return view('booking.show', [
             'booking' => $booking,
             'gateways' => $this->paymentService->availableGateways(),
             'paymentSummary' => $this->goTymePaymentService->summary($booking),
+            'paymentTransactions' => $booking->payment_plan_version === 2 ? $booking->paymentTransactions()->get() : collect(),
         ]);
     }
 

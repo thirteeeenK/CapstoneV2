@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\DestinationModel;
 use App\Services\CartService;
 use App\Services\LuckyItineraryService;
+use App\Services\TripBookingDatePolicy;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
@@ -69,6 +70,8 @@ class LuckyItineraryController extends Controller
             'check_in_date' => 'required|date|after:today',
             'check_out_date' => 'required|date|after:check_in_date',
         ]);
+
+        app(TripBookingDatePolicy::class)->assertBookableArrival($validated['check_in_date'], 'check_in_date');
 
         try {
             $verified = $this->luckyService->verifyAcceptedItinerary($validated);
