@@ -253,6 +253,22 @@
         "required_facts": []
     },
     {
+        "id": "multi-stay-activity",
+        "query": "hotels in Eval Boracay and activities",
+        "expect_intents": ["HOTEL_SEARCH", "ACTIVITY_SEARCH"],
+        "expect_destination": "Eval Boracay",
+        "expect_result_names_any": ["Eval Palm Resort", "Eval Paddle Tour"],
+        "required_facts": ["Eval Boracay"]
+    },
+    {
+        "id": "multi-action-capability",
+        "query": "book this hotel and find activities in Eval Boracay",
+        "expect_intents": ["ACTION_REQUEST", "ACTIVITY_SEARCH"],
+        "expect_destination": "Eval Boracay",
+        "expect_result_names_any": ["Eval Paddle Tour"],
+        "required_facts": ["cannot complete a booking"]
+    },
+    {
         "id": "support-handoff",
         "query": "talk to a human",
         "expect_intent": "SUPPORT_AGENT",

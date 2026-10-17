@@ -170,7 +170,7 @@
             </template>
 
             {{-- Messages --}}
-            <template x-for="msg in messages" :key="msg.id">
+            <template x-for="msg in displayMessages()" :key="msg.id">
                 <div class="space-y-2">
                     {{-- Bot --}}
                     <template x-if="msg.sender === 'bot'">
@@ -351,6 +351,16 @@
                                 </template>
 
                                 {{-- Itinerary card --}}
+                                <template x-if="msg.addons">
+                                    <div class="mt-3 space-y-2">
+                                        <template x-for="addon in msg.addons" :key="addon.id">
+                                            <div class="border border-slate-200 dark:border-slate-700 rounded-xl p-3 font-body text-xs">
+                                                <p class="font-bold" x-text="addon.name"></p>
+                                                <p x-text="addon.price_quote?.display || 'Price unavailable'"></p>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </template>
                                 <template x-if="msg.itinerary">
                                     <div
                                         class="mt-3 bg-slate-50 dark:bg-slate-800 rounded-xl p-2.5 border border-slate-200/80 dark:border-slate-700 text-xs space-y-1.5">
@@ -369,6 +379,15 @@
                                         </template>
                                         <p class="font-black text-ocean-600 font-headline text-xs pt-1 border-t border-slate-200 dark:border-slate-700"
                                             x-text="'Total: ' + msg.itinerary.formatted_grand_total"></p>
+                                        <p x-show="itineraryBudgetLabel(msg.itinerary)"
+                                            class="text-[11px] font-bold"
+                                            :class="{
+                                                'text-emerald-700 dark:text-emerald-400': msg.itinerary.budget_check?.status === 'within',
+                                                'text-amber-700 dark:text-amber-400': msg.itinerary.budget_check?.status === 'slightly_over',
+                                                'text-slate-500 dark:text-slate-400': msg.itinerary.budget_check?.status === 'under_target',
+                                                'text-red-600 dark:text-red-400': msg.itinerary.budget_check?.status === 'over',
+                                            }"
+                                            x-text="itineraryBudgetLabel(msg.itinerary)"></p>
                                         <div class="grid grid-cols-2 gap-1.5 pt-1">
                                             <button type="button" @click="addItineraryToBasket(msg.itinerary)"
                                                 class="col-span-2 bg-slate-900 text-white font-bold px-2 py-1.5 rounded-lg hover:bg-slate-800 transition-colors text-[11px] font-headline cursor-pointer flex items-center justify-center gap-1">
@@ -661,6 +680,9 @@
                     this.messages = data.messages.map(msg => {
                         const extras = {};
                         const ctx = msg.context_data || {};
+                        extras.sections = ctx.sections;
+                        extras.section_footer = ctx.section_footer;
+                        extras.price_effective_note = ctx.price_effective_note;
                         if (ctx.retrieved_rooms?.length) extras.rooms = ctx.retrieved_rooms;
                         if (ctx.retrieved_hotels?.length) extras.hotels = ctx.retrieved_hotels;
                         if (ctx.retrieved_activities?.length) extras.activities = ctx.retrieved_activities;
@@ -840,6 +862,10 @@
                 this.guestLimitMessage = message;
             },
 
+            displayMessages() {
+                return window.displayChatMessages(this.messages);
+            },
+
             addMessage(sender, text, extra = {}) {
                 this.messages.push({ id: Date.now(), sender, text, ...extra });
                 this.scrollDown();
@@ -887,7 +913,8 @@
                     }
 
                     if (res.status === 403 && data.status === 'blocked') {
-                        this.addMessage('bot', data.reply || 'Your message was blocked by our safety system.', {});
+                        this.addMessage('bot', data.reply || 'Your message was blocked by our safety system.',
+                            data.suggested_actions?.length ? { suggested_actions: data.suggested_actions } : {});
                         return;
                     }
 
@@ -951,6 +978,9 @@
                         this.startHandoffPolling();
                     }
 
+                    extras.sections = data.sections;
+                    extras.section_footer = data.section_footer;
+                    extras.price_effective_note = data.price_effective_note;
                     this.addMessage('bot', data.reply || 'I could not process that.', extras);
                 } catch (err) {
                     this.addMessage('bot', 'Something went wrong. Please try again.');
@@ -963,6 +993,19 @@
             addToBasket(type, id, opts) {
                 if (typeof window.addToCart === 'function') {
                     window.addToCart(type, id, opts);
+                }
+            },
+
+            itineraryBudgetLabel(itin) {
+                const check = itin?.budget_check;
+                if (!check || !check.budget) return '';
+                const peso = (amount) => '₱' + Number(Math.abs(amount)).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                switch (check.status) {
+                    case 'within': return 'Within budget · ' + check.percent + '% of ' + peso(check.budget);
+                    case 'slightly_over': return 'Slightly over budget · ' + peso(check.delta) + ' over ' + peso(check.budget);
+                    case 'under_target': return peso(check.delta) + ' under your ' + peso(check.budget) + ' budget';
+                    case 'over': return 'Over budget · ' + peso(check.delta) + ' over ' + peso(check.budget);
+                    default: return '';
                 }
             },
 
@@ -1111,6 +1154,9 @@
                     if (data.retrieved_packages?.length) extras.packages = data.retrieved_packages;
                     if (data.result_ordering) extras.ordering = data.result_ordering;
                     if (data.itinerary) extras.itinerary = data.itinerary;
+                    extras.sections = data.sections;
+                    extras.section_footer = data.section_footer;
+                    extras.price_effective_note = data.price_effective_note;
                     this.addMessage('bot', data.reply || 'I could not process that.', extras);
                 } catch (_) {
                     this.addMessage('bot', 'Something went wrong. Please try again.');

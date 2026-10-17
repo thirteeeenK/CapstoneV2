@@ -9,6 +9,15 @@ return [
     ],
     'trip_journey' => ['enabled' => env('TRIP_JOURNEY_ENABLED', false)],
 
+    'chatbot' => [
+        'conversational_enabled' => env('CHATBOT_CONVERSATIONAL_ENABLED', true),
+        'planner_enabled' => env('CHATBOT_PLANNER_ENABLED', true),
+        'max_tasks' => (int) env('CHATBOT_MAX_TASKS', 4),
+        'cards_per_task' => (int) env('CHATBOT_CARDS_PER_TASK', 3),
+        'turn_timeout' => (int) env('CHATBOT_TURN_TIMEOUT', 90),
+        'model_timeout' => (int) env('CHATBOT_MODEL_TIMEOUT', 20),
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Third Party Services

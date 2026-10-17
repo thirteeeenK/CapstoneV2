@@ -17,7 +17,7 @@ class GroqChatService
     /**
      * @param  array<int, array{role: string, parts: array<int, array{text: string}>}>  $history  Gemini-shaped turns.
      */
-    public function chat(string $systemInstruction, array $history, string $userPrompt, bool $conversational = false): ?string
+    public function chat(string $systemInstruction, array $history, string $userPrompt, bool $conversational = false, int $timeout = 20): ?string
     {
         $startedAt = (int) (microtime(true) * 1000);
 
@@ -54,7 +54,7 @@ class GroqChatService
             : (float) config('services.gemini.chat_grounded_temperature', 0);
 
         try {
-            $response = Http::withToken($apiKey)->timeout(20)->post($url, [
+            $response = Http::withToken($apiKey)->timeout(max(1, min(20, $timeout)))->post($url, [
                 'model' => $model,
                 'messages' => $messages,
                 'temperature' => $temperature,

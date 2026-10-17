@@ -129,6 +129,8 @@ class ConversationManager
             $this->rememberActiveSearch($session, $contextData);
             $session->refresh();
             $this->rememberRetrievalState($session, $contextData);
+            $session->refresh();
+            $this->rememberTaskState($session, $contextData);
         }
 
         return $chatMessage;
@@ -153,6 +155,87 @@ class ConversationManager
         $state = $session->metadata['active_search_state'] ?? [];
 
         return is_array($state) ? $state : [];
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function resultGroups(ChatSession $session): array
+    {
+        $groups = $session->metadata['conversation_v2']['groups'] ?? [];
+        if (is_array($groups) && $groups !== []) {
+            return array_values($groups);
+        }
+        $frame = $this->currentFrame($session);
+        if (empty($frame['result_ids'])) {
+            return [];
+        }
+
+        return [['type' => $frame['type'], 'intent' => $frame['intent'] ?? strtoupper($frame['type']).'_SEARCH', 'result_ids' => $frame['result_ids'], 'constraints' => $frame, 'source_turn' => $frame['source_turn'] ?? null]];
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function pendingTasks(ChatSession $session): array
+    {
+        $pending = $session->metadata['conversation_v2']['pending'] ?? [];
+
+        return is_array($pending) ? array_values($pending) : [];
+    }
+
+    /** @param array<string, mixed> $data */
+    private function rememberTaskState(ChatSession $session, array $data): void
+    {
+        $metadata = $session->metadata ?? [];
+        $state = $metadata['conversation_v2'] ?? ['version' => 2, 'groups' => [], 'pending' => []];
+        $groups = empty($data['reset_destination']) ? ($state['groups'] ?? []) : [];
+        $pending = empty($data['reset_destination']) ? ($state['pending'] ?? []) : [];
+        $sections = $data['sections'] ?? [[
+            'id' => 'legacy', 'type' => $data['trace']['intent'] ?? '',
+            'constraints' => $data['trace']['constraints'] ?? [],
+            'outcome' => $data['retrieval_outcome'] ?? [], 'data' => $data,
+        ]];
+        $catalogs = ['retrieved_rooms' => 'room', 'retrieved_hotels' => 'hotel', 'retrieved_activities' => 'activity', 'retrieved_packages' => 'package', 'retrieved_addons' => 'addon'];
+        unset($state['last_action']);
+        foreach ($sections as $section) {
+            if (($section['outcome']['reason'] ?? null) === 'action_not_supported') {
+                $state['last_action'] = ['operation' => $section['operation'] ?? null];
+            }
+            $constraints = array_filter($section['constraints'] ?? [], static fn (mixed $v): bool => $v !== null && $v !== []);
+            $scope = ($section['type'] ?? '').':'.($constraints['destination_id'] ?? 'any');
+            if (($section['outcome']['status'] ?? null) === RetrievalOutcome::NeedsClarification) {
+                $pending[$scope] = array_intersect_key($section, array_flip(['id', 'type', 'query', 'constraints', 'outcome']));
+            } elseif (in_array($section['outcome']['status'] ?? null, [RetrievalOutcome::Matched, RetrievalOutcome::NoMatch], true)) {
+                unset($pending[$scope]);
+                foreach ($pending as $pendingKey => $pendingTask) {
+                    if (($pendingTask['type'] ?? null) === ($section['type'] ?? null) && empty($pendingTask['constraints']['destination_id'])) {
+                        unset($pending[$pendingKey]);
+                    }
+                }
+            }
+            foreach ($catalogs as $key => $type) {
+                $cards = $section['data'][$key] ?? [];
+                if ($cards === []) {
+                    continue;
+                }
+                $first = $cards[0];
+                $groupKey = $type.':'.($constraints['destination_id'] ?? $first['destination_id'] ?? 'any');
+                $groupIntent = $section['type'] ?? '';
+                if ($groupIntent === '' || ! isset($data['sections'])) {
+                    $groupIntent = strtoupper($type === 'addon' ? 'addon' : $type).'_SEARCH';
+                }
+                $groups[$groupKey] = [
+                    'task_id' => $section['id'], 'type' => $type, 'intent' => $groupIntent,
+                    'result_ids' => array_values(array_map('intval', array_column($cards, 'id'))),
+                    'constraints' => array_replace($constraints, array_filter([
+                        'destination_id' => $first['destination_id'] ?? null,
+                        'destination_name' => $first['destination'] ?? null,
+                    ], static fn (mixed $v): bool => $v !== null)),
+                    'source_turn' => $data['trace']['trace_id'] ?? null, 'retrieved_at' => now()->toIso8601String(),
+                ];
+            }
+        }
+        $state['groups'] = array_slice($groups, -12, null, true);
+        $state['pending'] = array_slice($pending, -8, null, true);
+        $metadata['conversation_v2'] = $state;
+        $session->update(['metadata' => $metadata]);
     }
 
     protected function rememberActiveSearch(ChatSession $session, array $contextData): void

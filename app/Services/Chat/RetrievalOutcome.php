@@ -12,6 +12,12 @@ final class RetrievalOutcome
 
     public const TemporarilyUnavailable = 'temporarily_unavailable';
 
+    public const Unsupported = 'unsupported';
+
+    public const Deferred = 'deferred';
+
+    public const Partial = 'partial';
+
     public static function make(string $status, string $reason, array $relaxedConstraints = [], array $suggestedActions = []): array
     {
         return ['status' => $status, 'reason' => $reason, 'relaxed_constraints' => array_values($relaxedConstraints), 'suggested_actions' => array_values($suggestedActions)];

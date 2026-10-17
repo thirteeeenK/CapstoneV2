@@ -59,6 +59,67 @@ class ChatbotService
     ];
 
     /**
+     * Section headings for multi-intent replies, in display order.
+     */
+    protected const MULTI_INTENT_SECTIONS = [
+        IntentRouter::DESTINATIONS_OVERVIEW => 'About our destinations',
+        IntentRouter::WEATHER_QUERY => 'Weather',
+        IntentRouter::ROOM_SEARCH => 'Where to stay',
+        IntentRouter::HOTEL_SEARCH => 'Where to stay',
+        IntentRouter::AVAILABILITY_QUERY => 'Room availability',
+        IntentRouter::ACTIVITY_SEARCH => 'Things to do',
+        IntentRouter::PACKAGE_SEARCH => 'Package deals',
+        IntentRouter::ADDON_SEARCH => 'Add-ons & transfers',
+        IntentRouter::ITINERARY_QUERY => 'Suggested itinerary',
+        IntentRouter::MAP_QUERY => 'Getting there',
+        IntentRouter::DISCOUNT_QUERY => 'Discounts',
+        IntentRouter::BOOKING_STATUS => 'Your bookings',
+        IntentRouter::LEGAL_QUERY => 'Good to know',
+    ];
+
+    /**
+     * Payload keys a section may contribute to a multi-intent reply. Merged
+     * by whitelist (first section wins) so no section can clobber the reply
+     * text, trace, or another section's cards.
+     */
+    protected const MULTI_INTENT_CARRY_KEYS = [
+        'retrieved_rooms',
+        'retrieved_hotels',
+        'retrieved_activities',
+        'retrieved_packages',
+        'retrieved_addons',
+        'result_ordering',
+        'itinerary',
+        'availability',
+        'weather',
+        'weather_forecast_raw',
+        'weather_normalized',
+        'destination_id',
+        'destination_name',
+        'map',
+        'location_request',
+        'location_target',
+        'discount_rules',
+    ];
+
+    /**
+     * Trip-wide constraints every section shares even when only one clause
+     * stated them ("a hotel for 4 pax and some tours" quotes tours for 4).
+     * Budget is deliberately not shared: it belongs to the clause it was in.
+     */
+    protected const MULTI_INTENT_SHARED_CONSTRAINTS = ['pax', 'check_in_date', 'check_out_date', 'nights', 'days', 'destination_id', 'destination_name'];
+
+    /**
+     * Plain-language names for the off-topic tasks SunnyBot declines, keyed
+     * by IntentRouter::outOfScopeTopic().
+     */
+    protected const OUT_OF_SCOPE_TOPICS = [
+        'coding' => 'writing code',
+        'math' => 'math or homework questions',
+        'writing' => 'writing essays, poems, or other non-travel pieces',
+    ];
+
+    /**
      * Notice naming the backup model when Gemini failed over to Groq. Kept
      * out of the reply text (separate payload key) so it never leaks into
      * the persisted conversation history the model sees next turn.
@@ -80,6 +141,8 @@ class ChatbotService
 
     protected bool $aiTotallyDown = false;
 
+    protected bool $preparingTask = false;
+
     public function __construct(
         protected GeminiService $gemini,
         protected IntentRouter $intentRouter,
@@ -90,6 +153,10 @@ class ChatbotService
         protected RoutingService $routing,
         protected FaqService $faq,
         protected CatalogPriceQuote $priceQuotes,
+        protected ConversationPlanner $planner,
+        protected ChatRetrievalService $taskRetrieval,
+        protected ChatResponseComposer $composer,
+        protected ChatCapabilities $capabilities,
     ) {}
 
     public function handle(ChatSession $session, ?User $user, string $message, ?float $userLat = null, ?float $userLng = null): array
@@ -104,6 +171,8 @@ class ChatbotService
         // Fresh per-turn AI health flags for the fallback/outage notices.
         $this->aiFallbackUsed = false;
         $this->aiTotallyDown = false;
+        $this->gemini->lastUsedFallback = false;
+        $this->gemini->chatDeadline = microtime(true) + max(5, min(120, (int) config('services.chatbot.turn_timeout', 90)));
 
         $inquiry = SupportInquiry::where('chat_session_id', $session->id)
             ->whereIn('status', [SupportInquiry::STATUS_PENDING, SupportInquiry::STATUS_HUMAN_ACTIVE])
@@ -128,6 +197,28 @@ class ChatbotService
                 'control' => 'admin',
                 'session_token' => $session->session_token,
             ];
+        }
+
+        // Coding asks are declined before any follow-up heuristic can hand
+        // them to the model as small talk ("can you write me a python
+        // script?" after a hotel turn). Mixed asks skip this and are
+        // answered section by section below, with the decline appended.
+        if ($this->intentRouter->outOfScopeTopic($message, strongOnly: true) !== null
+            && $this->intentRouter->compoundIntents($message) === []) {
+            $reply = $this->handleOutOfScope($message);
+            $reply = $this->finalizeBotReply($session, $reply['reply'], $reply, IntentRouter::OUT_OF_SCOPE, 'grounded', [], false, $traceId);
+
+            return array_merge($aiBase, $reply);
+        }
+
+        if (config('services.chatbot.conversational_enabled', true)) {
+            $plan = $this->planner->plan($message, $session);
+            if ($plan['handle']) {
+                $reply = $this->handlePlannedTasks($plan, $message, $session, $user, $userLat, $userLng);
+                $reply = $this->finalizeBotReply($session, $reply['reply'], $reply, $reply['multi_intents'][0] ?? null, 'grounded', $reply['sections'][0]['constraints'] ?? [], false, $traceId);
+
+                return array_merge($aiBase, $reply);
+            }
         }
 
         $lastBot = $session->messages()->where('sender', 'bot')->latest('id')->first();
@@ -245,7 +336,7 @@ class ChatbotService
         }
 
         $intent = $this->intentRouter->classify($message);
-        $constraints = in_array($intent, [IntentRouter::GENERAL_TALK, IntentRouter::DESTINATIONS_OVERVIEW, IntentRouter::BOOKING_STATUS, IntentRouter::LEGAL_QUERY], true)
+        $constraints = in_array($intent, [IntentRouter::GENERAL_TALK, IntentRouter::DESTINATIONS_OVERVIEW, IntentRouter::BOOKING_STATUS, IntentRouter::LEGAL_QUERY, IntentRouter::OUT_OF_SCOPE], true)
             ? []
             : $this->intentRouter->extractConstraints($message);
         if ($unsupportedDestination = $this->unsupportedDestinationName($message, $intent, $constraints)) {
@@ -255,6 +346,19 @@ class ChatbotService
 
             return array_merge($aiBase, $reply);
         }
+
+        // Compound asks ("a nice place in Boracay and some extreme
+        // activities") answer every requested intent in its own section
+        // instead of only the one classify() ranked first.
+        $compoundIntents = $this->intentRouter->compoundIntents($message);
+        if ($compoundIntents !== []) {
+            [$reply, $primaryIntent, $traceConstraints, $mode] = $this->handleMultiIntent($message, $compoundIntents, $user, $session, $userLat, $userLng);
+            $reply['intent_initial'] = $intent;
+            $reply = $this->finalizeBotReply($session, $reply['reply'], $reply, $primaryIntent, $mode, $traceConstraints, false, $traceId);
+
+            return array_merge($aiBase, $reply);
+        }
+
         // Pre-resolution snapshot: personalization labeling is decided from
         // what the user actually typed, not from inherited/profile state.
         // Bare amenity refinements ("luxury quiet pool") often token-match a
@@ -330,6 +434,7 @@ class ChatbotService
             IntentRouter::BOOKING_STATUS => $this->handleBookingStatus($message, $user, $session),
             IntentRouter::SUPPORT_AGENT => $this->handleSupportAgentRequest(),
             IntentRouter::LEGAL_QUERY => $this->handleLegalQuery($message),
+            IntentRouter::OUT_OF_SCOPE => $this->handleOutOfScope($message),
             default => $this->handleGeneralChat($message, $session),
         };
 
@@ -346,6 +451,409 @@ class ChatbotService
         $reply = $this->finalizeBotReply($session, $text, $reply, $intent, $mode, $constraints, $historyUsed, $traceId);
 
         return array_merge($aiBase, ['reply' => $text], $reply);
+    }
+
+    // ────────────────────────────────────────────────
+    //  Multi-intent decomposition
+    // ────────────────────────────────────────────────
+
+    /**
+     * Prepare each task through the existing deterministic handlers, compose
+     * once, and retain every task's evidence and outcome in the response.
+     *
+     * @param  array{handle: bool, tasks: list<array<string, mixed>>, source: string}  $plan
+     * @return array<string, mixed>
+     */
+    protected function handlePlannedTasks(array $plan, string $message, ChatSession $session, ?User $user, ?float $userLat, ?float $userLng): array
+    {
+        $deadline = $this->gemini->chatDeadline ?? microtime(true) + 90;
+        $sections = [];
+        $limit = max(1, min(8, (int) config('services.chatbot.max_tasks', 4)));
+        foreach ($plan['tasks'] as $index => $task) {
+            $task['heading'] = self::MULTI_INTENT_SECTIONS[$task['type']] ?? match ($task['type']) {
+                ConversationPlanner::ACTION => 'Your requested action',
+                ConversationPlanner::UNSUPPORTED => 'Additional travel information',
+                ConversationPlanner::DRAFT => 'Message draft',
+                IntentRouter::OUT_OF_SCOPE => 'Other request',
+                default => 'A quick clarification',
+            };
+            $task['constraints'] = $this->sanitizeConstraintsForIntent($task['constraints'], $task['type']);
+            $section = $this->taskRetrieval->retrieve($task, function () use ($task, $index, $limit, $session, $user, $userLat, $userLng): array {
+                if ($index >= $limit) {
+                    return ['reply' => 'I have kept this part of your request for a follow-up. Please ask it next so I can check it fully.', 'retrieval_outcome' => RetrievalOutcome::make(RetrievalOutcome::Deferred, 'task_limit')];
+                }
+                if ($task['type'] === ConversationPlanner::ACTION) {
+                    return $this->capabilities->limitation($task['operation'], (bool) preg_match('/\b(?:ko|ako|kami|paki|gusto|mo|sa)\b/iu', $task['query']));
+                }
+                if ($task['type'] === ConversationPlanner::UNSUPPORTED) {
+                    return ['reply' => 'I do not have a verified source for this information in SunnyTrips yet. I can help with the available hotels, activities, packages, and transfers.', 'retrieval_outcome' => RetrievalOutcome::make(RetrievalOutcome::Unsupported, 'data_source_not_supported')];
+                }
+                if ($task['type'] === ConversationPlanner::DRAFT) {
+                    $topic = preg_match('/\bearly\s+check[-\s]?in\b/iu', $task['query']) ? 'whether early check-in is possible and whether any extra fee applies' : 'the available options and requirements for my planned trip';
+
+                    return ['reply' => "**Draft for you to send**\n\nHello,\n\nI am planning a trip and would like to ask about {$topic}. Please let me know what details you need from me.\n\nThank you.\n\nThis message has not been sent.", 'retrieval_outcome' => RetrievalOutcome::make(RetrievalOutcome::Matched, 'message_draft_prepared')];
+                }
+                if ($task['type'] === IntentRouter::OUT_OF_SCOPE) {
+                    $topic = self::OUT_OF_SCOPE_TOPICS[$this->intentRouter->outOfScopeTopic($task['query'])] ?? 'that request';
+
+                    return ['reply' => "As for {$topic}, I can't seem to help with that. I can still help with the travel parts of your request.", 'retrieval_outcome' => RetrievalOutcome::make(RetrievalOutcome::Unsupported, 'outside_travel_scope')];
+                }
+                if ($task['type'] === ConversationPlanner::CLARIFY || isset($task['clarification'])) {
+                    return ['reply' => $task['clarification'] ?? 'What would you like me to find for this part of your request?', 'retrieval_outcome' => RetrievalOutcome::make(RetrievalOutcome::NeedsClarification, 'ambiguous_request')];
+                }
+                $constraints = $task['constraints'];
+                if ($unsupported = $this->unsupportedDestinationName($task['query'], $task['type'], $constraints)) {
+                    return $this->unsupportedDestinationPayload($unsupported, $task['type']);
+                }
+                $constraints = $this->resolveDefaultDestination($constraints, $user);
+                $catalogIntent = in_array($task['type'], [...self::RECOMMENDATION_INTENTS, IntentRouter::WEATHER_QUERY, IntentRouter::MAP_QUERY, IntentRouter::AVAILABILITY_QUERY, IntentRouter::ITINERARY_QUERY], true);
+                if ($catalogIntent && empty($constraints['destination_id']) && empty($constraints['hotel_id']) && empty($constraints['room_id']) && empty($task['entity'])) {
+                    return ['reply' => 'Which destination should I use for this part of your request?', 'retrieval_outcome' => RetrievalOutcome::make(RetrievalOutcome::NeedsClarification, 'missing_destination')];
+                }
+                if (isset($task['joint_budget']) && $task['type'] !== IntentRouter::ITINERARY_QUERY) {
+                    return ['reply' => 'Your budget covers the whole trip. Please tell me how much to allocate to this part, or request one itinerary so I can check a combined total.', 'retrieval_outcome' => RetrievalOutcome::make(RetrievalOutcome::NeedsClarification, 'joint_budget_allocation')];
+                }
+                if (! empty($constraints['max_price']) && $task['budget_basis'] === 'unknown' && in_array($task['type'], self::RECOMMENDATION_INTENTS, true)) {
+                    return ['reply' => 'Does this budget apply per night, per person, or to this whole part of the trip?', 'retrieval_outcome' => RetrievalOutcome::make(RetrievalOutcome::NeedsClarification, 'missing_budget_basis')];
+                }
+                if (isset($task['entity'])) {
+                    $constraints = $this->constraintsForTaskEntity($task['entity'], $constraints);
+                    if ($constraints === null) {
+                        return ['reply' => 'That option is no longer available in the visible catalog. Please search again for current alternatives.', 'retrieval_outcome' => RetrievalOutcome::make(RetrievalOutcome::NoMatch, 'stale_reference')];
+                    }
+                }
+                $this->preparingTask = true;
+                try {
+                    $result = $this->dispatchSectionIntent($task['type'], $task['query'], $constraints, $user, $session, $userLat, $userLng);
+                    if ($task['type'] === IntentRouter::BOOKING_STATUS && ! $user) {
+                        $result['retrieval_outcome'] = RetrievalOutcome::make(RetrievalOutcome::NeedsClarification, 'authentication_required');
+                    }
+
+                    return $this->enforceTaskPreferences($this->enforceTaskBudget($result, $task), $task);
+                } finally {
+                    $this->preparingTask = false;
+                }
+            }, $deadline);
+            $sections[] = $section;
+        }
+        $sections = $this->composer->compose($sections, function (string $candidate, array $section): ?string {
+            $this->gemini->lastContextPrices = $section['evidence']['prices'];
+
+            return $this->groundedExplanation($candidate, $section['data']);
+        }, microtime(true) < $deadline);
+        $this->aiFallbackUsed = $this->aiFallbackUsed || $this->gemini->lastUsedFallback;
+        $this->aiTotallyDown = $this->composer->unavailable;
+        $payload = ['schema_version' => 2, 'sections' => $sections, 'multi_intents' => array_values(array_unique(array_column($sections, 'type'))), 'planner_source' => $plan['source']];
+        $texts = [];
+        $actions = [];
+        foreach ($sections as $section) {
+            $heading = $section['heading'];
+            if (! empty($section['constraints']['destination_name'])) {
+                $heading .= ' — '.$section['constraints']['destination_name'];
+            }
+            $texts[] = '### '.$heading."\n\n".$section['answer'];
+            foreach (self::MULTI_INTENT_CARRY_KEYS as $key) {
+                if (isset(ChatRetrievalService::CATALOGS[$key])) {
+                    foreach ($section['data'][$key] ?? [] as $card) {
+                        $payload[$key][$card['id']] = $card;
+                    }
+                } elseif (! empty($section['data'][$key]) && ! isset($payload[$key])) {
+                    $payload[$key] = $section['data'][$key];
+                }
+            }
+            foreach ($section['data']['suggested_actions'] ?? [] as $action) {
+                $actions[$action['id']] = $action;
+            }
+        }
+        foreach (ChatRetrievalService::CATALOGS as $key => $type) {
+            if (isset($payload[$key])) {
+                $payload[$key] = array_values($payload[$key]);
+            }
+        }
+        if ((! empty($payload['retrieved_hotels']) || ! empty($payload['retrieved_rooms'])) && ! empty($payload['retrieved_activities'])) {
+            $actions['build-itinerary'] = ['id' => 'build-itinerary', 'label' => 'Build my itinerary', 'prompt' => 'Plan a suggested itinerary using my selected hotel and activities'];
+            $payload['section_footer'] = 'I can help arrange your choices into a suggested itinerary. Tell me your dates, trip length, and total budget.';
+            $texts[] = $payload['section_footer'];
+        }
+        $statuses = array_column(array_column($sections, 'outcome'), 'status');
+        $status = count(array_unique($statuses)) > 1 ? RetrievalOutcome::Partial : ($statuses[0] ?? RetrievalOutcome::NeedsClarification);
+        $payload['retrieval_outcome'] = count($sections) === 1 ? $sections[0]['outcome'] : RetrievalOutcome::make($status, $status === RetrievalOutcome::Partial ? 'mixed_task_outcomes' : 'tasks_accounted_for');
+        $payload['suggested_actions'] = array_values($actions);
+        $payload['reply'] = implode("\n\n", $texts);
+        $payload['reset_destination'] = (bool) preg_match('/\b(?:actually|instead|change\s+(?:the\s+)?destination)\b/iu', $message) && $this->intentRouter->extractDestinationName($message) !== null;
+
+        return $payload;
+    }
+
+    /** @param array{type: string, id: int} $entity
+     * @param  array<string, mixed>  $constraints
+     * @return array<string, mixed>|null
+     */
+    private function constraintsForTaskEntity(array $entity, array $constraints): ?array
+    {
+        [$model, $name, $idKey, $nameKey] = match ($entity['type']) {
+            'hotel' => [HotelModel::class, 'hotel_name', 'hotel_id', 'hotel_name'],
+            'room' => [RoomType::class, 'room_name', 'room_id', 'room_name'],
+            'activity' => [ActivityModel::class, 'activity_name', 'activity_id', 'activity_name'],
+            'package' => [Package::class, 'name', 'package_id', 'package_name'],
+            'addon' => [AddOnModel::class, 'name', 'addon_id', 'addon_name'],
+        };
+        $item = $model::whereKey($entity['id'])->where($entity['type'] === 'package' ? 'is_active' : 'is_shown', true)->first();
+        if (! $item) {
+            return null;
+        }
+        $destinationId = $entity['type'] === 'room' ? $item->hotel?->destination_id : $item->destination_id;
+        if (! empty($constraints['destination_id']) && (int) $destinationId !== (int) $constraints['destination_id']) {
+            return null;
+        }
+        $constraints[$idKey] = (int) $item->id;
+        $constraints[$nameKey] = $item->{$name};
+        $constraints['destination_id'] = $destinationId;
+
+        return $constraints;
+    }
+
+    /** @param array<string, mixed> $result
+     * @param  array<string, mixed>  $task
+     * @return array<string, mixed>
+     */
+    private function enforceTaskBudget(array $result, array $task): array
+    {
+        $max = $task['constraints']['max_price'] ?? null;
+        if (! $max || ($task['constraints']['budget_mode'] ?? 'target') !== 'ceiling') {
+            return $result;
+        }
+        foreach (ChatRetrievalService::CATALOGS as $key => $type) {
+            if (isset($result[$key])) {
+                $result[$key] = array_values(array_filter($result[$key], function (array $card) use ($max, $type): bool {
+                    $price = match ($type) {
+                        'hotel' => $card['price_from'] ?? null, 'room' => $card['base_price'] ?? null, default => $card['price_quote']['unit_amount'] ?? $card['rate'] ?? $card['price'] ?? null
+                    };
+
+                    return is_numeric($price) && (float) $price <= (float) $max;
+                }));
+            }
+        }
+        if (! $this->replyHasRetrievedCards($result)) {
+            return ['reply' => 'I could not verify an option within your stated budget for this part. Would you like to change that budget?', 'retrieval_outcome' => RetrievalOutcome::make(RetrievalOutcome::NoMatch, 'hard_budget_no_match')];
+        }
+        $result['reply'] = $this->catalogCardsPointer($result);
+
+        return $result;
+    }
+
+    /** @param array<string, mixed> $result
+     * @param  array<string, mixed>  $task
+     * @return array<string, mixed>
+     */
+    private function enforceTaskPreferences(array $result, array $task): array
+    {
+        $excluded = $task['constraints']['excluded_terms'] ?? [];
+        if ($excluded !== [] && $this->replyHasRetrievedCards($result)) {
+            foreach (ChatRetrievalService::CATALOGS as $key => $type) {
+                if (isset($result[$key])) {
+                    $result[$key] = array_values(array_filter($result[$key], function (array $card) use ($excluded): bool {
+                        $facts = mb_strtolower(json_encode($card, JSON_INVALID_UTF8_SUBSTITUTE));
+                        foreach ($excluded as $term) {
+                            if (str_contains($facts, $term)) {
+                                return false;
+                            }
+                        }
+
+                        return true;
+                    }));
+                }
+            }
+            if (! $this->replyHasRetrievedCards($result)) {
+                return ['reply' => 'I could not verify an option matching your exclusions. Would you like to change the search?', 'retrieval_outcome' => RetrievalOutcome::make(RetrievalOutcome::NoMatch, 'excluded_features')];
+            }
+            $result['reply'] = $this->catalogCardsPointer($result);
+        }
+        preg_match_all('/\b(?:extreme|relaxing|beachfront|quiet|pool|wifi|wi-fi)\b/iu', $task['query'], $requested);
+        if ($requested[0] === [] || ! $this->replyHasRetrievedCards($result)) {
+            return $result;
+        }
+        $unverified = [];
+        foreach (ChatRetrievalService::CATALOGS as $key => $type) {
+            foreach ($result[$key] ?? [] as $index => $card) {
+                $facts = mb_strtolower(json_encode(array_intersect_key($card, array_flip(['activity_level', 'category', 'description', 'vibe_tags', 'amenities', 'hotel_description'])), JSON_INVALID_UTF8_SUBSTITUTE));
+                $missing = array_values(array_filter(array_unique($requested[0]), fn (string $term): bool => ! str_contains($facts, mb_strtolower($term))));
+                if ($missing !== []) {
+                    $result[$key][$index]['match_status'] = 'alternative';
+                    $unverified = array_merge($unverified, $missing);
+                }
+            }
+        }
+        if ($unverified !== []) {
+            $result['reply'] = 'Some options are alternatives: the catalog does not verify all your requested features ('.implode(', ', array_unique($unverified)).'). '.$this->catalogCardsPointer($result);
+            $result['preference_notice'] = true;
+        }
+
+        return $result;
+    }
+
+    protected function handleMultiIntent(string $message, array $intents, ?User $user, ChatSession $session, ?float $userLat, ?float $userLng): array
+    {
+        $rawConstraints = $this->intentRouter->extractConstraints($message);
+        $messageScope = $this->hasExplicitScope($rawConstraints);
+        $shared = $this->resolveConversationalDestination($rawConstraints, $session);
+        $shared = $this->resolveDefaultDestination($shared, $user);
+        $shared = $this->inheritConversationalConstraints($message, $shared, $session, $messageScope);
+
+        $subQueries = $this->intentRouter->compoundSubQueries($message, $intents);
+        $ordered = array_values(array_filter(
+            array_keys(self::MULTI_INTENT_SECTIONS),
+            fn (string $intent): bool => in_array($intent, $intents, true)
+        ));
+
+        $payload = [];
+        $sections = [];
+        $actions = [];
+        $outcomes = [];
+        $sectionConstraints = [];
+        foreach ($ordered as $intent) {
+            $sectionQuery = $subQueries[$intent] ?? $message;
+            $constraints = $this->intentRouter->extractConstraints($sectionQuery);
+            foreach (self::MULTI_INTENT_SHARED_CONSTRAINTS as $key) {
+                if (empty($constraints[$key]) && ! empty($shared[$key])) {
+                    $constraints[$key] = $shared[$key];
+                }
+            }
+            $constraints = $this->sanitizeConstraintsForIntent($constraints, $intent);
+            $sectionConstraints[$intent] = $constraints;
+
+            $result = $this->dispatchSectionIntent($intent, $sectionQuery, $constraints, $user, $session, $userLat, $userLng);
+
+            $text = trim((string) ($result['reply'] ?? ''));
+            if ($text !== '') {
+                $sections[] = '### '.self::MULTI_INTENT_SECTIONS[$intent]."\n\n".$text;
+            }
+            foreach (self::MULTI_INTENT_CARRY_KEYS as $key) {
+                if (! empty($result[$key]) && ! array_key_exists($key, $payload)) {
+                    $payload[$key] = $result[$key];
+                }
+            }
+            foreach ($result['suggested_actions'] ?? [] as $action) {
+                $actions[$action['id'] ?? count($actions)] ??= $action;
+            }
+            if (! empty($result['retrieval_outcome'])) {
+                $outcomes[] = $result['retrieval_outcome'];
+            }
+        }
+
+        if (in_array(IntentRouter::OUT_OF_SCOPE, $intents, true)) {
+            $topic = null;
+            foreach ($this->intentRouter->splitCompoundClauses($message) as $clause) {
+                $topic ??= $this->intentRouter->outOfScopeTopic($clause);
+            }
+            $declined = self::OUT_OF_SCOPE_TOPICS[$topic] ?? 'the rest of your message';
+            $sections[] = "As for {$declined}, I can't seem to help with that — I stick to travel planning.";
+            $ordered[] = IntentRouter::OUT_OF_SCOPE;
+        }
+
+        $hasStay = ! empty($payload['retrieved_rooms']) || ! empty($payload['retrieved_hotels']);
+        if ($hasStay && ! empty($payload['retrieved_activities']) && ! in_array(IntentRouter::ITINERARY_QUERY, $intents, true)) {
+            $destination = $shared['destination_name'] ?? null;
+            $sections[] = '**Next step:** I can combine this stay and these activities into a day-by-day itinerary — tap **Build my itinerary** or tell me your trip length and budget.';
+            $actions['build-itinerary'] ??= [
+                'id' => 'build-itinerary',
+                'label' => 'Build my itinerary',
+                'prompt' => 'Plan a trip itinerary'.($destination ? " in {$destination}" : ''),
+            ];
+        }
+
+        $payload['reply'] = implode("\n\n", $sections);
+        $payload['multi_intents'] = $ordered;
+        if ($actions !== []) {
+            $payload['suggested_actions'] = array_values($actions);
+        }
+        $outcome = $this->multiIntentOutcome($payload, $outcomes);
+        if ($outcome !== null) {
+            $payload['retrieval_outcome'] = $outcome;
+        }
+
+        $primaryIntent = $this->multiIntentPrimary($payload, $ordered);
+        [$payload, $mode] = $this->decorateRecommendationReply($payload, $primaryIntent, $rawConstraints, $user);
+        $payload['explicit_constraints'] = $this->explicitScopeKeys($rawConstraints);
+
+        return [$payload, $primaryIntent, $sectionConstraints[$primaryIntent] ?? $shared, $mode];
+    }
+
+    /**
+     * Run one compound section through the same handler the single-intent
+     * dispatch in handle() would use.
+     *
+     * @return array<string, mixed>
+     */
+    protected function dispatchSectionIntent(string $intent, string $query, array $constraints, ?User $user, ChatSession $session, ?float $userLat, ?float $userLng): array
+    {
+        return match ($intent) {
+            IntentRouter::ROOM_SEARCH => $this->handleRoomSearch($query, $constraints, $user, $session),
+            IntentRouter::HOTEL_SEARCH => $this->handleHotelSearch($query, $constraints, $user, $session),
+            IntentRouter::ACTIVITY_SEARCH => $this->handleActivitySearch($query, $constraints, $user, $session),
+            IntentRouter::PACKAGE_SEARCH => $this->handlePackageSearch($query, $constraints, $user, $session),
+            IntentRouter::ADDON_SEARCH => $this->handleAddOnSearch($query, $constraints, $user, $session),
+            IntentRouter::ITINERARY_QUERY => $this->handleItineraryQuery($query, $constraints, $user, $session),
+            IntentRouter::AVAILABILITY_QUERY => $this->handleAvailabilityQuery($query, $constraints, $user, $session),
+            IntentRouter::MAP_QUERY => $this->handleMapQuery($query, $constraints, $session, $userLat, $userLng),
+            IntentRouter::WEATHER_QUERY => $this->handleWeatherQuery($query, $constraints, $session),
+            IntentRouter::DESTINATIONS_OVERVIEW => $this->handleDestinationsOverview($session),
+            IntentRouter::DISCOUNT_QUERY => $this->handleDiscountQuery($query, $session),
+            IntentRouter::BOOKING_STATUS => $this->handleBookingStatus($query, $user, $session),
+            IntentRouter::LEGAL_QUERY => $this->handleLegalQuery($query),
+            default => [],
+        };
+    }
+
+    /**
+     * Turn-level retrieval outcome for a compound reply. Any verified section
+     * makes the turn a match (left unset so finalizeBotReply marks it), except
+     * a pending "missing dates" ask, which must survive so the user's next
+     * message with dates resumes the availability check. With no verified
+     * section at all, the first section's own outcome explains the miss.
+     *
+     * @param  array<string, mixed>  $payload
+     * @param  list<array<string, mixed>>  $outcomes
+     * @return array<string, mixed>|null
+     */
+    protected function multiIntentOutcome(array $payload, array $outcomes): ?array
+    {
+        foreach ($outcomes as $outcome) {
+            if (($outcome['reason'] ?? null) === 'missing_dates') {
+                return $outcome;
+            }
+        }
+
+        $verified = $this->replyHasRetrievedCards($payload) || ! empty($payload['itinerary']) || ! empty($payload['weather']);
+
+        return $verified ? null : ($outcomes[0] ?? null);
+    }
+
+    /**
+     * The intent recorded for a compound turn. Mirrors the card group
+     * ConversationManager remembers as the turn frame (rooms, hotels,
+     * activities, packages, add-ons — first non-empty wins), so ordinal
+     * follow-ups like "the second one" resolve against the same list.
+     *
+     * @param  array<string, mixed>  $payload
+     * @param  list<string>  $ordered
+     */
+    protected function multiIntentPrimary(array $payload, array $ordered): string
+    {
+        $groups = [
+            'retrieved_rooms' => in_array(IntentRouter::AVAILABILITY_QUERY, $ordered, true) ? IntentRouter::AVAILABILITY_QUERY : IntentRouter::ROOM_SEARCH,
+            'retrieved_hotels' => IntentRouter::HOTEL_SEARCH,
+            'retrieved_activities' => IntentRouter::ACTIVITY_SEARCH,
+            'retrieved_packages' => IntentRouter::PACKAGE_SEARCH,
+            'retrieved_addons' => IntentRouter::ADDON_SEARCH,
+        ];
+        foreach ($groups as $key => $intent) {
+            if (! empty($payload[$key])) {
+                return $intent;
+            }
+        }
+
+        return $ordered[0];
     }
 
     // ────────────────────────────────────────────────
@@ -718,22 +1226,102 @@ class ChatbotService
     protected function checkAbuse(?User $user, string $message): ?array
     {
         if ($user) {
-            return $this->gemini->detectAbuseAndGuard($user, $message);
+            $guard = $this->gemini->detectAbuseAndGuard($user, $message);
+
+            // Override attempts are still reported for admin review, but the
+            // user gets the graceful decline instead of the guideline warning.
+            return ($guard['category'] ?? null) === 'Prompt Injection'
+                ? $this->overrideDeclinePayload($message, loggedForReview: true)
+                : $guard;
         }
 
         $match = ChatbotModerationPolicy::match($message);
         if ($match) {
             Log::info('Chatbot guest abuse blocked', ['keyword' => $match['term'], 'category' => $match['category']]);
 
-            return [
-                'blocked' => true,
-                'response' => $match['category'] === 'Prompt Injection'
-                    ? 'I cannot follow requests to override, reveal, or bypass the chatbot instructions. Please ask a SunnyTrips travel question instead.'
-                    : 'Your message contains abusive or prohibited content. Please rephrase it respectfully so I can help with your trip.',
-            ];
+            return $match['category'] === 'Prompt Injection'
+                ? $this->overrideDeclinePayload($message, loggedForReview: false)
+                : [
+                    'blocked' => true,
+                    'response' => 'Your message contains abusive or prohibited content. Please rephrase it respectfully so I can help with your trip.',
+                ];
         }
 
         return null;
+    }
+
+    /**
+     * Blocked payload for an attempt to override SunnyBot. Declines the
+     * actual ask by name when it is recognizable ("writing code"), never
+     * mentions prompts or rules, and offers concrete travel next steps.
+     */
+    protected function overrideDeclinePayload(string $message, bool $loggedForReview): array
+    {
+        $reply = $this->declineReply($this->intentRouter->outOfScopeTopic($message), overrideAttempt: true);
+        if ($loggedForReview) {
+            $reply .= "\n\nThis message was logged for administrator review.";
+        }
+
+        return [
+            'blocked' => true,
+            'response' => $reply,
+            'suggested_actions' => $this->travelPivotActions(),
+        ];
+    }
+
+    /**
+     * Graceful out-of-scope reply: one short decline that names what SunnyBot
+     * can't do, then a pivot to travel help built from the live destination
+     * list. Deterministic, so it reads the same every time and costs no
+     * model call.
+     */
+    protected function declineReply(?string $topic, bool $overrideAttempt = false): string
+    {
+        $declined = self::OUT_OF_SCOPE_TOPICS[$topic] ?? 'that';
+        $lead = "I can't seem to help with {$declined}"
+            .($overrideAttempt ? ", and I can't override how I work" : '')
+            ." — I'm SunnyBot, and I stick to travel planning with SunnyTrips.";
+
+        $offer = 'find you a place to stay in '.$this->exampleDestinations().', suggest things to do, or build a day-by-day itinerary';
+        $pivot = $topic === 'math'
+            ? "If you're working out trip costs, tell me the hotel, dates, and number of guests and I'll total it for you. I can also {$offer}."
+            : "But I can {$offer}. Where would you like to go?";
+
+        return $lead."\n\n".$pivot;
+    }
+
+    /**
+     * Tap-to-send travel suggestions shown under a decline.
+     *
+     * @return list<array{id: string, label: string, prompt: string}>
+     */
+    protected function travelPivotActions(): array
+    {
+        $names = DestinationModel::orderBy('name')->pluck('name')->unique()->values()->take(2)->all();
+        if ($names === []) {
+            return [];
+        }
+        $first = $names[0];
+        $second = $names[1] ?? $first;
+
+        return [
+            ['id' => 'pivot-stays', 'label' => "Stays in {$first}", 'prompt' => "Show me hotels in {$first}"],
+            ['id' => 'pivot-activities', 'label' => "Things to do in {$second}", 'prompt' => "Things to do in {$second}"],
+            ['id' => 'pivot-itinerary', 'label' => 'Plan an itinerary', 'prompt' => "Plan a 3-day itinerary in {$first}"],
+        ];
+    }
+
+    /**
+     * Deterministic decline for an off-topic task (no model call). Recorded
+     * as a no-match outcome so evaluations count it as a correct abstention.
+     */
+    protected function handleOutOfScope(string $message): array
+    {
+        return [
+            'reply' => $this->declineReply($this->intentRouter->outOfScopeTopic($message)),
+            'suggested_actions' => $this->travelPivotActions(),
+            'retrieval_outcome' => RetrievalOutcome::make(RetrievalOutcome::NoMatch, 'out_of_scope'),
+        ];
     }
 
     public const REPETITION_THRESHOLD = 5;
@@ -1032,7 +1620,7 @@ class ChatbotService
 
         $context = $this->buildBookingContext($bookings);
         $prompt = $this->buildPrompt('booking-status', $context, $query, $user);
-        $reply = $this->geminiChatResponse($prompt, $session);
+        $reply = $this->preparingTask ? $context : $this->geminiChatResponse($prompt, $session);
 
         return ['reply' => $this->linkifyBookingReferences($reply, $bookings)];
     }
@@ -2202,7 +2790,7 @@ class ChatbotService
      */
     protected function inheritConversationalConstraints(string $message, array $constraints, ChatSession $session, ?bool $explicitScope = null): array
     {
-        $keys = ['pax', 'max_price', 'destination_id', 'destination_name', 'hotel_id', 'hotel_name', 'room_id', 'room_name', 'check_in_date', 'check_out_date', 'nights'];
+        $keys = ['pax', 'max_price', 'budget_mode', 'destination_id', 'destination_name', 'hotel_id', 'hotel_name', 'room_id', 'room_name', 'check_in_date', 'check_out_date', 'nights'];
         try {
             $session->refresh();
             $lastBot = $session->messages()->where('sender', 'bot')->latest('id')->first();
@@ -2755,15 +3343,15 @@ class ChatbotService
     {
         $constraints = $this->resolveConversationalDestination($constraints, $session);
         $constraints = $this->resolveDefaultDestination($constraints, $user);
-        $destinationId = $constraints['destination_id'] ?? null;
         $pax = $constraints['pax'] ?? 2;
         $nights = $constraints['nights'] ?? 2;
-        $days = $nights + 1;
-        $maxBudget = $constraints['max_price'] ?? 20000;
-        $checkIn = $constraints['check_in_date']
+        // No stated budget means a value plan plus a request for one — never
+        // a silent default the planner would then spend up to.
+        $maxBudget = ! empty($constraints['max_price']) ? (float) $constraints['max_price'] : null;
+        $checkIn = ! empty($constraints['check_in_date'])
             ? Carbon::parse($constraints['check_in_date'])
             : Carbon::now()->addDays(7);
-        $checkOut = $constraints['check_out_date']
+        $checkOut = ! empty($constraints['check_out_date'])
             ? Carbon::parse($constraints['check_out_date'])
             : $checkIn->copy()->addDays($nights);
 
@@ -2781,22 +3369,127 @@ class ChatbotService
             return ['reply' => $itinerary['message'] ?? $this->noResultsReply('itinerary items')];
         }
 
-        $context = $itinerary['context'];
-        $prompt = $this->buildPrompt('itinerary', $context, $query, $user, ['explicit_scope' => $this->hasExplicitScope($constraints)]);
-        $reply = $this->geminiChatResponse($prompt, $session);
-
-        if (! empty($itinerary['data']['over_budget'])) {
-            $cheapestTotal = $itinerary['data']['room']['formatted_total'] ?? null;
-            $notice = 'Heads up: even the cheapest stay'.($cheapestTotal ? " ({$cheapestTotal} for {$nights} nights)" : '')
-                .' is over budget for ₱'.number_format($maxBudget, 2)
-                .' — the options above are the closest available.';
-            $reply = $notice."\n\n".$reply;
+        $prompt = $this->buildPrompt('itinerary', $itinerary['context'], $query, $user, ['explicit_scope' => $this->hasExplicitScope($constraints)]);
+        $reply = $this->itineraryBudgetNotice($itinerary['data'])."\n\n".$this->geminiChatResponse($prompt, $session);
+        if ($breakdown = $this->itineraryCostBreakdown($itinerary['data'])) {
+            $reply .= "\n\n".$breakdown;
         }
 
         return [
             'reply' => $reply,
             'itinerary' => $itinerary['data'],
         ];
+    }
+
+    /**
+     * Server-written budget verdict for an itinerary, so the status and the
+     * numbers never drift from the plan on the card. Plans that miss the
+     * budget band also say why, from the catalog facts the builder recorded.
+     *
+     * @param  array<string, mixed>  $itinerary
+     */
+    protected function itineraryBudgetNotice(array $itinerary): string
+    {
+        $check = $itinerary['budget_check'];
+        $destination = $itinerary['destination']['name'];
+        $nights = (int) $itinerary['nights'];
+        $pax = (int) $itinerary['pax'];
+        $trip = $nights.' '.Str::plural('night', $nights).' and '.$pax.' '.Str::plural('guest', $pax).' in '.$destination;
+        $total = $this->peso($itinerary['grand_total']);
+
+        if ($check['status'] === 'no_budget') {
+            return "**No budget given**, so this is a value plan built from the most affordable options ({$total} total). Tell me your total budget — for example, \"₱20,000 budget\" — and I'll fit the plan to it.";
+        }
+
+        $budget = $this->peso($check['budget']);
+        $gap = $this->peso(abs((float) $check['delta']));
+
+        if ($check['status'] === 'within') {
+            return "**Budget check:** this plan comes to **{$total}** — ".$this->percentText((float) $check['percent'])." of your {$budget} budget.".$this->itineraryActivityShortfall($check);
+        }
+
+        if ($check['status'] === 'slightly_over') {
+            return "**Heads up — slightly over budget:** this plan comes to **{$total}**, {$gap} (".$this->percentText((float) $check['percent'] - 100).") over your {$budget} budget. Nothing in our {$destination} catalog lands between ".$this->peso($check['band_min'])." and {$budget} for {$trip}, so this is the closest match. Drop an activity or ask for a cheaper stay to come in under budget.";
+        }
+
+        if ($check['status'] === 'under_target') {
+            $notice = "**Budget check:** this plan comes to **{$total}** — {$gap} under your {$budget} budget (".$this->percentText((float) $check['percent']).').';
+            if ($check['max_plan_total'] < $check['band_min']) {
+                $planned = (int) $check['activities_planned'];
+                $activities = $planned > 0 ? ' plus the top '.$planned.' '.Str::plural('activity', $planned).' (we plan one per day, up to four)' : '';
+
+                return $notice." It's already the highest-value plan we can build for {$trip}: the priciest available stay{$activities}. You could put the remaining {$gap} toward an extra night or add-ons like transfers.";
+            }
+
+            return $notice." Nothing in our {$destination} catalog lands between ".$this->peso($check['band_min']).' and '.$this->peso($check['band_max'])." for {$trip} — the next option up costs ".$this->peso($check['next_above_total']).', so this is the closest plan below your budget.';
+        }
+
+        $requested = $check['requested_activity'];
+        $reason = $requested !== null && $check['cheapest_stay_total'] <= $check['band_max']
+            ? $requested['name'].' alone costs '.$this->peso($requested['cost']).' for your group, which pushes the trip past your budget.'
+            : 'The cheapest available stay alone costs '.$this->peso($check['cheapest_stay_total']).' for '.$nights.' '.Str::plural('night', $nights).'.'
+                .((int) $check['activities_planned'] === 0 && $check['cheapest_activity_cost'] !== null ? ' Activities start at '.$this->peso($check['cheapest_activity_cost']).' for your group.' : '');
+
+        return "**Heads up — over budget:** the most affordable plan for {$trip} comes to **{$total}**, {$gap} (".$this->percentText((float) $check['percent'] - 100).") over your {$budget} budget. {$reason} Try fewer nights or a larger budget.";
+    }
+
+    /**
+     * Explains a within-budget plan that carries fewer activities than the
+     * one-per-day pace, so a short day plan never looks like an oversight.
+     *
+     * @param  array<string, mixed>  $check
+     */
+    protected function itineraryActivityShortfall(array $check): string
+    {
+        $planned = (int) $check['activities_planned'];
+        $possible = (int) $check['activities_target'];
+        if ($planned >= $possible) {
+            return '';
+        }
+
+        return $planned === 0
+            ? ' Your budget covers the stay only — activities start at '.$this->peso($check['cheapest_activity_cost']).' for your group.'
+            : " To stay within budget it includes {$planned} ".Str::plural('activity', $planned)." instead of {$possible}.";
+    }
+
+    /**
+     * Line-item cost breakdown for plans that miss the budget band (slightly
+     * over, under target, over), so the user can decide what to change.
+     * Within-budget and value plans rely on the itinerary card instead.
+     *
+     * @param  array<string, mixed>  $itinerary
+     */
+    protected function itineraryCostBreakdown(array $itinerary): ?string
+    {
+        $check = $itinerary['budget_check'];
+        if (! in_array($check['status'], ['slightly_over', 'under_target', 'over'], true)) {
+            return null;
+        }
+
+        $nights = (int) $itinerary['nights'];
+        $pax = (int) $itinerary['pax'];
+        $lines = ['**Cost breakdown** ('.$pax.' '.Str::plural('guest', $pax).', '.$nights.' '.Str::plural('night', $nights).')'];
+        $lines[] = '- Stay: '.$itinerary['room']['room_name'].' at '.$itinerary['hotel']['name'].' — '.$this->peso($itinerary['room']['nightly_rate']).' × '.$nights.' '.Str::plural('night', $nights).' = '.$this->peso($itinerary['room']['total']);
+        foreach ($itinerary['activities'] as $activity) {
+            $lines[] = '- Day '.$activity['day'].': '.$activity['activity_name'].' — '.$this->peso($activity['cost']);
+        }
+        $delta = (float) $check['delta'];
+        $lines[] = '- **Total: '.$this->peso($itinerary['grand_total']).'** · Budget '.$this->peso($check['budget']).' · '.$this->peso(abs($delta)).($delta > 0 ? ' over' : ' under');
+
+        return implode("\n", $lines);
+    }
+
+    protected function peso(float|int|string|null $amount): string
+    {
+        return '₱'.number_format((float) $amount, 2);
+    }
+
+    /**
+     * "99.2%", "100%" — one decimal, trailing zeros dropped.
+     */
+    protected function percentText(float $value): string
+    {
+        return rtrim(rtrim(number_format($value, 1), '0'), '.').'%';
     }
 
     protected function handleAvailabilityQuery(string $query, array &$constraints, ?User $user, ChatSession $session): array
@@ -3332,7 +4025,7 @@ class ChatbotService
         $forecast = $this->weather->forecastForDestination($dest);
 
         if (! $forecast) {
-            return ['reply' => "I'm sorry, weather data for {$dest->name} is currently unavailable. Please try again later."];
+            return ['reply' => "Weather data for {$dest->name} is currently unavailable. Please try again later.", 'retrieval_outcome' => RetrievalOutcome::make(RetrievalOutcome::TemporarilyUnavailable, 'weather_provider_unavailable')];
         }
 
         $current = $forecast['list'][0] ?? [];
@@ -3911,6 +4604,7 @@ class ChatbotService
             $rules[] = 'Do not create airport arrival or departure plans, transfer details, meal plans, or extra budget estimates. Only use the listed room and activity prices and the pre-computed total.';
             $rules[] = 'If a part of the trip is not covered by the provided results, say that it is not included in the database results.';
             $rules[] = 'When the context gives a pre-computed total, quote that exact figure verbatim and never recompute or re-sum prices yourself. If no total is provided, list individual prices instead of stating a combined total.';
+            $rules[] = 'The app shows the user a budget check (within, over, or under budget, with the difference) and, when needed, a cost breakdown alongside your reply. Do NOT say whether the plan fits the budget and do not calculate budget differences or percentages — focus on the day-by-day plan.';
         }
 
         if ($stage === 'booking-status') {
@@ -4144,6 +4838,15 @@ class ChatbotService
             $reply['suggested_actions'] = array_values($actions);
         }
         $reply['trace'] = $this->buildTrace($traceId, $intent, $mode, $constraints, $reply, $historyUsed);
+        if (isset($reply['sections'])) {
+            $reply['trace']['tasks'] = array_map(fn (array $section): array => [
+                'id' => $section['id'], 'type' => $section['type'],
+                'constraints' => $this->normalizeTraceConstraints($section['constraints']),
+                'result_references' => $section['card_refs'], 'outcome' => $section['outcome'],
+                'retrieval_mode' => $section['evidence']['retrieval_mode'],
+                'latency_ms' => $section['evidence']['latency_ms'],
+            ], $reply['sections']);
+        }
         $this->conversation->persist($session, 'bot', $text, $reply);
 
         return $reply;
@@ -4244,6 +4947,9 @@ class ChatbotService
 
     protected function geminiChatResponse(string $prompt, ChatSession $session, bool $includeHistory = false): string
     {
+        if ($this->preparingTask) {
+            return '';
+        }
         // Grounded path (default): only the fully constructed database /
         // live-data prompt is sent, so identical factual queries resolve
         // identically regardless of device, session, or account history.
@@ -4889,6 +5595,9 @@ class ChatbotService
             'destination' => $e['item']->destination?->name ?? null,
             'destination_id' => $e['item']->destination_id ?? $e['item']->destination?->id ?? null,
             'type' => $e['item']->type,
+            'vibe_tags' => $e['item']->vibe_tags,
+            'amenities' => $e['item']->featured_amenities,
+            'hotel_description' => strip_tags($e['item']->hotel_description ?? ''),
             'price_from' => isset($priceDetails[$e['item']->id]) ? (float) $priceDetails[$e['item']->id]->base_price : null,
             'price_updated_at' => isset($priceDetails[$e['item']->id])
                 ? ($priceDates[$priceDetails[$e['item']->id]->id] ?? $priceDetails[$e['item']->id]->updated_at?->format('M d, Y'))
@@ -4911,6 +5620,8 @@ class ChatbotService
             'destination' => $e['item']->destination?->name ?? null,
             'destination_id' => $e['item']->destination_id ?? $e['item']->destination?->id ?? null,
             'category' => $e['item']->category,
+            'activity_level' => $e['item']->activity_level,
+            'vibe_tags' => $e['item']->vibe_tags,
             'rate' => $e['item']->rate,
             'description' => strip_tags($e['item']->description ?? ''),
             'image' => $this->firstImage($e['item']->images),

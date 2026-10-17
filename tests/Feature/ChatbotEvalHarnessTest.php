@@ -2,6 +2,16 @@
 
 use Tests\Support\ChatEvalMetrics;
 
+test('multi task evaluation separates coverage from intent correctness and catalog identity', function () {
+    $rows = [
+        ['expect_intents' => ['HOTEL_SEARCH', 'ACTIVITY_SEARCH'], 'intents' => ['ACTIVITY_SEARCH', 'HOTEL_SEARCH'], 'accounted_intents' => ['HOTEL_SEARCH', 'ACTIVITY_SEARCH']],
+        ['expect_intents' => ['HOTEL_SEARCH', 'WEATHER_QUERY'], 'intents' => ['HOTEL_SEARCH'], 'accounted_intents' => ['HOTEL_SEARCH']],
+    ];
+    expect(ChatEvalMetrics::intentSetAccuracy($rows))->toBe(0.5)
+        ->and(ChatEvalMetrics::taskCoverage($rows))->toBe(0.75)
+        ->and(ChatEvalMetrics::typedResultIds([['card_refs' => [['type' => 'hotel', 'id' => 1], ['type' => 'activity', 'id' => 1]]]]))->toBe(['hotel:1', 'activity:1']);
+});
+
 test('eval metrics match hand-computed values on synthetic rows', function () {
     $results = [
         [

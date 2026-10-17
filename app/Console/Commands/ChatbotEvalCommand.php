@@ -138,7 +138,7 @@ class ChatbotEvalCommand extends Command
 
         $trace = $reply['trace'] ?? [];
         $intent = $trace['intent'] ?? null;
-        $groups = self::INTENT_GROUPS[$intent] ?? array_keys(self::REPLY_GROUPS);
+        $groups = isset($reply['sections']) ? array_keys(self::REPLY_GROUPS) : (self::INTENT_GROUPS[$intent] ?? array_keys(self::REPLY_GROUPS));
 
         $retrievedIds = [];
         $destinations = [];
@@ -170,6 +170,10 @@ class ChatbotEvalCommand extends Command
         return [
             'id' => $case['id'],
             'intent' => $intent,
+            'intents' => $reply['multi_intents'] ?? array_filter([$intent]),
+            'expect_intents' => $case['expect_intents'] ?? null,
+            'accounted_intents' => array_values(array_column(array_filter($reply['sections'] ?? [], fn (array $section): bool => ! empty($section['answer']) && isset($section['outcome']['status'])), 'type')),
+            'typed_result_ids' => ChatEvalMetrics::typedResultIds($reply['sections'] ?? []),
             'expect_intent' => $case['expect_intent'] ?? null,
             'retrieved_ids' => array_values(array_unique($retrievedIds)),
             'expect_ids' => $expectedIds,
@@ -216,6 +220,8 @@ class ChatbotEvalCommand extends Command
         return [
             'cases' => count($rows),
             'intent_accuracy' => $metrics::intentAccuracy($rows),
+            'intent_set_accuracy' => $metrics::intentSetAccuracy($rows),
+            'task_coverage' => $metrics::taskCoverage($rows),
             'recall_at_3' => $metrics::recallAt($rows, 3),
             'recall_at_5' => $metrics::recallAt($rows, 5),
             'mrr' => $metrics::mrr($rows),

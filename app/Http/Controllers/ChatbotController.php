@@ -12,6 +12,7 @@ use App\Services\Support\SupportQueueService;
 use App\Services\SystemSettingsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class ChatbotController extends Controller
 {
@@ -40,45 +41,55 @@ class ChatbotController extends Controller
             $user
         );
 
-        $result = $this->chatbot->checkRepetition($session, $user, $validated['message'], $request->ip())
-            ?? $this->chatbot->handle(
-                $session,
-                $user,
-                $validated['message'],
-                isset($validated['user_lat']) ? (float) $validated['user_lat'] : null,
-                isset($validated['user_lng']) ? (float) $validated['user_lng'] : null
-            );
-
-        if (! empty($result['blocked'])) {
-            return response()->json([
-                'status' => 'blocked',
-                'reply' => $result['response'],
-            ], 403);
+        $lock = Cache::lock('chat-turn:'.$session->id, 300);
+        if (! $lock->get()) {
+            return response()->json(['status' => 'busy', 'reply' => 'Your previous request is still being checked. Please try again when it finishes.'], 409);
         }
+        try {
+            $session->refresh();
+            $result = $this->chatbot->checkRepetition($session, $user, $validated['message'], $request->ip())
+                ?? $this->chatbot->handle(
+                    $session,
+                    $user,
+                    $validated['message'],
+                    isset($validated['user_lat']) ? (float) $validated['user_lat'] : null,
+                    isset($validated['user_lng']) ? (float) $validated['user_lng'] : null
+                );
 
-        if (! $user && ($result['status'] ?? null) === 'success' && ($result['control'] ?? null) === 'ai' && isset($result['reply'])) {
-            $nudge = $this->guestNudgeSuffix($session);
-            if ($nudge !== null && ! str_ends_with($result['reply'], $nudge)) {
-                $result['reply'] .= "\n\n".$nudge;
-                $session->messages()->where('sender', 'bot')->latest('id')->first()?->update(['message' => $result['reply']]);
+            if (! empty($result['blocked'])) {
+                return response()->json(array_filter([
+                    'status' => 'blocked',
+                    'reply' => $result['response'],
+                    'suggested_actions' => $result['suggested_actions'] ?? null,
+                ], fn ($value) => $value !== null), 403);
             }
-        }
 
-        if (($result['status'] ?? null) === 'success' && isset($result['reply']) && $user && $user->isWarned()) {
-            $alreadyNotified = $session->messages()
-                ->where('sender', 'bot')
-                ->where('message', 'like', self::WARNING_MARKER.'%')
-                ->exists();
-
-            if (! $alreadyNotified) {
-                $notice = self::WARNING_MARKER.' Your account has been warned for inappropriate usage.'
-                    .($user->ban_reason ? ' Admin note: '.$user->ban_reason : '');
-                $result['reply'] = $notice."\n\n".$result['reply'];
-                $session->messages()->where('sender', 'bot')->latest('id')->first()?->update(['message' => $result['reply']]);
+            if (! $user && ($result['status'] ?? null) === 'success' && ($result['control'] ?? null) === 'ai' && isset($result['reply'])) {
+                $nudge = $this->guestNudgeSuffix($session);
+                if ($nudge !== null && ! str_ends_with($result['reply'], $nudge)) {
+                    $result['reply'] .= "\n\n".$nudge;
+                    $session->messages()->where('sender', 'bot')->latest('id')->first()?->update(['message' => $result['reply']]);
+                }
             }
-        }
 
-        return response()->json($result);
+            if (($result['status'] ?? null) === 'success' && isset($result['reply']) && $user && $user->isWarned()) {
+                $alreadyNotified = $session->messages()
+                    ->where('sender', 'bot')
+                    ->where('message', 'like', self::WARNING_MARKER.'%')
+                    ->exists();
+
+                if (! $alreadyNotified) {
+                    $notice = self::WARNING_MARKER.' Your account has been warned for inappropriate usage.'
+                        .($user->ban_reason ? ' Admin note: '.$user->ban_reason : '');
+                    $result['reply'] = $notice."\n\n".$result['reply'];
+                    $session->messages()->where('sender', 'bot')->latest('id')->first()?->update(['message' => $result['reply']]);
+                }
+            }
+
+            return response()->json($result);
+        } finally {
+            $lock->release();
+        }
     }
 
     /**
