@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\SubmitGoTymePaymentRequest;
 use App\Models\AdminModel;
 use App\Models\Booking;
+use App\Models\BookingPaymentRequest;
 use App\Notifications\BookingCancellationRequested;
 use App\Notifications\BookingNotification;
 use App\Notifications\BookingPaid;
@@ -45,10 +46,13 @@ class BookingPaymentController extends Controller
     public function show($bookingCode)
     {
         $booking = $this->loadOwnedBooking($bookingCode);
+        if ($booking->payment_plan_version === 2) {
+            return app(BookingInstallmentController::class)->page($bookingCode);
+        }
 
         if ($this->expiryService->expireIfDue($booking)) {
             return redirect()->route('booking.show', $booking->booking_code)
-                ->with('error', 'This booking expired because payment was not completed within the 48-hour window.');
+                ->with('error', 'This booking expired because payment was not completed by the agreed payment deadline.');
         }
 
         if ($booking->status !== Booking::STATUS_APPROVED) {
@@ -71,10 +75,13 @@ class BookingPaymentController extends Controller
     public function pay(Request $request, $bookingCode)
     {
         $booking = $this->loadOwnedBooking($bookingCode);
+        if ($booking->payment_plan_version === 2) {
+            return redirect()->route('booking.pay', $bookingCode);
+        }
 
         if ($this->expiryService->expireIfDue($booking)) {
             return redirect()->route('booking.show', $booking->booking_code)
-                ->with('error', 'This booking expired because payment was not completed within the 48-hour window.');
+                ->with('error', 'This booking expired because payment was not completed by the agreed payment deadline.');
         }
 
         if ($booking->status !== Booking::STATUS_APPROVED) {
@@ -121,11 +128,11 @@ class BookingPaymentController extends Controller
     public function simulatorShow($bookingCode)
     {
         $booking = $this->loadOwnedBooking($bookingCode);
-        abort_unless(! app()->isProduction() && $booking->gateway === 'simulator', 404);
+        abort_unless(! app()->isProduction() && $booking->gateway === 'simulator' && $booking->payment_plan_version !== 2, 404);
 
         if ($this->expiryService->expireIfDue($booking)) {
             return redirect()->route('booking.show', $booking->booking_code)
-                ->with('error', 'This booking expired because payment was not completed within the 48-hour window.');
+                ->with('error', 'This booking expired because payment was not completed by the agreed payment deadline.');
         }
 
         if ($booking->status !== Booking::STATUS_APPROVED) {
@@ -142,11 +149,11 @@ class BookingPaymentController extends Controller
     public function simulatorConfirm($bookingCode)
     {
         $booking = $this->loadOwnedBooking($bookingCode);
-        abort_unless(! app()->isProduction() && $booking->gateway === 'simulator', 404);
+        abort_unless(! app()->isProduction() && $booking->gateway === 'simulator' && $booking->payment_plan_version !== 2, 404);
 
         if ($this->expiryService->expireIfDue($booking)) {
             return redirect()->route('booking.show', $booking->booking_code)
-                ->with('error', 'This booking expired because payment was not completed within the 48-hour window.');
+                ->with('error', 'This booking expired because payment was not completed by the agreed payment deadline.');
         }
 
         if ($booking->status !== Booking::STATUS_APPROVED) {
@@ -166,6 +173,10 @@ class BookingPaymentController extends Controller
     public function return($bookingCode)
     {
         $booking = $this->loadOwnedBooking($bookingCode);
+        if ($booking->payment_plan_version === 2) {
+            return redirect()->route('booking.pay', $bookingCode);
+        }
+
         if (in_array($booking->gateway, ['qrph', 'paymongo'], true)) {
             return $this->confirmQrPayment($bookingCode, $booking->gateway);
         }
@@ -192,6 +203,10 @@ class BookingPaymentController extends Controller
     private function startQrPayment(string $bookingCode, string $gateway): RedirectResponse
     {
         $booking = $this->loadOwnedBooking($bookingCode);
+        if ($booking->payment_plan_version === 2) {
+            return redirect()->route('booking.pay', $bookingCode);
+        }
+
         try {
             $result = QrphPaymentService::forGateway($gateway)->create($booking);
 
@@ -276,7 +291,7 @@ class BookingPaymentController extends Controller
 
         if ($attempt->status === 'paid') {
             return redirect()->route('booking.show', $booking->booking_code)
-                ->with('success', 'QR Ph payment confirmed. Your booking is now paid.');
+                ->with('success', $booking->payment_plan_version === 2 ? 'QR Ph payment confirmed. Your verified booking balance has been updated.' : 'QR Ph payment confirmed. Your booking is now paid.');
         }
         if ($attempt->status === 'review_required') {
             return redirect()->route('booking.show', $booking->booking_code)
@@ -295,10 +310,13 @@ class BookingPaymentController extends Controller
     public function goTymeInit(string $bookingCode): RedirectResponse
     {
         $booking = $this->loadOwnedBooking($bookingCode);
+        if ($booking->payment_plan_version === 2) {
+            return redirect()->route('booking.pay', $bookingCode);
+        }
 
         if ($this->expiryService->expireIfDue($booking)) {
             return redirect()->route('booking.show', $booking->booking_code)
-                ->with('error', 'This booking expired because payment was not completed within the 48-hour window.');
+                ->with('error', 'This booking expired because payment was not completed by the agreed payment deadline.');
         }
 
         try {
@@ -313,10 +331,13 @@ class BookingPaymentController extends Controller
     public function goTymeShow(string $bookingCode): RedirectResponse|View
     {
         $booking = $this->loadOwnedBooking($bookingCode);
+        if ($booking->payment_plan_version === 2 && ! BookingPaymentRequest::where('booking_id', $booking->id)->where('gateway', 'gotyme')->whereIn('status', BookingPaymentRequest::ACTIVE)->exists()) {
+            return redirect()->route('booking.pay', $bookingCode);
+        }
 
         if ($this->expiryService->expireIfDue($booking)) {
             return redirect()->route('booking.show', $booking->booking_code)
-                ->with('error', 'This booking expired because payment was not completed within the 48-hour window.');
+                ->with('error', 'This booking expired because payment was not completed by the agreed payment deadline.');
         }
 
         if ($booking->status !== Booking::STATUS_APPROVED) {
@@ -337,6 +358,7 @@ class BookingPaymentController extends Controller
         return view('booking.gotyme', [
             'booking' => $booking,
             'paymentSummary' => $this->goTymePaymentService->summary($booking),
+            'collection' => $booking->payment_plan_version === 2 ? BookingPaymentRequest::where('booking_id', $booking->id)->where('gateway', 'gotyme')->whereIn('status', BookingPaymentRequest::ACTIVE)->first() : null,
             'goTyme' => config('services.gotyme'),
         ]);
     }
@@ -347,7 +369,7 @@ class BookingPaymentController extends Controller
 
         if ($this->expiryService->expireIfDue($booking)) {
             return redirect()->route('booking.show', $booking->booking_code)
-                ->with('error', 'This booking expired because payment was not completed within the 48-hour window.');
+                ->with('error', 'This booking expired because payment was not completed by the agreed payment deadline.');
         }
 
         $validated = $request->validated();
@@ -499,6 +521,7 @@ class BookingPaymentController extends Controller
      */
     protected function markAsPaid(Booking $booking): void
     {
+        abort_if($booking->payment_plan_version === 2, 409, 'Verify the collection before updating its balance.');
         if ($booking->markPaid()) {
             BookingNotification::send($booking, new BookingPaid($booking));
         }

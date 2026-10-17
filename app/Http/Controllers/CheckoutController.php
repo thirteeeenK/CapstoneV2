@@ -53,12 +53,6 @@ class CheckoutController extends Controller
             return redirect()->route('cart.index');
         }
 
-        try {
-            $this->bookingRequestService->assertPlannerArrivalDates($cartItems);
-        } catch (ValidationException $exception) {
-            return redirect()->route('cart.index')->with('error', $exception->validator->errors()->first());
-        }
-
         // Past-date guard: block checkout if any *selected* room has expired check-in (< today)
         $expiredSelected = $cartItems->filter(fn ($item) => $item->isExpired());
         if ($expiredSelected->isNotEmpty()) {
@@ -66,6 +60,12 @@ class CheckoutController extends Controller
 
             return redirect()->route('cart.index')
                 ->with('error', 'Your Trip Basket contains stays with dates that have already passed. Please update the dates or remove the items before checkout.'.($names ? ' Expired: '.$names : ''));
+        }
+
+        try {
+            $this->bookingRequestService->assertPlannerArrivalDates($cartItems);
+        } catch (ValidationException $exception) {
+            return redirect()->route('cart.index')->with('error', $exception->validator->errors()->first());
         }
 
         // Auto-heal/sync existing cart items in DB if quantity or pax was out of sync from older session

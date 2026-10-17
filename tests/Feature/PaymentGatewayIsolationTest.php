@@ -28,10 +28,11 @@ it('shows four independently selectable payment choices regardless of the defaul
         ->assertSee('name="gateway" value="qrph"', false)
         ->assertSee('name="gateway" value="gotyme"', false)
         ->assertSee('name="gateway" value="paymongo"', false)
-        ->assertSee('QR Ph Sandbox')->assertSee('PayMongo QR Ph — Live');
+        ->assertSee('QR Ph Sandbox')->assertSee('PayMongo QR Ph — Sandbox');
 })->with(['auto', 'stripe', 'qrph', 'paymongo']);
 
 it('creates the separate PayMongo gateway with the live key and no sandbox fallback', function () {
+    productionPaymentContext();
     $user = onboardedUser();
     $booking = Booking::factory()->approved()->for($user)->create(['net_amount' => '3210.55']);
     fakePaymongoCreation();
@@ -84,12 +85,12 @@ it('preserves the Stripe return and verified webhook with the PayMongo default',
     $booking = Booking::factory()->approved()->for($user)->create(['gateway' => 'stripe', 'gateway_reference' => 'cs_fixture']);
 
     if ($confirmation === 'return') {
-        Http::fake(['api.stripe.com/v1/checkout/sessions/cs_fixture' => Http::response(['payment_status' => 'paid'])]);
+        Http::fake(['api.stripe.com/v1/checkout/sessions/cs_fixture' => Http::response(['payment_status' => 'paid', 'livemode' => false])]);
         $this->actingAs($user)->get(route('booking.pay.return', $booking->booking_code))->assertRedirect();
     } else {
         $body = json_encode(['id' => 'evt_stripe', 'type' => 'checkout.session.completed', 'data' => ['object' => [
             'id' => 'cs_fixture', 'payment_status' => 'paid', 'client_reference_id' => $booking->booking_code,
-            'amount_total' => 600000, 'currency' => 'php',
+            'amount_total' => 600000, 'currency' => 'php', 'livemode' => false,
         ]]], JSON_THROW_ON_ERROR);
         $timestamp = time();
         $headers = ['CONTENT_TYPE' => 'application/json', 'HTTP_STRIPE_SIGNATURE' => 't='.$timestamp.',v1='.hash_hmac('sha256', $timestamp.'.'.$body, 'stripe_signing_fixture')];
@@ -123,6 +124,7 @@ it('allows a sandbox session to be replaced by an explicitly selected card witho
 });
 
 it('keeps sandbox and live QR attempts distinct for the same booking', function () {
+    productionPaymentContext();
     $user = onboardedUser();
     $booking = Booking::factory()->approved()->for($user)->create(['gateway' => 'qrph', 'gateway_reference' => 'pi_sandbox']);
     $sandbox = QrphPaymentAttempt::factory()->for($booking)->create(['intent_id' => 'pi_sandbox']);
@@ -151,6 +153,7 @@ it('does not let a sandbox payment settle a booking whose live payment is active
 });
 
 it('rejects sandbox signatures on the live endpoint and live signatures on the sandbox endpoint', function (bool $live) {
+    productionPaymentContext();
     $attempt = QrphPaymentAttempt::factory()->create(['livemode' => $live]);
     [$body, $headers] = paymongoWebhookFixture($attempt);
     $this->call('POST', '/webhook/payment/'.($live ? 'qrph' : 'paymongo'), [], [], [], $headers, $body)->assertBadRequest();
@@ -159,6 +162,7 @@ it('rejects sandbox signatures on the live endpoint and live signatures on the s
 })->with([true, false]);
 
 it('verifies and deduplicates live PayMongo settlement without using the sandbox configuration', function () {
+    productionPaymentContext();
     Notification::fake();
     $booking = Booking::factory()->approved()->create(['gateway' => 'paymongo']);
     $attempt = QrphPaymentAttempt::factory()->for($booking)->create(['livemode' => true]);
@@ -173,6 +177,7 @@ it('verifies and deduplicates live PayMongo settlement without using the sandbox
 });
 
 it('confirms a live payment using the live credential and preserves pending status', function (string $status, string $expected) {
+    productionPaymentContext();
     Notification::fake();
     $user = onboardedUser();
     $booking = Booking::factory()->approved()->for($user)->create(['gateway' => 'paymongo']);
@@ -185,6 +190,7 @@ it('confirms a live payment using the live credential and preserves pending stat
 })->with([['succeeded', 'paid'], ['awaiting_next_action', 'unpaid']]);
 
 it('fails closed if the new live gateway is configured with a test key', function () {
+    productionPaymentContext();
     config()->set('services.paymongo.secret_key', 'sk_test_wrong_for_live');
     $user = onboardedUser();
     $booking = Booking::factory()->approved()->for($user)->create();
@@ -196,6 +202,7 @@ it('fails closed if the new live gateway is configured with a test key', functio
 });
 
 it('rejects a live key for the sandbox even if a global mode is changed', function () {
+    productionPaymentContext();
     config()->set('services.qrph.mode', 'live');
     config()->set('services.qrph.secret_key', 'sk_live_wrong_for_sandbox');
     expect((new QrphDriver)->configured())->toBeFalse();
@@ -214,6 +221,7 @@ it('keeps manual transfers from overwriting an in-flight live PayMongo payment',
 })->with(['booking.pay.gotyme', 'booking.pay.gotyme.submit']);
 
 it('reconciles live intents by default without contacting sandbox intents', function () {
+    productionPaymentContext();
     Notification::fake();
     $live = QrphPaymentAttempt::factory()->create(['livemode' => true]);
     $sandbox = QrphPaymentAttempt::factory()->create();
@@ -225,11 +233,12 @@ it('reconciles live intents by default without contacting sandbox intents', func
 });
 
 it('reports missing live signing configuration without displaying any credential', function () {
+    productionPaymentContext();
     config()->set('services.paymongo.webhook_secret', null);
     config()->set('services.paymongo.webhook_url', 'https://sunnytripsv2.up.railway.app/webhook/payment/paymongo');
     config()->set('cache.default', 'database');
     $this->artisan('payments:check-configuration')
-        ->expectsOutput('MISSING: Live webhook signing secret is configured')->assertFailed();
+        ->expectsOutput('MISSING: Matching webhook signing secret is configured')->assertFailed();
     Http::assertNothingSent();
 });
 

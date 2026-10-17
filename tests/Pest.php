@@ -54,6 +54,14 @@ function something()
     // ..
 }
 
+/** Exercise live-mode behavior with fake credentials in the test database. */
+function productionPaymentContext(): void
+{
+    app()->instance('env', 'production');
+    test()->withSession(['_token' => 'production-payment-fixture'])
+        ->withHeaders(['X-CSRF-TOKEN' => 'production-payment-fixture']);
+}
+
 /** @return array<string, mixed> */
 function paymongoIntentFixture(QrphPaymentAttempt $attempt, string $status = 'awaiting_next_action'): array
 {

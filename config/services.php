@@ -74,9 +74,14 @@ return [
     'payment' => [
         // Default resolution does not hide or replace explicitly selected methods.
         'provider' => env('PAYMENT_PROVIDER', 'auto'),
+        'mode' => env('PAYMENT_MODE'),
     ],
 
     'stripe' => [
+        'test_secret_key' => env('STRIPE_TEST_SECRET_KEY'),
+        'test_webhook_secret' => env('STRIPE_TEST_WEBHOOK_SECRET'),
+        'live_secret_key' => env('STRIPE_LIVE_SECRET_KEY'),
+        'live_webhook_secret' => env('STRIPE_LIVE_WEBHOOK_SECRET'),
         'secret_key' => env('STRIPE_SECRET_KEY'),
         'publishable_key' => env('STRIPE_PUBLISHABLE_KEY'),
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),

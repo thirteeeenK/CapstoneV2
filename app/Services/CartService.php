@@ -72,6 +72,9 @@ class CartService
         $selectedPax = max(1, (int) ($payload['selected_pax'] ?? 1));
         $checkIn = $payload['check_in_date'] ?? null;
         $checkOut = $payload['check_out_date'] ?? null;
+        if ($itemType === 'room') {
+            app(TripBookingDatePolicy::class)->assertBookableArrival($checkIn, 'check_in_date');
+        }
         // Package-only room preference (no price effect). Null = legacy/no choice.
         $roomOption = $itemType === 'package' && in_array($payload['room_option'] ?? null, ['shared', 'separate'], true)
             ? $payload['room_option']

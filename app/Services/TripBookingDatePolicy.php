@@ -22,13 +22,13 @@ class TripBookingDatePolicy
         return 'Arrival must be at least two calendar days ahead in Philippine time. The earliest arrival is '.$this->minimumArrivalDate().'. Start a new trip with eligible dates if needed.';
     }
 
-    public function assertBookableArrival(?string $arrival): void
+    public function assertBookableArrival(?string $arrival, string $field = 'start_date'): void
     {
         $parsed = $arrival && preg_match('/^\d{4}-\d{2}-\d{2}$/', $arrival)
             ? DateTimeImmutable::createFromFormat('!Y-m-d', $arrival, new DateTimeZone(self::TIMEZONE))
             : false;
         if (! $parsed || $parsed->format('Y-m-d') !== $arrival || $arrival < $this->minimumArrivalDate()) {
-            throw ValidationException::withMessages(['start_date' => $this->message()]);
+            throw ValidationException::withMessages([$field => $this->message()]);
         }
     }
 

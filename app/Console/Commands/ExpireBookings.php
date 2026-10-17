@@ -10,7 +10,7 @@ class ExpireBookings extends Command
 {
     protected $signature = 'bookings:expire';
 
-    protected $description = 'Expire approved bookings whose 48-hour payment window has passed';
+    protected $description = 'Expire approved bookings whose agreed payment deadline has passed';
 
     public function handle(BookingExpiryService $expiryService): int
     {

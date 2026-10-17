@@ -1069,7 +1069,7 @@ class ChatbotService
                 'Total: ₱'.number_format((float) $booking->net_amount, 2),
             ];
             if ($booking->status === Booking::STATUS_APPROVED && $booking->payment_deadline) {
-                $lines[] = 'Payment Deadline: '.$booking->payment_deadline->format('M j, Y g:i A').' (48-hour window)';
+                $lines[] = 'Payment Deadline: '.$booking->payment_deadline->format('M j, Y g:i A').' (Philippine time)';
             }
             foreach ($booking->items as $item) {
                 $dates = $item->check_in_date

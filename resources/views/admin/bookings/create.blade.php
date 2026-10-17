@@ -116,8 +116,8 @@
              this.modalPkgId = '';
              this.modalActId = '';
              this.modalAddonId = '';
-             this.modalCheckIn = new Date().toISOString().split('T')[0];
-             const tomorrow = new Date();
+             this.modalCheckIn = this.todayStr;
+             const tomorrow = new Date(this.todayStr + 'T12:00:00');
              tomorrow.setDate(tomorrow.getDate() + 1);
              this.modalCheckOut = tomorrow.toISOString().split('T')[0];
              this.modalQty = 1;
@@ -178,7 +178,7 @@
          },
 
           get todayStr() {
-              return new Date().toISOString().split('T')[0];
+              return '{{ app(\App\Services\TripBookingDatePolicy::class)->minimumArrivalDate() }}';
           },
 
           get selectedModalRoom() {
@@ -754,6 +754,10 @@
                         <textarea name="admin_notes" x-model="adminNotes" rows="2" placeholder="e.g. Customer called front desk; paid via GCash to desk phone..."
                                   class="w-full px-4 py-2 rounded-xl border border-slate-200 text-xs font-medium text-slate-900 focus:border-ocean-500 focus:ring-2 focus:ring-ocean-500/20"></textarea>
                     </div>
+                </div>
+
+                <div x-show="initialStatus === 'approved'">
+                    @include('admin.bookings._payment-approval', ['deadlineInputId' => 'proxy-payment-deadline'])
                 </div>
 
                 {{-- Live Financial Summary Card --}}

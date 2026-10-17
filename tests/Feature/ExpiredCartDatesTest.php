@@ -131,8 +131,8 @@ it('allows checkout page when expired item is deselected', function () {
         'item_type' => 'room',
         'item_id' => $validRoom->id,
         'quantity' => 1,
-        'check_in_date' => '2026-09-01',
-        'check_out_date' => '2026-09-02',
+        'check_in_date' => '2026-09-02',
+        'check_out_date' => '2026-09-03',
         'selected_pax' => 2,
         'is_selected' => true,
     ]);

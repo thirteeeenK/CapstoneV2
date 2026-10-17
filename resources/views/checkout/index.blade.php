@@ -434,7 +434,7 @@
                         <li class="flex items-start gap-2">
                             <span
                                 class="w-5 h-5 min-w-[20px] rounded-full bg-sky-600 text-white text-[10px] font-black flex items-center justify-center shrink-0 mt-0.5">3</span>
-                            <p class="text-[11px] sm:text-xs text-slate-600 dark:text-slate-400"><strong class="text-slate-900">Pay to confirm:</strong> Pay within <strong class="text-slate-900">48 hours</strong> via email link.</p>
+                            <p class="text-[11px] sm:text-xs text-slate-600 dark:text-slate-400"><strong class="text-slate-900">Pay to confirm:</strong> Payment opens after approval. The initial window starts when you submit this request and may be shortened to keep payment before check-in. Your approval email confirms the exact amount and deadline.</p>
                         </li>
                     </ol>
                 </div>

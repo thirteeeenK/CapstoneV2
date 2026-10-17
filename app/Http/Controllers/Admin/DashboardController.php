@@ -15,6 +15,7 @@ use App\Models\ReviewSummary;
 use App\Models\RoomType;
 use App\Models\SupportInquiry;
 use App\Models\User;
+use App\Services\Payment\BookingPaymentAccountingService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -51,7 +52,7 @@ class DashboardController extends Controller
 
         $approvedQuery = Booking::where('status', Booking::STATUS_APPROVED);
         $approvedCount = (clone $approvedQuery)->count();
-        $pipelineValue = (float) (clone $approvedQuery)->sum('net_amount');
+        $pipelineValue = app(BookingPaymentAccountingService::class)->outstandingFor($approvedQuery);
         $deadlineRisk = (clone $approvedQuery)
             ->whereNotNull('payment_deadline')
             ->where('payment_deadline', '<=', $now->copy()->addDay())
@@ -82,11 +83,11 @@ class DashboardController extends Controller
             $scope = Booking::where('created_at', '>=', $from);
             $kpi[$key] = [
                 'bookings' => (clone $scope)->count(),
-                'collected' => (float) (clone $scope)->where('payment_status', Booking::PAYMENT_PAID)->sum('net_amount'),
+                'collected' => app(BookingPaymentAccountingService::class)->collectedBetween($from, $now),
             ];
         }
         $monthScope = Booking::where('created_at', '>=', $monthStart);
-        $kpi['month']['pipeline'] = (float) (clone $monthScope)->where('status', Booking::STATUS_APPROVED)->sum('net_amount');
+        $kpi['month']['pipeline'] = app(BookingPaymentAccountingService::class)->outstandingFor((clone $monthScope)->where('status', Booking::STATUS_APPROVED));
         $kpi['month']['avg'] = $kpi['month']['bookings'] > 0
             ? round((float) (clone $monthScope)->avg('net_amount'), 2)
             : 0.00;

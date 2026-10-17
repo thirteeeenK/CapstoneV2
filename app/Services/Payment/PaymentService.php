@@ -3,6 +3,7 @@
 namespace App\Services\Payment;
 
 use App\Models\Booking;
+use App\Models\BookingPaymentRequest;
 use App\Models\QrphPaymentAttempt;
 use App\Services\Payment\Drivers\PaymentDriver;
 use App\Services\Payment\Drivers\PaymongoDriver;
@@ -39,7 +40,7 @@ class PaymentService
     /** @return array{url: string, reference: string, gateway: string} */
     public function createCardPayment(Booking $booking): array
     {
-        if (! $this->stripeConfigured() && app()->isProduction()) {
+        if (! $this->stripeConfigured()) {
             throw new PaymentGatewayException('Card payments are temporarily unavailable. Please choose another method.');
         }
 
@@ -66,6 +67,7 @@ class PaymentService
             }
 
             $booking->forceFill([
+                'payment_environment' => app(PaymentEnvironmentResolver::class)->mode(),
                 'gateway' => $driver->name(), 'gateway_reference' => $result['reference'],
                 'payment_url' => $result['url'], 'gateway_data' => null,
             ])->save();
@@ -89,6 +91,17 @@ class PaymentService
 
     public function assertCanSelectGateway(Booking $booking, string $gateway): void
     {
+        app(PaymentEnvironmentResolver::class)->assertBooking($booking);
+        if ($booking->payment_plan_version === 2) {
+            $gateway = $gateway === 'card' ? 'stripe' : $gateway;
+            $active = BookingPaymentRequest::where('booking_id', $booking->id)->whereIn('status', BookingPaymentRequest::ACTIVE)->first();
+            if ($active && $active->gateway !== $gateway) {
+                throw new PaymentGatewayException('Another payment is still in progress. Complete or reconcile that payment before changing methods.');
+            }
+
+            return;
+        }
+
         $liveAttempt = QrphPaymentAttempt::where('booking_id', $booking->id)->where('livemode', true)
             ->whereIn('status', ['creating', 'pending', 'review_required'])->exists();
         if ($gateway !== 'paymongo' && $liveAttempt) {
@@ -152,7 +165,7 @@ class PaymentService
 
     protected function stripeConfigured(): bool
     {
-        return ! empty(config('services.stripe.secret_key'));
+        return (bool) app(PaymentEnvironmentResolver::class)->stripeConfiguration('secret_key');
     }
 
     /** @return array<string, bool> */

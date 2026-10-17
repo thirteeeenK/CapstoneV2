@@ -36,6 +36,14 @@ class UpdateSystemSettingsRequest extends FormRequest
                 'website_url' => ['nullable', 'url:https', 'max:2048'],
             ],
             'accounts' => ['grace_period' => ['required', 'boolean']],
+            'payments' => [
+                'installments_enabled' => ['required', 'boolean'],
+                'initial_window_hours' => ['required', 'integer', 'between:1,720'],
+                'deposit_min_advance_days' => ['sometimes', 'required', 'integer', 'between:1,90'],
+                'balance_lead_days' => ['required', 'integer', 'between:1,90'],
+                'undated_balance_days' => ['required', 'integer', 'between:1,90'],
+                'service_cutoff_hours' => ['required', 'integer', 'between:1,72'],
+            ],
             'chatbot' => [
                 'daily_limit' => ['required', 'integer', 'between:1,1000'],
                 'minute_limit' => ['required', 'integer', 'between:1,10'],
@@ -86,6 +94,9 @@ class UpdateSystemSettingsRequest extends FormRequest
         return [function (Validator $validator): void {
             if ($validator->errors()->isNotEmpty()) {
                 return;
+            }
+            if ($this->route('section') === 'payments' && (int) $this->input('values.undated_balance_days') * 24 <= (int) $this->input('values.initial_window_hours')) {
+                $validator->errors()->add('values.undated_balance_days', 'The balance window for flexible-date bookings must exceed the initial payment window.');
             }
             if ($this->route('section') === 'support') {
                 $openDays = 0;

@@ -70,6 +70,9 @@ class TripJourneyService
             if (! $locked || ! $locked->trip_itineraries || ! in_array($locked->status, ['paid', 'cancellation_denied'], true)) {
                 return false;
             }
+            if ($locked->payment_plan_version === 2 && $locked->payment_status !== Booking::PAYMENT_PAID) {
+                return false;
+            }
             $dates = $this->dates($locked);
             $included = $locked->items->reject(fn ($item) => $item->availability_status === 'unavailable');
             if (! $dates || $dates['end']->copy()->addDay()->gt(now()) || $included->contains(fn ($item) => $item->fulfillment_status !== 'fulfilled')) {

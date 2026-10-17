@@ -53,7 +53,7 @@
                                 {{ $booking->status }}
                             </span>
                         </td>
-                        <td class="py-4 px-6 font-bold text-slate-700">{{ ucfirst($booking->payment_status) }}</td>
+                        <td class="py-4 px-6 font-bold text-slate-700">{{ $booking->balance_overdue_at ? 'Overdue / review' : ($booking->deposit_secured_at && $booking->payment_status === 'partial' ? 'Deposit paid · Reserved' : ucfirst($booking->payment_status)) }}</td>
                         <td class="py-4 px-6 text-slate-500">{{ $booking->created_at->format('M j, g:i A') }}</td>
                         <td class="py-4 px-6 text-right">
                             <a href="{{ route('admin.bookings.show', $booking->id) }}"

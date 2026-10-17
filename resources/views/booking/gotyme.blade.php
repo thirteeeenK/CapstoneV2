@@ -8,10 +8,11 @@
             <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7" aria-labelledby="gotyme-heading">
                 <div class="text-center">
                     <p class="font-label text-[10px] font-bold uppercase tracking-[0.18em] text-sky-700">Manual QR payment</p>
-                    <h1 id="gotyme-heading" class="mt-2 font-headline text-2xl font-black text-slate-900">Pay to GoTyme QR</h1>
-                    <p class="mt-2 text-sm leading-relaxed text-slate-600">Scan this personal GoTyme QR. Your banking app will show the recipient, but you must type the amount yourself.</p>
+                    <h1 id="gotyme-heading" class="mt-2 font-headline text-2xl font-black text-slate-900">{{ app(\App\Services\Payment\PaymentEnvironmentResolver::class)->isLive() ? 'Pay to GoTyme QR' : 'GoTyme test submission' }}</h1>
+                    <p class="mt-2 text-sm leading-relaxed text-slate-600">{{ app(\App\Services\Payment\PaymentEnvironmentResolver::class)->isLive() ? 'Scan this personal GoTyme QR. Your banking app will show the recipient, but you must type the amount yourself.' : 'Testing only: do not send real money. Enter a made-up unique reference and test amount below; an admin verifies the simulated receipt.' }}</p>
                 </div>
 
+                @if(app(\App\Services\Payment\PaymentEnvironmentResolver::class)->isLive())
                 <div class="mx-auto mt-5 max-w-sm rounded-3xl border border-sky-100 bg-sky-50 p-4 text-center">
                     <img src="{{ asset(ltrim($goTyme['qr_image'], '/')) }}"
                          alt="GoTyme QR code for {{ $goTyme['account_name'] }}"
@@ -20,9 +21,10 @@
                     <p class="mt-4 font-headline text-base font-black text-slate-900">{{ $goTyme['account_name'] }}</p>
                     <p class="mt-1 break-all font-mono text-sm font-bold text-slate-600">{{ $goTyme['account_number'] }}</p>
                 </div>
+                @endif
 
                 <div class="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
-                    <p class="font-bold">Type exactly ₱{{ number_format($paymentSummary['remaining_cents'] / 100, 2) }} in your GoTyme app.</p>
+                    <p class="font-bold">{{ app(\App\Services\Payment\PaymentEnvironmentResolver::class)->isLive() ? 'Transfer amount' : 'Simulated amount' }}: ₱{{ number_format((($collection ?? null)?->amount ?? $paymentSummary['remaining_cents']) / 100, 2) }}.</p>
                     <p class="mt-1 text-xs leading-relaxed">Booking reference: <span class="break-all font-mono font-bold">{{ $booking->gateway_reference }}</span>. GoTyme does not automatically report personal-account transfers to SunnyTrips.</p>
                 </div>
             </section>
@@ -63,7 +65,7 @@
 
                 <section class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7" aria-labelledby="submit-heading">
                     <h2 id="submit-heading" class="font-headline text-lg font-black text-slate-900">Submit your transfer</h2>
-                    <p class="mt-1 text-xs leading-relaxed text-slate-500">Enter the transaction reference shown in GoTyme and the amount you actually sent. This does not automatically mark the booking paid.</p>
+                    <p class="mt-1 text-xs leading-relaxed text-slate-500">{{ app(\App\Services\Payment\PaymentEnvironmentResolver::class)->isLive() ? 'Enter the transaction reference shown in GoTyme and the amount you actually sent.' : 'Enter a unique simulated reference and the test amount. Do not make a bank transfer.' }} This does not automatically mark the booking paid.</p>
 
                     <form action="{{ route('booking.pay.gotyme.submit', $booking->booking_code) }}" method="POST" class="mt-5 space-y-4">
                         @csrf
@@ -73,7 +75,7 @@
                                    aria-describedby="sender-ref-hint @error('sender_ref') sender-ref-error @enderror"
                                    @error('sender_ref') aria-invalid="true" @enderror
                                    class="mt-1 min-h-11 w-full rounded-xl border border-slate-300 px-3 text-base focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">
-                            <p id="sender-ref-hint" class="mt-1 text-xs text-slate-500">Use the unique reference from the successful transfer receipt.</p>
+                            <p id="sender-ref-hint" class="mt-1 text-xs text-slate-500">{{ app(\App\Services\Payment\PaymentEnvironmentResolver::class)->isLive() ? 'Use the unique reference from the successful transfer receipt.' : 'Use a made-up reference that you have not used for another test submission.' }}</p>
                             @error('sender_ref')<p id="sender-ref-error" class="mt-1 text-xs font-bold text-rose-700">{{ $message }}</p>@enderror
                         </div>
 
@@ -82,7 +84,7 @@
                             <div class="mt-1 flex min-h-11 items-center rounded-xl border border-slate-300 bg-white focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-500/20">
                                 <span class="pl-3 font-bold text-slate-500" aria-hidden="true">₱</span>
                                 <input id="claimed_amount" name="claimed_amount" type="number" inputmode="decimal" required min="0.01" max="99999999.99" step="0.01"
-                                       value="{{ old('claimed_amount', number_format($paymentSummary['remaining_cents'] / 100, 2, '.', '')) }}"
+                                       value="{{ old('claimed_amount', number_format((($collection ?? null)?->amount ?? $paymentSummary['remaining_cents']) / 100, 2, '.', '')) }}"
                                        @error('claimed_amount') aria-invalid="true" aria-describedby="claimed-amount-error" @enderror
                                        class="min-h-11 min-w-0 flex-1 rounded-xl border-0 px-2 text-base focus:ring-0">
                             </div>

@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['uuid', 'booking_id', 'intent_id', 'method_id', 'method_generation', 'qr_code_id', 'payment_id', 'amount', 'currency', 'livemode', 'status', 'qr_image', 'test_url', 'expires_at', 'confirmed_at', 'last_checked_at'])]
+#[Fillable(['uuid', 'booking_id', 'booking_payment_request_id', 'intent_id', 'method_id', 'method_generation', 'qr_code_id', 'payment_id', 'amount', 'currency', 'livemode', 'status', 'qr_image', 'test_url', 'expires_at', 'confirmed_at', 'last_checked_at'])]
 #[Hidden(['qr_image', 'test_url'])]
 class QrphPaymentAttempt extends Model
 {

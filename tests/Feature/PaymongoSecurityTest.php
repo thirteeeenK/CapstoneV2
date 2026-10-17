@@ -53,6 +53,7 @@ it('rejects invalid, outdated, wrong-mode and legacy webhook signatures', functi
 })->with(['tampered', 'missing', 'old', 'wrong-mode', 'legacy']);
 
 it('accepts li signatures only for live events without calling a live API', function () {
+    productionPaymentContext();
     Notification::fake();
     config()->set('services.paymongo.secret_key', 'sk_live_fixture_not_a_real_key');
     config()->set('services.paymongo.webhook_secret', 'fixture_live_webhook_secret');

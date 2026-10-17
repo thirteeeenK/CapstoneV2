@@ -3,15 +3,18 @@
 namespace App\Http\Controllers;
 
 use App\Models\Booking;
+use App\Models\BookingPaymentRequest;
 use App\Models\PaymentWebhookEvent;
 use App\Notifications\BookingNotification;
 use App\Notifications\BookingPaid;
+use App\Services\Payment\InstallmentPaymentService;
 use App\Services\Payment\PaymentGatewayException;
 use App\Services\Payment\PaymentService;
 use App\Services\Payment\QrphPaymentService;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class PaymentWebhookController extends Controller
@@ -53,6 +56,27 @@ class PaymentWebhookController extends Controller
             return response('ignored', Response::HTTP_OK);
         }
 
+        if ($gateway === 'stripe' && ! empty($event['payment_request_uuid'])) {
+            $collection = BookingPaymentRequest::where('uuid', $event['payment_request_uuid'])->first();
+            if (! $collection) {
+                return response('not actionable', Response::HTTP_OK);
+            }
+            try {
+                DB::transaction(function () use ($collection, $event): void {
+                    Booking::query()->lockForUpdate()->findOrFail($collection->booking_id);
+                    if (PaymentWebhookEvent::where('gateway', 'stripe')->where('event_id', $event['event_id'])->exists()) {
+                        return;
+                    }
+                    app(InstallmentPaymentService::class)->stripeReceipt($collection, $event);
+                    PaymentWebhookEvent::create(['gateway' => 'stripe', 'event_id' => $event['event_id'], 'booking_code' => $collection->booking->booking_code, 'processed_at' => now()]);
+                });
+            } catch (PaymentGatewayException) {
+                return response('event could not be processed', Response::HTTP_SERVICE_UNAVAILABLE);
+            }
+
+            return response('ok', Response::HTTP_OK);
+        }
+
         $eventId = $event['event_id'] ?? null;
         $bookingCode = $event['booking_code'] ?? $event['reference'] ?? null;
 
@@ -77,6 +101,10 @@ class PaymentWebhookController extends Controller
 
         if (! $booking) {
             return response('not actionable', Response::HTTP_OK);
+        }
+
+        if ($booking->payment_plan_version === 2) {
+            return response('collection reference required', Response::HTTP_BAD_REQUEST);
         }
 
         $expectedAmount = (int) round((float) $booking->net_amount * 100);

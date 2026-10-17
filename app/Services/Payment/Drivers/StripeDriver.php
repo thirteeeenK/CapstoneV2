@@ -3,6 +3,8 @@
 namespace App\Services\Payment\Drivers;
 
 use App\Models\Booking;
+use App\Models\BookingPaymentRequest;
+use App\Services\Payment\PaymentEnvironmentResolver;
 use App\Services\Payment\PaymentGatewayException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -16,8 +18,9 @@ class StripeDriver implements PaymentDriver
 
     public function __construct()
     {
-        $this->secretKey = (string) config('services.stripe.secret_key');
-        $this->webhookSecret = config('services.stripe.webhook_secret') ?: null;
+        $resolver = app(PaymentEnvironmentResolver::class);
+        $this->secretKey = (string) $resolver->stripeConfiguration('secret_key');
+        $this->webhookSecret = $resolver->stripeConfiguration('webhook_secret');
     }
 
     public function name(): string
@@ -25,22 +28,27 @@ class StripeDriver implements PaymentDriver
         return 'stripe';
     }
 
-    public function createPayment(Booking $booking): array
+    public function createPayment(Booking $booking, ?BookingPaymentRequest $collection = null): array
     {
+        app(PaymentEnvironmentResolver::class)->assertBooking($booking);
+        if (! $this->secretKey) {
+            throw new PaymentGatewayException('Configure a Stripe key matching this deployment’s payment mode.');
+        }
         $response = Http::withBasicAuth($this->secretKey, '')
             ->timeout(6)
-            ->withHeaders(['Idempotency-Key' => 'checkout-'.$booking->booking_code.'-'.$booking->net_amount])
+            ->withHeaders(['Idempotency-Key' => $collection ? 'collection-'.$collection->uuid : 'checkout-'.$booking->booking_code.'-'.$booking->net_amount])
             ->asForm()
             ->post('https://api.stripe.com/v1/checkout/sessions', [
                 'mode' => 'payment',
                 'client_reference_id' => $booking->booking_code,
-                'success_url' => route('booking.pay.return', $booking->booking_code),
+                'success_url' => $collection ? route('booking.installment.show', [$booking->booking_code, $collection->uuid]) : route('booking.pay.return', $booking->booking_code),
                 'cancel_url' => route('booking.show', $booking->booking_code),
                 'line_items[0][quantity]' => 1,
                 'line_items[0][price_data][currency]' => 'php',
-                'line_items[0][price_data][unit_amount]' => (int) round((float) $booking->net_amount * 100),
+                'line_items[0][price_data][unit_amount]' => $collection?->amount ?? (int) round((float) $booking->net_amount * 100),
                 'line_items[0][price_data][product_data][name]' => 'SunnyTrips Booking '.$booking->booking_code,
                 'metadata[booking_code]' => $booking->booking_code,
+                'metadata[payment_request_uuid]' => $collection?->uuid ?? '',
             ]);
 
         if ($response->failed()) {
@@ -52,6 +60,11 @@ class StripeDriver implements PaymentDriver
         }
 
         $session = $response->json();
+        if ($collection && (parse_url((string) ($session['url'] ?? ''), PHP_URL_SCHEME) !== 'https'
+            || parse_url((string) ($session['url'] ?? ''), PHP_URL_HOST) !== 'checkout.stripe.com'
+            || ! preg_match('/^cs_[A-Za-z0-9_]+$/D', $session['id'] ?? ''))) {
+            throw new PaymentGatewayException('Stripe returned an invalid checkout session. Contact support before retrying.');
+        }
 
         return [
             'url' => $session['url'] ?? throw new PaymentGatewayException('Card checkout is temporarily unavailable.'),
@@ -78,11 +91,16 @@ class StripeDriver implements PaymentDriver
         }
 
         $session = $event['data']['object'] ?? [];
-        if (($session['payment_status'] ?? null) !== 'paid') {
+        if (($session['payment_status'] ?? null) !== 'paid'
+            || ($session['livemode'] ?? null) !== app(PaymentEnvironmentResolver::class)->isLive()) {
             return false;
         }
 
         $eventData = [
+            'livemode' => $session['livemode'] ?? null,
+            'payment_request_uuid' => $session['metadata']['payment_request_uuid'] ?? null,
+            'payment_id' => $session['payment_intent'] ?? null,
+            'paid_at' => $event['created'] ?? null,
             'event_id' => $event['id'] ?? null,
             'reference' => $session['id'] ?? null,
             'booking_code' => $session['client_reference_id'] ?? ($session['metadata']['booking_code'] ?? null),
@@ -95,6 +113,9 @@ class StripeDriver implements PaymentDriver
 
     public function verifyPaymentByReference(string $reference): bool
     {
+        if (! $this->secretKey) {
+            return false;
+        }
         $response = Http::withBasicAuth($this->secretKey, '')
             ->timeout(6)
             ->get('https://api.stripe.com/v1/checkout/sessions/'.$reference);
@@ -105,7 +126,42 @@ class StripeDriver implements PaymentDriver
             return false;
         }
 
-        return $response->json('payment_status') === 'paid';
+        return $response->json('payment_status') === 'paid'
+            && $response->json('livemode') === app(PaymentEnvironmentResolver::class)->isLive();
+    }
+
+    /** @return array<string, mixed> */
+    public function retrieveSession(string $reference): array
+    {
+        if (! $this->secretKey) {
+            throw new PaymentGatewayException('Configure a Stripe key matching this deployment’s payment mode.');
+        }
+        if (! preg_match('/^cs_[A-Za-z0-9_]+$/D', $reference)) {
+            throw new PaymentGatewayException('The Stripe session reference is invalid.');
+        }
+        $response = Http::withBasicAuth($this->secretKey, '')->connectTimeout(3)->timeout(8)
+            ->get('https://api.stripe.com/v1/checkout/sessions/'.$reference);
+        if (! $response->successful()) {
+            throw new PaymentGatewayException('Stripe could not verify this payment. Please check again shortly.');
+        }
+
+        return $response->json();
+    }
+
+    public function expireSession(string $reference, string $idempotencyKey): void
+    {
+        if (! $this->secretKey) {
+            throw new PaymentGatewayException('Configure a Stripe key matching this deployment’s payment mode.');
+        }
+        if (! preg_match('/^cs_[A-Za-z0-9_]+$/D', $reference)) {
+            throw new PaymentGatewayException('The Stripe session reference is invalid.');
+        }
+        $response = Http::withBasicAuth($this->secretKey, '')->connectTimeout(3)->timeout(8)
+            ->withHeaders(['Idempotency-Key' => $idempotencyKey])
+            ->post('https://api.stripe.com/v1/checkout/sessions/'.$reference.'/expire');
+        if (! $response->successful()) {
+            throw new PaymentGatewayException('The existing Stripe session could not be closed safely.');
+        }
     }
 
     /**

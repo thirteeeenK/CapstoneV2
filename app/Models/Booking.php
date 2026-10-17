@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\Payment\PaymentGatewayException;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -11,6 +12,8 @@ use Illuminate\Support\Facades\DB;
 class Booking extends Model
 {
     use HasFactory;
+
+    protected $dateFormat = 'Y-m-d H:i:sP';
 
     protected $table = 'bookings';
 
@@ -43,6 +46,8 @@ class Booking extends Model
     public const PAYMENT_REFUNDED = 'refunded';
 
     protected $fillable = [
+        'payment_plan_version', 'payment_plan', 'payment_environment', 'payment_policy',
+        'deposit_required_cents', 'deposit_secured_at', 'balance_due_at', 'balance_overdue_at',
         'booking_code',
         'user_id',
         'status',
@@ -87,6 +92,8 @@ class Booking extends Model
     ];
 
     protected $casts = [
+        'payment_plan_version' => 'integer', 'payment_policy' => 'array', 'deposit_required_cents' => 'integer',
+        'deposit_secured_at' => 'datetime', 'balance_due_at' => 'datetime', 'balance_overdue_at' => 'datetime',
         'trip_itineraries' => 'array',
         'trip_end_override' => 'datetime',
         'total_amount' => 'decimal:2',
@@ -148,6 +155,11 @@ class Booking extends Model
         return $this->hasMany(BookingAttachment::class)->orderBy('id', 'desc');
     }
 
+    public function paymentTransactions(): HasMany
+    {
+        return $this->hasMany(BookingPaymentTransaction::class)->orderBy('id');
+    }
+
     public function payments(): HasMany
     {
         return $this->hasMany(BookingPayment::class)->orderByDesc('id');
@@ -166,6 +178,12 @@ class Booking extends Model
      */
     public function isPaymentDeadlinePassed(): bool
     {
+        if ($this->payment_plan_version === 2) {
+            $deadline = $this->deposit_secured_at ? $this->balance_due_at : $this->payment_deadline;
+
+            return $this->status === self::STATUS_APPROVED && $deadline && now()->greaterThan($deadline);
+        }
+
         return $this->status === self::STATUS_APPROVED
             && $this->payment_deadline
             && now()->greaterThan($this->payment_deadline);
@@ -245,6 +263,10 @@ class Booking extends Model
      */
     public function markPaid(string $note = 'Payment completed.'): bool
     {
+        if ($this->payment_plan_version === 2) {
+            throw new PaymentGatewayException('Installment bookings require a verified financial receipt.');
+        }
+
         return $this->transitionTo(
             self::STATUS_PAID,
             [self::STATUS_APPROVED],
