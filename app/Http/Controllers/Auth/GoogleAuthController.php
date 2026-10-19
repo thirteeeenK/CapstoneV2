@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Services\AccountDeletionService;
 use App\Services\RegistrationAbuseService;
 use App\Services\SocialAuthService;
+use App\Services\TurnstileService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -24,11 +25,23 @@ class GoogleAuthController extends Controller
 
     /**
      * Hand the traveler over to Google's consent screen.
+     *
+     * The challenge is verified before Socialite runs, because redirect()
+     * writes the OAuth state nonce into the session and a rejected request
+     * should not leave one behind.
      */
-    public function redirect(): SymfonyRedirect|RedirectResponse
+    public function redirect(Request $request, TurnstileService $turnstile): SymfonyRedirect|RedirectResponse
     {
         if (! $this->isConfigured()) {
             return $this->unavailable();
+        }
+
+        if ($turnstile->configured()
+            && ! $turnstile->passes($request->input('cf-turnstile-response'), TurnstileService::ACTION_GOOGLE)) {
+            Log::notice('auth.google.challenge_failed', ['ip' => $request->ip()]);
+
+            return back(fallback: route('login'))
+                ->with('error', 'We could not confirm that you are human. Please reload the page and try again.');
         }
 
         return Socialite::driver('google')->redirect();

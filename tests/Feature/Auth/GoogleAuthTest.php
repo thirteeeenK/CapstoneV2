@@ -2,6 +2,8 @@
 
 use App\Models\User;
 use App\Models\UserPreference;
+use App\Services\TurnstileService;
+use Illuminate\Support\Facades\Http;
 use Laravel\Socialite\Contracts\Provider;
 use Laravel\Socialite\Facades\Socialite;
 use Laravel\Socialite\Two\InvalidStateException;
@@ -51,14 +53,22 @@ function fakeGoogleCallback(SocialiteUser|Throwable $result): void
 test('the google button is shown on the login and register screens', function () {
     $this->get('/login')
         ->assertOk()
-        ->assertSee(route('auth.google.redirect'))
+        ->assertSee('action="'.route('auth.google.redirect').'"', false)
         ->assertSee('Continue with Google');
 
     $this->get('/register')
         ->assertOk()
-        ->assertSee(route('auth.google.redirect'))
+        ->assertSee('action="'.route('auth.google.redirect').'"', false)
         ->assertSee('Sign up with Google');
 });
+
+test('the google form is not nested inside the credentials form', function (string $page) {
+    // Nested forms are invalid HTML and the browser silently drops the inner
+    // one, which would take the Turnstile token with it.
+    $html = $this->get($page)->assertOk()->getContent();
+
+    expect(strpos($html, '</form>'))->toBeLessThan(strpos($html, route('auth.google.redirect')));
+})->with(['/login', '/register']);
 
 test('the google button is hidden when no credentials are configured', function () {
     config(['services.google.client_id' => null, 'services.google.client_secret' => null]);
@@ -69,16 +79,21 @@ test('the google button is hidden when no credentials are configured', function 
 });
 
 test('the redirect leg hands the traveler to google', function () {
-    $this->get(route('auth.google.redirect'))
+    $this->post(route('auth.google.redirect'))
         ->assertRedirectContains('accounts.google.com');
 });
 
 test('the redirect leg bounces back to login when google is not configured', function () {
     config(['services.google.client_id' => null, 'services.google.client_secret' => null]);
 
-    $this->get(route('auth.google.redirect'))
+    $this->post(route('auth.google.redirect'))
         ->assertRedirect(route('login'))
         ->assertSessionHas('error');
+});
+
+test('the redirect leg is unreachable by get', function () {
+    // A GET variant would be an unverified way into the same OAuth flow.
+    $this->get(route('auth.google.redirect'))->assertStatus(405);
 });
 
 test('a new traveler is registered from their google profile and sent to onboarding', function () {
@@ -302,4 +317,136 @@ test('the profile page still asks a password traveler for their current one', fu
         ->assertSee('Update password')
         ->assertSee('Enter your current password to confirm.')
         ->assertDontSee('Type your email address to confirm.');
+});
+
+/**
+ * Turn the Google button's Turnstile gate on. It is off by default because the
+ * test environment ships no TURNSTILE_* keys.
+ */
+function googleChallengeConfigured(): void
+{
+    config([
+        'services.turnstile.site_key' => 'test-site',
+        'services.turnstile.secret_key' => 'test-secret',
+        'services.turnstile.hostname' => 'sunnytripsv2.up.railway.app',
+    ]);
+}
+
+/**
+ * Stand in for Cloudflare's siteverify endpoint.
+ *
+ * @param  array<string, mixed>  $payload
+ */
+function fakeSiteverify(array $payload): void
+{
+    Http::fake(['challenges.cloudflare.com/*' => Http::response($payload)]);
+}
+
+test('a verified challenge hands the traveler to google', function () {
+    googleChallengeConfigured();
+    fakeSiteverify([
+        'success' => true,
+        'hostname' => 'sunnytripsv2.up.railway.app',
+        'action' => TurnstileService::ACTION_GOOGLE,
+    ]);
+
+    $this->from('/login')
+        ->post(route('auth.google.redirect'), ['cf-turnstile-response' => 'test-token'])
+        ->assertRedirectContains('accounts.google.com');
+
+    Http::assertSentCount(1);
+});
+
+test('a failed challenge returns the traveler to the page they started from', function () {
+    googleChallengeConfigured();
+    fakeSiteverify(['success' => false]);
+
+    $this->from('/register')
+        ->post(route('auth.google.redirect'), ['cf-turnstile-response' => 'rejected-token'])
+        ->assertRedirect('/register')
+        ->assertSessionHas('error')
+        // Not a cf-turnstile-response validation error: that key is what makes
+        // the register page re-open its consent modal.
+        ->assertSessionHasNoErrors();
+});
+
+test('a registration token cannot be replayed at the google button', function () {
+    googleChallengeConfigured();
+    fakeSiteverify([
+        'success' => true,
+        'hostname' => 'sunnytripsv2.up.railway.app',
+        'action' => TurnstileService::ACTION_REGISTER,
+    ]);
+
+    $this->from('/login')
+        ->post(route('auth.google.redirect'), ['cf-turnstile-response' => 'register-token'])
+        ->assertRedirect('/login')
+        ->assertSessionHas('error');
+});
+
+test('a challenge minted for another site is rejected at the google button', function () {
+    googleChallengeConfigured();
+    fakeSiteverify([
+        'success' => true,
+        'hostname' => 'attacker.example',
+        'action' => TurnstileService::ACTION_GOOGLE,
+    ]);
+
+    $this->from('/login')
+        ->post(route('auth.google.redirect'), ['cf-turnstile-response' => 'foreign-token'])
+        ->assertRedirect('/login')
+        ->assertSessionHas('error');
+});
+
+test('a missing challenge token is rejected without calling cloudflare', function () {
+    googleChallengeConfigured();
+    Http::fake();
+
+    $this->from('/login')
+        ->post(route('auth.google.redirect'))
+        ->assertRedirect('/login')
+        ->assertSessionHas('error');
+
+    Http::assertNothingSent();
+});
+
+test('provider connectivity failures keep the traveler on the sign-in page', function () {
+    googleChallengeConfigured();
+    Http::fake(['challenges.cloudflare.com/*' => Http::failedConnection()]);
+
+    $this->from('/login')
+        ->post(route('auth.google.redirect'), ['cf-turnstile-response' => 'test-token'])
+        ->assertRedirect('/login')
+        ->assertSessionHas('error');
+});
+
+test('the google button is not challenged when turnstile is unconfigured', function () {
+    // Deliberate: with no site key no widget can render, so no token could ever
+    // exist. Failing closed here would make Google sign-in permanently dead in
+    // local dev and CI, and this leg only forwards to Google — account creation
+    // happens in callback(), which stays rate limited and state-checked.
+    config(['services.turnstile.site_key' => null, 'services.turnstile.secret_key' => null]);
+    Http::fake();
+
+    $this->post(route('auth.google.redirect'))
+        ->assertRedirectContains('accounts.google.com');
+
+    Http::assertNothingSent();
+});
+
+test('the sign-in button carries a challenge only when turnstile is configured', function () {
+    googleChallengeConfigured();
+
+    $this->get('/login')
+        ->assertOk()
+        ->assertSee('name="cf-turnstile-response"', false)
+        ->assertSee('test-site')
+        ->assertSee(TurnstileService::ACTION_GOOGLE);
+
+    config(['services.turnstile.site_key' => null, 'services.turnstile.secret_key' => null]);
+
+    $this->get('/login')
+        ->assertOk()
+        ->assertDontSee('name="cf-turnstile-response"', false)
+        ->assertDontSee('challenges.cloudflare.com');
 });

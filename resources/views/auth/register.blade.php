@@ -102,6 +102,12 @@
             </x-primary-button>
         </div>
 
+    </form>
+
+    {{-- Kept outside the credentials form: the Google button is a form of its
+         own now that it carries a Turnstile token, and forms cannot nest. --}}
+    <div class="mt-4 space-y-4">
+
         {{-- Divider --}}
         <div class="relative my-1">
             <div class="absolute inset-0 flex items-center" aria-hidden="true">
@@ -125,7 +131,9 @@
             </a>
         </p>
 
-    </form>
+    </div>
+
+    <x-turnstile-loader />
 
     <script>
         function togglePasswordVisibility(fieldId, eyeId) {
@@ -151,7 +159,6 @@
             const challengeResponse = document.getElementById('registration-turnstile-response');
             const challengeStatus = document.getElementById('registration-security-status');
             let submitting = false;
-            let scriptLoading = false;
             let widgetId;
 
             function challengeResult(token, message) {
@@ -164,7 +171,7 @@
                 if (!window.turnstile || widgetId !== undefined) return;
                 const sitekey = @js(config('services.turnstile.site_key'));
                 if (!sitekey) {
-                    challengeResult('', 'Registration is temporarily unavailable. Please try again later.');
+                    challengeResult('', 'Security checks are temporarily unavailable. Please try again later.');
                     return;
                 }
                 widgetId = window.turnstile.render('#registration-security-check', {
@@ -175,31 +182,18 @@
                     'error-callback': () => challengeResult('', 'Security check could not load. Retry the check or reload the page.'),
                 });
             }
-            window.registrationTurnstileReady = renderChallenge;
-
-            function loadChallengeScript() {
-                if (scriptLoading || window.turnstile) return;
-                scriptLoading = true;
-                const challengeScript = document.createElement('script');
-                challengeScript.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?onload=registrationTurnstileReady&render=explicit';
-                challengeScript.async = true;
-                challengeScript.onload = () => { scriptLoading = false; };
-                challengeScript.onerror = () => {
-                    scriptLoading = false;
-                    challengeScript.remove();
-                    challengeResult('', 'Security check could not load. Check your connection and retry.');
-                };
-                document.head.appendChild(challengeScript);
-            }
-
+            // The widget container lives inside a hidden modal, and Turnstile
+            // mis-measures a display:none parent, so the SDK is fetched on load
+            // but the widget is only rendered once the modal is actually open.
             window.addEventListener('open-modal', event => {
-                if (event.detail === 'confirm-submit-modal') requestAnimationFrame(renderChallenge);
+                if (event.detail === 'confirm-submit-modal') {
+                    window.sunnyTurnstile.ready(() => requestAnimationFrame(renderChallenge));
+                }
             });
             document.getElementById('registration-security-retry').addEventListener('click', () => {
                 challengeResult('', 'Checking your connection…');
                 if (window.turnstile && widgetId !== undefined) window.turnstile.reset(widgetId);
-                else if (window.turnstile) renderChallenge();
-                else loadChallengeScript();
+                else window.sunnyTurnstile.retry(() => requestAnimationFrame(renderChallenge));
             });
             registrationForm.addEventListener('submit', event => {
                 if (submitting || !challengeResponse.value || modalSubmitBtn.disabled) {
@@ -248,7 +242,8 @@
                 window.dispatchEvent(new CustomEvent('open-modal', { detail: 'confirm-submit-modal' }));
             }
 
-            loadChallengeScript();
+            window.sunnyTurnstile.onError(() => challengeResult('', 'Security check could not load. Check your connection and retry.'));
+            window.sunnyTurnstile.preload();
         });
     </script>
 

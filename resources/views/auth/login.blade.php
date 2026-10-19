@@ -107,6 +107,12 @@
             </x-primary-button>
         </div>
 
+    </form>
+
+    {{-- Kept outside the credentials form: the Google button is a form of its
+         own now that it carries a Turnstile token, and forms cannot nest. --}}
+    <div class="mt-4 space-y-4">
+
         {{-- Divider --}}
         <div class="relative my-1">
             <div class="absolute inset-0 flex items-center" aria-hidden="true">
@@ -129,7 +135,7 @@
             </a>
         </p>
 
-    </form>
+    </div>
 
     <script>
         function togglePasswordVisibility(fieldId, eyeId) {
