@@ -8,6 +8,7 @@ test('recognizes unsupported execution requests', function (string $message, str
     ['book this hotel for me', 'book'], ['cancel my reservation', 'cancel'],
     ['refund my payment', 'refund'], ['email the hotel', 'contact'],
     ['watch the prices and notify me tomorrow', 'monitor'], ['add this to my basket', 'basket'],
+    ['save this itinerary to my trip plan', 'trip_plan'],
 ]);
 
 test('does not refuse supported lookups or process guidance as execution', function (string $message) {

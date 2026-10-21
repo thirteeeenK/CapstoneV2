@@ -2,6 +2,7 @@
 
 namespace App\Services\Chat;
 
+use App\Services\ProviderLogRedactor;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -61,20 +62,17 @@ class GroqChatService
                 'max_tokens' => 1024,
             ]);
         } catch (ConnectionException $e) {
-            Log::warning('Groq fallback timeout: '.$e->getMessage());
+            Log::warning('Groq fallback timed out.', ProviderLogRedactor::exceptionContext('groq.chat', $e));
 
             return null;
         } catch (\Exception $e) {
-            Log::warning('Groq fallback exception: '.$e->getMessage());
+            Log::warning('Groq fallback threw.', ProviderLogRedactor::exceptionContext('groq.chat', $e));
 
             return null;
         }
 
         if (! $response->successful()) {
-            Log::warning('Groq fallback failed.', [
-                'status' => $response->status(),
-                'body' => mb_substr($response->body(), 0, 500),
-            ]);
+            Log::warning('Groq fallback failed.', ProviderLogRedactor::responseContext('groq.chat', $response));
 
             return null;
         }

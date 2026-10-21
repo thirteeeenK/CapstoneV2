@@ -1,6 +1,24 @@
 <?php
 
+use App\Models\ChatSession;
+use App\Models\User;
 use Tests\Support\ChatEvalMetrics;
+
+test('guided dialogue accuracy counts every checked turn and reports absent data honestly', function () {
+    expect(ChatEvalMetrics::dialogueAccuracy([['correct' => true], ['correct' => false], ['correct' => true], ['correct' => false]]))->toBe(0.5);
+    expect(ChatEvalMetrics::dialogueAccuracy([]))->toBeNull();
+});
+
+test('guided evaluation can run twice without retaining fixture accounts or sessions', function () {
+    $userCount = User::withTrashed()->count();
+    $sessionCount = ChatSession::count();
+
+    $this->artisan('chatbot:eval', ['--guided' => true])->assertExitCode(0);
+    $this->artisan('chatbot:eval', ['--guided' => true])->assertExitCode(0);
+
+    expect(User::withTrashed()->count())->toBe($userCount);
+    expect(ChatSession::count())->toBe($sessionCount);
+});
 
 test('multi task evaluation separates coverage from intent correctness and catalog identity', function () {
     $rows = [

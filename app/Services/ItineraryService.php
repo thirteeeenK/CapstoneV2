@@ -21,6 +21,9 @@ class ItineraryService
 
     public function generate(TripPlan $plan): TripItinerary
     {
+        if ($plan->start_date === null || $plan->end_date === null) {
+            throw ValidationException::withMessages(['dates' => 'Choose travel dates before building a checked schedule. You can keep this itinerary as a draft.']);
+        }
         $plan->load(['items', 'destination']);
         if ($plan->items->isEmpty()) {
             throw ValidationException::withMessages(['items' => 'Add a hotel or room and the places you want to visit first.']);
@@ -213,6 +216,8 @@ class ItineraryService
             if ($locked->revision !== $revision) {
                 throw ValidationException::withMessages(['plan' => 'The trip changed during generation. Generate it again with your current choices.']);
             }
+
+            $locked->update(['status' => 'dated']);
 
             return $locked->itineraries()->create(['revision' => $revision, 'snapshot' => $snapshot]);
         });

@@ -1,8 +1,11 @@
 /**
- * Dev server wrapper — runs artisan serve, queue listener, and Vite
- * concurrently while suppressing the EPIPE crash on Windows shutdown.
+ * Dev server wrapper — runs artisan serve, the queue listener, the scheduler
+ * and Vite concurrently while suppressing the EPIPE crash on Windows shutdown.
+ *
+ * ESM: package.json declares "type": "module", and the installed concurrently
+ * is ESM-only, so `require` would fail before any process started.
  */
-const { concurrently } = require('concurrently');
+import { concurrently } from 'concurrently';
 
 // Swallow the EPIPE / errored-stream crash that concurrently throws on Ctrl+C (Windows)
 process.on('uncaughtException', (err) => {

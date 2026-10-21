@@ -15,6 +15,7 @@ final class ChatCapabilities
             'contact' => 'I cannot send messages or call a hotel directly from chat. I can help draft a message for you to send.',
             'monitor' => 'I cannot keep checking prices or send a notification after this conversation. I can check the current catalog when you ask again.',
             'basket' => 'I cannot add an item to your basket through a chat command. Use Add to Trip Basket on the relevant result card.',
+            'trip_plan' => 'Use Add to Trip Plan below a suggested itinerary to save it under Itinerary (From Chatbot). You can save an undated draft and set dates later.',
             'account' => 'I cannot change your account details directly in chat. Use your account settings or request a human support agent.',
         ];
     }
@@ -26,6 +27,7 @@ final class ChatCapabilities
             return null;
         }
         $patterns = [
+            'trip_plan' => '/\b(?:save|add|put|ilagay)\b.*\b(?:itinerary|trip\s+plan)\b/u',
             'monitor' => '/\b(?:monitor|watch|remind|notify|alert|keep\s+checking|tell\s+me\s+(?:tomorrow|later)|paalalahanan)\b/u',
             'refund' => '/\b(?:refund|ibalik\s+.*bayad)\b/u',
             'cancel' => '/\b(?:cancel|kanselahin)\b.*\b(?:booking|reservation|trip|it|this|that)\b/u',

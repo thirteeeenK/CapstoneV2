@@ -153,6 +153,9 @@ class TripPlannerService
         $quantity = (int) ($data['quantity'] ?? 1);
         $pax = (int) ($data['pax'] ?? ($type === 'activity' ? 1 : $plan->pax));
         $options = ['quantity' => $quantity, 'pax' => $pax];
+        if ($plan->start_date === null || $plan->end_date === null) {
+            throw ValidationException::withMessages(['dates' => 'Set travel dates before changing dated selections. You can remove draft choices without dates.']);
+        }
         if (in_array($type, ['hotel', 'room'], true)) {
             $hotelStay = $type === 'room' ? $plan->items()->where('item_type', 'hotel')->where('item_id', $model->hotel_id)->first()?->options : null;
             $in = Carbon::parse($data['check_in'] ?? $hotelStay['check_in'] ?? $plan->start_date->toDateString())->startOfDay();
@@ -197,6 +200,9 @@ class TripPlannerService
                 throw ValidationException::withMessages(['cart' => 'An earlier version is still in your Trip Basket. Remove it before transferring this version.']);
             }
             $snapshot = $locked->snapshot;
+            if (($snapshot['kind'] ?? null) === 'chatbot_draft' || $lockedPlan->start_date === null || $lockedPlan->end_date === null) {
+                throw ValidationException::withMessages(['itinerary' => 'Choose dates and build a checked schedule before adding this draft to your Trip Basket.']);
+            }
             $this->dates->assertBookableArrival($lockedPlan->start_date->toDateString());
             $items = $lockedPlan->items()->get();
             $bookable = $items->whereIn('item_type', ['room', 'activity']);

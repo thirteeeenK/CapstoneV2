@@ -46,7 +46,11 @@ final class ConversationPlanner
         $unresolved = [];
         $excluded = [];
         $excludedTerms = [];
+        $excludedNames = [];
         foreach ($clauses as $clause) {
+            // Negation is resolved before positive extraction so a ruled-out
+            // feature or catalog item can never become a positive task.
+            $exclusions = $this->router->extractExclusions($clause);
             $signals = $this->signals($clause);
             if (preg_match('/\b(?:draft|write|prepare)\b.*\b(?:email|message|letter)\b/iu', $clause) && preg_match('/\b(?:hotel|resort|booking|trip|travel|check-in)\b/iu', $clause) && $this->router->outOfScopeTopic($clause) !== 'coding') {
                 $tasks[] = $this->task(self::DRAFT, $clause);
@@ -58,8 +62,25 @@ final class ConversationPlanner
 
                 continue;
             }
-            if (preg_match('/^(?:no|not|without)\s+(snorkell?ing|diving|hiking|surfing|pool|wifi|wi-fi)\b/iu', $clause, $exclusion)) {
-                $excludedTerms[] = mb_strtolower($exclusion[1]);
+            // A clause that only rules something out applies to the whole
+            // turn. This is decided before positive signals are read: the
+            // words inside "no snorkeling" look like an activity request, and
+            // must not become one.
+            $exclusionOnly = ($exclusions['terms'] !== [] || $exclusions['names'] !== [] || $exclusions['unclear'] !== [])
+                && preg_match('/^(?:no|not|without|wala(?:ng)?|ayaw|ayoko|huwag|wag|skip|exclude|excluding|except|avoid|minus)\b/iu', trim($clause))
+                && ! preg_match('/\b(?:show|find|recommend|suggest|give|book|instead|but|pero)\b/iu', $clause);
+            if ($exclusionOnly && ($exclusions['terms'] !== [] || $exclusions['names'] !== [])) {
+                $excludedTerms = array_merge($excludedTerms, $exclusions['terms']);
+                $excludedNames = array_merge($excludedNames, $exclusions['names']);
+
+                continue;
+            }
+            // An exclusion the catalog vocabulary cannot resolve is asked
+            // about rather than silently dropped or treated as a feature.
+            if ($exclusionOnly) {
+                $tasks[] = $this->task(self::CLARIFY, $clause, [
+                    'clarification' => 'I could not match “'.$exclusions['unclear'][0].'” to anything in the catalog. Which option should I leave out?',
+                ]);
 
                 continue;
             }
@@ -78,12 +99,14 @@ final class ConversationPlanner
                 continue;
             }
             foreach ($signals as $signal) {
-                $tasks[] = $this->task($signal, $clause);
+                $tasks[] = $this->task($signal, $clause, array_filter([
+                    'clause_excluded_terms' => $exclusions['terms'],
+                    'clause_excluded_names' => $exclusions['names'],
+                ]));
             }
             if ($signals === []) {
                 $sharedClauses[] = $clause;
-                if (preg_match('/(?:₱|\bphp\b|\b\d+\s*(?:pax|persons?|nights?|days?|budget)\b)/iu', $clause)
-                    && ! preg_match('/\b(?:find|recommend|suggest|show|compare)\b/iu', $clause)) {
+                if ($this->constraintOnlyClause($clause)) {
                     continue;
                 }
                 if (preg_match('/\b(?:find|recommend|suggest|show|compare|viewpoints?|dining|hanap|pasyalan)\b/iu', $clause)
@@ -110,6 +133,7 @@ final class ConversationPlanner
 
         $groups = $this->conversation->resultGroups($session);
         $whole = $this->router->extractConstraints($message);
+        $unknownDestination = empty($whole['destination_id']) && empty($whole['hotel_id']) && empty($whole['room_id']) && (bool) preg_match('/\b(?:in|near|sa)\s+[\p{L}]/iu', $message);
         $reference = (bool) preg_match('/\b(?:first|second|third|1st|2nd|3rd|that|this|same|selected|choices|cheaper|instead|actually|keep|iyon|yun|doon|mas\s+mura)\b/iu', $message);
         if ($tasks === [] && $groups !== [] && $reference) {
             $types = array_values(array_unique(array_column($groups, 'intent')));
@@ -152,6 +176,9 @@ final class ConversationPlanner
             }
         }
         $tasks = array_values(array_filter($tasks, fn (array $task): bool => ! in_array($task['type'], $excluded, true)));
+        if (($whole['include_accommodation'] ?? null) === false && in_array(IntentRouter::ITINERARY_QUERY, array_column($tasks, 'type'), true)) {
+            $tasks = array_values(array_filter($tasks, fn (array $task): bool => ! in_array($task['type'], [IntentRouter::HOTEL_SEARCH, IntentRouter::ROOM_SEARCH], true)));
+        }
         if ($tasks === [] && $excluded !== []) {
             $tasks[] = $this->task(self::CLARIFY, $message, ['clarification' => 'What would you like me to look for instead?']);
         }
@@ -164,6 +191,9 @@ final class ConversationPlanner
             }
         }
         $shared = $this->router->extractConstraints(implode(', ', $sharedClauses));
+        if (count($destinations) <= 1 && array_key_exists('include_accommodation', $whole)) {
+            $shared['include_accommodation'] = $whole['include_accommodation'];
+        }
         foreach (['pax', 'check_in_date', 'check_out_date', 'nights', 'days'] as $key) {
             $values = array_values(array_unique(array_filter(array_column($parsed, $key), fn (mixed $v): bool => $v !== null)));
             if (count($values) === 1 && empty($shared[$key])) {
@@ -174,18 +204,54 @@ final class ConversationPlanner
             $shared['destination_id'] = array_key_first($destinations);
             $shared['destination_name'] = reset($destinations);
         }
-        $jointBudget = (bool) preg_match('/\b(?:total|overall|for\s+both|combined|kabuuan)\b/iu', $message) && ! empty($whole['max_price']);
+        if (! $unknownDestination && $destinations === [] && empty($shared['destination_id'])) {
+            $previousDestinations = [];
+            foreach ($groups as $group) {
+                if (! empty($group['constraints']['destination_id'])) {
+                    $previousDestinations[$group['constraints']['destination_id']] = $group['constraints']['destination_name'] ?? null;
+                }
+            }
+            if (count($previousDestinations) === 1) {
+                $shared['destination_id'] = array_key_first($previousDestinations);
+                $shared['destination_name'] = reset($previousDestinations);
+            }
+        }
+        // A budget is only "joint" when there is more than one part to split it
+        // between; with a single request the whole amount is simply that
+        // request's budget and there is nothing to allocate.
+        $spendableTasks = count(array_filter($tasks, fn (array $task): bool => in_array($task['type'], [
+            IntentRouter::HOTEL_SEARCH, IntentRouter::ROOM_SEARCH, IntentRouter::ACTIVITY_SEARCH,
+            IntentRouter::PACKAGE_SEARCH, IntentRouter::ADDON_SEARCH, IntentRouter::ITINERARY_QUERY,
+            IntentRouter::AVAILABILITY_QUERY,
+        ], true)));
+        $jointBudget = (bool) preg_match('/\b(?:total|overall|for\s+both|combined|kabuuan)\b/iu', $message)
+            && ! empty($whole['max_price'])
+            && $spendableTasks > 1;
         foreach ($tasks as $i => &$task) {
             $task['id'] = 'task-'.($i + 1);
             $constraints = $parsed[$i];
-            foreach (['destination_id', 'destination_name', 'pax', 'check_in_date', 'check_out_date', 'nights', 'days'] as $key) {
+            $localUnknownDestination = empty($constraints['destination_id']) && empty($constraints['hotel_id']) && empty($constraints['room_id']) && (bool) preg_match('/\b(?:in|near|sa)\s+[\p{L}]/iu', $task['query']);
+            $task['explicit_unknown_destination'] = $unknownDestination || $localUnknownDestination;
+            $task['destination_query'] = $unknownDestination ? $message : $task['query'];
+            foreach (['destination_id', 'destination_name', 'pax', 'check_in_date', 'check_out_date', 'nights', 'days', 'include_accommodation'] as $key) {
+                if ($task['explicit_unknown_destination'] && in_array($key, ['destination_id', 'destination_name'], true)) {
+                    continue;
+                }
                 $constraints[$key] ??= $shared[$key] ?? null;
+            }
+            if (! empty($shared['max_price']) && empty($constraints['max_price'])) {
+                $constraints['max_price'] = $shared['max_price'];
+                $constraints['budget_mode'] = $shared['budget_mode'];
+                $task['budget_scope'] = 'shared';
             }
             $typeGroups = array_values(array_filter($groups, fn (array $group): bool => $group['intent'] === $task['type']
                 || ($task['type'] === IntentRouter::AVAILABILITY_QUERY && in_array($group['intent'], [IntentRouter::ROOM_SEARCH, IntentRouter::AVAILABILITY_QUERY], true))));
+            if ($task['explicit_unknown_destination']) {
+                $typeGroups = [];
+            }
             $task['reference'] = $reference;
             $isOrdinal = (bool) preg_match('/\b(?:first|second|third|1st|2nd|3rd)\b/iu', $task['query']);
-            if (count($typeGroups) > 1 && $reference && empty($constraints['destination_id'])) {
+            if (count($typeGroups) > 1 && empty($constraints['destination_id'])) {
                 $task['clarification'] = 'Which destination or result group do you mean?';
             } elseif ($typeGroups !== [] && ($reference || empty($constraints['destination_id']))) {
                 $group = $typeGroups[0];
@@ -242,7 +308,9 @@ final class ConversationPlanner
                 $constraints['max_price'] = $task['type'] === IntentRouter::ITINERARY_QUERY ? $whole['max_price'] : null;
             }
             $task['budget_basis'] = $jointBudget ? 'trip_total' : $this->budgetBasis($task['query']);
-            $constraints['excluded_terms'] = $excludedTerms;
+            $constraints['excluded_terms'] = array_values(array_unique(array_merge($excludedTerms, $task['clause_excluded_terms'] ?? [])));
+            $constraints['excluded_names'] = array_values(array_unique(array_merge($excludedNames, $task['clause_excluded_names'] ?? [])));
+            unset($task['clause_excluded_terms'], $task['clause_excluded_names']);
             $task['constraints'] = $constraints;
             $task['explicit_constraints'] = array_keys(array_filter($parsed[$i], static fn (mixed $v): bool => $v !== null && $v !== []));
             if (empty($constraints['destination_id']) && count($destinations) > 1) {
@@ -253,7 +321,12 @@ final class ConversationPlanner
         $tasks = array_values(array_unique($tasks, SORT_REGULAR));
         $special = array_filter($tasks, fn (array $task): bool => in_array($task['type'], [self::ACTION, self::UNSUPPORTED, self::CLARIFY, self::DRAFT], true) || isset($task['clarification']));
 
-        return ['handle' => count($tasks) > 1 || $special !== [] || $excluded !== [] || $excludedTerms !== [] || ($groups !== [] && $reference) || ($pending !== [] && $tasks !== []), 'tasks' => $tasks, 'source' => $source];
+        // A single request that rules something out is still planned work:
+        // its exclusions only reach retrieval through the planned task.
+        $hasScopedExclusions = array_filter($tasks, static fn (array $task): bool => ($task['constraints']['excluded_terms'] ?? []) !== []
+            || ($task['constraints']['excluded_names'] ?? []) !== []) !== [];
+
+        return ['handle' => count($tasks) > 1 || $special !== [] || $excluded !== [] || $excludedTerms !== [] || $excludedNames !== [] || $hasScopedExclusions || ($groups !== [] && $reference) || ($pending !== [] && $tasks !== []), 'tasks' => $tasks, 'source' => $source];
     }
 
     /** @return list<string> */
@@ -276,6 +349,41 @@ final class ConversationPlanner
     /** @param array<string, mixed> $extra
      * @return array<string, mixed>
      */
+    /**
+     * Whether a clause only restates constraints ("total budget 20000",
+     * "for 2 pax", "within 15k") rather than asking for something.
+     *
+     * Such a clause belongs to its sibling tasks' constraints; turning it into
+     * a task of its own spends a task slot and asks a second question about a
+     * fact the user already stated.
+     */
+    private function constraintOnlyClause(string $clause): bool
+    {
+        if (preg_match('/\b(?:find|recommend|suggest|show|compare|look\s+for|hanap|pasyalan)\b/iu', $clause)) {
+            return false;
+        }
+
+        $constraints = $this->router->extractConstraints($clause);
+        $hasConstraintValue = ! empty($constraints['max_price'])
+            || ! empty($constraints['pax'])
+            || ! empty($constraints['nights'])
+            || ! empty($constraints['days'])
+            || ! empty($constraints['check_in_date']);
+
+        if (! $hasConstraintValue) {
+            return false;
+        }
+
+        // A named catalog entity makes the clause a request about that item.
+        foreach (['hotel_name', 'room_name', 'activity_name', 'package_name', 'addon_name'] as $key) {
+            if (! empty($constraints[$key])) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     private function task(string $type, string $query, array $extra = []): array
     {
         return ['type' => $type, 'query' => mb_substr($query, 0, 1000), ...$extra];

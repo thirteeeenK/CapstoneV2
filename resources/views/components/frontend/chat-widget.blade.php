@@ -256,6 +256,7 @@
                                                     alt="" onerror="this.style.display='none'">
                                                 <p class="text-xs font-bold text-slate-900 dark:text-slate-100 font-headline"
                                                     x-text="act.activity_name"></p>
+                                                <p x-show="act.weather_dependent === true" class="mt-1 text-xs text-slate-500 dark:text-slate-400">Weather-dependent</p>
                                                 <p class="text-[11px] text-slate-500 dark:text-slate-400" x-text="act.destination"></p>
                                                 <div class="flex items-center justify-between pt-0.5">
                                                     <span class="text-xs font-black text-emerald-600 font-headline"
@@ -412,13 +413,140 @@
                                     <div class="mt-3 flex flex-wrap gap-1.5">
                                         <template x-for="action in msg.suggested_actions" :key="action.id">
                                             <button type="button" @click="useSuggestedAction(msg, action)"
-                                                :disabled="isActionUsed(msg.id, action.id)"
+                                                :disabled="isActionDisabled(msg, action)"
+                                                :aria-disabled="isActionDisabled(msg, action)"
                                                  :class="isActionUsed(msg.id, action.id) ? 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500 border-slate-200 dark:border-slate-700 cursor-default' : 'bg-ocean-50 dark:bg-ocean-900/50 text-ocean-700 dark:text-ocean-100 border-ocean-200 dark:border-ocean-800 hover:bg-ocean-100 dark:hover:bg-ocean-900 cursor-pointer'"
                                                 class="text-[11px] font-bold px-3 py-1.5 rounded-full border transition-colors font-headline disabled:opacity-60">
                                                 <span x-text="action.label"></span>
                                             </button>
                                         </template>
                                     </div>
+                                </template>
+
+                                @include('components.frontend.chat-trip-details')
+
+                                <template x-if="msg.itinerary_suggestion">
+                                    <div data-trip-plan-actions class="mt-3 space-y-2 text-xs font-body">
+                                        @include('components.frontend.chat-itinerary-summary', ['suggestionExpression' => 'msg.itinerary_suggestion'])
+                                        <template x-for="day in msg.itinerary_suggestion.days" :key="day.day">
+                                            <section class="border-t border-sand-200 pt-2 dark:border-slate-700">
+                                                <h4 class="font-bold" x-text="`Day ${day.day}${day.date ? ' · ' + day.date : ''}${day.day === 1 ? ' · Arrival' : (day.day === msg.itinerary_suggestion.duration_days ? ' · Departure' : '')}`"></h4>
+                                                <template x-for="choice in day.choices" :key="choice.type + ':' + choice.id"><p x-text="choice.name"></p></template>
+                                                <p x-show="!day.choices.length">Open time — arrange activities at your own pace.</p>
+                                            </section>
+                                        </template>
+                                        <p class="text-slate-600 dark:text-slate-300" x-text="msg.itinerary_suggestion.weather_notice"></p>
+                                        <p class="text-slate-500 dark:text-slate-400">Save this as a draft. Rooms and activities are reserved only through checkout.</p>
+                                        <button type="button" x-show="!savedTripPlans[msg.itinerary_suggestion.id]" @click="saveItineraryPlan(msg.itinerary_suggestion, $el)" :disabled="savingTripPlan === msg.itinerary_suggestion.id"
+                                            class="min-h-11 rounded-lg bg-ocean-700 px-4 py-2 font-bold text-white disabled:opacity-50">Add to Trip Plan</button>
+                                        <a data-trip-plan-return-focus x-show="typeof savedTripPlans[msg.itinerary_suggestion.id] === 'string'" :href="savedTripPlans[msg.itinerary_suggestion.id] || '#'" class="inline-flex min-h-11 items-center font-bold text-ocean-700 dark:text-ocean-300">Saved — View Trip Plan</a>
+                                        <p x-show="savedTripPlans[msg.itinerary_suggestion.id] === true" class="font-bold text-ocean-700 dark:text-ocean-300">Added to your Trip Plan — <a data-trip-plan-return-focus :href="loginUrl" class="underline">sign in to view it</a>.</p>
+                                        <p role="status" x-show="tripPlanNotices[msg.itinerary_suggestion.id]" x-text="tripPlanNotices[msg.itinerary_suggestion.id]"></p>
+                                    </div>
+                                </template>
+
+                                {{-- Compact trip summary with per-field edits --}}
+                                <template x-if="activeTripSummary(msg)">
+                                    <div class="mt-3 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 p-3 space-y-1.5">
+                                        <p class="text-[11px] font-bold text-ink-700 dark:text-slate-200 font-headline"
+                                            x-text="activeTripSummary(msg).heading"></p>
+                                        <dl class="space-y-1">
+                                            <template x-for="item in activeTripSummary(msg).items" :key="item.field">
+                                                <div class="flex items-center justify-between gap-2">
+                                                    <div class="min-w-0">
+                                                        <dt class="inline text-[11px] text-slate-500 dark:text-slate-400 font-label"
+                                                            x-text="item.label + ': '"></dt>
+                                                        <dd class="inline text-[11px] font-bold text-ink-800 dark:text-slate-100 font-body"
+                                                            x-text="item.value"></dd>
+                                                    </div>
+                                                    <button type="button" @click="editTripField(item)"
+                                                        :aria-label="'Change ' + item.label"
+                                                        class="shrink-0 text-[10px] font-bold px-2.5 py-1.5 rounded-full border border-slate-200 dark:border-slate-700 text-ocean-700 dark:text-ocean-100 hover:bg-ocean-50 dark:hover:bg-ocean-900 transition-colors font-headline cursor-pointer">
+                                                        Change
+                                                    </button>
+                                                </div>
+                                            </template>
+                                        </dl>
+                                    </div>
+                                </template>
+
+                                {{-- Question controls: shown only for the question the
+                                     server is still waiting on. The composer stays
+                                     available for a typed answer at every step. --}}
+                                <template x-if="activeControl(msg)">
+                                    <form @submit.prevent="submitControl(msg)"
+                                        class="mt-3 rounded-xl border border-ocean-200/80 dark:border-ocean-800 bg-ocean-50/70 dark:bg-ocean-900/40 p-3 space-y-2.5">
+                                        <fieldset class="space-y-2.5" :disabled="controlBusy || sending">
+                                            <legend class="sr-only" x-text="msg.clarification.text"></legend>
+                                            <template x-for="field in activeControl(msg).fields" :key="field.name">
+                                                <div class="space-y-1">
+                                                    <label class="block text-[11px] font-bold text-ink-700 dark:text-slate-200 font-label"
+                                                        :for="msg.clarification.id + '-' + field.name" x-text="field.label"></label>
+
+                                                    <template x-if="field.input === 'select'">
+                                                        <select :id="msg.clarification.id + '-' + field.name"
+                                                            :value="controlValue(msg.clarification.id, field.name)"
+                                                            @change="setControlValue(msg.clarification.id, field.name, $event.target.value)"
+                                                            class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs px-3 py-2 font-body text-slate-800 dark:text-slate-200 focus:border-ocean-500 focus:outline-none min-h-[44px]">
+                                                            <option value="">Choose one…</option>
+                                                            <template x-for="option in field.options" :key="option.value">
+                                                                <option :value="option.value" x-text="option.label"
+                                                                    :selected="controlValue(msg.clarification.id, field.name) === option.value"></option>
+                                                            </template>
+                                                        </select>
+                                                    </template>
+
+                                                    <template x-if="field.input === 'date' || field.input === 'number'">
+                                                        <input :type="field.input"
+                                                            :id="msg.clarification.id + '-' + field.name"
+                                                            :min="field.min" :max="field.max" :step="field.step || null"
+                                                            :value="controlValue(msg.clarification.id, field.name)"
+                                                            @input="setControlValue(msg.clarification.id, field.name, $event.target.value)"
+                                                            :aria-invalid="controlError(field.name) ? 'true' : 'false'"
+                                                            :aria-describedby="controlError(field.name) ? msg.clarification.id + '-' + field.name + '-error' : null"
+                                                            class="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs px-3 py-2 font-body text-slate-800 dark:text-slate-200 focus:border-ocean-500 focus:outline-none min-h-[44px]">
+                                                    </template>
+
+                                                    <template x-if="field.input === 'radio'">
+                                                        <div class="flex flex-wrap gap-1.5" role="radiogroup" :aria-label="field.label">
+                                                            <template x-for="option in field.options" :key="option.value">
+                                                                <button type="button"
+                                                                    @click="setControlValue(msg.clarification.id, field.name, option.value)"
+                                                                    :aria-pressed="controlValue(msg.clarification.id, field.name) === option.value"
+                                                                    :class="controlValue(msg.clarification.id, field.name) === option.value
+                                                                        ? 'bg-ocean-600 text-white border-ocean-600'
+                                                                        : 'bg-white dark:bg-slate-900 text-ocean-700 dark:text-ocean-100 border-ocean-200 dark:border-ocean-800 hover:bg-ocean-100 dark:hover:bg-ocean-900'"
+                                                                    class="text-[11px] font-bold px-3 py-2 rounded-full border transition-colors font-headline cursor-pointer min-h-[44px]">
+                                                                    <span x-text="option.label"></span>
+                                                                </button>
+                                                            </template>
+                                                        </div>
+                                                    </template>
+
+                                                    <template x-if="controlError(field.name)">
+                                                        <p class="text-[11px] font-bold text-coral-600 dark:text-coral-300 font-label"
+                                                            :id="msg.clarification.id + '-' + field.name + '-error'"
+                                                            x-text="controlError(field.name)"></p>
+                                                    </template>
+                                                </div>
+                                            </template>
+
+                                            <div class="flex flex-wrap items-center gap-1.5 pt-0.5">
+                                                <button type="submit"
+                                                    class="text-[11px] font-bold px-3 py-2 rounded-full bg-ocean-600 text-white hover:bg-ocean-700 transition-colors font-headline cursor-pointer disabled:opacity-60 min-h-[44px]">
+                                                    <span x-text="activeControl(msg).submit_label"></span>
+                                                </button>
+                                                <template x-if="activeControl(msg).skip">
+                                                    <button type="button" @click="submitControl(msg, { skip: true })"
+                                                        class="text-[11px] font-bold px-3 py-2 rounded-full border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors font-headline cursor-pointer min-h-[44px]">
+                                                        <span x-text="activeControl(msg).skip.label"></span>
+                                                    </button>
+                                                </template>
+                                                <p class="text-[10px] text-slate-500 dark:text-slate-400 font-body"
+                                                    x-text="activeControl(msg).manual_hint"></p>
+                                            </div>
+                                        </fieldset>
+                                    </form>
                                 </template>
 
                                 {{-- Location request --}}
@@ -531,8 +659,9 @@
                 <textarea x-model="input" @keydown.enter.prevent="!$event.shiftKey && send()"
                     placeholder="Ask about islands, hotels, rates..." rows="1"
                     class="flex-1 resize-none rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs sm:text-sm px-3.5 py-2.5 focus:bg-white dark:focus:bg-slate-900 focus:border-ocean-500 focus:outline-none transition-all font-body text-slate-800 dark:text-slate-200 placeholder:text-slate-400"
-                    :disabled="sending" x-ref="input" @input="autoResize($el)"></textarea>
-                <button type="submit" :disabled="sending || !input.trim()"
+                    :disabled="sending" x-ref="input" @input="autoResize($el)"
+                    :aria-describedby="input.length > inputLimit * 0.8 ? 'chat-input-counter' : null"></textarea>
+                <button type="submit" :disabled="sending || !input.trim() || input.length > inputLimit"
                     class="shrink-0 w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-ocean-600 text-white flex items-center justify-center hover:bg-ocean-700 transition-colors shadow-xs disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                     aria-label="Send message">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -541,6 +670,14 @@
                     </svg>
                 </button>
             </form>
+            <template x-if="input.length > inputLimit * 0.8">
+                <p id="chat-input-counter" aria-live="polite"
+                    :class="input.length > inputLimit ? 'text-coral-600 dark:text-coral-300' : 'text-slate-500 dark:text-slate-400'"
+                    class="text-right text-[10px] font-bold font-label">
+                    <span x-text="input.length"></span>/<span x-text="inputLimit"></span>
+                    <span x-show="input.length > inputLimit"> — please shorten this message before sending.</span>
+                </p>
+            </template>
             <p class="text-center text-black dark:text-slate-400 text-[10px] font-medium leading-tight">SunnyBot AI can make mistakes.
                 Be specific in inquiries for higher accuracy. Do not treat SunnyBot as a Human.</p>
         </div>
@@ -568,7 +705,22 @@
             geoError: null,
             hasUnreadAdmin: false,
             showGuide: false,
-            usedActionIds: new Set(),
+            // Plain array, not a Set: an immutable reassignment is reactive in
+            // every Alpine version, so a used pill disables itself immediately.
+            usedActionIds: [],
+            // The question the server is currently waiting on. Held as a
+            // primitive on the component root so staleness is read from live
+            // state rather than inferred from a derived message object.
+            activeQuestionId: null,
+            nextMessageId: 0,
+            controlValues: {},
+            controlErrors: {},
+            controlBusy: false,
+            activeTripFormId: null,
+            savingTripPlan: null,
+            savedTripPlans: {},
+            tripPlanNotices: {},
+            inputLimit: @json(\App\Http\Controllers\ChatbotController::MESSAGE_LIMIT),
             isAuthed: @json(auth()->check()),
 
             async init() {
@@ -681,6 +833,11 @@
                         const extras = {};
                         const ctx = msg.context_data || {};
                         extras.sections = ctx.sections;
+                        extras.clarification = ctx.clarification;
+                        extras.trip_summary = ctx.trip_summary;
+                        extras.trip_details_form = ctx.trip_details_form;
+                        extras.itinerary_suggestion = ctx.itinerary_suggestion;
+                        extras.dialogue_notice = ctx.dialogue_notice;
                         extras.section_footer = ctx.section_footer;
                         extras.price_effective_note = ctx.price_effective_note;
                         if (ctx.retrieved_rooms?.length) extras.rooms = ctx.retrieved_rooms;
@@ -698,6 +855,12 @@
                         }
                         return { id: msg.id, sender: msg.sender, text: msg.text, ...extras };
                     });
+                    // The question the server is still waiting on survives a
+                    // refresh, so its control stays live and older ones do not.
+                    const lastBot = [...this.messages].reverse().find(m => m.sender === 'bot');
+                    this.activeQuestionId = lastBot?.clarification?.id ?? null;
+                    this.activeTripFormId = lastBot?.trip_details_form?.id ?? null;
+                    await this.restoreSavedTripPlans();
                     this.$nextTick(() => this.scrollDown());
                 } catch (err) {
                     console.error('Failed to load chat history:', err);
@@ -867,16 +1030,29 @@
             },
 
             addMessage(sender, text, extra = {}) {
-                this.messages.push({ id: Date.now(), sender, text, ...extra });
+                this.messages = [...this.messages, { id: `local-${Date.now()}-${++this.nextMessageId}`, sender, text, ...extra }];
                 this.scrollDown();
             },
 
-            async send() {
-                const msg = this.input.trim();
-                if (!msg || this.sending || this.guestLimited) return;
+            async send(question = null, textOverride = null, answer = null, details = null) {
+                const structured = answer || details;
+                const typed = this.input;
+                const msg = (textOverride ?? this.input).trim();
+                if (this.sending || this.guestLimited) return;
+                if (!structured && !msg) return;
+                if (!structured && msg.length > this.inputLimit) {
+                    this.addMessage('bot', `That message is ${msg.length} characters. Please shorten it to ${this.inputLimit} or fewer and send again — your text is still in the box.`);
+                    return;
+                }
 
-                this.addMessage('user', msg);
-                this.input = '';
+                // Optimistic echo. A structured answer has no typed text, so
+                // the readable sentence comes back from the server instead.
+                if (!structured) {
+                    this.addMessage('user', msg);
+                }
+                if (textOverride === null && !structured) {
+                    this.input = '';
+                }
                 this.sending = true;
 
                 try {
@@ -889,12 +1065,34 @@
                             'Accept': 'application/json',
                         },
                         body: JSON.stringify({
-                            message: msg,
+                            ...(details ? details : (answer ? { answer } : { message: msg })),
                             session_token: this.sessionToken,
+                            ...(question ? { question_id: question.question_id, question_revision: question.question_revision } : {}),
                         }),
                     });
 
                     const data = await res.json();
+
+                    if (res.status === 409) {
+                        // Busy or stale: the draft is handed back for retry and
+                        // the live question id is resynced from the server.
+                        if (textOverride === null && !answer) this.input = typed;
+                        this.activeQuestionId = data.clarification?.id ?? this.activeQuestionId;
+                        this.activeTripFormId = data.trip_details_form?.id ?? null;
+                        this.addMessage('bot', data.reply || 'Your previous request is still being checked.', { clarification: data.clarification, trip_details_form: data.trip_details_form });
+                        return;
+                    }
+
+                    if (res.status === 422) {
+                        if (textOverride === null && !answer) this.input = typed;
+                        this.controlErrors = Object.fromEntries(
+                            Object.entries(data.errors || {}).map(([key, value]) => [key, Array.isArray(value) ? value[0] : value])
+                        );
+                        if (!structured) {
+                            this.addMessage('bot', data.message || 'Please check your message and try again.');
+                        }
+                        return;
+                    }
 
                     if (res.status === 429 && data.status === 'guest_limit_reached') {
                         if (data.limit_type === 'minute') {
@@ -979,10 +1177,22 @@
                     }
 
                     extras.sections = data.sections;
+                    extras.clarification = data.clarification;
+                    extras.trip_summary = data.trip_summary;
+                    extras.trip_details_form = data.trip_details_form;
+                    extras.itinerary_suggestion = data.itinerary_suggestion;
+                    if (structured && data.user_message) {
+                        this.addMessage('user', data.user_message);
+                    }
+                    this.activeQuestionId = data.clarification?.id ?? null;
+                    this.activeTripFormId = data.trip_details_form?.id ?? null;
+                    extras.dialogue_notice = data.dialogue_notice;
                     extras.section_footer = data.section_footer;
                     extras.price_effective_note = data.price_effective_note;
                     this.addMessage('bot', data.reply || 'I could not process that.', extras);
                 } catch (err) {
+                    // The draft is preserved so the user can retry the same text.
+                    if (textOverride === null && !answer) this.input = typed;
                     this.addMessage('bot', 'Something went wrong. Please try again.');
                 } finally {
                     this.sending = false;
@@ -996,10 +1206,65 @@
                 }
             },
 
+            async submitTripDetails(form, values) {
+                this.controlErrors = {};
+                const changes = {};
+                for (const [key, raw] of Object.entries(values)) {
+                    const value = raw === '' ? null : raw;
+                    const previous = form.values[key] === '' ? null : (form.values[key] ?? null);
+                    if (JSON.stringify(value) !== JSON.stringify(previous)) changes[key] = value;
+                }
+                if (changes.dates_undecided === true) {
+                    delete changes.check_in_date; delete changes.check_out_date;
+                }
+                if (values.dates_undecided === false && values.check_in_date && values.check_out_date) {
+                    delete changes.days;
+                }
+                if (!Object.keys(changes).length) changes.destination_id = values.destination_id;
+                await this.send(null, '', null, { trip_details: changes, form_id: form.id, form_revision: form.revision, scope_id: form.scope_id });
+            },
+
+            async saveItineraryPlan(suggestion, returnFocus = null) {
+                if (this.savingTripPlan) return;
+                this.savingTripPlan = suggestion.id;
+                try {
+                    const response = await fetch(@js(route('trip-planner.chatbot-store')), { method: 'POST',
+                        headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' },
+                        body: JSON.stringify({ suggestion_id: suggestion.id, session_token: this.sessionToken }) });
+                    const data = await response.json();
+                    if (!response.ok) throw new Error(Object.values(data.errors || {}).flat()[0] || data.message || 'Unable to save this itinerary. Please try again.');
+                    // A guest has no planner page yet, so the saved state is held
+                    // as `true` until the plan is claimed at sign-in.
+                    this.savedTripPlans = { ...this.savedTripPlans, [suggestion.id]: data.url || true };
+                    window.dispatchEvent(new CustomEvent('show-trip-plan-modal', { detail: {
+                        suggestion, url: data.url, claimed: data.claimed, alreadySaved: response.status === 200, returnFocus,
+                    } }));
+                } catch (error) {
+                    this.tripPlanNotices = { ...this.tripPlanNotices, [suggestion.id]: error.message };
+                } finally { this.savingTripPlan = null; }
+            },
+
+            async restoreSavedTripPlans() {
+                const ids = this.displayMessages().map(message => message.itinerary_suggestion?.id).filter(Boolean).slice(-50);
+                if (!ids.length) return;
+                const params = new URLSearchParams();
+                ids.forEach(id => params.append('suggestion_ids[]', id));
+                try {
+                    const response = await fetch(@js(route('trip-planner.chatbot-status')) + '?' + params, { headers: { Accept: 'application/json' } });
+                    if (response.ok) this.savedTripPlans = (await response.json()).data;
+                } catch { /* The save action can still be retried safely. */ }
+            },
+
             itineraryBudgetLabel(itin) {
                 const check = itin?.budget_check;
                 if (!check || !check.budget) return '';
                 const peso = (amount) => '₱' + Number(Math.abs(amount)).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                if (check.scope === 'lodging') {
+                    return (itin.room.total <= check.budget ? 'Hotel within budget' : 'Hotel over budget') + ' · activities extra';
+                }
+                if (check.scope === 'activities') {
+                    return (itin.grand_total - itin.room.total <= check.budget ? 'Activities within budget' : 'Activities over budget') + ' · hotel extra';
+                }
                 switch (check.status) {
                     case 'within': return 'Within budget · ' + check.percent + '% of ' + peso(check.budget);
                     case 'slightly_over': return 'Slightly over budget · ' + peso(check.delta) + ' over ' + peso(check.budget);
@@ -1050,8 +1315,59 @@
                 }
             },
 
+            /**
+             * The trip summary is live only on the newest bot message, so an
+             * older turn never offers edits against stale values.
+             */
+            activeTripSummary(msg) {
+                if (!msg.trip_summary?.items?.length) return null;
+                const shown = this.displayMessages();
+                const latest = [...shown].reverse().find(m => m.sender === 'bot' && m.trip_summary);
+                return latest && latest.id === msg.id ? msg.trip_summary : null;
+            },
+
+            /**
+             * Puts an edit prompt in the composer for the user to complete. A
+             * typed draft is never replaced without asking.
+             */
+            editTripField(item) {
+                if (this.input.trim() !== '' && !this.input.startsWith('Change the ')) {
+                    return;
+                }
+                this.input = item.edit_prompt;
+                this.$nextTick(() => {
+                    const field = this.$refs.input;
+                    if (!field) return;
+                    field.focus();
+                    field.setSelectionRange(field.value.length, field.value.length);
+                    this.autoResize(field);
+                });
+            },
+
             isActionUsed(msgId, actionId) {
-                return this.usedActionIds.has(`${msgId}:${actionId}`);
+                return this.usedActionIds.includes(`${msgId}:${actionId}`);
+            },
+
+            /**
+             * A question control is dead once the server moved on: either the
+             * renderer marked it stale, or it no longer matches the question
+             * the server is waiting on.
+             */
+            isActionStale(action) {
+                if (!action.question_id) return false;
+                return action.stale === true || action.question_id !== this.activeQuestionId;
+            },
+
+            isActionDisabled(msg, action) {
+                return this.sending || this.controlBusy || this.isActionStale(action)
+                    || (action.question_id && this.handoffStatus === 'active')
+                    || this.isActionUsed(msg.id, action.id);
+            },
+
+            markActionUsed(key) {
+                if (!this.usedActionIds.includes(key)) {
+                    this.usedActionIds = [...this.usedActionIds, key];
+                }
             },
 
             async useSuggestedAction(msg, action) {
@@ -1059,16 +1375,72 @@
                     return;
                 }
                 const key = `${msg.id}:${action.id}`;
-                if (this.usedActionIds.has(key)) {
+                if (this.isActionDisabled(msg, action)) {
                     return;
                 }
-                this.usedActionIds.add(key);
+                this.markActionUsed(key);
                 if (action.handoff) {
                     await this.requestHandoff();
                     return;
                 }
-                this.input = action.prompt;
-                await this.send();
+                // Sent as an override so a typed draft is never overwritten.
+                await this.send(action.question_id ? action : null, action.prompt);
+            },
+
+            /**
+             * The control for the question the server is still waiting on, or
+             * null. Answered questions render as read-only history instead.
+             */
+            activeControl(msg) {
+                if (this.activeTripFormId) return null;
+                const clarification = msg.clarification;
+                if (!clarification?.control || !clarification.id) return null;
+                if (clarification.id !== this.activeQuestionId) return null;
+                if (this.handoffStatus === 'active') return null;
+                return clarification.control;
+            },
+
+            controlValue(questionId, name) {
+                return this.controlValues[`${questionId}:${name}`] ?? '';
+            },
+
+            setControlValue(questionId, name, value) {
+                this.controlValues = { ...this.controlValues, [`${questionId}:${name}`]: value };
+                if (this.controlErrors[name]) {
+                    const next = { ...this.controlErrors };
+                    delete next[name];
+                    this.controlErrors = next;
+                }
+            },
+
+            controlError(name) {
+                return this.controlErrors[name] ?? null;
+            },
+
+            async submitControl(msg, options = {}) {
+                const clarification = msg.clarification;
+                const control = this.activeControl(msg);
+                if (!control || this.sending || this.controlBusy) return;
+
+                const answer = {};
+                if (options.skip) {
+                    answer.skip = true;
+                } else {
+                    for (const field of control.fields) {
+                        answer[field.name] = this.controlValue(clarification.id, field.name);
+                    }
+                }
+
+                this.controlBusy = true;
+                this.controlErrors = {};
+                try {
+                    await this.send({
+                        question_id: clarification.id,
+                        question_revision: clarification.revision,
+                    }, null, answer);
+                } finally {
+                    this.controlBusy = false;
+                }
             },
 
             getCachedCoords() {
@@ -1155,6 +1527,10 @@
                     if (data.result_ordering) extras.ordering = data.result_ordering;
                     if (data.itinerary) extras.itinerary = data.itinerary;
                     extras.sections = data.sections;
+                    extras.clarification = data.clarification;
+                    extras.trip_summary = data.trip_summary;
+                    this.activeQuestionId = data.clarification?.id ?? null;
+                    extras.dialogue_notice = data.dialogue_notice;
                     extras.section_footer = data.section_footer;
                     extras.price_effective_note = data.price_effective_note;
                     this.addMessage('bot', data.reply || 'I could not process that.', extras);

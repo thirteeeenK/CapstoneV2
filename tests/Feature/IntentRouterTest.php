@@ -251,3 +251,70 @@ test('detects amenities field intent without disturbing exclusions precedence', 
     expect($this->router->detectFieldIntent('what is not included?'))->toBe('exclusions');
     expect($this->router->detectFieldIntent('show me beachfront rooms in El Nido'))->toBeNull();
 });
+
+test('short catalog names only match on word boundaries', function () {
+    ActivityModel::factory()->create(['activity_name' => 'ATV Ride']);
+    ActivityModel::factory()->create(['activity_name' => 'Ain Cove Swim']);
+    HotelModel::factory()->create(['hotel_name' => 'Aircon Suites']);
+
+    // Fragments inside unrelated words must never pin an entity.
+    expect($this->router->extractActivityName('I have stomach pains and a headache'))->toBeNull();
+    expect($this->router->extractActivityName('we hiked up the mountain yesterday'))->toBeNull();
+    expect($this->router->extractHotelName('is the room airconditioned?'))->toBeNull();
+
+    // Intentional short exact names still resolve, including plurals.
+    expect($this->router->extractActivityName('book an ATV Ride in Boracay'))->toBe('ATV Ride');
+    expect($this->router->extractActivityName('how much are the ATV Rides?'))->toBe('ATV Ride');
+    expect($this->router->extractHotelName('rooms at Aircon Suites'))->toBe('Aircon Suites');
+});
+
+test('duration and count tokens cannot pin a named activity', function () {
+    ActivityModel::factory()->create(['activity_name' => 'Jet Ski (30 mins)']);
+
+    expect($this->router->extractActivityName('how much for 30 mins?'))->toBeNull();
+    expect($this->router->extractActivityName('is 2 days enough for 4 people?'))->toBeNull();
+
+    // The distinctive core still resolves, typed with or without a space.
+    expect($this->router->extractActivityName('jet ski please'))->toBe('Jet Ski (30 mins)');
+    expect($this->router->extractActivityName('jetski please'))->toBe('Jet Ski (30 mins)');
+});
+
+test('one word of a multi-word name does not resolve the item', function () {
+    ActivityModel::factory()->create(['activity_name' => 'Mountain Trail Trek']);
+
+    expect($this->router->extractActivityName('I get mountain sickness easily'))->toBeNull();
+    expect($this->router->extractActivityName('book the Mountain Trail Trek'))->toBe('Mountain Trail Trek');
+});
+
+test('genuine activity typos are still tolerated', function () {
+    ActivityModel::factory()->create(['activity_name' => 'Parasailing']);
+    ActivityModel::factory()->create(['activity_name' => 'Island Hopping Tour A']);
+
+    expect($this->router->extractActivityName('parawsailing in Boracay'))->toBe('Parasailing');
+    expect($this->router->extractActivityName('parasailng please'))->toBe('Parasailing');
+});
+
+test('health concerns are separated from health travel logistics', function () {
+    expect($this->router->healthConcern('I want to kill myself'))->toBe('crisis');
+    expect($this->router->healthConcern('my friend has chest pains and cannot breathe'))->toBe('urgent');
+    expect($this->router->healthConcern('what medicine should I take for a fever?'))->toBe('advice');
+
+    expect($this->router->healthConcern('is there a hospital near Boracay?'))->toBeNull();
+    expect($this->router->healthConcern('do you have wheelchair accessible rooms?'))->toBeNull();
+    expect($this->router->healthConcern('what is the hotel emergency contact number?'))->toBeNull();
+    expect($this->router->healthConcern('show me hotels in Boracay with a pool'))->toBeNull();
+});
+
+test('a stated day count that agrees with the nights keeps both durations', function () {
+    $c = $this->router->extractConstraints('4 days 3 nights in Boracay');
+    expect($c['days'])->toBe(4);
+    expect($c['nights'])->toBe(3);
+    expect($c['invalid_duration'] ?? false)->toBeFalse();
+});
+
+test('contradictory day and night counts are dropped instead of silently reconciled', function () {
+    $c = $this->router->extractConstraints('5 day trip in Boracay with 2 nights hotel');
+    expect($c['invalid_duration'])->toBeTrue();
+    expect($c['days'])->toBeNull();
+    expect($c['nights'])->toBeNull();
+});

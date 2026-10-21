@@ -7,6 +7,8 @@ use App\Models\ChatSession;
 use App\Models\SupportInquiry;
 use App\Services\Chat\ChatbotService;
 use App\Services\Chat\ConversationManager;
+use App\Services\Chat\DialogueManager;
+use App\Services\Chat\TripDetailsForm;
 use App\Services\Support\SupportAvailabilityService;
 use App\Services\Support\SupportQueueService;
 use App\Services\SystemSettingsService;
@@ -20,19 +22,39 @@ class ChatbotController extends Controller
 
     private const GUEST_NUDGE_THRESHOLD = 10;
 
+    /**
+     * Longest message the chat turn accepts. Surfaced to the widget so the
+     * limit is visible before a send rather than after a failed one.
+     */
+    public const MESSAGE_LIMIT = 1000;
+
     public function __construct(
         protected ChatbotService $chatbot,
         protected ConversationManager $conversation,
         protected SupportQueueService $supportQueue,
+        protected DialogueManager $dialogue,
+        protected TripDetailsForm $tripDetailsForm,
     ) {}
 
     public function chat(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'message' => 'required|string|max:1000',
+            // A structured answer replaces the typed message, so exactly one
+            // of the two must be present.
+            'message' => 'required_without_all:answer,trip_details|nullable|string|prohibits:answer,trip_details|max:'.self::MESSAGE_LIMIT,
+            'answer' => 'required_without_all:message,trip_details|nullable|array|prohibits:trip_details|max:8',
+            'trip_details' => 'sometimes|required|array|max:13',
+            'form_id' => 'required_with:trip_details|uuid',
+            'form_revision' => 'required_with:trip_details|integer|min:0',
+            'scope_id' => 'required_with:trip_details|string|max:100',
+            'answer.*' => 'nullable',
             'session_token' => 'nullable|string|max:255',
             'user_lat' => 'nullable|numeric|between:-90,90',
             'user_lng' => 'nullable|numeric|between:-180,180',
+            'question_id' => 'nullable|string|max:80|required_with:question_revision,answer|prohibits:trip_details',
+            'question_revision' => 'nullable|integer|min:0|required_with:question_id',
+        ], [
+            'message.max' => 'Your message is longer than '.self::MESSAGE_LIMIT.' characters. Please shorten it and send again.',
         ]);
 
         $user = $request->user();
@@ -47,13 +69,56 @@ class ChatbotController extends Controller
         }
         try {
             $session->refresh();
-            $result = $this->chatbot->checkRepetition($session, $user, $validated['message'], $request->ip())
+            $tripDetails = null;
+            $message = isset($validated['message']) ? (string) $validated['message'] : '';
+            if (isset($validated['trip_details'])) {
+                $state = $this->dialogue->state($session);
+                $form = $state['trip_details_form'] ?? null;
+                if (! config('services.chatbot.guided_conversation_enabled', false) || ! is_array($form)
+                    || $form['id'] !== $validated['form_id'] || $state['revision'] !== (int) $validated['form_revision'] || $form['scope_id'] !== $validated['scope_id']
+                    || ! collect($state['tasks'])->contains(fn (array $task): bool => $task['scope_id'] === $validated['scope_id'] && ! in_array($task['status'], ['cancelled', 'suspended'], true))) {
+                    return response()->json(['status' => 'stale_form', 'reply' => 'Your trip details changed. Please use the latest form.', 'trip_details_form' => $form], 409);
+                }
+                $tripDetails = $this->tripDetailsForm->validate($form, $validated['trip_details']);
+                $tripDetails['scope_id'] = $form['scope_id'];
+                $message = $tripDetails['message'];
+            }
+            if (! empty($validated['question_id'])) {
+                $state = $this->dialogue->state($session);
+                $question = $state['active_question'] ?? null;
+                if (! config('services.chatbot.guided_conversation_enabled', false) || ($question['id'] ?? null) !== $validated['question_id'] || ($question['revision'] ?? null) !== (int) $validated['question_revision']) {
+                    // Checked inside the turn lock, before anything is stored:
+                    // a stale submission never mutates history or dialogue.
+                    return response()->json(['status' => 'stale_question', 'reply' => 'That question has changed. '.($question['text'] ?? 'Please send your next request.'), 'clarification' => $question], 409);
+                }
+                if (isset($validated['answer']) && is_array($validated['answer'])) {
+                    $normalized = $this->dialogue->answerFromControl($question, $validated['answer']);
+                    if (isset($normalized['errors'])) {
+                        return response()->json([
+                            'status' => 'invalid_answer',
+                            'message' => 'Please correct the highlighted fields.',
+                            'errors' => $normalized['errors'],
+                            'clarification' => $question,
+                        ], 422);
+                    }
+                    $message = $normalized['message'];
+                }
+            }
+            if (trim($message) === '') {
+                return response()->json([
+                    'status' => 'invalid_answer',
+                    'message' => 'Please type a message or answer the question.',
+                    'errors' => ['message' => 'A message is required.'],
+                ], 422);
+            }
+            $result = $this->chatbot->checkRepetition($session, $user, $message, $request->ip())
                 ?? $this->chatbot->handle(
                     $session,
                     $user,
-                    $validated['message'],
+                    $message,
                     isset($validated['user_lat']) ? (float) $validated['user_lat'] : null,
-                    isset($validated['user_lng']) ? (float) $validated['user_lng'] : null
+                    isset($validated['user_lng']) ? (float) $validated['user_lng'] : null,
+                    $tripDetails
                 );
 
             if (! empty($result['blocked'])) {
@@ -84,6 +149,10 @@ class ChatbotController extends Controller
                     $result['reply'] = $notice."\n\n".$result['reply'];
                     $session->messages()->where('sender', 'bot')->latest('id')->first()?->update(['message' => $result['reply']]);
                 }
+            }
+
+            if ((isset($validated['answer']) || $tripDetails !== null) && ($result['status'] ?? null) === 'success') {
+                $result['user_message'] = $message;
             }
 
             return response()->json($result);

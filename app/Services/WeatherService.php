@@ -118,7 +118,7 @@ class WeatherService
                 }
             }
         } catch (\Throwable $e) {
-            Log::warning('OpenWeather fetch failed: '.$e->getMessage());
+            Log::warning('OpenWeather fetch failed.', ProviderLogRedactor::exceptionContext('openweather.forecast', $e));
         }
 
         // Cache the failure briefly to avoid hammering the API.

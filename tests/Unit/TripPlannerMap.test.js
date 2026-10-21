@@ -2,6 +2,28 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import tripPlanner from '../../resources/js/trip-planner.js';
 
+test('undated saved drafts open without weather calls and retain their draft snapshot', async () => {
+    const planner = tripPlanner({ destinations: [], plans: [], emailPreferences: {} });
+    const draft = { id: 8, revision: 1, snapshot: { kind: 'chatbot_draft', days: [{ day: 1, choices: [] }] } };
+    const plan = { id: 7, revision: 1, destination_id: 1, start_date: null, end_date: null, pax: 2, mode: 'walking', items: [], title: 'Flexible trip' };
+    const requests = [];
+    planner.run = async action => action();
+    planner.closeMapPreview = () => {};
+    planner.renderMap = () => {};
+    planner.allListings = () => [];
+    planner.loadWeather = () => { throw new Error('An undated draft must not request a forecast'); };
+    planner.api = async path => { requests.push(path); return path.includes('/catalog/') ? { data: { hotels: [], activities: [] } } : { data: plan, itinerary: draft }; };
+    await planner.openPlan(7);
+    assert.equal(planner.startDate, '');
+    assert.equal(planner.endDate, '');
+    assert.equal(planner.itinerary, null);
+    assert.equal(planner.draftItinerary.id, 8);
+    assert.equal(planner.tab, 'itinerary');
+    assert.equal(planner.savedPlans[0].id, 7);
+    assert.match(planner.savedPlanLabel(plan), /Dates to be decided/);
+    assert.deepEqual(requests, ['/plans/7', '/catalog/1']);
+});
+
 async function withPreviewMap(action, datePolicy = null) {
     const keys = ['window', 'document', 'L', 'ResizeObserver', 'requestAnimationFrame', 'cancelAnimationFrame'];
     const originals = new Map(keys.map(key => [key, globalThis[key]]));

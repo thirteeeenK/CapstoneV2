@@ -47,12 +47,13 @@ class TripItineraryReady extends Notification implements ShouldQueue
     public function toMail(object $notifiable): MailMessage
     {
         $snapshot = $this->snapshot;
-        $pdf = Pdf::loadView('trip-planner.document', ['itinerary' => $snapshot, 'reference' => 'Plan '.$this->tripPlanId])->setPaper('a4')->output();
+        $view = ($snapshot['kind'] ?? null) === 'chatbot_draft' ? 'trip-planner.draft-document' : 'trip-planner.document';
+        $pdf = Pdf::loadView($view, ['itinerary' => $snapshot, 'reference' => 'Plan '.$this->tripPlanId])->setPaper('a4')->output();
 
         return (new MailMessage)->subject('Your SunnyTrips itinerary · '.$snapshot['destination'])
-            ->greeting('Hi '.$notifiable->name.',')->line('Your selected stays and visits are arranged by day in the attached itinerary, with route and weather explanations.')
+            ->greeting('Hi '.$notifiable->name.',')->line(($snapshot['kind'] ?? null) === 'chatbot_draft' ? 'Your draft itinerary is attached. Dates, routes and weather still need review before booking.' : 'Your selected stays and visits are arranged by day in the attached itinerary, with route and weather explanations.')
             ->line('This is a travel plan. Your booking status determines confirmed services; recheck provisional forecasts before departure.')
-            ->action('Open your saved trip', route('trip-planner.index'))
+            ->action('Open your saved trip', route('trip-planner.index', ['plan' => $this->tripPlanId]))
             ->attachData($pdf, 'sunnytrips-itinerary.pdf', ['mime' => 'application/pdf']);
     }
 

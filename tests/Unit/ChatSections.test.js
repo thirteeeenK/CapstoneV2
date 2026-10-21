@@ -35,3 +35,82 @@ test('legacy messages and restored JSON sections retain their original behavior'
     ] }]));
     assert.equal(displayChatMessages(restored)[0].addons[0].name, 'Transfer');
 });
+
+test('budget previews restore their cards and display a shared question once', () => {
+    const restored = JSON.parse(JSON.stringify([{
+        id: 8, sender: 'bot', text: 'Reply with question?',
+        clarification: { id: 'q-1', text: 'What does the budget cover?' },
+        suggested_actions: [{ id: 'skip', label: 'No preference', question_id: 'q-1' }],
+        sections: [
+            { id: 'task-1', heading: 'Activities', answer: 'Catalog previews.', data: { retrieved_activities: [{ id: 1 }] } },
+            { id: 'task-2', heading: 'Hotels', answer: 'Catalog previews.', data: { retrieved_hotels: [{ id: 2 }] } },
+        ],
+    }]));
+    const result = displayChatMessages(restored);
+    assert.equal(result[0].activities[0].id, 1);
+    assert.equal(result[1].hotels[0].id, 2);
+    assert.equal(result.map(message => message.text).join('\n').split('What does the budget cover?').length - 1, 1);
+    assert.equal(result[1].suggested_actions[0].stale, false);
+    const later = { id: 9, sender: 'bot', text: 'New question', clarification: { id: 'q-2' } };
+    assert.equal(displayChatMessages([...restored, later])[1].suggested_actions[0].stale, true);
+});
+
+test('the open question and its control survive section splitting, once and only on the last section', () => {
+    const control = { type: 'count', field: 'pax', submit_label: 'Use this number', fields: [{ name: 'pax', label: 'Travelers', input: 'number', min: 1, max: 30 }] };
+    const restored = JSON.parse(JSON.stringify([{
+        id: 11, sender: 'bot', text: 'Reply',
+        clarification: { id: 'q-9', revision: 3, text: 'How many travelers?', control },
+        sections: [
+            { id: 'task-1', heading: 'Hotels', answer: 'Hotel answer', data: {} },
+            { id: 'task-2', heading: 'Activities', answer: 'Activity answer', data: {} },
+        ],
+    }]));
+    const result = displayChatMessages(restored);
+    assert.equal(result[0].clarification, null);
+    assert.equal(result[1].clarification.id, 'q-9');
+    assert.equal(result[1].clarification.control.field, 'pax');
+    assert.equal(result.map(message => message.text).join('\n').split('How many travelers?').length - 1, 1);
+});
+
+test('notices are ordered prices first and the question last', () => {
+    const restored = JSON.parse(JSON.stringify([{
+        id: 12, sender: 'bot', text: 'Reply',
+        price_effective_note: 'Prices updated today',
+        dialogue_notice: 'Saved-task limit reached',
+        section_footer: 'Footer line',
+        clarification: { id: 'q-10', text: 'How many days?' },
+        sections: [{ id: 'task-1', heading: 'Hotels', answer: 'Hotel answer', data: {} }],
+    }]));
+    const text = displayChatMessages(restored)[0].text;
+    assert.ok(text.indexOf('Prices updated today') < text.indexOf('Saved-task limit reached'));
+    assert.ok(text.indexOf('Saved-task limit reached') < text.indexOf('How many days?'));
+    assert.ok(text.indexOf('How many days?') === text.lastIndexOf('How many days?'));
+});
+
+test('the current trip summary survives section splitting and replaces older summaries', () => {
+    const summary = { items: [{ field: 'pax', value: '2' }] };
+    const older = { id: 1, sender: 'bot', text: 'Old reply', trip_summary: summary };
+    const current = { id: 2, sender: 'bot', text: 'Reply', trip_summary: summary, sections: [
+        { id: 'task-1', heading: 'Hotels', answer: 'Stays', data: {} },
+        { id: 'task-2', heading: 'Activities', answer: 'Things to do', data: {} },
+    ] };
+    const rows = displayChatMessages([older, current]);
+    assert.equal(rows[0].trip_summary, null);
+    assert.equal(rows[1].trip_summary, null);
+    assert.deepEqual(rows[2].trip_summary, summary);
+});
+
+test('the consolidated form appears once while each itinerary keeps its own save reference', () => {
+    const form = { id: 'form-new', revision: 3 };
+    const previous = { id: 1, sender: 'bot', text: 'Previous', trip_details_form: { id: 'form-old' } };
+    const current = { id: 2, sender: 'bot', text: 'Reply', trip_details_form: form, sections: [
+        { id: 'task-1', heading: 'First trip', answer: 'Draft', data: { itinerary_suggestion: { id: 'suggestion-1' } } },
+        { id: 'task-2', heading: 'Second trip', answer: 'Draft', data: { itinerary_suggestion: { id: 'suggestion-2' } } },
+    ] };
+    const rows = displayChatMessages([previous, current]);
+    assert.equal(rows[0].trip_details_form, null);
+    assert.equal(rows[1].trip_details_form, null);
+    assert.deepEqual(rows[2].trip_details_form, form);
+    assert.equal(rows[1].itinerary_suggestion.id, 'suggestion-1');
+    assert.equal(rows[2].itinerary_suggestion.id, 'suggestion-2');
+});

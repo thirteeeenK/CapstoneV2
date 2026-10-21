@@ -357,7 +357,7 @@ class GeminiService
 
             return implode("\n", $lines);
         } catch (\Throwable $e) {
-            Log::warning('getPassengerDiscountContext failed: '.$e->getMessage());
+            Log::warning('getPassengerDiscountContext failed.', ProviderLogRedactor::exceptionContext('passenger_discount_context', $e));
 
             return '';
         }
@@ -559,7 +559,7 @@ class GeminiService
         }
 
         $modelName = config('services.gemini.embedding_model') ?? 'models/text-embedding-001';
-        $url = "https://generativelanguage.googleapis.com/v1beta/{$modelName}:embedContent?key={$apiKey}";
+        $url = "https://generativelanguage.googleapis.com/v1beta/{$modelName}:embedContent";
 
         $payload = [
             'model' => $modelName,
@@ -578,6 +578,7 @@ class GeminiService
         try {
             $response = Http::withHeaders([
                 'Content-Type' => 'application/json',
+                'x-goog-api-key' => $apiKey,
             ])->timeout(15)->post($url, $payload);
 
             if ($response->successful() && isset($response->json()['embedding']['values'])) {
@@ -586,9 +587,9 @@ class GeminiService
                 return $this->cacheQueryEmbedding($cacheKey, $this->normalizeVector($rawVector));
             }
 
-            Log::error('Gemini Embedding Failed: ', ['response' => $response->body()]);
+            Log::error('Gemini provider call failed.', ProviderLogRedactor::responseContext('embedContent', $response));
         } catch (\Exception $e) {
-            Log::error('Gemini Embedding Exception: '.$e->getMessage());
+            Log::error('Gemini provider call threw.', ProviderLogRedactor::exceptionContext('embedContent', $e));
         }
 
         return $this->cacheQueryEmbedding($cacheKey, null);
@@ -1396,7 +1397,7 @@ class GeminiService
                 }
             }
         } catch (\Throwable $e) {
-            Log::debug('priceUpdatedDates failed: '.$e->getMessage());
+            Log::debug('priceUpdatedDates failed.', ProviderLogRedactor::exceptionContext('price_updated_dates', $e));
         }
 
         return $dates;
@@ -2137,7 +2138,7 @@ class GeminiService
                 return self::$promptCache[$filename] = $cached['content'];
             }
         } catch (\Throwable $e) {
-            Log::warning('Gemini prompt cache read failed, falling back to disk: '.$e->getMessage());
+            Log::warning('Gemini prompt cache read failed, falling back to disk.', ProviderLogRedactor::exceptionContext('prompt.cache.read', $e));
         }
 
         $content = File::get($path);
@@ -2145,7 +2146,7 @@ class GeminiService
         try {
             Cache::put($cacheKey, ['content' => $content, 'mtime' => $mtime], now()->addDay());
         } catch (\Throwable $e) {
-            Log::warning('Gemini prompt cache write failed: '.$e->getMessage());
+            Log::warning('Gemini prompt cache write failed.', ProviderLogRedactor::exceptionContext('prompt.cache.write', $e));
         }
 
         return self::$promptCache[$filename] = $content;
@@ -2183,7 +2184,7 @@ class GeminiService
             return null;
         }
 
-        $url = "https://generativelanguage.googleapis.com/v1beta/{$modelName}:generateContent?key={$apiKey}";
+        $url = "https://generativelanguage.googleapis.com/v1beta/{$modelName}:generateContent";
 
         $payload = [
             'systemInstruction' => [
@@ -2201,6 +2202,7 @@ class GeminiService
         try {
             $response = Http::withHeaders([
                 'Content-Type' => 'application/json',
+                'x-goog-api-key' => $apiKey,
             ])->timeout(30)->post($url, $payload);
 
             if ($response->successful()) {
@@ -2210,9 +2212,9 @@ class GeminiService
                 }
             }
 
-            Log::error('Gemini GenerateContent Failed: ', ['response' => $response->body()]);
+            Log::error('Gemini provider call failed.', ProviderLogRedactor::responseContext('generateContent', $response));
         } catch (\Exception $e) {
-            Log::error('Gemini GenerateContent Exception: '.$e->getMessage());
+            Log::error('Gemini provider call threw.', ProviderLogRedactor::exceptionContext('generateContent', $e));
         }
 
         return null;
@@ -3038,7 +3040,7 @@ class GeminiService
             return null;
         }
 
-        $url = "https://generativelanguage.googleapis.com/v1beta/cachedContents?key={$apiKey}";
+        $url = 'https://generativelanguage.googleapis.com/v1beta/cachedContents';
 
         $payload = [
             'model' => $modelName,
@@ -3049,11 +3051,13 @@ class GeminiService
         ];
 
         try {
-            $response = Http::withHeaders(['Content-Type' => 'application/json'])
-                ->timeout(30)->post($url, $payload);
+            $response = Http::withHeaders([
+                'Content-Type' => 'application/json',
+                'x-goog-api-key' => $apiKey,
+            ])->timeout(30)->post($url, $payload);
 
             if (! $response->successful()) {
-                Log::error('Gemini CachedContent Create Failed: ', ['response' => $response->body()]);
+                Log::error('Gemini provider call failed.', ProviderLogRedactor::responseContext('cachedContents.create', $response));
 
                 return null;
             }
@@ -3062,7 +3066,7 @@ class GeminiService
 
             return is_string($name) ? $name : null;
         } catch (\Exception $e) {
-            Log::error('Gemini CachedContent Exception: '.$e->getMessage());
+            Log::error('Gemini provider call threw.', ProviderLogRedactor::exceptionContext('cachedContents.create', $e));
 
             return null;
         }
@@ -3100,7 +3104,7 @@ class GeminiService
                 }
             }
         } catch (\Throwable $e) {
-            Log::warning('Gemini chat cache read failed, falling back to inline systemInstruction: '.$e->getMessage());
+            Log::warning('Gemini chat cache read failed, falling back to inline systemInstruction.', ProviderLogRedactor::exceptionContext('chat.cache.read', $e));
 
             return null;
         }
@@ -3111,7 +3115,7 @@ class GeminiService
             try {
                 Cache::put($key, ['name' => null, 'expires_at' => now()->addMinutes(10)->timestamp, 'negative' => true], now()->addMinutes(10));
             } catch (\Throwable $e) {
-                Log::warning('Gemini chat cache negative marker write failed: '.$e->getMessage());
+                Log::warning('Gemini chat cache negative marker write failed.', ProviderLogRedactor::exceptionContext('chat.cache.negative_write', $e));
             }
 
             return null;
@@ -3120,7 +3124,7 @@ class GeminiService
         try {
             Cache::put($key, ['name' => $name, 'expires_at' => now()->addHours(23)->timestamp], now()->addDay());
         } catch (\Throwable $e) {
-            Log::warning('Gemini chat cache write failed: '.$e->getMessage());
+            Log::warning('Gemini chat cache write failed.', ProviderLogRedactor::exceptionContext('chat.cache.write', $e));
         }
 
         return $name;
@@ -3174,7 +3178,7 @@ class GeminiService
         }
 
         $modelName = config('services.gemini.chat_model') ?? 'models/gemini-2.5-flash-lite';
-        $url = "https://generativelanguage.googleapis.com/v1beta/{$modelName}:generateContent?key={$apiKey}";
+        $url = "https://generativelanguage.googleapis.com/v1beta/{$modelName}:generateContent";
 
         $contents = [];
         foreach ($history as $entry) {
@@ -3214,6 +3218,7 @@ class GeminiService
             try {
                 $response = Http::withHeaders([
                     'Content-Type' => 'application/json',
+                    'x-goog-api-key' => $apiKey,
                 ])->timeout($this->chatDeadline === null ? 30 : max(1, min((int) config('services.chatbot.model_timeout', 20), (int) ceil($this->chatDeadline - microtime(true)))))->post($url, $payload);
 
                 if ($response->successful()) {
@@ -3244,13 +3249,13 @@ class GeminiService
             } catch (ConnectionException $e) {
                 $this->lastFinishReason = 'timeout';
                 $this->lastLatencyMs = (int) (microtime(true) * 1000) - $startedAt;
-                Log::error('Gemini ChatResponse timeout: '.$e->getMessage());
+                Log::error('Gemini chat call timed out.', ProviderLogRedactor::exceptionContext('chat.generateContent', $e));
 
                 return $this->fallbackToGroq($systemInstruction, $history, $userPrompt, $conversational, $startedAt);
             } catch (\Exception $e) {
                 $this->lastFinishReason = 'error';
                 $this->lastLatencyMs = (int) (microtime(true) * 1000) - $startedAt;
-                Log::error('Gemini ChatResponse Exception: '.$e->getMessage());
+                Log::error('Gemini chat call threw.', ProviderLogRedactor::exceptionContext('chat.generateContent', $e));
             }
 
             if (! $useCache || ! $isCacheRelated) {
@@ -3261,7 +3266,7 @@ class GeminiService
             try {
                 Cache::forget($cacheKey);
             } catch (\Throwable $e) {
-                Log::warning('Gemini chat cache invalidation failed: '.$e->getMessage());
+                Log::warning('Gemini chat cache invalidation failed.', ProviderLogRedactor::exceptionContext('chat.cache.forget', $e));
             }
             $useCache = false;
         }
@@ -3275,7 +3280,7 @@ class GeminiService
         }
         $this->lastLatencyMs ??= (int) (microtime(true) * 1000) - $startedAt;
 
-        Log::error('Gemini ChatResponse Failed: ', ['response' => $response ? $response->body() : 'no response']);
+        Log::error('Gemini chat call failed.', ProviderLogRedactor::responseContext('chat.generateContent', $response));
 
         return $this->fallbackToGroq($systemInstruction, $history, $userPrompt, $conversational, $startedAt);
     }
@@ -3342,7 +3347,7 @@ class GeminiService
      *
      * @return array{success: bool, context?: string, data?: array, message?: string}
      */
-    public function buildItineraryContext(string $query, array $constraints, int $pax, int $nights, ?float $maxBudget = null, ?string $checkIn = null, ?string $checkOut = null): array
+    public function buildItineraryContext(string $query, array $constraints, int $pax, int $nights, ?float $maxBudget = null, ?string $checkIn = null, ?string $checkOut = null, ?callable $candidateAllowed = null): array
     {
         $destinationId = $constraints['destination_id'] ?? null;
         if (! $destinationId) {
@@ -3358,6 +3363,13 @@ class GeminiService
         $checkOutDate = $this->parseItineraryDate($checkOut);
 
         $rooms = $this->itineraryRoomCandidates((int) $destinationId, $pax, $nights, $checkInDate, $checkOutDate);
+        if ($candidateAllowed !== null) {
+            $rooms = array_values(array_filter($rooms, fn (array $candidate): bool => $candidateAllowed([
+                'hotel_name' => $candidate['hotel']->hotel_name, 'room_name' => $candidate['room']->room_name,
+                'hotel_description' => $candidate['hotel']->hotel_description, 'amenities' => $candidate['hotel']->featured_amenities,
+                'room_description' => $candidate['room']->description, 'features' => $candidate['room']->room_amenities,
+            ])));
+        }
         if (! empty($constraints['preserve_selected_stay'])) {
             $rooms = array_values(array_filter($rooms, fn (array $candidate): bool => (empty($constraints['hotel_id']) || (int) $candidate['hotel']->id === (int) $constraints['hotel_id'])
                 && (empty($constraints['room_id']) || (int) $candidate['room']->id === (int) $constraints['room_id'])));
@@ -3368,6 +3380,14 @@ class GeminiService
 
         $requestedActivityName = $constraints['activity_name'] ?? null;
         [$requested, $pool] = $this->itineraryActivityPool((int) $destinationId, $pax, $requestedActivityName ? (string) $requestedActivityName : null);
+        if ($candidateAllowed !== null) {
+            $allowed = fn (ActivityModel $activity): bool => $candidateAllowed([
+                'activity_name' => $activity->activity_name, 'description' => $activity->description,
+                'activity_level' => $activity->activity_level, 'category' => $activity->category,
+            ]);
+            $requested = $requested && $allowed($requested) ? $requested : null;
+            $pool = array_values(array_filter($pool, $allowed));
+        }
         $selectedIds = array_values(array_unique(array_map('intval', $constraints['selected_activity_ids'] ?? [])));
         if ($selectedIds !== []) {
             $selected = array_values(array_filter(array_merge($requested ? [$requested] : [], $pool), fn (ActivityModel $activity): bool => in_array((int) $activity->id, $selectedIds, true)));
@@ -3382,11 +3402,13 @@ class GeminiService
         $budgetMode = $budget === null ? null : (($constraints['budget_mode'] ?? null) === 'ceiling' ? 'ceiling' : 'target');
         $activityTarget = min(self::ITINERARY_MAX_ACTIVITIES, $nights + 1, count($pool) + ($requested ? 1 : 0));
 
-        $plan = $this->selectItineraryPlan($rooms, $requested, $pool, $activityTarget, $budget, $budgetMode);
+        $budgetScope = in_array($constraints['itinerary_budget_scope'] ?? null, ['lodging', 'activities'], true) ? $constraints['itinerary_budget_scope'] : 'trip';
+        $plan = $this->selectItineraryPlan($rooms, $requested, $pool, $activityTarget, $budget, $budgetMode, $budgetScope);
         if ($selectedIds !== [] && array_diff($selectedIds, array_map(fn (ActivityModel $activity): int => (int) $activity->id, $plan['activities'])) !== []) {
             return ['success' => false, 'message' => 'The selected activities do not all fit this plan. Please change the trip length or budget, or choose fewer activities.'];
         }
         $budgetCheck = $this->itineraryBudgetCheck($plan, $budget, $budgetMode, $rooms, $pool, $requested, $activityTarget);
+        $budgetCheck['scope'] = $budgetScope;
 
         return [
             'success' => true,
@@ -3490,7 +3512,7 @@ class GeminiService
      * @param  list<ActivityModel>  $pool
      * @return array{room: array, activities: list<ActivityModel>, total: float, tier: int, band: array{0: ?float, 1: ?float}, max_total: float, next_above_total: ?float}
      */
-    private function selectItineraryPlan(array $rooms, ?ActivityModel $requested, array $pool, int $activityTarget, ?float $budget, ?string $mode): array
+    private function selectItineraryPlan(array $rooms, ?ActivityModel $requested, array $pool, int $activityTarget, ?float $budget, ?string $mode, string $budgetScope = 'trip'): array
     {
         $band = $budget === null ? [null, null] : $this->itineraryBudgetBand($budget, $mode);
         $sets = $this->itineraryActivitySets($requested, $pool, $activityTarget, $budget === null);
@@ -3502,14 +3524,17 @@ class GeminiService
         foreach ($rooms as $room) {
             foreach ($sets as $set) {
                 $total = round($room['total'] + $set['cost'], 2);
-                $maxTotal = max($maxTotal, $total);
-                if ($band[1] !== null && $total > $band[1] && ($nextAbove === null || $total < $nextAbove)) {
-                    $nextAbove = $total;
+                $comparedTotal = match ($budgetScope) {
+                    'lodging' => $room['total'], 'activities' => $set['cost'], default => $total,
+                };
+                $maxTotal = max($maxTotal, $comparedTotal);
+                if ($band[1] !== null && $comparedTotal > $band[1] && ($nextAbove === null || $comparedTotal < $nextAbove)) {
+                    $nextAbove = $comparedTotal;
                 }
 
-                $rank = $this->itineraryPlanRank($room, $set, $total, $budget, $band);
+                $rank = $this->itineraryPlanRank($room, $set, $comparedTotal, $budget, $band);
                 if ($bestRank === null || $this->compareItineraryRanks($rank, $bestRank) < 0) {
-                    $best = ['room' => $room, 'activities' => $set['activities'], 'total' => $total, 'tier' => $rank[0]];
+                    $best = ['room' => $room, 'activities' => $set['activities'], 'total' => $total, 'compared_total' => $comparedTotal, 'tier' => $rank[0]];
                     $bestRank = $rank;
                 }
             }
@@ -3666,8 +3691,9 @@ class GeminiService
             },
             'mode' => $mode,
             'budget' => $budget,
-            'delta' => $budget === null ? null : round($plan['total'] - $budget, 2),
-            'percent' => $budget === null ? null : round($plan['total'] / $budget * 100, 1),
+            'compared_total' => $plan['compared_total'],
+            'delta' => $budget === null ? null : round($plan['compared_total'] - $budget, 2),
+            'percent' => $budget === null ? null : round($plan['compared_total'] / $budget * 100, 1),
             'band_min' => $plan['band'][0],
             'band_max' => $plan['band'][1],
             'activities_planned' => count($plan['activities']),
@@ -3725,6 +3751,12 @@ class GeminiService
         }
 
         $context .= "\nTOTAL: ₱".number_format($plan['total'], 2);
+        if (($budgetCheck['scope'] ?? 'trip') === 'lodging') {
+            $context .= "\nThe stated budget covers the hotel only. Activities are extra; do not claim the full trip is within budget.";
+        }
+        if (($budgetCheck['scope'] ?? 'trip') === 'activities') {
+            $context .= "\nThe stated budget covers activities only. The hotel is extra; do not claim the full trip is within budget.";
+        }
         $context .= "\nBUDGET CHECK: shown to the user by the app — do not restate or judge it.";
 
         return $context;
@@ -3750,12 +3782,14 @@ class GeminiService
                 'room_name' => $room->room_name,
                 'nightly_rate' => $plan['room']['rate'],
                 'formatted_nightly_rate' => '₱'.number_format($plan['room']['rate'], 2),
+                'max_occupancy' => (int) ($room->max_occupancy ?: $room->occupancy ?: 2),
                 'total' => $plan['room']['total'],
                 'formatted_total' => '₱'.number_format($plan['room']['total'], 2),
             ],
             'activities' => array_map(fn (ActivityModel $activity, int $index): array => [
                 'id' => $activity->id,
                 'activity_name' => $activity->activity_name,
+                'weather_dependent' => isset($activity->scheduling['environment']) ? $activity->scheduling['environment'] !== 'indoor' : null,
                 'category' => $activity->category,
                 'duration' => $activity->duration,
                 'day' => $index + 1,
@@ -3771,7 +3805,7 @@ class GeminiService
             'formatted_grand_total' => '₱'.number_format($plan['total'], 2),
             'budget' => $budget,
             'budget_check' => $budgetCheck,
-            'within_budget' => $budget === null || $plan['total'] <= $budget,
+            'within_budget' => $budget === null || $plan['compared_total'] <= $budget,
             'available' => $plan['room']['available'],
             'over_budget' => $budgetCheck['status'] === 'over',
         ];

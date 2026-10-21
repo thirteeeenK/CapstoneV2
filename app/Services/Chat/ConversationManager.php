@@ -116,7 +116,7 @@ class ConversationManager
         return $contents;
     }
 
-    public function persist(ChatSession $session, string $sender, string $message, ?array $contextData = null): ChatMessage
+    public function persist(ChatSession $session, string $sender, string $message, ?array $contextData = null, ?array $dialogueState = null): ChatMessage
     {
         $chatMessage = ChatMessage::create([
             'chat_session_id' => $session->id,
@@ -131,6 +131,12 @@ class ConversationManager
             $this->rememberRetrievalState($session, $contextData);
             $session->refresh();
             $this->rememberTaskState($session, $contextData);
+            if ($dialogueState !== null) {
+                $metadata = $session->metadata ?? [];
+                $metadata['conversation_v2']['dialogue'] = $dialogueState;
+                $metadata['conversation_v2']['pending'] = [];
+                $session->update(['metadata' => $metadata]);
+            }
         }
 
         return $chatMessage;

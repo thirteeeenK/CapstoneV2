@@ -21,7 +21,8 @@ export default (config) => {
 
     return {
     destinations: config.destinations, savedPlans: config.plans, destinationId: Number(config.destination || 0),
-    catalog: { hotels: [], activities: [] }, plan: null, selections: [], itinerary: null,
+    catalog: { hotels: [], activities: [] }, plan: null, selections: [], itinerary: null, draftItinerary: null,
+    plansPage: 1, hasMorePlans: config.plans.length >= 20,
     weatherHtml: '', weatherLoading: false, weatherError: '', weatherSequence: 0,
     tab: 'hotels', busy: false, error: '', notice: '', mapError: '', routeNotice: '', search: '', activeDay: 0, editing: null,
     title: '', startDate: '', endDate: '', pax: 2, mode: 'walking', optionIn: '', optionOut: '', optionDate: '', optionPax: 2, optionQuantity: 1,
@@ -75,7 +76,8 @@ export default (config) => {
             container.sunnyTripsPageShowHandler = pageShowHandler;
             window.addEventListener('pageshow', pageShowHandler);
         } catch { this.mapError = 'The map could not load. You can still plan from the listings.'; }
-        if (this.destinationId) await this.chooseDestination(this.destinationId);
+        if (config.initialPlan) await this.openPlan(config.initialPlan);
+        else if (this.destinationId) await this.chooseDestination(this.destinationId);
         else this.renderMap();
     },
     async api(path, method = 'GET', data) {
@@ -143,23 +145,27 @@ export default (config) => {
             this.loadSequence++; this.catalogLoading = false; this.closeMapPreview(false); this.itineraryMapContext = false; this.search = ''; this.editing = null;
             const body = await this.api('/plans/' + id);
             const catalog = await this.api('/catalog/' + body.data.destination_id);
-            this.plan = body.data; this.selections = body.data.items; this.itinerary = body.itinerary;
+            this.plan = body.data; this.selections = body.data.items;
+            this.draftItinerary = body.itinerary?.snapshot.kind === 'chatbot_draft' ? body.itinerary : null;
+            this.itinerary = this.draftItinerary ? null : body.itinerary;
             this.savedPlanId = String(this.plan.id);
+            if (!this.savedPlans.some(saved => saved.id === this.plan.id)) this.savedPlans.unshift(this.plan);
             this.destinationId = Number(this.plan.destination_id); this.title = this.plan.title;
-            this.loadWeather(this.destinationId);
-            this.startDate = this.plan.start_date.slice(0, 10); this.endDate = this.plan.end_date.slice(0, 10);
+            if (!this.draftItinerary) this.loadWeather(this.destinationId);
+            else { this.weatherSequence++; this.weatherHtml = ''; this.weatherLoading = false; this.weatherError = ''; }
+            this.startDate = this.plan.start_date?.slice(0, 10) || ''; this.endDate = this.plan.end_date?.slice(0, 10) || '';
             this.pax = this.plan.pax; this.mode = this.plan.mode;
             this.catalog = catalog.data;
             const room = this.selections.find(item => item.item_type === 'room');
             this.activeHotelId = room ? this.allListings().find(item => item.type === 'room' && item.id === room.item_id)?.hotel_id || 0 : this.selections.find(item => item.item_type === 'hotel')?.item_id || 0;
             if (this.itinerary?.revision !== this.plan.revision) this.itinerary = null;
-            this.tab = this.itinerary ? 'itinerary' : 'selections'; this.activeDay = 0; this.renderMap();
+            this.tab = this.itinerary || this.draftItinerary ? 'itinerary' : 'selections'; this.activeDay = 0; this.renderMap();
         });
     },
     newTrip() {
         const reloadCatalog = this.catalogLoading;
         this.loadSequence++; this.catalogLoading = false; this.closeMapPreview(false); this.itineraryMapContext = false; this.search = '';
-        this.plan = null; this.selections = []; this.itinerary = null; this.tab = 'hotels'; this.error = ''; this.notice = '';
+        this.plan = null; this.selections = []; this.itinerary = null; this.draftItinerary = null; this.tab = 'hotels'; this.error = ''; this.notice = '';
         this.savedPlanId = ''; this.activeHotelId = 0; this.editing = null; this.deleting = false;
         this.title = 'Trip to ' + (this.destination()?.name || 'the islands'); this.renderMap();
         if (reloadCatalog && !this.busy) this.chooseDestination(this.destinationId);
@@ -301,6 +307,7 @@ export default (config) => {
         this.selections = body.items;
         if (this.plan.revision !== body.revision) { this.itinerary = null; this.itineraryMapContext = false; }
         this.plan.revision = body.revision;
+        if (body.draft_itinerary) this.draftItinerary = body.draft_itinerary;
     },
     async deletePlan() {
         await this.run(async () => {
@@ -350,12 +357,14 @@ export default (config) => {
             const body = await this.api('/plans/' + this.plan.id + '/items/' + item.id, 'DELETE');
             this.selections = this.selections.filter(choice => choice.id !== item.id);
             this.plan.revision = body.revision; this.itinerary = null; this.itineraryMapContext = false; this.renderMap();
+            if (body.draft_itinerary) this.draftItinerary = body.draft_itinerary;
         });
     },
     async generate() {
         await this.run(async () => {
             this.closeMapPreview(false); this.itineraryMapContext = false;
             this.itinerary = (await this.api('/plans/' + this.plan.id + '/generate', 'POST')).data;
+            this.draftItinerary = null; this.plan.status = 'dated';
             this.activeDay = 0; this.tab = 'itinerary'; this.renderMap(); this.notice = 'Itinerary saved. Review the schedule and its explanation.';
         });
     },
@@ -372,9 +381,35 @@ export default (config) => {
             } }));
         });
     },
-    documentUrl(print = false) { return this.itinerary ? config.base + '/plans/' + this.plan.id + '/itineraries/' + this.itinerary.id + '/document' + (print ? '?print=1' : '') : '#'; },
+    documentUrl(print = false) { const current = this.itinerary || this.draftItinerary; return current ? config.base + '/plans/' + this.plan.id + '/itineraries/' + current.id + '/document' + (print ? '?print=1' : '') : '#'; },
     async email() {
-        await this.run(async () => { this.notice = (await this.api('/plans/' + this.plan.id + '/itineraries/' + this.itinerary.id + '/email', 'POST')).message; });
+        await this.run(async () => { this.notice = (await this.api('/plans/' + this.plan.id + '/itineraries/' + (this.itinerary || this.draftItinerary).id + '/email', 'POST')).message; });
+    },
+
+    savedPlanLabel(saved) {
+        return saved.title + ' · ' + (saved.start_date ? saved.start_date.slice(0, 10) + ' → ' + saved.end_date.slice(0, 10) : 'Dates to be decided') + (saved.status === 'draft' ? ' · Draft' : '');
+    },
+    async loadMorePlans() {
+        await this.run(async () => {
+            const body = await this.api('/plans?page=' + (this.plansPage + 1));
+            const existing = new Set(this.savedPlans.map(plan => plan.id));
+            this.savedPlans.push(...body.data.filter(plan => !existing.has(plan.id)));
+            this.plansPage++; this.hasMorePlans = Boolean(body.next_page_url);
+        });
+    },
+    async updateDraft(removeChoice = null) {
+        await this.run(async () => {
+            const changes = { revision: this.plan.revision };
+            if (removeChoice) changes.remove_choice = removeChoice;
+            else {
+                Object.assign(changes, { title: this.title, pax: Number(this.pax), mode: this.mode });
+                if (this.startDate || this.endDate) Object.assign(changes, { start_date: this.startDate, end_date: this.endDate });
+            }
+            const body = await this.api('/plans/' + this.plan.id, 'PATCH', changes);
+            this.plan = body.data; this.selections = body.data.items; this.draftItinerary = body.itinerary;
+            this.savedPlans = this.savedPlans.map(plan => plan.id === this.plan.id ? this.plan : plan);
+            this.notice = 'Draft saved. Build a schedule when your dates and choices are ready.';
+        });
     },
     async saveEmailPreferences() {
         await this.run(async () => { this.notice = (await this.api('/email-preferences', 'PATCH', { reminders: this.reminders, marketing: this.marketing })).message; });

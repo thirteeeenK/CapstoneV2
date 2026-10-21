@@ -10,6 +10,12 @@ namespace Tests\Support;
  */
 class ChatEvalMetrics
 {
+    /** @param list<array<string, mixed>> $turns */
+    public static function dialogueAccuracy(array $turns): ?float
+    {
+        return $turns === [] ? null : count(array_filter($turns, fn (array $turn): bool => ($turn['correct'] ?? false) === true)) / count($turns);
+    }
+
     public static function intentSetAccuracy(array $results): ?float
     {
         $scoped = array_values(array_filter($results, fn (array $row): bool => isset($row['expect_intents'])));

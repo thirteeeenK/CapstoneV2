@@ -3,7 +3,7 @@
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
         <style>.planner-map-icon{display:grid;place-items:center}.planner-map-number{box-sizing:border-box;display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:#006b91;color:white;border:2px solid white;font:700 14px 'DM Sans',sans-serif;box-shadow:0 2px 8px #0003}.planner-map-pending{background:#fdfaf4;color:#b45309;border:2px dashed #b45309;box-shadow:none}</style>
     @endpush
-    <div x-data="tripPlanner({ destinations: @js($destinations), plans: @js($plans), destination: @js($initialDestination), emailPreferences: @js($emailPreferences), datePolicy: @js($datePolicy), base: @js(route('trip-planner.index')), csrf: @js(csrf_token()) })"
+    <div x-data="tripPlanner({ destinations: @js($destinations), plans: @js($plans), initialPlan: @js($initialPlan), destination: @js($initialDestination), emailPreferences: @js($emailPreferences), datePolicy: @js($datePolicy), base: @js(route('trip-planner.index')), csrf: @js(csrf_token()) })"
          class="mx-auto max-w-screen-2xl bg-sand-50 text-ink-900 dark:bg-slate-900 dark:text-slate-100 font-body">
         <div class="grid lg:grid-cols-2">
             <section class="min-w-0 border-r border-sand-200 dark:border-slate-700">
@@ -16,8 +16,10 @@
                         <label for="saved-plan" class="text-sm font-semibold">Saved trips</label>
                         <select id="saved-plan" x-model="savedPlanId" @change="if ($event.target.value) openPlan($event.target.value)" :disabled="busy" class="min-w-0 max-w-full rounded-lg border-sand-300 dark:bg-slate-800 text-sm">
                             <option value="">Open a saved trip</option>
-                            <template x-for="saved in savedPlans" :key="saved.id"><option :value="saved.id" x-text="saved.title + ' · ' + saved.start_date.slice(0, 10) + ' → ' + saved.end_date.slice(0, 10)"></option></template>
+                            <optgroup label="Itinerary (From Chatbot)"><template x-for="saved in savedPlans.filter(item => item.source === 'chatbot')" :key="saved.id"><option :value="saved.id" x-text="savedPlanLabel(saved)"></option></template></optgroup>
+                            <optgroup label="My other trips"><template x-for="saved in savedPlans.filter(item => item.source !== 'chatbot')" :key="saved.id"><option :value="saved.id" x-text="savedPlanLabel(saved)"></option></template></optgroup>
                         </select>
+                        <button type="button" x-show="hasMorePlans" @click="loadMorePlans()" :disabled="busy" class="min-h-11 px-3 text-sm font-bold text-ocean-700 dark:text-ocean-300">Load more trips</button>
                         <button type="button" @click="newTrip()" :disabled="busy" class="min-h-11 px-3 text-sm font-bold text-ocean-700 dark:text-ocean-300">New trip</button>
                         <button x-ref="deleteTrigger" type="button" x-show="plan" x-cloak @click="deleting = true; $nextTick(() => $refs.deleteCancel.focus())" :disabled="busy" class="min-h-11 px-3 text-sm font-bold text-rose-700 dark:text-rose-300">Delete saved trip</button>
                     </div>
@@ -49,6 +51,7 @@
                         <p class="mt-1 text-sm text-slate-600 dark:text-slate-400" x-text="startDate + ' → ' + endDate + ' · ' + (mode === 'driving' ? 'getting around by vehicle' : 'getting around on foot')"></p>
                         <p class="mt-2 text-xs text-slate-500">Your planner saves each choice.</p>
                     </div>
+                    @include('trip-planner._chatbot-draft')
                 </div>
                 <div class="px-5 sm:px-8 pt-5">
                     <section x-show="destinationId" x-cloak aria-label="Destination weather forecast" :aria-busy="weatherLoading" class="mb-5">
@@ -109,6 +112,27 @@
                         </template>
                     </div>
                     <div x-show="tab === 'itinerary'" x-cloak>
+                        <template x-if="draftItinerary"><div class="space-y-4">
+                            @include('components.frontend.chat-itinerary-summary', ['suggestionExpression' => 'draftItinerary.snapshot'])
+                            <h2 class="font-headline text-xl font-bold">Itinerary (From Chatbot)</h2>
+                            <p class="text-sm font-bold" x-text="plan?.start_date ? 'Draft — schedule not checked' : 'Draft — dates not selected'"></p>
+                            <p class="text-sm text-slate-600 dark:text-slate-300" x-text="draftItinerary.snapshot.notice"></p>
+                            <p class="text-sm text-slate-600 dark:text-slate-300" x-text="draftItinerary.snapshot.weather_notice"></p>
+                            <p x-show="plan?.context?.pax_assumed" class="text-sm">Traveler count was not provided; this draft uses 2 travelers. Confirm it before building a schedule.</p>
+                            <template x-for="day in draftItinerary.snapshot.days" :key="day.day"><section class="border-t border-sand-200 pt-3 dark:border-slate-700">
+                                <h3 class="font-headline font-bold" x-text="'Day ' + day.day + (day.date ? ' · ' + day.date : '')"></h3>
+                                <template x-for="choice in draftItinerary.snapshot.choices.filter(item => item.day === day.day)" :key="choice.type + ':' + choice.id"><p class="mt-2 text-sm" x-text="choice.name"></p></template>
+                                <p x-show="!draftItinerary.snapshot.choices.some(item => item.day === day.day)" class="mt-2 text-sm text-slate-500">Open day — arrange activities at your own pace.</p>
+                            </section></template>
+                            <h3 class="font-headline font-bold">Saved choices</h3>
+                            <template x-for="choice in draftItinerary.snapshot.choices" :key="choice.type + ':' + choice.id"><div class="flex flex-wrap items-center justify-between gap-2 border-b border-sand-200 py-2 dark:border-slate-700">
+                                <div><p class="text-sm" x-text="choice.name"></p><p class="text-xs text-slate-500" x-text="choice.available ? (choice.day ? 'Suggested for Day ' + choice.day : 'Timing not assigned') : 'Unavailable — choose an alternative before scheduling'"></p></div>
+                                <p x-show="choice.weather_dependent === true" class="text-xs text-slate-500">Weather-dependent</p>
+                                <button type="button" @click="updateDraft(choice.type + ':' + choice.id)" :disabled="busy" class="min-h-11 px-3 text-sm font-bold text-coral-700 dark:text-coral-300" :aria-label="'Remove ' + choice.name">Remove</button>
+                            </div></template>
+                            <p class="text-xs text-slate-500">Saving does not reserve rooms or activities. Estimates may change before booking.</p>
+                            <div class="flex flex-wrap gap-3"><a :href="documentUrl()" class="min-h-11 py-2 text-sm font-bold text-ocean-700 dark:text-ocean-300">Download draft PDF</a><a :href="documentUrl(true)" target="_blank" rel="noopener" class="min-h-11 py-2 text-sm font-bold text-ocean-700 dark:text-ocean-300">Print draft</a><button type="button" @click="email()" :disabled="busy" class="min-h-11 py-2 text-sm font-bold text-ocean-700 dark:text-ocean-300">Email draft</button></div>
+                        </div></template>
                         <template x-if="itinerary"><div>
                             <h2 class="font-headline text-xl font-bold">Your day-by-day Suggested Itinerary</h2>
                             <p class="mt-1 text-sm text-slate-500">This is a suggested plan. Weather, travel times and activity availability may change. Recheck conditions and confirm details with providers before departure.</p>
@@ -158,10 +182,10 @@
                             </div>
                             <details class="mt-6 border-t border-sand-200 dark:border-slate-700 pt-4" open><summary class="min-h-11 py-2 font-headline font-bold cursor-pointer">Strategic report</summary><template x-for="(paragraph, key) in itinerary.snapshot.report" :key="key"><p class="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-400" x-text="paragraph"></p></template></details>
                         </div></template>
-                        <p x-show="!itinerary" class="text-sm text-slate-500">Add your choices, then generate a schedule to see the day-by-day plan and its reasoning.</p>
+                        <p x-show="!itinerary && !draftItinerary" class="text-sm text-slate-500">Add your choices, then generate a schedule to see the day-by-day plan and its reasoning.</p>
                     </div>
                     <div x-show="plan" x-cloak class="mt-6 border-t border-sand-200 dark:border-slate-700 pt-5 flex flex-wrap items-center gap-3">
-                        <button type="button" @click="generate()" :disabled="busy || !selections.length" class="min-h-11 rounded-lg bg-ocean-700 px-5 py-3 font-bold text-white disabled:opacity-50" x-text="itinerary ? 'Generate again' : 'Generate itinerary'"></button>
+                        <button type="button" @click="generate()" :disabled="busy || !selections.length || !plan?.start_date" class="min-h-11 rounded-lg bg-ocean-700 px-5 py-3 font-bold text-white disabled:opacity-50" x-text="draftItinerary ? 'Check dates and build schedule' : (itinerary ? 'Generate again' : 'Generate itinerary')"></button>
                         <p class="text-xs text-slate-500">Uses your choices, mapped routes and available weather data.</p>
                     </div>
                     <details class="mt-6 border-t border-sand-200 dark:border-slate-700 pt-4"><summary class="min-h-11 py-2 font-semibold cursor-pointer">Email preferences</summary><form @submit.prevent="saveEmailPreferences()" class="mt-3 space-y-3"><label class="flex gap-3 items-start text-sm"><input type="checkbox" x-model="reminders" class="mt-1">Send trip reminders, departure information and review invitations</label><label class="flex gap-3 items-start text-sm"><input type="checkbox" x-model="marketing" class="mt-1">Send planning follow-ups and destination suggestions (optional)</label><button type="submit" :disabled="busy" class="min-h-11 rounded-lg border border-ocean-700 px-4 py-2 text-sm font-bold text-ocean-700 dark:text-ocean-300">Save email preferences</button></form></details>

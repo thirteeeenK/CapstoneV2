@@ -10,12 +10,19 @@ return [
     'trip_journey' => ['enabled' => env('TRIP_JOURNEY_ENABLED', false)],
 
     'chatbot' => [
+        'guided_conversation_enabled' => env('CHATBOT_GUIDED_CONVERSATION_ENABLED', false),
         'conversational_enabled' => env('CHATBOT_CONVERSATIONAL_ENABLED', true),
         'planner_enabled' => env('CHATBOT_PLANNER_ENABLED', true),
         'max_tasks' => (int) env('CHATBOT_MAX_TASKS', 4),
         'cards_per_task' => (int) env('CHATBOT_CARDS_PER_TASK', 3),
         'turn_timeout' => (int) env('CHATBOT_TURN_TIMEOUT', 90),
         'model_timeout' => (int) env('CHATBOT_MODEL_TIMEOUT', 20),
+
+        // Read through config so a cached config keeps the configured values:
+        // a runtime env() call returns null once config:cache has run.
+        'repetition_ban_enabled' => env('CHATBOT_REPETITION_BAN_ENABLED', false),
+        'repetition_ban_allow_local' => env('CHATBOT_REPETITION_BAN_ALLOW_LOCAL', false),
+        'repetition_ban_seconds' => (int) env('CHATBOT_REPETITION_BAN_SECONDS', 600),
     ],
 
     /*

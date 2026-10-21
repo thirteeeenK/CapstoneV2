@@ -38,8 +38,26 @@ final class ChatRetrievalService
                 }
             }
         }
+        if (! empty($data['itinerary_suggestion']) && empty($data['itinerary'])) {
+            $ids = array_column($data['retrieved_activities'] ?? [], 'id');
+            $suggestion = &$data['itinerary_suggestion'];
+            $roomIds = array_column($data['retrieved_rooms'] ?? [], 'id');
+            $suggestion['choices'] = array_values(array_filter($suggestion['choices'], fn (array $choice): bool => $choice['type'] === 'room' ? in_array($choice['id'], $roomIds, true) : ($choice['type'] !== 'activity' || in_array($choice['id'], $ids, true))));
+            if (! empty($suggestion['accommodation']) && ! in_array($suggestion['accommodation']['room_id'], $roomIds, true)) {
+                $suggestion['accommodation'] = null;
+                $suggestion['accommodation_notice'] = 'No matching room remains after applying your preferences and budget. Adjust your stay preferences to see alternatives.';
+            }
+            foreach ($suggestion['days'] as &$day) {
+                $day['choices'] = array_values(array_filter($suggestion['choices'], fn (array $choice): bool => $choice['day'] === $day['day']));
+            }
+            unset($day, $suggestion);
+        }
         $outcome = $data['retrieval_outcome'] ?? RetrievalOutcome::make(RetrievalOutcome::Matched, 'verified_result_found');
         $fallback = trim((string) ($data['reply'] ?? ''));
+        if ($references !== []) {
+            $count = count($references);
+            $fallback = preg_replace('/I found \d+ verified options?\./u', 'I found '.$count.' verified '.($count === 1 ? 'option.' : 'options.'), $fallback);
+        }
         if ($fallback === '') {
             $fallback = match (true) {
                 ! empty($data['itinerary']) => 'I prepared a suggested itinerary from the available catalog. Review the dates, included items, and quoted total below; unlisted expenses are not included.',

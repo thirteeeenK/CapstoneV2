@@ -189,6 +189,7 @@
     
     <x-frontend.cart-drawer />
     <x-frontend.cart-success-modal />
+    <x-frontend.trip-plan-success-modal />
     @unless($hideChatWidget ?? false)
         <x-frontend.chat-widget />
     @endunless
