@@ -46,6 +46,24 @@ final class ChatCapabilities
         return null;
     }
 
+    /** "What can you do?" in English or Filipino, without a concrete request. */
+    public function isCapabilityQuestion(string $query): bool
+    {
+        return (bool) preg_match('/^(?:what\s+(?:can|do)\s+you\s+(?:do|help\s+(?:me\s+)?with)|what\s+are\s+your\s+(?:capabilities|features|limits)|how\s+can\s+you\s+help(?:\s+me)?|what\s+is\s+sunnybot|ano(?:ng|\s+ang)?\s+(?:kaya|magagawa|pwede)\s+mo(?:ng\s+gawin)?|paano\s+mo\s+ako\s+matutulungan)\s*[?.!]*$/iu', trim($query));
+    }
+
+    /** Public, deterministic description of what the chatbot can and cannot do. */
+    public function overview(): string
+    {
+        return "Here is what I can help with:\n\n"
+            ."- Find hotels, rooms, activities, tour packages and transfers in SunnyTrips destinations, with filters for budget, group size and dates.\n"
+            ."- Check room availability for specific dates and compare listed options.\n"
+            ."- Suggest an itinerary from catalog items and save it as a trip plan.\n"
+            ."- Answer booking, payment and policy questions from SunnyTrips FAQs, and share reviewed destination guidance (getting there, local transport, dining) where we have it.\n\n"
+            .'What I cannot do in chat: complete bookings or payments, cancel or refund reservations, send messages for you, or track prices later. '
+            .'For those, use the result cards and checkout, or ask for a human support agent.';
+    }
+
     /** @return array<string, mixed> */
     public function limitation(string $operation, bool $taglish = false): array
     {

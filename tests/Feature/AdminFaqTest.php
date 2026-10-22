@@ -38,6 +38,8 @@ it('creates a new FAQ', function () {
             'category' => 'Booking',
             'sort_order' => 2,
             'is_active' => 1,
+            'source_label' => 'SunnyTrips operations team',
+            'reviewed_at' => now()->toDateString(),
         ])
         ->assertRedirect(route('admin.faqs.index'));
 
@@ -60,6 +62,8 @@ it('stores FAQ keywords at the supported 500 character boundary', function () {
             'sort_order' => 1,
             'is_active' => 1,
             'show_on_landing' => 1,
+            'source_label' => 'SunnyTrips operations team',
+            'reviewed_at' => now()->toDateString(),
         ])
         ->assertRedirect(route('admin.faqs.index'))
         ->assertSessionHasNoErrors();
@@ -100,6 +104,8 @@ it('keeps a successful FAQ save when embedding generation throws an error', func
             'answer' => 'No, the FAQ remains saved.',
             'is_active' => 1,
             'show_on_landing' => 1,
+            'source_label' => 'SunnyTrips operations team',
+            'reviewed_at' => now()->toDateString(),
         ])
         ->assertRedirect(route('admin.faqs.index'))
         ->assertSessionHas('success');
@@ -200,6 +206,8 @@ it('stores each independent FAQ visibility combination', function (string $label
             'answer' => 'Audience answer.',
             'is_active' => (int) $isActive,
             'show_on_landing' => (int) $showOnLanding,
+            'source_label' => 'SunnyTrips operations team',
+            'reviewed_at' => now()->toDateString(),
         ])
         ->assertRedirect(route('admin.faqs.index'));
 

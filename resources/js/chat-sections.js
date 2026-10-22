@@ -7,6 +7,7 @@ export function sectionExtras(data) {
         addons: data.retrieved_addons?.length ? data.retrieved_addons : null,
         ordering: data.result_ordering, itinerary: data.itinerary, itinerary_suggestion: data.itinerary_suggestion, map: data.map,
         location_request: data.location_request, location_target: data.location_target,
+        knowledge: data.knowledge?.length ? data.knowledge : null,
     };
 }
 
@@ -42,6 +43,8 @@ export function displayChatMessages(messages) {
             return {
                 id: String(message.id) + ':' + section.id, sender: 'bot', text,
                 ...sectionExtras(section.data || {}),
+                // Feedback stays linked to this answer and to the task it covers.
+                trace_id: message.trace_id ?? null, task_id: section.id,
                 ai_notice: index === 0 ? message.ai_notice : null,
                 // The question metadata must survive section splitting, or the
                 // last section cannot render its control.

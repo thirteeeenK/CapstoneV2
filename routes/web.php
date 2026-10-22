@@ -83,5 +83,6 @@ require __DIR__.'/adminPlannerInventoryRoute.php';
 require __DIR__.'/chatRoute.php';
 require __DIR__.'/adminSupportRoute.php';
 require __DIR__.'/adminFaqRoute.php';
+require __DIR__.'/adminKnowledgeArticleRoute.php';
 require __DIR__.'/adminOnboardingOptionRoute.php';
 require __DIR__.'/adminAuditRoute.php';

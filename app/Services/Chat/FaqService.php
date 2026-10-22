@@ -152,7 +152,10 @@ class FaqService
 
     protected function tokenize(string $text): Collection
     {
-        $stopwords = ['a', 'an', 'the', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might', 'must', 'can', 'need', 'dare', 'ought', 'used', 'to', 'of', 'in', 'for', 'on', 'with', 'at', 'by', 'from', 'as', 'into', 'through', 'during', 'before', 'after', 'above', 'below', 'between', 'under', 'again', 'further', 'then', 'once', 'here', 'there', 'when', 'where', 'why', 'how', 'all', 'each', 'few', 'more', 'most', 'other', 'some', 'such', 'no', 'nor', 'not', 'only', 'own', 'same', 'so', 'than', 'too', 'very', 'just', 'and', 'but', 'if', 'or', 'because', 'until', 'while', 'sunnytrips', 'sunny', 'trips', 'does', 'it', 'they', 'we', 'you', 'he', 'she', 'this', 'that', 'these', 'those', 'i', 'me', 'my', 'myself'];
+        $stopwords = ['a', 'an', 'the', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could', 'should', 'may', 'might', 'must', 'can', 'need', 'dare', 'ought', 'used', 'to', 'of', 'in', 'for', 'on', 'with', 'at', 'by', 'from', 'as', 'into', 'through', 'during', 'before', 'after', 'above', 'below', 'between', 'under', 'again', 'further', 'then', 'once', 'here', 'there', 'when', 'where', 'why', 'how', 'all', 'each', 'few', 'more', 'most', 'other', 'some', 'such', 'no', 'nor', 'not', 'only', 'own', 'same', 'so', 'than', 'too', 'very', 'just', 'and', 'but', 'if', 'or', 'because', 'until', 'while', 'sunnytrips', 'sunny', 'trips', 'does', 'it', 'they', 'we', 'you', 'he', 'she', 'this', 'that', 'these', 'those', 'i', 'me', 'my', 'myself',
+            // Filipino function words, so Taglish questions match on their
+            // content words ("pwede ba magbayad ng down payment muna?").
+            'ba', 'ng', 'na', 'sa', 'ang', 'mga', 'po', 'ko', 'mo', 'ako', 'kami', 'tayo', 'muna', 'pwede', 'puwede', 'paano', 'mag', 'ano', 'yung', 'lang', 'naman'];
 
         $tokens = collect(explode(' ', $this->normalize($text)))
             ->filter(fn ($t) => $t !== '' && ! in_array($t, $stopwords, true) && mb_strlen($t) >= 2);

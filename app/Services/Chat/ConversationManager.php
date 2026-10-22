@@ -229,6 +229,9 @@ class ConversationManager
                 }
                 $groups[$groupKey] = [
                     'task_id' => $section['id'], 'type' => $type, 'intent' => $groupIntent,
+                    // The request that produced the group, so a later
+                    // correction can re-run it instead of searching its own words.
+                    'query' => mb_substr((string) ($section['query'] ?? $session->messages()->where('sender', 'user')->latest('id')->value('message') ?? ''), 0, 300),
                     'result_ids' => array_values(array_map('intval', array_column($cards, 'id'))),
                     'constraints' => array_replace($constraints, array_filter([
                         'destination_id' => $first['destination_id'] ?? null,
@@ -240,8 +243,71 @@ class ConversationManager
         }
         $state['groups'] = array_slice($groups, -12, null, true);
         $state['pending'] = array_slice($pending, -8, null, true);
+        $state['trip_facts'] = $this->updatedTripFacts(is_array($state['trip_facts'] ?? null) ? $state['trip_facts'] : [], $sections);
         $metadata['conversation_v2'] = $state;
         $session->update(['metadata' => $metadata]);
+    }
+
+    /**
+     * Accepted trip facts for this conversation, kept beyond the recent prose
+     * window. User context only: never proof of current prices or
+     * availability, and it holds no model text or account details.
+     *
+     * @return array<string, mixed>
+     */
+    public function tripFacts(ChatSession $session): array
+    {
+        $facts = $session->metadata['conversation_v2']['trip_facts'] ?? [];
+
+        return is_array($facts) ? $facts : [];
+    }
+
+    /**
+     * @param  array<string, mixed>  $facts
+     * @param  list<array<string, mixed>>  $sections
+     * @return array<string, mixed>
+     */
+    private function updatedTripFacts(array $facts, array $sections): array
+    {
+        $fields = ['destination_id', 'destination_name', 'pax', 'children', 'check_in_date', 'check_out_date', 'nights', 'max_price', 'budget_mode'];
+        foreach ($sections as $section) {
+            if (! in_array($section['outcome']['status'] ?? null, [RetrievalOutcome::Matched, RetrievalOutcome::Partial, RetrievalOutcome::NoMatch], true)) {
+                continue;
+            }
+            $constraints = $section['constraints'] ?? [];
+            if (! empty($constraints['destination_id']) && ! empty($facts['destination_id']) && (int) $constraints['destination_id'] !== (int) $facts['destination_id']) {
+                // Selections belong to one destination; shared preferences
+                // (party, dates, budget, exclusions) carry over.
+                $facts['selected'] = [];
+            }
+            foreach ($fields as $field) {
+                $value = $constraints[$field] ?? null;
+                if ($value === null || $value === '') {
+                    continue;
+                }
+                if (array_key_exists($field, $facts) && $facts[$field] !== null && $facts[$field] != $value && ! in_array($field, ['destination_name', 'budget_mode'], true)) {
+                    $facts['corrections'][] = ['field' => $field, 'from' => $facts[$field], 'to' => $value, 'at' => now()->toIso8601String()];
+                }
+                $facts[$field] = $value;
+            }
+            if (($section['budget_basis'] ?? 'unknown') !== 'unknown' && ! empty($constraints['max_price'])) {
+                $facts['budget_basis'] = $section['budget_basis'];
+            }
+            foreach (['excluded_terms', 'excluded_names'] as $field) {
+                if (! empty($constraints[$field])) {
+                    $facts[$field] = array_values(array_unique([...($facts[$field] ?? []), ...$constraints[$field]]));
+                }
+            }
+            if (! empty($section['entity']['type']) && ! empty($section['entity']['id'])) {
+                $facts['selected'][$section['entity']['type']] = (int) $section['entity']['id'];
+            }
+        }
+        if (isset($facts['corrections'])) {
+            $facts['corrections'] = array_slice($facts['corrections'], -5);
+        }
+        $facts['updated_at'] = now()->toIso8601String();
+
+        return $facts;
     }
 
     protected function rememberActiveSearch(ChatSession $session, array $contextData): void

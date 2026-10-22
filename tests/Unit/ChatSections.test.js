@@ -114,3 +114,17 @@ test('the consolidated form appears once while each itinerary keeps its own save
     assert.equal(rows[1].itinerary_suggestion.id, 'suggestion-1');
     assert.equal(rows[2].itinerary_suggestion.id, 'suggestion-2');
 });
+
+test('each section keeps its answer trace, task id and cited sources for feedback and restore', () => {
+    const restored = JSON.parse(JSON.stringify([{
+        id: 11, sender: 'bot', text: 'Reply', trace_id: 'trace-abc',
+        sections: [
+            { id: 'task-1', heading: 'Where to stay', answer: 'Hotels.', data: { retrieved_hotels: [{ id: 1 }] } },
+            { id: 'task-2', heading: 'Travel guidance', answer: 'Eat at the food strip.', data: { knowledge: [{ id: 5, current_status: 'withdrawn' }] } },
+        ],
+    }]));
+    const result = displayChatMessages(restored);
+    assert.deepEqual(result.map(message => [message.trace_id, message.task_id]), [['trace-abc', 'task-1'], ['trace-abc', 'task-2']]);
+    assert.equal(result[0].knowledge, null);
+    assert.equal(result[1].knowledge[0].current_status, 'withdrawn');
+});

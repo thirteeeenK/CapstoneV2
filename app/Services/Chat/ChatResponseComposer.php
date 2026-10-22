@@ -37,7 +37,7 @@ final class ChatResponseComposer
         }
         foreach ($sections as &$section) {
             $candidate = $blocks[$section['id']] ?? null;
-            if ($candidate !== null && empty($section['data']['preference_notice']) && $section['card_refs'] !== [] && ($section['outcome']['status'] ?? null) === RetrievalOutcome::Matched
+            if ($candidate !== null && empty($section['data']['preference_notice']) && empty($section['data']['deterministic_answer']) && $section['card_refs'] !== [] && ($section['outcome']['status'] ?? null) === RetrievalOutcome::Matched
                 && ! preg_match('/\b(?:book|reserve|cancel|refund|pay|send|email|call|notify|remind|booked|reserved|cancelled|canceled|refunded|paid|sent|scheduled|added|confirmed|pool|wifi|wi-fi|beachfront|luxury|extreme|safe|suitable|nearby|walking|minutes|included)\b|\d|₱/iu', $candidate)
                 && $this->supportsVocabulary($candidate, $section)) {
                 $validated = $validate($candidate, $section);

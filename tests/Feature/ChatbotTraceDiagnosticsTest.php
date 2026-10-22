@@ -46,11 +46,29 @@ test('feedback persists against a trace id', function () {
     $response = $this->postJson('/chat/feedback', [
         'trace_id' => $traceId,
         'helpful' => false,
-        'expected_answer' => 'A human agent, please.',
+        'reason' => 'wrong_information',
+        'expected_answer' => 'A human agent, please. Reach me at juan@example.com or 09171234567.',
+        'session_token' => $chat->json('session_token'),
     ]);
 
     $response->assertCreated();
-    expect(ChatFeedback::where('trace_id', $traceId)->count())->toBe(1);
+    $feedback = ChatFeedback::where('trace_id', $traceId)->sole();
+    expect($feedback->reason)->toBe('wrong_information')
+        ->and($feedback->expected_answer)->toBe('A human agent, please. Reach me at [email] or [phone].');
+});
+
+test('feedback cannot be attached to an answer from another conversation', function () {
+    $owner = $this->postJson('/chat', ['message' => 'stop']);
+    $stranger = $this->postJson('/chat', ['message' => 'hello']);
+
+    $this->postJson('/chat/feedback', [
+        'trace_id' => $owner->json('trace.trace_id'),
+        'helpful' => false,
+        'reason' => 'not_helpful',
+        'session_token' => $stranger->json('session_token'),
+    ])->assertNotFound();
+
+    expect(ChatFeedback::count())->toBe(0);
 });
 
 test('feedback without a trace id is rejected', function () {

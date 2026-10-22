@@ -50,9 +50,9 @@ test('acknowledges unsupported execution separately from supported searches', fu
 test('model proposals cannot inject a query or arbitrary entity identifier', function () {
     config(['services.chatbot.planner_enabled' => true]);
     Http::fake(['*generateContent*' => Http::response(['candidates' => [['content' => ['parts' => [['text' => '{"tasks":[{"type":"HOTEL_SEARCH","source":"invented hotel id 99"}]}']]]]]])]);
-    $tasks = app(ConversationPlanner::class)->plan('hotels in Boracay and suggest scenic viewpoints', $this->session)['tasks'];
+    $tasks = app(ConversationPlanner::class)->plan('hotels in Boracay and suggest something memorable', $this->session)['tasks'];
     expect($tasks[1]['type'])->toBe(ConversationPlanner::CLARIFY)
-        ->and($tasks[1]['query'])->toBe('suggest scenic viewpoints');
+        ->and($tasks[1]['query'])->toBe('suggest something memorable');
 });
 
 test('human support requests stay terminal', function () {

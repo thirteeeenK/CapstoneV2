@@ -33,6 +33,11 @@
                                 <td class="py-4 px-4 max-w-md">
                                     <p class="font-bold text-slate-900 line-clamp-2">{{ $faq->question }}</p>
                                     <p class="text-[11px] text-slate-500 mt-1 line-clamp-2">{{ $faq->answer }}</p>
+                                    @if ($faq->isReviewed())
+                                        <p class="mt-1 text-[11px] text-slate-500">Source: {{ $faq->source_label }} · reviewed {{ $faq->reviewed_at->toDateString() }}</p>
+                                    @else
+                                        <p class="mt-1 text-[11px] font-bold text-amber-700">Review gap: no source or review date. SunnyBot labels this answer as unreviewed.</p>
+                                    @endif
                                 </td>
                                 <td class="py-4 px-4 max-w-[120px]">
                                     @if($faq->category)

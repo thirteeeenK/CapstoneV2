@@ -172,6 +172,7 @@ class ChatbotService
         protected ChatCapabilities $capabilities,
         protected DialogueManager $dialogue,
         protected ChatbotTripPlanService $tripPlans,
+        protected KnowledgeRetrievalService $knowledge,
     ) {}
 
     public function handle(ChatSession $session, ?User $user, string $message, ?float $userLat = null, ?float $userLng = null, ?array $tripDetails = null): array
@@ -241,6 +242,16 @@ class ChatbotService
             && $this->intentRouter->compoundIntents($message) === []) {
             $reply = $this->handleOutOfScope($message);
             $reply = $this->finalizeBotReply($session, $reply['reply'], $reply, IntentRouter::OUT_OF_SCOPE, 'grounded', [], false, $traceId);
+
+            return array_merge($aiBase, $reply);
+        }
+
+        // Policy and capability questions ("can I cancel and get a refund?",
+        // "paano mag-book?", "what can you do?") are answered from FAQs or the
+        // fixed capability list before task planning, so their verbs are not
+        // mistaken for action requests or catalog searches.
+        if ($tripDetails === null && ($direct = $this->directInformationReply($message)) !== null) {
+            $reply = $this->finalizeBotReply($session, $direct['reply'], $direct, null, 'grounded', [], false, $traceId);
 
             return array_merge($aiBase, $reply);
         }
@@ -420,7 +431,7 @@ class ChatbotService
         // run their deterministic handlers, never an FAQ answer.
         $intentInitial = $intent;
         if (($faq = $this->faq->findBestMatch($message, eligibleIntent: $intent))) {
-            $reply = ['reply' => $faq->answer, 'faq' => ['id' => $faq->id, 'question' => $faq->question, 'answer' => $faq->answer]];
+            $reply = $this->faqPayload($faq);
             $reply = $this->finalizeBotReply($session, $reply['reply'], $reply, null, 'grounded', [], false, $traceId);
 
             return array_merge($aiBase, $reply);
@@ -511,6 +522,8 @@ class ChatbotService
             $task['heading'] = self::MULTI_INTENT_SECTIONS[$task['type']] ?? match ($task['type']) {
                 ConversationPlanner::ACTION => 'Your requested action',
                 ConversationPlanner::UNSUPPORTED => 'Additional travel information',
+                ConversationPlanner::KNOWLEDGE => 'Travel guidance',
+                ConversationPlanner::COMPARE => 'Side-by-side comparison',
                 ConversationPlanner::DRAFT => 'Message draft',
                 IntentRouter::OUT_OF_SCOPE => 'Other request',
                 default => 'A quick clarification',
@@ -547,6 +560,12 @@ class ChatbotService
                 }
                 if ($unsupported = $this->unsupportedDestinationName($task['destination_query'] ?? $task['query'], $task['type'], $task['constraints'])) {
                     return $this->unsupportedDestinationPayload($unsupported, $task['type']);
+                }
+                if ($task['type'] === ConversationPlanner::KNOWLEDGE) {
+                    return $this->handleKnowledgeTask($task);
+                }
+                if ($task['type'] === ConversationPlanner::COMPARE) {
+                    return $this->handleComparisonTask($task);
                 }
                 // A budget still being narrowed does not block retrieval: the
                 // user gets labelled previews plus the one open question,
@@ -623,6 +642,7 @@ class ChatbotService
                 }
                 $this->exclusionHeadroom = ($task['constraints']['excluded_terms'] ?? []) !== []
                     || ($task['constraints']['excluded_names'] ?? []) !== []
+                    || isset($task['relative_price'])
                     ? self::EXCLUSION_HEADROOM
                     : 0;
                 $this->preparingTask = true;
@@ -634,7 +654,7 @@ class ChatbotService
                         $result['retrieval_outcome'] = RetrievalOutcome::make(RetrievalOutcome::NeedsClarification, 'authentication_required');
                     }
 
-                    $result = $this->enforceTaskPreferences($this->enforceTaskBudget($result, $task), $task);
+                    $result = $this->enforceRelativePrice($this->enforceTaskPreferences($this->enforceTaskBudget($result, $task), $task), $task);
                     if ($budgetQuestion !== null && $this->replyHasRetrievedCards($result)) {
                         $result['reply'] = 'These are catalog previews; the budget has not been applied and this is not a checked trip total. '.$result['reply'];
                         $result['budget_clarification'] = $budgetQuestion;
@@ -682,6 +702,12 @@ class ChatbotService
             foreach ($section['data']['suggested_actions'] ?? [] as $action) {
                 $actions[$action['id']] = $action;
             }
+            foreach ($section['data']['knowledge'] ?? [] as $citation) {
+                $payload['knowledge'][$citation['id']] = [...$citation, 'task_id' => $section['id']];
+            }
+        }
+        if (isset($payload['knowledge'])) {
+            $payload['knowledge'] = array_values($payload['knowledge']);
         }
         foreach (ChatRetrievalService::CATALOGS as $key => $type) {
             if (isset($payload[$key])) {
@@ -754,7 +780,7 @@ class ChatbotService
             // Tour" is snorkeling. URLs, slugs and identifiers are not.
             'activity_name', 'hotel_name', 'room_name', 'name', 'package_name', 'title',
             'activity_level', 'category', 'description', 'vibe_tags', 'amenities',
-            'hotel_description', 'inclusions', 'exclusions', 'features', 'room_description',
+            'hotel_description', 'inclusions', 'exclusions', 'features', 'room_description', 'view_type',
         ]));
 
         return mb_strtolower((string) json_encode($fields, JSON_INVALID_UTF8_SUBSTITUTE));
@@ -843,9 +869,14 @@ class ChatbotService
             return $result;
         }
         $max = $task['constraints']['max_price'] ?? null;
-        if (! $max || ($task['constraints']['budget_mode'] ?? 'target') !== 'ceiling' || ! empty($result['itinerary'])) {
+        $ceiling = ($task['constraints']['budget_mode'] ?? 'target') === 'ceiling';
+        // A soft budget ("budget 4000") is applied once its basis is known:
+        // options that fit are preferred, and over-budget ones appear only,
+        // labelled, when nothing fits. A hard ceiling never shows them.
+        if (! $max || ! empty($result['itinerary']) || (! $ceiling && ($task['budget_basis'] ?? 'unknown') === 'unknown')) {
             return $result;
         }
+        $original = $result;
         $hotelRates = [];
         $pax = max(1, (int) ($task['constraints']['pax'] ?? 1));
         // Hotel and room prices are compared per night for the whole booking,
@@ -874,6 +905,10 @@ class ChatbotService
                     if (in_array($type, ['activity', 'addon', 'package'], true) && $task['budget_basis'] === 'per_person') {
                         $price = isset($card['price_quote']['total']) ? ($card['price_quote']['total_max'] ?? $card['price_quote']['total']) / $pax : null;
                     }
+                    // A whole-trip amount is compared with the group total.
+                    if (in_array($type, ['activity', 'addon', 'package'], true) && $task['budget_basis'] === 'trip_total') {
+                        $price = $card['price_quote']['total_max'] ?? $card['price_quote']['total'] ?? null;
+                    }
                     if (($card['price_quote']['basis'] ?? null) === 'per_hour' && $task['budget_basis'] !== 'per_activity') {
                         $price = null;
                     }
@@ -883,9 +918,20 @@ class ChatbotService
             }
         }
         if (! $this->replyHasRetrievedCards($result)) {
-            return ['reply' => 'I could not verify an option within your stated budget for this part. Would you like to change that budget?', 'retrieval_outcome' => RetrievalOutcome::make(RetrievalOutcome::NoMatch, 'hard_budget_no_match')];
+            if ($ceiling || ! $this->replyHasRetrievedCards($original)) {
+                return ['reply' => 'I could not verify an option within your stated budget for this part. Would you like to change that budget?', 'retrieval_outcome' => RetrievalOutcome::make(RetrievalOutcome::NoMatch, 'hard_budget_no_match')];
+            }
+            foreach (ChatRetrievalService::CATALOGS as $key => $type) {
+                foreach (array_keys($original[$key] ?? []) as $index) {
+                    $original[$key][$index]['over_budget'] = true;
+                }
+            }
+            $original['reply'] = 'None of the listed options fit your budget of ₱'.number_format((float) $max).'; these are the closest options and they cost more. '.$this->catalogCardsPointer($original);
+            $original['budget_notice'] = true;
+
+            return $original;
         }
-        $result['reply'] = $this->catalogCardsPointer($result);
+        $result['reply'] = ($ceiling ? '' : 'These options fit your budget. ').$this->catalogCardsPointer($result);
 
         return $result;
     }
@@ -894,6 +940,59 @@ class ChatbotService
      * @param  array<string, mixed>  $task
      * @return array<string, mixed>
      */
+    /**
+     * "Cheaper ones": keep only options priced below the most expensive one
+     * shown before, cheapest first. Both sides use current catalog prices,
+     * never figures from an earlier reply.
+     *
+     * @param  array<string, mixed>  $result
+     * @param  array<string, mixed>  $task
+     * @return array<string, mixed>
+     */
+    private function enforceRelativePrice(array $result, array $task): array
+    {
+        $relative = $task['relative_price'] ?? null;
+        $key = is_array($relative) ? array_search($relative['type'], ChatRetrievalService::CATALOGS, true) : false;
+        if ($key === false || empty($result[$key])) {
+            return $result;
+        }
+        $reference = array_filter(array_map(fn ($id): ?float => $this->comparablePrice($relative['type'], (int) $id), $relative['reference_ids']), fn (?float $price): bool => $price !== null);
+        if ($reference === []) {
+            return $result;
+        }
+        $ceiling = max($reference);
+        $cheaper = [];
+        foreach ($result[$key] as $card) {
+            $price = $this->comparablePrice($relative['type'], (int) $card['id']);
+            if ($price !== null && $price < $ceiling) {
+                $cheaper[] = [$price, $card];
+            }
+        }
+        if ($cheaper === []) {
+            return ['reply' => 'I could not find a listed option cheaper than the ones already shown. Would you like to change another preference instead?', 'retrieval_outcome' => RetrievalOutcome::make(RetrievalOutcome::NoMatch, 'no_cheaper_option')];
+        }
+        usort($cheaper, fn (array $a, array $b): int => $a[0] <=> $b[0]);
+        $result[$key] = array_column($cheaper, 1);
+        $result['result_ordering'] = 'price_asc';
+        $result['reply'] = 'These options are priced below the highest one shown before, cheapest first. '.$this->catalogCardsPointer($result);
+
+        return $result;
+    }
+
+    /** Current per-unit catalog price used to compare options of one type. */
+    private function comparablePrice(string $type, int $id): ?float
+    {
+        $price = match ($type) {
+            'activity' => ActivityModel::find($id)?->calculateRateForPax(1),
+            'room' => RoomType::whereKey($id)->value('base_price'),
+            'hotel' => RoomType::where('hotel_id', $id)->where('is_shown', true)->min('base_price'),
+            'package' => Package::whereKey($id)->value('price'),
+            default => null,
+        };
+
+        return $price === null ? null : (float) $price;
+    }
+
     private function enforceTaskPreferences(array $result, array $task): array
     {
         $excluded = $task['constraints']['excluded_terms'] ?? [];
@@ -927,7 +1026,8 @@ class ChatbotService
             $result['reply'] = $this->catalogCardsPointer($result);
         }
         $positiveQuery = $this->intentRouter->withoutNegatedSpans($task['query']);
-        preg_match_all('/\b(?:extreme|relaxing|beachfront|quiet|pool|wifi|wi-fi)\b/iu', $positiveQuery, $requested);
+        preg_match_all('/\b(?:extreme|relaxing|beachfront|quiet|pool|wifi|wi-fi|(?:ocean|sea|beach|garden|mountain|city)\s+view)\b/iu', $positiveQuery, $requested);
+        $requested[0] = array_map('mb_strtolower', $requested[0]);
         if ($requested[0] === [] || ! $this->replyHasRetrievedCards($result)) {
             return $result;
         }
@@ -942,7 +1042,27 @@ class ChatbotService
                 }
             }
         }
+        // A requested feature is a requirement: when some options verify it,
+        // unverified ones are dropped rather than shown beside them.
+        // Labelled alternatives remain only when nothing verifies it.
         if ($unverified !== []) {
+            foreach (ChatRetrievalService::CATALOGS as $key => $type) {
+                $verified = array_values(array_filter($result[$key] ?? [], fn (array $card): bool => ($card['match_status'] ?? null) !== 'alternative'));
+                if ($verified !== [] && count($verified) !== count($result[$key])) {
+                    $result[$key] = $verified;
+                }
+            }
+            $remaining = false;
+            foreach (ChatRetrievalService::CATALOGS as $key => $type) {
+                foreach ($result[$key] ?? [] as $card) {
+                    $remaining = $remaining || ($card['match_status'] ?? null) === 'alternative';
+                }
+            }
+            if (! $remaining) {
+                $result['reply'] = 'These options list '.implode(', ', array_unique($requested[0])).' in the catalog. '.$this->catalogCardsPointer($result);
+
+                return $result;
+            }
             $result['reply'] = 'Some options are alternatives: the catalog does not verify all your requested features ('.implode(', ', array_unique($unverified)).'). '.$this->catalogCardsPointer($result);
             $result['preference_notice'] = true;
         }
@@ -1308,10 +1428,43 @@ class ChatbotService
             || (bool) preg_match('/\b(book|reserve|booking)\b/', $lower);
     }
 
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array{0: array<string, mixed>, 1: bool} the data without withdrawn cards, and whether any were removed
+     */
+    protected function withoutWithdrawnCards(array $data): array
+    {
+        $withdrawn = false;
+        foreach (ChatRetrievalService::CATALOGS as $key => $type) {
+            if (empty($data[$key]) || ! is_array($data[$key])) {
+                continue;
+            }
+            [$model, $column] = match ($type) {
+                'hotel' => [HotelModel::class, 'is_shown'],
+                'room' => [RoomType::class, 'is_shown'],
+                'activity' => [ActivityModel::class, 'is_shown'],
+                'package' => [Package::class, 'is_active'],
+                'addon' => [AddOnModel::class, 'is_shown'],
+            };
+            $live = $model::whereKey(array_map(fn (array $card): int => (int) ($card['id'] ?? 0), $data[$key]))->where($column, true)->pluck('id')->map(fn ($id): int => (int) $id)->all();
+            $kept = array_values(array_filter($data[$key], fn (array $card): bool => in_array((int) ($card['id'] ?? 0), $live, true)));
+            $withdrawn = $withdrawn || count($kept) !== count($data[$key]);
+            $data[$key] = $kept;
+        }
+
+        return [$data, $withdrawn];
+    }
+
     protected function handleFollowUp(string $query, ChatSession $session): array
     {
         $lastBot = $session->messages()->where('sender', 'bot')->latest('id')->first();
         $data = $lastBot?->context_data ?: [];
+        // Cards from the previous turn are re-checked against the live
+        // catalog: a listing hidden or deleted since then is never described.
+        [$data, $withdrawn] = $this->withoutWithdrawnCards($data);
+        if ($withdrawn && ! $this->replyHasRetrievedCards($data)) {
+            return ['reply' => 'That option is no longer listed in the catalog, so I cannot share current details. Would you like me to search for alternatives?', 'retrieval_outcome' => RetrievalOutcome::make(RetrievalOutcome::NoMatch, 'stale_reference')];
+        }
         // Ordinal reference ("the second one") narrows both the grounded
         // context and the carried cards to the selected result.
         $resolved = $lastBot ? $this->applyOrdinalReference($query, [], $session) : [];
@@ -4870,6 +5023,263 @@ class ChatbotService
      * Deterministic legal/contact answers — canned text plus links to the
      * legal pages. No Gemini call, so nothing can be hallucinated.
      */
+    /**
+     * @return array<string, mixed>|null
+     */
+    protected function directInformationReply(string $message): ?array
+    {
+        if ($this->capabilities->isCapabilityQuestion($message)) {
+            return [
+                'reply' => $this->capabilities->overview(),
+                'retrieval_outcome' => RetrievalOutcome::make(RetrievalOutcome::Matched, 'capability_overview'),
+            ];
+        }
+        $policyQuestion = (bool) preg_match('/^(?:can\s+(?:i|we)|how\s+(?:do|can)\s+(?:i|we)|is\s+it\s+possible|do\s+you\s+(?:accept|allow|offer|have\s+a)|what\s+(?:is|are)\s+(?:your|the)\s+\w*\s*(?:polic|method|option|fee|step)|paano|pwede\s+(?:ba|po)|puwede\s+(?:ba|po))\b/iu', trim($message));
+        $catalogRequest = (bool) preg_match('/\b(?:hotels?|rooms?|resorts?|activit(?:y|ies)|tours?|packages?|transfers?|itinerar(?:y|ies)|kwarto)\b/iu', $message)
+            || $this->intentRouter->extractDestinationName($message) !== null;
+        if (! $policyQuestion || $catalogRequest) {
+            return null;
+        }
+        $faq = $this->faq->findBestMatch($message);
+
+        return $faq ? $this->faqPayload($faq) : null;
+    }
+
+    /**
+     * FAQ answer with its review state. An FAQ without a recorded source and
+     * review date still answers, but is not presented as verified policy.
+     *
+     * @return array<string, mixed>
+     */
+    protected function faqPayload(Faq $faq): array
+    {
+        $reviewed = $faq->isReviewed();
+
+        return [
+            'reply' => $faq->answer,
+            'evidence_note' => $reviewed
+                ? 'Source: '.$faq->source_label.' (reviewed '.$faq->reviewed_at->toDateString().').'
+                : 'Source: SunnyTrips FAQ (review date not recorded; confirm current terms at checkout).',
+            'faq' => [
+                'id' => $faq->id,
+                'question' => $faq->question,
+                'answer' => $faq->answer,
+                'reviewed' => $reviewed,
+                'source_label' => $faq->source_label,
+                'source_url' => is_string($faq->source_url) && preg_match('#^https?://#i', $faq->source_url) ? $faq->source_url : null,
+                'reviewed_at' => $faq->reviewed_at?->toDateString(),
+            ],
+            'retrieval_outcome' => RetrievalOutcome::make(RetrievalOutcome::Matched, 'faq_answer'),
+        ];
+    }
+
+    /**
+     * Side-by-side comparison of catalog items from verified fields only.
+     * Missing attributes read "Not documented"; the explanation lists which
+     * stated requirements each option meets or leaves unverified, without
+     * scores, rankings or confidence figures.
+     *
+     * @param  array<string, mixed>  $task
+     * @return array<string, mixed>
+     */
+    protected function handleComparisonTask(array $task): array
+    {
+        $type = $task['comparison']['type'];
+        $ids = $task['comparison']['ids'];
+        $constraints = $task['constraints'] ?? [];
+        $pax = empty($constraints['pax']) ? null : (int) $constraints['pax'];
+        $nights = empty($constraints['nights']) ? null : (int) $constraints['nights'];
+        [$model, $cardKey] = match ($type) {
+            'room' => [RoomType::class, 'retrieved_rooms'],
+            'hotel' => [HotelModel::class, 'retrieved_hotels'],
+            default => [ActivityModel::class, 'retrieved_activities'],
+        };
+        $items = $model::whereKey($ids)->where('is_shown', true)->get()->keyBy('id');
+        $ordered = array_values(array_filter(array_map(fn (int $id) => $items->get($id), $ids)));
+        if (count($ordered) < 2) {
+            return ['reply' => 'At least one of those options is no longer listed, so I cannot compare them. Please search again for current options.', 'retrieval_outcome' => RetrievalOutcome::make(RetrievalOutcome::NoMatch, 'stale_reference')];
+        }
+        $scored = array_map(fn ($item): array => ['item' => $item, 'score' => 1.0], $ordered);
+        $cards = match ($type) {
+            'room' => $this->formatRoomResults($scored, $pax, $nights),
+            'hotel' => $this->formatHotelResults($scored),
+            default => $this->formatActivityResults($scored, $pax),
+        };
+
+        $rows = $this->comparisonRows($type);
+        $nameOf = fn ($item): string => (string) ($item->room_name ?? $item->hotel_name ?? $item->activity_name);
+        $cell = fn (string $text): string => str_replace(['|', "\n"], ['/', ' '], $text);
+        $table = [
+            '| | '.implode(' | ', array_map(fn ($item): string => '**'.$cell($nameOf($item)).'**', $ordered)).' |',
+            '|---|'.str_repeat('---|', count($ordered)),
+        ];
+        $structured = [];
+        foreach ($rows as $label => $value) {
+            $cells = array_map(fn ($item): string => $cell($value($item)), $ordered);
+            $table[] = '| '.$label.' | '.implode(' | ', $cells).' |';
+            $structured[] = ['label' => $label, 'values' => $cells];
+        }
+
+        preg_match_all('/\b(swimming\s+pool|pool|wi-?fi|beachfront|quiet|famil(?:y|ies)|kids|ocean\s+view|garden|breakfast)\b/iu', $this->intentRouter->withoutNegatedSpans($task['query']), $found);
+        $requested = array_values(array_unique(array_map(fn (string $term): string => preg_match('/^famil/iu', $term) ? 'family' : mb_strtolower($term), $found[0])));
+        $why = [];
+        foreach ($ordered as $index => $item) {
+            $facts = $this->cardFacts($cards[$index]).' '.mb_strtolower((string) json_encode([$item->vibe_tags ?? null, $item->view_type ?? null, $item->ideal_for ?? null], JSON_INVALID_UTF8_SUBSTITUTE));
+            $met = [];
+            $unverified = [];
+            if ($pax !== null && $type === 'room') {
+                if ((int) ($item->max_occupancy ?: 0) >= $pax) {
+                    $met[] = "fits {$pax} guests";
+                } else {
+                    $unverified[] = "room for {$pax} guests";
+                }
+            }
+            if (! empty($constraints['max_price']) && in_array($type, ['hotel', 'room'], true)) {
+                $price = $this->comparisonStayPrice($item, $task);
+                if ($price !== null && $price <= (float) $constraints['max_price']) {
+                    $met[] = 'within your budget';
+                } else {
+                    $unverified[] = 'your budget';
+                }
+            }
+            foreach ($requested as $term) {
+                if ($this->factsAffirm($facts, $term)) {
+                    $met[] = $term;
+                } else {
+                    $unverified[] = $term;
+                }
+            }
+            if ($met !== [] || $unverified !== []) {
+                $why[] = '- **'.$nameOf($item).'**: '.($met !== [] ? 'matches '.implode(', ', $met) : 'no stated requirement verified')
+                    .($unverified !== [] ? '; not verified in the catalog: '.implode(', ', $unverified) : '').'.';
+            }
+        }
+
+        $reply = implode("\n", $table);
+        if ($why !== []) {
+            $reply .= "\n\n**Why these match your request**\n".implode("\n", $why);
+        }
+        $reply .= "\n\nPrices are catalog base rates, not a checked total for your dates.";
+
+        return [
+            'reply' => $reply,
+            $cardKey => $cards,
+            'comparison' => ['type' => $type, 'items' => array_map($nameOf, $ordered), 'rows' => $structured],
+            'deterministic_answer' => true,
+            'retrieval_outcome' => RetrievalOutcome::make(RetrievalOutcome::Matched, 'comparison_ready'),
+        ];
+    }
+
+    /**
+     * Quote one room that fits the party, using the same guest pricing as
+     * search. Unknown budget periods or party sizes cannot prove affordability.
+     *
+     * @param  array<string, mixed>  $task
+     */
+    private function comparisonStayPrice(HotelModel|RoomType $item, array $task): ?float
+    {
+        $constraints = $task['constraints'] ?? [];
+        $pax = (int) ($constraints['pax'] ?? 0);
+        $basis = $task['budget_basis'] ?? 'unknown';
+        $period = $task['budget_period'] ?? null;
+        $nights = (int) ($constraints['nights'] ?? 0);
+        if ($pax < 1 || ! in_array($basis, ['per_night', 'trip_total', 'per_person'], true)
+            || ($task['budget_coverage'] ?? null) === 'activities'
+            || ($basis === 'per_person' && ! in_array($period, ['per_night', 'total'], true))) {
+            return null;
+        }
+        $wholeStay = $basis === 'trip_total' || $period === 'total';
+        if ($wholeStay && $nights < 1) {
+            return null;
+        }
+        $rooms = $item instanceof RoomType ? collect([$item]) : $item->rooms()->where('is_shown', true)->get();
+        $rates = $rooms->filter(fn (RoomType $room): bool => (int) ($room->max_occupancy ?: $room->base_occupancy) >= $pax)
+            ->map(fn (RoomType $room): float => (float) $room->calculateNightlyRate($pax));
+        if ($rates->isEmpty()) {
+            return null;
+        }
+
+        return (float) $rates->min() * ($wholeStay ? $nights : 1) / ($basis === 'per_person' ? $pax : 1);
+    }
+
+    /**
+     * Comparison rows per catalog type; each closure reads one verified field.
+     *
+     * @return array<string, \Closure(mixed): string>
+     */
+    private function comparisonRows(string $type): array
+    {
+        $peso = fn (float $amount): string => '₱'.number_format($amount, $amount == floor($amount) ? 0 : 2);
+        $listOr = fn (mixed $values): string => is_array($values) && array_filter($values) !== [] ? implode(', ', array_unique(array_filter($values))) : 'Not documented';
+
+        return match ($type) {
+            'room' => [
+                'Price basis' => fn (RoomType $room): string => $peso((float) $room->base_price).' per night for up to '.($room->base_occupancy ?: 2).' guests'
+                    .($room->extra_person_fee > 0 ? '; '.$peso((float) $room->extra_person_fee).' per extra guest' : ''),
+                'Capacity' => fn (RoomType $room): string => $room->max_occupancy ? 'Up to '.$room->max_occupancy.' guests' : 'Not documented',
+                'Hotel' => fn (RoomType $room): string => $room->hotel?->hotel_name ?? 'Not documented',
+                'Location' => fn (RoomType $room): string => $room->hotel?->destination?->name ?? 'Not documented',
+                'Amenities' => fn (RoomType $room): string => $listOr(array_merge((array) $room->room_amenities, (array) $room->hotel?->featured_amenities)),
+                'View' => fn (RoomType $room): string => $room->view_type ?: 'Not documented',
+                'Notes' => fn (RoomType $room): string => $room->additional_notes ?: 'Not documented',
+            ],
+            'hotel' => [
+                'Price basis' => function (HotelModel $hotel) use ($peso): string {
+                    $from = $hotel->rooms()->where('is_shown', true)->min('base_price');
+
+                    return $from !== null ? 'From '.$peso((float) $from).' per night (lowest listed room)' : 'Not documented';
+                },
+                'Room capacity' => function (HotelModel $hotel): string {
+                    $max = $hotel->rooms()->where('is_shown', true)->max('max_occupancy');
+
+                    return $max ? 'Rooms for up to '.$max.' guests' : 'Not documented';
+                },
+                'Type' => fn (HotelModel $hotel): string => $hotel->type ?: 'Not documented',
+                'Location' => fn (HotelModel $hotel): string => trim(($hotel->destination?->name ?? '').($hotel->specific_address ? ', '.$hotel->specific_address : ''), ', ') ?: 'Not documented',
+                'Amenities' => fn (HotelModel $hotel): string => $listOr($hotel->featured_amenities),
+                'Check-in / out' => fn (HotelModel $hotel): string => $hotel->check_in_time || $hotel->check_out_time
+                    ? ($hotel->check_in_time ?: 'Not documented').' / '.($hotel->check_out_time ?: 'Not documented') : 'Not documented',
+            ],
+            default => [
+                'Price basis' => fn (ActivityModel $activity): string => $activity->rate ?: 'Not documented',
+                'Category' => fn (ActivityModel $activity): string => $activity->category ?: 'Not documented',
+                'Duration' => fn (ActivityModel $activity): string => $activity->duration ?: 'Not documented',
+                'Capacity' => fn (ActivityModel $activity): string => $activity->capacity ?: 'Not documented',
+                'Location' => fn (ActivityModel $activity): string => $activity->destination?->name ?? 'Not documented',
+                'Requirements' => fn (ActivityModel $activity): string => $activity->requirements ?: 'Not documented',
+            ],
+        };
+    }
+
+    /**
+     * Answer a narrative travel-information clause from reviewed knowledge
+     * articles only. Guidance for one destination never answers another,
+     * and a destination outside the catalog is named instead of guessed.
+     *
+     * @param  array<string, mixed>  $task
+     * @return array<string, mixed>
+     */
+    protected function handleKnowledgeTask(array $task): array
+    {
+        $constraints = $task['constraints'] ?? [];
+        if (! empty($task['explicit_unknown_destination'])) {
+            return [
+                'reply' => 'That place is not one of the SunnyTrips destinations yet, so I have no reviewed travel guidance for it.',
+                'retrieval_outcome' => RetrievalOutcome::make(RetrievalOutcome::NoMatch, 'unsupported_destination'),
+            ];
+        }
+        $destinationId = empty($constraints['destination_id']) ? null : (int) $constraints['destination_id'];
+        $result = $this->knowledge->answer($task['query'], $destinationId, $constraints['destination_name'] ?? null, $task['topic'] ?? null);
+        if ($destinationId === null && ($result['retrieval_outcome']['status'] ?? null) !== RetrievalOutcome::Matched) {
+            return [
+                'reply' => 'Which destination should I check travel guidance for?',
+                'retrieval_outcome' => RetrievalOutcome::make(RetrievalOutcome::NeedsClarification, 'missing_destination'),
+            ];
+        }
+
+        return $result;
+    }
+
     protected function handleLegalQuery(string $message): array
     {
         $lower = mb_strtolower($message);
@@ -5279,6 +5689,7 @@ class ChatbotService
                 'id' => $section['id'], 'type' => $section['type'],
                 'constraints' => $this->normalizeTraceConstraints($section['constraints']),
                 'result_references' => $section['card_refs'], 'outcome' => $section['outcome'],
+                'knowledge_references' => array_map(fn (array $citation): array => ['id' => $citation['id'], 'content_hash' => $citation['content_hash']], $section['data']['knowledge'] ?? []),
                 'retrieval_mode' => $section['evidence']['retrieval_mode'],
                 'latency_ms' => $section['evidence']['latency_ms'],
             ], $reply['sections']);
@@ -5869,6 +6280,8 @@ class ChatbotService
         $stop = ['hotel', 'hotels', 'room', 'rooms', 'activity', 'activities', 'package', 'packages', 'addon', 'addons', 'add-on', 'add-ons', 'tour', 'tours', 'price', 'prices', 'pricing', 'cost', 'costs', 'cheap', 'cheapest', 'expensive', 'best', 'top', 'list', 'show', 'find', 'search', 'available', 'availability', 'book', 'booking', 'recommend', 'recommended', 'affordable', 'luxury', 'deal', 'deals', 'promo', 'budget', 'with', 'for', 'from', 'near', 'our', 'trip', 'trips', 'the', 'and', 'per', 'hour', 'hours', 'day', 'days', 'night', 'nights', 'person', 'pax', 'under', 'about', 'any', 'there', 'what', 'which', 'want', 'need', 'looking', 'like', 'some', 'give', 'tell', 'know', 'how', 'much', 'here', 'in', 'on', 'is', 'are', 'an', 'a', 'of', 'to', 'me', 'my', 'do', 'does',
             'magkano', 'presyo', 'halaga', 'ano', 'ang', 'ng', 'mga', 'sa', 'po', 'ba', 'may', 'meron', 'bang', 'naman', 'please', 'rate', 'rates', 'rental', 'rentals',
             'good', 'suitable', 'backpacker', 'backpackers', 'couple', 'couples', 'friendly', 'solo',
+            // Party-size and budget words describe the group, not an offering.
+            'people', 'persons', 'guest', 'guests', 'traveler', 'travelers', 'traveller', 'travellers', 'adult', 'adults', 'child', 'children', 'kid', 'kids', 'group', 'total', 'overall', 'tao', 'kami',
             'inclusion', 'inclusions', 'included', 'includes', 'exclusion', 'exclusions', 'duration', 'capacity', 'requirements', 'restrictions', 'details', 'information', 'location', 'amenities', 'kasama', 'dadalhin',
             // Amenity / vibe descriptors, not nameable things: "beachfront",
             // "pool", "spa" describe attributes no catalog name need contain.
@@ -6029,6 +6442,7 @@ class ChatbotService
             'amenities' => $e['item']->hotel?->featured_amenities ?? [],
             'room_description' => strip_tags($e['item']->description ?? ''),
             'features' => $e['item']->room_amenities ?? [],
+            'view_type' => $e['item']->view_type,
             'extra_person_fee' => (float) ($e['item']->extra_person_fee ?: 0),
             'ideal_guest' => $e['item']->ideal_guest ?? $e['item']->ideal_for,
             'image' => $this->firstImage($e['item']->images),

@@ -3004,7 +3004,10 @@ class GeminiService
             }
         }
 
-        if ($rooms->isEmpty() && empty($constraints['hotel_id']) && empty($constraints['room_id']) && empty($constraints['room_name'])) {
+        // Capacity is a hard requirement: when no room (or room split) fits the
+        // party, return nothing so the caller says so, instead of widening to
+        // rooms that cannot hold the group.
+        if ($rooms->isEmpty() && ! $pax && empty($constraints['hotel_id']) && empty($constraints['room_id']) && empty($constraints['room_name'])) {
             $rooms = RoomType::with('hotel.destination')
                 ->where('is_shown', true)
                 ->whereNotNull('embedding')

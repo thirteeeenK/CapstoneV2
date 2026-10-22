@@ -8,6 +8,7 @@ use App\Models\SupportInquiry;
 use App\Services\Chat\ChatbotService;
 use App\Services\Chat\ConversationManager;
 use App\Services\Chat\DialogueManager;
+use App\Services\Chat\KnowledgeRetrievalService;
 use App\Services\Chat\TripDetailsForm;
 use App\Services\Support\SupportAvailabilityService;
 use App\Services\Support\SupportQueueService;
@@ -15,6 +16,7 @@ use App\Services\SystemSettingsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\RateLimiter;
 
 class ChatbotController extends Controller
 {
@@ -216,23 +218,38 @@ class ChatbotController extends Controller
     public function feedback(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'trace_id' => 'required|string|max:255',
+            'trace_id' => 'required|string|max:64',
             'helpful' => 'required|boolean',
+            'reason' => 'nullable|in:wrong_information,missing_part,not_helpful',
+            'task_id' => ['nullable', 'string', 'regex:/^task-\d{1,2}$/'],
             'expected_answer' => 'nullable|string|max:2000',
-            'session_token' => 'nullable|string|max:255',
+            'session_token' => 'required|string|max:255',
         ]);
 
-        $session = null;
-        if (! empty($validated['session_token'])) {
-            $session = $this->conversation->resolveSession($validated['session_token'], $request->user());
+        // Feedback is accepted only for an answer in the caller's own
+        // conversation, so one visitor cannot attach reports to another's.
+        $session = $this->conversation->resolveSession($validated['session_token'], $request->user());
+        $ownsAnswer = $session->messages()->where('sender', 'bot')
+            ->where('context_data->trace->trace_id', $validated['trace_id'])->exists();
+        if (! $ownsAnswer) {
+            return response()->json(['status' => 'error', 'message' => 'That answer is not part of this conversation.'], 404);
         }
 
-        $feedback = ChatFeedback::create([
-            'trace_id' => $validated['trace_id'],
-            'chat_session_id' => $session?->id,
-            'helpful' => $validated['helpful'],
-            'expected_answer' => $validated['expected_answer'] ?? null,
-        ]);
+        $limiterKey = 'chat-feedback:'.$session->id;
+        if (RateLimiter::tooManyAttempts($limiterKey, 20)) {
+            return response()->json(['status' => 'error', 'message' => 'Too many reports. Please try again later.'], 429);
+        }
+        RateLimiter::hit($limiterKey, 3600);
+
+        $feedback = ChatFeedback::updateOrCreate(
+            ['trace_id' => $validated['trace_id'], 'chat_session_id' => $session->id, 'task_id' => $validated['task_id'] ?? null],
+            [
+                'user_id' => $request->user()?->id,
+                'helpful' => $validated['helpful'],
+                'reason' => $validated['reason'] ?? null,
+                'expected_answer' => isset($validated['expected_answer']) ? ChatFeedback::redact($validated['expected_answer']) : null,
+            ]
+        );
 
         return response()->json(['status' => 'success', 'id' => $feedback->id], 201);
     }
@@ -262,16 +279,32 @@ class ChatbotController extends Controller
         // Signal isolation so the widget keeps the owner's original token instead of overwriting it.
         $isolatedGuest = ! $user && $token !== $session->session_token;
 
+        // Restored answers keep their original citations; each one is marked
+        // current, changed or withdrawn so an old answer is never presented
+        // as freshly verified guidance.
+        $knowledge = app(KnowledgeRetrievalService::class);
         $messages = $session->messages()
             ->oldest('created_at')
             ->get()
             ->values()
-            ->map(fn ($msg) => [
-                'id' => $msg->id,
-                'sender' => $msg->sender,
-                'text' => $msg->message,
-                'context_data' => $msg->context_data,
-            ]);
+            ->map(function ($msg) use ($knowledge) {
+                $context = $msg->context_data;
+                if (is_array($context) && ! empty($context['knowledge']) && is_array($context['knowledge'])) {
+                    $context['knowledge'] = $knowledge->refreshCitations($context['knowledge']);
+                }
+                foreach ((is_array($context) ? ($context['sections'] ?? []) : []) as $index => $section) {
+                    if (! empty($section['data']['knowledge']) && is_array($section['data']['knowledge'])) {
+                        $context['sections'][$index]['data']['knowledge'] = $knowledge->refreshCitations($section['data']['knowledge']);
+                    }
+                }
+
+                return [
+                    'id' => $msg->id,
+                    'sender' => $msg->sender,
+                    'text' => $msg->message,
+                    'context_data' => $context,
+                ];
+            });
 
         $inquiry = SupportInquiry::where('chat_session_id', $session->id)
             ->orderBy('created_at', 'desc')

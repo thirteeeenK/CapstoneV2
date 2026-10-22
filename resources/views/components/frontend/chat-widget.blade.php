@@ -191,6 +191,34 @@
                                         x-text="msg.ai_notice"></p>
                                 </template>
 
+                                {{-- Evidence: FAQ review state, and cited guidance that changed or was withdrawn after this answer --}}
+                                <template x-if="msg.evidence_note">
+                                    <p class="mt-2 text-[10px] leading-relaxed text-slate-500 dark:text-slate-400" x-text="msg.evidence_note"></p>
+                                </template>
+                                <template x-if="msg.knowledge && msg.knowledge.some(source => source.current_status && source.current_status !== 'current')">
+                                    <p role="note" class="mt-2 text-[10px] leading-relaxed text-amber-700 dark:text-amber-100 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 rounded-lg px-2 py-1.5">
+                                        A source cited in this answer has since been updated or withdrawn. Ask again for current guidance.
+                                    </p>
+                                </template>
+
+                                {{-- Response-linked feedback (stored with the trace ID only) --}}
+                                <template x-if="msg.trace_id">
+                                    <div class="mt-2" x-data="{ feedbackOpen: false, feedbackSent: false }">
+                                        <button type="button" x-show="!feedbackSent" @click="feedbackOpen = !feedbackOpen" :aria-expanded="feedbackOpen.toString()"
+                                            class="text-[10px] text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ocean-400 rounded">
+                                            Report a problem with this answer
+                                        </button>
+                                        <div x-show="feedbackOpen && !feedbackSent" class="mt-1.5 flex flex-wrap gap-1.5" role="group" aria-label="What was wrong with this answer?">
+                                            <template x-for="reason in [['wrong_information', 'Wrong information'], ['missing_part', 'Missing part'], ['not_helpful', 'Not helpful']]" :key="reason[0]">
+                                                <button type="button" x-text="reason[1]"
+                                                    @click="sendFeedback(msg, reason[0]).then(ok => { feedbackSent = ok; feedbackOpen = !ok; })"
+                                                    class="px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-600 text-[10px] font-label text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ocean-400"></button>
+                                            </template>
+                                        </div>
+                                        <p x-show="feedbackSent" role="status" class="text-[10px] text-emerald-700 dark:text-emerald-300">Thanks, this was sent to the SunnyTrips team.</p>
+                                    </div>
+                                </template>
+
                                 {{-- Room cards --}}
                                 <template x-if="msg.rooms">
                                     <div class="mt-3 space-y-2">
@@ -848,6 +876,9 @@
                         if (ctx.itinerary) extras.itinerary = ctx.itinerary;
                         if (ctx.map) extras.map = ctx.map;
                         if (ctx.ai_notice) extras.ai_notice = ctx.ai_notice;
+                        if (ctx.evidence_note) extras.evidence_note = ctx.evidence_note;
+                        if (ctx.knowledge?.length) extras.knowledge = ctx.knowledge;
+                        if (msg.sender === 'bot' && ctx.trace?.trace_id) extras.trace_id = ctx.trace.trace_id;
                         if (ctx.suggested_actions?.length) extras.suggested_actions = ctx.suggested_actions;
                         if (ctx.location_request) {
                             extras.location_request = true;
@@ -947,6 +978,23 @@
                     paragraph = [];
                 };
 
+                // Comparison tables ("| | A | B |"): the first row is the header,
+                // separator rows are dropped, and the first cell of each body
+                // row labels it. Scrolls horizontally inside the bubble.
+                let tableRows = [];
+                const flushTable = () => {
+                    if (!tableRows.length) return;
+                    const rows = tableRows.filter(cells => !cells.every(cell => /^:?-{3,}:?$/.test(cell)));
+                    tableRows = [];
+                    if (!rows.length) return;
+                    const [header, ...body] = rows;
+                    const head = header.map(cell => `<th scope="col" class="px-2 py-1.5 font-semibold text-ink-800 dark:text-slate-100 border-b border-slate-200 dark:border-slate-600 align-bottom">${formatInline(cell)}</th>`).join('');
+                    const bodyHtml = body.map(cells => `<tr class="align-top">${cells.map((cell, index) => index === 0
+                        ? `<th scope="row" class="px-2 py-1.5 font-semibold text-slate-600 dark:text-slate-300 border-b border-slate-100 dark:border-slate-700 whitespace-nowrap">${formatInline(cell)}</th>`
+                        : `<td class="px-2 py-1.5 border-b border-slate-100 dark:border-slate-700">${formatInline(cell)}</td>`).join('')}</tr>`).join('');
+                    blocks.push(`<div class="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-700" role="region" aria-label="Comparison table" tabindex="0"><table class="min-w-full text-left text-xs"><thead class="bg-slate-50 dark:bg-slate-900/40"><tr>${head}</tr></thead><tbody>${bodyHtml}</tbody></table></div>`);
+                };
+
                 const flushList = () => {
                     if (!listType) return;
                     const listTag = listType === 'ul' ? 'ul' : 'ol';
@@ -958,6 +1006,14 @@
 
                 for (const rawLine of lines) {
                     const line = rawLine.trim();
+                    const tableRow = line.match(/^\|(.+)\|$/);
+                    if (tableRow) {
+                        flushParagraph();
+                        flushList();
+                        tableRows.push(tableRow[1].split('|').map(cell => cell.trim()));
+                        continue;
+                    }
+                    flushTable();
                     if (!line) {
                         flushParagraph();
                         flushList();
@@ -990,6 +1046,7 @@
 
                 flushParagraph();
                 flushList();
+                flushTable();
 
                 return blocks.join('');
             },
@@ -1159,6 +1216,9 @@
                     if (data.result_ordering) extras.ordering = data.result_ordering;
                     if (data.map) extras.map = data.map;
                     if (data.ai_notice) extras.ai_notice = data.ai_notice;
+                    if (data.evidence_note) extras.evidence_note = data.evidence_note;
+                    if (data.knowledge?.length) extras.knowledge = data.knowledge;
+                    if (data.trace_id) extras.trace_id = data.trace_id;
                     if (data.suggested_actions?.length) extras.suggested_actions = data.suggested_actions;
                     if (data.location_request) {
                         extras.location_request = true;
@@ -1547,6 +1607,26 @@
                     this.returnToBot();
                 } else {
                     this.requestHandoff();
+                }
+            },
+
+            /**
+             * Report a problem with one answer. Only the trace ID, task ID and
+             * reason are sent; the server checks the trace belongs to this
+             * conversation.
+             */
+            async sendFeedback(msg, reason) {
+                try {
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+                    const res = await fetch('/chat/feedback', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': csrfToken },
+                        body: JSON.stringify({ trace_id: msg.trace_id, task_id: msg.task_id || null, reason, helpful: false, session_token: this.sessionToken }),
+                    });
+
+                    return res.ok;
+                } catch (err) {
+                    return false;
                 }
             },
 

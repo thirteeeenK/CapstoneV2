@@ -464,6 +464,7 @@ class IntentRouter
      * before single words so "no island hopping" never reduces to "island".
      */
     private const EXCLUDABLE_FEATURES = [
+        'water activities', 'water activity', 'land tours', 'land tour',
         'island hopping', 'scuba diving', 'free diving', 'jet ski', 'banana boat',
         'party boat', 'pub crawl', 'night life', 'nightlife', 'early call time',
         'swimming pool', 'infinity pool', 'kids pool', 'shared bathroom',
@@ -475,6 +476,9 @@ class IntentRouter
         'buffet', 'karaoke', 'boat', 'bar', 'club', 'crowds', 'crowded',
         'smoking', 'pets', 'stairs', 'alcohol', 'seafood',
     ];
+
+    /** Plural phrasings normalized to the catalog's category labels. */
+    private const FEATURE_ALIASES = ['water activities' => 'water activity', 'land tours' => 'land tour'];
 
     /**
      * Wording that rules the rest of a span out.
@@ -547,7 +551,8 @@ class IntentRouter
                 }
             }
             if ($matchedFeature !== null) {
-                $terms[] = $matchedFeature;
+                // Catalog categories are stored singular ("Water Activity").
+                $terms[] = self::FEATURE_ALIASES[$matchedFeature] ?? $matchedFeature;
 
                 continue;
             }
@@ -671,8 +676,9 @@ class IntentRouter
         $ceilingBeforeAmount = '/\b(?:'.self::BUDGET_CEILING_LEAD.')\s*(?:of\s+|is\s+|[:=]\s*)?(?:₱|php|peso|p(?=\s*\d))?\s*\d/iu';
         $ceilingAfterAmount = '/\d[\d,.]*\s*k?\s*(?:pesos?|php)?\s+(?:max(?:imum)?|at\s+most|only|lang|tops)\b/iu';
         $ceilingNoun = '/\b(?:max(?:imum)?|limited)\s+budget\b|\bbudget\s+(?:limit|cap|ceiling)\b/iu';
+        $ceilingAfterBasis = '/\d[\d,.]*\s*k?\s*(?:per|a|an|each|\/)\s*(?:night|person|pax|head|day)\s+(?:max(?:imum)?|or\s+less|at\s+most|tops|only|lang)\b/iu';
 
-        return preg_match($ceilingBeforeAmount, $query) || preg_match($ceilingAfterAmount, $query) || preg_match($ceilingNoun, $query)
+        return preg_match($ceilingBeforeAmount, $query) || preg_match($ceilingAfterAmount, $query) || preg_match($ceilingNoun, $query) || preg_match($ceilingAfterBasis, $query)
             ? 'ceiling'
             : 'target';
     }
@@ -702,6 +708,12 @@ class IntentRouter
 
         // "20,000 budget", "20k max", "15000 pesos", "20000 lang".
         if ($amount === null && preg_match('/'.$currency.'\s*'.$digits.'\s*(k)?\s*(?:budget|max(?:imum)?|pesos?|php|lang|only|tops)\b/iu', $query, $m)) {
+            $amount = $this->normalizeAmount($m[1], ! empty($m[2]));
+        }
+
+        // A trailing ceiling after the basis: "3000 per night max",
+        // "1500 a person or less".
+        if ($amount === null && preg_match('/'.$currency.'\s*'.$digits.'\s*(k)?\s*(?:per|a|an|each|\/)\s*(?:night|person|pax|head|day)\s*(?:max(?:imum)?|or\s+less|at\s+most|tops|lang|only)\b/iu', $query, $m)) {
             $amount = $this->normalizeAmount($m[1], ! empty($m[2]));
         }
 
@@ -1006,7 +1018,15 @@ class IntentRouter
         if (preg_match('/(\d+)\s*(?:pax|persons?|people|travelers?|travellers?|tao|katao|miyembro|guests?|adults?|children|kids|heads?)\b/i', $query, $m)) {
             $constraints['pax'] = (int) $m[1];
         }
+        // "2 adults and 1 child": every traveler counts toward room capacity.
+        if (preg_match_all('/(\d+)\s*(?:adults?|children|child|kids?|infants?|seniors?|matanda|bata)\b/iu', $query, $counts) && count($counts[1]) > 1) {
+            $constraints['pax'] = array_sum(array_map('intval', $counts[1]));
+            $constraints['children'] = array_sum(array_map('intval', array_intersect_key($counts[1], array_filter($counts[0], fn (string $part): bool => (bool) preg_match('/child|kid|infant|bata/iu', $part)))));
+        }
         if (preg_match('/\bfor\s+(\d+)\s*(?:pax|persons?|people|guests?)?\b(?!\s*(?:nights?|days?|gabi|araw))/i', $query, $m) && ! $constraints['pax']) {
+            $constraints['pax'] = (int) $m[1];
+        }
+        if (preg_match('/\b(\d+)\s+of\s+us\b/i', $query, $m) && ! $constraints['pax']) {
             $constraints['pax'] = (int) $m[1];
         }
         if (preg_match('/(\d+)\s*kami\b/i', $query, $m) && ! $constraints['pax']) {
@@ -1061,6 +1081,22 @@ class IntentRouter
             }
         }
 
+        // "2 nights from 2026-12-10": a start date plus a stated stay length
+        // fixes both stay dates.
+        if (empty($constraints['check_in_date']) && ! empty($constraints['nights'])
+            && preg_match('/\b(?:from|on|starting|simula)\s+(\d{4}-\d{2}-\d{2})\b/iu', $query, $start)) {
+            try {
+                $in = Carbon::parse($start[1])->startOfDay();
+                if ($in->toDateString() === $start[1] && $in->gte(Carbon::today())) {
+                    $constraints['check_in_date'] = $in->toDateString();
+                    $constraints['check_out_date'] = $in->copy()->addDays($constraints['nights'])->toDateString();
+                    $constraints['days'] = $constraints['nights'] + 1;
+                }
+            } catch (\Throwable) {
+                $constraints['invalid_dates'] = true;
+            }
+        }
+
         $constraints['destination_name'] = $this->extractDestinationName($query);
         if ($constraints['destination_name']) {
             $constraints['destination_id'] = $this->resolveDestinationId($constraints['destination_name']);
@@ -1069,6 +1105,14 @@ class IntentRouter
         $constraints['hotel_name'] = $this->extractHotelName($query);
         if ($constraints['hotel_name']) {
             $constraints['hotel_id'] = HotelModel::where('hotel_name', 'ILIKE', $constraints['hotel_name'])->value('id');
+            // A partial or fuzzy name match is only trusted inside the named
+            // destination: "kwarto para sa 3 tao sa Marikit" must not pin a
+            // hotel elsewhere because one of its tokens looked similar.
+            if ($constraints['hotel_id'] && $constraints['destination_id'] && ! $this->containsName($lower, $constraints['hotel_name'])
+                && (int) HotelModel::whereKey($constraints['hotel_id'])->value('destination_id') !== (int) $constraints['destination_id']) {
+                $constraints['hotel_id'] = null;
+                $constraints['hotel_name'] = null;
+            }
         }
 
         // Room name — supports both hotel-scoped and global search (per answer 5)
@@ -1196,6 +1240,12 @@ class IntentRouter
             'house',
             'homes',
             'home',
+            // Price words name no hotel on their own ("total budget 4000"
+            // must not pin a "Budget Hotel").
+            'budget',
+            'cheap',
+            'affordable',
+            'luxury',
             // Scenery words that name no hotel by themselves ("fly above the
             // sea" must not pin a hotel carrying a "sea" token).
             'sea',
@@ -1580,6 +1630,33 @@ class IntentRouter
      *
      * @return string[]
      */
+    /**
+     * Visible hotels or rooms whose full names appear in the query, in the
+     * order mentioned; a longer name wins over a shorter one it contains.
+     *
+     * @param  'hotel'|'room'  $type
+     * @return list<array{id: int, name: string}>
+     */
+    public function mentionedCatalogItems(string $query, string $type): array
+    {
+        [$model, $column] = $type === 'room' ? [RoomType::class, 'room_name'] : [HotelModel::class, 'hotel_name'];
+        $lower = mb_strtolower($this->withoutNegatedSpans($query));
+        $found = [];
+        $names = $model::where('is_shown', true)->pluck($column, 'id')->all();
+        uasort($names, static fn (string $a, string $b): int => mb_strlen($b) <=> mb_strlen($a));
+        foreach ($names as $id => $name) {
+            $needle = mb_strtolower(trim((string) $name));
+            if (mb_strlen($needle) < 4 || ! preg_match('/(?<![\p{L}\p{N}])'.preg_quote($needle, '/').'(?![\p{L}\p{N}])/u', $lower, $match, PREG_OFFSET_CAPTURE)) {
+                continue;
+            }
+            $found[$match[0][1]] = ['id' => (int) $id, 'name' => (string) $name];
+            $lower = substr_replace($lower, str_repeat(' ', strlen($match[0][0])), $match[0][1], strlen($match[0][0]));
+        }
+        ksort($found);
+
+        return array_values($found);
+    }
+
     public function extractActivityNames(string $query): array
     {
         $query = $this->withoutNegatedSpans($query);
@@ -1656,6 +1733,13 @@ class IntentRouter
     protected function extractDateRange(string $query): ?array
     {
         $lower = mb_strtolower($query);
+
+        // ISO ranges ("2026-12-10 to 2026-12-12"), as the trip-details form
+        // and many travelers write them. Impossible dates are left to the
+        // caller's range validation rather than guessed.
+        if (preg_match('/\b(\d{4}-\d{2}-\d{2})\s*(?:to|until|through|hanggang|–|-)\s*(\d{4}-\d{2}-\d{2})\b/u', $query, $iso)) {
+            return [$iso[1], $iso[2]];
+        }
 
         if (preg_match('/this\s*weekend/i', $lower)) {
             $sat = Carbon::now()->next(UnitValue::SATURDAY);
@@ -2114,7 +2198,7 @@ class IntentRouter
         self::ADDON_SEARCH => '/\b(add[-\s]?ons?|transfers?|pick[-\s]?ups?)\b/u',
         self::ROOM_SEARCH => '/\b(rooms?|suites?|villas?|kwarto|kuwarto)\b/u',
         self::HOTEL_SEARCH => '/\b(hotels?|resorts?|accommodations?|lodging|hostels?|inns?|tuluyan|matutulugan|(place|places|somewhere)\s+to\s+(stay|sleep)|where\s+to\s+stay|(nice|good|cozy|cheap|affordable|romantic|quiet|relaxing|budget)\s+places?\b(?!\s+to\s+(visit|go|see|explore|eat)))\b/u',
-        self::ACTIVITY_SEARCH => '/\b(activit(y|ies)|tours?|things\s+to\s+do|attractions?|adventures?|sightseeing|experiences?|island\s+hopping|diving|scuba|snorkell?ing|hiking|trekking|surfing|kayak(ing)?|zipline|atv|parasail(ing)?|jet\s*ski|banana\s+boat|cliff\s+(jumping|diving)|sunset\s+cruise|pasyalan|gawain|libangan)\b/u',
+        self::ACTIVITY_SEARCH => '/\b(activit(y|ies)|tours?|things\s+to\s+do|attractions?|adventures?|sightseeing|experiences?|island\s+hopping|diving|scuba|snorkell?ing|hiking|trekking|surfing|kayak(ing)?|zipline|atv|parasail(ing)?|jet\s*ski|banana\s+boat|cliff\s+(jumping|diving)|sunset\s+cruise|pasyalan|gawain|libangan|p(?:u)?wedeng\s+gawin|gagawin)\b/u',
     ];
 
     /**
@@ -2314,6 +2398,9 @@ class IntentRouter
             'attractions',
             'adventure',
             'gawain',
+            'pwedeng gawin',
+            'puwedeng gawin',
+            'gagawin',
             'pasyalan',
             'libangan',
             // safe broad activity signals (excluded sup/zoo/waterfall etc. — DB-missing, sup substring risky)
@@ -2381,7 +2468,7 @@ class IntentRouter
      */
     protected function hasBookingStatusIntent(string $lower): bool
     {
-        if (preg_match('/\b(my|our)\s+(booking|reservation)\b/', $lower)) {
+        if (preg_match('/\b(my|our)\s+(bookings?|reservations?)\b|\b(?:bookings?|reservations?)\s+(?:ko|namin)\b/u', $lower)) {
             return true;
         }
 

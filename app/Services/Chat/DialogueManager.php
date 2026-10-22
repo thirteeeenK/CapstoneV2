@@ -526,9 +526,10 @@ final class DialogueManager
             return null;
         }
 
-        // A per-person budget for activities or add-ons is only convertible
-        // once the headcount is known.
-        if (in_array($task['type'], [IntentRouter::ACTIVITY_SEARCH, IntentRouter::ADDON_SEARCH], true)
+        // A per-person budget for activities compares directly with their
+        // per-person rates, so it needs no headcount. Add-on tiers are priced
+        // per group size and still need one.
+        if ($task['type'] === IntentRouter::ADDON_SEARCH
             && ! empty($c['max_price']) && $basis === 'per_person' && empty($c['pax'])) {
             return 'pax';
         }

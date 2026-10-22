@@ -67,7 +67,7 @@ final class ChatRetrievalService
             };
         }
 
-        return [...$task, 'outcome' => $outcome, 'answer' => $fallback, 'data' => $data, 'card_refs' => $references, 'evidence' => [
+        return [...$task, 'outcome' => $outcome, 'recovery' => RetrievalOutcome::recoveryKind($outcome), 'answer' => $fallback, 'data' => $data, 'card_refs' => $references, 'evidence' => [
             'prices' => $this->gemini->lastContextPrices,
             'retrieval_mode' => $this->gemini->lastRetrievalMode,
             'retrieved_at' => now()->toIso8601String(),

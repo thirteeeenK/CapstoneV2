@@ -80,8 +80,11 @@ test('a guest can receive public recommendations alongside a protected task', fu
 });
 
 test('unknown dining sources are acknowledged without invented restaurants', function () {
+    // No reviewed dining article exists, so the knowledge task abstains.
     $response = $this->postJson('/chat', ['message' => 'hotels in Boracay and restaurants nearby']);
-    $response->assertOk()->assertJsonPath('sections.1.outcome.reason', 'data_source_not_supported')
+    $response->assertOk()->assertJsonPath('sections.1.type', 'KNOWLEDGE_QUERY')
+        ->assertJsonPath('sections.1.outcome.status', 'no_match')
+        ->assertJsonPath('sections.1.outcome.reason', 'no_reviewed_guidance')
         ->assertJsonPath('retrieved_hotels.0.id', $this->hotel->id);
 });
 

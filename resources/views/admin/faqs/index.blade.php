@@ -132,6 +132,7 @@
                     <option value="chatbot_only">SunnyBot Only</option>
                     <option value="faq_only">FAQ Page Only</option>
                     <option value="hidden">Hidden from Both</option>
+                    <option value="unreviewed">Review gap ({{ $stats['unreviewed'] }} on SunnyBot)</option>
                 </select>
 
                 <a href="{{ route('admin.faqs.index') }}" @click.prevent="search = ''; category = ''; visibility = ''; fetchResults()" x-show="search || category || visibility" class="text-xs font-bold text-rose-600 hover:underline px-2">Clear Filters</a>
