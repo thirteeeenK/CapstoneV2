@@ -78,6 +78,41 @@
 
             </div>
 
+            <fieldset class="rounded-2xl border border-slate-200 p-4 sm:p-5">
+                <legend class="px-1 text-xs font-bold uppercase tracking-wider text-slate-700">Source &amp; review</legend>
+                <p class="text-[11px] text-slate-500 mb-4">Required when a new or changed answer is shown to SunnyBot. Answers without them are labelled as unreviewed in chat.</p>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div>
+                        <label for="source_label" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Responsible source</label>
+                        <input id="source_label" type="text" name="source_label" maxlength="255" value="{{ old('source_label') }}" placeholder="e.g. SunnyTrips operations team"
+                               @error('source_label') aria-invalid="true" aria-describedby="source-label-error" @enderror
+                               class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">
+                        @error('source_label')<p id="source-label-error" class="text-xs text-rose-600 mt-1">{{ $message }}</p>@enderror
+                    </div>
+                    <div>
+                        <label for="source_url" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Reference link</label>
+                        <input id="source_url" type="url" name="source_url" maxlength="2048" value="{{ old('source_url') }}" placeholder="https://"
+                               @error('source_url') aria-invalid="true" aria-describedby="source-url-error" @enderror
+                               class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">
+                        @error('source_url')<p id="source-url-error" class="text-xs text-rose-600 mt-1">{{ $message }}</p>@enderror
+                    </div>
+                    <div>
+                        <label for="reviewed_by" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Reviewed by</label>
+                        <input id="reviewed_by" type="text" name="reviewed_by" maxlength="255" value="{{ old('reviewed_by') }}"
+                               @error('reviewed_by') aria-invalid="true" aria-describedby="reviewed-by-error" @enderror
+                               class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">
+                        @error('reviewed_by')<p id="reviewed-by-error" class="text-xs text-rose-600 mt-1">{{ $message }}</p>@enderror
+                    </div>
+                    <div>
+                        <label for="reviewed_at" class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">Review date</label>
+                        <input id="reviewed_at" type="date" name="reviewed_at" max="{{ today()->toDateString() }}" value="{{ old('reviewed_at') }}"
+                               @error('reviewed_at') aria-invalid="true" aria-describedby="reviewed-at-error" @enderror
+                               class="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">
+                        @error('reviewed_at')<p id="reviewed-at-error" class="text-xs text-rose-600 mt-1">{{ $message }}</p>@enderror
+                    </div>
+                </div>
+            </fieldset>
+
             <fieldset>
                 <legend class="text-xs font-bold uppercase tracking-wider text-slate-700">Visibility channels</legend>
                 <p class="mt-1 text-[11px] text-slate-500">These settings are independent. Enable either channel, both, or neither.</p>

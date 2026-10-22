@@ -9,6 +9,8 @@ use App\Models\TripItinerary;
 use App\Models\TripPlan;
 use App\Models\TripPlanItem;
 use App\Notifications\TripItineraryReady;
+use App\Services\CartService;
+use App\Services\Chat\ChatbotTripPlanService;
 use App\Services\ItineraryService;
 use App\Services\TripBookingDatePolicy;
 use App\Services\TripPlannerService;
@@ -23,11 +25,16 @@ use Illuminate\View\View;
 
 class TripPlannerController extends Controller
 {
-    public function index(Request $request, TripBookingDatePolicy $dates): View
+    public function __construct(private ChatbotTripPlanService $drafts) {}
+
+    public function index(Request $request, TripBookingDatePolicy $dates, CartService $cart, ChatbotTripPlanService $drafts): View
     {
+        $drafts->claimGuestPlans($request->user(), $cart->getSessionToken($request));
+
         return view('trip-planner.index', [
             'destinations' => DestinationModel::query()->orderBy('name')->get(['id', 'name', 'latitude', 'longitude']),
-            'plans' => TripPlan::query()->where('user_id', $request->user()->id)->latest('updated_at')->limit(20)->get(),
+            'plans' => TripPlan::query()->where('user_id', $request->user()->id)->latest('updated_at')->orderByDesc('id')->limit(20)->get(),
+            'initialPlan' => $request->integer('plan'),
             'initialDestination' => $request->integer('destination'),
             'emailPreferences' => ['reminders' => (bool) $request->user()->trip_reminders_enabled, 'marketing' => (bool) $request->user()->trip_marketing_enabled],
             'datePolicy' => $dates->frontendConfig(),
@@ -37,6 +44,94 @@ class TripPlannerController extends Controller
     public function catalog(DestinationModel $destination, TripPlannerService $planner): JsonResponse
     {
         return response()->json(['data' => $planner->catalog($destination)]);
+    }
+
+    public function plans(Request $request, CartService $cart, ChatbotTripPlanService $drafts): JsonResponse
+    {
+        $drafts->claimGuestPlans($request->user(), $cart->getSessionToken($request));
+
+        return response()->json(TripPlan::query()->where('user_id', $request->user()->id)->latest('updated_at')->orderByDesc('id')->simplePaginate(20));
+    }
+
+    public function update(Request $request, TripPlan $plan, TripBookingDatePolicy $dates, TripPlannerService $planner): JsonResponse
+    {
+        $this->owned($request, $plan);
+        abort_unless($plan->source === 'chatbot' && $plan->status === 'draft', 422, 'Only chatbot drafts can be edited here.');
+        $data = $request->validate([
+            'revision' => ['required', 'integer'], 'title' => ['sometimes', 'required', 'string', 'max:150'],
+            'start_date' => ['sometimes', 'required', 'date_format:Y-m-d', 'after_or_equal:'.$dates->minimumArrivalDate()],
+            'end_date' => ['required_with:start_date', 'date_format:Y-m-d', 'after:start_date'],
+            'pax' => ['sometimes', 'required', 'integer', 'between:1,20'],
+            'mode' => ['sometimes', 'required', 'in:walking,driving'],
+            'remove_choice' => ['sometimes', 'string', 'regex:/^(room|hotel|activity):[0-9]+$/'],
+        ]);
+        if (isset($data['start_date']) && Carbon::parse($data['start_date'])->diffInDays(Carbon::parse($data['end_date'])) > 29) {
+            throw ValidationException::withMessages(['end_date' => 'Plan up to 30 calendar days at a time.']);
+        }
+        DB::transaction(function () use ($plan, $data, $planner): void {
+            $locked = TripPlan::query()->whereKey($plan->id)->lockForUpdate()->firstOrFail();
+            if ($locked->revision !== (int) $data['revision'] || $locked->status !== 'draft') {
+                throw ValidationException::withMessages(['revision' => 'Your trip changed. Reload it before saving your edits.']);
+            }
+            $locked->fill(array_intersect_key($data, array_flip(['title', 'start_date', 'end_date', 'pax', 'mode'])));
+            if (isset($data['pax'])) {
+                $locked->context = array_replace($locked->context ?? [], ['pax_assumed' => false]);
+            }
+            if (isset($data['start_date'])) {
+                $locked->duration_days = (int) $locked->start_date->diffInDays($locked->end_date) + 1;
+            }
+            $locked->revision++;
+            $locked->save();
+            if (isset($data['start_date']) || isset($data['pax'])) {
+                if ($locked->start_date !== null) {
+                    foreach ($locked->items()->get() as $item) {
+                        $planner->add($locked->fresh(), ['item_type' => $item->item_type, 'item_id' => $item->item_id,
+                            'quantity' => $item->options['quantity'] ?? 1, 'pax' => $locked->pax]);
+                    }
+                }
+            }
+            if (isset($data['remove_choice'])) {
+                [$type, $id] = explode(':', $data['remove_choice']);
+                $locked->items()->where('item_type', $type)->where('item_id', $id)->delete();
+            }
+            $this->recordDraft($locked->fresh(), $data['remove_choice'] ?? null);
+        });
+
+        return $this->show($request, $plan->fresh());
+    }
+
+    private function recordDraft(TripPlan $plan, ?string $removed = null, ?array $added = null): void
+    {
+        $snapshot = $plan->itineraries()->latest('id')->first()?->snapshot;
+        if (($snapshot['kind'] ?? null) !== 'chatbot_draft') {
+            return;
+        }
+        $ids = $plan->items()->pluck('id')->all();
+        $snapshot['choices'] = array_values(array_filter($snapshot['choices'], fn (array $choice): bool => ($choice['type'].':'.$choice['id']) !== $removed
+            && (empty($choice['plan_item_id']) || in_array($choice['plan_item_id'], $ids, true))));
+        if ($added !== null) {
+            $snapshot['choices'] = array_values(array_filter($snapshot['choices'], fn (array $choice): bool => $choice['type'] !== $added['type'] || $choice['id'] !== $added['id']));
+            $snapshot['choices'][] = $added;
+        }
+        foreach ($snapshot['choices'] as &$choice) {
+            if ($choice['day'] > $plan->duration_days) {
+                $choice['day'] = null;
+            }
+        }
+        unset($choice);
+        $snapshot['title'] = $plan->title;
+        $snapshot['start_date'] = $plan->start_date?->toDateString();
+        $snapshot['end_date'] = $plan->end_date?->toDateString();
+        $snapshot['pax'] = $plan->pax;
+        $snapshot['duration_days'] = $plan->duration_days;
+        $snapshot['estimate'] = null;
+        $snapshot['duration_nights'] = max(0, $plan->duration_days - 1);
+        $snapshot['accommodation'] = $this->drafts->refreshAccommodation($plan, $snapshot, ($added['type'] ?? null) === 'room' ? $added['id'] : null);
+        if ($snapshot['accommodation'] !== null) {
+            $snapshot['accommodation_notice'] = null;
+        }
+        $snapshot['days'] = array_map(fn (int $day): array => ['day' => $day, 'date' => $plan->start_date?->copy()->addDays($day - 1)->toDateString(), 'choices' => array_values(array_filter($snapshot['choices'], fn (array $choice): bool => $choice['day'] === $day))], range(1, $plan->duration_days));
+        $plan->itineraries()->create(['revision' => $plan->revision, 'snapshot' => $snapshot]);
     }
 
     public function weather(DestinationModel $destination, WeatherService $weather): View
@@ -80,9 +175,19 @@ class TripPlannerController extends Controller
             'quantity' => ['sometimes', 'integer', 'between:1,20'], 'pax' => ['sometimes', 'integer', 'between:1,20'],
             'check_in' => ['nullable', 'date_format:Y-m-d'], 'check_out' => ['nullable', 'date_format:Y-m-d'], 'date' => ['nullable', 'date_format:Y-m-d'],
         ]);
-        $item = $planner->add($plan, $data);
+        $item = DB::transaction(function () use ($plan, $data, $planner): TripPlanItem {
+            $item = $planner->add($plan, $data);
+            if ($plan->status === 'draft') {
+                $model = $planner->inventory($item->item_type, $item->item_id, $plan->destination_id);
+                $listing = $planner->listing($item->item_type, $model);
+                $this->recordDraft($plan->fresh(), added: ['type' => $item->item_type, 'id' => $item->item_id, 'name' => $listing['name'], 'day' => $item->options['day'] ?? null, 'plan_item_id' => $item->id, 'available' => true]);
+            }
 
-        return response()->json(['data' => $item, 'items' => $plan->items()->get(), 'revision' => $plan->fresh()->revision]);
+            return $item;
+        });
+
+        return response()->json(['data' => $item, 'items' => $plan->items()->get(), 'revision' => $plan->fresh()->revision,
+            'draft_itinerary' => $plan->status === 'draft' ? $plan->itineraries()->latest('id')->first() : null]);
     }
 
     public function destroy(Request $request, TripPlan $plan): JsonResponse
@@ -106,9 +211,10 @@ class TripPlannerController extends Controller
             $locked = TripPlan::query()->lockForUpdate()->findOrFail($plan->id);
             $item->delete();
             $locked->increment('revision');
+            $this->recordDraft($locked);
         });
 
-        return response()->json(['revision' => $plan->fresh()->revision]);
+        return response()->json(['revision' => $plan->fresh()->revision, 'draft_itinerary' => $plan->status === 'draft' ? $plan->itineraries()->latest('id')->first() : null]);
     }
 
     public function generate(Request $request, TripPlan $plan, ItineraryService $engine): JsonResponse
@@ -131,11 +237,12 @@ class TripPlannerController extends Controller
         $this->owned($request, $plan);
         abort_unless($itinerary->trip_plan_id === $plan->id, 404);
         $data = ['itinerary' => $itinerary->snapshot, 'reference' => 'Plan '.$plan->id.' · Version '.$itinerary->id];
+        $view = ($itinerary->snapshot['kind'] ?? null) === 'chatbot_draft' ? 'trip-planner.draft-document' : 'trip-planner.document';
         if ($request->boolean('print')) {
-            return view('trip-planner.document', $data);
+            return view($view, $data);
         }
 
-        return Pdf::loadView('trip-planner.document', $data)->setPaper('a4')->download('sunnytrips-itinerary-'.$itinerary->id.'.pdf');
+        return Pdf::loadView($view, $data)->setPaper('a4')->download('sunnytrips-itinerary-'.$itinerary->id.'.pdf');
     }
 
     private function owned(Request $request, TripPlan $plan): void

@@ -7,11 +7,16 @@ use App\Models\ChatSession;
 use App\Models\SupportInquiry;
 use App\Services\Chat\ChatbotService;
 use App\Services\Chat\ConversationManager;
+use App\Services\Chat\DialogueManager;
+use App\Services\Chat\KnowledgeRetrievalService;
+use App\Services\Chat\TripDetailsForm;
 use App\Services\Support\SupportAvailabilityService;
 use App\Services\Support\SupportQueueService;
 use App\Services\SystemSettingsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\RateLimiter;
 
 class ChatbotController extends Controller
 {
@@ -19,19 +24,39 @@ class ChatbotController extends Controller
 
     private const GUEST_NUDGE_THRESHOLD = 10;
 
+    /**
+     * Longest message the chat turn accepts. Surfaced to the widget so the
+     * limit is visible before a send rather than after a failed one.
+     */
+    public const MESSAGE_LIMIT = 1000;
+
     public function __construct(
         protected ChatbotService $chatbot,
         protected ConversationManager $conversation,
         protected SupportQueueService $supportQueue,
+        protected DialogueManager $dialogue,
+        protected TripDetailsForm $tripDetailsForm,
     ) {}
 
     public function chat(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'message' => 'required|string|max:1000',
+            // A structured answer replaces the typed message, so exactly one
+            // of the two must be present.
+            'message' => 'required_without_all:answer,trip_details|nullable|string|prohibits:answer,trip_details|max:'.self::MESSAGE_LIMIT,
+            'answer' => 'required_without_all:message,trip_details|nullable|array|prohibits:trip_details|max:8',
+            'trip_details' => 'sometimes|required|array|max:13',
+            'form_id' => 'required_with:trip_details|uuid',
+            'form_revision' => 'required_with:trip_details|integer|min:0',
+            'scope_id' => 'required_with:trip_details|string|max:100',
+            'answer.*' => 'nullable',
             'session_token' => 'nullable|string|max:255',
             'user_lat' => 'nullable|numeric|between:-90,90',
             'user_lng' => 'nullable|numeric|between:-180,180',
+            'question_id' => 'nullable|string|max:80|required_with:question_revision,answer|prohibits:trip_details',
+            'question_revision' => 'nullable|integer|min:0|required_with:question_id',
+        ], [
+            'message.max' => 'Your message is longer than '.self::MESSAGE_LIMIT.' characters. Please shorten it and send again.',
         ]);
 
         $user = $request->user();
@@ -40,45 +65,102 @@ class ChatbotController extends Controller
             $user
         );
 
-        $result = $this->chatbot->checkRepetition($session, $user, $validated['message'], $request->ip())
-            ?? $this->chatbot->handle(
-                $session,
-                $user,
-                $validated['message'],
-                isset($validated['user_lat']) ? (float) $validated['user_lat'] : null,
-                isset($validated['user_lng']) ? (float) $validated['user_lng'] : null
-            );
-
-        if (! empty($result['blocked'])) {
-            return response()->json([
-                'status' => 'blocked',
-                'reply' => $result['response'],
-            ], 403);
+        $lock = Cache::lock('chat-turn:'.$session->id, 300);
+        if (! $lock->get()) {
+            return response()->json(['status' => 'busy', 'reply' => 'Your previous request is still being checked. Please try again when it finishes.'], 409);
         }
-
-        if (! $user && ($result['status'] ?? null) === 'success' && ($result['control'] ?? null) === 'ai' && isset($result['reply'])) {
-            $nudge = $this->guestNudgeSuffix($session);
-            if ($nudge !== null && ! str_ends_with($result['reply'], $nudge)) {
-                $result['reply'] .= "\n\n".$nudge;
-                $session->messages()->where('sender', 'bot')->latest('id')->first()?->update(['message' => $result['reply']]);
+        try {
+            $session->refresh();
+            $tripDetails = null;
+            $message = isset($validated['message']) ? (string) $validated['message'] : '';
+            if (isset($validated['trip_details'])) {
+                $state = $this->dialogue->state($session);
+                $form = $state['trip_details_form'] ?? null;
+                if (! config('services.chatbot.guided_conversation_enabled', false) || ! is_array($form)
+                    || $form['id'] !== $validated['form_id'] || $state['revision'] !== (int) $validated['form_revision'] || $form['scope_id'] !== $validated['scope_id']
+                    || ! collect($state['tasks'])->contains(fn (array $task): bool => $task['scope_id'] === $validated['scope_id'] && ! in_array($task['status'], ['cancelled', 'suspended'], true))) {
+                    return response()->json(['status' => 'stale_form', 'reply' => 'Your trip details changed. Please use the latest form.', 'trip_details_form' => $form], 409);
+                }
+                $tripDetails = $this->tripDetailsForm->validate($form, $validated['trip_details']);
+                $tripDetails['scope_id'] = $form['scope_id'];
+                $message = $tripDetails['message'];
             }
-        }
-
-        if (($result['status'] ?? null) === 'success' && isset($result['reply']) && $user && $user->isWarned()) {
-            $alreadyNotified = $session->messages()
-                ->where('sender', 'bot')
-                ->where('message', 'like', self::WARNING_MARKER.'%')
-                ->exists();
-
-            if (! $alreadyNotified) {
-                $notice = self::WARNING_MARKER.' Your account has been warned for inappropriate usage.'
-                    .($user->ban_reason ? ' Admin note: '.$user->ban_reason : '');
-                $result['reply'] = $notice."\n\n".$result['reply'];
-                $session->messages()->where('sender', 'bot')->latest('id')->first()?->update(['message' => $result['reply']]);
+            if (! empty($validated['question_id'])) {
+                $state = $this->dialogue->state($session);
+                $question = $state['active_question'] ?? null;
+                if (! config('services.chatbot.guided_conversation_enabled', false) || ($question['id'] ?? null) !== $validated['question_id'] || ($question['revision'] ?? null) !== (int) $validated['question_revision']) {
+                    // Checked inside the turn lock, before anything is stored:
+                    // a stale submission never mutates history or dialogue.
+                    return response()->json(['status' => 'stale_question', 'reply' => 'That question has changed. '.($question['text'] ?? 'Please send your next request.'), 'clarification' => $question], 409);
+                }
+                if (isset($validated['answer']) && is_array($validated['answer'])) {
+                    $normalized = $this->dialogue->answerFromControl($question, $validated['answer']);
+                    if (isset($normalized['errors'])) {
+                        return response()->json([
+                            'status' => 'invalid_answer',
+                            'message' => 'Please correct the highlighted fields.',
+                            'errors' => $normalized['errors'],
+                            'clarification' => $question,
+                        ], 422);
+                    }
+                    $message = $normalized['message'];
+                }
             }
-        }
+            if (trim($message) === '') {
+                return response()->json([
+                    'status' => 'invalid_answer',
+                    'message' => 'Please type a message or answer the question.',
+                    'errors' => ['message' => 'A message is required.'],
+                ], 422);
+            }
+            $result = $this->chatbot->checkRepetition($session, $user, $message, $request->ip())
+                ?? $this->chatbot->handle(
+                    $session,
+                    $user,
+                    $message,
+                    isset($validated['user_lat']) ? (float) $validated['user_lat'] : null,
+                    isset($validated['user_lng']) ? (float) $validated['user_lng'] : null,
+                    $tripDetails
+                );
 
-        return response()->json($result);
+            if (! empty($result['blocked'])) {
+                return response()->json(array_filter([
+                    'status' => 'blocked',
+                    'reply' => $result['response'],
+                    'suggested_actions' => $result['suggested_actions'] ?? null,
+                ], fn ($value) => $value !== null), 403);
+            }
+
+            if (! $user && ($result['status'] ?? null) === 'success' && ($result['control'] ?? null) === 'ai' && isset($result['reply'])) {
+                $nudge = $this->guestNudgeSuffix($session);
+                if ($nudge !== null && ! str_ends_with($result['reply'], $nudge)) {
+                    $result['reply'] .= "\n\n".$nudge;
+                    $session->messages()->where('sender', 'bot')->latest('id')->first()?->update(['message' => $result['reply']]);
+                }
+            }
+
+            if (($result['status'] ?? null) === 'success' && isset($result['reply']) && $user && $user->isWarned()) {
+                $alreadyNotified = $session->messages()
+                    ->where('sender', 'bot')
+                    ->where('message', 'like', self::WARNING_MARKER.'%')
+                    ->exists();
+
+                if (! $alreadyNotified) {
+                    $notice = self::WARNING_MARKER.' Your account has been warned for inappropriate usage.'
+                        .($user->ban_reason ? ' Admin note: '.$user->ban_reason : '');
+                    $result['reply'] = $notice."\n\n".$result['reply'];
+                    $session->messages()->where('sender', 'bot')->latest('id')->first()?->update(['message' => $result['reply']]);
+                }
+            }
+
+            if ((isset($validated['answer']) || $tripDetails !== null) && ($result['status'] ?? null) === 'success') {
+                $result['user_message'] = $message;
+            }
+
+            return response()->json($result);
+        } finally {
+            $lock->release();
+        }
     }
 
     /**
@@ -136,23 +218,38 @@ class ChatbotController extends Controller
     public function feedback(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'trace_id' => 'required|string|max:255',
+            'trace_id' => 'required|string|max:64',
             'helpful' => 'required|boolean',
+            'reason' => 'nullable|in:wrong_information,missing_part,not_helpful',
+            'task_id' => ['nullable', 'string', 'regex:/^task-\d{1,2}$/'],
             'expected_answer' => 'nullable|string|max:2000',
-            'session_token' => 'nullable|string|max:255',
+            'session_token' => 'required|string|max:255',
         ]);
 
-        $session = null;
-        if (! empty($validated['session_token'])) {
-            $session = $this->conversation->resolveSession($validated['session_token'], $request->user());
+        // Feedback is accepted only for an answer in the caller's own
+        // conversation, so one visitor cannot attach reports to another's.
+        $session = $this->conversation->resolveSession($validated['session_token'], $request->user());
+        $ownsAnswer = $session->messages()->where('sender', 'bot')
+            ->where('context_data->trace->trace_id', $validated['trace_id'])->exists();
+        if (! $ownsAnswer) {
+            return response()->json(['status' => 'error', 'message' => 'That answer is not part of this conversation.'], 404);
         }
 
-        $feedback = ChatFeedback::create([
-            'trace_id' => $validated['trace_id'],
-            'chat_session_id' => $session?->id,
-            'helpful' => $validated['helpful'],
-            'expected_answer' => $validated['expected_answer'] ?? null,
-        ]);
+        $limiterKey = 'chat-feedback:'.$session->id;
+        if (RateLimiter::tooManyAttempts($limiterKey, 20)) {
+            return response()->json(['status' => 'error', 'message' => 'Too many reports. Please try again later.'], 429);
+        }
+        RateLimiter::hit($limiterKey, 3600);
+
+        $feedback = ChatFeedback::updateOrCreate(
+            ['trace_id' => $validated['trace_id'], 'chat_session_id' => $session->id, 'task_id' => $validated['task_id'] ?? null],
+            [
+                'user_id' => $request->user()?->id,
+                'helpful' => $validated['helpful'],
+                'reason' => $validated['reason'] ?? null,
+                'expected_answer' => isset($validated['expected_answer']) ? ChatFeedback::redact($validated['expected_answer']) : null,
+            ]
+        );
 
         return response()->json(['status' => 'success', 'id' => $feedback->id], 201);
     }
@@ -182,16 +279,32 @@ class ChatbotController extends Controller
         // Signal isolation so the widget keeps the owner's original token instead of overwriting it.
         $isolatedGuest = ! $user && $token !== $session->session_token;
 
+        // Restored answers keep their original citations; each one is marked
+        // current, changed or withdrawn so an old answer is never presented
+        // as freshly verified guidance.
+        $knowledge = app(KnowledgeRetrievalService::class);
         $messages = $session->messages()
             ->oldest('created_at')
             ->get()
             ->values()
-            ->map(fn ($msg) => [
-                'id' => $msg->id,
-                'sender' => $msg->sender,
-                'text' => $msg->message,
-                'context_data' => $msg->context_data,
-            ]);
+            ->map(function ($msg) use ($knowledge) {
+                $context = $msg->context_data;
+                if (is_array($context) && ! empty($context['knowledge']) && is_array($context['knowledge'])) {
+                    $context['knowledge'] = $knowledge->refreshCitations($context['knowledge']);
+                }
+                foreach ((is_array($context) ? ($context['sections'] ?? []) : []) as $index => $section) {
+                    if (! empty($section['data']['knowledge']) && is_array($section['data']['knowledge'])) {
+                        $context['sections'][$index]['data']['knowledge'] = $knowledge->refreshCitations($section['data']['knowledge']);
+                    }
+                }
+
+                return [
+                    'id' => $msg->id,
+                    'sender' => $msg->sender,
+                    'text' => $msg->message,
+                    'context_data' => $context,
+                ];
+            });
 
         $inquiry = SupportInquiry::where('chat_session_id', $session->id)
             ->orderBy('created_at', 'desc')

@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-#[Fillable(['user_id', 'destination_id', 'title', 'start_date', 'end_date', 'pax', 'mode', 'revision'])]
+#[Fillable(['user_id', 'session_token', 'destination_id', 'title', 'start_date', 'end_date', 'pax', 'mode', 'revision', 'source', 'status', 'duration_days', 'context', 'source_suggestion_uuid'])]
 class TripPlan extends Model
 {
     /** @use HasFactory<TripPlanFactory> */
@@ -17,7 +17,7 @@ class TripPlan extends Model
 
     protected function casts(): array
     {
-        return ['start_date' => 'date:Y-m-d', 'end_date' => 'date:Y-m-d', 'pax' => 'integer', 'revision' => 'integer'];
+        return ['start_date' => 'date:Y-m-d', 'end_date' => 'date:Y-m-d', 'pax' => 'integer', 'revision' => 'integer', 'duration_days' => 'integer', 'context' => 'array'];
     }
 
     public function items(): HasMany

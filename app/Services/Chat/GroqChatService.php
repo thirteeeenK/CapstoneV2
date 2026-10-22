@@ -2,6 +2,7 @@
 
 namespace App\Services\Chat;
 
+use App\Services\ProviderLogRedactor;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -17,7 +18,7 @@ class GroqChatService
     /**
      * @param  array<int, array{role: string, parts: array<int, array{text: string}>}>  $history  Gemini-shaped turns.
      */
-    public function chat(string $systemInstruction, array $history, string $userPrompt, bool $conversational = false): ?string
+    public function chat(string $systemInstruction, array $history, string $userPrompt, bool $conversational = false, int $timeout = 20): ?string
     {
         $startedAt = (int) (microtime(true) * 1000);
 
@@ -54,27 +55,24 @@ class GroqChatService
             : (float) config('services.gemini.chat_grounded_temperature', 0);
 
         try {
-            $response = Http::withToken($apiKey)->timeout(20)->post($url, [
+            $response = Http::withToken($apiKey)->timeout(max(1, min(20, $timeout)))->post($url, [
                 'model' => $model,
                 'messages' => $messages,
                 'temperature' => $temperature,
                 'max_tokens' => 1024,
             ]);
         } catch (ConnectionException $e) {
-            Log::warning('Groq fallback timeout: '.$e->getMessage());
+            Log::warning('Groq fallback timed out.', ProviderLogRedactor::exceptionContext('groq.chat', $e));
 
             return null;
         } catch (\Exception $e) {
-            Log::warning('Groq fallback exception: '.$e->getMessage());
+            Log::warning('Groq fallback threw.', ProviderLogRedactor::exceptionContext('groq.chat', $e));
 
             return null;
         }
 
         if (! $response->successful()) {
-            Log::warning('Groq fallback failed.', [
-                'status' => $response->status(),
-                'body' => mb_substr($response->body(), 0, 500),
-            ]);
+            Log::warning('Groq fallback failed.', ProviderLogRedactor::responseContext('groq.chat', $response));
 
             return null;
         }

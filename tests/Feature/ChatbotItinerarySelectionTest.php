@@ -7,7 +7,6 @@ use App\Models\DestinationModel;
 use App\Models\HotelModel;
 use App\Models\RoomType;
 use App\Models\User;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Http;
 
 function blockRoomFully(RoomType $room, string $in, string $out): void
@@ -77,7 +76,7 @@ function itineraryHotel(int $destinationId, string $name, int $nightly): HotelMo
 test('available room wins over a blocked cheaper room', function () {
     $blocked = itineraryHotel($this->destination->id, 'Blocked Budget Inn', 2000);
     itineraryHotel($this->destination->id, 'Open Midway Hotel', 2000);
-    // Default window is [today+7, today+9]: span it fully.
+    // Block the explicitly requested travel window.
     blockRoomFully(
         $blocked->rooms()->first(),
         now()->addDays(5)->toDateString(),
@@ -85,14 +84,14 @@ test('available room wins over a blocked cheaper room', function () {
     );
 
     $response = $this->postJson('/chat', [
-        'message' => 'Plan a 2-day itinerary in Boracay for 2 pax under 10000',
+        'message' => 'Plan a 2-day itinerary in Boracay for 2 pax under 10000 from '.now()->addDays(7)->format('M j').' to '.now()->addDays(8)->format('M j'),
     ]);
 
     $response->assertOk()->assertJsonPath('status', 'success');
     expect($response->json('itinerary.hotel.name'))->toBe('Open Midway Hotel');
 });
 
-test('cheaper total wins when scores tie', function () {
+test('an unreachable budget upgrades to the better stay instead of the cheapest', function () {
     itineraryHotel($this->destination->id, 'First Pricey Inn', 2500);
     itineraryHotel($this->destination->id, 'Second Budget Inn', 2000);
 
@@ -101,7 +100,8 @@ test('cheaper total wins when scores tie', function () {
     ]);
 
     $response->assertOk()->assertJsonPath('status', 'success');
-    expect($response->json('itinerary.hotel.name'))->toBe('Second Budget Inn');
+    expect($response->json('itinerary.hotel.name'))->toBe('First Pricey Inn')
+        ->and($response->json('itinerary.budget_check.status'))->toBe('under_target');
 });
 
 test('over-budget picks cheapest with a deterministic notice', function () {
@@ -136,7 +136,7 @@ test('explicit check-in dates reach availability selection', function () {
     expect($response->json('itinerary.hotel.name'))->toBe('Open Expensive Inn');
 });
 
-test('5-day prompt adapts itinerary duration and includes stay dates', function () {
+test('5-day prompt keeps the duration without inventing stay dates', function () {
     itineraryHotel($this->destination->id, 'Duration Hotel', 1500);
 
     $response = $this->postJson('/chat', [
@@ -147,7 +147,7 @@ test('5-day prompt adapts itinerary duration and includes stay dates', function 
     $itin = $response->json('itinerary');
     expect($itin['nights'])->toBe(4)
         ->and($itin['days'])->toBe(5)
-        ->and($itin['check_in_date'])->not->toBeNull()
-        ->and($itin['check_out_date'])->not->toBeNull()
-        ->and((int) Carbon::parse($itin['check_in_date'])->diffInDays(Carbon::parse($itin['check_out_date'])))->toBe(4);
+        ->and($itin['check_in_date'])->toBeNull()
+        ->and($itin['check_out_date'])->toBeNull()
+        ->and($response->json('itinerary_suggestion.accommodation.availability_status'))->toBe('not_checked');
 });

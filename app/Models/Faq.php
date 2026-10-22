@@ -12,6 +12,10 @@ use Illuminate\Database\Eloquent\Model;
     'answer',
     'keywords',
     'category',
+    'source_label',
+    'source_url',
+    'reviewed_at',
+    'reviewed_by',
     'sort_order',
     'is_active',
     'show_on_landing',
@@ -24,7 +28,17 @@ class Faq extends Model
         'is_active' => 'boolean',
         'show_on_landing' => 'boolean',
         'sort_order' => 'integer',
+        'reviewed_at' => 'date',
     ];
+
+    /**
+     * Whether a responsible source and review date are recorded. Legacy FAQs
+     * without them keep answering but are labelled as unreviewed.
+     */
+    public function isReviewed(): bool
+    {
+        return $this->reviewed_at !== null && filled($this->source_label);
+    }
 
     /**
      * Render the Markdown answer as safe HTML (bold, bullet lists, paragraphs).

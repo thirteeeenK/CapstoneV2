@@ -1,0 +1,39 @@
+[
+  {
+    "id": "guided-itinerary",
+    "turns": [
+      {"message": "help me plan a trip", "question": "destination"},
+      {"message": "Eval Boracay, dalawa kami", "question": "days"},
+      {"message": "three days", "cards": ["retrieved_activities"]}
+    ]
+  },
+  {
+    "id": "guided-reported-budget",
+    "turns": [
+      {"message": "hotels in Eval Boracay", "cards": ["retrieved_hotels"]},
+      {"message": "activities and hotel for 2 pax 10000 budget", "question": "budget_scope", "cards": ["retrieved_hotels", "retrieved_activities"]},
+      {"message": "per night", "cards": ["retrieved_hotels", "retrieved_activities"]}
+    ]
+  },
+  {
+    "id": "guided-shared-destination",
+    "turns": [
+      {"message": "hotels and activities", "question": "destination"},
+      {"message": "Eval Boracay", "cards": ["retrieved_hotels", "retrieved_activities"]}
+    ]
+  },
+  {
+    "id": "guided-cancel",
+    "turns": [
+      {"message": "help me plan a trip", "question": "destination"},
+      {"message": "never mind"},
+      {"message": "activities in Eval Boracay", "cards": ["retrieved_activities"]}
+    ]
+  },
+  {
+    "id": "guided-joint-budget-once",
+    "turns": [
+      {"message": "hotels and activities in Eval Boracay, total budget 20000", "question": "days", "cards": ["retrieved_hotels", "retrieved_activities"]}
+    ]
+  }
+]

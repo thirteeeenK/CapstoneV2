@@ -6,6 +6,7 @@ use App\Models\ActivityModel;
 use App\Models\AddOnModel;
 use App\Models\Faq;
 use App\Models\HotelModel;
+use App\Models\KnowledgeArticle;
 use App\Models\Package;
 use App\Models\RoomType;
 use App\Services\GeminiService;
@@ -256,6 +257,31 @@ class GenerateEmbeddingsCommand extends Command
                 }
             } else {
                 $this->line("  ↻ Skipped FAQ (fresh): {$faq->question}");
+            }
+        }
+
+        // 7. Process knowledge articles (stale = text or model changed). The
+        // hash uses the configured model name, matching
+        // KnowledgeArticle::embeddingIsStale().
+        $knowledgeModel = (string) config('services.gemini.embedding_model');
+        $articles = KnowledgeArticle::with('destination')->get()
+            ->filter(fn (KnowledgeArticle $article): bool => $force || $article->embeddingIsStale());
+
+        $this->info("Processing {$articles->count()} knowledge articles...");
+        foreach ($articles as $article) {
+            $text = $article->embeddingText();
+            $vector = $geminiService->generateEmbedding($text, 'RETRIEVAL_DOCUMENT', $article->title);
+
+            if ($vector) {
+                $article->forceFill([
+                    'embedding' => $geminiService->formatVectorForDb($vector),
+                    'embedding_source_hash' => $this->computeSourceHash($text, $knowledgeModel),
+                    'embedding_model' => $knowledgeModel,
+                    'embedded_at' => now(),
+                ])->save();
+                $this->line("  ✓ Embedded article: {$article->title}");
+            } else {
+                $this->error("  ✗ Failed article: {$article->title}");
             }
         }
 

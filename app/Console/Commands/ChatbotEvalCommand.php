@@ -20,9 +20,10 @@ use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 use Tests\Support\ChatEvalMetrics;
 
-#[Signature('chatbot:eval {--update-baseline : Write the baseline file from this run instead of comparing}')]
+#[Signature('chatbot:eval {--update-baseline : Write the baseline file from this run instead of comparing} {--guided : Also evaluate isolated guided conversation sequences}')]
 #[Description('Run the offline chatbot retrieval eval suite (seeded fixtures, stubbed LLM) and compare against the baseline')]
 class ChatbotEvalCommand extends Command
 {
@@ -80,18 +81,28 @@ class ChatbotEvalCommand extends Command
                 $rows[] = $this->runCase($case);
             }
             $metrics = $this->metrics($rows);
+            $guided = $this->option('guided') ? $this->runDialogueCases() : [];
+            $guidedMetrics = ChatEvalMetrics::dialogueAccuracy($guided);
 
             // Brief-literal output dir: storage/app/eval (the local disk root is
             // storage/app/private on Laravel 11, so Storage::disk('local')
             // would land files in storage/app/private/eval instead).
             File::ensureDirectoryExists(storage_path('app/eval'));
             $filename = 'chatbot-eval-'.now()->format('Y-m-d_His').'.json';
-            File::put(storage_path('app/eval/'.$filename), json_encode(['metrics' => $metrics, 'cases' => $rows], JSON_PRETTY_PRINT));
+            File::put(storage_path('app/eval/'.$filename), json_encode(['metrics' => $metrics, 'cases' => $rows, 'guided_metrics' => $guidedMetrics, 'guided_turns' => $guided], JSON_PRETTY_PRINT));
             $this->line('Wrote storage/app/eval/'.$filename);
             $this->table(
                 ['metric', 'value'],
                 collect($metrics)->map(fn ($v, $k) => [$k, is_float($v) ? round($v, 4) : $v])->all()
             );
+            if ($guidedMetrics !== null) {
+                $this->line('Guided dialogue accuracy: '.$guidedMetrics.' (stubbed models; see guided_turns in the report).');
+                if ($guidedMetrics < 1.0) {
+                    $this->error('A guided conversation expectation failed.');
+
+                    return self::FAILURE;
+                }
+            }
 
             if ($this->option('update-baseline')) {
                 File::put(storage_path('app/eval/eval_baseline.json'), json_encode($metrics, JSON_PRETTY_PRINT));
@@ -118,6 +129,35 @@ class ChatbotEvalCommand extends Command
         }
     }
 
+    /** @return list<array<string, mixed>> */
+    private function runDialogueCases(): array
+    {
+        $enabled = config('services.chatbot.guided_conversation_enabled');
+        config(['services.chatbot.guided_conversation_enabled' => true]);
+        $rows = [];
+        try {
+            $cases = json_decode((string) File::get(base_path('tests/Fixtures/chatbot_guided_eval_v1.json')), true, flags: JSON_THROW_ON_ERROR);
+            foreach ($cases as $case) {
+                $session = ChatSession::create(['session_token' => ChatSession::generateToken()]);
+                $this->sessionIds[] = $session->id;
+                foreach ($case['turns'] as $index => $turn) {
+                    $started = microtime(true);
+                    $reply = app(ChatbotService::class)->handle($session->refresh(), null, $turn['message']);
+                    $correct = ($reply['clarification']['field'] ?? null) === ($turn['question'] ?? null);
+                    foreach ($turn['cards'] ?? [] as $key) {
+                        $correct = $correct && ! empty($reply[$key]);
+                    }
+                    $questionCount = substr_count($reply['reply'] ?? '', '?');
+                    $rows[] = ['case' => $case['id'], 'turn' => $index + 1, 'message' => $turn['message'], 'question' => $reply['clarification']['field'] ?? null, 'expected_question' => $turn['question'] ?? null, 'correct' => $correct && $questionCount <= 1, 'question_count' => $questionCount, 'typed_result_ids' => ChatEvalMetrics::typedResultIds($reply['sections'] ?? []), 'latency_ms' => (microtime(true) - $started) * 1000];
+                }
+            }
+        } finally {
+            config(['services.chatbot.guided_conversation_enabled' => $enabled]);
+        }
+
+        return $rows;
+    }
+
     private function runCase(array $case): array
     {
         $user = ($case['auth'] ?? null) === 'personalized' ? $this->evalUser : null;
@@ -138,7 +178,7 @@ class ChatbotEvalCommand extends Command
 
         $trace = $reply['trace'] ?? [];
         $intent = $trace['intent'] ?? null;
-        $groups = self::INTENT_GROUPS[$intent] ?? array_keys(self::REPLY_GROUPS);
+        $groups = isset($reply['sections']) ? array_keys(self::REPLY_GROUPS) : (self::INTENT_GROUPS[$intent] ?? array_keys(self::REPLY_GROUPS));
 
         $retrievedIds = [];
         $destinations = [];
@@ -170,6 +210,10 @@ class ChatbotEvalCommand extends Command
         return [
             'id' => $case['id'],
             'intent' => $intent,
+            'intents' => $reply['multi_intents'] ?? array_filter([$intent]),
+            'expect_intents' => $case['expect_intents'] ?? null,
+            'accounted_intents' => array_values(array_column(array_filter($reply['sections'] ?? [], fn (array $section): bool => ! empty($section['answer']) && isset($section['outcome']['status'])), 'type')),
+            'typed_result_ids' => ChatEvalMetrics::typedResultIds($reply['sections'] ?? []),
             'expect_intent' => $case['expect_intent'] ?? null,
             'retrieved_ids' => array_values(array_unique($retrievedIds)),
             'expect_ids' => $expectedIds,
@@ -216,6 +260,8 @@ class ChatbotEvalCommand extends Command
         return [
             'cases' => count($rows),
             'intent_accuracy' => $metrics::intentAccuracy($rows),
+            'intent_set_accuracy' => $metrics::intentSetAccuracy($rows),
+            'task_coverage' => $metrics::taskCoverage($rows),
             'recall_at_3' => $metrics::recallAt($rows, 3),
             'recall_at_5' => $metrics::recallAt($rows, 5),
             'mrr' => $metrics::mrr($rows),
@@ -330,7 +376,7 @@ class ChatbotEvalCommand extends Command
         $faq->forceFill(['embedding' => $this->vectorString(0)])->save();
         $this->seededIds[Faq::class][] = $faq->id;
 
-        $this->evalUser = User::factory()->create(['email' => 'eval-harness@example.com']);
+        $this->evalUser = User::factory()->create(['email' => 'eval-harness-'.Str::uuid().'@example.com']);
         $this->evalUser->preferences_embedding = '['.implode(',', array_fill(0, self::DIMS, '0.01')).']';
         $this->evalUser->save();
     }
@@ -363,7 +409,7 @@ class ChatbotEvalCommand extends Command
         foreach (array_reverse($this->seededIds) as $class => $ids) {
             $class::whereIn('id', $ids)->delete();
         }
-        $this->evalUser?->delete();
+        $this->evalUser?->forceDelete();
     }
 
     /** @return float[] */

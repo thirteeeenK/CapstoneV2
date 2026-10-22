@@ -1908,151 +1908,127 @@ test('repetition guard off by default lets identical guest questions through', f
 });
 
 test('repetition guard bans guest IP after five identical questions', function () {
-    putenv('CHATBOT_REPETITION_BAN_ENABLED=true');
-    try {
-        $this->withoutMiddleware([
-            EnforceGuestChatLimits::class,
-            ThrottleRequests::class,
-        ]);
-        $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.9']);
+    config(['services.chatbot.repetition_ban_enabled' => true]);
+    $this->withoutMiddleware([
+        EnforceGuestChatLimits::class,
+        ThrottleRequests::class,
+    ]);
+    $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.9']);
 
-        $token = null;
-        for ($i = 1; $i <= 4; $i++) {
-            $res = $this->postJson('/chat', [
-                'message' => 'repeat ban probe question',
-                'session_token' => $token,
-            ]);
-            $res->assertOk()->assertJsonPath('status', 'success');
-            $token = $res->json('session_token');
-        }
-
-        $blocked = $this->postJson('/chat', [
+    $token = null;
+    for ($i = 1; $i <= 4; $i++) {
+        $res = $this->postJson('/chat', [
             'message' => 'repeat ban probe question',
             'session_token' => $token,
         ]);
-
-        $blocked->assertStatus(403)->assertJsonPath('status', 'blocked');
-        expect(IpBan::where('ip_address', '203.0.113.9')->where('ban_level', 'temporary')->exists())->toBeTrue();
-    } finally {
-        putenv('CHATBOT_REPETITION_BAN_ENABLED');
+        $res->assertOk()->assertJsonPath('status', 'success');
+        $token = $res->json('session_token');
     }
+
+    $blocked = $this->postJson('/chat', [
+        'message' => 'repeat ban probe question',
+        'session_token' => $token,
+    ]);
+
+    $blocked->assertStatus(403)->assertJsonPath('status', 'blocked');
+    expect(IpBan::where('ip_address', '203.0.113.9')->where('ban_level', 'temporary')->exists())->toBeTrue();
 });
 
 test('repetition guard never bans localhost', function () {
-    putenv('CHATBOT_REPETITION_BAN_ENABLED=true');
-    try {
-        $this->withoutMiddleware([
-            EnforceGuestChatLimits::class,
-            ThrottleRequests::class,
+    config(['services.chatbot.repetition_ban_enabled' => true]);
+    $this->withoutMiddleware([
+        EnforceGuestChatLimits::class,
+        ThrottleRequests::class,
+    ]);
+
+    $token = null;
+    for ($i = 1; $i <= 5; $i++) {
+        $res = $this->postJson('/chat', [
+            'message' => 'localhost repeat probe',
+            'session_token' => $token,
         ]);
-
-        $token = null;
-        for ($i = 1; $i <= 5; $i++) {
-            $res = $this->postJson('/chat', [
-                'message' => 'localhost repeat probe',
-                'session_token' => $token,
-            ]);
-            $res->assertOk()->assertJsonPath('status', 'success');
-            $token = $res->json('session_token');
-        }
-
-        expect(IpBan::count())->toBe(0);
-    } finally {
-        putenv('CHATBOT_REPETITION_BAN_ENABLED');
+        $res->assertOk()->assertJsonPath('status', 'success');
+        $token = $res->json('session_token');
     }
+
+    expect(IpBan::count())->toBe(0);
 });
 
 test('repetition guard logs abuse report for authed users instead of IP ban', function () {
-    putenv('CHATBOT_REPETITION_BAN_ENABLED=true');
-    try {
-        $this->withoutMiddleware(ThrottleRequests::class);
-        $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.10']);
+    config(['services.chatbot.repetition_ban_enabled' => true]);
+    $this->withoutMiddleware(ThrottleRequests::class);
+    $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.10']);
 
-        $token = null;
-        for ($i = 1; $i <= 4; $i++) {
-            $res = $this->actingAs($this->user)->postJson('/chat', [
-                'message' => 'authed repeat probe',
-                'session_token' => $token,
-            ]);
-            $res->assertOk()->assertJsonPath('status', 'success');
-            $token = $res->json('session_token');
-        }
-
-        $blocked = $this->actingAs($this->user)->postJson('/chat', [
+    $token = null;
+    for ($i = 1; $i <= 4; $i++) {
+        $res = $this->actingAs($this->user)->postJson('/chat', [
             'message' => 'authed repeat probe',
             'session_token' => $token,
         ]);
-
-        $blocked->assertStatus(403)->assertJsonPath('status', 'blocked');
-        expect(ChatbotAbuseReport::where('user_id', $this->user->id)->where('category', 'Spam/Repetition')->exists())->toBeTrue();
-        expect(IpBan::count())->toBe(0);
-    } finally {
-        putenv('CHATBOT_REPETITION_BAN_ENABLED');
+        $res->assertOk()->assertJsonPath('status', 'success');
+        $token = $res->json('session_token');
     }
+
+    $blocked = $this->actingAs($this->user)->postJson('/chat', [
+        'message' => 'authed repeat probe',
+        'session_token' => $token,
+    ]);
+
+    $blocked->assertStatus(403)->assertJsonPath('status', 'blocked');
+    expect(ChatbotAbuseReport::where('user_id', $this->user->id)->where('category', 'Spam/Repetition')->exists())->toBeTrue();
+    expect(IpBan::count())->toBe(0);
 });
 
 test('repetition ban honors configured seconds and expires', function () {
-    putenv('CHATBOT_REPETITION_BAN_ENABLED=true');
-    putenv('CHATBOT_REPETITION_BAN_SECONDS=10');
-    try {
-        $this->withoutMiddleware([
-            EnforceGuestChatLimits::class,
-            ThrottleRequests::class,
+    config(['services.chatbot.repetition_ban_enabled' => true, 'services.chatbot.repetition_ban_seconds' => 10]);
+    $this->withoutMiddleware([
+        EnforceGuestChatLimits::class,
+        ThrottleRequests::class,
+    ]);
+    $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.11']);
+
+    $token = null;
+    for ($i = 1; $i <= 5; $i++) {
+        $res = $this->postJson('/chat', [
+            'message' => 'expiring ban probe question',
+            'session_token' => $token,
         ]);
-        $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.11']);
-
-        $token = null;
-        for ($i = 1; $i <= 5; $i++) {
-            $res = $this->postJson('/chat', [
-                'message' => 'expiring ban probe question',
-                'session_token' => $token,
-            ]);
-            $token = $res->json('session_token');
-        }
-
-        $ban = IpBan::where('ip_address', '203.0.113.11')->first();
-        expect($ban)->not->toBeNull();
-        expect($ban->banned_at->diffInSeconds($ban->expires_at))->toEqual(10);
-        expect(IpBan::isBanned('203.0.113.11'))->toBeTrue();
-
-        $this->travel(11)->seconds();
-        expect(IpBan::isBanned('203.0.113.11'))->toBeFalse();
-    } finally {
-        putenv('CHATBOT_REPETITION_BAN_ENABLED');
-        putenv('CHATBOT_REPETITION_BAN_SECONDS');
+        $token = $res->json('session_token');
     }
+
+    $ban = IpBan::where('ip_address', '203.0.113.11')->first();
+    expect($ban)->not->toBeNull();
+    expect($ban->banned_at->diffInSeconds($ban->expires_at))->toEqual(10);
+    expect(IpBan::isBanned('203.0.113.11'))->toBeTrue();
+
+    $this->travel(11)->seconds();
+    expect(IpBan::isBanned('203.0.113.11'))->toBeFalse();
 });
 
 test('repetition ban allow-local flag lets localhost trigger the guard', function () {
-    putenv('CHATBOT_REPETITION_BAN_ENABLED=true');
-    putenv('CHATBOT_REPETITION_BAN_ALLOW_LOCAL=true');
-    try {
-        $this->withoutMiddleware([
-            EnforceGuestChatLimits::class,
-            ThrottleRequests::class,
-        ]);
+    config(['services.chatbot.repetition_ban_enabled' => true, 'services.chatbot.repetition_ban_allow_local' => true]);
+    $this->withoutMiddleware([
+        EnforceGuestChatLimits::class,
+        ThrottleRequests::class,
+    ]);
 
-        $token = null;
-        for ($i = 1; $i <= 4; $i++) {
-            $res = $this->postJson('/chat', [
-                'message' => 'allow local repeat probe',
-                'session_token' => $token,
-            ]);
-            $res->assertOk();
-            $token = $res->json('session_token');
-        }
-
-        $blocked = $this->postJson('/chat', [
+    $token = null;
+    for ($i = 1; $i <= 4; $i++) {
+        $res = $this->postJson('/chat', [
             'message' => 'allow local repeat probe',
             'session_token' => $token,
         ]);
-
-        $blocked->assertStatus(403)->assertJsonPath('status', 'blocked');
-        expect(IpBan::where('ip_address', '127.0.0.1')->where('ban_level', 'temporary')->exists())->toBeTrue();
-    } finally {
-        putenv('CHATBOT_REPETITION_BAN_ENABLED');
-        putenv('CHATBOT_REPETITION_BAN_ALLOW_LOCAL');
+        $res->assertOk();
+        $token = $res->json('session_token');
     }
+
+    $blocked = $this->postJson('/chat', [
+        'message' => 'allow local repeat probe',
+        'session_token' => $token,
+    ]);
+
+    $blocked->assertStatus(403)->assertJsonPath('status', 'blocked');
+    expect(IpBan::where('ip_address', '127.0.0.1')->where('ban_level', 'temporary')->exists())->toBeTrue();
 });
 
 test('authenticated user past ten questions gets no guest nudge', function () {

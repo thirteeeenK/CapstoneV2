@@ -29,7 +29,7 @@ class TripJourneyService
                     }
                 }
             });
-        TripPlan::query()->where('updated_at', '<=', now()->subDay())->where('updated_at', '>=', now()->subDays(7))
+        TripPlan::query()->where('status', '!=', 'draft')->where('updated_at', '<=', now()->subDay())->where('updated_at', '>=', now()->subDays(7))
             ->where('start_date', '>', now('Asia/Manila')->toDateString())->whereDoesntHave('itineraries', fn ($q) => $q->whereNotNull('transferred_at'))
             ->with(['items', 'user'])->chunkById(100, function ($plans) use (&$count) {
                 foreach ($plans as $plan) {
@@ -162,7 +162,7 @@ class TripJourneyService
         }
         $plan = TripPlan::query()->find($message->trip_plan_id);
 
-        return $user->trip_marketing_enabled && $plan && $plan->updated_at->lte(now()->subDay()) && $plan->start_date->gt(now()->startOfDay())
+        return $user->trip_marketing_enabled && $plan && $plan->start_date !== null && $plan->status !== 'draft' && $plan->updated_at->lte(now()->subDay()) && $plan->start_date->gt(now()->startOfDay())
             && ! $plan->itineraries()->whereNotNull('transferred_at')->exists();
     }
 }

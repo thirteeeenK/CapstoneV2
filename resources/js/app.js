@@ -5,8 +5,10 @@ import './thinking-orb';
 import './preview-modal';
 import tripPlanner from './trip-planner';
 import plannerScheduling from './admin-planner-scheduling';
+import { displayChatMessages } from './chat-sections';
 
 window.Alpine = Alpine;
+window.displayChatMessages = displayChatMessages;
 
 Alpine.plugin(focus);
 Alpine.data('tripPlanner', tripPlanner);

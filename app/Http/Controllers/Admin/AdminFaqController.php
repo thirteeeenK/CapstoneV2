@@ -8,7 +8,9 @@ use App\Models\Faq;
 use App\Services\AdminAuditService;
 use App\Services\GeminiService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 
 class AdminFaqController extends Controller
 {
@@ -45,6 +47,8 @@ class AdminFaqController extends Controller
             $query->where('is_active', false)->where('show_on_landing', true);
         } elseif ($visibility === 'hidden') {
             $query->where('is_active', false)->where('show_on_landing', false);
+        } elseif ($visibility === 'unreviewed') {
+            $query->where(fn ($q) => $q->whereNull('reviewed_at')->orWhereNull('source_label'));
         }
 
         $faqs = $query->orderBy('sort_order', 'asc')->orderBy('id', 'desc')->paginate(15);
@@ -54,6 +58,7 @@ class AdminFaqController extends Controller
             'sunnybot' => Faq::where('is_active', true)->count(),
             'faq_page' => Faq::where('show_on_landing', true)->count(),
             'hidden' => Faq::where('is_active', false)->where('show_on_landing', false)->count(),
+            'unreviewed' => Faq::where('is_active', true)->where(fn ($q) => $q->whereNull('reviewed_at')->orWhereNull('source_label'))->count(),
         ];
 
         if ($request->ajax()) {
@@ -86,6 +91,7 @@ class AdminFaqController extends Controller
             'sort_order' => $validated['sort_order'] ?? 0,
             'is_active' => (bool) $validated['is_active'],
             'show_on_landing' => (bool) ($validated['show_on_landing'] ?? true),
+            ...$this->reviewFields($validated),
         ]);
 
         AdminAuditService::log($faq);
@@ -123,6 +129,7 @@ class AdminFaqController extends Controller
             'sort_order' => $validated['sort_order'] ?? $faq->sort_order,
             'is_active' => (bool) $validated['is_active'],
             'show_on_landing' => (bool) ($validated['show_on_landing'] ?? $faq->show_on_landing),
+            ...$this->reviewFields($validated, $faq),
         ]);
 
         AdminAuditService::log($faq, $oldValues);
@@ -138,6 +145,11 @@ class AdminFaqController extends Controller
     public function toggleVisibility(Request $request, $id)
     {
         $faq = Faq::findOrFail($id);
+        if (! $faq->is_active && ! $faq->isReviewed()) {
+            throw ValidationException::withMessages([
+                'reviewed_at' => 'Record a responsible source and review date before enabling this answer for SunnyBot.',
+            ]);
+        }
         $oldValues = ['is_active' => $faq->is_active];
         $faq->is_active = ! $faq->is_active;
         $faq->save();
@@ -196,6 +208,26 @@ class AdminFaqController extends Controller
         $faq->delete();
 
         return redirect()->route('admin.faqs.index')->with('success', "FAQ '{$question}' deleted successfully.");
+    }
+
+    /**
+     * @param  array<string, mixed>  $validated
+     * @return array<string, mixed>
+     */
+    protected function reviewFields(array $validated, ?Faq $faq = null): array
+    {
+        if ($faq !== null && ($faq->question !== $validated['question'] || $faq->answer !== $validated['answer'])
+            && (! filled($validated['reviewed_at'] ?? null) || Carbon::parse($validated['reviewed_at'])->toDateString() !== today()->toDateString())) {
+            $validated['reviewed_at'] = null;
+            $validated['reviewed_by'] = null;
+        }
+
+        return [
+            'source_label' => $validated['source_label'] ?? null,
+            'source_url' => $validated['source_url'] ?? null,
+            'reviewed_at' => $validated['reviewed_at'] ?? null,
+            'reviewed_by' => $validated['reviewed_by'] ?? null,
+        ];
     }
 
     /**

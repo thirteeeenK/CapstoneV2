@@ -10,6 +10,57 @@ namespace Tests\Support;
  */
 class ChatEvalMetrics
 {
+    /** @param list<array<string, mixed>> $turns */
+    public static function dialogueAccuracy(array $turns): ?float
+    {
+        return $turns === [] ? null : count(array_filter($turns, fn (array $turn): bool => ($turn['correct'] ?? false) === true)) / count($turns);
+    }
+
+    public static function intentSetAccuracy(array $results): ?float
+    {
+        $scoped = array_values(array_filter($results, fn (array $row): bool => isset($row['expect_intents'])));
+        if ($scoped === []) {
+            return null;
+        }
+        $hits = 0;
+        foreach ($scoped as $row) {
+            $expected = array_values(array_unique($row['expect_intents']));
+            $actual = array_values(array_unique($row['intents'] ?? []));
+            sort($expected);
+            sort($actual);
+            $hits += (int) ($expected === $actual);
+        }
+
+        return $hits / count($scoped);
+    }
+
+    public static function taskCoverage(array $results): ?float
+    {
+        $expected = 0;
+        $covered = 0;
+        foreach ($results as $row) {
+            foreach ($row['expect_intents'] ?? [] as $intent) {
+                $expected++;
+                $covered += (int) in_array($intent, $row['accounted_intents'] ?? [], true);
+            }
+        }
+
+        return $expected === 0 ? null : $covered / $expected;
+    }
+
+    /** @return list<string> */
+    public static function typedResultIds(array $sections): array
+    {
+        $ids = [];
+        foreach ($sections as $section) {
+            foreach ($section['card_refs'] ?? [] as $reference) {
+                $ids[] = $reference['type'].':'.$reference['id'];
+            }
+        }
+
+        return array_values(array_unique($ids));
+    }
+
     public static function intentAccuracy(array $results): ?float
     {
         $scoped = array_values(array_filter($results, fn ($r) => ! empty($r['expect_intent'])));
