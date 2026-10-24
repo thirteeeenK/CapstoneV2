@@ -7,6 +7,8 @@
     'inputName' => 'stay_dates',
     'checkInName' => 'check_in_date',
     'checkOutName' => 'check_out_date',
+    // Pins the stay to a trip's length; null keeps the free catalog range.
+    'nights' => null,
 ])
 
 @php
@@ -15,9 +17,10 @@
         'basePrice' => (float) $basePrice,
         'storeRoom' => (bool) $storeRoom,
         'minimumArrival' => app(\App\Services\TripBookingDatePolicy::class)->minimumArrivalDate(),
+        'nights' => $nights !== null ? (int) $nights : null,
     ]) . ')';
     if ($dynamicRoomId !== null) {
-        $configExpr = 'dateRangePicker({ roomId: (' . $dynamicRoomId . '), basePrice: (' . ($dynamicBasePrice ?? '0') . '), minimumArrival: ' . json_encode(app(\App\Services\TripBookingDatePolicy::class)->minimumArrivalDate()) . ' })';
+        $configExpr = 'dateRangePicker({ roomId: (' . $dynamicRoomId . '), basePrice: (' . ($dynamicBasePrice ?? '0') . '), minimumArrival: ' . json_encode(app(\App\Services\TripBookingDatePolicy::class)->minimumArrivalDate()) . ', nights: ' . json_encode($nights !== null ? (int) $nights : null) . ' })';
     }
 @endphp
 

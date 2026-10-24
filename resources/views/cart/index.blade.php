@@ -182,6 +182,9 @@
                                         </span>
                                     </div>
                                     <h3 class="font-display text-[15px] sm:text-lg font-bold text-white mt-1" x-text="group.title"></h3>
+                                    <template x-if="group.lucky_code">
+                                        <p class="mt-1 text-xs text-white/90">Lucky code <span class="font-mono font-bold bg-white/20 rounded px-1.5 py-0.5" x-text="group.lucky_code"></span> <span x-text="'· ' + group.lucky_code_label + '. Apply it at checkout.'"></span></p>
+                                    </template>
                                     <p class="text-xs text-white/80 mt-0.5">
                                         <span x-text="group.item_count + ' ' + (group.item_count === 1 ? 'item' : 'items')"></span>
                                         <span x-text="group.selected_count === group.item_count ? ' • fully selected' : ''"></span>

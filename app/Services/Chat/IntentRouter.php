@@ -45,6 +45,12 @@ class IntentRouter
     public const LEGAL_QUERY = 'LEGAL_QUERY';
 
     /**
+     * An "I'm Feeling Lucky" request: answered by the same generator and offer
+     * service as the Lucky page, never by the language model.
+     */
+    public const LUCKY_ITINERARY = 'LUCKY_ITINERARY';
+
+    /**
      * A non-travel task SunnyBot declines gracefully without calling the
      * model (writing code, math or homework, essays).
      */
@@ -879,6 +885,25 @@ class IntentRouter
     }
 
     /** @return array<string, mixed> */
+    /**
+     * A stated trip length that the stated dates do not cover is neither
+     * silently resolved: the stated length is kept, the dates are set aside,
+     * and both readings are recorded so the traveler can choose.
+     *
+     * @param  array<string, mixed>  $constraints  with the range's dates, days and nights
+     * @return array<string, mixed>
+     */
+    private function durationConflict(array $constraints, int $statedDays): array
+    {
+        $constraints['duration_conflict'] = ['days' => $statedDays, 'range_days' => $constraints['days'],
+            'check_in_date' => $constraints['check_in_date'], 'check_out_date' => $constraints['check_out_date']];
+        $constraints['invalid_dates'] = true;
+        $constraints['days'] = $statedDays;
+        $constraints['nights'] = max(0, $statedDays - 1);
+
+        return $constraints;
+    }
+
     public function dialogueConstraints(string $query, ?string $field = null): array
     {
         $words = ['one' => 1, 'isa' => 1, 'two' => 2, 'dalawa' => 2, 'three' => 3, 'tatlo' => 3, 'four' => 4, 'apat' => 4, 'five' => 5, 'lima' => 5, 'six' => 6, 'anim' => 6, 'seven' => 7, 'pito' => 7, 'eight' => 8, 'walo' => 8, 'nine' => 9, 'siyam' => 9, 'ten' => 10, 'sampu' => 10];
@@ -953,13 +978,17 @@ class IntentRouter
                     $constraints['invalid_dates'] = true;
                 } else {
                     $constraints['nights'] = (int) $in->diffInDays($out);
+                    $stated = null;
                     if (preg_match('/\b(\d+)\s*days?\b/iu', $query, $duration) && (int) $duration[1] !== $constraints['nights'] + 1) {
-                        $constraints['invalid_dates'] = true;
+                        $stated = (int) $duration[1];
                     }
                     if (preg_match('/\b(\d+)\s*nights?\b/iu', $query, $duration) && (int) $duration[1] !== $constraints['nights']) {
-                        $constraints['invalid_dates'] = true;
+                        $stated = (int) $duration[1] + 1;
                     }
                     $constraints['days'] = $constraints['nights'] + 1;
+                    if ($stated !== null) {
+                        $constraints = $this->durationConflict($constraints, $stated);
+                    }
                 }
             } catch (\Throwable) {
                 $constraints['invalid_dates'] = true;
@@ -1073,11 +1102,18 @@ class IntentRouter
             $constraints['check_out_date'] = $dateRange[1];
             if ($dateRange[0] && $dateRange[1]) {
                 $nights = (int) Carbon::parse($dateRange[0])->diffInDays(Carbon::parse($dateRange[1]), false);
-                if ($nights < 1 || $nights > 29 || ($constraints['nights'] !== null && $constraints['nights'] !== $nights)) {
-                    $constraints['invalid_dates'] = true;
+                if ($nights >= 1 && $nights <= 29 && $constraints['nights'] !== null && $constraints['nights'] !== $nights) {
+                    $stated = $constraints['nights'] + 1;
+                    $constraints['nights'] = $nights;
+                    $constraints['days'] = $nights + 1;
+                    $constraints = $this->durationConflict($constraints, $stated);
+                } else {
+                    if ($nights < 1 || $nights > 29) {
+                        $constraints['invalid_dates'] = true;
+                    }
+                    $constraints['nights'] = max(0, $nights);
+                    $constraints['days'] = max(1, $nights + 1);
                 }
-                $constraints['nights'] = max(0, $nights);
-                $constraints['days'] = max(1, $nights + 1);
             }
         }
 
@@ -2011,6 +2047,17 @@ class IntentRouter
         }
 
         return false;
+    }
+
+    /**
+     * Whether the message asks for a surprise Lucky itinerary. A "surprise"
+     * must be the request itself, so "surprise my wife with a spa" is not one.
+     */
+    public function hasLuckyIntent(string $message): bool
+    {
+        $lower = mb_strtolower(trim($message));
+
+        return (bool) preg_match('/\b(?:i\W?m\s+)?feeling\s+lucky\b|\blucky\s+(?:trip|itinerary|getaway|draw|shuffle)\b|\bsurprise\s+(?:trip|itinerary|getaway|vacation)\b|^(?:please\s+|can\s+you\s+)?surprise\s+me\b|\brandom\s+(?:trip|itinerary|getaway)\b/u', $lower);
     }
 
     protected function hasDiscountIntent(string $lower): bool

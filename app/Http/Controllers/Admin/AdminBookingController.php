@@ -29,6 +29,7 @@ use App\Notifications\BookingRejected;
 use App\Notifications\BookingRequestReceived;
 use App\Notifications\NewGuestAccountCreated;
 use App\Services\AdminAuditService;
+use App\Services\BookingQuoteService;
 use App\Services\BookingRequestService;
 use App\Services\Payment\BookingPaymentAccountingService;
 use App\Services\Payment\BookingPaymentPolicy;
@@ -304,7 +305,7 @@ class AdminBookingController extends Controller
                     'nights' => $nights,
                     'subtotal' => $lineSubtotal,
                     'availability_status' => BookingItem::AVAIL_AVAILABLE,
-                    'item_snapshot' => ['check_in_time' => $type === 'room' ? $room->hotel?->check_in_time : null],
+                    'item_snapshot' => ['check_in_time' => $type === 'room' ? $room->hotel?->check_in_time : null, 'source' => $validated['booking_source']],
                 ];
             }
 
@@ -333,7 +334,7 @@ class AdminBookingController extends Controller
             $adminSurcharge = (float) ($validated['admin_surcharge_amount'] ?? 0);
             $reason = trim((string) ($validated['price_adjustment_reason'] ?? ''));
 
-            $netAmount = max(0.00, $totalAmount - $discountAmount + $surchargeAmount - $adminDiscount + $adminSurcharge);
+            $netAmount = BookingQuoteService::net($totalAmount, $discountAmount, $surchargeAmount, 0, $adminDiscount, $adminSurcharge);
 
             // 5. Initial Status Setup
             $initialStatus = $validated['initial_status'];
@@ -588,6 +589,9 @@ class AdminBookingController extends Controller
                 }
                 $approvalNote .= ': '.$booking->price_adjustment_reason;
             }
+            if (! empty($totals['promotion_note'])) {
+                $approvalNote .= ' '.$totals['promotion_note'];
+            }
 
             $updated = $booking->transitionTo(
                 Booking::STATUS_APPROVED,
@@ -725,7 +729,9 @@ class AdminBookingController extends Controller
     }
 
     /**
-     * Deny a user cancellation request → cancellation_denied (still reserved).
+     * Deny a user cancellation request: the booking returns to the state it was
+     * requested from, so remaining payments and approval stay possible. Legacy
+     * requests without a recorded origin become cancellation_denied.
      * Admin message is required.
      */
     public function denyCancellation(Request $request, $id)
@@ -740,7 +746,7 @@ class AdminBookingController extends Controller
         $adminMessage = trim($validated['admin_message']);
 
         $updated = $booking->transitionTo(
-            $booking->payment_plan_version === 2 && in_array($booking->cancellation_requested_from, ['pending', 'approved'], true) ? $booking->cancellation_requested_from : Booking::STATUS_CANCELLATION_DENIED,
+            in_array($booking->cancellation_requested_from, ['pending', 'approved', 'paid'], true) ? $booking->cancellation_requested_from : Booking::STATUS_CANCELLATION_DENIED,
             [Booking::STATUS_CANCELLATION_REQUESTED],
             [
                 'cancellation_reason' => $adminMessage,
@@ -901,6 +907,9 @@ class AdminBookingController extends Controller
                 return back()->with('error', 'Record fulfillment for every included service before completing this planner booking.');
             }
             $note .= ' '.$request->string('completion_note');
+        } elseif ($request->filled('completion_note')) {
+            $request->validate(['completion_note' => ['string', 'min:10', 'max:1000']]);
+            $note .= ' '.$request->string('completion_note');
         }
         $updated = $booking->transitionTo(Booking::STATUS_COMPLETED, [Booking::STATUS_PAID], [], $note);
 
@@ -921,7 +930,7 @@ class AdminBookingController extends Controller
         DB::transaction(function () use ($id, $validated) {
             $booking = Booking::query()->lockForUpdate()->with('items')->findOrFail($id);
             abort_if($booking->payment_plan_version === 2 && $booking->payment_status !== Booking::PAYMENT_PAID, 422, 'Full payment is required before fulfillment.');
-            abort_unless($booking->trip_itineraries && in_array($booking->status, ['paid', 'cancellation_denied'], true), 422, 'Only active paid planner bookings can record fulfillment.');
+            abort_unless(in_array($booking->status, ['paid', 'cancellation_denied'], true) && $booking->payment_status === Booking::PAYMENT_PAID, 422, 'Only active, fully paid bookings can record fulfillment.');
             $oldBooking = $booking->getOriginal();
             if (! empty($validated['trip_end_override'])) {
                 $booking->trip_end_override = null;
@@ -976,7 +985,10 @@ class AdminBookingController extends Controller
             return back()->with('error', 'Only paid bookings can be refunded.');
         }
 
-        $note = $request->input('refund_note') ?: 'Manual refund processed by admin.';
+        $request->validate(['refund_reference' => ['nullable', 'string', 'max:100'], 'refund_note' => ['nullable', 'string', 'max:500']]);
+        $note = ($request->input('refund_note') ?: 'Manual refund processed by admin.')
+            .($request->filled('refund_reference') ? ' External refund reference: '.trim($request->input('refund_reference')).'.' : '')
+            .' No transfer was initiated by SunnyTrips.';
 
         $booking->payment_status = Booking::PAYMENT_REFUNDED;
         $booking->save();

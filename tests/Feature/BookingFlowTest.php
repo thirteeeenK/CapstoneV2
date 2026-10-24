@@ -332,6 +332,22 @@ it('rebooks items back into the cart after expiry', function () {
         ->and(CartItem::first()->item_id)->toBe($this->room->id);
 });
 
+it('submits a rebooking as a new linked request without carrying over payments', function () {
+    addRoomToCart($this->user, $this->room);
+    $request = ['contact_name' => 'Juan Dela Cruz', 'contact_email' => $this->user->email, 'contact_phone' => '09171234567', 'guest_manifest' => null];
+    $this->actingAs($this->user)->post(route('checkout.process'), $request);
+    $original = Booking::first();
+    $original->update(['status' => 'cancelled', 'payment_status' => 'refunded']);
+
+    $this->post(route('booking.rebook', $original->booking_code));
+    $this->post(route('checkout.process'), $request)->assertOk();
+
+    $rebooked = Booking::whereKeyNot($original->id)->sole();
+    expect($rebooked)->rebooked_from_booking_id->toBe($original->id)->payment_status->toBe(Booking::PAYMENT_UNPAID)
+        ->and($rebooked->history()->pluck('note')->join(' '))->toContain($original->booking_code)->toContain('not transferred')
+        ->and($original->history()->pluck('note')->join(' '))->toContain('Rebooked as new request '.$rebooked->booking_code);
+});
+
 it('holds inventory in availability counts and releases on expiry', function () {
     addRoomToCart($this->user, $this->room);
     $this->actingAs($this->user)->post(route('checkout.process'), [

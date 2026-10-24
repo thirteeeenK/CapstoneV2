@@ -472,6 +472,25 @@
                         @endforeach
                     </div>
 
+                    {{-- Lucky code: previewed here, validated again by the server on submission --}}
+                    <div class="space-y-1.5">
+                        <label for="promotion-code-input" class="text-[10.5px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Lucky code</label>
+                        <div class="flex gap-2">
+                            <input id="promotion-code-input" type="text" x-model="promoCode" maxlength="40" autocomplete="off" placeholder="e.g. LUCKY-7KQ2MZ"
+                                   :disabled="appliedCode !== ''" @keydown.enter.prevent="applyPromotion()"
+                                   aria-describedby="promotion-code-status"
+                                   class="flex-1 min-w-0 px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-mono uppercase text-slate-900 dark:text-slate-100 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">
+                            <button type="button" x-show="appliedCode === ''" @click="applyPromotion()" :disabled="applyingPromo || promoCode.trim() === ''"
+                                    class="min-h-11 shrink-0 px-4 rounded-xl bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-xs font-bold disabled:opacity-50 cursor-pointer"
+                                    x-text="applyingPromo ? 'Checking…' : 'Apply'"></button>
+                            <button type="button" x-show="appliedCode !== ''" x-cloak @click="removePromotion()"
+                                    class="min-h-11 shrink-0 px-4 rounded-xl border border-slate-300 dark:border-slate-600 text-xs font-bold text-slate-700 dark:text-slate-200 cursor-pointer">Remove</button>
+                        </div>
+                        <input type="hidden" name="promotion_code" :value="appliedCode">
+                        <p id="promotion-code-status" role="status" class="text-[11px]"
+                           :class="promoError ? 'text-rose-600' : 'text-emerald-700 dark:text-emerald-300'" x-text="promoError || promoMessage"></p>
+                    </div>
+
                     {{-- Totals Calculation --}}
                     <div class="bg-slate-50 dark:bg-slate-800 rounded-xl p-3 space-y-1.5 border border-slate-200/60 dark:border-slate-700/60 text-xs">
                         <div class="flex items-center justify-between text-slate-600 dark:text-slate-400 font-medium text-[11.5px]">
@@ -526,6 +545,15 @@
                                     </div>
                                 </template>
                             </div>
+                        </div>
+
+                        <div x-show="promoDiscount > 0" x-cloak
+                            class="flex items-center justify-between py-1 px-2 rounded-lg border text-[10.5px] font-semibold bg-emerald-50/70 dark:bg-emerald-950/60 border-emerald-200/80 dark:border-emerald-800/80 text-emerald-800 dark:text-emerald-100">
+                            <span class="flex items-center gap-1.5 min-w-0 pr-2 truncate">
+                                <span class="material-symbols-outlined text-[13px] shrink-0 text-emerald-600 dark:text-emerald-400">casino</span>
+                                <span class="truncate" x-text="'Lucky discount (' + appliedCode + ') on ' + promoEligibleLabel"></span>
+                            </span>
+                            <span class="font-extrabold shrink-0" x-text="'-₱' + Number(promoDiscount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })"></span>
                         </div>
 
                         <div
@@ -587,6 +615,48 @@
                 passengerDiscount: 0,
                 foreignerSurcharge: 0,
                 pricingBreakdown: [],
+                promoCode: '',
+                appliedCode: '',
+                promoDiscount: 0,
+                promoEligibleLabel: '',
+                promoMessage: '',
+                promoError: '',
+                applyingPromo: false,
+
+                async applyPromotion() {
+                    this.applyingPromo = true;
+                    this.promoError = '';
+                    this.promoMessage = '';
+                    try {
+                        const res = await fetch('{{ route('checkout.promotion.apply') }}', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' },
+                            body: JSON.stringify({ promotion_code: this.promoCode.trim() }),
+                        });
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                            this.appliedCode = data.code;
+                            this.promoCode = data.code;
+                            this.promoDiscount = Number(data.discount) || 0;
+                            this.promoEligibleLabel = data.formatted_eligible_subtotal;
+                            this.promoMessage = data.message;
+                        } else {
+                            this.promoError = data.errors?.promotion_code?.[0] || data.message || 'This code could not be applied.';
+                        }
+                    } catch (err) {
+                        this.promoError = 'The code could not be checked. Please try again.';
+                    } finally {
+                        this.applyingPromo = false;
+                    }
+                },
+
+                removePromotion() {
+                    this.appliedCode = '';
+                    this.promoDiscount = 0;
+                    this.promoEligibleLabel = '';
+                    this.promoMessage = '';
+                    this.promoError = '';
+                },
 
                 get extraPersonFeeTotal() {
                     let fee = 0;
@@ -628,7 +698,7 @@
                 },
 
                 get netTotal() {
-                    return Math.max(0, this.baseSubtotal + this.extraPersonFeeTotal - this.passengerDiscount + this.foreignerSurcharge);
+                    return Math.max(0, this.baseSubtotal + this.extraPersonFeeTotal - this.passengerDiscount + this.foreignerSurcharge - this.promoDiscount);
                 },
 
                 get formattedTotalNet() {
@@ -723,6 +793,10 @@
                         const data = await res.json();
                         if (data.success) {
                             window.location.href = data.redirect_url;
+                        } else if (data.errors?.promotion_code) {
+                            this.promoError = data.errors.promotion_code[0];
+                            alert(this.promoError);
+                            this.isSubmitting = false;
                         } else {
                             alert(data.message || 'Could not process booking order.');
                             this.isSubmitting = false;

@@ -4,6 +4,7 @@ namespace App\Services\Chat;
 
 use App\Models\ChatSession;
 use App\Models\DestinationModel;
+use App\Services\TripDurationPolicy;
 use Carbon\Carbon;
 use Illuminate\Support\Str;
 
@@ -117,7 +118,6 @@ final class DialogueManager
                         $task['type'] = IntentRouter::ROOM_SEARCH;
                         $task['discovery_only'] = true;
                     } elseif ($field === 'dates' && $task['type'] === IntentRouter::ITINERARY_QUERY) {
-                        $task['constraints']['max_price'] = null;
                         $task['draft_itinerary'] = true;
                         $task['discovery_only'] = true;
                     } elseif (in_array($field, ['budget_scope', 'budget_basis', 'budget_period', 'budget_coverage'], true)) {
@@ -276,8 +276,15 @@ final class DialogueManager
     {
         $values = $details['values'];
         $work = [];
+        // Editing a trip's details updates its itinerary; searches already
+        // answered in that conversation are kept, not run again.
+        $hasItinerary = collect($state['tasks'])->contains(fn (array $task): bool => $task['scope_id'] === $details['scope_id']
+            && $task['status'] !== 'cancelled' && $task['type'] === IntentRouter::ITINERARY_QUERY);
         foreach ($state['tasks'] as $task) {
             if ($task['scope_id'] !== $details['scope_id'] || $task['status'] === 'cancelled') {
+                continue;
+            }
+            if ($hasItinerary && $task['type'] !== IntentRouter::ITINERARY_QUERY && $task['status'] === 'answered') {
                 continue;
             }
             unset($task['requirement'], $task['paused_reason'], $task['clarification'], $task['joint_budget'], $task['budget_scope'], $task['combined_budget_pending']);
@@ -291,7 +298,10 @@ final class DialogueManager
                     unset($task[$key], $task['slots'][$key]);
                 }
             }
-            foreach (['pax', 'days', 'nights', 'max_price', 'check_in_date', 'check_out_date', 'preferences', 'notes'] as $key) {
+            if (array_intersect(array_keys($values), ['pax', 'max_price', 'preferences', 'notes', 'include_accommodation', 'budget_basis', 'budget_period', 'budget_coverage']) !== []) {
+                unset($task['constraints']['draft_room_id']);
+            }
+            foreach (['pax', 'days', 'nights', 'max_price', 'check_in_date', 'check_out_date', 'preferences', 'notes', 'include_accommodation'] as $key) {
                 if (array_key_exists($key, $values)) {
                     $task['constraints'][$key] = $values[$key];
                 }
@@ -398,6 +408,12 @@ final class DialogueManager
             $values['budget_basis'] = null;
             $values['budget_period'] = 'per_night';
         }
+        // A new destination, party, budget or taste needs a fresh stay; a new length or new dates do not.
+        foreach (['destination_id', 'pax', 'max_price', 'preferences', 'notes', 'hotel_id', 'room_id'] as $key) {
+            if (($values[$key] ?? null) !== null && ($values[$key] ?? null) !== []) {
+                unset($task['constraints']['draft_room_id']);
+            }
+        }
         $changedDestination = ! $this->compatible($task, $values);
         if ($changedDestination) {
             foreach (['hotel_id', 'hotel_name', 'room_id', 'room_name', 'activity_id', 'activity_name', 'selected_activity_ids', 'preserve_selected_stay'] as $key) {
@@ -413,9 +429,16 @@ final class DialogueManager
             $task['constraints'][$key] = $value;
             $task['slots'][$key] = ['value' => $value, 'status' => 'provided', 'source_turn' => $turn, 'provenance' => 'user'];
         }
+        if (empty($values['duration_conflict']) && ! empty($values['check_in_date']) && empty($values['invalid_dates'])) {
+            unset($task['constraints']['duration_conflict']);
+        }
         if (! empty($values['invalid_dates'])) {
             foreach (['check_in_date', 'check_out_date', 'nights'] as $key) {
                 $task['constraints'][$key] = null;
+            }
+            if (! empty($values['duration_conflict'])) {
+                $task['constraints']['days'] = $values['duration_conflict']['days'];
+                $task['constraints']['nights'] = max(0, $values['duration_conflict']['days'] - 1);
             }
             $task['slots']['dates'] = ['value' => null, 'status' => 'invalid', 'source_turn' => $turn, 'provenance' => 'user'];
         } elseif (! empty($task['constraints']['check_in_date']) && ! empty($task['constraints']['check_out_date'])) {
@@ -1131,6 +1154,10 @@ final class DialogueManager
                 $field = 'budget_scope';
             }
             $task['constraints'] = $section['constraints'];
+            // The drafted stay is remembered so a length-only edit keeps it.
+            if (! empty($section['data']['itinerary_suggestion']['accommodation']['room_id'])) {
+                $task['constraints']['draft_room_id'] = (int) $section['data']['itinerary_suggestion']['accommodation']['room_id'];
+            }
             $task['status'] = ($section['outcome']['status'] ?? '') === RetrievalOutcome::Deferred ? 'suspended' : ($field !== null ? 'collecting' : 'answered');
             if ($field !== null && $task['status'] !== 'suspended') {
                 $scope = $task['scope_id'].':'.$field;
@@ -1138,6 +1165,7 @@ final class DialogueManager
                 $candidates[$scope]['task_ids'][] = $task['persistent_id'];
                 $candidates[$scope]['destination'] = $task['constraints']['destination_name'] ?? null;
                 $candidates[$scope]['attempts'] = max($candidates[$scope]['attempts'] ?? 0, $task['invalid_attempts'] ?? 0);
+                $candidates[$scope]['conflict'] ??= $field === 'dates' ? ($task['constraints']['duration_conflict'] ?? null) : null;
                 $candidates[$scope]['acknowledged'] = array_values(array_unique(array_merge($candidates[$scope]['acknowledged'] ?? [], $task['acknowledged'] ?? [])));
                 if (! empty($section['data']['budget_unverified'])) {
                     $section['answer'] = explode("\n\n", $section['answer'])[0];
@@ -1158,6 +1186,12 @@ final class DialogueManager
         $question = null;
         if ($next !== null) {
             $question = ['id' => (string) Str::uuid(), 'revision' => $state['revision'], 'field' => $next['field'], 'task_ids' => $next['task_ids'], 'required' => true, 'attempts' => $next['attempts'], 'text' => $this->questionText($next, $plan), 'options' => []];
+            if ($next['field'] === 'dates' && ! empty($next['conflict'])) {
+                $conflict = $next['conflict'];
+                $kept = TripDurationPolicy::endDate($conflict['check_in_date'], $conflict['days']);
+                $question['options'][] = ['label' => 'Keep '.$conflict['days'].' days ('.$conflict['check_in_date'].' to '.$kept.')', 'value' => $conflict['days'].' days, '.$conflict['check_in_date'].' to '.$kept];
+                $question['options'][] = ['label' => 'Use '.$conflict['check_in_date'].' to '.$conflict['check_out_date'].' ('.$conflict['range_days'].' days)', 'value' => $conflict['range_days'].' days, '.$conflict['check_in_date'].' to '.$conflict['check_out_date']];
+            }
             if (in_array($next['field'], ['dates', 'budget_scope', 'budget_basis', 'budget_period', 'budget_coverage'], true)) {
                 $question['options'][] = ['label' => $next['field'] === 'dates' ? 'Dates undecided' : 'No budget preference', 'value' => $next['field'] === 'dates' ? 'Dates undecided' : 'No budget preference'];
             }
@@ -1234,7 +1268,11 @@ final class DialogueManager
             'budget_coverage' => 'Does that nightly amount cover the hotel only, or everything including activities?',
             default => 'Does this budget apply per night, per person, or to the whole trip?',
         };
-        if (($next['attempts'] ?? 0) > 0) {
+        if ($next['field'] === 'dates' && ! empty($next['conflict'])) {
+            $conflict = $next['conflict'];
+            $text = 'You mentioned '.TripDurationPolicy::label($conflict['days']).', but '.$conflict['check_in_date'].' to '.$conflict['check_out_date'].' covers '
+                .TripDurationPolicy::label($conflict['range_days']).'. Should I keep '.$conflict['days'].' days from '.$conflict['check_in_date'].', or use those dates?';
+        } elseif (($next['attempts'] ?? 0) > 0) {
             $text = 'I could not confirm that detail. '.$text;
         } elseif (! empty($next['acknowledged'])) {
             // Volunteered detail is confirmed before the outstanding question

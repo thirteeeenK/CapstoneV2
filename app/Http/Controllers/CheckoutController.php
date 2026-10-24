@@ -102,6 +102,7 @@ class CheckoutController extends Controller
             'contact_phone' => 'required|string|regex:/^\d{11}$/|max:30',
             'special_requests' => 'nullable|string|max:1000',
             'guest_manifest' => 'nullable|string|max:50000',
+            'promotion_code' => 'nullable|string|max:40',
         ], [
             'contact_phone.regex' => 'The mobile phone number must be exactly 11 digits.',
         ]);

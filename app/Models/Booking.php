@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use App\Services\Payment\PaymentGatewayException;
+use App\Services\PromotionService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
@@ -89,6 +91,8 @@ class Booking extends Model
         'is_walk_in',
         'trip_itineraries',
         'trip_end_override',
+        'rebooked_from_booking_id',
+        'promotion_discount_amount',
     ];
 
     protected $casts = [
@@ -101,6 +105,7 @@ class Booking extends Model
         'tax_amount' => 'decimal:2',
         'admin_discount_amount' => 'decimal:2',
         'admin_surcharge_amount' => 'decimal:2',
+        'promotion_discount_amount' => 'decimal:2',
         'net_amount' => 'decimal:2',
         'guest_manifest' => 'array',
         'gateway_data' => 'array',
@@ -128,6 +133,24 @@ class Booking extends Model
     public function bookedByAdmin()
     {
         return $this->belongsTo(AdminModel::class, 'booked_by_admin_id');
+    }
+
+    /**
+     * The earlier booking this request repeats, recorded for audit only.
+     */
+    public function rebookedFrom()
+    {
+        return $this->belongsTo(self::class, 'rebooked_from_booking_id');
+    }
+
+    /**
+     * Whether a cancellation request on this booking was reviewed and denied.
+     */
+    public function hasDeniedCancellationRequest(): bool
+    {
+        return $this->status === self::STATUS_CANCELLATION_DENIED
+            || ($this->cancellation_requested_at !== null && $this->cancellation_reason !== null
+                && ! in_array($this->status, [self::STATUS_CANCELLATION_REQUESTED, self::STATUS_CANCELLED], true));
     }
 
     public function isAgentBooked(): bool
@@ -163,6 +186,11 @@ class Booking extends Model
     public function payments(): HasMany
     {
         return $this->hasMany(BookingPayment::class)->orderByDesc('id');
+    }
+
+    public function promotionRedemption(): HasOne
+    {
+        return $this->hasOne(PromotionRedemption::class)->latestOfMany();
     }
 
     /**
@@ -210,6 +238,7 @@ class Booking extends Model
             'actor_type' => $actor ? get_class($actor) : null,
             'actor_id' => $actor?->getKey(),
         ]);
+        $this->syncPromotionRedemption($to);
     }
 
     /**
@@ -252,8 +281,22 @@ class Booking extends Model
             'actor_type' => is_string($actor) ? $actor : ($actor ? get_class($actor) : null),
             'actor_id' => is_string($actor) ? null : $actor?->getKey(),
         ]);
+        $this->syncPromotionRedemption($to);
 
         return true;
+    }
+
+    /**
+     * A reserved Lucky redemption is used once the booking is paid, and its
+     * campaign capacity is returned if the unpaid request closes instead.
+     */
+    private function syncPromotionRedemption(string $to): void
+    {
+        if ($to === self::STATUS_PAID) {
+            app(PromotionService::class)->finalizeForBooking($this);
+        } elseif (in_array($to, [self::STATUS_EXPIRED, self::STATUS_REJECTED, self::STATUS_CANCELLED], true)) {
+            app(PromotionService::class)->releaseForBooking($this, 'Booking '.$to.' before a verified payment.');
+        }
     }
 
     /**

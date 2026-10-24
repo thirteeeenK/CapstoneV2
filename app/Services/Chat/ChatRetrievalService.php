@@ -30,6 +30,9 @@ final class ChatRetrievalService
             $data = ['reply' => 'I could not check this part right now. The other results are still available; please try this part again.', 'retrieval_outcome' => RetrievalOutcome::make(RetrievalOutcome::TemporarilyUnavailable, 'retrieval_failed')];
         }
         $references = [];
+        // An itinerary keeps every choice that survived budget and preference
+        // checks; only the standalone preview cards are capped for display.
+        $eligible = ['retrieved_rooms' => array_column($data['retrieved_rooms'] ?? [], 'id'), 'retrieved_activities' => array_column($data['retrieved_activities'] ?? [], 'id')];
         foreach (self::CATALOGS as $key => $type) {
             if (! empty($data[$key])) {
                 $data[$key] = array_slice($data[$key], 0, max(1, min(5, (int) config('services.chatbot.cards_per_task', 3))));
@@ -39,9 +42,9 @@ final class ChatRetrievalService
             }
         }
         if (! empty($data['itinerary_suggestion']) && empty($data['itinerary'])) {
-            $ids = array_column($data['retrieved_activities'] ?? [], 'id');
+            $ids = $eligible['retrieved_activities'];
             $suggestion = &$data['itinerary_suggestion'];
-            $roomIds = array_column($data['retrieved_rooms'] ?? [], 'id');
+            $roomIds = $eligible['retrieved_rooms'];
             $suggestion['choices'] = array_values(array_filter($suggestion['choices'], fn (array $choice): bool => $choice['type'] === 'room' ? in_array($choice['id'], $roomIds, true) : ($choice['type'] !== 'activity' || in_array($choice['id'], $ids, true))));
             if (! empty($suggestion['accommodation']) && ! in_array($suggestion['accommodation']['room_id'], $roomIds, true)) {
                 $suggestion['accommodation'] = null;
@@ -50,7 +53,22 @@ final class ChatRetrievalService
             foreach ($suggestion['days'] as &$day) {
                 $day['choices'] = array_values(array_filter($suggestion['choices'], fn (array $choice): bool => $choice['day'] === $day['day']));
             }
-            unset($day, $suggestion);
+            unset($day);
+            // A total that still counts a removed activity or stay would be wrong; withdraw it.
+            if (! empty($suggestion['cost'])) {
+                $kept = array_column(array_filter($suggestion['choices'], fn (array $choice): bool => $choice['type'] === 'activity'), 'id');
+                $removed = array_diff(array_column($suggestion['cost']['activity_lines'], 'id'), $kept) !== [] || ($suggestion['cost']['stay'] !== null && empty($suggestion['accommodation']));
+                if ($removed) {
+                    $previousSummary = $suggestion['cost']['summary'] ?? '';
+                    $suggestion['cost'] = ['total' => null, 'status' => 'unknown', 'activity_lines' => [], 'stay' => null, 'activities' => null, 'budget' => $suggestion['cost']['budget'],
+                        'summary' => 'Some choices were removed by your preferences or budget, so there is no total yet. Update the trip details for a new estimate.'] + $suggestion['cost'];
+                    $suggestion['estimate'] = null;
+                    if ($previousSummary !== '' && is_string($data['reply'] ?? null)) {
+                        $data['reply'] = str_replace($previousSummary, $suggestion['cost']['summary'], $data['reply']);
+                    }
+                }
+            }
+            unset($suggestion);
         }
         $outcome = $data['retrieval_outcome'] ?? RetrievalOutcome::make(RetrievalOutcome::Matched, 'verified_result_found');
         $fallback = trim((string) ($data['reply'] ?? ''));

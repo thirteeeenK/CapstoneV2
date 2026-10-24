@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\ActivityModel;
 use App\Models\AddOnModel;
 use App\Models\CartItem;
+use App\Models\LuckyOffer;
 use App\Models\Package;
+use App\Models\Promotion;
 use App\Models\RoomType;
 use App\Models\TripItinerary;
 use App\Services\CartService;
@@ -111,6 +113,8 @@ class CartController extends Controller
             ->groupBy('basket_group_id');
         $itineraries = TripItinerary::query()->whereIn('id', $items->pluck('trip_itinerary_id')->filter()->unique())
             ->select(['id', 'trip_plan_id'])->with('plan:id,title')->get()->keyBy('id');
+        $offers = LuckyOffer::query()->whereIn('id', $items->pluck('lucky_offer_id')->filter()->unique())->whereNotNull('code')
+            ->get(['id', 'code', 'expires_at', 'terms'])->keyBy('id');
 
         foreach ($grouped as $groupId => $groupItems) {
             $roomItem = $groupItems->first(fn ($i) => $i->item_type === 'room');
@@ -128,6 +132,7 @@ class CartController extends Controller
             $isChat = str_starts_with((string) $groupId, 'ch');
             $isPlanner = str_starts_with((string) $groupId, 'tp-');
             $plannerTitle = $isPlanner ? $itineraries->get($groupItems->first()->trip_itinerary_id)?->plan?->title : null;
+            $offer = $offers->get($groupItems->first()->lucky_offer_id);
 
             $groups[] = [
                 'id' => $groupId,
@@ -141,6 +146,8 @@ class CartController extends Controller
                 'is_selected' => $groupItems->count() > 0 && $selectedItems->count() === $groupItems->count(),
                 'subtotal' => $subtotal,
                 'formatted_subtotal' => '₱'.number_format($subtotal, 2),
+                'lucky_code' => $offer?->code,
+                'lucky_code_label' => $offer ? Promotion::describeDiscount($offer->terms).' · valid until '.$offer->expires_at?->timezone('Asia/Manila')->format('M j, g:i A') : null,
             ];
         }
 

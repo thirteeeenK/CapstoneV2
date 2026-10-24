@@ -143,3 +143,24 @@ test('a failed save exposes the server error and leaves the suggestion available
         assert.equal(chat.tripPlanNotices['suggestion-1'], 'Please regenerate this itinerary.');
     } finally { Object.assign(globalThis, originals); }
 });
+
+test('an itinerary form sends the chosen duration and the departure that follows from it', async () => {
+    const original = globalThis.window;
+    globalThis.window = { tripDuration: { tripEndDate: (start, days) => (start === '2026-10-26' && days === 6 ? '2026-10-31' : '') } };
+    try {
+        const chat = widget();
+        let submission;
+        chat.send = async (...args) => { submission = args[3]; };
+        await chat.submitTripDetails({ id: 'trip', revision: 2, scope_id: 'trip', needs_duration: true, values: { days: 3 } },
+            { dates_undecided: false, check_in_date: '2026-10-26', check_out_date: '2026-10-28', days: '6', include_accommodation: true });
+        assert.deepEqual([submission.trip_details.days, submission.trip_details.check_in_date, submission.trip_details.check_out_date], [6, '2026-10-26', '2026-10-31']);
+    } finally { globalThis.window = original; }
+});
+
+test('non-itinerary forms never send the accommodation toggle', async () => {
+    const chat = widget();
+    let submission;
+    chat.send = async (...args) => { submission = args[3]; };
+    await chat.submitTripDetails({ id: 'rooms', revision: 1, scope_id: 'trip', values: { pax: 2 } }, { pax: 3, include_accommodation: true });
+    assert.deepEqual(submission.trip_details, { pax: 3 });
+});

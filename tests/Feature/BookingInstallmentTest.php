@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\AdminModel;
 use App\Models\Booking;
 use App\Models\BookingItem;
 use App\Models\BookingPaymentRequest;
@@ -185,6 +186,21 @@ test('cancelled bookings retain incoming money for review without reopening inve
     expect($receipt->allocated)->toBeFalse();
     expect($booking->fresh()->status)->toBe('cancelled');
     expect($request->fresh()->status)->toBe('review_required');
+});
+
+test('a receipt during a cancellation review is held for review and denial reopens payment', function () {
+    $booking = installmentBooking();
+    $request = app(InstallmentPaymentService::class)->prepare($booking, 'deposit', 'paymongo');
+    $booking->update(['status' => 'cancellation_requested', 'cancellation_requested_from' => 'approved', 'cancellation_requested_at' => now(), 'cancellation_request_reason' => 'Our travel dates changed unexpectedly.']);
+
+    $receipt = app(BookingPaymentAccountingService::class)->receipt($request, 'pay_during_review', 500000);
+    expect($receipt->allocated)->toBeFalse()->and($request->fresh()->status)->toBe('review_required');
+
+    $admin = AdminModel::create(['name' => 'Admin Review', 'email' => 'admin-review-installment@test.com', 'password' => 'password']);
+    $this->actingAs($admin, 'admin')->post(route('admin.bookings.cancel-request.deny', $booking->id), ['admin_message' => 'Travel dates stay as booked; no change needed.']);
+
+    expect($booking->fresh()->status)->toBe('approved');
+    app(BookingPaymentPolicy::class)->assertCollectible($booking->fresh());
 });
 
 test('unpaid bookings without an open collection expire at their snapshotted deadline', function () {

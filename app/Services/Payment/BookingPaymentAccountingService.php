@@ -8,6 +8,7 @@ use App\Models\AdminModel;
 use App\Models\Booking;
 use App\Models\BookingPaymentRequest;
 use App\Models\BookingPaymentTransaction;
+use App\Services\PromotionService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -130,6 +131,7 @@ final class BookingPaymentAccountingService
                 'payment_status' => Booking::PAYMENT_PARTIAL, 'payment_reference' => $reference,
                 'payment_method' => $request->gateway, 'deposit_secured_at' => $secured ? ($booking->deposit_secured_at ?? now()) : null,
             ])->save();
+            app(PromotionService::class)->finalizeForBooking($booking);
             $booking->history()->create([
                 'from_status' => $booking->status, 'to_status' => $booking->status,
                 'note' => $secured ? 'Reservation deposit verified; balance remains due.' : 'Partial payment verified; reservation deposit is not yet covered.',

@@ -3,8 +3,10 @@
     <p x-show="!isChatbotDraft()" class="text-sm text-slate-600 dark:text-slate-300">Change your dates, travelers or how you get around. Your choices are kept where they still fit; build the schedule again before adding it to your Trip Basket.</p>
     <label class="block text-sm font-semibold">Trip name<input x-model="title" required maxlength="150" class="mt-1 w-full min-h-11 rounded-lg border-sand-300 dark:bg-slate-800"></label>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <label class="block text-sm font-semibold">Arrival<input type="date" x-model="startDate" :min="minimumArrival" :required="!isChatbotDraft()" class="mt-1 w-full min-w-0 min-h-11 rounded-lg border-sand-300 dark:bg-slate-800"></label>
-        <label class="block text-sm font-semibold">Departure<input type="date" x-model="endDate" :min="startDate" :required="!isChatbotDraft()" class="mt-1 w-full min-w-0 min-h-11 rounded-lg border-sand-300 dark:bg-slate-800"></label>
+        <label class="block text-sm font-semibold">Arrival<input type="date" x-model="startDate" @change="syncDeparture()" :min="minimumArrival" :required="!isChatbotDraft()" class="mt-1 w-full min-w-0 min-h-11 rounded-lg border-sand-300 dark:bg-slate-800"></label>
+        <label class="block text-sm font-semibold">Trip duration (days)<input type="number" x-model="durationDays" min="1" max="30" step="1" :required="!isChatbotDraft()" @input="syncDeparture()" aria-describedby="planner-duration" class="mt-1 w-full min-h-11 rounded-lg border-sand-300 dark:bg-slate-800">
+            <span id="planner-duration" aria-live="polite" class="mt-1 block text-xs font-normal text-slate-600 dark:text-slate-300" x-text="durationSummary()"></span></label>
+        <div class="text-sm font-semibold"><p>Departure</p><p class="mt-1 flex min-h-11 items-center rounded-lg border border-dashed border-sand-300 px-3 font-normal dark:border-slate-600" aria-live="polite" x-text="endDate || 'Follows from arrival and duration'"></p></div>
         <label class="block text-sm font-semibold">Travelers<input type="number" x-model="pax" min="1" max="20" step="1" required class="mt-1 w-full min-h-11 rounded-lg border-sand-300 dark:bg-slate-800"></label>
         <label class="block text-sm font-semibold">Getting around<select x-model="mode" class="mt-1 w-full min-h-11 rounded-lg border-sand-300 dark:bg-slate-800"><option value="walking">Walking</option><option value="driving">By vehicle</option></select></label>
     </div>

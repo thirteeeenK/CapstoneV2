@@ -36,15 +36,19 @@ class ChatbotTripPlanController extends Controller
         $data = $request->validate([
             'suggestion_id' => ['required', 'uuid'], 'title' => ['nullable', 'string', 'max:150'],
             'session_token' => ['nullable', 'string', 'max:255'],
+            // Replace this saved chatbot draft instead of creating another plan.
+            'plan_id' => ['nullable', 'integer'],
         ]);
         $user = $request->user();
-        $result = $this->service->save(
-            $user,
-            $this->cart->getSessionToken($request),
-            $data['suggestion_id'],
-            $data['title'] ?? null,
-            $data['session_token'] ?? null,
-        );
+        $result = isset($data['plan_id'])
+            ? $this->service->update($user, $this->cart->getSessionToken($request), (int) $data['plan_id'], $data['suggestion_id'], $data['session_token'] ?? null)
+            : $this->service->save(
+                $user,
+                $this->cart->getSessionToken($request),
+                $data['suggestion_id'],
+                $data['title'] ?? null,
+                $data['session_token'] ?? null,
+            );
         $plan = $result['plan'];
 
         return response()->json([

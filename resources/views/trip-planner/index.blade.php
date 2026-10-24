@@ -32,8 +32,9 @@
                         </div>
                         <div><label for="trip-title" class="block text-sm font-semibold mb-1">Trip name</label><input id="trip-title" x-model="title" maxlength="150" required class="w-full rounded-lg border-sand-300 dark:bg-slate-800"></div>
                         <div class="grid grid-cols-2 gap-3">
-                            <div><label for="trip-start" class="block text-sm font-semibold mb-1">Arrival date</label><input id="trip-start" type="date" x-model="startDate" min="{{ $datePolicy['minimumArrival'] }}" :min="minimumArrival" @focus="refreshMinimumArrival()" aria-describedby="trip-arrival-hint" required class="w-full min-w-0 rounded-lg border-sand-300 dark:bg-slate-800"></div>
-                            <div><label for="trip-end" class="block text-sm font-semibold mb-1">Departure date</label><input id="trip-end" type="date" x-model="endDate" :min="startDate" required class="w-full min-w-0 rounded-lg border-sand-300 dark:bg-slate-800"></div>
+                            <div><label for="trip-start" class="block text-sm font-semibold mb-1">Arrival date</label><input id="trip-start" type="date" x-model="startDate" @change="syncDeparture()" min="{{ $datePolicy['minimumArrival'] }}" :min="minimumArrival" @focus="refreshMinimumArrival()" aria-describedby="trip-arrival-hint" required class="w-full min-w-0 rounded-lg border-sand-300 dark:bg-slate-800"></div>
+                            <div><label for="trip-days" class="block text-sm font-semibold mb-1">Trip duration (days)</label><input id="trip-days" type="number" x-model="durationDays" @input="syncDeparture()" min="2" max="30" step="1" required aria-describedby="trip-duration-summary" class="w-full min-w-0 rounded-lg border-sand-300 dark:bg-slate-800">
+                                <p id="trip-duration-summary" aria-live="polite" class="mt-1 text-xs text-slate-600 dark:text-slate-300" x-text="durationSummary() + (endDate ? ' · departs ' + endDate : '')"></p></div>
                         </div>
                         <p id="trip-arrival-hint" class="text-xs leading-relaxed text-slate-600 dark:text-slate-300" x-text="'Choose an arrival on or after ' + minimumArrival + ' (two calendar days ahead in Philippine time).'"></p>
                         <div>

@@ -41,6 +41,7 @@ class BookingConfirmationController extends Controller
             'gateways' => $this->paymentService->availableGateways(),
             'paymentSummary' => $this->goTymePaymentService->summary($booking),
             'paymentTransactions' => $booking->payment_plan_version === 2 ? $booking->paymentTransactions()->get() : collect(),
+            'canRequestCancellation' => BookingPaymentController::canRequestCancellation($booking),
         ]);
     }
 
@@ -69,7 +70,7 @@ class BookingConfirmationController extends Controller
         $booking = $this->loadOwnedBooking($code);
         $snapshot = $booking->trip_itineraries[$version] ?? null;
         abort_unless(is_array($snapshot), 404);
-        $data = ['itinerary' => $snapshot, 'reference' => 'Booking '.$booking->booking_code.' · Saved itinerary'];
+        $data = ['itinerary' => $snapshot, 'reference' => 'Booking '.$booking->booking_code.' · Saved itinerary', 'referenceLabel' => 'Booking reference', 'referenceCode' => $booking->booking_code, 'booking' => $booking];
         if ($request->boolean('print')) {
             return view('trip-planner.document', $data);
         }

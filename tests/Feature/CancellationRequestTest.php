@@ -2,6 +2,7 @@
 
 use App\Models\AdminModel;
 use App\Models\Booking;
+use App\Models\BookingItem;
 use App\Notifications\BookingCancellationApproved;
 use App\Notifications\BookingCancellationDenied;
 use App\Notifications\BookingCancellationRequested;
@@ -76,18 +77,68 @@ it('lets a user request cancellation on an approved booking', function () {
         ->and($booking->fresh()->cancellation_requested_from)->toBe(Booking::STATUS_APPROVED);
 });
 
-it('prevents cancellation requests on paid bookings', function () {
+it('lets a paid traveler request cancellation review without issuing a refund', function () {
     $user = onboardedUser();
-    $booking = Booking::factory()->paid()->create([
-        'user_id' => $user->id,
-    ]);
+    $booking = Booking::factory()->paid()->create(['user_id' => $user->id]);
+    BookingItem::factory()->create(['booking_id' => $booking->id, 'check_in_date' => now()->addDays(10), 'check_out_date' => now()->addDays(12), 'availability_status' => 'available']);
 
     $this->actingAs($user)->post(route('booking.cancel', $booking->booking_code), [
-        'reason' => 'I want to cancel even though it is already paid, should be blocked.',
-    ])->assertRedirect()
-        ->assertSessionHas('error');
+        'reason' => 'Our flight was cancelled, so we cannot travel on these dates.',
+    ])->assertRedirect()->assertSessionHas('success');
+
+    expect($booking->fresh())->status->toBe(Booking::STATUS_CANCELLATION_REQUESTED)
+        ->cancellation_requested_from->toBe(Booking::STATUS_PAID)
+        ->payment_status->toBe(Booking::PAYMENT_PAID);
+});
+
+it('prevents cancellation requests once a paid trip has ended', function () {
+    $user = onboardedUser();
+    $booking = Booking::factory()->paid()->create(['user_id' => $user->id]);
+    BookingItem::factory()->create(['booking_id' => $booking->id, 'check_in_date' => now()->subDays(5), 'check_out_date' => now()->subDays(3), 'availability_status' => 'available']);
+
+    $this->actingAs($user)->post(route('booking.cancel', $booking->booking_code), [
+        'reason' => 'I want to cancel a trip that has already happened.',
+    ])->assertRedirect()->assertSessionHas('error');
 
     expect($booking->fresh()->status)->toBe(Booking::STATUS_PAID);
+});
+
+it('restores a denied paid request and does not accept a second request', function () {
+    $user = onboardedUser();
+    $admin = AdminModel::create(['name' => 'Admin Deny Paid', 'email' => 'admin-deny-paid@test.com', 'password' => 'password']);
+    $booking = Booking::factory()->paid()->cancellationRequested(Booking::STATUS_PAID)->create(['user_id' => $user->id]);
+
+    $this->actingAs($admin, 'admin')->post(route('admin.bookings.cancel-request.deny', $booking->id), [
+        'admin_message' => 'Your trip starts tomorrow, which is inside the non-cancellable window.',
+    ])->assertSessionHas('success');
+    expect($booking->fresh())->status->toBe(Booking::STATUS_PAID)->payment_status->toBe(Booking::PAYMENT_PAID);
+
+    $this->actingAs($user)->post(route('booking.cancel', $booking->booking_code), [
+        'reason' => 'Asking again because I still want to cancel.',
+    ])->assertSessionHas('error');
+    $this->get(route('booking.show', $booking->booking_code))->assertSee('Cancellation denied', false)->assertDontSee('Request Cancellation');
+});
+
+it('records the external refund reference for a cancelled paid booking', function () {
+    $admin = AdminModel::create(['name' => 'Admin Refund', 'email' => 'admin-refund@test.com', 'password' => 'password']);
+    $booking = Booking::factory()->paid()->create(['status' => Booking::STATUS_CANCELLED, 'cancelled_at' => now()]);
+
+    $this->actingAs($admin, 'admin')->get(route('admin.bookings.show', $booking->id))->assertSee('Record refund outcome');
+    $this->post(route('admin.bookings.mark-refunded', $booking->id), ['refund_reference' => 'GCASH-7781', 'refund_note' => 'Refunded ₱6,000 by GCash.'])->assertRedirect();
+
+    expect($booking->fresh()->payment_status)->toBe(Booking::PAYMENT_REFUNDED)
+        ->and($booking->history()->latest('id')->value('note'))->toContain('GCASH-7781')->toContain('No transfer was initiated');
+});
+
+it('tells a paid traveler that an approved cancellation does not refund automatically', function () {
+    $user = onboardedUser();
+    $admin = AdminModel::create(['name' => 'Admin Approve Paid', 'email' => 'admin-approve-paid@test.com', 'password' => 'password']);
+    $booking = Booking::factory()->paid()->cancellationRequested(Booking::STATUS_PAID)->create(['user_id' => $user->id]);
+
+    $this->actingAs($admin, 'admin')->post(route('admin.bookings.cancel-request.approve', $booking->id), ['admin_message' => 'Approved.']);
+
+    expect($booking->fresh()->payment_status)->toBe(Booking::PAYMENT_PAID);
+    Notification::assertSentTo($user, BookingCancellationApproved::class, fn ($notification) => str_contains(implode(' ', $notification->toMail($user)->introLines), 'does not issue a refund automatically'));
 });
 
 it('lets an admin approve a cancellation request and notifies the user', function () {
@@ -136,9 +187,10 @@ it('lets an admin deny a cancellation request keeping inventory held', function 
 
     $booking->refresh();
 
-    expect($booking->status)->toBe(Booking::STATUS_CANCELLATION_DENIED)
+    expect($booking->status)->toBe(Booking::STATUS_PENDING)
         ->and($booking->cancellation_reason)->toBe($denyMessage)
-        ->and($booking->isHoldStatus())->toBeTrue();
+        ->and($booking->isHoldStatus())->toBeTrue()
+        ->and($booking->hasDeniedCancellationRequest())->toBeTrue();
 
     Notification::assertSentTo($user, BookingCancellationDenied::class);
 });
@@ -170,7 +222,9 @@ it('lets a user withdraw a cancellation request', function () {
 
     $booking->refresh();
 
-    expect($booking->status)->toBe(Booking::STATUS_APPROVED);
+    expect($booking->status)->toBe(Booking::STATUS_APPROVED)
+        ->and($booking->cancellation_requested_at)->toBeNull()
+        ->and($booking->hasDeniedCancellationRequest())->toBeFalse();
 });
 
 it('shows cancellation request on the booking show page for the owner', function () {

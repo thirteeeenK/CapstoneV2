@@ -1,10 +1,15 @@
 <?php
 
+use App\Models\ActivityModel;
 use App\Models\AdminModel;
+use App\Models\DestinationModel;
+use App\Models\HotelModel;
 use App\Models\QrphPaymentAttempt;
+use App\Models\RoomType;
 use App\Models\User;
 use App\Services\GeminiService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -135,6 +140,24 @@ function onboardedUser(array $attributes = []): User
     $user->save();
 
     return $user;
+}
+
+/**
+ * One destination with a ₱1,000/night room and two ₱500/person activities: a 2-night,
+ * 2-traveler Lucky itinerary there costs ₱4,000.
+ *
+ * @return array{destination: DestinationModel, room: RoomType, activities: Collection<int, ActivityModel>}
+ */
+function luckyTripFixture(string $name = 'Siargao'): array
+{
+    $destination = DestinationModel::factory()->create(['name' => $name, 'region' => 'Test Region', 'description' => 'A test destination.']);
+    $hotel = HotelModel::factory()->create(['hotel_name' => $name.' Surf Resort', 'destination_id' => $destination->id, 'specific_address' => 'Tourism Road']);
+    $room = RoomType::factory()->create(['hotel_id' => $hotel->id, 'room_name' => 'Garden Room', 'base_price' => 1000.00, 'base_occupancy' => 2,
+        'max_occupancy' => 4, 'extra_person_fee' => 500.00, 'total_rooms' => 5]);
+    $activities = collect([1, 2])->map(fn (int $i) => ActivityModel::factory()->create(['destination_id' => $destination->id, 'activity_name' => "$name Activity $i",
+        'category' => 'Water Activity', 'activity_level' => 'Adventure', 'rate' => '₱500/person', 'duration' => '4 hours']));
+
+    return compact('destination', 'room', 'activities');
 }
 
 function settingsAdmin(array $attributes = []): AdminModel

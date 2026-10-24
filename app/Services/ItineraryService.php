@@ -6,6 +6,7 @@ use App\Models\ActivityModel;
 use App\Models\TripItinerary;
 use App\Models\TripPlan;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -243,6 +244,8 @@ class ItineraryService
             'end_date' => $plan->end_date->toDateString(), 'pax' => $plan->pax, 'mode' => $plan->mode, 'generated_at' => now()->toIso8601String(),
             'graph_version' => config('services.routing.graph_version'), 'days' => $days, 'unscheduled' => $unscheduled,
             'selections' => $plan->items->map(fn ($item) => ['plan_item_id' => $item->id, 'type' => $item->item_type, 'item_id' => $item->item_id, 'options' => $item->options])->all(),
+            'pricing' => $this->estimate($plan, $models),
+            'forecast' => ['fetched_at' => $rawWeather['fetched_at'], 'stale' => $rawWeather['stale']],
             'report' => $this->gemini->generateTripReport($reportContext),
         ];
 
@@ -256,6 +259,39 @@ class ItineraryService
 
             return $locked->itineraries()->create(['revision' => $revision, 'snapshot' => $snapshot]);
         });
+    }
+
+    /**
+     * Itemized price estimates at generation time, so a saved version keeps the
+     * prices it was planned with instead of showing today's prices as history.
+     *
+     * @param  array<string, Collection>  $models
+     * @return array{currency: string, estimated_at: string, lines: list<array{plan_item_id: int, type: string, name: string, detail: string, unit_price: float, subtotal: float}>, total: float, exclusions: string}
+     */
+    private function estimate(TripPlan $plan, array $models): array
+    {
+        $lines = [];
+        foreach ($plan->items as $item) {
+            $model = $models[$item->item_type][$item->item_id];
+            $options = $item->options ?? [];
+            $pax = max(1, (int) ($options['pax'] ?? $plan->pax));
+            if ($item->item_type === 'room') {
+                $nights = max(1, (int) Carbon::parse($options['check_in'])->diffInDays(Carbon::parse($options['check_out'])));
+                $quantity = max(1, (int) ($options['quantity'] ?? 1));
+                $unit = round($model->calculateNightlyRate($pax), 2);
+                $lines[] = ['plan_item_id' => $item->id, 'type' => 'room', 'name' => $model->room_name.' · '.$model->hotel->hotel_name,
+                    'detail' => $quantity.' room'.($quantity === 1 ? '' : 's').' × '.$nights.' night'.($nights === 1 ? '' : 's').' · '.$pax.' guests · '.$options['check_in'].' to '.$options['check_out'],
+                    'unit_price' => $unit, 'subtotal' => round($unit * $nights * $quantity, 2)];
+            } elseif ($item->item_type === 'activity') {
+                $rate = round($model->calculateRateForPax($pax), 2);
+                $lines[] = ['plan_item_id' => $item->id, 'type' => 'activity', 'name' => $model->activity_name,
+                    'detail' => ($model->isPerPersonRate() ? $pax.' guest'.($pax === 1 ? '' : 's').' × per-person rate' : 'Flat group rate').(isset($options['date']) ? ' · '.$options['date'] : ''),
+                    'unit_price' => $rate, 'subtotal' => round($model->isPerPersonRate() ? $rate * $pax : $rate, 2)];
+            }
+        }
+
+        return ['currency' => 'PHP', 'estimated_at' => now()->toIso8601String(), 'lines' => $lines, 'total' => round(array_sum(array_column($lines, 'subtotal')), 2),
+            'exclusions' => 'Excludes transport, boat transfers, environmental and terminal fees, meals and tips unless listed. Passenger-category adjustments and approval may change the final amount.'];
     }
 
     private function scheduling(object $model, array $choice): array

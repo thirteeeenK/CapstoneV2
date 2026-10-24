@@ -35,6 +35,7 @@
                 ['route' => 'manage-hotels', 'icon' => 'house', 'label' => 'Add Hotel Information', 'href' => Route::has('manage-hotels') ? route('manage-hotels') : '#'],
                 ['route' => 'view-listings', 'icon' => 'hotel', 'label' => 'Show Hotel Listing', 'href' => route('view-listings')],
                 ['route' => 'admin.packages.*', 'icon' => 'card_travel', 'label' => 'Tour Packages & Promos', 'href' => route('admin.packages.index')],
+                ['route' => 'admin.promotions.*', 'icon' => 'confirmation_number', 'label' => 'Lucky Promotions', 'href' => route('admin.promotions.index')],
                 ['route' => 'admin.activities.*', 'icon' => 'explore', 'label' => 'Activities & Tours', 'href' => Route::has('admin.activities.index') ? route('admin.activities.index') : '#'],
                 ['route' => 'admin.planner-inventory.*', 'icon' => 'route', 'label' => 'Planner Scheduling & Locations', 'href' => route('admin.planner-inventory.index')],
                 ['route' => 'admin.addons.*', 'icon' => 'extension', 'label' => 'Transfers and Add-ons', 'href' => route('admin.addons.index')],

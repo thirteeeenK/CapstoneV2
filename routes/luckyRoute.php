@@ -7,4 +7,5 @@ Route::prefix('lucky')->name('lucky.')->middleware(['auth'])->group(function () 
     Route::get('/', [LuckyItineraryController::class, 'index'])->name('index');
     Route::post('/generate', [LuckyItineraryController::class, 'generate'])->name('generate');
     Route::post('/accept', [LuckyItineraryController::class, 'accept'])->name('accept');
+    Route::post('/plan', [LuckyItineraryController::class, 'plan'])->name('plan');
 });

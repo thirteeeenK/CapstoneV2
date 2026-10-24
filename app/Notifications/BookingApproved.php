@@ -31,6 +31,12 @@ class BookingApproved extends BookingNotification
             $mail->line('Your initial payment window started when you submitted the reservation. Approval does not restart it. A shortened deadline keeps payment before check-in or the first confirmed service.');
         }
 
+        if ((float) $booking->promotion_discount_amount > 0) {
+            $mail->line('Your Lucky discount of **−₱'.number_format((float) $booking->promotion_discount_amount, 2).'** is included in this amount; it applies to your Lucky itinerary items only.');
+        } elseif ($booking->promotionRedemption?->status === 'released') {
+            $mail->line('Your Lucky code no longer applies because an item of its itinerary was unavailable or changed during review, so this amount has no Lucky discount.');
+        }
+
         if ((float) $booking->admin_discount_amount > 0 || (float) $booking->admin_surcharge_amount > 0) {
             $reason = $booking->price_adjustment_reason;
 

@@ -7,9 +7,11 @@ import tripPlanner from './trip-planner';
 import plannerScheduling from './admin-planner-scheduling';
 import adminLiveList from './admin-live-list';
 import { displayChatMessages } from './chat-sections';
+import { durationLabel, tripDays, tripEndDate } from './trip-duration';
 
 window.Alpine = Alpine;
 window.displayChatMessages = displayChatMessages;
+window.tripDuration = { durationLabel, tripDays, tripEndDate };
 
 Alpine.plugin(focus);
 Alpine.data('tripPlanner', tripPlanner);
@@ -58,10 +60,14 @@ Alpine.data('dateRangePicker', (config = {}) => ({
 
                     if (start && end) {
                         this.checkIn = instance.formatDate(start, 'Y-m-d');
-                        this.checkOut = instance.formatDate(end, 'Y-m-d');
-
-                        const diffTime = Math.abs(end - start);
-                        this.nights = Math.max(1, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+                        // Calendar-day arithmetic: elapsed hours shift across timezones and DST.
+                        // A stay tied to a trip length (config.nights) always spans exactly that many nights;
+                        // a same-day pick becomes a one-night stay.
+                        const nights = Number.isInteger(config.nights) && config.nights > 0 ? config.nights
+                            : Math.max(1, (tripDays(this.checkIn, instance.formatDate(end, 'Y-m-d')) ?? 2) - 1);
+                        this.checkOut = tripEndDate(this.checkIn, nights + 1);
+                        end = new Date(this.checkOut + 'T00:00:00');
+                        this.nights = nights;
 
                         const startFormatted = instance.formatDate(start, 'M j');
                         const endFormatted = instance.formatDate(end, 'M j, Y');

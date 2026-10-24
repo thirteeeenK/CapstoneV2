@@ -32,6 +32,8 @@ class CartItem extends Model
         'lucky_group_id',
         'trip_itinerary_id',
         'trip_plan_item_id',
+        'rebooked_from_booking_id',
+        'lucky_offer_id',
     ];
 
     protected $casts = [
@@ -56,6 +58,11 @@ class CartItem extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function luckyOffer()
+    {
+        return $this->belongsTo(LuckyOffer::class);
     }
 
     public function itemable()

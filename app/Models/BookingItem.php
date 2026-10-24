@@ -37,6 +37,7 @@ class BookingItem extends Model
         'fulfillment_status',
         'fulfilled_at',
         'fulfillment_admin_id',
+        'promotion_discount_amount',
     ];
 
     protected $casts = [
@@ -45,6 +46,7 @@ class BookingItem extends Model
         'check_out_date' => 'date',
         'unit_price' => 'decimal:2',
         'subtotal' => 'decimal:2',
+        'promotion_discount_amount' => 'decimal:2',
         'item_snapshot' => 'array',
     ];
 

@@ -16,7 +16,7 @@ use Illuminate\Validation\ValidationException;
 
 class BookingRequestService
 {
-    public function __construct(private readonly RoomAvailabilityService $roomAvailabilityService, private readonly TripBookingDatePolicy $dates, private readonly CartService $cart) {}
+    public function __construct(private readonly RoomAvailabilityService $roomAvailabilityService, private readonly TripBookingDatePolicy $dates, private readonly CartService $cart, private readonly PromotionService $promotions) {}
 
     /**
      * @param  Collection<int, CartItem>  $cartItems
@@ -157,9 +157,15 @@ class BookingRequestService
             $totalAmount += $itemSubtotal;
         }
 
-        $netAmount = max(0.00, $totalAmount - $discountAmount + $surchargeAmount - (float) ($validated['admin_discount_amount'] ?? 0) + (float) ($validated['admin_surcharge_amount'] ?? 0));
+        // A Lucky code is priced from the server's own line subtotals; the browser only names the code.
+        $promotion = filled($validated['promotion_code'] ?? null) && $request->user()
+            ? $this->promotions->evaluate($request->user(), $validated['promotion_code'], $cartItems,
+                BookingQuoteService::payableBeforePromotionCents($totalAmount, $discountAmount, $surchargeAmount), array_map(fn ($calc) => $calc['subtotal'], $calculatedItemSubtotals))
+            : null;
+        $promotionDiscount = $promotion ? $promotion['discount_cents'] / 100 : 0.00;
+        $netAmount = BookingQuoteService::net($totalAmount, $discountAmount, $surchargeAmount, $promotionDiscount, (float) ($validated['admin_discount_amount'] ?? 0), (float) ($validated['admin_surcharge_amount'] ?? 0));
 
-        return DB::transaction(function () use ($validated, $cartItems, $calculatedItemSubtotals, $bookingCode, $guestManifest, $totalAmount, $discountAmount, $surchargeAmount, $netAmount) {
+        return DB::transaction(function () use ($request, $validated, $cartItems, $calculatedItemSubtotals, $bookingCode, $guestManifest, $totalAmount, $discountAmount, $surchargeAmount, $netAmount, $promotion, $promotionDiscount) {
             $lockedCartItems = CartItem::query()
                 ->whereIn('id', $cartItems->modelKeys())
                 ->lockForUpdate()
@@ -232,6 +238,7 @@ class BookingRequestService
                 'total_amount' => $totalAmount,
                 'discount_amount' => $discountAmount,
                 'tax_amount' => $surchargeAmount,
+                'promotion_discount_amount' => $promotionDiscount,
                 'net_amount' => $netAmount,
                 'payment_status' => Booking::PAYMENT_UNPAID,
                 'contact_name' => $validated['contact_name'],
@@ -239,14 +246,17 @@ class BookingRequestService
                 'contact_phone' => $validated['contact_phone'],
                 'special_requests' => $validated['special_requests'] ?? null,
                 'guest_manifest' => $guestManifest,
+                'rebooked_from_booking_id' => $this->rebookedFrom($cartItems)?->id,
             ]);
+            $this->recordRebooking($booking);
 
+            $bookingItems = [];
             foreach ($cartItems as $item) {
                 $calc = $calculatedItemSubtotals[$item->id] ?? ['subtotal' => $item->subtotal, 'pax' => $item->selected_pax];
                 $finalSubtotal = $calc['subtotal'];
                 $finalPax = $calc['pax'];
 
-                BookingItem::create([
+                $bookingItems[$item->id] = BookingItem::create([
                     'booking_id' => $booking->id,
                     'item_type' => $item->item_type,
                     'item_id' => $item->item_id,
@@ -271,6 +281,8 @@ class BookingRequestService
                         'image' => $item->item_image,
                         'room_option' => $item->room_option,
                         'trip_itinerary_id' => $item->trip_itinerary_id,
+                        'lucky_group_id' => $item->lucky_group_id,
+                        'lucky_offer_id' => $item->lucky_offer_id,
                         'trip_plan_item_id' => $item->trip_itinerary_id ? collect($plannerItineraries[$item->trip_itinerary_id]->snapshot['selections'])->first(fn ($choice) => $choice['type'] === $item->item_type && $choice['item_id'] === $item->item_id)['plan_item_id'] : null,
                     ],
                 ]);
@@ -289,12 +301,43 @@ class BookingRequestService
             if ($snapshots !== []) {
                 $booking->update(['trip_itineraries' => $snapshots]);
             }
+            if ($promotion) {
+                $this->promotions->reserve($booking, $request->user(), $promotion, $bookingItems);
+            }
             CartItem::whereIn('id', $cartItems->pluck('id')->toArray())->delete();
 
             app(AdminNotificationService::class)->send('booking_requested', $booking);
 
             return $booking;
         });
+    }
+
+    /**
+     * The caller's own earlier booking that these basket lines were rebooked from, if any.
+     *
+     * @param  Collection<int, CartItem>  $cartItems
+     */
+    private function rebookedFrom(Collection $cartItems): ?Booking
+    {
+        $id = $cartItems->pluck('rebooked_from_booking_id')->filter()->first();
+
+        return $id ? Booking::query()->whereKey($id)->where('user_id', auth()->id())->first() : null;
+    }
+
+    /**
+     * Cross-reference a rebooking in both bookings' history. Payments, credits
+     * and promotions of the earlier booking are deliberately not carried over.
+     */
+    private function recordRebooking(Booking $booking): void
+    {
+        $original = $booking->rebookedFrom;
+        if (! $original) {
+            return;
+        }
+        $original->history()->create(['from_status' => $original->status, 'to_status' => $original->status, 'actor_type' => 'system',
+            'note' => 'Rebooked as new request '.$booking->booking_code.'.']);
+        $booking->history()->create(['from_status' => 'created', 'to_status' => $booking->status, 'actor_type' => 'system',
+            'note' => 'New request rebooking '.$original->booking_code.' at current prices and availability. Earlier payments, credits and promo codes were not transferred.']);
     }
 
     /**
@@ -398,7 +441,7 @@ class BookingRequestService
      * Apply admin availability adjustments to booking items and recompute totals.
      *
      * @param  array  $adjustments  items[id => ['include' => bool, 'quantity' => int, 'admin_note' => ?string]]
-     * @return array{total: float, net: float, included: int, excluded: int}
+     * @return array{total: float, net: float, included: int, excluded: int, promotion_note?: ?string}
      */
     public function repriceForApproval(Booking $booking, array $adjustments): array
     {
@@ -445,17 +488,20 @@ class BookingRequestService
         $surcharge = (float) $booking->tax_amount;
         $adminDiscount = (float) $booking->admin_discount_amount;
         $adminSurcharge = (float) $booking->admin_surcharge_amount;
-        $net = max(0.00, $total - $discount + $surcharge - $adminDiscount + $adminSurcharge);
+        $promotion = $this->promotions->repriceForApproval($booking, BookingQuoteService::payableBeforePromotionCents($total, $discount, $surcharge));
+        $net = BookingQuoteService::net($total, $discount, $surcharge, $promotion['discount'], $adminDiscount, $adminSurcharge);
 
         $booking->total_amount = round($total, 2);
-        $booking->net_amount = round($net, 2);
+        $booking->promotion_discount_amount = $promotion['discount'];
+        $booking->net_amount = $net;
         $booking->save();
 
         return [
             'total' => round($total, 2),
-            'net' => round($net, 2),
+            'net' => $net,
             'included' => $included,
             'excluded' => $excluded,
+            'promotion_note' => $promotion['note'],
         ];
     }
 
@@ -487,6 +533,7 @@ class BookingRequestService
 
             if ($matching) {
                 $matching->quantity = ($matching->quantity ?? 1) + $item->quantity;
+                $matching->rebooked_from_booking_id = $booking->id;
                 $matching->save();
                 $count++;
 
@@ -504,6 +551,7 @@ class BookingRequestService
                 'selected_pax' => $item->selected_pax,
                 'is_selected' => true,
                 'notes' => null,
+                'rebooked_from_booking_id' => $booking->id,
             ]);
             $count++;
         }

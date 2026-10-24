@@ -4,7 +4,9 @@
 <style>body { font-family: 'DejaVu Sans', sans-serif; color: #183440; font-size: 12px; line-height: 1.6; padding: 24px; } h1 { font-size: 24px; } section { margin-top: 20px; } @media print { button { display: none; } }</style></head>
 <body>
 @if(request()->boolean('print'))<button type="button" onclick="window.print()">Print draft</button>@endif
-<h1>{{ $itinerary['title'] }}</h1><p>Itinerary (From Chatbot) · Draft · {{ $reference }}</p>
+<h1>{{ $itinerary['title'] }}</h1>
+<div style="border: 2px solid #183440; padding: 10px 14px; margin: 12px 0;"><span style="display:block;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#5c707b">{{ $referenceLabel ?? 'Plan reference (not a booking)' }}</span><span style="display:block;font-size:20px;font-weight:bold;letter-spacing:2px">{{ $referenceCode ?? $reference }}</span><span style="color:#8a4b00">Draft — routes, timings and weather are not checked yet. Build a checked schedule in the Trip Planner before relying on it.</span></div>
+<p>Itinerary (From Chatbot) · Draft · {{ $reference }}</p>
 <p>{{ $itinerary['destination'] }} · {{ $itinerary['duration_days'] }} days · {{ $itinerary['pax'] ?? 'Unspecified' }} travelers</p>
 <p>{{ $itinerary['start_date'] ?? 'Dates to be decided' }} @if($itinerary['end_date']) → {{ $itinerary['end_date'] }} @endif</p>
 <p>{{ $itinerary['notice'] }}</p><p>{{ $itinerary['weather_notice'] }}</p>

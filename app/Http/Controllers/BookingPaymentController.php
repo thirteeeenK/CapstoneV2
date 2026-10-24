@@ -11,6 +11,7 @@ use App\Notifications\BookingNotification;
 use App\Notifications\BookingPaid;
 use App\Services\AdminNotificationService;
 use App\Services\BookingExpiryService;
+use App\Services\BookingJourneyContext;
 use App\Services\BookingRequestService;
 use App\Services\Payment\GoTymePaymentService;
 use App\Services\Payment\PaymentGatewayException;
@@ -399,9 +400,11 @@ class BookingPaymentController extends Controller
             'reason' => 'required|string|min:10|max:2000',
         ]);
 
-        if (! in_array($booking->status, [Booking::STATUS_PENDING, Booking::STATUS_APPROVED], true)) {
+        if (! $this->canRequestCancellation($booking)) {
             return redirect()->route('booking.show', $booking->booking_code)
-                ->with('error', 'This booking can no longer be cancelled.');
+                ->with('error', $booking->hasDeniedCancellationRequest()
+                    ? 'A cancellation request for this booking was already reviewed. Contact support if you still need to cancel.'
+                    : 'This booking can no longer be cancelled.');
         }
 
         $reason = trim($validated['reason']);
@@ -409,7 +412,7 @@ class BookingPaymentController extends Controller
 
         $updated = $booking->transitionTo(
             Booking::STATUS_CANCELLATION_REQUESTED,
-            [Booking::STATUS_PENDING, Booking::STATUS_APPROVED],
+            [Booking::STATUS_PENDING, Booking::STATUS_APPROVED, Booking::STATUS_PAID],
             [
                 'cancellation_request_reason' => $reason,
                 'cancellation_requested_at' => now(),
@@ -442,7 +445,22 @@ class BookingPaymentController extends Controller
         app(AdminNotificationService::class)->send('cancellation_requested', $booking->fresh());
 
         return redirect()->route('booking.show', $booking->booking_code)
-            ->with('success', 'Cancellation requested. Our team will review your request and reply with a decision.');
+            ->with('success', 'Cancellation requested. Our team will review your request and reply with a decision.'
+                .(in_array($booking->payment_status, [Booking::PAYMENT_PAID, Booking::PAYMENT_PARTIAL], true) ? ' Your payments stay recorded; a request does not issue a refund by itself.' : ''));
+    }
+
+    /**
+     * Pending, approved (including deposit-paid) and fully paid bookings may ask
+     * for review until the trip ends, unless a request was already denied.
+     */
+    public static function canRequestCancellation(Booking $booking): bool
+    {
+        if (! in_array($booking->status, [Booking::STATUS_PENDING, Booking::STATUS_APPROVED, Booking::STATUS_PAID], true) || $booking->hasDeniedCancellationRequest()) {
+            return false;
+        }
+        $end = BookingJourneyContext::for($booking)->tripEnd();
+
+        return $booking->status !== Booking::STATUS_PAID || $end === null || $end->isFuture();
     }
 
     /**
@@ -458,14 +476,15 @@ class BookingPaymentController extends Controller
         }
 
         $restoreTo = $booking->cancellation_requested_from ?: Booking::STATUS_PENDING;
-        if (! in_array($restoreTo, [Booking::STATUS_PENDING, Booking::STATUS_APPROVED], true)) {
+        if (! in_array($restoreTo, [Booking::STATUS_PENDING, Booking::STATUS_APPROVED, Booking::STATUS_PAID], true)) {
             $restoreTo = Booking::STATUS_PENDING;
         }
 
+        // A withdrawn request leaves no open request behind; the history keeps the record.
         $updated = $booking->transitionTo(
             $restoreTo,
             [Booking::STATUS_CANCELLATION_REQUESTED],
-            [],
+            ['cancellation_request_reason' => null, 'cancellation_requested_at' => null, 'cancellation_requested_from' => null],
             'Cancellation request withdrawn by customer.'
         );
 
@@ -493,7 +512,7 @@ class BookingPaymentController extends Controller
         $count = $this->bookingRequestService->recreateCartFromBooking($booking, $request);
 
         return redirect()->route('cart.index')
-            ->with('success', "Added {$count} item".($count === 1 ? '' : 's').' back to your Trip Basket for rebooking.');
+            ->with('success', "Added {$count} item".($count === 1 ? '' : 's')." back to your Trip Basket as a new booking request. Review the dates; prices and availability are rechecked at checkout, and payments or promo codes from {$booking->booking_code} do not carry over.");
     }
 
     /**

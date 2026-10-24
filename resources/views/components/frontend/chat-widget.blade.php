@@ -129,6 +129,9 @@
                         <button @click='input = "Best activities in El Nido?"; send()'
                             class="px-3 py-1.5 rounded-full bg-amber-50 dark:bg-amber-950/60 hover:bg-amber-100 dark:hover:bg-amber-950 text-amber-700 dark:text-amber-100 text-[11px] font-bold border border-amber-200 dark:border-amber-800 transition-colors cursor-pointer">Best
                             activities in El Nido?</button>
+                        <button @click='input = "Surprise me with a Lucky trip"; send()'
+                            class="px-3 py-1.5 rounded-full bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-100 dark:hover:bg-rose-950 text-rose-700 dark:text-rose-100 text-[11px] font-bold border border-rose-200 dark:border-rose-800 transition-colors cursor-pointer">I'm
+                            Feeling Lucky</button>
                         <button @click='input = "What is the weather like in Boracay?"; send()'
                             class="px-3 py-1.5 rounded-full bg-sky-50 dark:bg-sky-950/60 hover:bg-sky-100 dark:hover:bg-sky-950 text-sky-700 dark:text-sky-100 text-[11px] font-bold border border-sky-200 dark:border-sky-800 transition-colors cursor-pointer">Boracay
                             weather today?</button>
@@ -153,6 +156,9 @@
                         about
                         hotels, island activities, room rates, or custom itineraries.</p>
                     <div class="flex flex-wrap gap-2 justify-center pt-2">
+                        <button @click='input = "Surprise me with a Lucky trip"; send()'
+                            class="px-3 py-1.5 rounded-full bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-100 dark:hover:bg-rose-950 text-rose-700 dark:text-rose-100 text-[11px] font-bold border border-rose-200 dark:border-rose-800 transition-colors cursor-pointer">I'm
+                            Feeling Lucky</button>
                         <!-- <button @click='input = "Where to stay in Boracay?"; send()'
                             class="px-3 py-1.5 rounded-full bg-ocean-50 hover:bg-ocean-100 text-ocean-700 text-[11px] font-bold border border-ocean-200 transition-colors cursor-pointer">Where
                             to stay in Boracay?</button>
@@ -436,6 +442,48 @@
                                     </div>
                                 </template>
 
+                                {{-- Lucky itinerary: the same server-issued offer as the Lucky page --}}
+                                <template x-if="msg.lucky">
+                                    <div class="mt-3 rounded-xl border border-rose-200 dark:border-rose-800 bg-white dark:bg-slate-900 p-3 text-xs space-y-2">
+                                        <template x-if="msg.lucky.requires_login">
+                                            <a :href="msg.lucky.login_url" class="inline-flex min-h-11 items-center gap-1 rounded-lg bg-ocean-700 px-3 py-2 font-bold text-white">
+                                                <span class="material-symbols-outlined text-[16px]">login</span> Sign in to get a Lucky trip
+                                            </a>
+                                        </template>
+                                        <template x-if="msg.lucky.itinerary">
+                                            <div class="space-y-1.5">
+                                                <p class="font-bold text-slate-900 dark:text-slate-100" x-text="msg.lucky.itinerary.destination.name + ' · ' + msg.lucky.itinerary.nights + 'N · ' + msg.lucky.itinerary.pax + ' guest' + (msg.lucky.itinerary.pax > 1 ? 's' : '')"></p>
+                                                <p class="text-slate-600 dark:text-slate-400" x-text="msg.lucky.itinerary.hotel.hotel_name + ' — ' + msg.lucky.itinerary.room.room_name"></p>
+                                                <template x-for="act in msg.lucky.itinerary.activities" :key="act.id">
+                                                    <p class="text-slate-600 dark:text-slate-400" x-text="'• ' + act.activity_name + ' (' + act.formatted_rate + ')'"></p>
+                                                </template>
+                                                <p class="font-bold text-ocean-700 dark:text-ocean-300" x-text="'Total: ' + msg.lucky.itinerary.formatted_total"></p>
+                                                <template x-if="msg.lucky.offer && msg.lucky.offer.code">
+                                                    <div class="rounded-lg bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 p-2 space-y-1">
+                                                        <div class="flex items-center justify-between gap-2">
+                                                            <code class="font-mono font-bold text-emerald-900 dark:text-emerald-100" x-text="msg.lucky.offer.code"></code>
+                                                            <button type="button" @click="copyLuckyCode(msg.lucky.offer.code)" class="min-h-11 px-2 font-bold text-emerald-700 dark:text-emerald-300 underline underline-offset-4">Copy</button>
+                                                        </div>
+                                                        <p class="text-emerald-800 dark:text-emerald-200" x-text="msg.lucky.offer.discount_label + ' · est. saving ' + msg.lucky.offer.formatted_estimated_saving + ' · until ' + msg.lucky.offer.formatted_expires_at"></p>
+                                                        <details><summary class="cursor-pointer text-emerald-800 dark:text-emerald-200">Terms</summary>
+                                                            <ul class="list-disc pl-4 mt-1 space-y-0.5 text-emerald-900/80 dark:text-emerald-100/80"><template x-for="term in msg.lucky.offer.terms" :key="term"><li x-text="term"></li></template></ul>
+                                                        </details>
+                                                    </div>
+                                                </template>
+                                                <div class="flex flex-wrap gap-2 pt-1">
+                                                    <button type="button" @click="acceptLucky(msg.lucky)" :disabled="acceptingLucky"
+                                                        class="min-h-11 rounded-lg bg-ocean-700 px-3 py-2 font-bold text-white disabled:opacity-60">Add to Trip Basket</button>
+                                                    <button type="button" x-show="msg.lucky.plan_url" @click="planLucky(msg.lucky)" class="min-h-11 px-2 font-bold text-ocean-700 dark:text-ocean-300 underline underline-offset-4">Check daily schedule</button>
+                                                    <a :href="msg.lucky.page_url" class="inline-flex min-h-11 items-center px-2 font-bold text-ocean-700 dark:text-ocean-300">Open Lucky page</a>
+                                                </div>
+                                            </div>
+                                        </template>
+                                        <template x-if="!msg.lucky.requires_login && !msg.lucky.itinerary && msg.lucky.page_url">
+                                            <a :href="msg.lucky.page_url" class="inline-flex min-h-11 items-center font-bold text-ocean-700 dark:text-ocean-300">Adjust filters on the Lucky page</a>
+                                        </template>
+                                    </div>
+                                </template>
+
                                 {{-- Suggested actions (pills) --}}
                                 <template x-if="msg.suggested_actions && msg.suggested_actions.length">
                                     <div class="mt-3 flex flex-wrap gap-1.5">
@@ -454,19 +502,36 @@
                                 @include('components.frontend.chat-trip-details')
 
                                 <template x-if="msg.itinerary_suggestion">
-                                    <div data-trip-plan-actions class="mt-3 space-y-2 text-xs font-body">
+                                    <div data-trip-plan-actions class="mt-3 space-y-2 text-xs font-body" :class="isLatestSuggestion(msg.itinerary_suggestion) ? '' : 'opacity-70'">
+                                        <p class="font-headline text-[11px] font-bold uppercase tracking-wide" :class="isLatestSuggestion(msg.itinerary_suggestion) ? 'text-ocean-700 dark:text-ocean-300' : 'text-slate-500'"
+                                            x-text="isLatestSuggestion(msg.itinerary_suggestion) ? 'Draft itinerary · not checked yet' : 'Earlier version · replaced by the itinerary below'"></p>
                                         @include('components.frontend.chat-itinerary-summary', ['suggestionExpression' => 'msg.itinerary_suggestion'])
                                         <template x-for="day in msg.itinerary_suggestion.days" :key="day.day">
                                             <section class="border-t border-sand-200 pt-2 dark:border-slate-700">
                                                 <h4 class="font-bold" x-text="`Day ${day.day}${day.date ? ' · ' + day.date : ''}${day.day === 1 ? ' · Arrival' : (day.day === msg.itinerary_suggestion.duration_days ? ' · Departure' : '')}`"></h4>
-                                                <template x-for="choice in day.choices" :key="choice.type + ':' + choice.id"><p x-text="choice.name"></p></template>
+                                                <template x-for="choice in day.choices" :key="choice.type + ':' + choice.id">
+                                                    <div class="flex items-start justify-between gap-2 py-0.5">
+                                                        <div class="min-w-0">
+                                                            <p class="font-semibold" x-text="choice.name"></p>
+                                                            <p x-show="choice.detail" class="text-slate-500 dark:text-slate-400" x-text="[choice.detail?.category, choice.detail?.duration, choice.detail?.price].filter(Boolean).join(' · ')"></p>
+                                                        </div>
+                                                        <button type="button" x-show="choice.type === 'activity'" @click="$store.preview.openActivityById(choice.id)" :aria-label="'Details for ' + choice.name"
+                                                            class="min-h-11 shrink-0 px-2 font-bold text-ocean-700 underline underline-offset-4 dark:text-ocean-300">Details</button>
+                                                    </div>
+                                                </template>
                                                 <p x-show="!day.choices.length">Open time — arrange activities at your own pace.</p>
                                             </section>
                                         </template>
                                         <p class="text-slate-600 dark:text-slate-300" x-text="msg.itinerary_suggestion.weather_notice"></p>
                                         <p class="text-slate-500 dark:text-slate-400">Save this as a draft. Rooms and activities are reserved only through checkout.</p>
-                                        <button type="button" x-show="!savedTripPlans[msg.itinerary_suggestion.id]" @click="saveItineraryPlan(msg.itinerary_suggestion, $el)" :disabled="savingTripPlan === msg.itinerary_suggestion.id"
-                                            class="min-h-11 rounded-lg bg-ocean-700 px-4 py-2 font-bold text-white disabled:opacity-50">Add to Trip Plan</button>
+                                        <p x-show="estimateIsStale(msg.itinerary_suggestion) && !savedTripPlans[msg.itinerary_suggestion.id]" class="rounded-lg bg-amber-50 p-2 text-amber-900 dark:bg-amber-950 dark:text-amber-200">These prices and availability were estimated more than a day ago and may have changed. Update the trip details for a current version.</p>
+                                        <div class="flex flex-wrap gap-2" x-show="!savedTripPlans[msg.itinerary_suggestion.id] && isLatestSuggestion(msg.itinerary_suggestion)">
+                                            <button type="button" x-show="replaceablePlanId(msg.itinerary_suggestion)" @click="saveItineraryPlan(msg.itinerary_suggestion, $el, replaceablePlanId(msg.itinerary_suggestion))" :disabled="savingTripPlan === msg.itinerary_suggestion.id"
+                                                class="min-h-11 rounded-lg bg-ocean-700 px-4 py-2 font-bold text-white disabled:opacity-50">Update my saved plan</button>
+                                            <button type="button" @click="saveItineraryPlan(msg.itinerary_suggestion, $el)" :disabled="savingTripPlan === msg.itinerary_suggestion.id"
+                                                :class="replaceablePlanId(msg.itinerary_suggestion) ? 'border border-ocean-700 text-ocean-700 dark:text-ocean-300' : 'bg-ocean-700 text-white'"
+                                                class="min-h-11 rounded-lg px-4 py-2 font-bold disabled:opacity-50" x-text="replaceablePlanId(msg.itinerary_suggestion) ? 'Save as a new plan' : 'Add to Trip Plan'"></button>
+                                        </div>
                                         <a data-trip-plan-return-focus x-show="typeof savedTripPlans[msg.itinerary_suggestion.id] === 'string'" :href="savedTripPlans[msg.itinerary_suggestion.id] || '#'" class="inline-flex min-h-11 items-center font-bold text-ocean-700 dark:text-ocean-300">Saved — View Trip Plan</a>
                                         <p x-show="savedTripPlans[msg.itinerary_suggestion.id] === true" class="font-bold text-ocean-700 dark:text-ocean-300">Added to your Trip Plan — <a data-trip-plan-return-focus :href="loginUrl" class="underline">sign in to view it</a>.</p>
                                         <p role="status" x-show="tripPlanNotices[msg.itinerary_suggestion.id]" x-text="tripPlanNotices[msg.itinerary_suggestion.id]"></p>
@@ -747,6 +812,7 @@
             controlBusy: false,
             activeTripFormId: null,
             savingTripPlan: null,
+            acceptingLucky: false,
             savedTripPlans: {},
             tripPlanNotices: {},
             inputLimit: @json(\App\Http\Controllers\ChatbotController::MESSAGE_LIMIT),
@@ -869,12 +935,13 @@
                         extras.dialogue_notice = ctx.dialogue_notice;
                         extras.section_footer = ctx.section_footer;
                         extras.price_effective_note = ctx.price_effective_note;
-                        if (ctx.retrieved_rooms?.length) extras.rooms = ctx.retrieved_rooms;
+                        if (ctx.retrieved_rooms?.length && !ctx.itinerary_suggestion) extras.rooms = ctx.retrieved_rooms;
                         if (ctx.retrieved_hotels?.length) extras.hotels = ctx.retrieved_hotels;
-                        if (ctx.retrieved_activities?.length) extras.activities = ctx.retrieved_activities;
+                        if (ctx.retrieved_activities?.length && !ctx.itinerary_suggestion) extras.activities = ctx.retrieved_activities;
                         if (ctx.retrieved_packages?.length) extras.packages = ctx.retrieved_packages;
                         if (ctx.result_ordering) extras.ordering = ctx.result_ordering;
                         if (ctx.itinerary) extras.itinerary = ctx.itinerary;
+                        if (ctx.lucky) extras.lucky = ctx.lucky;
                         if (ctx.map) extras.map = ctx.map;
                         if (ctx.ai_notice) extras.ai_notice = ctx.ai_notice;
                         if (ctx.evidence_note) extras.evidence_note = ctx.evidence_note;
@@ -1185,7 +1252,7 @@
                     }
 
                     const extras = {};
-                    if (data.retrieved_rooms && data.retrieved_rooms.length > 0) {
+                    if (data.retrieved_rooms && data.retrieved_rooms.length > 0 && !data.itinerary_suggestion) {
                         extras.rooms = data.retrieved_rooms;
                     } else if (data.availability && data.availability.length > 0) {
                         // Map raw availability entries (item + availability) to room cards when retrieved_rooms missing
@@ -1211,8 +1278,9 @@
                     if (data.itinerary) {
                         extras.itinerary = data.itinerary;
                     }
+                    if (data.lucky) extras.lucky = data.lucky;
                     if (data.retrieved_hotels) extras.hotels = data.retrieved_hotels;
-                    if (data.retrieved_activities) extras.activities = data.retrieved_activities;
+                    if (data.retrieved_activities && !data.itinerary_suggestion) extras.activities = data.retrieved_activities;
                     if (data.retrieved_packages) extras.packages = data.retrieved_packages;
                     if (data.result_ordering) extras.ordering = data.result_ordering;
                     if (data.map) extras.map = data.map;
@@ -1278,20 +1346,44 @@
                 if (changes.dates_undecided === true) {
                     delete changes.check_in_date; delete changes.check_out_date;
                 }
-                if (values.dates_undecided === false && values.check_in_date && values.check_out_date) {
+                if (form.needs_duration && values.days && values.dates_undecided === false && values.check_in_date) {
+                    changes.days = Number(values.days);
+                    changes.check_in_date = values.check_in_date;
+                    changes.check_out_date = window.tripDuration.tripEndDate(values.check_in_date, Number(values.days)) || null;
+                } else if (values.dates_undecided === false && values.check_in_date && values.check_out_date) {
                     delete changes.days;
                 }
+                if (!form.needs_duration) delete changes.include_accommodation;
                 if (!Object.keys(changes).length) changes.destination_id = values.destination_id;
                 await this.send(null, '', null, { trip_details: changes, form_id: form.id, form_revision: form.revision, scope_id: form.scope_id });
             },
 
-            async saveItineraryPlan(suggestion, returnFocus = null) {
+            /**
+             * The plan id of an earlier saved draft for the same destination in this
+             * conversation, so a newer version can update it instead of adding another.
+             */
+            replaceablePlanId(suggestion) {
+                if (!suggestion || this.savedTripPlans[suggestion.id]) return null;
+                const earlier = this.displayMessages().map(message => message.itinerary_suggestion).filter(Boolean)
+                    .filter(other => other.id !== suggestion.id && other.destination_id === suggestion.destination_id && typeof this.savedTripPlans[other.id] === 'string');
+                const url = earlier.length ? this.savedTripPlans[earlier[earlier.length - 1].id] : null;
+                const id = url ? new URL(url, window.location.origin).searchParams.get('plan') : null;
+                return id ? Number(id) : null;
+            },
+
+            /** Whether an estimate is old enough that prices and availability may have changed. */
+            estimateIsStale(suggestion) {
+                const generated = Date.parse(suggestion?.generated_at || '');
+                return Number.isFinite(generated) && Date.now() - generated > 24 * 3600 * 1000;
+            },
+
+            async saveItineraryPlan(suggestion, returnFocus = null, planId = null) {
                 if (this.savingTripPlan) return;
                 this.savingTripPlan = suggestion.id;
                 try {
                     const response = await fetch(@js(route('trip-planner.chatbot-store')), { method: 'POST',
                         headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' },
-                        body: JSON.stringify({ suggestion_id: suggestion.id, session_token: this.sessionToken }) });
+                        body: JSON.stringify({ suggestion_id: suggestion.id, session_token: this.sessionToken, ...(planId ? { plan_id: planId } : {}) }) });
                     const data = await response.json();
                     if (!response.ok) throw new Error(Object.values(data.errors || {}).flat()[0] || data.message || 'Unable to save this itinerary. Please try again.');
                     // A guest has no planner page yet, so the saved state is held
@@ -1332,6 +1424,82 @@
                     case 'under_target': return peso(check.delta) + ' under your ' + peso(check.budget) + ' budget';
                     case 'over': return 'Over budget · ' + peso(check.delta) + ' over ' + peso(check.budget);
                     default: return '';
+                }
+            },
+
+            /**
+             * Only the newest itinerary offers a save action; earlier revisions
+             * stay readable as history, and a saved one keeps its link.
+             */
+            isLatestSuggestion(suggestion) {
+                if (!suggestion) return false;
+                for (let i = this.messages.length - 1; i >= 0; i--) {
+                    const message = this.messages[i];
+                    const found = message.itinerary_suggestion
+                        || [...(message.sections || [])].reverse().find(section => section.data?.itinerary_suggestion)?.data.itinerary_suggestion;
+                    if (found) return found.id === suggestion.id;
+                }
+                return true;
+            },
+
+            async copyLuckyCode(code) {
+                try {
+                    await navigator.clipboard.writeText(code);
+                } catch (err) {
+                    alert('Copy is unavailable here. Your code is ' + code + '.');
+                }
+            },
+
+            /**
+             * Accept a Lucky offer through the same endpoint as the Lucky page,
+             * by its saved id, so the basket lines stay bound to the offer.
+             */
+            async acceptLucky(lucky) {
+                if (!lucky?.offer?.id || this.acceptingLucky) return;
+                this.acceptingLucky = true;
+                try {
+                    const res = await fetch(lucky.accept_url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content,
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: JSON.stringify({ offer_id: lucky.offer.id }),
+                    });
+                    const data = await res.json();
+                    if (data.success) {
+                        window.dispatchEvent(new CustomEvent('cart-updated'));
+                        window.dispatchEvent(new CustomEvent('show-cart-modal', {
+                            detail: { message: data.message, cartCount: data.cart_count, cartTotal: data.cart_total }
+                        }));
+                    } else {
+                        alert(data.message || 'Could not add the Lucky trip to your basket.');
+                    }
+                } catch (err) {
+                    alert('Could not add the Lucky trip to your basket. Please try again.');
+                } finally {
+                    this.acceptingLucky = false;
+                }
+            },
+
+            /** Open the Lucky itinerary in the Trip Planner, where its schedule is checked. */
+            async planLucky(lucky) {
+                try {
+                    const res = await fetch(lucky.plan_url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content, 'Accept': 'application/json' },
+                        body: JSON.stringify({ offer_id: lucky.offer.id }),
+                    });
+                    const data = await res.json();
+                    if (res.ok && data.success) {
+                        window.location.href = data.url;
+                    } else {
+                        alert(data.message || 'Could not open this trip in the Trip Planner.');
+                    }
+                } catch (err) {
+                    alert('Could not open this trip in the Trip Planner. Please try again.');
                 }
             },
 
@@ -1581,7 +1749,7 @@
                         extras.location_request = true;
                         extras.location_target = data.location_target || '';
                     }
-                    if (data.retrieved_rooms?.length) extras.rooms = data.retrieved_rooms;
+                    if (data.retrieved_rooms?.length && !data.itinerary_suggestion) extras.rooms = data.retrieved_rooms;
                     if (data.retrieved_hotels?.length) extras.hotels = data.retrieved_hotels;
                     if (data.retrieved_activities?.length) extras.activities = data.retrieved_activities;
                     if (data.retrieved_packages?.length) extras.packages = data.retrieved_packages;

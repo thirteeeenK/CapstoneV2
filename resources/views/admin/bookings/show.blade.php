@@ -22,7 +22,7 @@
     @endphp
 
     <div class="pb-12 font-body space-y-6">
-        @if($booking->trip_itineraries && in_array($booking->status, ['paid', 'cancellation_denied'], true))
+        @if(in_array($booking->status, ['paid', 'cancellation_denied'], true) && $booking->payment_status === 'paid')
             <details class="rounded-xl border border-ocean-200 bg-white dark:bg-slate-900 p-5"><summary class="min-h-11 py-2 font-headline font-bold cursor-pointer">Trip completion &amp; fulfillment evidence</summary>
                 <p class="mt-2 text-sm text-slate-500">Record actual hotel stays and activity attendance. The scheduler completes a booking only after every included service is fulfilled and its end date has passed by 24 hours. Keep no-shows pending for admin review.</p>
                 <form action="{{ route('admin.bookings.trip-fulfillment', $booking->id) }}" method="POST" class="mt-4 space-y-4">@csrf @method('PATCH')
@@ -120,6 +120,18 @@
                 @endif
             </div>
         </div>
+
+        @if($booking->payment_plan_version !== 2 && $booking->status === 'cancelled' && $booking->payment_status === 'paid')
+            <form action="{{ route('admin.bookings.mark-refunded', $booking->id) }}" method="POST" class="rounded-xl border border-amber-200 bg-amber-50 p-4 space-y-3">
+                @csrf
+                <p class="text-sm font-bold text-amber-900">This cancelled booking is still recorded as paid. Record the outcome of the refund you processed outside SunnyTrips.</p>
+                <div class="grid gap-3 sm:grid-cols-2">
+                    <div><label for="v1-refund-reference" class="block text-xs font-semibold mb-1">External refund reference</label><input id="v1-refund-reference" name="refund_reference" required maxlength="100" class="w-full rounded-lg border-slate-300"></div>
+                    <div><label for="v1-refund-note" class="block text-xs font-semibold mb-1">Note (amount, method, who confirmed)</label><input id="v1-refund-note" name="refund_note" required maxlength="500" class="w-full rounded-lg border-slate-300"></div>
+                </div>
+                <button type="submit" class="min-h-11 px-4 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs cursor-pointer">Record refund outcome</button>
+            </form>
+        @endif
 
         @if (session('success'))
             <div class="bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-sm px-4 py-3 rounded-2xl flex items-center gap-2">
@@ -502,6 +514,16 @@
                             <span>Foreign Tourist Surcharges</span>
                             <span>+₱{{ number_format((float)$booking->tax_amount, 2) }}</span>
                         </div>
+                    @endif
+                    @if((float)$booking->promotion_discount_amount > 0 || $booking->promotionRedemption)
+                        @php($redemption = $booking->promotionRedemption)
+                        <div class="flex items-center justify-between text-emerald-700 font-semibold">
+                            <span>Lucky Discount{{ $redemption ? ' · '.$redemption->code.' ('.$redemption->status.')' : '' }}</span>
+                            <span>-₱{{ number_format((float)$booking->promotion_discount_amount, 2) }}</span>
+                        </div>
+                        @if($redemption)
+                            <p class="text-[11px] text-slate-500">Applies only to the Lucky itinerary items; excluding or changing one of them at approval removes it. {{ $redemption->status_reason }}</p>
+                        @endif
                     @endif
                     @if((float)$booking->admin_discount_amount > 0)
                         <div class="flex items-center justify-between text-emerald-700 font-semibold">

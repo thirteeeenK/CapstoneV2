@@ -4,6 +4,7 @@ use App\Models\ActivityModel;
 use App\Models\AdminAuditLog;
 use App\Models\AdminModel;
 use App\Models\Booking;
+use App\Models\BookingItem;
 use App\Models\CartItem;
 use App\Models\DestinationModel;
 use App\Models\HotelModel;
@@ -591,6 +592,69 @@ it('offers protected print and PDF documents and queues itinerary email to the o
     Notification::assertSentTo($this->user, TripItineraryReady::class, fn (TripItineraryReady $notification) => $notification->itineraryId === $itinerary->id
         && $notification->tripPlanId === $this->plan->id
         && $notification->snapshot['destination'] === 'Boracay');
+});
+
+it('records itemized estimates with each version and prints them under a prominent plan reference', function () {
+    $this->room->update(['base_price' => 2000, 'base_occupancy' => 2]);
+    plannerAdd($this->plan, 'room', $this->room->id, ['quantity' => 1, 'pax' => 2]);
+    $activity = plannerActivity($this->destination, ['rate' => '₱750/person']);
+    plannerAdd($this->plan, 'activity', $activity->id, ['pax' => 2]);
+    $itinerary = app(ItineraryService::class)->generate($this->plan->fresh());
+
+    $pricing = $itinerary->snapshot['pricing'];
+    expect($pricing['currency'])->toBe('PHP')->and($pricing['total'])->toEqual(7500)
+        ->and(collect($pricing['lines'])->firstWhere('type', 'room')['subtotal'])->toEqual(6000)
+        ->and($itinerary->snapshot['forecast']['fetched_at'])->not->toBeNull();
+
+    $this->room->update(['base_price' => 9999]);
+    $this->get(route('trip-planner.document', [$this->plan, $itinerary, 'print' => 1]))->assertOk()
+        ->assertSee('Plan reference (not a booking)')->assertSee('PLAN-'.$this->plan->id.'-V'.$itinerary->id)
+        ->assertSee('Estimated prices')->assertSee('₱7,500.00')->assertDontSee('₱9,999.00')->assertSee('Mapped road/path estimate');
+});
+
+it('shows estimate unavailable and honest route labels for older versions', function () {
+    plannerAdd($this->plan, 'room', $this->room->id);
+    plannerAdd($this->plan, 'activity', plannerActivity($this->destination)->id);
+    $itinerary = app(ItineraryService::class)->generate($this->plan->fresh());
+    $snapshot = $itinerary->snapshot;
+    unset($snapshot['pricing'], $snapshot['forecast']);
+    foreach ($snapshot['days'] as &$day) {
+        foreach ($day['stops'] as &$stop) {
+            $stop['travel'] = ['distance_km' => null, 'duration_minutes' => null, 'geometry_kind' => 'straight_line'] + $stop['travel'];
+        }
+    }
+    unset($day, $stop);
+    $itinerary->update(['snapshot' => $snapshot]);
+
+    $this->get(route('trip-planner.document', [$this->plan, $itinerary, 'print' => 1]))->assertOk()
+        ->assertSee('Estimate unavailable')->assertSee('Forecast check time was not recorded')
+        ->assertSee('not a verified road or boat route')->assertSee('Distance and travel time from');
+});
+
+it('prints a booked itinerary with the booking reference, stored prices and only the purchased services', function () {
+    plannerAdd($this->plan, 'room', $this->room->id);
+    $activity = plannerActivity($this->destination);
+    plannerAdd($this->plan, 'activity', $activity->id);
+    $itinerary = app(ItineraryService::class)->generate($this->plan->fresh());
+    $roomItem = $this->plan->items()->where('item_type', 'room')->first();
+    $activityItem = $this->plan->items()->where('item_type', 'activity')->first();
+    $booking = Booking::factory()->approved()->create(['user_id' => $this->user->id, 'total_amount' => 5200, 'net_amount' => 4700, 'promotion_discount_amount' => 500,
+        'trip_itineraries' => [$itinerary->snapshot + ['itinerary_id' => $itinerary->id, 'booked_plan_item_ids' => [$roomItem->id, $activityItem->id]]]]);
+    BookingItem::factory()->create(['booking_id' => $booking->id, 'item_title' => 'Booked Garden Room', 'subtotal' => 4400, 'availability_status' => 'available',
+        'promotion_discount_amount' => 500, 'item_snapshot' => ['trip_itinerary_id' => $itinerary->id, 'trip_plan_item_id' => $roomItem->id]]);
+    BookingItem::factory()->create(['booking_id' => $booking->id, 'item_type' => 'activity', 'item_title' => 'Sunset Sail', 'subtotal' => 800, 'availability_status' => 'unavailable',
+        'item_snapshot' => ['trip_itinerary_id' => $itinerary->id, 'trip_plan_item_id' => $activityItem->id]]);
+
+    $this->get(route('booking.itinerary', [$booking->booking_code, 0, 'print' => 1]))->assertOk()
+        ->assertSee('Booking reference')->assertSee($booking->booking_code)->assertSee('Booked services and prices')
+        ->assertSee('₱4,400.00')->assertSee('Lucky −₱500.00')->assertSee('Excluded at review — not charged')
+        ->assertSee('₱4,700.00')->assertSee('not yet paid')->assertDontSee('Estimated prices');
+});
+
+it('creates a trip from an arrival and a duration and rejects a departure that does not match', function () {
+    $payload = ['destination_id' => $this->destination->id, 'title' => 'Six days', 'start_date' => '2026-10-26', 'pax' => 2, 'mode' => 'walking', 'duration_days' => 6];
+    $this->postJson(route('trip-planner.store'), $payload + ['end_date' => '2026-10-28'])->assertUnprocessable()->assertJsonValidationErrors(['end_date' => 'the trip is 6 days, 5 nights']);
+    $this->postJson(route('trip-planner.store'), $payload + ['end_date' => '2026-10-31'])->assertCreated()->assertJsonPath('data.duration_days', 6);
 });
 
 it('lets admins verify activity scheduling and refuses malformed times', function () {

@@ -29,10 +29,14 @@ function tripDetailsPayload(TestResponse $response, array $values): array
     return ['session_token' => $response->json('session_token'), 'form_id' => $form['id'], 'form_revision' => $form['revision'], 'scope_id' => $form['scope_id'], 'trip_details' => $values];
 }
 
-test('exact dates override stale duration and include a dated stay', function () {
+test('dates must match the chosen duration instead of silently replacing it', function () {
     $first = $this->postJson('/chat', ['message' => 'help me plan a trip']);
+    $this->postJson('/chat', tripDetailsPayload($first, ['destination_id' => $this->destination->id, 'pax' => 2,
+        'check_in_date' => '2026-11-01', 'check_out_date' => '2026-11-04', 'days' => 12]))
+        ->assertUnprocessable()->assertJsonValidationErrors(['trip_details.check_out_date' => 'the trip is 12 days, 11 nights']);
+
     $response = $this->postJson('/chat', tripDetailsPayload($first, ['destination_id' => $this->destination->id, 'pax' => 2,
-        'check_in_date' => '2026-11-01', 'check_out_date' => '2026-11-04', 'days' => 12]));
+        'check_in_date' => '2026-11-01', 'check_out_date' => '2026-11-04', 'days' => 4]));
     $response->assertOk()->assertJsonPath('trip_details_form.values.days', 4)->assertJsonPath('trip_details_form.values.nights', 3)
         ->assertJsonPath('itinerary_suggestion.accommodation.hotel_name', $this->hotel->hotel_name)
         ->assertJsonPath('itinerary_suggestion.accommodation.nights', 3)
@@ -217,12 +221,41 @@ test('clearing form notes removes only the exclusions those notes introduced', f
     expect($third->json('sections.0.constraints.excluded_terms'))->toBe([]);
 });
 
-test('editing only arrival preserves the prefilled departure and recomputes the duration', function () {
+test('moving only the arrival moves the whole trip and keeps its duration', function () {
     $first = $this->postJson('/chat', ['message' => 'help me plan a trip']);
     $second = $this->postJson('/chat', tripDetailsPayload($first, ['destination_id' => $this->destination->id, 'check_in_date' => '2026-11-01', 'check_out_date' => '2026-11-04']));
     $second->assertOk();
     $this->postJson('/chat', tripDetailsPayload($second, ['check_in_date' => '2026-11-02']))->assertOk()
-        ->assertJsonPath('trip_details_form.values.check_out_date', '2026-11-04')->assertJsonPath('trip_details_form.values.days', 3);
+        ->assertJsonPath('trip_details_form.values.check_out_date', '2026-11-05')->assertJsonPath('trip_details_form.values.days', 4);
+});
+
+test('an arrival and a duration are enough; the departure follows from them', function () {
+    $first = $this->postJson('/chat', ['message' => 'help me plan a trip']);
+    $this->postJson('/chat', tripDetailsPayload($first, ['destination_id' => $this->destination->id, 'pax' => 2, 'days' => 6, 'check_in_date' => '2026-10-26']))->assertOk()
+        ->assertJsonPath('trip_details_form.values.check_out_date', '2026-10-31')->assertJsonPath('itinerary_suggestion.duration_days', 6)
+        ->assertJsonPath('itinerary_suggestion.days.5.date', '2026-10-31');
+});
+
+test('arrivals follow the two-day Manila lead policy and a dated trip needs one night', function () {
+    $first = $this->postJson('/chat', ['message' => 'help me plan a trip']);
+    expect($first->json('trip_details_form.minimum_arrival'))->toBe('2026-10-23');
+    $this->postJson('/chat', tripDetailsPayload($first, ['destination_id' => $this->destination->id, 'days' => 3, 'check_in_date' => '2026-10-22']))
+        ->assertUnprocessable()->assertJsonValidationErrors(['trip_details.check_in_date' => 'two calendar days ahead']);
+    $this->postJson('/chat', tripDetailsPayload($first, ['destination_id' => $this->destination->id, 'days' => 1, 'check_in_date' => '2026-11-01']))
+        ->assertUnprocessable()->assertJsonValidationErrors(['trip_details.days' => 'at least 2 days']);
+});
+
+test('a contradictory per-night amount for the whole trip is rejected', function () {
+    $first = $this->postJson('/chat', ['message' => 'help me plan a trip']);
+    $this->postJson('/chat', tripDetailsPayload($first, ['destination_id' => $this->destination->id, 'days' => 3, 'dates_undecided' => true,
+        'max_price' => 5000, 'budget_basis' => 'per_night', 'budget_period' => 'total']))
+        ->assertUnprocessable()->assertJsonValidationErrors(['trip_details.budget_period' => 'cannot also cover the whole trip']);
+});
+
+test('excluding accommodation drafts activities only', function () {
+    $first = $this->postJson('/chat', ['message' => 'help me plan a trip']);
+    $this->postJson('/chat', tripDetailsPayload($first, ['destination_id' => $this->destination->id, 'pax' => 2, 'days' => 3, 'dates_undecided' => true, 'include_accommodation' => false]))
+        ->assertOk()->assertJsonPath('itinerary_suggestion.accommodation', null)->assertJsonPath('trip_details_form.values.include_accommodation', false);
 });
 
 test('native form strings are normalized into numeric context values', function () {
@@ -251,9 +284,75 @@ test('date and duration errors read as plain guidance without internal field pat
     $response->assertUnprocessable()->assertJsonValidationErrors([$key => $message]);
     expect(str_contains((string) $response->json('errors.'.$key.'.0'), 'trip details'))->toBeFalse();
 })->with([
-    'missing departure' => [['check_in_date' => '2026-11-04'], 'trip_details.check_out_date', 'Choose a departure date, or tick "Dates not decided yet".'],
+    'missing departure' => [['check_in_date' => '2026-11-04'], 'trip_details.check_out_date', 'Choose a departure date, or choose "Decide later".'],
     'reversed' => [['check_in_date' => '2026-11-04', 'check_out_date' => '2026-11-01'], 'trip_details.check_out_date', 'Departure must be after arrival.'],
-    'past arrival' => [['check_in_date' => '2020-01-01', 'check_out_date' => '2020-01-05'], 'trip_details.check_in_date', 'Arrival cannot be in the past.'],
+    'past arrival' => [['check_in_date' => '2020-01-01', 'check_out_date' => '2020-01-05'], 'trip_details.check_in_date', 'at least two calendar days ahead in Philippine time'],
     'beyond thirty days' => [['check_in_date' => '2026-11-01', 'check_out_date' => '2026-12-20'], 'trip_details.check_out_date', 'Those dates cover 50 days. Plan up to 30 days at a time.'],
     'undecided without duration' => [['dates_undecided' => true], 'trip_details.days', 'Enter how many days the trip should last.'],
 ]);
+
+test('changing only the duration updates the itinerary without rerunning an answered activities search', function () {
+    $first = $this->postJson('/chat', ['message' => 'activities in Boracay']);
+    $plan = $this->postJson('/chat', ['message' => 'help me plan a trip to Boracay', 'session_token' => $first->json('session_token')]);
+    $three = $this->postJson('/chat', tripDetailsPayload($plan, ['destination_id' => $this->destination->id, 'pax' => 2, 'days' => 3, 'dates_undecided' => true]));
+    $three->assertOk();
+    $six = $this->postJson('/chat', tripDetailsPayload($three, ['days' => 6]));
+
+    $six->assertOk()->assertJsonPath('itinerary_suggestion.duration_days', 6)->assertJsonPath('itinerary_suggestion.duration_nights', 5);
+    expect(collect($six->json('sections'))->pluck('type')->all())->toBe(['ITINERARY_QUERY'])
+        ->and($six->json('trip_details_form.values.pax'))->toBe(2);
+});
+
+test('a six-day draft is not cut to the three preview cards and an unchanged redraft keeps its identity', function () {
+    foreach (range(1, 5) as $i) {
+        ActivityModel::factory()->create(['destination_id' => $this->destination->id, 'activity_level' => 'Relaxing', 'description' => 'A relaxing experience '.$i.'.', 'is_shown' => true, 'embedding' => unitVectorString(0), 'rate' => '900']);
+    }
+    $first = $this->postJson('/chat', ['message' => 'help me plan a trip']);
+    $details = ['destination_id' => $this->destination->id, 'pax' => 2, 'days' => 6, 'dates_undecided' => true];
+    $draft = $this->postJson('/chat', tripDetailsPayload($first, $details));
+
+    $activities = collect($draft->json('itinerary_suggestion.choices'))->where('type', 'activity');
+    expect($activities->count())->toBeGreaterThan(3)
+        ->and($draft->json('reply'))->not->toContain('do not have enough verified activities');
+
+    $again = $this->postJson('/chat', tripDetailsPayload($draft, ['notes' => null]));
+    expect($again->json('itinerary_suggestion.id'))->toBe($draft->json('itinerary_suggestion.id'));
+});
+
+test('a draft without travelers asks for them instead of calling the price stale', function () {
+    $first = $this->postJson('/chat', ['message' => 'help me plan a trip']);
+    $draft = $this->postJson('/chat', tripDetailsPayload($first, ['destination_id' => $this->destination->id, 'days' => 3, 'dates_undecided' => true]));
+
+    $draft->assertOk()->assertJsonPath('itinerary_suggestion.accommodation.nightly_rate', null);
+    expect($draft->json('reply'))->toContain('Add the number of travelers to calculate the stay estimate');
+});
+
+test('a duration-only edit keeps the drafted stay while other changes search again', function () {
+    $first = $this->postJson('/chat', ['message' => 'help me plan a trip']);
+    $three = $this->postJson('/chat', tripDetailsPayload($first, ['destination_id' => $this->destination->id, 'pax' => 2, 'days' => 3, 'dates_undecided' => true]));
+    $kept = $three->json('itinerary_suggestion.accommodation.room_id');
+    expect($kept)->not->toBeNull();
+
+    // A closer semantic match now exists; it must not displace the stay on a length-only edit.
+    RoomType::whereKey($kept)->update(['embedding' => unitVectorString(5)]);
+    $better = RoomType::factory()->create(['hotel_id' => $this->hotel->id, 'base_price' => 2000, 'is_shown' => true, 'embedding' => unitVectorString(0), 'max_occupancy' => 4]);
+
+    $six = $this->postJson('/chat', tripDetailsPayload($three, ['days' => 6]));
+    $six->assertOk()->assertJsonPath('itinerary_suggestion.accommodation.room_id', $kept)->assertJsonPath('itinerary_suggestion.accommodation.nights', 5);
+
+    $four = $this->postJson('/chat', tripDetailsPayload($six, ['pax' => 3]));
+    $four->assertOk()->assertJsonPath('itinerary_suggestion.accommodation.room_id', $better->id);
+});
+
+test('a draft shows planned activity details and one cost breakdown checked against the budget', function () {
+    $first = $this->postJson('/chat', ['message' => 'help me plan a trip']);
+    $draft = $this->postJson('/chat', tripDetailsPayload($first, ['destination_id' => $this->destination->id, 'pax' => 2, 'days' => 3, 'dates_undecided' => true,
+        'max_price' => 5500, 'budget_basis' => 'trip_total', 'budget_period' => 'total', 'budget_coverage' => 'all_inclusive']));
+
+    $cost = $draft->json('itinerary_suggestion.cost');
+    $activity = collect($draft->json('itinerary_suggestion.choices'))->firstWhere('type', 'activity');
+    expect($activity['detail']['price'])->not->toBeEmpty()
+        ->and($cost['stay'])->toEqual(5000)->and($cost['total'])->toEqual($cost['stay'] + $cost['activities'])
+        ->and($cost['status'])->toBe('over')->and($cost['summary'])->toContain('over your ₱5,500.00 trip budget')
+        ->and($draft->json('reply'))->toContain('Estimated total');
+});

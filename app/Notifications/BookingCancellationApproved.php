@@ -19,7 +19,10 @@ class BookingCancellationApproved extends BookingNotification
             ->greeting("Hi {$booking->contact_name},")
             ->line("Your cancellation request for booking **{$booking->booking_code}** has been **approved**.")
             ->line("Reason: {$reason}")
-            ->line('No payment was taken for this booking. You may rebook at any time.')
+            ->line(in_array($booking->payment_status, ['paid', 'partial'], true)
+                ? 'Your recorded payments stay on file. Cancelling does not issue a refund automatically: our team reviews any refundable amount under the booking terms and will confirm the outcome with its reference.'
+                : 'No payment was taken for this booking.')
+            ->line('You may rebook at any time; a rebooking is a new request at current prices and availability.')
             ->action('View Booking', route('booking.show', $booking->booking_code))
             ->line('Thank you. — SunnyTrips Team');
     }

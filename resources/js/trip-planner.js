@@ -1,3 +1,4 @@
+import { durationLabel, tripDays, tripEndDate } from './trip-duration.js';
 // One colour per itinerary day so overlapping days stay readable. Brand palette
 // only, and no purple, per the SunnyTrips colour rules.
 const dayColors = ['#0a78a8', '#e85e37', '#0f766e', '#085e85', '#b45309', '#15803d', '#be123c'];
@@ -25,7 +26,7 @@ export default (config) => {
     plansPage: 1, hasMorePlans: config.plans.length >= 20,
     weatherHtml: '', weatherLoading: false, weatherError: '', weatherSequence: 0,
     tab: 'hotels', busy: false, error: '', notice: '', mapError: '', routeNotice: '', search: '', activeDay: 0, editing: null,
-    title: '', startDate: '', endDate: '', pax: 2, mode: 'walking', optionIn: '', optionOut: '', optionDate: '', optionPax: 2, optionQuantity: 1,
+    title: '', startDate: '', endDate: '', durationDays: '', pax: 2, mode: 'walking', optionIn: '', optionOut: '', optionDate: '', optionPax: 2, optionQuantity: 1,
     viewportSignature: '', loadSequence: 0, activeHotelId: 0, savedPlanId: '', deleting: false, customStayDates: false,
     previewPlaces: [], previewKey: '', previewError: '', previewStatus: '', previewImageFailed: false,
     itineraryMapContext: false, catalogLoading: false,
@@ -133,9 +134,10 @@ export default (config) => {
         if (this.minimumArrival && this.startDate && this.startDate < this.minimumArrival) {
             this.error = this.arrivalHint(); return;
         }
+        this.syncDeparture();
         await this.run(async () => {
             this.plan = (await this.api('/plans', 'POST', { destination_id: this.destinationId, title: this.title,
-                start_date: this.startDate, end_date: this.endDate, pax: Number(this.pax), mode: this.mode })).data;
+                start_date: this.startDate, end_date: this.endDate, duration_days: Number(this.durationDays), pax: Number(this.pax), mode: this.mode })).data;
             this.savedPlans.unshift(this.plan); this.notice = 'Trip saved. Choose the places you want to include.';
             this.savedPlanId = String(this.plan.id);
         });
@@ -154,6 +156,7 @@ export default (config) => {
             if (!this.draftItinerary) this.loadWeather(this.destinationId);
             else { this.weatherSequence++; this.weatherHtml = ''; this.weatherLoading = false; this.weatherError = ''; }
             this.startDate = this.plan.start_date?.slice(0, 10) || ''; this.endDate = this.plan.end_date?.slice(0, 10) || '';
+            this.durationDays = this.plan.duration_days || tripDays(this.startDate, this.endDate) || '';
             this.pax = this.plan.pax; this.mode = this.plan.mode;
             this.catalog = catalog.data;
             const room = this.selections.find(item => item.item_type === 'room');
@@ -405,18 +408,27 @@ export default (config) => {
             if (this.title !== this.plan.title) changes.title = this.title;
             if (Number(this.pax) !== Number(this.plan.pax)) changes.pax = Number(this.pax);
             if (this.mode !== this.plan.mode) changes.mode = this.mode;
+            this.syncDeparture();
             const datesChanged = this.startDate !== (this.plan.start_date?.slice(0, 10) || '') || this.endDate !== (this.plan.end_date?.slice(0, 10) || '');
+            const durationChanged = this.durationDays !== '' && Number(this.durationDays) !== Number(this.plan.duration_days || 0);
             if ((this.startDate || this.endDate) && datesChanged) Object.assign(changes, { start_date: this.startDate, end_date: this.endDate });
+            if (durationChanged || (changes.start_date && this.durationDays !== '')) changes.duration_days = Number(this.durationDays);
         }
         await this.savePlanDetails(changes);
     },
     async clearDates() { await this.savePlanDetails({ clear_dates: true }); },
+    /** The departure always follows from the arrival and the trip length. */
+    syncDeparture() {
+        if (this.startDate && this.durationDays) this.endDate = tripEndDate(this.startDate, Number(this.durationDays));
+    },
+    durationSummary() { return durationLabel(Number(this.durationDays)); },
     isChatbotDraft() { return this.plan?.source === 'chatbot' && this.plan?.status === 'draft'; },
     async savePlanDetails(changes) {
         await this.run(async () => {
             const body = await this.api('/plans/' + this.plan.id, 'PATCH', { revision: this.plan.revision, ...changes });
             this.plan = body.data; this.selections = body.data.items;
             this.startDate = this.plan.start_date?.slice(0, 10) || ''; this.endDate = this.plan.end_date?.slice(0, 10) || '';
+            this.durationDays = this.plan.duration_days || tripDays(this.startDate, this.endDate) || '';
             // A draft keeps showing its draft; a rescheduled trip's old schedule no longer matches and must be rebuilt.
             const latest = body.itinerary;
             this.draftItinerary = latest?.snapshot?.kind === 'chatbot_draft' ? latest : null;

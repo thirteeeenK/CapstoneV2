@@ -228,7 +228,7 @@ test('dates and choices can be edited with revisions and the original snapshot i
     $saved = $this->postJson('/trip-planner/chatbot-plans', ['suggestion_id' => $this->suggestion['id']])->assertCreated();
     $plan = TripPlan::findOrFail($saved->json('data.id'));
     $url = '/trip-planner/plans/'.$plan->id;
-    $updated = $this->patchJson($url, ['revision' => 1, 'title' => 'Updated trip', 'start_date' => '2026-11-01', 'end_date' => '2026-11-04', 'pax' => 2]);
+    $updated = $this->patchJson($url, ['revision' => 1, 'title' => 'Updated trip', 'start_date' => '2026-11-01', 'end_date' => '2026-11-04', 'duration_days' => 4, 'pax' => 2]);
     $updated->assertOk()->assertJsonPath('data.title', 'Updated trip')->assertJsonPath('data.context.pax_assumed', false)->assertJsonPath('itinerary.snapshot.start_date', '2026-11-01');
     expect($plan->itineraries()->count())->toBe(2)->and($plan->itineraries()->oldest('id')->first()->snapshot['start_date'])->toBeNull();
     $this->patchJson($url, ['revision' => 1, 'title' => 'stale'])->assertUnprocessable()->assertJsonValidationErrors('revision');
@@ -270,7 +270,7 @@ test('new dated choices update the saved draft and it can later become a schedul
     $saved = $this->postJson('/trip-planner/chatbot-plans', ['suggestion_id' => $this->suggestion['id']])->assertCreated();
     $plan = TripPlan::findOrFail($saved->json('data.id'));
     $base = '/trip-planner/plans/'.$plan->id;
-    $this->patchJson($base, ['revision' => 1, 'start_date' => '2026-11-01', 'end_date' => '2026-11-04'])->assertOk();
+    $this->patchJson($base, ['revision' => 1, 'start_date' => '2026-11-01', 'end_date' => '2026-11-04', 'duration_days' => 4])->assertOk();
     $hotel = HotelModel::factory()->create(['destination_id' => $this->destination->id, 'latitude' => 11.96, 'longitude' => 121.927]);
     $added = $this->postJson($base.'/items', ['item_type' => 'hotel', 'item_id' => $hotel->id])->assertOk();
     expect(array_column($added->json('draft_itinerary.snapshot.choices'), 'name'))->toContain($hotel->hotel_name);
@@ -388,7 +388,7 @@ test('changing party size and dates keeps custom choices that still fit the trip
     $plan = savedDatedRoomDraft($this);
     customizeDraftChoices($this, $plan);
 
-    $this->patchJson('/trip-planner/plans/'.$plan->id, ['revision' => $plan->fresh()->revision, 'pax' => 3, 'start_date' => '2026-11-01', 'end_date' => '2026-11-05'])->assertOk();
+    $this->patchJson('/trip-planner/plans/'.$plan->id, ['revision' => $plan->fresh()->revision, 'pax' => 3, 'start_date' => '2026-11-01', 'end_date' => '2026-11-05', 'duration_days' => 5])->assertOk();
 
     $options = draftChoiceOptions($plan);
     expect($options['room'])->toMatchArray(['check_in' => '2026-11-02', 'check_out' => '2026-11-04', 'pax' => 3])
@@ -410,9 +410,45 @@ test('custom dates that no longer fit a moved trip fall back to the trip dates',
     $plan = savedDatedRoomDraft($this);
     customizeDraftChoices($this, $plan);
 
-    $this->patchJson('/trip-planner/plans/'.$plan->id, ['revision' => $plan->fresh()->revision, 'start_date' => '2026-11-10', 'end_date' => '2026-11-12'])->assertOk();
+    $this->patchJson('/trip-planner/plans/'.$plan->id, ['revision' => $plan->fresh()->revision, 'start_date' => '2026-11-10', 'end_date' => '2026-11-12', 'duration_days' => 3])->assertOk();
 
     $options = draftChoiceOptions($plan);
     expect($options['room'])->toMatchArray(['check_in' => '2026-11-10', 'check_out' => '2026-11-12'])
         ->and($options['activity'])->toMatchArray(['pax' => 1])->not->toHaveKey('date');
+});
+
+test('a saved draft only accepts travel dates that match its duration', function () {
+    $plan = TripPlan::create(['user_id' => $this->user->id, 'destination_id' => $this->destination->id, 'title' => 'Six days', 'source' => 'chatbot',
+        'status' => 'draft', 'duration_days' => 6, 'pax' => 2, 'mode' => 'walking', 'revision' => 1]);
+    $url = '/trip-planner/plans/'.$plan->id;
+
+    $this->patchJson($url, ['revision' => 1, 'start_date' => '2026-10-26', 'end_date' => '2026-10-28'])
+        ->assertUnprocessable()->assertJsonValidationErrors(['end_date' => 'the trip is 6 days, 5 nights']);
+    $this->patchJson($url, ['revision' => 1, 'start_date' => '2026-10-26', 'end_date' => '2026-10-31'])->assertOk();
+    expect($plan->fresh())->duration_days->toBe(6)->end_date->toDateString()->toBe('2026-10-31');
+
+    $this->patchJson($url, ['revision' => $plan->fresh()->revision, 'duration_days' => 3])->assertOk();
+    expect($plan->fresh())->duration_days->toBe(3)->start_date->toDateString()->toBe('2026-10-26')->end_date->toDateString()->toBe('2026-10-28');
+});
+
+test('a newer draft can update the saved plan instead of adding another, and stale drafts must be refreshed', function () {
+    $saved = $this->postJson('/trip-planner/chatbot-plans', ['suggestion_id' => $this->suggestion['id']])->assertCreated();
+    $plan = TripPlan::findOrFail($saved->json('data.id'));
+    $other = ActivityModel::factory()->create(['destination_id' => $this->destination->id, 'is_shown' => true]);
+    $newer = app(ChatbotTripPlanService::class)->suggestion(['activities' => [['id' => $other->id, 'activity_name' => $other->activity_name, 'day' => 2]]],
+        ['destination_id' => $this->destination->id, 'destination_name' => 'Boracay', 'days' => 4, 'pax' => 2]);
+    ChatMessage::create(['chat_session_id' => $this->session->id, 'sender' => 'bot', 'message' => 'Revised itinerary',
+        'context_data' => ['itinerary_suggestions' => [$newer['id'] => $newer]]]);
+
+    $this->postJson('/trip-planner/chatbot-plans', ['suggestion_id' => $newer['id'], 'plan_id' => $plan->id])->assertOk()->assertJsonPath('data.id', $plan->id);
+
+    $plan->refresh();
+    expect(TripPlan::count())->toBe(1)->and($plan)->duration_days->toBe(4)->source_suggestion_uuid->toBe($newer['id'])->revision->toBe(2)
+        ->and($plan->items()->pluck('item_id')->all())->toBe([$other->id])->and($plan->itineraries()->count())->toBe(2);
+
+    $this->travel(73)->hours();
+    $stale = app(ChatbotTripPlanService::class)->suggestion(['activities' => []], ['destination_id' => $this->destination->id, 'destination_name' => 'Boracay', 'days' => 2]);
+    ChatMessage::create(['chat_session_id' => $this->session->id, 'sender' => 'bot', 'message' => 'Old itinerary',
+        'context_data' => ['itinerary_suggestions' => [$stale['id'] => array_replace($stale, ['generated_at' => now()->subHours(80)->toIso8601String()])]]]);
+    $this->postJson('/trip-planner/chatbot-plans', ['suggestion_id' => $stale['id']])->assertUnprocessable()->assertJsonValidationErrors(['suggestion_id' => 'more than 72 hours old']);
 });

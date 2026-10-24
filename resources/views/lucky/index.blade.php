@@ -375,6 +375,33 @@
                             </div>
                         </div>
 
+                        {{-- Lucky offer code: issued by the server for this exact itinerary --}}
+                        <template x-if="itinerary.offer && itinerary.offer.code">
+                            <div class="rounded-2xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/60 p-5 space-y-3">
+                                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                    <div>
+                                        <p class="text-[11px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300" x-text="itinerary.offer.campaign || 'Lucky offer'"></p>
+                                        <p class="font-headline text-lg font-black text-emerald-900 dark:text-emerald-100" x-text="itinerary.offer.discount_label + ' this itinerary'"></p>
+                                        <p class="text-xs text-emerald-800 dark:text-emerald-200 mt-0.5">
+                                            Estimated saving <span class="font-bold" x-text="itinerary.offer.formatted_estimated_saving"></span>
+                                            on an eligible subtotal of <span x-text="itinerary.offer.formatted_eligible_subtotal"></span>
+                                        </p>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <code class="px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-emerald-300 dark:border-emerald-700 font-mono text-sm font-bold text-slate-900 dark:text-slate-100" x-text="itinerary.offer.code"></code>
+                                        <button type="button" @click="copyCode()" class="min-h-11 inline-flex items-center gap-1 px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold cursor-pointer">
+                                            <span class="material-symbols-outlined text-[16px]" x-text="copied ? 'check' : 'content_copy'"></span>
+                                            <span x-text="copied ? 'Copied' : 'Copy'"></span>
+                                        </button>
+                                    </div>
+                                </div>
+                                <p class="text-[11px] text-emerald-800 dark:text-emerald-200" x-text="'Valid until ' + itinerary.offer.formatted_expires_at + ' (Philippine time). Paste it at checkout and press Apply.'"></p>
+                                <ul class="list-disc pl-5 space-y-0.5 text-[11px] text-emerald-900/80 dark:text-emerald-100/80">
+                                    <template x-for="term in itinerary.offer.terms" :key="term"><li x-text="term"></li></template>
+                                </ul>
+                            </div>
+                        </template>
+
                         {{-- Total Summary & Acceptance Actions --}}
                         <div
                             class="rounded-2xl bg-slate-900 text-white p-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg">
@@ -388,6 +415,11 @@
                                     class="inline-flex items-center gap-2 px-4 sm:px-5 py-3.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition cursor-pointer disabled:opacity-60">
                                     <span class="material-symbols-outlined text-[16px]">shuffle</span>
                                     <span>Shuffle Again</span>
+                                </button>
+                                <button type="button" x-show="itinerary.offer" @click="planSchedule()" :disabled="loading || planning"
+                                    class="inline-flex items-center gap-2 px-4 sm:px-5 py-3.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition cursor-pointer disabled:opacity-60">
+                                    <span class="material-symbols-outlined text-[16px]">route</span>
+                                    <span x-text="planning ? 'Opening planner…' : 'Check daily schedule'"></span>
                                 </button>
                                 <button type="button" @click="acceptItinerary()" :disabled="loading || accepting"
                                     class="inline-flex items-center gap-2 px-5 sm:px-6 py-3.5 rounded-xl bg-ocean-600 hover:bg-ocean-500 text-white font-bold text-xs shadow-md shadow-ocean-600/30 transition cursor-pointer disabled:opacity-60">
@@ -424,8 +456,42 @@
                 },
                 loading: false,
                 accepting: false,
+                copied: false,
+                planning: false,
+
+                async planSchedule() {
+                    this.planning = true;
+                    this.error = null;
+                    try {
+                        const res = await fetch('{{ route('lucky.plan') }}', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content, 'Accept': 'application/json' },
+                            body: JSON.stringify({ offer_id: this.itinerary.offer.id }),
+                        });
+                        const data = await res.json();
+                        if (res.ok && data.success) {
+                            window.location.href = data.url;
+                            return;
+                        }
+                        this.error = data.message || 'Could not open this itinerary in the Trip Planner.';
+                    } catch (err) {
+                        this.error = 'Could not open this itinerary in the Trip Planner. Please try again.';
+                    } finally {
+                        this.planning = false;
+                    }
+                },
                 error: null,
                 itinerary: null,
+
+                async copyCode() {
+                    try {
+                        await navigator.clipboard.writeText(this.itinerary.offer.code);
+                        this.copied = true;
+                        setTimeout(() => this.copied = false, 2000);
+                    } catch (err) {
+                        this.error = 'Copy is unavailable in this browser. Select the code and copy it manually.';
+                    }
+                },
 
                 get tomorrowStr() {
                     return '{{ app(\App\Services\TripBookingDatePolicy::class)->minimumArrivalDate() }}';
@@ -478,7 +544,7 @@
                                 'Accept': 'application/json',
                                 'X-Requested-With': 'XMLHttpRequest'
                             },
-                            body: JSON.stringify({
+                            body: JSON.stringify(this.itinerary.offer ? { offer_id: this.itinerary.offer.id } : {
                                 destination_id: this.itinerary.destination.id,
                                 room_id: this.itinerary.room.id,
                                 activity_ids: this.itinerary.activities.map(a => a.id),

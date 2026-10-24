@@ -32,7 +32,7 @@ test('gathers only missing itinerary details and accepts several answers togethe
     $third = $this->postJson('/chat', ['message' => 'three days', 'session_token' => $first->json('session_token')]);
     $third->assertOk()->assertJsonPath('clarification', null)->assertJsonPath('sections.0.outcome.reason', 'undated_itinerary_draft')
         ->assertJsonPath('retrieved_activities.0.id', $this->activity->id);
-    expect($third->json('reply'))->toContain('undated')->not->toContain('Cost breakdown');
+    expect($third->json('reply'))->toContain('Travel dates are still to be decided')->not->toContain('Cost breakdown');
     $session = ChatSession::where('session_token', $first->json('session_token'))->firstOrFail();
     expect($session->metadata['conversation_v2']['dialogue']['tasks'][0]['persistent_id'])->toBe($first->json('sections.0.persistent_id'));
 });
@@ -780,4 +780,40 @@ test('an unknown field is left out of the summary', function () {
     $response->assertOk();
     expect(collect($response->json('trip_summary.items') ?? [])->pluck('field'))
         ->not->toContain('budget');
+});
+
+test('typing dates undecided keeps the stated budget, matching the trip form', function () {
+    $first = $this->postJson('/chat', ['message' => 'plan a 3 day trip to Boracay for 2 people with a 15000 budget']);
+    $response = $first;
+    $answeredDates = false;
+    // Answer the questions in whichever order they are asked until dates are settled.
+    $answers = ['dates' => 'Dates undecided', 'budget_basis' => 'whole trip', 'nights' => '2 nights', 'days' => '3 days', 'pax' => '2 people'];
+    for ($turn = 0; $turn < 6 && $response->json('clarification.field') !== null && ! $answeredDates; $turn++) {
+        $field = $response->json('clarification.field');
+        $answeredDates = $field === 'dates';
+        $response = $this->postJson('/chat', ['message' => $answers[$field] ?? 'skip',
+            'session_token' => $first->json('session_token'), 'question_id' => $response->json('clarification.id'), 'question_revision' => $response->json('clarification.revision')])->assertOk();
+    }
+    expect($answeredDates)->toBeTrue();
+
+    $state = ChatSession::where('session_token', $first->json('session_token'))->firstOrFail()->metadata['conversation_v2']['dialogue'];
+    $itinerary = collect($state['tasks'])->firstWhere('type', IntentRouter::ITINERARY_QUERY);
+    expect((float) $itinerary['constraints']['max_price'])->toBe(15000.0);
+});
+
+test('a stated duration that contradicts the stated dates is asked about instead of silently resolved', function () {
+    $response = $this->postJson('/chat', ['message' => 'plan a 6 days trip to Boracay for 2 people from Oct 26 to 28, 2026']);
+    $response->assertOk()->assertJsonPath('itinerary_suggestion', null)->assertJsonPath('clarification.field', 'dates');
+    expect($response->json('clarification.text'))->toContain('6 days, 5 nights')->toContain('3 days, 2 nights')
+        ->and(collect($response->json('clarification.options'))->pluck('label')->all())
+        ->toContain('Keep 6 days (2026-10-26 to 2026-10-31)', 'Use 2026-10-26 to 2026-10-28 (3 days)');
+
+    $keep = collect($response->json('clarification.options'))->firstWhere('label', 'Keep 6 days (2026-10-26 to 2026-10-31)');
+    $this->postJson('/chat', ['message' => $keep['value'], 'session_token' => $response->json('session_token'),
+        'question_id' => $response->json('clarification.id'), 'question_revision' => $response->json('clarification.revision')])->assertOk();
+
+    $state = ChatSession::where('session_token', $response->json('session_token'))->firstOrFail()->metadata['conversation_v2']['dialogue'];
+    $itinerary = collect($state['tasks'])->firstWhere('type', IntentRouter::ITINERARY_QUERY);
+    expect($itinerary['constraints'])->toMatchArray(['days' => 6, 'check_in_date' => '2026-10-26', 'check_out_date' => '2026-10-31'])
+        ->not->toHaveKey('duration_conflict');
 });

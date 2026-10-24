@@ -788,6 +788,12 @@
                                 @endif
                             @endif
 
+                            @if($booking->promotion_discount_amount > 0)
+                                <div class="flex items-center justify-between text-emerald-700 dark:text-emerald-100 font-semibold">
+                                    <dt>Lucky discount{{ $booking->promotionRedemption ? ' ('.$booking->promotionRedemption->code.')' : '' }}</dt>
+                                    <dd>-₱{{ number_format($booking->promotion_discount_amount, 2) }}</dd>
+                                </div>
+                            @endif
                             @if($booking->admin_discount_amount > 0)
                                 <div class="flex items-center justify-between text-emerald-700 dark:text-emerald-100 font-semibold">
                                     <dt>Admin discount</dt>
@@ -859,8 +865,8 @@
             {{-- ============ FOOTNOTES ============ --}}
             <div class="mt-8 space-y-6">
 
-                {{-- Cancellation request zone (pending/approved → request; requested → withdraw; denied → info) --}}
-                @if (in_array($status, ['pending', 'approved'], true))
+                {{-- Cancellation request zone (pending/approved/paid → request; requested → withdraw; denied → info) --}}
+                @if ($canRequestCancellation ?? in_array($status, ['pending', 'approved'], true))
                     <section class="bg-white dark:bg-slate-900 rounded-3xl border border-sand-200/80 dark:border-slate-700/80 shadow-xs p-6">
                         <div class="flex items-start gap-3 mb-4">
                             <div class="w-10 h-10 rounded-2xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 border border-rose-100 dark:border-rose-800 flex items-center justify-center shrink-0">
@@ -869,6 +875,9 @@
                             <div>
                                 <h3 class="font-headline text-sm font-bold text-slate-900 dark:text-slate-100">Request cancellation?</h3>
                                 <p class="text-xs text-slate-500 dark:text-slate-400">Your request will be reviewed by our team. Cancellation is not immediate — you will be notified of the decision. A reason is required.</p>
+                                @if(in_array($booking->payment_status, ['paid', 'partial'], true))
+                                    <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Your payments stay recorded while we review. A request does not issue a refund by itself; any refundable amount follows the booking terms and is confirmed with a reference.</p>
+                                @endif
                             </div>
                         </div>
                         <form action="{{ route('booking.cancel', $booking->booking_code) }}" method="POST" class="space-y-3"
@@ -914,7 +923,7 @@
                             </button>
                         </form>
                     </section>
-                @elseif ($status === 'cancellation_denied')
+                @elseif ($booking->hasDeniedCancellationRequest())
                     <section class="bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 rounded-3xl p-6">
                         <div class="flex items-start gap-3">
                             <div class="w-10 h-10 rounded-2xl bg-white dark:bg-slate-900 text-rose-600 border border-rose-200 dark:border-rose-800 flex items-center justify-center shrink-0">

@@ -61,11 +61,12 @@ class CartService
      *
      * @param  array  $payload  item_type, item_id, quantity, selected_pax, check_in_date, check_out_date, notes, room_option
      * @param  string|null  $luckyGroupId  shared group id for "I'm Feeling Lucky" itineraries
+     * @param  int|null  $luckyOfferId  the persisted Lucky offer these lines were accepted from
      * @return array{status: string, cart_item: CartItem} status: added|incremented|already_in_cart
      *
      * @throws \RuntimeException when the room is sold out for the requested dates
      */
-    public function add(Request $request, array $payload, ?string $luckyGroupId = null): array
+    public function add(Request $request, array $payload, ?string $luckyGroupId = null, ?int $luckyOfferId = null): array
     {
         $userId = auth()->id();
         $sessionToken = $this->getSessionToken($request);
@@ -147,7 +148,7 @@ class CartService
         }
 
         // Lock the matching line so two quick adds cannot both read the old quantity.
-        return DB::transaction(function () use ($query, $luckyGroupId, $quantity, $hasPax, $selectedPax, $userId, $sessionToken, $itemType, $itemId, $roomOption, $checkIn, $checkOut, $payload): array {
+        return DB::transaction(function () use ($query, $luckyGroupId, $luckyOfferId, $quantity, $hasPax, $selectedPax, $userId, $sessionToken, $itemType, $itemId, $roomOption, $checkIn, $checkOut, $payload): array {
             $existingItem = $luckyGroupId ? null : $query->lockForUpdate()->first();
 
             if ($existingItem) {
@@ -187,6 +188,7 @@ class CartService
                 'notes' => $payload['notes'] ?? null,
                 'is_selected' => true,
                 'lucky_group_id' => $luckyGroupId,
+                'lucky_offer_id' => $luckyOfferId,
             ]);
 
             return ['status' => 'added', 'cart_item' => $cartItem];

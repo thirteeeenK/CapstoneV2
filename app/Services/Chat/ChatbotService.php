@@ -19,10 +19,14 @@ use App\Models\User;
 use App\Models\UserPreference;
 use App\Services\DistanceService;
 use App\Services\GeminiService;
+use App\Services\LuckyItineraryService;
+use App\Services\LuckyOfferService;
 use App\Services\RoomAvailabilityService;
 use App\Services\RoutingService;
 use App\Services\Support\SupportAvailabilityService;
 use App\Services\SystemSettingsService;
+use App\Services\TripBookingDatePolicy;
+use App\Services\TripDurationPolicy;
 use App\Services\WeatherService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
@@ -242,6 +246,17 @@ class ChatbotService
             && $this->intentRouter->compoundIntents($message) === []) {
             $reply = $this->handleOutOfScope($message);
             $reply = $this->finalizeBotReply($session, $reply['reply'], $reply, IntentRouter::OUT_OF_SCOPE, 'grounded', [], false, $traceId);
+
+            return array_merge($aiBase, $reply);
+        }
+
+        // Lucky requests use the dashboard's generator and offer service, so the
+        // itinerary, prices and any code come from the server, not the model.
+        if ($tripDetails === null && $this->intentRouter->hasLuckyIntent($message)) {
+            $reply = $this->handleLuckyRequest($message, $user);
+            $constraints = $reply['_constraints'] ?? [];
+            unset($reply['_constraints']);
+            $reply = $this->finalizeBotReply($session, $reply['reply'], $reply, IntentRouter::LUCKY_ITINERARY, 'grounded', $constraints, false, $traceId);
 
             return array_merge($aiBase, $reply);
         }
@@ -873,7 +888,8 @@ class ChatbotService
         // A soft budget ("budget 4000") is applied once its basis is known:
         // options that fit are preferred, and over-budget ones appear only,
         // labelled, when nothing fits. A hard ceiling never shows them.
-        if (! $max || ! empty($result['itinerary']) || (! $ceiling && ($task['budget_basis'] ?? 'unknown') === 'unknown')) {
+        // A draft itinerary checks its own whole-trip total against the budget.
+        if (! $max || ! empty($result['itinerary']) || ! empty($result['itinerary_suggestion']) || (! $ceiling && ($task['budget_basis'] ?? 'unknown') === 'unknown')) {
             return $result;
         }
         $original = $result;
@@ -1763,6 +1779,146 @@ class ChatbotService
      * Deterministic decline for an off-topic task (no model call). Recorded
      * as a no-match outcome so evaluations count it as a correct abstention.
      */
+    /**
+     * A surprise Lucky itinerary for the signed-in traveler, built from the
+     * budget, destination, nights, travelers and arrival date in the message.
+     * Guests are shown the feature and asked to sign in before an offer is issued.
+     */
+    protected function handleLuckyRequest(string $message, ?User $user): array
+    {
+        $again = ['id' => 'lucky-again', 'label' => 'Shuffle again', 'prompt' => 'Surprise me with another Lucky trip'];
+        if (! $user) {
+            return [
+                'reply' => "I'm Feeling Lucky builds a surprise stay with activities in one destination, within your budget. When a Lucky promotion is running, the itinerary can come with a personal discount code. Sign in so I can create one for your account.",
+                'lucky' => ['requires_login' => true, 'login_url' => route('login'), 'page_url' => route('lucky.index')],
+                'retrieval_outcome' => RetrievalOutcome::make(RetrievalOutcome::NoMatch, 'login_required'),
+            ];
+        }
+
+        $constraints = $this->intentRouter->extractConstraints($message);
+        $minimumArrival = app(TripBookingDatePolicy::class)->minimumArrivalDate();
+        $filters = array_filter([
+            'destination_id' => $constraints['destination_id'] ?? null,
+            'max_budget' => $constraints['max_price'] ?? null,
+            'nights' => isset($constraints['nights']) && $constraints['nights'] > 0 ? min(7, (int) $constraints['nights']) : null,
+            'pax' => isset($constraints['pax']) && $constraints['pax'] > 0 ? min(4, (int) $constraints['pax']) : null,
+            'start_date' => ! empty($constraints['check_in_date']) && $constraints['check_in_date'] >= $minimumArrival ? $constraints['check_in_date'] : null,
+        ], fn ($value) => $value !== null);
+        $limits = ($constraints['pax'] ?? 0) > 4 || ($constraints['nights'] ?? 0) > 7 ? ' Lucky trips cover up to 4 travelers and 7 nights, so I used those limits.' : '';
+
+        $itinerary = app(LuckyItineraryService::class)->generate($filters);
+        if (! isset($itinerary['destination'])) {
+            return [
+                'reply' => ($itinerary['message'] ?? 'I could not build a Lucky trip with those details.').' You can also adjust every filter on the Lucky page.',
+                'lucky' => ['page_url' => route('lucky.index')],
+                'suggested_actions' => [$again],
+                'retrieval_outcome' => RetrievalOutcome::make(RetrievalOutcome::NoMatch, 'lucky_no_combination'),
+                '_constraints' => $filters,
+            ];
+        }
+        $offers = app(LuckyOfferService::class);
+        $offer = $offers->present($offers->issue($user, $itinerary, (float) ($filters['max_budget'] ?? 20000)));
+        $text = 'Here is a surprise trip to '.$itinerary['destination']['name'].': '.$itinerary['room']['room_name'].' at '.$itinerary['hotel']['hotel_name']
+            .' for '.$itinerary['nights'].' night'.($itinerary['nights'] === 1 ? '' : 's').' ('.$itinerary['check_in_date'].' to '.$itinerary['check_out_date'].'), with '
+            .count($itinerary['activities']).' activit'.(count($itinerary['activities']) === 1 ? 'y' : 'ies').', for '.$itinerary['formatted_total'].'.'
+            .(! empty($itinerary['budget_notice']) ? ' '.$itinerary['budget_notice'] : '')
+            .($offer['code'] ? ' It comes with Lucky code '.$offer['code'].' ('.$offer['discount_label'].', valid until '.$offer['formatted_expires_at'].' Philippine time). Add it to your Trip Basket and apply the code at checkout.' : ' No Lucky promotion applies to this itinerary.')
+            .$limits;
+
+        return [
+            'reply' => $text,
+            'lucky' => ['itinerary' => $itinerary, 'offer' => $offer, 'accept_url' => route('lucky.accept'), 'plan_url' => route('lucky.plan'), 'page_url' => route('lucky.index')],
+            'suggested_actions' => [$again],
+            'retrieval_outcome' => RetrievalOutcome::make(RetrievalOutcome::Matched, 'verified_result_found'),
+            '_constraints' => $filters,
+        ];
+    }
+
+    /**
+     * One cost breakdown for a draft: the stay and each planned activity at
+     * catalog quotes, a total only when every part could be priced, and a
+     * budget check against the part of the trip the budget covers.
+     *
+     * @param  array<string, mixed>  $constraints
+     * @param  array<string, mixed>|null  $room
+     * @param  list<array<string, mixed>>  $activities  the activities placed on a day
+     * @return array{currency: string, stay: ?float, activities: ?float, activity_lines: list<array{id: int, name: string, day: int, total: ?float, display: string}>, total: ?float, budget: ?float, budget_scope: string, status: string, summary: string}
+     */
+    private function draftCost(array $constraints, ?array $room, array $activities, int $days): array
+    {
+        $pax = isset($constraints['pax']) ? (int) $constraints['pax'] : null;
+        $lines = array_map(fn (array $activity): array => ['id' => (int) $activity['id'], 'name' => $activity['activity_name'], 'day' => $activity['day'],
+            'total' => $pax !== null && ($activity['price_quote']['calculable'] ?? false) ? (float) $activity['price_quote']['total'] : null,
+            'display' => (string) ($activity['price_quote']['display'] ?? $activity['rate'] ?? 'Price unavailable')], $activities);
+        $activityTotal = $lines !== [] && ! in_array(null, array_column($lines, 'total'), true) ? round(array_sum(array_column($lines, 'total')), 2) : ($lines === [] ? 0.0 : null);
+        $stayTotal = $room['total'] ?? null;
+        $total = $activityTotal !== null && ($room === null || $stayTotal !== null) ? round($activityTotal + (float) $stayTotal, 2) : null;
+
+        $scope = $constraints['itinerary_budget_scope'] ?? match ($constraints['budget_coverage'] ?? null) {
+            'activities' => 'activities', 'lodging' => 'lodging', default => 'trip',
+        };
+        $budget = ! empty($constraints['max_price']) ? (float) $constraints['max_price'] : null;
+        $basis = $constraints['itinerary_budget_basis'] ?? $constraints['budget_basis'] ?? 'trip_total';
+        if ($budget !== null && $basis === 'per_person') {
+            $budget = $pax !== null ? $budget * $pax : null;
+        }
+        if ($budget !== null && ($basis === 'per_night' || ($constraints['itinerary_budget_period'] ?? $constraints['budget_period'] ?? null) === 'per_night')) {
+            $budget *= max(1, $days - 1);
+        }
+        $compared = match ($scope) {
+            'activities' => $activityTotal, 'lodging' => $stayTotal, default => $total,
+        };
+        $status = $budget === null ? 'no_budget' : ($compared === null ? 'unknown' : ($compared <= $budget ? 'within' : 'over'));
+        $peso = fn (float $amount): string => '₱'.number_format($amount, 2);
+        $parts = array_filter([$stayTotal !== null ? 'stay '.$peso($stayTotal) : null, $activityTotal !== null && $lines !== [] ? 'activities '.$peso($activityTotal) : null]);
+        $summary = match (true) {
+            $total === null => $pax === null ? 'Add the number of travelers to calculate the total estimate.' : 'Some prices could not be calculated, so there is no total estimate yet; the itinerary shows each available quote.',
+            default => 'Estimated total: '.$peso($total).($parts !== [] ? ' ('.implode(' + ', $parts).')' : '').'.',
+        };
+        $label = ['activities' => 'activities', 'lodging' => 'stay', 'trip' => 'trip'][$scope] ?? 'trip';
+        $summary .= match ($status) {
+            'within' => ' That fits your '.$peso($budget).' '.$label.' budget.',
+            'over' => ' That is '.$peso($compared - $budget).' over your '.$peso($budget).' '.$label.' budget.',
+            'unknown' => ' The budget fit cannot be checked until every part is priced'.($pax === null ? ' and the number of travelers is known' : '').'.',
+            default => '',
+        };
+
+        return ['currency' => 'PHP', 'stay' => $stayTotal, 'activities' => $lines === [] ? null : $activityTotal, 'activity_lines' => $lines,
+            'total' => $total, 'budget' => $budget, 'budget_scope' => $scope, 'status' => $status, 'summary' => $summary];
+    }
+
+    /**
+     * The stay already drafted for this trip, kept on a length or date change
+     * while it is still listed, in the destination, large enough for the party,
+     * within a strict nightly budget and free on any chosen dates.
+     *
+     * @param  array<string, mixed>  $constraints
+     * @param  array<string, mixed>  $roomConstraints  with the nightly budget for the new length
+     */
+    private function keptDraftRoom(array $constraints, array $roomConstraints): ?RoomType
+    {
+        if (empty($constraints['draft_room_id'])) {
+            return null;
+        }
+        $room = RoomType::query()->with('hotel.destination')->where('is_shown', true)->whereHas('hotel', fn ($q) => $q->where('is_shown', true))->find($constraints['draft_room_id']);
+        $pax = (int) ($constraints['pax'] ?? 1);
+        if (! $room || (int) $room->hotel->destination_id !== (int) ($constraints['destination_id'] ?? 0) || $room->max_occupancy < $pax) {
+            return null;
+        }
+        if (! empty($roomConstraints['max_price']) && ($constraints['budget_mode'] ?? 'target') === 'ceiling' && $room->calculateNightlyRate($pax) > (float) $roomConstraints['max_price']) {
+            return null;
+        }
+        if (! empty($constraints['check_in_date']) && ! empty($constraints['check_out_date'])
+            && ! app(RoomAvailabilityService::class)->check($room, Carbon::parse($constraints['check_in_date'])->startOfDay(), Carbon::parse($constraints['check_out_date'])->startOfDay())['available']) {
+            return null;
+        }
+
+        return $room;
+    }
+
+    /** Activity candidates a draft itinerary needs (0 = the ordinary preview limit). */
+    private int $itineraryCandidates = 0;
+
     protected function handleOutOfScope(string $message): array
     {
         return [
@@ -3483,7 +3639,8 @@ class ChatbotService
         $priceIntent = $this->detectPriceIntent($query);
         // Widen the vector window so budget filters and price sorts see the
         // whole candidate pool, not just the top 3 semantic hits.
-        $window = ($maxPrice !== null || $priceIntent !== null) ? 50 : 3 + $this->exclusionHeadroom;
+        $shown = max(3, $this->itineraryCandidates);
+        $window = ($maxPrice !== null || $priceIntent !== null) ? 50 : $shown + $this->exclusionHeadroom;
         $scored = null;
 
         // Exact-match shortcut: if a specific activity name is extracted, return just that activity.
@@ -3509,7 +3666,7 @@ class ChatbotService
         }
         // Wider than the display cap while exclusions are pending, so an
         // ineligible option is replaced rather than simply dropped.
-        $scored = array_slice($scored, 0, 3 + $this->exclusionHeadroom);
+        $scored = array_slice($scored, 0, $shown + $this->exclusionHeadroom);
         $priceNotice = $this->budgetNotice($scored, $constraints);
 
         $ordering = $this->resultOrdering($priceIntent, $scored, $constraints, 'activity_name', 'activity_id');
@@ -3801,11 +3958,19 @@ class ChatbotService
      */
     private function handleDraftItinerary(string $query, array $constraints, ?User $user, ChatSession $session): array
     {
-        $result = $this->handleActivitySearch('activities in '.($constraints['destination_name'] ?? '').' '.$query, $constraints, $user, $session);
         $days = (int) ($constraints['days'] ?? (($constraints['nights'] ?? 1) + 1));
+        // A draft may hold one activity per day; the three-card preview limit
+        // belongs to standalone searches, not to the itinerary's candidate pool.
+        $this->itineraryCandidates = min(30, $days);
+        try {
+            $result = $this->handleActivitySearch('activities in '.($constraints['destination_name'] ?? '').' '.$query, $constraints, $user, $session);
+        } finally {
+            $this->itineraryCandidates = 0;
+        }
         $result['retrieved_activities'] ??= [];
         $dated = ! empty($constraints['check_in_date']) && ! empty($constraints['check_out_date']);
-        $lines = ['Suggested '.$days.'-day draft. '.($dated ? 'Review the travel dates below.' : 'This is undated; dates are pending.').' Availability, opening times, and travel times have not been checked.'];
+        $lines = ['Here is a '.TripDurationPolicy::label($days).' draft'.(! empty($constraints['destination_name']) ? ' for '.$constraints['destination_name'] : '').'. '
+            .($dated ? 'Review the travel dates in the itinerary below.' : 'Travel dates are still to be decided.').' Availability, opening times and travel times have not been checked yet.'];
         $bundle = ['days' => $days, 'check_in_date' => $constraints['check_in_date'] ?? null, 'check_out_date' => $constraints['check_out_date'] ?? null];
         if ($days > 1 && ($constraints['include_accommodation'] ?? true)) {
             $roomConstraints = $constraints;
@@ -3819,8 +3984,10 @@ class ChatbotService
                     $roomConstraints['max_price'] /= $days - 1;
                 }
             }
-            $rooms = $this->handleRoomSearch('rooms in '.($constraints['destination_name'] ?? '').' '.$query, $roomConstraints, $user, $session);
-            $rooms = $this->enforceTaskPreferences($rooms, ['constraints' => $constraints, 'query' => $query]);
+            $kept = $this->keptDraftRoom($constraints, $roomConstraints);
+            $rooms = $kept !== null
+                ? ['retrieved_rooms' => $this->formatRoomResults([['item' => $kept, 'score' => 1.0]], $constraints['pax'] ?? null, $days - 1)]
+                : $this->enforceTaskPreferences($this->handleRoomSearch('rooms in '.($constraints['destination_name'] ?? '').' '.$query, $roomConstraints, $user, $session), ['constraints' => $constraints, 'query' => $query]);
             $room = collect($rooms['retrieved_rooms'] ?? [])->first(fn (array $card): bool => empty($card['combo_group'])
                 && $card['max_occupancy'] >= ($constraints['pax'] ?? 1)
                 && (empty($card['over_budget']) || ($constraints['budget_mode'] ?? 'target') !== 'ceiling'));
@@ -3830,20 +3997,26 @@ class ChatbotService
                 $rate = isset($constraints['pax']) ? $model?->calculateNightlyRate((int) $constraints['pax']) : null;
                 $bundle['hotel'] = ['id' => $room['hotel_id'], 'name' => $room['hotel_name']];
                 $bundle['room'] = ['id' => $room['id'], 'room_name' => $room['room_name'], 'max_occupancy' => $room['max_occupancy'], 'nightly_rate' => $rate, 'total' => $rate === null ? null : $rate * ($days - 1)];
-                $lines[] = 'Your stay: '.$room['hotel_name'].' — '.$room['room_name'].'. Dates pending; availability has not been checked. Accommodation and activity estimates are separate; a combined budget fit has not been confirmed.';
+                $lines[] = 'Stay: '.$room['hotel_name'].' — '.$room['room_name'].'.'.($rate === null ? ' Add the number of travelers to calculate the stay estimate.' : '');
             } else {
                 $bundle['accommodation_notice'] = 'No matching room was verified for this request. The activity plan is still available; adjust your stay preferences to see alternatives.';
                 $lines[] = $bundle['accommodation_notice'];
             }
         }
-        foreach (array_slice($result['retrieved_activities'], 0, min($days, 3)) as $i => $activity) {
-            $lines[] = 'Day '.($i + 1).': '.$activity['activity_name'].'. Review the activity details in the cards.';
+        // The day list lives in the itinerary itself; the text only says how full it is.
+        $planned = min($days, count($result['retrieved_activities']));
+        if ($planned === 0) {
+            $lines[] = 'No activities matched your preferences, so every day is open. Adjust the preferences to see more options.';
+        } elseif ($planned < $days) {
+            $lines[] = $planned.' matching '.($planned === 1 ? 'activity is' : 'activities are').' planned on days 1–'.$planned.'; days '.($planned + 1).'–'.$days.' are open because only '.$planned.' matched your preferences.';
+        } else {
+            $lines[] = 'One matching activity is planned for each day.';
         }
-        if ($days > count($result['retrieved_activities'])) {
-            $lines[] = 'The remaining days are open; I do not have enough verified activities to fill every day.';
-        }
-        $result['reply'] = implode("\n\n", $lines);
         $activities = array_map(fn (array $activity, int $index): array => $activity + ['day' => $index < $days ? $index + 1 : null], $result['retrieved_activities'], array_keys($result['retrieved_activities']));
+        $bundle['cost'] = $this->draftCost($constraints, $bundle['room'] ?? null, array_values(array_filter($activities, fn (array $activity): bool => $activity['day'] !== null)), $days);
+        $bundle['grand_total'] = $bundle['cost']['total'];
+        $lines[] = $bundle['cost']['summary'];
+        $result['reply'] = implode("\n\n", $lines);
         $result['itinerary_suggestion'] = $this->tripPlans->suggestion($bundle + ['activities' => $activities], $constraints);
         $result['retrieval_outcome'] = RetrievalOutcome::make(RetrievalOutcome::Matched, 'undated_itinerary_draft');
         $result['preference_notice'] = true;
@@ -6512,6 +6685,7 @@ class ChatbotService
             'weather_dependent' => isset($e['item']->scheduling['environment']) ? $e['item']->scheduling['environment'] !== 'indoor' : null,
             'vibe_tags' => $e['item']->vibe_tags,
             'rate' => $e['item']->rate,
+            'duration' => $e['item']->duration,
             'description' => strip_tags($e['item']->description ?? ''),
             'image' => $this->firstImage($e['item']->images),
             'similarity_score' => round($e['score'], 4),

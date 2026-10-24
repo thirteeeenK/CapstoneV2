@@ -25,7 +25,7 @@ class BookingPaid extends BookingNotification
         if (! empty($booking->trip_itineraries)) {
             $snapshot = $booking->trip_itineraries[0];
             $message->line('Your saved itinerary and route/weather explanations are attached. Current item availability and booking status apply.')
-                ->attachData(Pdf::loadView('trip-planner.document', ['itinerary' => $snapshot, 'reference' => 'Booking '.$booking->booking_code])->setPaper('a4')->output(),
+                ->attachData(Pdf::loadView('trip-planner.document', ['itinerary' => $snapshot, 'reference' => 'Booking '.$booking->booking_code, 'referenceLabel' => 'Booking reference', 'referenceCode' => $booking->booking_code, 'booking' => $booking->loadMissing('items')])->setPaper('a4')->output(),
                     'sunnytrips-itinerary.pdf', ['mime' => 'application/pdf']);
         }
 

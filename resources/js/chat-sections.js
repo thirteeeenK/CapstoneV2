@@ -1,8 +1,9 @@
 export function sectionExtras(data) {
+    const draft = Boolean(data.itinerary_suggestion);
     return {
-        rooms: data.retrieved_rooms?.length ? data.retrieved_rooms : null,
+        rooms: !draft && data.retrieved_rooms?.length ? data.retrieved_rooms : null,
         hotels: data.retrieved_hotels?.length ? data.retrieved_hotels : null,
-        activities: data.retrieved_activities?.length ? data.retrieved_activities : null,
+        activities: !draft && data.retrieved_activities?.length ? data.retrieved_activities : null,
         packages: data.retrieved_packages?.length ? data.retrieved_packages : null,
         addons: data.retrieved_addons?.length ? data.retrieved_addons : null,
         ordering: data.result_ordering, itinerary: data.itinerary, itinerary_suggestion: data.itinerary_suggestion, map: data.map,

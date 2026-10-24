@@ -13,6 +13,7 @@ use App\Services\CartService;
 use App\Services\Chat\ChatbotTripPlanService;
 use App\Services\ItineraryService;
 use App\Services\TripBookingDatePolicy;
+use App\Services\TripDurationPolicy;
 use App\Services\TripPlannerService;
 use App\Services\WeatherService;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -61,6 +62,7 @@ class TripPlannerController extends Controller
             'start_date' => ['sometimes', 'required', 'date_format:Y-m-d', 'after_or_equal:'.$dates->minimumArrivalDate()],
             'end_date' => ['required_with:start_date', 'date_format:Y-m-d', 'after:start_date'],
             'pax' => ['sometimes', 'required', 'integer', 'between:1,20'],
+            'duration_days' => ['sometimes', 'required', 'integer', 'between:'.TripDurationPolicy::MIN_DAYS.','.TripDurationPolicy::MAX_DAYS],
             'mode' => ['sometimes', 'required', 'in:walking,driving'],
             'remove_choice' => ['sometimes', 'string', 'regex:/^(room|hotel|activity):[0-9]+$/'],
             'clear_dates' => ['sometimes', 'accepted', 'prohibits:start_date,end_date'],
@@ -89,8 +91,21 @@ class TripPlannerController extends Controller
             if (isset($data['pax'])) {
                 $locked->context = array_replace($locked->context ?? [], ['pax_assumed' => false]);
             }
+            // The trip length is authoritative: dates must cover it exactly, and a
+            // length change on a dated trip keeps the arrival and moves the departure.
             if (isset($data['start_date'])) {
-                $locked->duration_days = (int) $locked->start_date->diffInDays($locked->end_date) + 1;
+                $selected = $data['duration_days'] ?? $locked->duration_days;
+                if ($selected) {
+                    TripDurationPolicy::assertDays((int) $selected, true, 'duration_days');
+                    TripDurationPolicy::assertMatches($data['start_date'], $data['end_date'], (int) $selected, 'end_date');
+                }
+                $locked->duration_days = TripDurationPolicy::days($data['start_date'], $data['end_date']);
+            } elseif (isset($data['duration_days'])) {
+                if ($locked->start_date !== null) {
+                    TripDurationPolicy::assertDays((int) $data['duration_days'], true, 'duration_days');
+                    $locked->end_date = TripDurationPolicy::endDate($locked->start_date->toDateString(), (int) $data['duration_days']);
+                }
+                $locked->duration_days = (int) $data['duration_days'];
             }
             $locked->revision++;
             $locked->save();
@@ -187,13 +202,17 @@ class TripPlannerController extends Controller
             'title' => ['required', 'string', 'max:150'],
             'start_date' => ['required', 'date_format:Y-m-d', 'after_or_equal:'.$dates->minimumArrivalDate()],
             'end_date' => ['required', 'date_format:Y-m-d', 'after:start_date'],
+            'duration_days' => ['sometimes', 'integer', 'between:'.TripDurationPolicy::MIN_DATED_DAYS.','.TripDurationPolicy::MAX_DAYS],
             'pax' => ['required', 'integer', 'between:1,20'],
             'mode' => ['required', 'in:walking,driving'],
         ], ['start_date.after_or_equal' => $dates->message()]);
+        if (isset($data['duration_days'])) {
+            TripDurationPolicy::assertMatches($data['start_date'], $data['end_date'], (int) $data['duration_days'], 'end_date');
+        }
         if (Carbon::parse($data['start_date'])->diffInDays(Carbon::parse($data['end_date'])) > 29) {
             throw ValidationException::withMessages(['end_date' => 'Plan up to 30 calendar days at a time.']);
         }
-        $plan = TripPlan::create($data + ['user_id' => $request->user()->id]);
+        $plan = TripPlan::create(['duration_days' => TripDurationPolicy::days($data['start_date'], $data['end_date'])] + $data + ['user_id' => $request->user()->id]);
 
         return response()->json(['data' => $plan], 201);
     }
@@ -279,7 +298,7 @@ class TripPlannerController extends Controller
     {
         $this->owned($request, $plan);
         abort_unless($itinerary->trip_plan_id === $plan->id, 404);
-        $data = ['itinerary' => $itinerary->snapshot, 'reference' => 'Plan '.$plan->id.' · Version '.$itinerary->id];
+        $data = ['itinerary' => $itinerary->snapshot, 'reference' => 'Plan '.$plan->id.' · Version '.$itinerary->id, 'referenceLabel' => 'Plan reference (not a booking)', 'referenceCode' => 'PLAN-'.$plan->id.'-V'.$itinerary->id];
         $view = ($itinerary->snapshot['kind'] ?? null) === 'chatbot_draft' ? 'trip-planner.draft-document' : 'trip-planner.document';
         if ($request->boolean('print')) {
             return view($view, $data);
