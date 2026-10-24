@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\RegenerateEmbedding;
 use App\Models\HotelModel;
 use App\Models\RoomType;
 use App\Services\AdminAuditService;
@@ -102,6 +103,8 @@ class RoomController extends Controller
         if ($vector) {
             $room->embedding = $geminiService->formatVectorForDb($vector);
             $room->save();
+        } else {
+            RegenerateEmbedding::dispatch('room', $room->id);
         }
 
         // Auto-generate parent hotel embedding if missing
@@ -111,6 +114,8 @@ class RoomController extends Controller
             if ($hotelVector) {
                 $hotel->embedding = $geminiService->formatVectorForDb($hotelVector);
                 $hotel->save();
+            } else {
+                RegenerateEmbedding::dispatch('hotel', $hotel->id);
             }
         }
 
@@ -213,6 +218,9 @@ class RoomController extends Controller
         }
 
         $room->save();
+        if (! $vector) {
+            RegenerateEmbedding::dispatch('room', $room->id);
+        }
 
         AdminAuditService::log($room, $oldValues);
 
@@ -223,6 +231,8 @@ class RoomController extends Controller
             if ($hotelVector) {
                 $hotel->embedding = $geminiService->formatVectorForDb($hotelVector);
                 $hotel->save();
+            } else {
+                RegenerateEmbedding::dispatch('hotel', $hotel->id);
             }
         }
 

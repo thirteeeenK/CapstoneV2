@@ -20,6 +20,7 @@ use App\Services\WeatherService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
 
@@ -859,4 +860,135 @@ it('carries coordinates on unscheduled picks so the map can still place them', f
     expect($unscheduled)->not->toBeEmpty()
         ->and((float) $unscheduled[0]['lat'])->toBe(11.965)
         ->and((float) $unscheduled[0]['lng'])->toBe(121.925);
+});
+
+it('rejects choice edits and removals sent from a stale tab', function () {
+    $activity = plannerActivity($this->destination);
+    plannerAdd($this->plan, 'activity', $activity->id);
+    $item = $this->plan->items()->sole();
+    $staleRevision = $this->plan->fresh()->revision - 1;
+
+    $this->postJson(route('trip-planner.add', $this->plan), ['item_type' => 'activity', 'item_id' => $activity->id, 'pax' => 2, 'revision' => $staleRevision])
+        ->assertUnprocessable()->assertJsonValidationErrors('plan');
+    $this->deleteJson(route('trip-planner.remove', [$this->plan, $item]), ['revision' => $staleRevision])
+        ->assertUnprocessable()->assertJsonValidationErrors('plan');
+
+    expect($item->fresh()->options['pax'])->toBe(1);
+    $this->deleteJson(route('trip-planner.remove', [$this->plan, $item]), ['revision' => $this->plan->fresh()->revision])->assertOk();
+    expect($this->plan->items()->count())->toBe(0);
+});
+
+it('explains the actual reason an activity could not be placed', function (array $scheduling, array $options, string $expected) {
+    $activity = plannerActivity($this->destination, ['scheduling' => $scheduling + ['duration_minutes' => 60, 'opens_at' => '09:00', 'closes_at' => '18:00', 'environment' => 'outdoor']]);
+    plannerAdd($this->plan, 'room', $this->room->id);
+    plannerAdd($this->plan, 'activity', $activity->id, $options);
+
+    $reason = app(ItineraryService::class)->generate($this->plan->fresh())->snapshot['unscheduled'][0]['reason'];
+
+    expect($reason)->toContain($expected)->toContain('won\'t be added to your Trip Basket');
+})->with([
+    'closed every trip day' => [['weekdays' => [7]], [], 'does not run on the days of your trip'],
+    'no departure left' => [['fixed_start_times' => ['06:00']], [], 'fixed departure times had already passed'],
+    'pinned to the check-in afternoon' => [['closes_at' => '12:00'], ['date' => '2026-10-14'], 'You pinned it to 2026-10-14'],
+    'long tour over lunch' => [['duration_minutes' => 480], [], 'midday lunch break'],
+]);
+
+it('never mixes an activity coordinate with its destination centre and flags the estimate', function () {
+    $this->destination->update(['latitude' => 11.9686, 'longitude' => 121.923]);
+    $halfSet = plannerActivity($this->destination, ['latitude' => 11.99, 'longitude' => null]);
+    $exact = plannerActivity($this->destination, ['latitude' => 11.97, 'longitude' => 121.93]);
+
+    $listings = collect($this->getJson(route('trip-planner.catalog', $this->destination))->json('data.activities'))->keyBy('id');
+    expect($listings[$halfSet->id])->toMatchArray(['lat' => 11.9686, 'lng' => 121.923, 'location_precision' => 'approximate'])
+        ->and($listings[$exact->id]['location_precision'])->toBe('exact');
+
+    plannerAdd($this->plan, 'room', $this->room->id);
+    plannerAdd($this->plan, 'activity', $halfSet->id);
+    plannerAdd($this->plan, 'activity', $exact->id);
+    $stops = collect(app(ItineraryService::class)->generate($this->plan->fresh())->snapshot['days'])->flatMap(fn ($day) => $day['stops'])->keyBy('item_id');
+
+    expect($stops[$halfSet->id]['travel_estimated'])->toBeTrue()
+        ->and($stops[$halfSet->id]['reason'])->toContain('estimated from the destination centre')
+        ->and($stops[$exact->id]['travel_estimated'])->toBeFalse();
+});
+
+it('reschedules a generated trip, keeping its choices and requiring a new schedule before booking', function () {
+    $activity = plannerActivity($this->destination);
+    plannerAdd($this->plan, 'room', $this->room->id);
+    plannerAdd($this->plan, 'activity', $activity->id, ['date' => '2026-10-16']);
+    $itinerary = app(ItineraryService::class)->generate($this->plan->fresh());
+
+    $this->patchJson(route('trip-planner.update', $this->plan), ['revision' => $this->plan->fresh()->revision, 'start_date' => '2026-10-20', 'end_date' => '2026-10-23'])
+        ->assertOk()->assertJsonPath('data.start_date', '2026-10-20');
+
+    $options = $this->plan->items()->get()->mapWithKeys(fn ($item) => [$item->item_type => $item->options]);
+    expect($options['room'])->toMatchArray(['check_in' => '2026-10-20', 'check_out' => '2026-10-23'])
+        ->and($options['activity'])->not->toHaveKey('date');
+    $this->postJson(route('trip-planner.transfer', [$this->plan, $itinerary]))->assertUnprocessable()->assertJsonValidationErrors('itinerary');
+});
+
+it('keeps travel dates required on a saved trip that did not come from the chatbot', function () {
+    $this->patchJson(route('trip-planner.update', $this->plan), ['revision' => $this->plan->revision, 'clear_dates' => true])
+        ->assertUnprocessable()->assertJsonValidationErrors('clear_dates');
+
+    expect($this->plan->fresh()->start_date)->not->toBeNull();
+});
+
+it('reuses a recent schedule for an unchanged plan and rebuilds once it is stale or changed', function () {
+    plannerAdd($this->plan, 'room', $this->room->id);
+    plannerAdd($this->plan, 'activity', plannerActivity($this->destination)->id);
+    $engine = app(ItineraryService::class);
+
+    $first = $engine->generate($this->plan->fresh());
+    expect($engine->generate($this->plan->fresh())->id)->toBe($first->id);
+
+    $this->travel(16)->minutes();
+    $stale = $engine->generate($this->plan->fresh());
+    expect($stale->id)->not->toBe($first->id);
+
+    plannerAdd($this->plan, 'activity', plannerActivity($this->destination)->id);
+    expect($engine->generate($this->plan->fresh())->id)->not->toBe($stale->id);
+});
+
+it('routes a hotel and its rooms as one location', function () {
+    $sizes = [];
+    $this->partialMock(RoutingService::class, function ($mock) use (&$sizes) {
+        $mock->shouldReceive('matrix')->andReturnUsing(function ($sources) use (&$sizes) {
+            $sizes[] = count($sources);
+            $grid = array_fill(0, count($sources), array_fill(0, count($sources), 600));
+
+            return ['distances' => $grid, 'durations' => $grid, 'mode' => 'walking'];
+        });
+        $mock->shouldReceive('route')->andReturn(['status' => 'unavailable', 'geometry' => null]);
+    });
+    plannerAdd($this->plan, 'hotel', $this->hotel->id);
+    plannerAdd($this->plan, 'room', $this->room->id);
+    plannerAdd($this->plan, 'activity', plannerActivity($this->destination, ['latitude' => 11.97, 'longitude' => 121.93])->id);
+
+    app(ItineraryService::class)->generate($this->plan->fresh());
+
+    expect($sizes)->toBe([2]);
+});
+
+it('refuses a second schedule build while one is already running', function () {
+    plannerAdd($this->plan, 'room', $this->room->id);
+    $lock = Cache::lock('trip-plan-generate:'.$this->plan->id, 180);
+    $lock->get();
+
+    $this->postJson(route('trip-planner.generate', $this->plan))->assertUnprocessable()->assertJsonValidationErrors('plan');
+
+    $lock->release();
+    expect($this->plan->itineraries()->count())->toBe(0);
+});
+
+it('prunes older generated schedules but keeps recent, basket-held and chatbot draft versions', function () {
+    $draft = TripItinerary::factory()->create(['trip_plan_id' => $this->plan->id, 'snapshot' => ['kind' => 'chatbot_draft', 'days' => []]]);
+    $versions = TripItinerary::factory()->count(7)->create(['trip_plan_id' => $this->plan->id]);
+    CartItem::create(['user_id' => $this->user->id, 'item_type' => 'room', 'item_id' => $this->room->id, 'quantity' => 1,
+        'selected_pax' => 2, 'trip_itinerary_id' => $versions[0]->id]);
+
+    $this->artisan('trips:prune-itineraries')->assertSuccessful();
+
+    expect($this->plan->itineraries()->pluck('id')->sort()->values()->all())
+        ->toBe(collect([$draft->id, $versions[0]->id])->merge($versions->slice(2)->pluck('id'))->sort()->values()->all());
 });

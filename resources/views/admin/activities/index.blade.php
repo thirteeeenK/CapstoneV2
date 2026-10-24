@@ -4,51 +4,11 @@
 
 @section('content')
     <div class="pb-12"
-         x-data="{
-             search: @js($search),
-             destinationId: @js((string) ($selectedDestinationId ?? '')),
-             level: @js($selectedLevel ?? ''),
-             category: @js($selectedCategory ?? ''),
-             loading: false,
-             timer: null,
-             baseUrl: @js(route('admin.activities.index')),
-             async fetchResults() {
-                 const params = new URLSearchParams();
-                 if (this.search) params.set('search', this.search);
-                 if (this.destinationId) params.set('destination_id', this.destinationId);
-                 if (this.level) params.set('level', this.level);
-                 if (this.category) params.set('category', this.category);
-                 const target = this.baseUrl + (params.toString() ? '?' + params.toString() : '');
-                 this.loading = true;
-                 try {
-                     const res = await fetch(target, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
-                     const html = await res.text();
-                     const el = document.getElementById('listings-results');
-                     if (el) el.outerHTML = html;
-                 } finally {
-                     this.loading = false;
-                 }
-             },
-             debouncedSearch() {
-                 clearTimeout(this.timer);
-                 this.timer = setTimeout(() => this.fetchResults(), 250);
-             },
-             setDestinationId(id) {
-                 this.destinationId = id;
-                 this.fetchResults();
-             },
-             setLevel(level) {
-                 this.level = level;
-                 this.fetchResults();
-             },
-             resetFilters() {
-                 this.search = '';
-                 this.destinationId = '';
-                 this.level = '';
-                 this.category = '';
-                 this.fetchResults();
-             }
-         }">
+         x-data="adminLiveList({
+             base: @js(route('admin.activities.index')),
+             filters: { search: @js($search), destinationId: @js((string) ($selectedDestinationId ?? '')), level: @js($selectedLevel ?? ''), category: @js($selectedCategory ?? '') },
+             params: { search: 'search', destinationId: 'destination_id', level: 'level', category: 'category' },
+         })">
         <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
                 <h1 class="text-xl font-bold text-slate-900">Activities & Tours</h1>
@@ -168,6 +128,7 @@
 
         <div>
             <div :class="loading ? 'opacity-60 transition-opacity' : 'transition-opacity'">
+                <div x-show="error" x-cloak role="alert" class="mb-4 flex flex-wrap items-center gap-3 rounded-lg bg-rose-50 p-3 text-sm text-rose-800 dark:bg-rose-950 dark:text-rose-200"><p x-text="error" class="flex-1"></p><button type="button" @click="retryResults()" class="min-h-11 px-3 font-bold underline underline-offset-4">Retry</button></div>
                 @include('admin.activities._table', compact('activities', 'selectedDestinationId'))
             </div>
         </div>

@@ -19,7 +19,7 @@ class TripBookingDatePolicy
 
     public function message(): string
     {
-        return 'Arrival must be at least two calendar days ahead in Philippine time. The earliest arrival is '.$this->minimumArrivalDate().'. Start a new trip with eligible dates if needed.';
+        return 'Arrival must be at least two calendar days ahead in Philippine time. The earliest arrival is '.$this->minimumArrivalDate().'. Change the trip dates if needed.';
     }
 
     public function assertBookableArrival(?string $arrival, string $field = 'start_date'): void

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Str;
 
 #[Fillable([
@@ -33,6 +34,22 @@ class ChatSession extends Model
     public function messages(): HasMany
     {
         return $this->hasMany(ChatMessage::class);
+    }
+
+    /**
+     * The newest message, so the support queue can eager-load it per ticket.
+     */
+    public function latestMessage(): HasOne
+    {
+        return $this->hasOne(ChatMessage::class)->latestOfMany();
+    }
+
+    /**
+     * The newest message the traveler sent (pending tickets preview this one).
+     */
+    public function latestUserMessage(): HasOne
+    {
+        return $this->hasOne(ChatMessage::class)->ofMany(['id' => 'max'], fn ($query) => $query->where('sender', 'user'));
     }
 
     public function user(): BelongsTo

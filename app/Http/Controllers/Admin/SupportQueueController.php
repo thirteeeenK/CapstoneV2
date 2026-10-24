@@ -90,13 +90,13 @@ class SupportQueueController extends Controller
     {
         $admin = $request->user('admin');
 
-        $pending = SupportInquiry::with(['chatSession', 'user'])
+        // Last messages are eager-loaded so each 5-second poll costs a fixed number of queries.
+        $pending = SupportInquiry::with(['chatSession.latestUserMessage', 'user'])
             ->where('status', SupportInquiry::STATUS_PENDING)
             ->orderBy('requested_at', 'asc')
             ->get()
             ->map(function ($inquiry) {
-                $session = $inquiry->chatSession;
-                $lastMsg = $session?->messages()->where('sender', 'user')->latest('created_at')->first();
+                $lastMsg = $inquiry->chatSession?->latestUserMessage;
 
                 return [
                     'id' => $inquiry->id,
@@ -111,14 +111,13 @@ class SupportQueueController extends Controller
                 ];
             });
 
-        $myActive = SupportInquiry::with(['chatSession', 'user'])
+        $myActive = SupportInquiry::with(['chatSession.latestMessage', 'user'])
             ->where('assigned_admin_id', $admin->id)
             ->where('status', SupportInquiry::STATUS_HUMAN_ACTIVE)
             ->orderBy('assigned_at', 'asc')
             ->get()
             ->map(function ($inquiry) {
-                $session = $inquiry->chatSession;
-                $lastMsg = $session?->messages()->latest('created_at')->first();
+                $lastMsg = $inquiry->chatSession?->latestMessage;
 
                 return [
                     'id' => $inquiry->id,
@@ -133,7 +132,7 @@ class SupportQueueController extends Controller
                 ];
             });
 
-        $myReturned = SupportInquiry::with(['chatSession', 'user'])
+        $myReturned = SupportInquiry::with(['user'])
             ->where('assigned_admin_id', $admin->id)
             ->where('status', SupportInquiry::STATUS_RETURNED_AI)
             ->orderBy('returned_to_ai_at', 'desc')

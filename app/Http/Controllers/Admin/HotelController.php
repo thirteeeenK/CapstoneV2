@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\RegenerateEmbedding;
 use App\Models\DestinationModel;
 use App\Models\HotelModel;
 use App\Services\AdminAuditService;
@@ -77,6 +78,8 @@ class HotelController extends Controller
         if ($vector) {
             $hotel->embedding = $geminiService->formatVectorForDb($vector);
             $hotel->save();
+        } else {
+            RegenerateEmbedding::dispatch('hotel', $hotel->id);
         }
 
         return redirect()->back()->with('success', 'Hotel Information Added Successfully.');
@@ -196,6 +199,9 @@ class HotelController extends Controller
         }
 
         $hotel->save();
+        if (! $vector) {
+            RegenerateEmbedding::dispatch('hotel', $hotel->id);
+        }
 
         AdminAuditService::log($hotel, $oldValues);
 

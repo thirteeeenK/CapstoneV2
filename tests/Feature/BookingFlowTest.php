@@ -51,6 +51,20 @@ function addRoomToCart(User $user, RoomType $room): CartItem
     ]);
 }
 
+it('refuses checkout when a basket listing was hidden after it was added', function () {
+    addRoomToCart($this->user, $this->room);
+    $this->room->update(['is_shown' => false]);
+
+    $this->actingAs($this->user)->postJson(route('checkout.process'), [
+        'contact_name' => 'Juan Dela Cruz',
+        'contact_email' => $this->user->email,
+        'contact_phone' => '09171234567',
+        'guest_manifest' => null,
+    ])->assertUnprocessable()->assertJsonValidationErrors('cart');
+
+    expect(Booking::count())->toBe(0);
+});
+
 it('creates a pending booking from the cart via checkout', function () {
     addRoomToCart($this->user, $this->room);
 

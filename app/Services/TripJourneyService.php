@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Jobs\SendTripJourneyMail;
 use App\Models\Booking;
+use App\Models\Review;
 use App\Models\TripPlan;
 use App\Models\User;
 use Illuminate\Support\Carbon;
@@ -11,6 +12,14 @@ use Illuminate\Support\Facades\DB;
 
 class TripJourneyService
 {
+    /**
+     * Trip reminders and marketing follow-ups each get their own 20-hour cap,
+     * so a marketing email never crowds out a time-sensitive reminder.
+     */
+    private const REMINDER_KINDS = ['pre_trip', 'departure', 'review'];
+
+    private const MARKETING_KINDS = ['continue', 'repeat'];
+
     public function process(): int
     {
         $count = 0;
@@ -34,11 +43,11 @@ class TripJourneyService
             ->with(['items', 'user'])->chunkById(100, function ($plans) use (&$count) {
                 foreach ($plans as $plan) {
                     $user = $plan->user;
-                    if ($user && $user->trip_marketing_enabled && $user->email_verified_at && $plan->items->isNotEmpty()) {
+                    if ($this->hasRecipient($user) && $user->trip_marketing_enabled && $plan->items->isNotEmpty()) {
                         $count += $this->enqueue($user, 'continue', 'plan:'.$plan->id.':continue', [
                             'subject' => 'Your '.$plan->title.' is waiting', 'title' => 'Pick up where you left off', 'name' => $user->name,
                             'message' => 'Your saved trip choices are ready to review. Check the current forecast and routes, then generate your itinerary when you’re ready.',
-                            'url' => route('trip-planner.index'), 'action' => 'Continue planning', 'schedule' => [], 'marketing' => true,
+                            'url' => route('trip-planner.index', ['plan' => $plan->id]), 'action' => 'Continue planning', 'schedule' => [], 'marketing' => true,
                         ], null, $plan->id);
                     }
                 }
@@ -86,7 +95,7 @@ class TripJourneyService
     public function bookingEligible(Booking $booking, string $kind): bool
     {
         $user = $booking->user;
-        if (! $user || ! $user->email_verified_at || ! $booking->trip_itineraries || in_array($booking->status, ['cancelled', 'rejected', 'expired', 'cancellation_requested'], true)) {
+        if (! $this->hasRecipient($user) || ! $booking->trip_itineraries || in_array($booking->status, ['cancelled', 'rejected', 'expired', 'cancellation_requested'], true)) {
             return false;
         }
         $dates = $this->dates($booking);
@@ -100,7 +109,7 @@ class TripJourneyService
             'pre_trip' => $user->trip_reminders_enabled && $confirmed && $dates['start']->gt($now) && $dates['start']->lte($now->copy()->addDay()),
             'departure' => $user->trip_reminders_enabled && $confirmed && $dates['start']->lte($now) && $dates['end']->gt($now) && $dates['end']->lte($now->copy()->addDay()),
             'review' => $user->trip_reminders_enabled && $booking->status === 'completed' && $dates['end']->copy()->addDay()->lte($now)
-                && $dates['end']->copy()->addDays(14)->gte($now) && $booking->items->contains(fn ($item) => $item->availability_status !== 'unavailable' && $item->fulfillment_status === 'fulfilled' && in_array($item->item_type, ['room', 'activity', 'package'], true)),
+                && $dates['end']->copy()->addDays(14)->gte($now) && $this->hasUnreviewedService($booking, $user),
             'repeat' => $user->trip_marketing_enabled && $booking->status === 'completed' && $dates['end']->copy()->addDays(30)->lte($now) && $dates['end']->copy()->addDays(37)->gte($now),
             default => false,
         };
@@ -114,28 +123,57 @@ class TripJourneyService
             'review' => ['Thank you for traveling with SunnyTrips', 'Your completed services are ready for your feedback. Share your experience to help other travelers choose their next stay or activity.', 'Leave a review', route('booking.show', $booking->booking_code).'#booking-reviews'],
             'repeat' => ['Ready for another island?', 'Explore our destinations and plan another trip around the places you enjoy. Current availability and weather will guide your next itinerary.', 'Explore destinations', route('trip-planner.index')],
         };
-        $snapshot = $booking->trip_itineraries[0];
         $included = $booking->items->reject(fn ($item) => $item->availability_status === 'unavailable');
         $includedIds = $included->map(fn ($item) => $item->item_snapshot['trip_plan_item_id'] ?? null)->filter()->all();
+        // A booking can hold several planned trips; each one's days are listed, labeled by trip when there are several.
+        $itineraries = $booking->trip_itineraries;
+        $schedule = collect($itineraries)->flatMap(fn ($snapshot) => collect($snapshot['days'])->map(fn ($day) => [
+            'label' => (count($itineraries) > 1 ? ($snapshot['title'] ?? 'Trip').' · ' : '').'Day '.$day['day'].' · '.$day['date'],
+            'hotel' => $included->contains(fn ($item) => $item->item_type === 'room' && $item->hotel_name === ($day['hotel']['name'] ?? null)) ? $day['hotel']['name'] : null,
+            'visits' => collect($day['stops'])->filter(fn ($stop) => in_array($stop['plan_item_id'], $includedIds, true))
+                ->map(fn ($stop) => $stop['start'].' · '.$stop['name'])->all()]))->all();
 
         return ['subject' => $title.' · '.$booking->booking_code, 'title' => $title, 'name' => $booking->user->name,
             'message' => $message, 'url' => $url, 'action' => $action, 'reference' => $booking->booking_code,
-            'schedule' => in_array($kind, ['pre_trip', 'departure'], true) ? collect($snapshot['days'])->map(fn ($day) => ['label' => 'Day '.$day['day'].' · '.$day['date'],
-                'hotel' => $included->contains(fn ($item) => $item->item_type === 'room' && $item->hotel_name === ($day['hotel']['name'] ?? null)) ? $day['hotel']['name'] : null,
-                'visits' => collect($day['stops'])->filter(fn ($stop) => in_array($stop['plan_item_id'], $includedIds, true))
-                    ->map(fn ($stop) => $stop['start'].' · '.$stop['name'])->all()])->all() : [],
+            'schedule' => in_array($kind, ['pre_trip', 'departure'], true) ? $schedule : [],
             'marketing' => $kind === 'repeat'];
+    }
+
+    /**
+     * Journey emails go to the account's saved address; verifying it is not required.
+     */
+    private function hasRecipient(?User $user): bool
+    {
+        return $user !== null && filled($user->email);
+    }
+
+    /**
+     * Whether the booking has a fulfilled, reviewable service this traveler has not reviewed yet.
+     */
+    private function hasUnreviewedService(Booking $booking, User $user): bool
+    {
+        $reviewable = $booking->items->filter(fn ($item) => $item->availability_status !== 'unavailable' && $item->fulfillment_status === 'fulfilled'
+            && in_array($item->item_type, ['room', 'activity', 'package'], true));
+        if ($reviewable->isEmpty()) {
+            return false;
+        }
+        $reviewed = Review::query()->where('user_id', $user->id)->whereIn('booking_item_id', $reviewable->modelKeys())->pluck('booking_item_id')->all();
+
+        return $reviewable->contains(fn ($item) => ! in_array($item->id, $reviewed));
     }
 
     private function enqueue(User $user, string $kind, string $key, array $payload, ?int $bookingId = null, ?int $planId = null, ?string $signature = null): int
     {
-        if (DB::table('trip_journey_messages')->where('user_id', $user->id)->where('created_at', '>', now()->subHours(20))->whereIn('status', ['pending', 'sending', 'sent'])->exists()) {
+        $recentSameCategory = fn () => DB::table('trip_journey_messages')->where('user_id', $user->id)->where('created_at', '>', now()->subHours(20))
+            ->whereIn('status', ['pending', 'sending', 'sent'])
+            ->whereIn('kind', in_array($kind, self::MARKETING_KINDS, true) ? self::MARKETING_KINDS : self::REMINDER_KINDS)->exists();
+        if ($recentSameCategory()) {
             return 0;
         }
 
-        return DB::transaction(function () use ($user, $kind, $key, $payload, $bookingId, $planId, $signature) {
+        return DB::transaction(function () use ($user, $kind, $key, $payload, $bookingId, $planId, $signature, $recentSameCategory) {
             User::query()->whereKey($user->id)->lockForUpdate()->firstOrFail();
-            if (DB::table('trip_journey_messages')->where('user_id', $user->id)->where('created_at', '>', now()->subHours(20))->whereIn('status', ['pending', 'sending', 'sent'])->exists()) {
+            if ($recentSameCategory()) {
                 return 0;
             }
             $payload['preferences_url'] = route('trip-planner.index');
@@ -152,7 +190,7 @@ class TripJourneyService
     public function deliveryEligible(object $message): bool
     {
         $user = User::query()->find($message->user_id);
-        if (! $user || ! $user->email_verified_at || Carbon::parse($message->created_at)->lt(now()->subHours(6))) {
+        if (! $this->hasRecipient($user) || Carbon::parse($message->created_at)->lt(now()->subHours(6))) {
             return false;
         }
         if ($message->booking_id) {

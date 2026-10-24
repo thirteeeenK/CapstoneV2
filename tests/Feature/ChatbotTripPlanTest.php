@@ -307,3 +307,112 @@ test('room availability failure rolls back an attempted draft date update', func
     $this->patchJson('/trip-planner/plans/'.$plan->id, ['revision' => 1, 'start_date' => '2026-11-01', 'end_date' => '2026-11-03'])->assertUnprocessable();
     expect($plan->fresh()->revision)->toBe(1)->and($plan->fresh()->start_date)->toBeNull()->and($plan->itineraries()->count())->toBe(1);
 });
+
+function savedDatedRoomDraft(object $test): TripPlan
+{
+    $hotel = HotelModel::factory()->create(['destination_id' => $test->destination->id, 'is_shown' => true, 'latitude' => 11.96, 'longitude' => 121.927]);
+    $room = RoomType::factory()->create(['hotel_id' => $hotel->id, 'is_shown' => true, 'max_occupancy' => 4]);
+    $suggestion = app(ChatbotTripPlanService::class)->suggestion([
+        'hotel' => ['id' => $hotel->id, 'name' => $hotel->hotel_name],
+        'room' => ['id' => $room->id, 'room_name' => $room->room_name, 'max_occupancy' => 4],
+        'activities' => [['id' => $test->activity->id, 'activity_name' => $test->activity->activity_name, 'day' => 1]],
+        'check_in_date' => '2026-11-01', 'check_out_date' => '2026-11-04', 'pax' => 2,
+    ], ['destination_id' => $test->destination->id, 'destination_name' => 'Boracay']);
+    $test->message->update(['context_data' => ['itinerary_suggestions' => [$suggestion['id'] => $suggestion]]]);
+    $saved = $test->postJson('/trip-planner/chatbot-plans', ['suggestion_id' => $suggestion['id']])->assertCreated();
+
+    return TripPlan::findOrFail($saved->json('data.id'));
+}
+
+/** A shorter room stay plus a one-traveler activity pinned to a date. */
+function customizeDraftChoices(object $test, TripPlan $plan): void
+{
+    $base = '/trip-planner/plans/'.$plan->id;
+    $roomId = $plan->items()->where('item_type', 'room')->value('item_id');
+    $test->postJson($base.'/items', ['item_type' => 'room', 'item_id' => $roomId, 'pax' => 2, 'check_in' => '2026-11-02', 'check_out' => '2026-11-04'])->assertOk();
+    $test->postJson($base.'/items', ['item_type' => 'activity', 'item_id' => $test->activity->id, 'pax' => 1, 'date' => '2026-11-03'])->assertOk();
+}
+
+/** @return array<string, array<string, mixed>> */
+function draftChoiceOptions(TripPlan $plan): array
+{
+    return $plan->items()->get()->mapWithKeys(fn ($item) => [$item->item_type => $item->options])->all();
+}
+
+test('a dated draft with a room builds its schedule straight after saving', function () {
+    $plan = savedDatedRoomDraft($this);
+    $this->partialMock(RoutingService::class, function ($mock) {
+        $mock->shouldReceive('matrix')->andReturnUsing(function ($sources, $targets): array {
+            $distances = $durations = [];
+            foreach ($sources as $i => $source) {
+                foreach ($targets as $j => $target) {
+                    $distances[$i][$j] = $i === $j ? 0 : 1;
+                    $durations[$i][$j] = $i === $j ? 0 : 600;
+                }
+            }
+
+            return ['distances' => $distances, 'durations' => $durations, 'mode' => 'walking'];
+        });
+        $mock->shouldReceive('route')->andReturn(['status' => 'unavailable', 'geometry' => null]);
+    });
+    $this->partialMock(WeatherService::class, fn ($mock) => $mock->shouldReceive('forecastForDestination')->andReturn(null));
+    $this->partialMock(GeminiService::class, fn ($mock) => $mock->shouldReceive('generateTripReport')->andReturn(['A provisional schedule.']));
+
+    $this->postJson('/trip-planner/plans/'.$plan->id.'/generate')->assertOk()->assertJsonPath('data.revision', 1);
+
+    expect(draftChoiceOptions($plan)['room'])->toMatchArray(['check_in' => '2026-11-01', 'check_out' => '2026-11-04', 'pax' => 2, 'quantity' => 1])
+        ->and($plan->fresh()->revision)->toBe(1);
+});
+
+test('a dated draft whose room no longer fits the party is rejected before scheduling', function () {
+    $plan = savedDatedRoomDraft($this);
+    RoomType::query()->whereKey($plan->items()->where('item_type', 'room')->value('item_id'))->update(['max_occupancy' => 1]);
+
+    $this->postJson('/trip-planner/plans/'.$plan->id.'/generate')->assertUnprocessable()->assertJsonValidationErrors('room');
+
+    expect(draftChoiceOptions($plan)['room'])->not->toHaveKey('check_in');
+});
+
+test('saving unchanged trip details keeps custom stay dates and activity choices', function () {
+    $plan = savedDatedRoomDraft($this);
+    customizeDraftChoices($this, $plan);
+    $before = draftChoiceOptions($plan);
+
+    $this->patchJson('/trip-planner/plans/'.$plan->id, ['revision' => $plan->fresh()->revision, 'title' => 'Renamed trip', 'pax' => 2,
+        'mode' => 'walking', 'start_date' => '2026-11-01', 'end_date' => '2026-11-04'])->assertOk();
+
+    expect(draftChoiceOptions($plan))->toEqual($before)->and($plan->fresh()->title)->toBe('Renamed trip');
+});
+
+test('changing party size and dates keeps custom choices that still fit the trip', function () {
+    $plan = savedDatedRoomDraft($this);
+    customizeDraftChoices($this, $plan);
+
+    $this->patchJson('/trip-planner/plans/'.$plan->id, ['revision' => $plan->fresh()->revision, 'pax' => 3, 'start_date' => '2026-11-01', 'end_date' => '2026-11-05'])->assertOk();
+
+    $options = draftChoiceOptions($plan);
+    expect($options['room'])->toMatchArray(['check_in' => '2026-11-02', 'check_out' => '2026-11-04', 'pax' => 3])
+        ->and($options['activity'])->toMatchArray(['pax' => 1, 'date' => '2026-11-03']);
+});
+
+test('a dated chatbot draft can go back to undecided dates', function () {
+    $plan = savedDatedRoomDraft($this);
+    customizeDraftChoices($this, $plan);
+
+    $this->patchJson('/trip-planner/plans/'.$plan->id, ['revision' => $plan->fresh()->revision, 'clear_dates' => true])->assertOk()
+        ->assertJsonPath('data.start_date', null)->assertJsonPath('itinerary.snapshot.days.0.date', null);
+
+    expect(draftChoiceOptions($plan)['room'])->not->toHaveKeys(['check_in', 'check_out'])
+        ->and(draftChoiceOptions($plan)['activity'])->toMatchArray(['pax' => 1])->not->toHaveKey('date');
+});
+
+test('custom dates that no longer fit a moved trip fall back to the trip dates', function () {
+    $plan = savedDatedRoomDraft($this);
+    customizeDraftChoices($this, $plan);
+
+    $this->patchJson('/trip-planner/plans/'.$plan->id, ['revision' => $plan->fresh()->revision, 'start_date' => '2026-11-10', 'end_date' => '2026-11-12'])->assertOk();
+
+    $options = draftChoiceOptions($plan);
+    expect($options['room'])->toMatchArray(['check_in' => '2026-11-10', 'check_out' => '2026-11-12'])
+        ->and($options['activity'])->toMatchArray(['pax' => 1])->not->toHaveKey('date');
+});

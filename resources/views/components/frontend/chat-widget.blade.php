@@ -728,6 +728,7 @@
             handoffStatus: null,
             handoffTicket: '',
             handoffPollTimer: null,
+            handoffPollInFlight: false,
             handoffLastMessageId: 0,
             locatingLocation: false,
             geoError: null,
@@ -1726,7 +1727,9 @@
             },
 
             async pollHandoffMessages() {
-                if (!this.sessionToken || !this.handoffStatus) return;
+                // A slow response must not stack another request behind it.
+                if (!this.sessionToken || !this.handoffStatus || this.handoffPollInFlight) return;
+                this.handoffPollInFlight = true;
                 // Keep polling even when closed to catch admin-initiated while off-screen (badge), but throttle via hasUnread.
                 const wasClosed = !this.open;
                 try {
@@ -1780,6 +1783,8 @@
                     }
                 } catch (err) {
                     console.error('Handoff poll error:', err);
+                } finally {
+                    this.handoffPollInFlight = false;
                 }
             },
         };

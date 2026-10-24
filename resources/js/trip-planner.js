@@ -268,7 +268,7 @@ export default (config) => {
         } else {
             await this.run(async () => {
                 const body = await this.api('/plans/' + this.plan.id + '/items', 'POST', {
-                    item_type: 'activity', item_id: listing.id, pax: 1, quantity: 1,
+                    item_type: 'activity', item_id: listing.id, pax: 1, quantity: 1, revision: this.plan.revision,
                 });
                 this.applyChoice(body); this.notice = listing.name + ' added to your trip. Edit its choice to adjust travelers or set a visit date.';
                 this.renderMap(true);
@@ -292,7 +292,7 @@ export default (config) => {
         if (!this.plan) { this.error = 'Save your trip dates first, then select a hotel.'; return; }
         await this.run(async () => {
             if (!this.selected(listing)) {
-                const body = await this.api('/plans/' + this.plan.id + '/items', 'POST', { item_type: 'hotel', item_id: listing.id });
+                const body = await this.api('/plans/' + this.plan.id + '/items', 'POST', { item_type: 'hotel', item_id: listing.id, revision: this.plan.revision });
                 this.applyChoice(body);
             }
             if (session === null || session === previewSession) {
@@ -343,7 +343,7 @@ export default (config) => {
             const type = this.editing.type;
             if (type === 'hotel' && !this.customStayDates) { this.optionIn = this.startDate; this.optionOut = this.endDate; }
             const body = await this.api('/plans/' + this.plan.id + '/items', 'POST', { item_type: type, item_id: this.editing.id,
-                pax: Number(this.optionPax), quantity: Number(this.optionQuantity),
+                pax: Number(this.optionPax), quantity: Number(this.optionQuantity), revision: this.plan.revision,
                 ...(type === 'hotel' || type === 'room' ? { check_in: this.optionIn, check_out: this.optionOut } : { date: this.optionDate || null }),
             });
             this.applyChoice(body);
@@ -354,7 +354,7 @@ export default (config) => {
     },
     async remove(item) {
         await this.run(async () => {
-            const body = await this.api('/plans/' + this.plan.id + '/items/' + item.id, 'DELETE');
+            const body = await this.api('/plans/' + this.plan.id + '/items/' + item.id, 'DELETE', { revision: this.plan.revision });
             this.selections = this.selections.filter(choice => choice.id !== item.id);
             this.plan.revision = body.revision; this.itinerary = null; this.itineraryMapContext = false; this.renderMap();
             if (body.draft_itinerary) this.draftItinerary = body.draft_itinerary;
@@ -398,17 +398,33 @@ export default (config) => {
         });
     },
     async updateDraft(removeChoice = null) {
+        const changes = {};
+        if (removeChoice) changes.remove_choice = removeChoice;
+        else {
+            // Send only edited fields so a rename never re-validates unchanged dates or rebuilds choices.
+            if (this.title !== this.plan.title) changes.title = this.title;
+            if (Number(this.pax) !== Number(this.plan.pax)) changes.pax = Number(this.pax);
+            if (this.mode !== this.plan.mode) changes.mode = this.mode;
+            const datesChanged = this.startDate !== (this.plan.start_date?.slice(0, 10) || '') || this.endDate !== (this.plan.end_date?.slice(0, 10) || '');
+            if ((this.startDate || this.endDate) && datesChanged) Object.assign(changes, { start_date: this.startDate, end_date: this.endDate });
+        }
+        await this.savePlanDetails(changes);
+    },
+    async clearDates() { await this.savePlanDetails({ clear_dates: true }); },
+    isChatbotDraft() { return this.plan?.source === 'chatbot' && this.plan?.status === 'draft'; },
+    async savePlanDetails(changes) {
         await this.run(async () => {
-            const changes = { revision: this.plan.revision };
-            if (removeChoice) changes.remove_choice = removeChoice;
-            else {
-                Object.assign(changes, { title: this.title, pax: Number(this.pax), mode: this.mode });
-                if (this.startDate || this.endDate) Object.assign(changes, { start_date: this.startDate, end_date: this.endDate });
-            }
-            const body = await this.api('/plans/' + this.plan.id, 'PATCH', changes);
-            this.plan = body.data; this.selections = body.data.items; this.draftItinerary = body.itinerary;
+            const body = await this.api('/plans/' + this.plan.id, 'PATCH', { revision: this.plan.revision, ...changes });
+            this.plan = body.data; this.selections = body.data.items;
+            this.startDate = this.plan.start_date?.slice(0, 10) || ''; this.endDate = this.plan.end_date?.slice(0, 10) || '';
+            // A draft keeps showing its draft; a rescheduled trip's old schedule no longer matches and must be rebuilt.
+            const latest = body.itinerary;
+            this.draftItinerary = latest?.snapshot?.kind === 'chatbot_draft' ? latest : null;
+            this.itinerary = !this.draftItinerary && latest?.revision === this.plan.revision ? latest : null;
             this.savedPlans = this.savedPlans.map(plan => plan.id === this.plan.id ? this.plan : plan);
-            this.notice = 'Draft saved. Build a schedule when your dates and choices are ready.';
+            this.notice = this.draftItinerary ? 'Draft saved. Build a schedule when your dates and choices are ready.'
+                : 'Trip details saved. Your choices were kept where they still fit; build the schedule again before adding it to your Trip Basket.';
+            this.renderMap(true);
         });
     },
     async saveEmailPreferences() {
@@ -448,7 +464,7 @@ export default (config) => {
         this.minimumArrival = date.toISOString().slice(0, 10);
     },
     arrivalTooSoon(date) { return Boolean(this.minimumArrival && date && date < this.minimumArrival); },
-    arrivalHint() { return 'Arrival must be at least two calendar days ahead in Philippine time. The earliest arrival is ' + this.minimumArrival + '. Start a new trip with eligible dates if needed.'; },
+    arrivalHint() { return 'Arrival must be at least two calendar days ahead in Philippine time. The earliest arrival is ' + this.minimumArrival + '. Change the trip dates if needed.'; },
     adjustActivityPax(change) {
         const current = Math.max(1, Number(this.optionPax) || 1);
         this.optionPax = change < 0 ? Math.max(1, current - 1) : (current < this.activityLimit(this.editing) ? current + 1 : current);
@@ -457,6 +473,72 @@ export default (config) => {
         pax = Math.max(1, Number(pax) || 1);
         const unit = this.activityUnitRate(listing, pax);
         return listing?.per_person ? unit * pax : unit;
+    },
+    selectionListing(item) { return this.allListings().find(listing => listing.type === item.item_type && listing.id === item.item_id); },
+    // Mirrors the transfer rule: rooms and scheduled activities are added; unscheduled activities and hotel bases are not.
+    basketPreview() {
+        const scheduled = new Set((this.itinerary?.snapshot?.days || []).flatMap(day => (day.stops || []).map(stop => stop.plan_item_id)));
+        const preview = { added: [], skipped: [] };
+        for (const item of this.selections) {
+            if (item.item_type === 'hotel') continue;
+            (item.item_type === 'room' || scheduled.has(item.id) ? preview.added : preview.skipped).push(this.selectionName(item));
+        }
+        return preview;
+    },
+    travelersLabel(item) {
+        return item.item_type === 'activity'
+            ? (item.options?.pax || 1) + ' of ' + (this.plan?.pax || 1) + ' traveler(s) joining'
+            : (item.options?.quantity || 1) + ' room(s) × ' + (item.options?.pax || 1) + ' guest(s)';
+    },
+    canApplyPartySize(item) {
+        const listing = this.selectionListing(item);
+        return Boolean(item.item_type === 'activity' && listing && Number(item.options?.pax || 1) < Math.min(Number(this.plan?.pax) || 1, this.activityLimit(listing)));
+    },
+    async applyPartySize(item) {
+        const listing = this.selectionListing(item);
+        if (!listing) return;
+        const pax = Math.min(Number(this.plan.pax) || 1, this.activityLimit(listing));
+        await this.run(async () => {
+            const body = await this.api('/plans/' + this.plan.id + '/items', 'POST', { item_type: 'activity', item_id: item.item_id,
+                pax, quantity: Number(item.options?.quantity) || 1, date: item.options?.date || null, revision: this.plan.revision });
+            this.applyChoice(body);
+            this.notice = listing.name + ' now includes ' + pax + ' traveler(s).';
+        });
+    },
+    // A planning estimate from listed rates; the checkout manifest sets the final price.
+    tripEstimate() {
+        let rooms = 0, activities = 0;
+        const roomItems = this.selections.filter(item => item.item_type === 'room');
+        for (const item of this.selections) {
+            const listing = this.selectionListing(item);
+            if (!listing) continue;
+            if (item.item_type === 'room') rooms += this.roomTotal(listing, item.options?.pax, item.options?.quantity, item.options?.check_in || this.startDate, item.options?.check_out || this.endDate);
+            if (item.item_type === 'activity') activities += this.activityTotal(listing, item.options?.pax);
+        }
+        // The fewest guests the chosen rooms sleep on any night, to compare with the party size.
+        let sleeps = null;
+        if (roomItems.length && this.startDate && this.endDate) {
+            for (const night = new Date(this.startDate); night < new Date(this.endDate); night.setUTCDate(night.getUTCDate() + 1)) {
+                const key = night.toISOString().slice(0, 10);
+                const count = roomItems.filter(item => (item.options?.check_in || this.startDate) <= key && key < (item.options?.check_out || this.endDate))
+                    .reduce((sum, item) => sum + (Number(item.options?.pax) || 0) * (Number(item.options?.quantity) || 1), 0);
+                sleeps = sleeps === null ? count : Math.min(sleeps, count);
+            }
+        }
+        return { rooms, activities, total: rooms + activities, sleeps, party: Number(this.plan?.pax) || 0 };
+    },
+    // The chat budget converted to a whole-trip amount the same way the chatbot priced it.
+    budgetComparison() {
+        const context = this.plan?.context || {};
+        const max = Number(context.max_price);
+        const basis = context.itinerary_budget_basis || 'trip_total';
+        if (!max || basis === 'per_activity') return null;
+        let budget = max * (basis === 'per_person' ? (Number(this.plan.pax) || 1) : 1);
+        if (basis === 'per_night' || context.itinerary_budget_period === 'per_night') budget *= this.nightsBetween(this.startDate, this.endDate);
+        const scope = context.itinerary_budget_scope || 'trip';
+        const estimate = this.tripEstimate();
+        const spend = scope === 'lodging' ? estimate.rooms : (scope === 'activities' ? estimate.activities : estimate.total);
+        return { budget, spend, scope, remaining: budget - spend };
     },
     dayPlan(day) {
         const events = day?.events || [];

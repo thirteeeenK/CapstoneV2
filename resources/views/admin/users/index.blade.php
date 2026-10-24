@@ -3,42 +3,12 @@
 @section('title', 'Registered Users & Chatbot Moderation | SunnyTrips Admin')
 
 @section('content')
-    <div class="pb-12" x-data="{
-                     search: @js($search),
-                     tab: @js($tab),
-                     loading: false,
-                     timer: null,
-                     baseUrl: @js(route('admin.users.index')),
-                     async fetchResults(url = null) {
-                         const params = new URLSearchParams();
-                         params.set('tab', this.tab || 'all');
-                         if (this.search) params.set('search', this.search);
-                         const target = url || (this.baseUrl + '?' + params.toString());
-                         this.loading = true;
-                         try {
-                             const res = await fetch(target, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
-                             const html = await res.text();
-                             const el = document.getElementById('listings-results');
-                             if (el) el.outerHTML = html;
-                         } finally {
-                             this.loading = false;
-                         }
-                     },
-                     debouncedSearch() {
-                         clearTimeout(this.timer);
-                         this.timer = setTimeout(() => this.fetchResults(), 250);
-                     },
-                     setTab(tab) {
-                         this.tab = tab;
-                         this.fetchResults();
-                     },
-                     handleNavClick(e) {
-                         const a = e.target.closest('a');
-                         if (!a || !a.href.includes('page=')) return;
-                         e.preventDefault();
-                         this.fetchResults(a.href);
-                     }
-                 }" @click="handleNavClick($event)">
+    <div class="pb-12" x-data="adminLiveList({
+            base: @js(route('admin.users.index')),
+            filters: { search: @js($search), tab: @js($tab) },
+            params: { tab: 'tab', search: 'search' },
+            defaults: { tab: 'all' },
+        })" @click="handleNavClick($event)">
         <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
                 <h1 class="text-xl sm:text-2xl font-bold text-slate-900 font-headline">Registered Users & Moderation</h1>
@@ -123,6 +93,7 @@
         </div>
 
         <div :class="loading ? 'opacity-60 transition-opacity' : 'transition-opacity'">
+            <div x-show="error" x-cloak role="alert" class="mb-4 flex flex-wrap items-center gap-3 rounded-lg bg-rose-50 p-3 text-sm text-rose-800 dark:bg-rose-950 dark:text-rose-200"><p x-text="error" class="flex-1"></p><button type="button" @click="retryResults()" class="min-h-11 px-3 font-bold underline underline-offset-4">Retry</button></div>
             @include('admin.users._table', compact('users'))
         </div>
     </div>

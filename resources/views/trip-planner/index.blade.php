@@ -51,7 +51,7 @@
                         <p class="mt-1 text-sm text-slate-600 dark:text-slate-400" x-text="startDate + ' → ' + endDate + ' · ' + (mode === 'driving' ? 'getting around by vehicle' : 'getting around on foot')"></p>
                         <p class="mt-2 text-xs text-slate-500">Your planner saves each choice.</p>
                     </div>
-                    @include('trip-planner._chatbot-draft')
+                    @include('trip-planner._trip-details')
                 </div>
                 <div class="px-5 sm:px-8 pt-5">
                     <section x-show="destinationId" x-cloak aria-label="Destination weather forecast" :aria-busy="weatherLoading" class="mb-5">
@@ -90,6 +90,7 @@
                                     <p class="mt-1 text-sm text-slate-500 line-clamp-2" x-text="listing.description"></p>
                                     <p x-show="listing.price != null" class="mt-2 text-sm font-semibold" x-text="listing.type === 'room' ? '₱' + Number(listing.price).toLocaleString() + ' / night, before guest adjustments' : listing.price"></p>
                                     <p x-show="listing.lat == null || listing.lng == null" class="mt-2 text-xs text-amber-700 dark:text-amber-300">Entrance or meeting point needs verification before scheduling.</p>
+                                    <p x-show="listing.location_precision === 'approximate'" class="mt-2 text-xs text-amber-700 dark:text-amber-300">Approximate location — pinned at the destination centre until the exact meeting point is added, so travel times will be estimates.</p>
                                     <div class="mt-3 flex flex-wrap gap-2">
                                         <button type="button" x-show="listing.type === 'activity' || listing.type === 'room'" @click="listing.type === 'room' ? $store.preview.openRoomById(listing.id, 'planner') : $store.preview.openActivityById(listing.id, 'planner')" :disabled="$store.preview.loading || $store.preview.loadingActivity" class="min-h-11 rounded-lg border border-sand-300 dark:border-slate-600 px-4 py-2 text-sm font-bold text-slate-700 dark:text-slate-200">Preview</button>
                                         <button type="button" @click="listing.type === 'hotel' ? chooseHotel(listing) : edit(listing)" :disabled="busy" class="min-h-11 rounded-lg border border-ocean-700 px-4 py-2 text-sm font-bold text-ocean-700 dark:text-ocean-300" x-text="listing.type === 'hotel' ? 'Select hotel & view rooms' : (selected(listing) ? 'Edit choice' : 'Add to my trip')"></button>
@@ -105,11 +106,24 @@
                         <template x-for="item in selections" :key="item.id">
                             <div class="py-4 border-b border-sand-200 dark:border-slate-700 flex items-start gap-3">
                                 <div class="flex-1 min-w-0"><h3 class="font-bold" x-text="(item.item_type === 'hotel' ? 'Hotel Name: ' : (item.item_type === 'room' ? 'Room: ' : 'Activity: ')) + selectionName(item)"></h3>
+                                    <p x-show="item.item_type !== 'hotel'" class="mt-1 text-sm text-slate-500" x-text="travelersLabel(item)"></p>
+                                    <button type="button" x-show="canApplyPartySize(item)" @click="applyPartySize(item)" :disabled="busy" class="min-h-11 text-sm font-semibold text-ocean-700 dark:text-ocean-300">Apply party size</button>
                                 </div>
                                 <button type="button" @click="editSelection(item)" :disabled="busy" class="min-h-11 px-2 text-sm text-ocean-700 dark:text-ocean-300 font-semibold" :aria-label="'Edit ' + selectionName(item)">Edit</button>
                                 <button type="button" @click="remove(item)" :disabled="busy" class="min-h-11 px-2 text-sm text-rose-700 dark:text-rose-300" :aria-label="'Remove ' + selectionName(item)">Remove</button>
                             </div>
                         </template>
+                        <section x-show="selections.length" aria-label="Trip estimate" class="mt-6 rounded-lg bg-sand-100 dark:bg-slate-800 p-4 text-sm">
+                            <h3 class="font-headline font-bold">Trip estimate</h3>
+                            <p class="mt-2 flex justify-between gap-3"><span>Rooms</span><span x-text="peso(tripEstimate().rooms)"></span></p>
+                            <p class="mt-1 flex justify-between gap-3"><span>Activities</span><span x-text="peso(tripEstimate().activities)"></span></p>
+                            <p class="mt-2 pt-2 border-t border-sand-200 dark:border-slate-700 flex justify-between gap-3 font-bold"><span>Estimated total</span><span x-text="peso(tripEstimate().total)"></span></p>
+                            <p x-show="budgetComparison()" class="mt-2" :class="budgetComparison()?.remaining < 0 ? 'text-amber-800 dark:text-amber-300' : 'text-ocean-800 dark:text-ocean-300'"
+                               x-text="budgetComparison() ? 'Your chat budget' + (budgetComparison().scope === 'trip' ? '' : ' for ' + budgetComparison().scope) + ' is ' + peso(budgetComparison().budget) + ' — ' + (budgetComparison().remaining < 0 ? peso(-budgetComparison().remaining) + ' over.' : peso(budgetComparison().remaining) + ' left.') : ''"></p>
+                            <p x-show="tripEstimate().sleeps !== null && tripEstimate().sleeps < tripEstimate().party" class="mt-2 text-amber-800 dark:text-amber-300"
+                               x-text="'On some nights your rooms sleep ' + tripEstimate().sleeps + ', fewer than your party of ' + tripEstimate().party + '. Add a room or more guests per room.'"></p>
+                            <p class="mt-2 text-xs text-slate-500">Estimate from listed rates. Transport, meals and fees are not included; the guest list at checkout confirms the final price.</p>
+                        </section>
                     </div>
                     <div x-show="tab === 'itinerary'" x-cloak>
                         <template x-if="draftItinerary"><div class="space-y-4">
@@ -143,6 +157,12 @@
                             <button type="button" @click="transfer()" :disabled="busy || arrivalTooSoon(startDate)" aria-describedby="trip-booking-date-hint" class="min-h-11 rounded-lg bg-ocean-700 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50">Add to Trip Basket</button>
                                 <a href="{{ route('cart.index') }}" class="min-h-11 px-3 py-2.5 text-sm font-bold text-ocean-700 dark:text-ocean-300">Open Trip Basket →</a>
                             </div>
+                            <div aria-label="What Add to Trip Basket includes" class="mt-3 rounded-lg bg-sand-100 dark:bg-slate-800 p-3 text-sm">
+                                <p class="font-semibold">Add to Trip Basket includes</p>
+                                <p class="mt-1 text-slate-600 dark:text-slate-300" x-text="basketPreview().added.join(', ') || 'Nothing bookable yet — add a room or an activity that fits on a day.'"></p>
+                                <p x-show="basketPreview().skipped.length" class="mt-2 text-amber-800 dark:text-amber-300" x-text="'Not added because they are not on a day: ' + basketPreview().skipped.join(', ')"></p>
+                                <p class="mt-2 text-xs text-slate-500">Hotel bases are planning choices and are not booked.</p>
+                            </div>
                             <template x-for="(day, index) in itinerary.snapshot.days" :key="day.date">
                                 <section class="mt-7 border-t border-sand-200 dark:border-slate-700 pt-5">
                                     <button type="button" @click="selectDay(index)" class="w-full text-left min-h-11"><h3 class="font-headline text-lg font-bold" x-text="'Day ' + day.day + ' · ' + day.label"></h3><p class="text-xs text-ocean-700 dark:text-ocean-300 mt-1" x-text="Number(day.distance_km).toFixed(2) + ' km · ' + day.travel_minutes + ' min ' + (mode === 'driving' ? 'by vehicle' : 'on foot') + ', including return'"></p></button>
@@ -160,6 +180,7 @@
                                                         <button type="button" @click="selectDay(index); focusStop(item.stop)" class="text-left min-h-11"><p class="text-xs font-semibold text-ocean-700 dark:text-ocean-300" x-text="item.stop.start + '–' + item.stop.end"></p><h4 class="font-headline font-bold mt-1" x-text="item.stop.name"></h4></button>
                                                         <p class="text-xs text-slate-500 mt-2" x-text="item.stop.travel.distance_km != null ? Number(item.stop.travel.distance_km).toFixed(2) + ' km · ' + item.stop.travel.duration_minutes + ' min from ' + item.stop.travel.from : 'Travel time from ' + item.stop.travel.from + ' is not available'"></p>
                                                         <p x-show="item.stop.travel.geometry_kind === 'straight_line'" class="text-xs text-amber-700 dark:text-amber-300 mt-1">Shown as a straight line on the map — no mapped road connects these two stops, so arrange a boat or transfer.</p>
+                                                        <p x-show="item.stop.travel_estimated" class="text-xs text-amber-700 dark:text-amber-300 mt-1">Estimated travel time — the exact meeting point isn't set yet, so it's measured from the destination centre. Confirm the location with the operator.</p>
                                                         <p class="mt-2 text-sm" :class="item.stop.weather.provisional ? 'text-amber-700 dark:text-amber-300' : 'text-ocean-700 dark:text-ocean-300'" x-text="item.stop.weather.description"></p>
                                                         <details class="mt-3"><summary class="cursor-pointer text-sm font-bold text-ocean-700 dark:text-ocean-300 min-h-11 py-2">Why this time and order?</summary><p class="text-sm leading-relaxed text-slate-600 dark:text-slate-400" x-text="item.stop.reason"></p></details>
                                                     </div>
@@ -172,7 +193,7 @@
                             </template>
                             <div x-show="itinerary.snapshot.unscheduled.length" class="mt-7 border-t border-sand-200 dark:border-slate-700 pt-5">
                                 <h3 class="font-headline text-lg font-bold">Other picks to arrange yourself</h3>
-                                <p class="mt-1 text-sm text-slate-500">We couldn't fit these onto a specific day automatically. They still appear on the map as hollow pins so you can see where they are, and you can add them to your trip and sort out the timing yourself — your scheduled days are unaffected.</p>
+                                <p class="mt-1 text-sm text-slate-500">We couldn't fit these onto a specific day. They still appear on the map as hollow pins, but they won't be added to your Trip Basket. Each one says what stopped it and what to change — your scheduled days are unaffected.</p>
                                 <template x-for="item in itinerary.snapshot.unscheduled" :key="item.plan_item_id">
                                     <div class="mt-4 rounded-lg bg-sand-100 dark:bg-slate-800 p-3">
                                         <p class="font-semibold text-sm" x-text="item.name"></p>
@@ -223,7 +244,7 @@
                     <div x-show="editing?.type !== 'activity'">
                         <label for="choice-pax" class="block text-sm mb-1">Guests <span x-show="editing?.type === 'room'">per room</span></label>
                         <input id="choice-pax" type="number" x-model.number="optionPax" min="1" :max="editing?.max_pax || 20" required class="w-full rounded-lg border-sand-300 dark:bg-slate-800">
-                        <p x-show="editing?.type === 'room' && editing?.max_pax" class="text-xs text-slate-500 mt-1" x-text="'This room holds up to ' + editing.max_pax + ' guests (' + editing.base_occupancy + ' included in the base rate).'"></p>
+                        <p x-show="editing?.type === 'room' && editing?.max_pax" class="text-xs text-slate-500 mt-1" x-text="'This room holds up to ' + editing?.max_pax + ' guests (' + editing?.base_occupancy + ' included in the base rate).'"></p>
                     </div>
                     <div x-show="editing?.type === 'activity'">
                         <label class="block text-sm mb-1">Travelers joining this activity</label>
@@ -238,7 +259,7 @@
                     <div x-show="editing?.type === 'room'"><label for="choice-qty" class="block text-sm mb-1">Number of rooms</label><input id="choice-qty" type="number" x-model.number="optionQuantity" min="1" max="20" class="w-full rounded-lg border-sand-300 dark:bg-slate-800"></div>
                     <div x-show="editing?.type === 'room'" class="rounded-lg bg-sand-100 dark:bg-slate-800 p-3 text-sm">
                         <p class="flex justify-between gap-3"><span>Nightly rate</span><span class="font-bold" x-text="peso(roomNightlyRate(editing, optionPax))"></span></p>
-                        <p x-show="Number(optionPax) > (editing?.base_occupancy || 2) && (editing?.extra_person_fee || 0) > 0" class="mt-1 text-xs text-slate-500" x-text="'Includes ' + peso(editing.extra_person_fee) + ' × ' + (Number(optionPax) - editing.base_occupancy) + ' extra guest(s) over the base of ' + editing.base_occupancy + '.'"></p>
+                        <p x-show="Number(optionPax) > (editing?.base_occupancy || 2) && (editing?.extra_person_fee || 0) > 0" class="mt-1 text-xs text-slate-500" x-text="'Includes ' + peso(editing?.extra_person_fee) + ' × ' + (Number(optionPax) - editing?.base_occupancy) + ' extra guest(s) over the base of ' + editing?.base_occupancy + '.'"></p>
                         <p class="mt-2 pt-2 border-t border-sand-200 dark:border-slate-700 flex justify-between gap-3"><span x-text="nightsBetween(optionIn, optionOut) + ' night(s) × ' + (optionQuantity || 1) + ' room(s)'"></span><span class="font-bold" x-text="peso(roomTotal(editing, optionPax, optionQuantity, optionIn, optionOut))"></span></p>
                         <p class="mt-1 text-[11px] text-slate-400">Estimate; final guest manifest at checkout may adjust it.</p>
                     </div>

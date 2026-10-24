@@ -7,6 +7,7 @@ use App\Services\CartService;
 use App\Services\LuckyItineraryService;
 use App\Services\TripBookingDatePolicy;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class LuckyItineraryController extends Controller
@@ -82,23 +83,26 @@ class LuckyItineraryController extends Controller
         $groupId = (string) Str::uuid();
 
         try {
-            $this->cartService->add($request, [
-                'item_type' => 'room',
-                'item_id' => $verified['room_id'],
-                'quantity' => 1,
-                'selected_pax' => (int) $validated['pax'],
-                'check_in_date' => $validated['check_in_date'],
-                'check_out_date' => $validated['check_out_date'],
-            ], $groupId);
-
-            foreach ($verified['activity_ids'] as $activityId) {
+            // All or nothing: one unavailable activity must not leave half an itinerary in the basket.
+            DB::transaction(function () use ($request, $validated, $verified, $groupId): void {
                 $this->cartService->add($request, [
-                    'item_type' => 'activity',
-                    'item_id' => $activityId,
+                    'item_type' => 'room',
+                    'item_id' => $verified['room_id'],
                     'quantity' => 1,
                     'selected_pax' => (int) $validated['pax'],
+                    'check_in_date' => $validated['check_in_date'],
+                    'check_out_date' => $validated['check_out_date'],
                 ], $groupId);
-            }
+
+                foreach ($verified['activity_ids'] as $activityId) {
+                    $this->cartService->add($request, [
+                        'item_type' => 'activity',
+                        'item_id' => $activityId,
+                        'quantity' => 1,
+                        'selected_pax' => (int) $validated['pax'],
+                    ], $groupId);
+                }
+            });
         } catch (\RuntimeException $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
         }

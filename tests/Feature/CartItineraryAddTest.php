@@ -68,3 +68,36 @@ it('rejects nonexistent room or activity', function () {
         'check_out_date' => now()->addDays(9)->toDateString(),
     ])->assertStatus(422);
 });
+
+it('rejects a hidden activity without leaving the room in the basket', function () {
+    $this->activity->update(['is_shown' => false]);
+
+    $this->postJson(route('cart.add-itinerary'), [
+        'room_id' => $this->room->id,
+        'activity_ids' => [$this->activity->id],
+        'pax' => 2,
+        'check_in_date' => now()->addDays(7)->toDateString(),
+        'check_out_date' => now()->addDays(9)->toDateString(),
+    ])->assertStatus(422);
+
+    expect(DB::table('cart_items')->count())->toBe(0);
+});
+
+it('rejects adding a listing that does not exist', function () {
+    $this->postJson(route('cart.add'), ['item_type' => 'activity', 'item_id' => 999999])->assertStatus(422);
+
+    expect(DB::table('cart_items')->count())->toBe(0);
+});
+
+it('rejects adding a room whose hotel is hidden', function () {
+    $this->room->hotel->update(['is_shown' => false]);
+
+    $this->postJson(route('cart.add'), [
+        'item_type' => 'room',
+        'item_id' => $this->room->id,
+        'check_in_date' => now()->addDays(7)->toDateString(),
+        'check_out_date' => now()->addDays(9)->toDateString(),
+    ])->assertStatus(422);
+
+    expect(DB::table('cart_items')->count())->toBe(0);
+});

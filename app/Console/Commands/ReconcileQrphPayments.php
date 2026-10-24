@@ -17,6 +17,14 @@ use Illuminate\Console\Command;
 class ReconcileQrphPayments extends Command
 {
     /**
+     * Ended attempts can still settle late, so they keep being rechecked, but
+     * only hourly and only within this window; webhooks still cover later events.
+     */
+    private const ENDED_STATUSES = ['failed', 'cancelled', 'expired'];
+
+    private const LATE_SETTLEMENT_DAYS = 7;
+
+    /**
      * Execute the console command.
      */
     public function handle(QrphPaymentService $payments): int
@@ -31,6 +39,10 @@ class ReconcileQrphPayments extends Command
         $attempts = QrphPaymentAttempt::query()
             ->whereNotNull('intent_id')
             ->whereNotIn('status', ['paid', 'review_required'])
+            // ISO 8601 bounds carry their offset, so the timestamptz comparison holds whatever the session time zone is.
+            ->where(fn ($query) => $query->whereNotIn('status', self::ENDED_STATUSES)
+                ->orWhere(fn ($ended) => $ended->where('created_at', '>=', now()->subDays(self::LATE_SETTLEMENT_DAYS)->toIso8601String())
+                    ->where(fn ($due) => $due->whereNull('last_checked_at')->orWhere('last_checked_at', '<=', now()->subHour()->toIso8601String()))))
             ->where('livemode', app(PaymentEnvironmentResolver::class)->gatewayIsLive($gateway))
             ->orderByRaw('last_checked_at ASC NULLS FIRST')->orderBy('id')
             ->limit(max(1, min(500, (int) $this->option('limit'))))->get();

@@ -14,6 +14,8 @@ class LuckyItineraryService
 {
     use ResolvesImages;
 
+    public function __construct(private RoomAvailabilityService $availability) {}
+
     public const MAX_ATTEMPTS = 40;
 
     /**
@@ -56,48 +58,73 @@ class LuckyItineraryService
             ];
         }
 
-        $best = null;
+        // Each destination's eligible rooms (free on these dates) and activities are loaded once for every draw.
+        $pools = $candidateDestinations->mapWithKeys(fn (DestinationModel $destination) => [$destination->id => [
+            'destination' => $destination,
+            'rooms' => $this->roomPool($destination, $category, $pax, $startDate, $checkOutDate),
+            'activities' => $this->activityPool($destination, $filters),
+        ]])->filter(fn (array $pool) => $pool['rooms']->isNotEmpty() && $pool['activities']->count() >= $activityCount);
 
-        for ($attempt = 0; $attempt < self::MAX_ATTEMPTS; $attempt++) {
-            $destination = $candidateDestinations->random();
-
-            $room = $this->pickRoom($destination, $category, $pax);
-            $activities = $this->pickActivities($destination, $filters, $activityCount);
-            if (! $room || $activities->count() < $activityCount) {
-                continue;
-            }
-
-            $hotel = $room->hotel;
-            $roomTotal = $room->calculateNightlyRate($pax) * $nights;
-            $activitiesTotal = $activities->sum(fn ($activity) => $this->activityCost($activity, $pax));
-            $total = round($roomTotal + $activitiesTotal, 2);
-
-            $itinerary = $this->buildItinerary(
-                $destination, $hotel, $room, $activities, $nights, $pax,
-                $startDate, $checkOutDate, $total, $maxBudget
-            );
-
-            if ($total <= $maxBudget) {
-                return $itinerary;
-            }
-
-            if ($best === null || $total < $best['total']) {
-                $best = $itinerary;
-            }
-        }
-
-        if ($best === null) {
+        if ($pools->isEmpty()) {
             return [
                 'success' => false,
                 'message' => 'No hotels or activities match your filters. Try relaxing the hotel category or number of activities.',
             ];
         }
 
-        // Nothing fit the budget — return the cheapest observed combo, flagged.
-        $best['budget_exceeded'] = true;
-        $best['budget_notice'] = 'Nothing matched your budget — showing the closest option. Increase your budget or adjust the filters, then shuffle again.';
+        // The cheapest combination per destination proves whether anything can fit the budget at all.
+        $cheapest = $pools->map(fn (array $pool) => $this->cheapestCombination($pool, $activityCount, $nights, $pax));
+        $affordable = $pools->filter(fn (array $pool, int $id) => $cheapest[$id]['total'] <= $maxBudget);
+        $itineraryFor = fn (array $combo) => $this->buildItinerary(
+            $combo['destination'], $combo['room']->hotel, $combo['room'], $combo['activities'], $nights, $pax,
+            $startDate, $checkOutDate, $combo['total'], $maxBudget
+        );
 
-        return $best;
+        if ($affordable->isEmpty()) {
+            $lowest = $cheapest->sortBy('total')->first();
+            $itinerary = $itineraryFor($lowest);
+            $itinerary['budget_exceeded'] = true;
+            $itinerary['budget_notice'] = 'No combination fits ₱'.number_format($maxBudget, 2).' with these filters — the lowest possible total is ₱'
+                .number_format($lowest['total'], 2).'. Increase your budget or adjust the filters.';
+
+            return $itinerary;
+        }
+
+        for ($attempt = 0; $attempt < self::MAX_ATTEMPTS; $attempt++) {
+            $pool = $affordable->random();
+            $combo = $this->combination($pool['destination'], $pool['rooms']->random(), collect($pool['activities']->random($activityCount)), $nights, $pax);
+            if ($combo['total'] <= $maxBudget) {
+                return $itineraryFor($combo);
+            }
+        }
+
+        // Random draws kept missing a rare fit; a destination's cheapest combination is known to fit.
+        return $itineraryFor($cheapest[$affordable->keys()->random()]);
+    }
+
+    /**
+     * @return array{destination: DestinationModel, room: RoomType, activities: Collection, total: float}
+     */
+    private function combination(DestinationModel $destination, RoomType $room, Collection $activities, int $nights, int $pax): array
+    {
+        $total = $room->calculateNightlyRate($pax) * $nights + $activities->sum(fn ($activity) => $this->activityCost($activity, $pax));
+
+        return ['destination' => $destination, 'room' => $room, 'activities' => $activities->values(), 'total' => round($total, 2)];
+    }
+
+    /**
+     * @param  array{destination: DestinationModel, rooms: Collection, activities: Collection}  $pool
+     * @return array{destination: DestinationModel, room: RoomType, activities: Collection, total: float}
+     */
+    private function cheapestCombination(array $pool, int $activityCount, int $nights, int $pax): array
+    {
+        return $this->combination(
+            $pool['destination'],
+            $pool['rooms']->sortBy(fn (RoomType $room) => $room->calculateNightlyRate($pax))->first(),
+            $pool['activities']->sortBy(fn (ActivityModel $activity) => $this->activityCost($activity, $pax))->take($activityCount),
+            $nights,
+            $pax,
+        );
     }
 
     /**
@@ -184,31 +211,25 @@ class LuckyItineraryService
         return $hasRoom && $availableActivities >= $activityCount;
     }
 
-    private function pickRoom(DestinationModel $destination, ?string $category, int $pax): ?RoomType
+    /**
+     * Shown rooms that fit the party and category and still have a room free for the stay.
+     *
+     * @return Collection<int, RoomType>
+     */
+    private function roomPool(DestinationModel $destination, ?string $category, int $pax, Carbon $checkIn, Carbon $checkOut): Collection
     {
         $hotels = HotelModel::where('destination_id', $destination->id)
             ->where('is_shown', true)
             ->with(['rooms' => fn ($q) => $q->where('is_shown', true)])
             ->get();
 
-        $roomPools = [];
-        foreach ($hotels as $hotel) {
-            foreach ($hotel->rooms as $room) {
-                if ((int) $room->max_occupancy < $pax) {
-                    continue;
-                }
-                if ($category && ! $this->roomMatchesCategory($room, $category, $pax)) {
-                    continue;
-                }
-                $roomPools[] = $room;
-            }
-        }
+        return $hotels->flatMap(function (HotelModel $hotel) {
+            $hotel->rooms->each(fn (RoomType $room) => $room->setRelation('hotel', $hotel));
 
-        if (empty($roomPools)) {
-            return null;
-        }
-
-        return $roomPools[array_rand($roomPools)];
+            return $hotel->rooms;
+        })->filter(fn (RoomType $room) => (int) $room->max_occupancy >= $pax
+            && (! $category || $this->roomMatchesCategory($room, $category, $pax))
+            && $this->availability->check($room, $checkIn->copy()->startOfDay(), $checkOut->copy()->startOfDay())['available'])->values();
     }
 
     private function roomMatchesCategory(RoomType $room, string $category, int $pax): bool
@@ -223,7 +244,10 @@ class LuckyItineraryService
         };
     }
 
-    private function pickActivities(DestinationModel $destination, array $filters, int $activityCount): Collection
+    /**
+     * @return Collection<int, ActivityModel>
+     */
+    private function activityPool(DestinationModel $destination, array $filters): Collection
     {
         $query = ActivityModel::where('destination_id', $destination->id)->where('is_shown', true);
         if (! empty($filters['activity_level'])) {
@@ -233,12 +257,7 @@ class LuckyItineraryService
             $query->where('category', $filters['activity_category']);
         }
 
-        $activities = $query->get();
-        if ($activities->count() < $activityCount) {
-            return collect();
-        }
-
-        return collect($activities->random($activityCount));
+        return $query->get();
     }
 
     private function buildItinerary(

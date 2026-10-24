@@ -28,7 +28,7 @@ class RoomAvailabilityService
             })
             ->sum('quantity');
 
-        $totalRooms = max(1, (int) ($room->total_number_of_rooms ?: $room->total_rooms ?: 5));
+        $totalRooms = $this->totalRooms($room);
         $remaining = max(0, $totalRooms - $bookedCount);
 
         return [
@@ -37,5 +37,13 @@ class RoomAvailabilityService
             'remaining' => $remaining,
             'available' => $remaining > 0,
         ];
+    }
+
+    /**
+     * The room type's stock, assuming 5 when a legacy record has none set.
+     */
+    public function totalRooms(RoomType $room): int
+    {
+        return max(1, (int) ($room->total_number_of_rooms ?: $room->total_rooms ?: 5));
     }
 }

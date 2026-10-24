@@ -4,34 +4,12 @@
 
 @section('content')
     <div class="pb-12 font-body"
-         x-data="{
-             search: @js($search),
-             status: @js($status),
-             loading: false,
-             timer: null,
-             baseUrl: @js(route('admin.bookings.index')),
-             async fetchResults(url = null) {
-                 const params = new URLSearchParams();
-                 if (this.search) params.set('search', this.search);
-                 if (this.status) params.set('status', this.status);
-                 const target = url || (this.baseUrl + (params.toString() ? '?' + params.toString() : ''));
-                 this.loading = true;
-                 try {
-                     const res = await fetch(target, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
-                     const html = await res.text();
-                     const el = document.getElementById('bookings-table');
-                     if (el) el.outerHTML = html;
-                 } finally {
-                     this.loading = false;
-                 }
-             },
-             handleNavClick(e) {
-                 const a = e.target.closest('a');
-                 if (!a || !a.href.includes('page=')) return;
-                 e.preventDefault();
-                 this.fetchResults(a.href);
-             }
-         }"
+         x-data="adminLiveList({
+             base: @js(route('admin.bookings.index')),
+             resultsId: 'bookings-table',
+             filters: { search: @js($search), status: @js($status) },
+             params: { search: 'search', status: 'status' },
+         })"
          @click="handleNavClick($event)">
 
         <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -76,7 +54,7 @@
             <div class="flex-1 relative">
                 <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>
                 <input type="text" name="search" x-model="search" value="{{ $search }}"
-                       @input="clearTimeout(timer); timer = setTimeout(() => fetchResults(), 250)"
+                       @input="debouncedSearch()"
                        placeholder="Search booking code, guest name, or email..."
                        class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">
             </div>
@@ -108,6 +86,7 @@
 
         {{-- Bookings Table --}}
         <div :class="loading ? 'opacity-60 transition-opacity' : 'transition-opacity'">
+            <div x-show="error" x-cloak role="alert" class="mb-4 flex flex-wrap items-center gap-3 rounded-lg bg-rose-50 p-3 text-sm text-rose-800 dark:bg-rose-950 dark:text-rose-200"><p x-text="error" class="flex-1"></p><button type="button" @click="retryResults()" class="min-h-11 px-3 font-bold underline underline-offset-4">Retry</button></div>
             @include('admin.bookings._table', compact('bookings'))
         </div>
     </div>

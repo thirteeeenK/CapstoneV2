@@ -5,6 +5,7 @@ import './thinking-orb';
 import './preview-modal';
 import tripPlanner from './trip-planner';
 import plannerScheduling from './admin-planner-scheduling';
+import adminLiveList from './admin-live-list';
 import { displayChatMessages } from './chat-sections';
 
 window.Alpine = Alpine;
@@ -13,6 +14,7 @@ window.displayChatMessages = displayChatMessages;
 Alpine.plugin(focus);
 Alpine.data('tripPlanner', tripPlanner);
 Alpine.data('plannerScheduling', plannerScheduling);
+Alpine.data('adminLiveList', adminLiveList);
 
 Alpine.data('dateRangePicker', (config = {}) => ({
     roomId: config.roomId,

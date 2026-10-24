@@ -91,6 +91,9 @@ class TripPlannerService
             'description' => (string) ($model->description ?? $model->hotel_description ?? ''),
             'lat' => $latitude === null ? null : (float) $latitude,
             'lng' => $longitude === null ? null : (float) $longitude,
+            // 'approximate' is an activity pinned to its destination centre, so its travel times are estimates.
+            'location_precision' => $latitude === null || $longitude === null ? 'missing'
+                : ($type === 'activity' && ! $model->hasExactLocation() ? 'approximate' : 'exact'),
             'image' => $type === 'activity'
                 ? self::resolveActivityImage($model->images[0] ?? null, $model->activity_name, $model->category)
                 : self::resolveImg($model->images[0] ?? null),
@@ -117,7 +120,8 @@ class TripPlannerService
 
         return DB::transaction(function () use ($plan, $data, $options, $model) {
             $locked = TripPlan::query()->lockForUpdate()->findOrFail($plan->id);
-            if ($locked->revision !== $plan->revision) {
+            // The bound plan only catches changes during this request; the browser's revision catches a stale tab.
+            if ($locked->revision !== $plan->revision || (isset($data['revision']) && $locked->revision !== (int) $data['revision'])) {
                 throw ValidationException::withMessages(['plan' => 'The trip changed in another tab. Reload it before adding choices.']);
             }
             if ($locked->items()->count() >= 100 && ! $locked->items()->where('item_type', $data['item_type'])->where('item_id', $data['item_id'])->exists()) {
@@ -144,6 +148,27 @@ class TripPlannerService
             $locked->increment('revision');
 
             return $item;
+        });
+    }
+
+    /**
+     * Give every hotel and room choice the stay dates the scheduler reads.
+     * Chatbot drafts save stays without them, so they are filled from the
+     * hotel's stay or the trip dates, keeping the saved room count and guests,
+     * and checked for availability and capacity like any other choice. Filling
+     * derived defaults is not a user edit, so the plan revision is unchanged.
+     */
+    public function prepareForSchedule(TripPlan $plan): void
+    {
+        DB::transaction(function () use ($plan): void {
+            $locked = TripPlan::query()->lockForUpdate()->findOrFail($plan->id);
+            $stays = $locked->items()->whereIn('item_type', ['hotel', 'room'])->get()
+                ->reject(fn (TripPlanItem $item): bool => isset($item->options['check_in'], $item->options['check_out']))
+                ->sortBy(fn (TripPlanItem $item): int => $item->item_type === 'hotel' ? 0 : 1);
+            foreach ($stays as $item) {
+                $model = $this->inventory($item->item_type, $item->item_id, $locked->destination_id);
+                $item->update(['options' => $this->options($locked, ['item_type' => $item->item_type] + ($item->options ?? []), $model)]);
+            }
         });
     }
 

@@ -6,6 +6,7 @@ use App\Models\ActivityModel;
 use App\Models\TripItinerary;
 use App\Models\TripPlan;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -17,28 +18,63 @@ class ItineraryService
      */
     private const CONNECTOR_THRESHOLD_METERS = 100;
 
+    /**
+     * A schedule built for the same plan revision within this window is
+     * returned again instead of repeating every routing and forecast call.
+     */
+    private const REUSE_MINUTES = 15;
+
     public function __construct(private RoutingService $routing, private WeatherService $weather, private TripPlannerService $planner, private GeminiService $gemini) {}
 
+    /**
+     * Build (or reuse) the checked schedule. Only one build runs per plan at a
+     * time, so a double click cannot start two full routing passes.
+     */
     public function generate(TripPlan $plan): TripItinerary
+    {
+        $lock = Cache::lock('trip-plan-generate:'.$plan->id, 180);
+        if (! $lock->get()) {
+            throw ValidationException::withMessages(['plan' => 'Your schedule is already being built. Wait a moment, then try again.']);
+        }
+        try {
+            return $this->build($plan);
+        } finally {
+            $lock->release();
+        }
+    }
+
+    private function build(TripPlan $plan): TripItinerary
     {
         if ($plan->start_date === null || $plan->end_date === null) {
             throw ValidationException::withMessages(['dates' => 'Choose travel dates before building a checked schedule. You can keep this itinerary as a draft.']);
         }
+        $this->planner->prepareForSchedule($plan);
         $plan->load(['items', 'destination']);
         if ($plan->items->isEmpty()) {
             throw ValidationException::withMessages(['items' => 'Add a hotel or room and the places you want to visit first.']);
+        }
+        $latest = $plan->itineraries()->latest('id')->first();
+        if ($latest && $latest->revision === $plan->revision && ($latest->snapshot['kind'] ?? null) !== 'chatbot_draft'
+            && $latest->created_at->gt(now()->subMinutes(self::REUSE_MINUTES))) {
+            return $latest;
         }
         $revision = $plan->revision;
         $choices = [];
         $stays = [];
         $points = [];
+        $pointIndexes = [];
         $models = $this->planner->selectedInventory($plan);
         foreach ($plan->items as $item) {
             $model = $models[$item->item_type][$item->item_id];
             $choice = $this->planner->listing($item->item_type, $model) + ['plan_item_id' => $item->id, 'options' => $item->options];
             $choice['point'] = ['lat' => $choice['lat'], 'lng' => $choice['lng']];
-            $choice['point_index'] = count($points);
-            $points[] = $choice['point'];
+            // A hotel and its rooms share one location; route each distinct point once.
+            $pointKey = json_encode($choice['point']);
+            if (! isset($pointIndexes[$pointKey])) {
+                $pointIndexes[$pointKey] = count($points);
+                $points[] = $choice['point'];
+            }
+            $choice['point_index'] = $pointIndexes[$pointKey];
             if (in_array($item->item_type, ['hotel', 'room'], true)) {
                 $hotel = $item->item_type === 'room' ? $model->hotel : $model;
                 $choice['room_name'] = $item->item_type === 'room' ? $choice['name'] : null;
@@ -123,27 +159,25 @@ class ItineraryService
 
         while ($choices !== []) {
             $best = null;
+            $rejections = [];
             foreach ($choices as $choice) {
                 foreach ($days as $index => $day) {
                     $candidate = $this->candidate($choice, $day, $matrix, $rawWeather);
-                    if ($candidate && ($best === null || $candidate['score'] < $best['score'])) {
+                    if (is_string($candidate)) {
+                        $rejections[$choice['plan_item_id']][] = $candidate;
+
+                        continue;
+                    }
+                    if ($best === null || $candidate['score'] < $best['score']) {
                         $best = $candidate + ['day_index' => $index, 'choice' => $choice];
                     }
                 }
             }
             if ($best === null) {
                 foreach ($choices as $choice) {
-                    $routable = collect($stays)->contains(fn ($stay) => ($matrix['durations'][$stay['point_index']][$choice['point_index']] ?? null) !== null
-                        && ($matrix['durations'][$choice['point_index']][$stay['point_index']] ?? null) !== null);
                     $unscheduled[] = ['plan_item_id' => $choice['plan_item_id'], 'type' => $choice['type'], 'name' => $choice['name'],
                         'lat' => $choice['lat'], 'lng' => $choice['lng'],
-                        'reason' => ! $this->routing->validPoint($choice['point'])
-                            ? 'We do not have an exact location for this yet, so we could not map it. You can still add it to your trip and arrange it with your hotel or a local operator.'
-                            : (in_array($matrix['status'] ?? '', ['not_configured', 'unavailable', 'rate_limited'], true)
-                                ? 'Our map service is temporarily unavailable, so we could not plot a route. Your choices are saved — generate again in a little while.'
-                                : (! $routable
-                                    ? 'Our map provider does not have a route to this spot yet, so we could not place it on a day. You can still add it to your trip and arrange it with your hotel or a local operator.'
-                                    : 'There was not enough free time to fit this on your trip dates. You can still add it and arrange the timing yourself, or free up time by removing another visit.'))];
+                        'reason' => $this->unscheduledReason($choice, $rejections[$choice['plan_item_id']] ?? [], $stays, $matrix)];
                 }
                 break;
             }
@@ -167,6 +201,7 @@ class ItineraryService
                 'plan_item_id' => $choice['plan_item_id'], 'item_id' => $choice['id'], 'type' => $choice['type'], 'name' => $choice['name'], 'date' => $day['date'],
                 'start' => $best['start']->format('H:i'), 'end' => $best['finish']->format('H:i'), 'duration_minutes' => $choice['scheduling']['duration_minutes'],
                 'lat' => $choice['lat'], 'lng' => $choice['lng'], 'image' => $choice['image'], 'travel' => $leg, 'weather' => $best['weather'], 'reason' => $reason,
+                'travel_estimated' => ($choice['location_precision'] ?? null) === 'approximate',
                 'assumptions' => $choice['scheduling']['assumptions'],
             ];
             $day['legs'][] = $leg;
@@ -240,6 +275,9 @@ class ItineraryService
         if (empty($metadata['opens_at']) || empty($metadata['closes_at'])) {
             $assumptions[] = 'Opening hours are unverified; a 09:00–18:00 planning window is assumed.';
         }
+        if (($choice['location_precision'] ?? null) === 'approximate') {
+            $assumptions[] = 'Its exact meeting point is not set yet, so travel times are estimated from the destination centre; confirm the location with the operator.';
+        }
         $environment = $metadata['environment'] ?? ($model instanceof ActivityModel ? $model->environment() : 'outdoor');
         if (empty($metadata['environment'])) {
             $assumptions[] = 'Indoor/outdoor suitability inferred from the listing; confirm before travel.';
@@ -249,17 +287,26 @@ class ItineraryService
             array_filter($metadata, fn ($value) => $value !== null && $value !== ''), ['duration_minutes' => $duration, 'assumptions' => $assumptions]);
     }
 
-    private function candidate(array $choice, array $day, array $matrix, array $rawWeather): ?array
+    /**
+     * A placement for the choice on this day, or the code of the first rule that
+     * rules the day out, so an unplaced choice can say what actually stopped it.
+     *
+     * @return array<string, mixed>|string
+     */
+    private function candidate(array $choice, array $day, array $matrix, array $rawWeather): array|string
     {
-        if (! $day['hotel'] || ! $this->routing->validPoint($choice['point']) || ! $this->routing->validPoint($day['hotel']['point'])) {
-            return null;
+        if (! $this->routing->validPoint($choice['point'])) {
+            return 'no_location';
+        }
+        if (! $day['hotel'] || ! $this->routing->validPoint($day['hotel']['point'])) {
+            return 'no_hotel';
         }
         if (isset($choice['options']['date']) && $choice['options']['date'] !== $day['date']) {
-            return null;
+            return 'pinned_other_day';
         }
         $metadata = $choice['scheduling'];
         if (isset($metadata['weekdays']) && ! in_array(Carbon::parse($day['date'])->dayOfWeekIso, $metadata['weekdays'], true)) {
-            return null;
+            return 'closed_weekday';
         }
         $from = $day['previous']['point_index'];
         $to = $choice['point_index'];
@@ -267,7 +314,7 @@ class ItineraryService
         $seconds = $matrix['durations'][$from][$to] ?? null;
         $return = $matrix['durations'][$to][$base] ?? null;
         if ($seconds === null || $return === null) {
-            return null;
+            return 'no_route';
         }
         $start = $day['cursor']->copy()->addMinutes((int) ceil($seconds / 60));
         $opens = Carbon::parse($day['date'].' '.$metadata['opens_at'], 'Asia/Manila');
@@ -277,7 +324,7 @@ class ItineraryService
             $fixed = collect($metadata['fixed_start_times'])->map(fn ($time) => Carbon::parse($day['date'].' '.$time, 'Asia/Manila'))
                 ->sortBy(fn ($time) => $time->timestamp)->first(fn ($time) => $time->gte($start));
             if (! $fixed) {
-                return null;
+                return 'no_departure_left';
             }
             $start = $fixed;
         }
@@ -287,7 +334,7 @@ class ItineraryService
         if ($start->lt($lunchEnd) && $finish->gt($lunchStart)) {
             if (! empty($metadata['fixed_start_times']) || (int) $metadata['duration_minutes'] >= 240) {
                 if (empty($metadata['includes_lunch'])) {
-                    return null;
+                    return 'lunch_conflict';
                 }
             } else {
                 $start = $lunchEnd;
@@ -295,12 +342,12 @@ class ItineraryService
             }
         }
         if ($finish->gt($closes) || $finish->copy()->addMinutes((int) ceil($return / 60))->gt($day['end'])) {
-            return null;
+            return 'not_enough_time';
         }
         $weather = $this->weatherEvidence($rawWeather, $start, $finish, $metadata['environment']);
         $travelWeather = $this->weatherEvidence($rawWeather, $day['cursor'], $start, 'outdoor');
         if ($weather['blocked'] || ($matrix['mode'] ?? 'walking') === 'walking' && $travelWeather['blocked']) {
-            return null;
+            return 'weather';
         }
         $weather['travel_weather'] = $travelWeather;
 
@@ -309,6 +356,48 @@ class ItineraryService
 
         return ['start' => $start, 'finish' => $finish, 'weather' => $weather, 'incremental_travel_minutes' => $incrementalTravel,
             'score' => $weather['risk'] * 1000 + $incrementalTravel + count($day['stops']) + $day['day'] * 0.01];
+    }
+
+    /**
+     * Why a choice could not be placed. Map-wide problems come first; otherwise
+     * the rule that ruled out the most trip days wins (ties go to the more
+     * specific rule), and a pinned visit is explained by its own day.
+     *
+     * @param  list<string>  $codes  one rejection code per trip day
+     */
+    private function unscheduledReason(array $choice, array $codes, array $stays, array $matrix): string
+    {
+        $notInBasket = ' It won\'t be added to your Trip Basket; you can arrange it yourself with your hotel or a local operator.';
+        if (! $this->routing->validPoint($choice['point'])) {
+            return 'We do not have an exact location for this yet, so we could not map it.'.$notInBasket;
+        }
+        if (in_array($matrix['status'] ?? '', ['not_configured', 'unavailable', 'rate_limited'], true)) {
+            return 'Our map service is temporarily unavailable, so we could not plot a route. Your choices are saved — generate again in a little while.';
+        }
+        $routable = collect($stays)->contains(fn ($stay) => ($matrix['durations'][$stay['point_index']][$choice['point_index']] ?? null) !== null
+            && ($matrix['durations'][$choice['point_index']][$stay['point_index']] ?? null) !== null);
+        if (! $routable) {
+            return 'Our map provider does not have a route to this spot yet, so we could not place it on a day.'.$notInBasket;
+        }
+
+        $codes = array_values(array_diff($codes, ['pinned_other_day'])) ?: $codes;
+        $counts = array_count_values($codes);
+        $priority = ['closed_weekday', 'weather', 'no_departure_left', 'lunch_conflict', 'no_hotel', 'no_route', 'not_enough_time'];
+        $code = collect($priority)->filter(fn ($candidate) => isset($counts[$candidate]))->sortByDesc(fn ($candidate) => $counts[$candidate])->first();
+        $reason = match ($code) {
+            'closed_weekday' => 'It does not run on the days of your trip. Check its operating days, or change your travel dates.',
+            'weather' => 'The forecast shows rain or strong wind during its time slot on each free day, so it was left off for safety. Generate again closer to your trip, when the forecast may change.',
+            'no_departure_left' => 'Its fixed departure times had already passed by the time you could reach it each day. Remove another visit to free up an earlier slot.',
+            'lunch_conflict' => 'This long tour runs through the midday lunch break and does not include lunch, so it could not be placed. Ask the operator about lunch, or choose a shorter option.',
+            'no_hotel' => 'None of your trip days has a hotel stay to start and end this visit from. Add a stay that covers your trip dates.',
+            'no_route' => 'Our map has no route between it and your hotel on the days it could fit, so it may need a boat or an arranged transfer.',
+            default => 'There was not enough free time on your trip dates to fit it. Remove another visit to free up time, or extend your trip.',
+        };
+        if (isset($choice['options']['date'])) {
+            $reason .= ' You pinned it to '.$choice['options']['date'].'; clearing its visit date lets the planner try your other days.';
+        }
+
+        return $reason.$notInBasket;
     }
 
     private function weatherEvidence(array $raw, Carbon $start, Carbon $end, string $environment): array

@@ -4,23 +4,23 @@ namespace App\Http\Controllers;
 
 use App\Models\ActivityModel;
 use App\Models\AddOnModel;
-use App\Models\Booking;
-use App\Models\BookingItem;
 use App\Models\CartItem;
 use App\Models\Package;
 use App\Models\RoomType;
 use App\Models\TripItinerary;
 use App\Services\CartService;
+use App\Services\RoomAvailabilityService;
 use App\Services\TripBookingDatePolicy;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class CartController extends Controller
 {
-    public function __construct(protected CartService $cartService) {}
+    public function __construct(protected CartService $cartService, protected RoomAvailabilityService $roomAvailability) {}
 
     /**
      * Get or generate cart identifier for session/user.
@@ -75,21 +75,14 @@ class CartController extends Controller
         }
 
         $room = $item->itemable;
-        $totalRooms = (int) ($room->total_rooms ?: ($room->total_number_of_rooms ?: 2));
-
-        $checkIn = $item->check_in_date ? \Carbon\Carbon::parse($item->check_in_date) : null;
-        $checkOut = $item->check_out_date ? \Carbon\Carbon::parse($item->check_out_date) : null;
+        $totalRooms = $this->roomAvailability->totalRooms($room);
 
         $bookedCount = 0;
-        if ($checkIn && $checkOut) {
-            $bookedCount = (int) BookingItem::where('item_type', 'room')
-                ->where('item_id', $room->id)
-                ->whereHas('booking', fn ($q) => $q->whereIn('status', Booking::HOLD_STATUSES))
-                ->where(function ($q) use ($checkIn, $checkOut) {
-                    $q->where('check_in_date', '<', $checkOut)
-                        ->where('check_out_date', '>', $checkIn);
-                })
-                ->sum('quantity');
+        $inBasket = 0;
+        if ($item->check_in_date && $item->check_out_date) {
+            $bookedCount = (int) $this->roomAvailability->check($room, $item->check_in_date->copy()->startOfDay(), $item->check_out_date->copy()->startOfDay())['booked_count'];
+            // Other selected lines for this room on overlapping dates draw from the same stock.
+            $inBasket = $this->cartService->basketRoomQuantity($item->user_id, $item->session_token, $room->id, $item->check_in_date, $item->check_out_date, $item->id);
         }
 
         $available = max(0, $totalRooms - $bookedCount);
@@ -103,7 +96,7 @@ class CartController extends Controller
         return [
             'total_rooms' => $totalRooms,
             'booked_count' => $bookedCount,
-            'available_count' => $available,
+            'available_count' => max(0, $available - $inBasket),
             'available_notice' => $notice,
         ];
     }
@@ -226,7 +219,7 @@ class CartController extends Controller
                 'check_in_date' => 'nullable|date|after:today',
                 'check_out_date' => 'nullable|date|after:check_in_date',
                 'room_option' => 'nullable|string|in:shared,separate',
-                'notes' => 'nullable|string',
+                'notes' => 'nullable|string|max:1000',
             ]);
 
             // Enforce required check-in and check-out dates for Room items
@@ -310,23 +303,26 @@ class CartController extends Controller
         $groupId = 'ch'.str_replace('-', '', (string) Str::uuid());
 
         try {
-            $this->cartService->add($request, [
-                'item_type' => 'room',
-                'item_id' => $validated['room_id'],
-                'quantity' => 1,
-                'selected_pax' => $validated['pax'],
-                'check_in_date' => $validated['check_in_date'],
-                'check_out_date' => $validated['check_out_date'],
-            ], $groupId);
-
-            foreach (array_values(array_unique($validated['activity_ids'] ?? [])) as $activityId) {
+            // All or nothing: one unavailable activity must not leave half an itinerary in the basket.
+            DB::transaction(function () use ($request, $validated, $groupId): void {
                 $this->cartService->add($request, [
-                    'item_type' => 'activity',
-                    'item_id' => $activityId,
+                    'item_type' => 'room',
+                    'item_id' => $validated['room_id'],
                     'quantity' => 1,
                     'selected_pax' => $validated['pax'],
+                    'check_in_date' => $validated['check_in_date'],
+                    'check_out_date' => $validated['check_out_date'],
                 ], $groupId);
-            }
+
+                foreach (array_values(array_unique($validated['activity_ids'] ?? [])) as $activityId) {
+                    $this->cartService->add($request, [
+                        'item_type' => 'activity',
+                        'item_id' => $activityId,
+                        'quantity' => 1,
+                        'selected_pax' => $validated['pax'],
+                    ], $groupId);
+                }
+            });
         } catch (\RuntimeException $e) {
             return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
         }
@@ -435,7 +431,7 @@ class CartController extends Controller
                 'check_out_date' => 'nullable|date|after:check_in_date',
                 'is_selected' => 'nullable|boolean',
                 'room_option' => 'nullable|string|in:shared,separate',
-                'notes' => 'nullable|string',
+                'notes' => 'nullable|string|max:1000',
             ]);
             if ($cartItem->item_type === 'room' && array_key_exists('check_in_date', $validated)) {
                 app(TripBookingDatePolicy::class)->assertBookableArrival($validated['check_in_date'], 'check_in_date');
@@ -444,26 +440,7 @@ class CartController extends Controller
             if (isset($validated['quantity'])) {
                 $newQty = (int) $validated['quantity'];
                 if ($cartItem->item_type === 'room' && $cartItem->itemable) {
-                    $room = $cartItem->itemable;
-                    $totalRooms = (int) ($room->total_rooms ?: ($room->total_number_of_rooms ?: 2));
-
-                    $checkIn = $cartItem->check_in_date ? \Carbon\Carbon::parse($cartItem->check_in_date) : null;
-                    $checkOut = $cartItem->check_out_date ? \Carbon\Carbon::parse($cartItem->check_out_date) : null;
-
-                    $bookedCount = 0;
-                    if ($checkIn && $checkOut) {
-                        $bookedCount = BookingItem::where('item_type', 'room')
-                            ->where('item_id', $room->id)
-                            ->whereHas('booking', fn ($q) => $q->whereIn('status', Booking::HOLD_STATUSES))
-                            ->where(function ($q) use ($checkIn, $checkOut) {
-                                $q->where('check_in_date', '<', $checkOut)
-                                    ->where('check_out_date', '>', $checkIn);
-                            })
-                            ->sum('quantity');
-                    }
-
-                    $available = max(1, $totalRooms - $bookedCount);
-                    $newQty = min($newQty, $available);
+                    $newQty = min($newQty, max(1, $this->getAvailableRoomInventory($cartItem)['available_count']));
                 }
                 if ($cartItem->item_type === 'package') {
                     $newQty = max(1, $newQty);

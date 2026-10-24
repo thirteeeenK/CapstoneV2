@@ -56,7 +56,6 @@ class TripPlannerController extends Controller
     public function update(Request $request, TripPlan $plan, TripBookingDatePolicy $dates, TripPlannerService $planner): JsonResponse
     {
         $this->owned($request, $plan);
-        abort_unless($plan->source === 'chatbot' && $plan->status === 'draft', 422, 'Only chatbot drafts can be edited here.');
         $data = $request->validate([
             'revision' => ['required', 'integer'], 'title' => ['sometimes', 'required', 'string', 'max:150'],
             'start_date' => ['sometimes', 'required', 'date_format:Y-m-d', 'after_or_equal:'.$dates->minimumArrivalDate()],
@@ -64,16 +63,29 @@ class TripPlannerController extends Controller
             'pax' => ['sometimes', 'required', 'integer', 'between:1,20'],
             'mode' => ['sometimes', 'required', 'in:walking,driving'],
             'remove_choice' => ['sometimes', 'string', 'regex:/^(room|hotel|activity):[0-9]+$/'],
-        ]);
+            'clear_dates' => ['sometimes', 'accepted', 'prohibits:start_date,end_date'],
+        ], ['start_date.after_or_equal' => $dates->message()]);
         if (isset($data['start_date']) && Carbon::parse($data['start_date'])->diffInDays(Carbon::parse($data['end_date'])) > 29) {
             throw ValidationException::withMessages(['end_date' => 'Plan up to 30 calendar days at a time.']);
         }
+        // Any saved trip can be rescheduled; only a chatbot draft may go back to "dates undecided".
+        if (isset($data['clear_dates']) && ! ($plan->source === 'chatbot' && $plan->status === 'draft')) {
+            throw ValidationException::withMessages(['clear_dates' => 'A saved trip needs travel dates. Change them instead of clearing them.']);
+        }
         DB::transaction(function () use ($plan, $data, $planner): void {
             $locked = TripPlan::query()->whereKey($plan->id)->lockForUpdate()->firstOrFail();
-            if ($locked->revision !== (int) $data['revision'] || $locked->status !== 'draft') {
+            if ($locked->revision !== (int) $data['revision']) {
                 throw ValidationException::withMessages(['revision' => 'Your trip changed. Reload it before saving your edits.']);
             }
+            $previous = ['start_date' => $locked->start_date?->toDateString(), 'end_date' => $locked->end_date?->toDateString(), 'pax' => $locked->pax];
             $locked->fill(array_intersect_key($data, array_flip(['title', 'start_date', 'end_date', 'pax', 'mode'])));
+            if (isset($data['clear_dates'])) {
+                $locked->forceFill(['start_date' => null, 'end_date' => null]);
+                // Undated choices keep only what does not depend on a date.
+                foreach ($locked->items()->get() as $item) {
+                    $item->update(['options' => array_intersect_key($item->options ?? [], array_flip(['pax', 'quantity', 'day']))]);
+                }
+            }
             if (isset($data['pax'])) {
                 $locked->context = array_replace($locked->context ?? [], ['pax_assumed' => false]);
             }
@@ -82,12 +94,11 @@ class TripPlannerController extends Controller
             }
             $locked->revision++;
             $locked->save();
-            if (isset($data['start_date']) || isset($data['pax'])) {
-                if ($locked->start_date !== null) {
-                    foreach ($locked->items()->get() as $item) {
-                        $planner->add($locked->fresh(), ['item_type' => $item->item_type, 'item_id' => $item->item_id,
-                            'quantity' => $item->options['quantity'] ?? 1, 'pax' => $locked->pax]);
-                    }
+            $tripChanged = $locked->start_date?->toDateString() !== $previous['start_date']
+                || $locked->end_date?->toDateString() !== $previous['end_date'] || $locked->pax !== $previous['pax'];
+            if ($tripChanged && $locked->start_date !== null) {
+                foreach ($locked->items()->get() as $item) {
+                    $planner->add($locked->fresh(), $this->rebuiltChoice($item, $locked, $previous));
                 }
             }
             if (isset($data['remove_choice'])) {
@@ -98,6 +109,33 @@ class TripPlannerController extends Controller
         });
 
         return $this->show($request, $plan->fresh());
+    }
+
+    /**
+     * The add() payload that re-checks a choice after the trip dates or party
+     * size change. Values that still matched the previous trip follow the new
+     * one; custom stay dates, pinned visit dates and traveler counts are kept,
+     * with dates falling back to the trip's when they no longer fit inside it.
+     *
+     * @param  array{start_date: ?string, end_date: ?string, pax: int}  $previous
+     * @return array{item_type: string, item_id: int, quantity: int, pax: int, check_in?: string, check_out?: string, date?: string}
+     */
+    private function rebuiltChoice(TripPlanItem $item, TripPlan $plan, array $previous): array
+    {
+        $options = $item->options ?? [];
+        $inTrip = fn (?string $date): bool => $date !== null && $date >= $plan->start_date->toDateString() && $date <= $plan->end_date->toDateString();
+        $pax = $options['pax'] ?? $previous['pax'];
+        $choice = ['item_type' => $item->item_type, 'item_id' => $item->item_id, 'quantity' => $options['quantity'] ?? 1,
+            'pax' => $pax === $previous['pax'] ? $plan->pax : $pax];
+        $customStay = ($options['check_in'] ?? null) !== $previous['start_date'] || ($options['check_out'] ?? null) !== $previous['end_date'];
+        if ($customStay && $inTrip($options['check_in'] ?? null) && $inTrip($options['check_out'] ?? null)) {
+            $choice += ['check_in' => $options['check_in'], 'check_out' => $options['check_out']];
+        }
+        if ($inTrip($options['date'] ?? null)) {
+            $choice['date'] = $options['date'];
+        }
+
+        return $choice;
     }
 
     private function recordDraft(TripPlan $plan, ?string $removed = null, ?array $added = null): void
@@ -174,6 +212,7 @@ class TripPlannerController extends Controller
             'item_type' => ['required', 'in:hotel,room,activity'], 'item_id' => ['required', 'integer', 'min:1'],
             'quantity' => ['sometimes', 'integer', 'between:1,20'], 'pax' => ['sometimes', 'integer', 'between:1,20'],
             'check_in' => ['nullable', 'date_format:Y-m-d'], 'check_out' => ['nullable', 'date_format:Y-m-d'], 'date' => ['nullable', 'date_format:Y-m-d'],
+            'revision' => ['sometimes', 'integer'],
         ]);
         $item = DB::transaction(function () use ($plan, $data, $planner): TripPlanItem {
             $item = $planner->add($plan, $data);
@@ -207,8 +246,12 @@ class TripPlannerController extends Controller
     {
         $this->owned($request, $plan);
         abort_unless($item->trip_plan_id === $plan->id, 404);
-        DB::transaction(function () use ($plan, $item) {
+        $data = $request->validate(['revision' => ['sometimes', 'integer']]);
+        DB::transaction(function () use ($plan, $item, $data) {
             $locked = TripPlan::query()->lockForUpdate()->findOrFail($plan->id);
+            if (isset($data['revision']) && $locked->revision !== (int) $data['revision']) {
+                throw ValidationException::withMessages(['plan' => 'The trip changed in another tab. Reload it before removing choices.']);
+            }
             $item->delete();
             $locked->increment('revision');
             $this->recordDraft($locked);

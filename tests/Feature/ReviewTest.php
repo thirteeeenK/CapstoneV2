@@ -105,6 +105,21 @@ function makeCompletedBooking(User $user, RoomType $room, string $status = 'comp
     return $booking;
 }
 
+it('lets an owner without a verified email follow the review link and submit a review', function () {
+    $this->user->forceFill(['email_verified_at' => null])->save();
+    $booking = makeCompletedBooking($this->user, $this->room);
+
+    $this->actingAs($this->user)->get(route('booking.show', $booking->booking_code))->assertOk()->assertSee('id="booking-reviews"', false);
+    $this->actingAs($this->user)->postJson(route('reviews.store'), [
+        'booking_id' => $booking->id,
+        'booking_item_id' => $booking->review_item_id,
+        'rating' => 5,
+        'comment' => 'The ocean view room was breathtaking and spotless! Staff were super polite.',
+    ])->assertCreated();
+
+    expect($this->user->fresh()->email_verified_at)->toBeNull();
+});
+
 it('publishes a verified review for a completed booking and runs AI sentiment', function () {
     $booking = makeCompletedBooking($this->user, $this->room);
 

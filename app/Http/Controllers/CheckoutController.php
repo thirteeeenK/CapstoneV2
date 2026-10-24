@@ -10,6 +10,7 @@ use App\Models\RoomType;
 use App\Notifications\BookingNotification;
 use App\Notifications\BookingRequestReceived;
 use App\Services\BookingRequestService;
+use App\Services\CartService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
@@ -18,7 +19,7 @@ class CheckoutController extends Controller
 {
     protected BookingRequestService $bookingRequestService;
 
-    public function __construct(BookingRequestService $bookingRequestService)
+    public function __construct(BookingRequestService $bookingRequestService, protected CartService $cartService)
     {
         $this->bookingRequestService = $bookingRequestService;
     }
@@ -28,7 +29,7 @@ class CheckoutController extends Controller
      */
     protected function getCartQuery(Request $request)
     {
-        return $this->bookingRequestService->getCartQuery($request);
+        return $this->cartService->getCartQuery($request)->where('is_selected', true);
     }
 
     /**
@@ -66,26 +67,6 @@ class CheckoutController extends Controller
             $this->bookingRequestService->assertPlannerArrivalDates($cartItems);
         } catch (ValidationException $exception) {
             return redirect()->route('cart.index')->with('error', $exception->validator->errors()->first());
-        }
-
-        // Auto-heal/sync existing cart items in DB if quantity or pax was out of sync from older session
-        foreach ($cartItems as $cItem) {
-            if (in_array($cItem->item_type, ['activity', 'addon'])) {
-                $maxVal = max(1, (int) $cItem->selected_pax, (int) $cItem->quantity);
-                if ($cItem->selected_pax !== $maxVal || $cItem->quantity !== $maxVal) {
-                    $cItem->selected_pax = $maxVal;
-                    $cItem->quantity = $maxVal;
-                    $cItem->save();
-                }
-            } elseif ($cItem->item_type === 'package') {
-                // min_pax only gates booking eligibility at checkout, never inflates pax
-                $maxVal = max(1, (int) $cItem->selected_pax, (int) $cItem->quantity);
-                if ($cItem->selected_pax !== $maxVal || $cItem->quantity !== $maxVal) {
-                    $cItem->selected_pax = $maxVal;
-                    $cItem->quantity = $maxVal;
-                    $cItem->save();
-                }
-            }
         }
 
         // Rooms contribute their base price only — any extra-person charges are

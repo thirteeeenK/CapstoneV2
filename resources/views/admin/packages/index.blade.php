@@ -4,40 +4,11 @@
 
 @section('content')
     <div class="pb-12 font-body"
-         x-data="{
-             search: @js($search),
-             destinationId: @js((string) ($destinationId ?? '')),
-             visibility: @js($visibility ?? ''),
-             loading: false,
-             timer: null,
-             baseUrl: @js(route('admin.packages.index')),
-             async fetchResults(url = null) {
-                 const params = new URLSearchParams();
-                 if (this.search) params.set('search', this.search);
-                 if (this.destinationId) params.set('destination_id', this.destinationId);
-                 if (this.visibility) params.set('visibility', this.visibility);
-                 const target = url || (this.baseUrl + (params.toString() ? '?' + params.toString() : ''));
-                 this.loading = true;
-                 try {
-                     const res = await fetch(target, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
-                     const html = await res.text();
-                     const el = document.getElementById('listings-results');
-                     if (el) el.outerHTML = html;
-                 } finally {
-                     this.loading = false;
-                 }
-             },
-             debouncedSearch() {
-                 clearTimeout(this.timer);
-                 this.timer = setTimeout(() => this.fetchResults(), 250);
-             },
-             handleNavClick(e) {
-                 const a = e.target.closest('a');
-                 if (!a || !a.href.includes('page=')) return;
-                 e.preventDefault();
-                 this.fetchResults(a.href);
-             }
-         }"
+         x-data="adminLiveList({
+             base: @js(route('admin.packages.index')),
+             filters: { search: @js($search), destinationId: @js((string) ($destinationId ?? '')), visibility: @js($visibility ?? '') },
+             params: { search: 'search', destinationId: 'destination_id', visibility: 'visibility' },
+         })"
          @click="handleNavClick($event)">
 
         {{-- Header & Create Action --}}
@@ -130,6 +101,7 @@
         </div>
 
         <div :class="loading ? 'opacity-60 transition-opacity' : 'transition-opacity'">
+            <div x-show="error" x-cloak role="alert" class="mb-4 flex flex-wrap items-center gap-3 rounded-lg bg-rose-50 p-3 text-sm text-rose-800 dark:bg-rose-950 dark:text-rose-200"><p x-text="error" class="flex-1"></p><button type="button" @click="retryResults()" class="min-h-11 px-3 font-bold underline underline-offset-4">Retry</button></div>
             @include('admin.packages._table', compact('packages'))
         </div>
     </div>

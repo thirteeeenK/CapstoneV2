@@ -251,6 +251,19 @@ it('reconciles an existing successful intent without creating or charging anythi
     Http::assertNotSent(fn ($request) => $request->method() !== 'GET');
 });
 
+it('rechecks ended attempts at most hourly and only within the late-settlement window', function () {
+    $active = QrphPaymentAttempt::factory()->create(['last_checked_at' => now()->subMinute()]);
+    $endedDue = QrphPaymentAttempt::factory()->create(['status' => 'expired', 'last_checked_at' => now()->subHours(2)]);
+    QrphPaymentAttempt::factory()->create(['status' => 'failed', 'last_checked_at' => now()->subMinutes(10)]);
+    QrphPaymentAttempt::factory()->create(['status' => 'cancelled', 'created_at' => now()->subDays(8), 'last_checked_at' => now()->subDays(2)]);
+    Http::fake(fn ($request) => Http::response(paymongoIntentFixture(QrphPaymentAttempt::where('intent_id', basename($request->url()))->firstOrFail())));
+
+    $this->artisan('payments:reconcile-qrph', ['--gateway' => 'qrph'])->assertSuccessful();
+
+    $checked = collect(Http::recorded())->map(fn ($pair) => basename($pair[0]->url()))->sort()->values()->all();
+    expect($checked)->toBe(collect([$active->intent_id, $endedDue->intent_id])->sort()->values()->all());
+});
+
 it('marks expired QR attempts expired without marking a pending payment successful', function () {
     $attempt = QrphPaymentAttempt::factory()->create(['expires_at' => now()->subMinute()]);
     Http::fake(['api.paymongo.com/v1/payment_intents/'.$attempt->intent_id => Http::response(paymongoIntentFixture($attempt))]);

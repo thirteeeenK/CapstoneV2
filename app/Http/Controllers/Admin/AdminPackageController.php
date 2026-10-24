@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\RegenerateEmbedding;
 use App\Models\ActivityModel;
 use App\Models\AddOnModel;
 use App\Models\DestinationModel;
@@ -153,6 +154,8 @@ class AdminPackageController extends Controller
             if ($vector) {
                 $package->embedding = $geminiService->formatVectorForDb($vector);
                 $package->save();
+            } else {
+                RegenerateEmbedding::dispatch('package', $package->id);
             }
         } catch (\Exception $e) {
             Log::warning('Package embedding generation skipped: '.$e->getMessage());
@@ -256,6 +259,8 @@ class AdminPackageController extends Controller
             if ($vector) {
                 $package->embedding = $geminiService->formatVectorForDb($vector);
                 $package->save();
+            } else {
+                RegenerateEmbedding::dispatch('package', $package->id);
             }
         } catch (\Exception $e) {
             Log::warning('Package embedding re-generation skipped: '.$e->getMessage());

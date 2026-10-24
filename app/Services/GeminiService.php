@@ -15,6 +15,7 @@ use App\Models\Review;
 use App\Models\ReviewSummary;
 use App\Models\RoomType;
 use App\Models\User;
+use App\Models\UserPreference;
 use App\Services\Chat\CatalogPriceQuote;
 use App\Services\Chat\ChatbotModerationPolicy;
 use App\Services\Chat\GroqChatService;
@@ -493,6 +494,26 @@ class GeminiService
             $room->view_type ? "Room View: {$room->view_type}" : null,
             "Inventory: {$room->total_rooms} rooms available",
             $desc ? "Detailed Room Description: {$desc}" : null,
+        ]));
+    }
+
+    /**
+     * Builds the onboarding profile text embedded as the user's preference vector.
+     * Unanswered questions fall back to broad defaults so the profile still ranks listings.
+     */
+    public function buildPreferenceEmbeddingText(UserPreference $preference): string
+    {
+        $list = fn (?array $values, string $default): string => ! empty($values) ? implode(', ', $values) : $default;
+        $notes = trim($preference->notes ?? '');
+
+        return implode("\n", array_filter([
+            'User Travel Preferences & Profile:',
+            'Preferred Destination: '.($preference->destination ?: 'Any Island Sanctuary'),
+            'Travel Atmosphere & Vibe Preferences: '.$list($preference->vibes, 'Beachfront, Island Energy'),
+            'Traveler Group Type: '.($preference->traveler_type ?: 'Vacationer'),
+            'Desired Activities & Experiences: '.$list($preference->activities, 'Open to Any Experience'),
+            'Desired Amenities & Facilities: '.$list($preference->amenities, 'Standard Luxuries'),
+            $notes ? "Custom Requests: {$notes}" : null,
         ]));
     }
 

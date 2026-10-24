@@ -54,6 +54,24 @@ it('removes structured preferences when onboarding is skipped', function () {
     expect(UserPreference::where('user_id', $user->id)->exists())->toBeFalse();
 });
 
+it('ranks personalized stays by similarity to the traveler profile and keeps the top five', function () {
+    config(['services.gemini.api_key' => null]);
+    $destination = DestinationModel::factory()->create();
+    $user = onboardedUser();
+    $user->forceFill(['preferences_embedding' => unitVectorString(0)])->save();
+    $user->userPreference()->create(['destination' => $destination->name]);
+    $unrelated = HotelModel::factory()->count(4)->create(['destination_id' => $destination->id, 'embedding' => unitVectorString(2)]);
+    $closest = HotelModel::factory()->create(['destination_id' => $destination->id, 'embedding' => unitVectorString(0)]);
+    $partial = array_fill(0, 3072, 0.0);
+    $partial[0] = $partial[1] = 1.0;
+    $related = HotelModel::factory()->create(['destination_id' => $destination->id, 'embedding' => '['.implode(',', $partial).']']);
+
+    $response = $this->actingAs($user)->get(route('dashboard'))->assertOk();
+
+    $hotels = collect($response->viewData('aiRecommendations'))->firstWhere('destination.id', $destination->id)['hotels'];
+    expect($hotels->pluck('id')->all())->toBe([$closest->id, $related->id, ...$unrelated->take(3)->pluck('id')->all()]);
+});
+
 it('shows a section-level fallback explanation on the dashboard', function () {
     config(['services.gemini.api_key' => null]);
 

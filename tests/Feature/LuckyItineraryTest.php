@@ -114,6 +114,46 @@ it('keeps the total within the budget and flags when nothing fits', function () 
         ->and((float) $tightItinerary['total'])->toBe(4000.0);
 });
 
+it('finds the one affordable combination hidden among many expensive ones', function () {
+    ['destination' => $destination, 'hotel' => $hotel] = createLuckyDestination('Coron', 1);
+    RoomType::factory()->count(30)->create(['hotel_id' => $hotel->id, 'base_price' => 9000, 'max_occupancy' => 4, 'total_rooms' => 5]);
+    ActivityModel::factory()->count(10)->create(['destination_id' => $destination->id, 'rate' => '₱9000/person']);
+
+    // Only the 1,000/night room (2 nights) plus the 500/person activity (2 pax) fits: 3,000.
+    $itinerary = $this->actingAs($this->user)->postJson(route('lucky.generate'), [
+        'destination_id' => $destination->id, 'max_budget' => 3000, 'activity_count' => 1, 'nights' => 2, 'pax' => 2,
+    ])->assertOk()->json('itinerary');
+
+    expect($itinerary['budget_exceeded'])->toBeFalse()->and((float) $itinerary['total'])->toBe(3000.0);
+});
+
+it('states the lowest possible total when nothing can fit the budget', function () {
+    $destination = createLuckyDestination('Siargao')['destination'];
+
+    $itinerary = $this->actingAs($this->user)->postJson(route('lucky.generate'), [
+        'destination_id' => $destination->id, 'max_budget' => 1000, 'activity_count' => 2, 'nights' => 2, 'pax' => 2,
+    ])->assertOk()->json('itinerary');
+
+    expect($itinerary['budget_exceeded'])->toBeTrue()
+        ->and($itinerary['budget_notice'])->toContain('lowest possible total is ₱4,000.00');
+});
+
+it('leaves out rooms that are fully booked for the stay', function () {
+    ['destination' => $destination, 'hotel' => $hotel, 'room' => $bookedRoom] = createLuckyDestination('Bohol', 1);
+    $openRoom = RoomType::factory()->create(['hotel_id' => $hotel->id, 'base_price' => 1500, 'max_occupancy' => 4, 'total_rooms' => 1]);
+    $bookedRoom->update(['total_rooms' => 1]);
+    $booking = Booking::factory()->paid()->create(['user_id' => $this->user->id]);
+    $booking->items()->create(['item_type' => 'room', 'item_id' => $bookedRoom->id, 'item_title' => 'Booked', 'quantity' => 1, 'unit_price' => 1000,
+        'subtotal' => 1000, 'selected_pax' => 2, 'check_in_date' => now()->addDays(7)->toDateString(), 'check_out_date' => now()->addDays(9)->toDateString()]);
+
+    $itinerary = $this->actingAs($this->user)->postJson(route('lucky.generate'), [
+        'destination_id' => $destination->id, 'max_budget' => 50000, 'activity_count' => 1, 'nights' => 2, 'pax' => 2,
+        'start_date' => now()->addDays(7)->toDateString(),
+    ])->assertOk()->json('itinerary');
+
+    expect($itinerary['room']['id'])->toBe($openRoom->id);
+});
+
 it('respects activity count, nights, and pax filters', function () {
     createLuckyDestination('El Nido');
     $dest = DestinationModel::where('name', 'El Nido')->first();

@@ -2,16 +2,21 @@
 
 namespace App\Services;
 
-use App\Models\Booking;
-use App\Models\BookingItem;
+use App\Models\ActivityModel;
+use App\Models\AddOnModel;
 use App\Models\CartItem;
+use App\Models\Package;
 use App\Models\RoomType;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class CartService
 {
+    public function __construct(private RoomAvailabilityService $availability) {}
+
     /**
      * Get or generate cart identifier for session/user.
      */
@@ -72,6 +77,10 @@ class CartService
         $selectedPax = max(1, (int) ($payload['selected_pax'] ?? 1));
         $checkIn = $payload['check_in_date'] ?? null;
         $checkOut = $payload['check_out_date'] ?? null;
+        $listing = $this->bookableListing($itemType, $itemId);
+        if (! $listing) {
+            throw new \RuntimeException('This listing is no longer available. Please choose another option.');
+        }
         if ($itemType === 'room') {
             app(TripBookingDatePolicy::class)->assertBookableArrival($checkIn, 'check_in_date');
         }
@@ -88,25 +97,14 @@ class CartService
         }
 
         // Room Availability Check before adding to cart
+        // Rooms already in the basket for overlapping dates count too, so repeat adds cannot exceed stock.
         if ($itemType === 'room' && $checkIn && $checkOut) {
-            $room = RoomType::find($itemId);
-            if ($room) {
-                $checkInDate = Carbon::parse($checkIn);
-                $checkOutDate = Carbon::parse($checkOut);
-
-                $bookedCount = BookingItem::where('item_type', 'room')
-                    ->where('item_id', $room->id)
-                    ->whereHas('booking', fn ($q) => $q->whereIn('status', Booking::HOLD_STATUSES))
-                    ->where(function ($q) use ($checkInDate, $checkOutDate) {
-                        $q->where('check_in_date', '<', $checkOutDate)
-                            ->where('check_out_date', '>', $checkInDate);
-                    })
-                    ->sum('quantity');
-
-                $totalRooms = max(1, (int) ($room->total_rooms ?: ($room->total_number_of_rooms ?: 2)));
-                if (($totalRooms - $bookedCount) < $quantity) {
-                    throw new \RuntimeException('Sorry, this room is sold out for your selected dates.');
-                }
+            $remaining = $this->availability->check($listing, Carbon::parse($checkIn)->startOfDay(), Carbon::parse($checkOut)->startOfDay())['remaining'];
+            $inBasket = $this->basketRoomQuantity($userId, $sessionToken, $itemId, $checkIn, $checkOut);
+            if ($remaining < $quantity + $inBasket) {
+                throw new \RuntimeException($inBasket > 0
+                    ? 'Only '.$remaining.' of this room '.($remaining === 1 ? 'is' : 'are').' left for your dates, and your Trip Basket already holds '.$inBasket.'.'
+                    : 'Sorry, this room is sold out for your selected dates.');
             }
         }
 
@@ -148,47 +146,79 @@ class CartService
             $selectedPax = $paxVal;
         }
 
-        $existingItem = $luckyGroupId ? null : $query->first();
+        // Lock the matching line so two quick adds cannot both read the old quantity.
+        return DB::transaction(function () use ($query, $luckyGroupId, $quantity, $hasPax, $selectedPax, $userId, $sessionToken, $itemType, $itemId, $roomOption, $checkIn, $checkOut, $payload): array {
+            $existingItem = $luckyGroupId ? null : $query->lockForUpdate()->first();
 
-        if ($existingItem) {
-            // Packages are non-stackable — each package is a single booking entry.
-            if ($existingItem->item_type === 'package') {
-                $existingItem->load('itemable');
+            if ($existingItem) {
+                // Packages are non-stackable — each package is a single booking entry.
+                if ($existingItem->item_type === 'package') {
+                    $existingItem->load('itemable');
 
-                return ['status' => 'already_in_cart', 'cart_item' => $existingItem];
+                    return ['status' => 'already_in_cart', 'cart_item' => $existingItem];
+                }
+
+                $existingItem->quantity += $quantity;
+                if ($hasPax) {
+                    $existingItem->selected_pax = $selectedPax;
+                }
+                if (in_array($existingItem->item_type, ['activity', 'addon'])) {
+                    $existingItem->selected_pax = max($existingItem->quantity, $existingItem->selected_pax);
+                    $existingItem->quantity = $existingItem->selected_pax;
+                }
+                if ($luckyGroupId) {
+                    $existingItem->lucky_group_id = $luckyGroupId;
+                }
+                $existingItem->save();
+
+                return ['status' => 'incremented', 'cart_item' => $existingItem];
             }
 
-            $existingItem->quantity += $quantity;
-            if ($hasPax) {
-                $existingItem->selected_pax = $selectedPax;
-            }
-            if (in_array($existingItem->item_type, ['activity', 'addon'])) {
-                $existingItem->selected_pax = max($existingItem->quantity, $existingItem->selected_pax);
-                $existingItem->quantity = $existingItem->selected_pax;
-            }
-            if ($luckyGroupId) {
-                $existingItem->lucky_group_id = $luckyGroupId;
-            }
-            $existingItem->save();
+            $cartItem = CartItem::create([
+                'user_id' => $userId,
+                'session_token' => $sessionToken,
+                'item_type' => $itemType,
+                'item_id' => $itemId,
+                'quantity' => $quantity,
+                'selected_pax' => $selectedPax,
+                'room_option' => $roomOption,
+                'check_in_date' => $checkIn ?: null,
+                'check_out_date' => $checkOut ?: null,
+                'notes' => $payload['notes'] ?? null,
+                'is_selected' => true,
+                'lucky_group_id' => $luckyGroupId,
+            ]);
 
-            return ['status' => 'incremented', 'cart_item' => $existingItem];
-        }
+            return ['status' => 'added', 'cart_item' => $cartItem];
+        });
+    }
 
-        $cartItem = CartItem::create([
-            'user_id' => $userId,
-            'session_token' => $sessionToken,
-            'item_type' => $itemType,
-            'item_id' => $itemId,
-            'quantity' => $quantity,
-            'selected_pax' => $selectedPax,
-            'room_option' => $roomOption,
-            'check_in_date' => $checkIn ?: null,
-            'check_out_date' => $checkOut ?: null,
-            'notes' => $payload['notes'] ?? null,
-            'is_selected' => true,
-            'lucky_group_id' => $luckyGroupId,
-        ]);
+    /**
+     * Rooms of one type that the basket's selected lines already claim for
+     * dates overlapping the given stay, optionally ignoring one line.
+     */
+    public function basketRoomQuantity(?int $userId, ?string $sessionToken, int $roomId, mixed $checkIn, mixed $checkOut, ?int $exceptLineId = null): int
+    {
+        return (int) CartItem::query()->where('item_type', 'room')->where('item_id', $roomId)->where('is_selected', true)
+            ->when($userId, fn ($q) => $q->where('user_id', $userId), fn ($q) => $q->where('session_token', $sessionToken))
+            ->where('check_in_date', '<', Carbon::parse($checkOut)->toDateString())
+            ->where('check_out_date', '>', Carbon::parse($checkIn)->toDateString())
+            ->when($exceptLineId, fn ($q) => $q->whereKeyNot($exceptLineId))
+            ->sum('quantity');
+    }
 
-        return ['status' => 'added', 'cart_item' => $cartItem];
+    /**
+     * The listing behind a basket line, or null once it is deleted or hidden.
+     * A room also needs its hotel to be shown.
+     */
+    public function bookableListing(string $itemType, int $itemId): ?Model
+    {
+        return match ($itemType) {
+            'room' => RoomType::query()->where('is_shown', true)->whereHas('hotel', fn ($q) => $q->where('is_shown', true))->find($itemId),
+            'activity' => ActivityModel::query()->where('is_shown', true)->find($itemId),
+            'addon' => AddOnModel::query()->where('is_shown', true)->find($itemId),
+            'package' => Package::query()->where('is_active', true)->find($itemId),
+            default => null,
+        };
     }
 }

@@ -5,7 +5,16 @@
  * ESM: package.json declares "type": "module", and the installed concurrently
  * is ESM-only, so `require` would fail before any process started.
  */
+import { spawnSync } from 'node:child_process';
 import { concurrently } from 'concurrently';
+
+// Stop before starting four processes when the database or app key is missing,
+// instead of letting every request log the same boot failure.
+const check = spawnSync('php', ['artisan', 'app:check-environment'], { stdio: 'inherit', shell: true });
+if (check.status !== 0) {
+    console.error('Environment check failed. Fix the issues above, then run composer dev again.');
+    process.exit(1);
+}
 
 // Swallow the EPIPE / errored-stream crash that concurrently throws on Ctrl+C (Windows)
 process.on('uncaughtException', (err) => {

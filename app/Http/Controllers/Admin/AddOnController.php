@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\RegenerateEmbedding;
 use App\Models\AddOnModel;
 use App\Models\DestinationModel;
 use App\Services\AdminAuditService;
@@ -72,6 +73,8 @@ class AddOnController extends Controller
         if ($vector) {
             $addon->embedding = $geminiService->formatVectorForDb($vector);
             $addon->save();
+        } else {
+            RegenerateEmbedding::dispatch('addon', $addon->id);
         }
 
         return redirect()->route('admin.addons.index')->with('success', 'Add-on created successfully.');
@@ -111,6 +114,8 @@ class AddOnController extends Controller
         if ($vector) {
             $addon->embedding = $geminiService->formatVectorForDb($vector);
             $addon->save();
+        } else {
+            RegenerateEmbedding::dispatch('addon', $addon->id);
         }
 
         return redirect()->route('admin.addons.index')->with('success', 'Add-on updated successfully.');

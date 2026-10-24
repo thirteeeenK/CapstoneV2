@@ -16,7 +16,7 @@ use Illuminate\Validation\ValidationException;
 
 class BookingRequestService
 {
-    public function __construct(private readonly RoomAvailabilityService $roomAvailabilityService, private readonly TripBookingDatePolicy $dates) {}
+    public function __construct(private readonly RoomAvailabilityService $roomAvailabilityService, private readonly TripBookingDatePolicy $dates, private readonly CartService $cart) {}
 
     /**
      * @param  Collection<int, CartItem>  $cartItems
@@ -45,27 +45,7 @@ class BookingRequestService
      */
     public function getCartQuery(Request $request)
     {
-        $sessionToken = $request->hasSession() ? $request->session()->get('cart_session_token') : null;
-        if (! $sessionToken && $request->hasSession()) {
-            $sessionToken = (string) Str::uuid();
-            $request->session()->put('cart_session_token', $sessionToken);
-        }
-        if (! $sessionToken) {
-            $sessionToken = 'guest_'.md5($request->ip().($request->header('User-Agent') ?? 'ua'));
-        }
-
-        if (auth()->check()) {
-            $userId = auth()->id();
-
-            // Automatically claim any guest cart items from the current session
-            CartItem::whereNull('user_id')
-                ->where('session_token', $sessionToken)
-                ->update(['user_id' => $userId]);
-
-            return CartItem::where('user_id', $userId)->where('is_selected', true);
-        }
-
-        return CartItem::where('session_token', $sessionToken)->where('is_selected', true);
+        return $this->cart->getCartQuery($request)->where('is_selected', true);
     }
 
     /**
@@ -80,6 +60,14 @@ class BookingRequestService
 
         if ($cartItems->isEmpty()) {
             throw new \RuntimeException('Your Trip Basket is empty. Cannot process booking.');
+        }
+
+        // A listing deleted or hidden after it entered the basket must not be booked (it would price at zero).
+        $unavailable = $cartItems->filter(fn (CartItem $item) => ! $this->cart->bookableListing($item->item_type, $item->item_id));
+        if ($unavailable->isNotEmpty()) {
+            throw ValidationException::withMessages([
+                'cart' => ['Some items in your Trip Basket are no longer available: '.$unavailable->map(fn (CartItem $item) => $item->item_title)->join(', ').'. Remove them to continue.'],
+            ]);
         }
 
         // Past-date guard (Option A: check_in < today). Only selected items reach here via getCartQuery().

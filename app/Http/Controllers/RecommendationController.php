@@ -41,6 +41,10 @@ class RecommendationController extends Controller
 
         $aiRecommendations = [];
         $defaultRecommendations = [];
+        // Postgres ranks by pgvector cosine distance, so only the top listings leave the database.
+        $userVectorSql = $isPersonalized ? $geminiService->formatVectorForDb($userVector) : null;
+        $nearest = fn ($query, int $limit) => $query->whereNotNull('embedding')
+            ->orderByRaw('embedding <=> ?', [$userVectorSql])->orderBy('id')->limit($limit)->get();
 
         foreach ($destinations as $destination) {
             // Default listings for this destination
@@ -73,48 +77,17 @@ class RecommendationController extends Controller
 
             // AI Recommendations for this destination
             if ($isPersonalized) {
-                $allAiHotels = HotelModel::where('is_shown', true)
-                    ->where('destination_id', $destination->id)
-                    ->whereNotNull('embedding')
-                    ->with(['destination', 'rooms'])
-                    ->get();
-
-                $rankedHotels = collect($geminiService->rankRecommendations($userVector, $allAiHotels, 5));
-                $aiHotels = $rankedHotels->map(fn ($entry) => $entry['item']);
-
-                $allAiActivities = ActivityModel::where('is_shown', true)
-                    ->where('destination_id', $destination->id)
-                    ->whereNotNull('embedding')
-                    ->with('destination')
-                    ->get();
-
-                $rankedActivities = collect($geminiService->rankRecommendations($userVector, $allAiActivities, 5));
-                $aiActivities = $rankedActivities->map(fn ($entry) => $entry['item']);
-
-                $allAiPackages = Package::where('is_active', true)
-                    ->where('destination_id', $destination->id)
-                    ->whereNotNull('embedding')
-                    ->with('destination')
-                    ->get();
-
-                if ($allAiPackages->isNotEmpty()) {
-                    $rankedPackages = collect($geminiService->rankRecommendations($userVector, $allAiPackages, 4));
-                    $aiPackages = $rankedPackages->map(fn ($entry) => $entry['item']);
-                    if ($aiPackages->count() < 4) {
-                        $remaining = Package::where('is_active', true)
-                            ->where('destination_id', $destination->id)
-                            ->whereNotIn('id', $aiPackages->pluck('id'))
-                            ->with('destination')
-                            ->take(4 - $aiPackages->count())
-                            ->get();
-                        $aiPackages = $aiPackages->concat($remaining);
-                    }
-                } else {
-                    $aiPackages = Package::where('is_active', true)
+                $aiHotels = $nearest(HotelModel::where('is_shown', true)->where('destination_id', $destination->id)->with(['destination', 'rooms']), 5);
+                $aiActivities = $nearest(ActivityModel::where('is_shown', true)->where('destination_id', $destination->id)->with('destination'), 5);
+                $aiPackages = $nearest(Package::where('is_active', true)->where('destination_id', $destination->id)->with('destination'), 4);
+                if ($aiPackages->count() < 4) {
+                    $remaining = Package::where('is_active', true)
                         ->where('destination_id', $destination->id)
+                        ->whereNotIn('id', $aiPackages->pluck('id'))
                         ->with('destination')
-                        ->take(4)
+                        ->take(4 - $aiPackages->count())
                         ->get();
+                    $aiPackages = $aiPackages->concat($remaining);
                 }
 
                 $reasons = $userPreference
@@ -137,8 +110,9 @@ class RecommendationController extends Controller
         // DSS overview markers (one per destination with weather + listing counts)
         $mapMarkers = $mapService->destinationMarkers();
         $weatherCards = [];
+        $destinationsById = $destinations->keyBy('id');
         foreach ($mapMarkers as $marker) {
-            $destination = DestinationModel::find($marker['id']);
+            $destination = $destinationsById->get($marker['id']);
             if ($destination) {
                 $weatherCards[$destination->id] = $weatherService->summaryForDestination($destination);
             }

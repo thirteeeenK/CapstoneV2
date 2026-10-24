@@ -268,8 +268,13 @@ function supportInbox() {
         adminInput: '',
         adminSending: false,
         pollTimer: null,
+        pollTick: 0,
+        visibilityHandler: null,
+        queueInFlight: false,
+        messagesInFlight: null,
         activeConvoPollTimer: null,
         lastMessageId: 0,
+        conversationToken: 0,
         showNewMessage: false,
         newMessageQuery: '',
         newMessageResults: [],
@@ -284,12 +289,31 @@ function supportInbox() {
             el.style.height = Math.min(el.scrollHeight, 100) + 'px';
         },
 
+        // The queue refreshes every 5 s while the tab is visible and every 30 s while it is
+        // hidden; returning to the tab refreshes at once. Only one request per channel runs at a time.
         startPolling() {
             this.fetchQueue();
-            this.pollTimer = setInterval(() => this.fetchQueue(), 5000);
+            this.pollTimer = setInterval(() => {
+                this.pollTick++;
+                if (!document.hidden || this.pollTick % 6 === 0) this.fetchQueue();
+            }, 5000);
+            this.visibilityHandler = () => {
+                if (document.hidden) return;
+                this.fetchQueue();
+                this.fetchMessages();
+            };
+            document.addEventListener('visibilitychange', this.visibilityHandler);
+        },
+
+        destroy() {
+            clearInterval(this.pollTimer);
+            clearInterval(this.activeConvoPollTimer);
+            document.removeEventListener('visibilitychange', this.visibilityHandler);
         },
 
         async fetchQueue() {
+            if (this.queueInFlight) return;
+            this.queueInFlight = true;
             try {
                 const res = await fetch('/admin/support/poll', {
                     headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
@@ -301,19 +325,51 @@ function supportInbox() {
                 this.myReturned = data.my_returned || [];
             } catch (e) {
                 console.error('Support poll error:', e);
+            } finally {
+                this.queueInFlight = false;
             }
         },
 
         openInquiry(ticket) {
-            this.selectedInquiry = ticket;
+            this.showConversation(ticket);
+        },
+
+        // Every way of opening or closing a thread bumps the token, so a response
+        // still in flight for the previous ticket knows it is stale and drops out.
+        showConversation(inquiry) {
+            this.selectedInquiry = inquiry;
+            this.conversationMessages = [];
             this.lastMessageId = 0;
+            this.conversationToken++;
             this.fetchMessages();
             if (this.activeConvoPollTimer) clearInterval(this.activeConvoPollTimer);
-            this.activeConvoPollTimer = setInterval(() => this.fetchMessages(), 5000);
+            this.activeConvoPollTimer = setInterval(() => {
+                if (!document.hidden) this.fetchMessages();
+            }, 5000);
+        },
+
+        closeConversation() {
+            this.selectedInquiry = null;
+            this.conversationMessages = [];
+            this.lastMessageId = 0;
+            this.conversationToken++;
+        },
+
+        // Overlapping polls (and a reply racing a poll) can return the same message twice.
+        appendMessages(msgs) {
+            const known = new Set(this.conversationMessages.map(msg => msg.id));
+            const fresh = msgs.filter(msg => !known.has(msg.id));
+            if (fresh.length === 0) return;
+            this.conversationMessages = [...this.conversationMessages, ...fresh];
+            this.lastMessageId = Math.max(this.lastMessageId, ...fresh.map(msg => msg.id));
         },
 
         async fetchMessages() {
             if (!this.selectedInquiry) return;
+            const token = this.conversationToken;
+            // One request per open thread; opening another ticket starts its own.
+            if (this.messagesInFlight === token) return;
+            this.messagesInFlight = token;
             try {
                 const params = new URLSearchParams();
                 if (this.lastMessageId > 0) params.set('after_id', this.lastMessageId);
@@ -323,23 +379,18 @@ function supportInbox() {
                 });
                 if (!res.ok) return;
                 const data = await res.json();
+                if (token !== this.conversationToken) return;
                 this.selectedInquiry.status = data.inquiry?.status || this.selectedInquiry.status;
                 this.selectedInquiry.assigned_admin_id = data.inquiry?.assigned_admin_id;
-                const msgs = data.messages || [];
-                if (this.lastMessageId === 0) {
-                    this.conversationMessages = msgs;
-                } else if (msgs.length > 0) {
-                    this.conversationMessages = [...this.conversationMessages, ...msgs];
-                }
-                if (msgs.length > 0) {
-                    this.lastMessageId = msgs[msgs.length - 1].id;
-                }
+                this.appendMessages(data.messages || []);
                 this.$nextTick(() => {
                     const el = this.$refs.adminMessages;
                     if (el) el.scrollTop = el.scrollHeight;
                 });
             } catch (e) {
                 console.error('Fetch messages error:', e);
+            } finally {
+                if (this.messagesInFlight === token) this.messagesInFlight = null;
             }
         },
 
@@ -358,11 +409,7 @@ function supportInbox() {
                 const data = await res.json();
                 if (data.status === 'success') {
                     await this.fetchQueue();
-                    this.selectedInquiry = { ...ticket, status: 'HUMAN_SUPPORT_ACTIVE' };
-                    this.lastMessageId = 0;
-                    this.fetchMessages();
-                    if (this.activeConvoPollTimer) clearInterval(this.activeConvoPollTimer);
-                    this.activeConvoPollTimer = setInterval(() => this.fetchMessages(), 5000);
+                    this.showConversation({ ...ticket, status: 'HUMAN_SUPPORT_ACTIVE' });
                 } else {
                     alert(data.message || 'Could not claim this inquiry.');
                 }
@@ -422,11 +469,7 @@ function supportInbox() {
                     this.selectedNewUser = null;
                     this.newMessageText = '';
                     await this.fetchQueue();
-                    this.selectedInquiry = data.inquiry;
-                    this.lastMessageId = 0;
-                    this.fetchMessages();
-                    if (this.activeConvoPollTimer) clearInterval(this.activeConvoPollTimer);
-                    this.activeConvoPollTimer = setInterval(() => this.fetchMessages(), 5000);
+                    this.showConversation(data.inquiry);
                 } else {
                     alert(data.message || 'Could not send message.');
                 }
@@ -441,6 +484,7 @@ function supportInbox() {
         async sendAdminReply() {
             if (!this.adminInput.trim() || !this.selectedInquiry || this.adminSending) return;
             const message = this.adminInput.trim();
+            const token = this.conversationToken;
             this.adminInput = '';
             this.adminSending = true;
 
@@ -457,9 +501,8 @@ function supportInbox() {
                     body: JSON.stringify({ message }),
                 });
                 const data = await res.json();
-                if (data.status === 'success' && data.message) {
-                    this.conversationMessages = [...this.conversationMessages, data.message];
-                    this.lastMessageId = data.message.id;
+                if (data.status === 'success' && data.message && token === this.conversationToken) {
+                    this.appendMessages([data.message]);
                     this.$nextTick(() => {
                         const el = this.$refs.adminMessages;
                         if (el) el.scrollTop = el.scrollHeight;
@@ -484,8 +527,7 @@ function supportInbox() {
                 });
                 const data = await res.json();
                 if (data.status === 'success') {
-                    this.selectedInquiry = null;
-                    this.conversationMessages = [];
+                    this.closeConversation();
                     await this.fetchQueue();
                 }
             } catch (e) {
@@ -507,8 +549,7 @@ function supportInbox() {
                 const data = await res.json();
                 if (data.status === 'success') {
                     if (this.selectedInquiry?.id === target.id) {
-                        this.selectedInquiry = null;
-                        this.conversationMessages = [];
+                        this.closeConversation();
                     }
                     await this.fetchQueue();
                 }

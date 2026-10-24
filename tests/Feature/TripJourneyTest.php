@@ -6,6 +6,7 @@ use App\Models\AdminModel;
 use App\Models\Booking;
 use App\Models\BookingItem;
 use App\Models\CartItem;
+use App\Models\Review;
 use App\Models\RoomType;
 use App\Models\TripItinerary;
 use App\Models\TripPlan;
@@ -149,6 +150,99 @@ it('omits excluded activities from reminders even if they remain in the historic
     $payload = json_decode(DB::table('trip_journey_messages')->value('payload'), true);
     expect($payload['schedule'][0]['visits'])->toBeEmpty();
     Queue::assertPushed(SendTripJourneyMail::class, 1);
+});
+
+it('queues and delivers each journey email to an account without a verified email', function (string $kind) {
+    Queue::fake([SendTripJourneyMail::class]);
+    Mail::fake();
+    $this->user->forceFill(['email_verified_at' => null])->save();
+    $service = app(TripJourneyService::class);
+
+    expect($service->process())->toBe(1);
+    $message = DB::table('trip_journey_messages')->sole();
+    (new SendTripJourneyMail($message->id))->handle($service);
+
+    expect($message->kind)->toBe($kind)->and($this->user->fresh()->email_verified_at)->toBeNull();
+    Mail::assertSent(TripJourneyMail::class, fn ($mail) => $mail->hasTo($this->user->email));
+})->with([
+    'pre-trip reminder' => fn () => 'pre_trip',
+    'departure reminder' => function () {
+        $this->item->update(['check_in_date' => '2026-10-12', 'check_out_date' => '2026-10-13']);
+
+        return 'departure';
+    },
+    'review invitation' => function () {
+        $this->booking->update(['status' => 'completed']);
+        $this->item->update(['check_in_date' => '2026-10-09', 'check_out_date' => '2026-10-11', 'fulfillment_status' => 'fulfilled']);
+
+        return 'review';
+    },
+    'return-trip suggestion' => function () {
+        $this->booking->update(['status' => 'completed']);
+        $this->item->update(['check_in_date' => '2026-09-08', 'check_out_date' => '2026-09-10', 'fulfillment_status' => 'fulfilled']);
+        $this->user->forceFill(['trip_marketing_enabled' => true])->save();
+
+        return 'repeat';
+    },
+    'saved-plan follow-up' => function () {
+        $this->booking->update(['status' => 'cancelled']);
+        $this->user->forceFill(['trip_marketing_enabled' => true])->save();
+        $plan = TripPlan::factory()->create(['user_id' => $this->user->id, 'updated_at' => now()->subDays(2)]);
+        TripPlanItem::factory()->create(['trip_plan_id' => $plan->id]);
+
+        return 'continue';
+    },
+]);
+
+it('lists every booked itinerary in a trip reminder', function () {
+    Queue::fake([SendTripJourneyMail::class]);
+    $this->booking->update(['trip_itineraries' => [
+        ['title' => 'Boracay days', 'days' => [['day' => 1, 'date' => '2026-10-14', 'stops' => []]], 'booked_plan_item_ids' => []],
+        ['title' => 'El Nido days', 'days' => [['day' => 1, 'date' => '2026-10-15', 'stops' => []]], 'booked_plan_item_ids' => []],
+    ]]);
+
+    app(TripJourneyService::class)->process();
+
+    $labels = array_column(json_decode(DB::table('trip_journey_messages')->value('payload'), true)['schedule'], 'label');
+    expect($labels)->toBe(['Boracay days · Day 1 · 2026-10-14', 'El Nido days · Day 1 · 2026-10-15']);
+});
+
+it('links the saved-plan follow-up to that plan', function () {
+    Queue::fake([SendTripJourneyMail::class]);
+    $this->booking->update(['status' => 'cancelled']);
+    $this->user->forceFill(['trip_marketing_enabled' => true])->save();
+    $plan = TripPlan::factory()->create(['user_id' => $this->user->id, 'updated_at' => now()->subDays(2)]);
+    TripPlanItem::factory()->create(['trip_plan_id' => $plan->id]);
+
+    app(TripJourneyService::class)->process();
+
+    expect(json_decode(DB::table('trip_journey_messages')->value('payload'), true)['url'])->toBe(route('trip-planner.index', ['plan' => $plan->id]));
+});
+
+it('skips the review invitation once every service has been reviewed', function () {
+    Queue::fake([SendTripJourneyMail::class]);
+    $this->booking->update(['status' => 'completed']);
+    $this->item->update(['check_in_date' => '2026-10-09', 'check_out_date' => '2026-10-11', 'fulfillment_status' => 'fulfilled']);
+    Review::create(['booking_id' => $this->booking->id, 'booking_item_id' => $this->item->id, 'user_id' => $this->user->id,
+        'reviewable_type' => (new RoomType)->getMorphClass(), 'reviewable_id' => $this->room->id, 'rating' => 5, 'comment' => 'A lovely, restful stay by the beach.']);
+
+    expect(app(TripJourneyService::class)->process())->toBe(0);
+    Queue::assertNothingPushed();
+});
+
+it('keeps trip reminders and marketing follow-ups on separate 20-hour limits', function () {
+    Queue::fake([SendTripJourneyMail::class]);
+    $service = app(TripJourneyService::class);
+    $this->booking->update(['status' => 'cancelled']);
+    $this->user->forceFill(['trip_marketing_enabled' => true])->save();
+    $plan = TripPlan::factory()->create(['user_id' => $this->user->id, 'updated_at' => now()->subDays(2)]);
+    TripPlanItem::factory()->create(['trip_plan_id' => $plan->id]);
+    expect($service->process())->toBe(1);
+
+    $this->booking->update(['status' => 'paid']);
+
+    expect($service->process())->toBe(1)
+        ->and(DB::table('trip_journey_messages')->orderBy('id')->pluck('kind')->all())->toBe(['continue', 'pre_trip']);
 });
 
 it('lets account cleanup remove a planner and cart without foreign key conflicts', function () {

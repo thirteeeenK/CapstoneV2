@@ -137,7 +137,7 @@ test('activity marker previews first and quick add persists once starting with o
         const addition = planner.addMapChoice();
         await planner.addMapChoice();
         assert.equal(requests.length, 1, 'busy guard rejects double clicks');
-        assert.deepEqual(requests[0], ['/plans/2/items', 'POST', { item_type: 'activity', item_id: 7, pax: 1, quantity: 1 }]);
+        assert.deepEqual(requests[0], ['/plans/2/items', 'POST', { item_type: 'activity', item_id: 7, pax: 1, quantity: 1, revision: 1 }]);
         complete({ items: [{ item_type: 'activity', item_id: 7, options: { pax: 1 } }], revision: 2 });
         await addition;
 
@@ -161,7 +161,7 @@ test('hotel card addition saves the planning base and keeps its matching rooms v
 
         await planner.addMapChoice();
 
-        assert.deepEqual(requests, [['/plans/3/items', 'POST', { item_type: 'hotel', item_id: 7 }]]);
+        assert.deepEqual(requests, [['/plans/3/items', 'POST', { item_type: 'hotel', item_id: 7, revision: 1 }]]);
         assert.equal(planner.selected(hotel), true);
         assert.equal(planner.activeHotelId, 7);
         assert.equal(planner.tab, 'rooms');
@@ -853,4 +853,75 @@ test('every scheduled stop gets a visible line and unplaced picks stay on the ma
             else globalThis[key] = value;
         }
     }
+});
+
+function plannerWithChoices() {
+    const planner = tripPlanner({ destinations: [], plans: [], emailPreferences: {} });
+    const room = { type: 'room', id: 3, name: 'Garden Room', base_price: 2000, base_occupancy: 2, extra_person_fee: 500, max_pax: 4 };
+    const tour = { type: 'activity', id: 5, name: 'Island Hopping', rate_min: 1000, rate_max: 1000, per_person: true, max_pax: 3 };
+    const cruise = { type: 'activity', id: 6, name: 'Sunset Cruise', rate_min: 800, rate_max: 800, per_person: false, max_pax: 10 };
+    planner.allListings = () => [room, tour, cruise];
+    planner.plan = { id: 1, pax: 4, revision: 3, context: { max_price: 10000, itinerary_budget_basis: 'trip_total', itinerary_budget_scope: 'trip' } };
+    planner.startDate = '2026-11-01'; planner.endDate = '2026-11-03';
+    planner.selections = [
+        { id: 11, item_type: 'room', item_id: 3, options: { pax: 2, quantity: 1, check_in: '2026-11-01', check_out: '2026-11-03' } },
+        { id: 12, item_type: 'activity', item_id: 5, options: { pax: 2, quantity: 1 } },
+        { id: 13, item_type: 'activity', item_id: 6, options: { pax: 4, quantity: 1 } },
+    ];
+    planner.itinerary = { snapshot: { days: [{ stops: [{ plan_item_id: 12 }] }] } };
+    return planner;
+}
+
+test('the trip estimate totals rooms and activities and flags rooms that sleep fewer than the party', () => {
+    const planner = plannerWithChoices();
+    assert.deepEqual(planner.tripEstimate(), { rooms: 4000, activities: 2800, total: 6800, sleeps: 2, party: 4 });
+    assert.equal(planner.travelersLabel(planner.selections[1]), '2 of 4 traveler(s) joining');
+});
+
+test('the chat budget is compared as a whole-trip amount for its scope', () => {
+    const planner = plannerWithChoices();
+    assert.deepEqual(planner.budgetComparison(), { budget: 10000, spend: 6800, scope: 'trip', remaining: 3200 });
+    planner.plan.context = { max_price: 1500, itinerary_budget_basis: 'per_person', itinerary_budget_period: 'per_night', itinerary_budget_scope: 'lodging' };
+    assert.deepEqual(planner.budgetComparison(), { budget: 12000, spend: 4000, scope: 'lodging', remaining: 8000 });
+    planner.plan.context = {};
+    assert.equal(planner.budgetComparison(), null);
+});
+
+test('the basket preview matches what transfer adds: rooms and scheduled activities only', () => {
+    assert.deepEqual(plannerWithChoices().basketPreview(), { added: ['Garden Room', 'Island Hopping'], skipped: ['Sunset Cruise'] });
+});
+
+test('applying the party size saves the activity for as many travelers as it can hold', async () => {
+    const planner = plannerWithChoices();
+    const requests = [];
+    planner.run = async action => action();
+    planner.api = async (...args) => { requests.push(args); return { items: planner.selections, revision: 4 }; };
+    assert.equal(planner.canApplyPartySize(planner.selections[1]), true);
+    assert.equal(planner.canApplyPartySize(planner.selections[2]), false);
+
+    await planner.applyPartySize(planner.selections[1]);
+
+    assert.deepEqual(requests, [['/plans/1/items', 'POST', { item_type: 'activity', item_id: 5, pax: 3, quantity: 1, date: null, revision: 3 }]]);
+    assert.equal(planner.plan.revision, 4);
+});
+
+test('saving details on a rescheduled trip drops its outdated schedule instead of showing it as a draft', async () => {
+    const planner = plannerWithChoices();
+    planner.run = async action => action();
+    planner.renderMap = () => {};
+    planner.plan = { id: 1, revision: 3, pax: 4, mode: 'walking', title: 'Trip', start_date: '2026-11-01', end_date: '2026-11-03', status: 'dated', source: 'manual' };
+    planner.title = 'Trip'; planner.pax = 4; planner.mode = 'walking';
+    planner.startDate = '2026-11-05'; planner.endDate = '2026-11-07';
+    const requests = [];
+    planner.api = async (...args) => {
+        requests.push(args);
+        return { data: { ...planner.plan, revision: 4, start_date: '2026-11-05', end_date: '2026-11-07', items: [] }, itinerary: { id: 9, revision: 3, snapshot: { days: [] } } };
+    };
+
+    await planner.updateDraft();
+
+    assert.deepEqual(requests[0][2], { revision: 3, start_date: '2026-11-05', end_date: '2026-11-07' });
+    assert.equal(planner.itinerary, null);
+    assert.equal(planner.draftItinerary, null);
+    assert.match(planner.notice, /build the schedule again/);
 });

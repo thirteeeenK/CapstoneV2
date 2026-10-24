@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\RegenerateEmbedding;
 use App\Models\ActivityModel;
 use App\Models\DestinationModel;
 use App\Services\AdminAuditService;
@@ -147,6 +148,8 @@ class ActivityController extends Controller
         if ($vector) {
             $activity->embedding = $geminiService->formatVectorForDb($vector);
             $activity->save();
+        } else {
+            RegenerateEmbedding::dispatch('activity', $activity->id);
         }
 
         return redirect()->route('admin.activities.index')->with('success', 'Activity added successfully.');
@@ -254,6 +257,9 @@ class ActivityController extends Controller
         }
 
         $activity->save();
+        if (! $vector) {
+            RegenerateEmbedding::dispatch('activity', $activity->id);
+        }
 
         AdminAuditService::log($activity, $oldValues);
 

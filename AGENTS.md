@@ -5,7 +5,8 @@ SunnyTrips — Philippine travel booking capstone with an AI Decision Support Sy
 ## Commands
 
 - `composer dev` — run the whole stack at once: `artisan serve` (localhost) + `queue:listen` + Vite via `scripts/dev.js` (wrapper suppresses the Windows EPIPE crash on Ctrl+C). Prefer this over separate terminals.
-- `composer test` — `config:clear` + `php artisan test` (Pest). Single test: `php artisan test --filter=Name`.
+- `composer test` — `config:clear` + `npm test` (Node `node:test` suites in `tests/Unit/*.test.js`) + `php artisan test` (Pest). Single test: `php artisan test --filter=Name`. Test runs log to `storage/logs/testing.log`, not `laravel.log`.
+- `composer dev` first runs `php artisan app:check-environment` (app key, PostgreSQL, pgvector; warns on a missing Gemini key) and stops with a clear message when something is missing.
 - `php artisan embed:all` — (re)generate Gemini embeddings for hotels/rooms/activities/packages (`--force` overwrites existing). Requires `GEMINI_API_KEY`; without it only a warning is logged and `embedding` columns stay null.
 - `composer setup` — fresh-install bootstrap (composer + .env + key + migrate + npm build).
 

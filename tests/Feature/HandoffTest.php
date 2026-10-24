@@ -1,10 +1,13 @@
 <?php
 
+use App\Models\AdminModel;
+use App\Models\ChatMessage;
 use App\Models\ChatSession;
 use App\Models\DestinationModel;
 use App\Models\HotelModel;
 use App\Models\RoomType;
 use App\Models\SupportInquiry;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 
 beforeEach(function () {
@@ -123,4 +126,27 @@ test('cancelling a pending ticket keeps AI working', function () {
     $response->assertOk()->assertJson(['control' => 'ai']);
     expect($response->json('handoff_status'))
         ->not->toBe(SupportInquiry::STATUS_PENDING);
+});
+
+test('the admin queue poll previews latest messages without a query per ticket', function () {
+    $admin = AdminModel::create(['name' => 'Queue Admin', 'email' => 'queue@handofftest.com', 'password' => 'password']);
+    $pollQueries = function () use ($admin): int {
+        DB::flushQueryLog();
+        DB::enableQueryLog();
+        $this->actingAs($admin, 'admin')->getJson(route('admin.support.poll'))->assertOk();
+
+        return count(DB::getQueryLog());
+    };
+    $session = pendingHandoffSession();
+    ChatMessage::create(['chat_session_id' => $session->id, 'sender' => 'user', 'message' => 'Can someone help me book?']);
+    ChatMessage::create(['chat_session_id' => $session->id, 'sender' => 'bot', 'message' => 'An agent will join shortly.']);
+    $oneTicket = $pollQueries();
+
+    foreach (range(1, 3) as $ticket) {
+        ChatMessage::create(['chat_session_id' => pendingHandoffSession()->id, 'sender' => 'user', 'message' => 'Question '.$ticket]);
+    }
+
+    expect($pollQueries())->toBe($oneTicket);
+    $previews = collect($this->actingAs($admin, 'admin')->getJson(route('admin.support.poll'))->json('pending'))->pluck('last_message');
+    expect($previews)->toContain('Can someone help me book?', 'Question 3')->not->toContain('An agent will join shortly.');
 });

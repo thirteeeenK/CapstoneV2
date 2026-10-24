@@ -54,12 +54,21 @@ class ActivityModel extends Model
     }
 
     /**
+     * Whether the activity has its own complete coordinate pair. A half-set pair
+     * is not used, so a real latitude is never mixed with a fallback longitude.
+     */
+    public function hasExactLocation(): bool
+    {
+        return $this->latitude !== null && $this->longitude !== null;
+    }
+
+    /**
      * Resolve effective coordinates for this activity, falling back to its
-     * destination center when the activity has no precise coordinates set.
+     * destination center when the activity has no complete coordinate pair.
      */
     public function getLatitudeWithFallbackAttribute(): ?float
     {
-        if ($this->latitude !== null) {
+        if ($this->hasExactLocation()) {
             return (float) $this->latitude;
         }
 
@@ -68,7 +77,7 @@ class ActivityModel extends Model
 
     public function getLongitudeWithFallbackAttribute(): ?float
     {
-        if ($this->longitude !== null) {
+        if ($this->hasExactLocation()) {
             return (float) $this->longitude;
         }
 

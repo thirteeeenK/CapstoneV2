@@ -85,48 +85,12 @@
             </div>
         </div>
 
-        <div x-data="{
-            search: @js($search),
-            destinationId: @js((string) ($selectedDestinationId ?? '')),
-            visibility: @js($visibility ?? ''),
-            tab: @js($activeTab),
-            loading: false,
-            timer: null,
-            baseUrl: @js(route('admin.inventory.index')),
-            async fetchResults() {
-                const params = new URLSearchParams();
-                params.set('tab', this.tab || 'hotels');
-                if (this.destinationId) params.set('destination_id', this.destinationId);
-                if (this.visibility) params.set('visibility', this.visibility);
-                if (this.search) params.set('search', this.search);
-                const target = this.baseUrl + '?' + params.toString();
-                this.loading = true;
-                try {
-                    const res = await fetch(target, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
-                    const html = await res.text();
-                    const el = document.getElementById('listings-results');
-                    if (el) el.outerHTML = html;
-                } finally {
-                    this.loading = false;
-                }
-            },
-            debouncedSearch() {
-                clearTimeout(this.timer);
-                this.timer = setTimeout(() => this.fetchResults(), 250);
-            },
-            setDestinationId(id) {
-                this.destinationId = id;
-                this.fetchResults();
-            },
-            setVisibility(v) {
-                this.visibility = v;
-                this.fetchResults();
-            },
-            setTab(tab) {
-                this.tab = tab;
-                this.fetchResults();
-            }
-        }">
+        <div x-data="adminLiveList({
+                base: @js(route('admin.inventory.index')),
+                filters: { search: @js($search), destinationId: @js((string) ($selectedDestinationId ?? '')), visibility: @js($visibility ?? ''), tab: @js($activeTab) },
+                params: { tab: 'tab', destinationId: 'destination_id', visibility: 'visibility', search: 'search' },
+                defaults: { tab: 'hotels' },
+            })">
 {{-- Filter Controls (live outside the swapped results region so the input keeps focus) --}}
         <div class="mb-6 bg-white p-4 border border-slate-200 rounded-lg shadow-sm space-y-4">
             {{-- Location Filters --}}
@@ -228,6 +192,7 @@
         </div>
 
         <div :class="loading ? 'opacity-60 transition-opacity' : 'transition-opacity'">
+            <div x-show="error" x-cloak role="alert" class="mb-4 flex flex-wrap items-center gap-3 rounded-lg bg-rose-50 p-3 text-sm text-rose-800 dark:bg-rose-950 dark:text-rose-200"><p x-text="error" class="flex-1"></p><button type="button" @click="retryResults()" class="min-h-11 px-3 font-bold underline underline-offset-4">Retry</button></div>
             @include('admin.inventory._results', compact('hotels', 'rooms', 'activities', 'addons', 'destinations', 'activeTab', 'selectedDestinationId', 'visibility', 'search'))
         </div>
     </div>

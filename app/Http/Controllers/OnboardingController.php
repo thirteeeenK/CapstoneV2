@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Concerns\ResolvesImages;
+use App\Jobs\RegenerateEmbedding;
 use App\Models\DestinationModel;
 use App\Models\OnboardingOption;
 use App\Models\UserPreference;
@@ -78,36 +79,8 @@ class OnboardingController extends Controller
             'notes' => 'nullable|string|max:500',
         ]);
 
-        $vibesList = ! empty($request->vibes) ? implode(', ', $request->vibes) : 'Beachfront, Island Energy';
-        $activitiesList = ! empty($request->activities) ? implode(', ', $request->activities) : 'Open to Any Experience';
-        $amenitiesList = ! empty($request->amenities) ? implode(', ', $request->amenities) : 'Standard Luxuries';
-        $destName = $request->destination ?: 'Any Island Sanctuary';
-        $travelerType = $request->traveler_type ?: 'Vacationer';
-        $notesText = trim($request->notes ?? '');
-
-        $semanticText = implode("\n", array_filter([
-            'User Travel Preferences & Profile:',
-            "Preferred Destination: {$destName}",
-            "Travel Atmosphere & Vibe Preferences: {$vibesList}",
-            "Traveler Group Type: {$travelerType}",
-            "Desired Activities & Experiences: {$activitiesList}",
-            "Desired Amenities & Facilities: {$amenitiesList}",
-            $notesText ? "Custom Requests: {$notesText}" : null,
-        ]));
-
-        $vector = $geminiService->generateEmbedding($semanticText, 'RETRIEVAL_QUERY');
-
         $user = Auth::user();
         if ($user) {
-            if ($vector) {
-                $user->preferences_embedding = $geminiService->formatVectorForDb($vector);
-            } else {
-                // Fallback zero vector if API is offline
-                $zeroVector = array_fill(0, 3072, 0.0);
-                $user->preferences_embedding = $geminiService->formatVectorForDb($zeroVector);
-            }
-            $user->save();
-
             $preference = UserPreference::updateOrCreate(
                 ['user_id' => $user->id],
                 [
@@ -120,7 +93,20 @@ class OnboardingController extends Controller
                 ]
             );
 
+            $vector = $geminiService->generateEmbedding($geminiService->buildPreferenceEmbeddingText($preference), 'RETRIEVAL_QUERY');
+            if ($vector) {
+                $user->preferences_embedding = $geminiService->formatVectorForDb($vector);
+            } else {
+                // A zero vector completes onboarding while Gemini is offline; the queued retry replaces it.
+                $zeroVector = array_fill(0, 3072, 0.0);
+                $user->preferences_embedding = $geminiService->formatVectorForDb($zeroVector);
+            }
+            $user->save();
+
             $explainer->invalidateForUser($preference);
+            if (! $vector) {
+                RegenerateEmbedding::dispatch('user', $user->id);
+            }
         }
 
         return redirect()->route('onboarding.processing')->with('success', 'Your AI Travel Profile has been saved! Generating your personalized recommendations...');
