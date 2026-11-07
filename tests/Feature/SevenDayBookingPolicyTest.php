@@ -223,3 +223,37 @@ test('a service cutoff that has passed requires review instead of a past payment
     expect(fn () => app(BookingPaymentPolicy::class)->approvalData($booking))->toThrow(ValidationException::class, 'No valid payment window remains');
     expect($booking->fresh()->status)->toBe('pending');
 });
+
+test('the approval screen states the computed deadline and limits the override picker to it', function () {
+    $booking = datedPolicyRequest('2026-10-23');
+
+    $this->actingAs(settingsAdmin(), 'admin')->get(route('admin.bookings.show', $booking))->assertOk()
+        ->assertSee('Traveler pays')->assertSee('₱8,500.00')->assertSee('Oct 19, 2026 12:33 PM')
+        ->assertSee('max="2026-10-19T12:33"', false)
+        ->assertSee('Pick a time between now and Oct 19, 2026 12:33 PM')
+        ->assertSee('Approve booking');
+});
+
+test('a request whose payment window has ended explains why and offers no approve button', function () {
+    $booking = datedPolicyRequest('2026-10-27', ['created_at' => now()->subDays(3)]);
+
+    $this->actingAs(settingsAdmin(), 'admin')->get(route('admin.bookings.show', $booking))->assertOk()
+        ->assertSee('This request can no longer be approved.')
+        ->assertSee('No valid payment window remains')
+        ->assertDontSee('id="approval-payment-deadline"', false)
+        ->assertDontSee('Approving emails the customer');
+});
+
+test('an override past the window names the latest allowed time while the summary keeps the default terms', function () {
+    $booking = datedPolicyRequest('2026-10-27');
+    $item = $booking->items->first();
+
+    $this->actingAs(settingsAdmin(), 'admin')->from(route('admin.bookings.show', $booking))->followingRedirects()
+        ->post(route('admin.bookings.approve', $booking), [
+            'items' => [$item->id => ['include' => 1, 'quantity' => 1]], 'payment_deadline_override' => '2026-11-30T14:57',
+        ])->assertOk()
+        ->assertSee('Choose a time on or before Oct 19, 2026 12:33 PM (Philippine time), 48 hours after the traveler submitted.')
+        ->assertSee('Approve booking')
+        ->assertDontSee('This request can no longer be approved.');
+    expect($booking->fresh()->status)->toBe('pending');
+});

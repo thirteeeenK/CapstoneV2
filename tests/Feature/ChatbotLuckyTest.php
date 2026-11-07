@@ -43,18 +43,28 @@ it('issues the same persisted offer and code as the Lucky page from budget, nigh
     $response = $this->actingAs($user)->postJson('/chat', ['message' => "I'm feeling lucky: 2 nights in Siargao for 2 people under 10000"])->assertOk();
 
     $offer = LuckyOffer::sole();
-    $response->assertJsonPath('lucky.offer.id', $offer->uuid)->assertJsonPath('lucky.offer.code', $offer->code)
+    $response->assertJsonPath('lucky.offer.id', $offer->uuid)->assertJsonPath('lucky.offer.won', true)
         ->assertJsonPath('lucky.itinerary.total', 4000)->assertJsonPath('lucky.offer.formatted_estimated_saving', '₱400.00');
     expect($offer)->user_id->toBe($user->id)->nights->toBe(2)->pax->toBe(2)->destination_id->toBe($this->trip['destination']->id)
-        ->and($response->json('reply'))->toContain($offer->code)->toContain('₱4,000.00');
+        ->and($response->json('reply'))->toContain('You won 10% off')->toContain('₱4,000.00')->toContain('4 of 5 Lucky attempts left');
 
     $this->postJson($response->json('lucky.accept_url'), ['offer_id' => $offer->uuid])->assertOk();
     expect(CartItem::where('lucky_offer_id', $offer->id)->count())->toBe(3);
 });
 
-it('says when no promotion applies instead of inventing a code', function () {
+it('says when an attempt won nothing instead of inventing a discount', function () {
     $response = $this->actingAs(onboardedUser())->postJson('/chat', ['message' => 'surprise me'])->assertOk();
 
-    expect($response->json('lucky.offer.code'))->toBeNull()
-        ->and($response->json('reply'))->toContain('No Lucky promotion applies');
+    expect($response->json('lucky.offer.won'))->toBeFalse()
+        ->and($response->json('reply'))->toContain('No Lucky discount this time');
+});
+
+it('shares the daily attempts with the Lucky page', function () {
+    config(['system_settings.lucky.daily_attempts' => 1]);
+    $user = onboardedUser();
+    $this->actingAs($user)->postJson(route('lucky.generate'), ['destination_id' => $this->trip['destination']->id, 'max_budget' => 50000, 'activity_count' => 2, 'nights' => 2, 'pax' => 2])->assertOk();
+
+    $response = $this->postJson('/chat', ['message' => 'surprise me'])->assertOk();
+
+    expect($response->json('reply'))->toContain('used all your Lucky attempts')->and(LuckyOffer::count())->toBe(1);
 });

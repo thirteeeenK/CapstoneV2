@@ -20,14 +20,13 @@ class PromotionFactory extends Factory
         return [
             'name' => fake()->words(3, true),
             'is_active' => true,
-            'code_prefix' => 'LUCKY',
+            'win_percent' => 100,
             'discount_type' => Promotion::TYPE_PERCENT,
             'percent_off' => 10,
             'fixed_off_cents' => null,
             'max_discount_cents' => null,
             'min_eligible_cents' => 0,
             'per_traveler_limit' => 1,
-            'codes_per_traveler_per_day' => 3,
             'offer_valid_hours' => 72,
             'award_weight' => 1,
         ];

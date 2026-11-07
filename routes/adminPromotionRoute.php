@@ -7,6 +7,7 @@ Route::prefix('admin')->middleware(['auth:admin', 'admin.2fa', 'no.cache', 'thro
     Route::get('/promotions', [AdminPromotionController::class, 'index'])->name('admin.promotions.index');
     Route::get('/promotions/create', [AdminPromotionController::class, 'create'])->name('admin.promotions.create');
     Route::post('/promotions', [AdminPromotionController::class, 'store'])->name('admin.promotions.store');
+    Route::post('/promotions/attempts/{user}/reset', [AdminPromotionController::class, 'resetAttempts'])->name('admin.promotions.attempts.reset');
     Route::get('/promotions/{promotion}/edit', [AdminPromotionController::class, 'edit'])->name('admin.promotions.edit');
     Route::put('/promotions/{promotion}', [AdminPromotionController::class, 'update'])->name('admin.promotions.update');
     Route::post('/promotions/{promotion}/toggle', [AdminPromotionController::class, 'toggle'])->name('admin.promotions.toggle');

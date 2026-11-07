@@ -15,9 +15,9 @@ use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Admin-configured Lucky promotions: awarding a code to a generated
- * itinerary, validating it against the exact basket lines it was issued for,
- * and the redemption lifecycle (reserved at submission, redeemed at the first
+ * Admin-configured Lucky promotions: rolling for a discount on a generated
+ * itinerary, validating it against the exact basket lines it was won for, and
+ * the redemption lifecycle (reserved at submission, redeemed at the first
  * verified payment, released if the unpaid request closes).
  *
  * All money is integer centavos. Discount values come from the terms
@@ -29,35 +29,30 @@ final class PromotionService
     public const MINIMUM_PAYABLE_CENTS = 100;
 
     /**
-     * Pick an active campaign for a newly generated itinerary, weighted by the
-     * admin-defined award weights, or none when no campaign applies.
+     * Roll for a discount on a newly generated itinerary: pick an applicable
+     * campaign by the admin-defined award weights, then let its win chance
+     * decide. Null means no campaign applies or this attempt did not win.
      *
      * @param  array{destination_id: int, nights: int, pax: int, check_in_date: string}  $selection
      */
     public function awardFor(User $user, array $selection, int $eligibleCents): ?Promotion
     {
-        $candidates = Promotion::query()->where('is_active', true)
-            ->where(fn ($q) => $q->whereNull('issue_starts_at')->orWhere('issue_starts_at', '<=', now()))
-            ->where(fn ($q) => $q->whereNull('issue_ends_at')->orWhere('issue_ends_at', '>', now()))
-            ->where(fn ($q) => $q->whereNull('redeem_ends_at')->orWhere('redeem_ends_at', '>', now()))
-            ->where('award_weight', '>', 0)->orderBy('id')->get()
-            ->filter(fn (Promotion $promotion) => $this->selectionProblem($promotion->termsSnapshot(), $selection, $eligibleCents) === null
-                && $this->hasCapacity($promotion) && $this->redemptionsBy($promotion, $user) < $promotion->per_traveler_limit
-                && LuckyOffer::query()->where('promotion_id', $promotion->id)->where('user_id', $user->id)->whereNotNull('code')
-                    ->where('created_at', '>=', now()->subDay())->count() < $promotion->codes_per_traveler_per_day)
+        $candidates = Promotion::query()->where('is_active', true)->where('award_weight', '>', 0)->where('win_percent', '>', 0)->orderBy('id')->get()
+            ->filter(fn (Promotion $promotion) => $promotion->status() === Promotion::STATUS_ACTIVE
+                && $this->selectionProblem($promotion->termsSnapshot(), $selection, $eligibleCents) === null
+                && $this->redemptionsBy($promotion, $user) < $promotion->per_traveler_limit)
             ->values();
         if ($candidates->isEmpty()) {
             return null;
         }
         $ticket = random_int(1, $candidates->sum('award_weight'));
-        foreach ($candidates as $promotion) {
+        $picked = $candidates->first(function (Promotion $promotion) use (&$ticket) {
             $ticket -= $promotion->award_weight;
-            if ($ticket <= 0) {
-                return $promotion;
-            }
-        }
 
-        return $candidates->last();
+            return $ticket <= 0;
+        });
+
+        return random_int(1, 100) <= $picked->win_percent ? $picked : null;
     }
 
     /**
@@ -150,7 +145,35 @@ final class PromotionService
     }
 
     /**
-     * Validate a code against the traveler's selected basket lines.
+     * The discount the basket qualifies for, found without the traveler doing
+     * anything: the largest of its won itineraries, since a booking takes one.
+     * When none qualifies, the notice says why the last one did not.
+     *
+     * @param  Collection<int, CartItem>  $cartItems  the selected basket lines
+     * @return array{evaluation: ?array<string, mixed>, notice: ?string}
+     */
+    public function forBasket(User $user, Collection $cartItems, int $payableCents): array
+    {
+        $offers = LuckyOffer::query()->where('user_id', $user->id)->whereNotNull('promotion_id')
+            ->whereIn('id', $cartItems->pluck('lucky_offer_id')->filter()->unique())->pluck('uuid');
+        $best = null;
+        $notice = null;
+        foreach ($offers as $uuid) {
+            try {
+                $evaluation = $this->evaluate($user, $uuid, $cartItems, $payableCents);
+                if ($best === null || $evaluation['discount_cents'] > $best['discount_cents']) {
+                    $best = $evaluation;
+                }
+            } catch (ValidationException $exception) {
+                $notice = $exception->errors()['lucky_offer'][0];
+            }
+        }
+
+        return ['evaluation' => $best, 'notice' => $best ? null : $notice];
+    }
+
+    /**
+     * Validate a won discount against the traveler's selected basket lines.
      *
      * @param  Collection<int, CartItem>  $cartItems  the selected basket lines
      * @param  array<int, float>|null  $subtotals  authoritative line subtotals by cart line id (submission); cart prices otherwise
@@ -158,25 +181,25 @@ final class PromotionService
      *
      * @throws ValidationException
      */
-    public function evaluate(User $user, string $code, Collection $cartItems, int $payableCents, ?array $subtotals = null): array
+    public function evaluate(User $user, string $offerUuid, Collection $cartItems, int $payableCents, ?array $subtotals = null): array
     {
-        $reject = fn (string $message) => throw ValidationException::withMessages(['promotion_code' => $message]);
-        $offer = LuckyOffer::query()->with('promotion')->where('code', strtoupper(trim($code)))->first();
+        $reject = fn (string $message) => throw ValidationException::withMessages(['lucky_offer' => $message]);
+        $offer = LuckyOffer::query()->with('promotion')->where('uuid', $offerUuid)->first();
         if (! $offer || $offer->user_id !== $user->id || ! $offer->promotion) {
-            $reject('This code is not valid for your account.');
+            $reject('This Lucky discount is not available on your account.');
         }
         $terms = $offer->terms;
         if (! $offer->promotion->is_active) {
             $reject('This Lucky promotion is no longer active.');
         }
         if ($offer->redemption()->exists()) {
-            $reject('This code has already been used and cannot be applied again.');
+            $reject('This Lucky discount has already been used.');
         }
         if ($offer->isExpired()) {
-            $reject('This code expired on '.$offer->expires_at->timezone('Asia/Manila')->format('M j, Y g:i A').'.');
+            $reject('This Lucky discount expired on '.$offer->expires_at->timezone('Asia/Manila')->format('M j, Y g:i A').'.');
         }
         if (! empty($terms['redeem_starts_at']) && Carbon::parse($terms['redeem_starts_at'])->isFuture()) {
-            $reject('This code can be used from '.Carbon::parse($terms['redeem_starts_at'])->timezone('Asia/Manila')->format('M j, Y g:i A').'.');
+            $reject('This Lucky discount can be used from '.Carbon::parse($terms['redeem_starts_at'])->timezone('Asia/Manila')->format('M j, Y g:i A').'.');
         }
         if (! empty($terms['redeem_ends_at']) && Carbon::parse($terms['redeem_ends_at'])->isPast()) {
             $reject('This promotion’s redemption period has ended.');
@@ -199,7 +222,7 @@ final class PromotionService
         }
         $discount = $this->discountCents($terms, $eligibleCents, $payableCents);
         if ($discount <= 0) {
-            $reject('This code gives no discount on the current total.');
+            $reject('This Lucky discount gives nothing off the current total.');
         }
 
         return ['offer' => $offer, 'promotion' => $offer->promotion, 'terms' => $terms, 'lines' => $lines, 'eligible_cents' => $eligibleCents, 'discount_cents' => $discount];
@@ -217,18 +240,18 @@ final class PromotionService
         $promotion = Promotion::query()->lockForUpdate()->findOrFail($evaluation['promotion']->id);
         LuckyOffer::query()->lockForUpdate()->findOrFail($evaluation['offer']->id);
         if (! $promotion->is_active || ! $this->hasCapacity($promotion) || $this->redemptionsBy($promotion, $user) >= (int) ($evaluation['terms']['per_traveler_limit'] ?? 1)) {
-            throw ValidationException::withMessages(['promotion_code' => 'This Lucky promotion is no longer available. Remove the code to continue.']);
+            throw ValidationException::withMessages(['lucky_offer' => 'This Lucky promotion is no longer available.']);
         }
         $items = $evaluation['lines']->map(fn (CartItem $line) => $bookingItems[$line->id]);
         $allocations = $this->allocate($items, $evaluation['discount_cents']);
         try {
             $redemption = PromotionRedemption::create([
                 'promotion_id' => $promotion->id, 'lucky_offer_id' => $evaluation['offer']->id, 'booking_id' => $booking->id, 'user_id' => $user->id,
-                'code' => $evaluation['offer']->code, 'status' => PromotionRedemption::STATUS_RESERVED, 'eligible_cents' => $evaluation['eligible_cents'],
+                'status' => PromotionRedemption::STATUS_RESERVED, 'eligible_cents' => $evaluation['eligible_cents'],
                 'discount_cents' => $evaluation['discount_cents'], 'allocations' => $allocations, 'terms' => $evaluation['terms'], 'reserved_at' => now(),
             ]);
         } catch (UniqueConstraintViolationException) {
-            throw ValidationException::withMessages(['promotion_code' => 'This code has already been used and cannot be applied again.']);
+            throw ValidationException::withMessages(['lucky_offer' => 'This Lucky discount has already been used.']);
         }
         $this->applyAllocations($items, $allocations);
 
@@ -245,8 +268,8 @@ final class PromotionService
     }
 
     /**
-     * Return the campaign capacity of an unpaid booking that closed. The code is
-     * retired, not reissued; a redemption already paid for is never released.
+     * Return the campaign capacity of an unpaid booking that closed. The won
+     * discount is retired; a redemption already paid for is never released.
      */
     public function releaseForBooking(Booking $booking, string $reason): void
     {
@@ -274,7 +297,7 @@ final class PromotionService
             $this->releaseForBooking($booking, 'A Lucky itinerary item was excluded or changed during availability review.');
             $this->applyAllocations($items, collect($items)->map(fn (BookingItem $item) => ['booking_item_id' => $item->id, 'discount_cents' => 0])->all());
 
-            return ['discount' => 0.0, 'note' => 'Lucky code '.$redemption->code.' no longer applies because an item of its itinerary was excluded or changed during availability review; its ₱'
+            return ['discount' => 0.0, 'note' => 'The Lucky discount no longer applies because an item of its itinerary was excluded or changed during availability review; its ₱'
                 .number_format($redemption->discount_cents / 100, 2).' discount was removed.'];
         }
         $eligible = (int) round($items->sum(fn (BookingItem $item) => (float) $item->subtotal) * 100);
@@ -285,7 +308,7 @@ final class PromotionService
         $this->applyAllocations($items, $allocations);
 
         return ['discount' => $discount / 100, 'note' => $discount !== $previous
-            ? 'Lucky code '.$redemption->code.' discount recalculated to ₱'.number_format($discount / 100, 2).' after availability review.' : null];
+            ? 'Lucky discount recalculated to ₱'.number_format($discount / 100, 2).' after availability review.' : null];
     }
 
     /**
@@ -323,13 +346,13 @@ final class PromotionService
     }
 
     /**
-     * Why the basket no longer holds the complete, unchanged itinerary the code was issued for, if it does not.
+     * Why the basket no longer holds the complete, unchanged itinerary the discount was won for, if it does not.
      *
      * @param  Collection<int, CartItem>  $lines
      */
     private function bindingProblem(LuckyOffer $offer, Collection $lines): ?string
     {
-        $incomplete = 'The code applies only to its complete, unchanged Lucky itinerary. Keep every item of that itinerary selected, or generate a new Lucky offer.';
+        $incomplete = 'Your Lucky discount applies only to its complete, unchanged itinerary. Keep every item of that itinerary selected.';
         $rooms = $lines->where('item_type', 'room');
         $activities = $lines->where('item_type', 'activity');
         $room = $rooms->first();
@@ -340,10 +363,10 @@ final class PromotionService
         }
         if ($room->item_id !== $offer->room_id || $room->quantity !== 1 || $room->check_in_date?->toDateString() !== $offer->check_in_date->toDateString()
             || $room->check_out_date?->toDateString() !== $offer->check_out_date->toDateString()) {
-            return 'The room or dates of this Lucky itinerary changed in your basket. Changing a bound room or date needs a new Lucky offer.';
+            return 'The room or dates of your Lucky itinerary changed in your basket, so its discount no longer applies.';
         }
         if ($lines->contains(fn (CartItem $line) => (int) $line->selected_pax !== $offer->pax)) {
-            return 'This Lucky offer was issued for '.$offer->pax.' traveler'.($offer->pax === 1 ? '' : 's').'. A different guest count needs a new Lucky offer.';
+            return 'Your Lucky discount was won for '.$offer->pax.' traveler'.($offer->pax === 1 ? '' : 's').', so it does not apply to a different guest count.';
         }
 
         return null;
@@ -358,19 +381,19 @@ final class PromotionService
     private function selectionProblem(array $terms, array $selection, int $eligibleCents): ?string
     {
         if (! empty($terms['destination_ids']) && ! in_array((int) $selection['destination_id'], array_map('intval', $terms['destination_ids']), true)) {
-            return 'This code does not cover the itinerary’s destination.';
+            return 'This discount does not cover the itinerary’s destination.';
         }
         if ((! empty($terms['travel_starts_on']) && $selection['check_in_date'] < $terms['travel_starts_on'])
             || (! empty($terms['travel_ends_on']) && $selection['check_in_date'] > $terms['travel_ends_on'])) {
-            return 'This code covers travel between '.($terms['travel_starts_on'] ?? 'now').' and '.($terms['travel_ends_on'] ?? 'any later date').' only.';
+            return 'This discount covers travel between '.($terms['travel_starts_on'] ?? 'now').' and '.($terms['travel_ends_on'] ?? 'any later date').' only.';
         }
         foreach (['nights' => 'night', 'pax' => 'traveler'] as $field => $label) {
             if ((! empty($terms['min_'.$field]) && $selection[$field] < $terms['min_'.$field]) || (! empty($terms['max_'.$field]) && $selection[$field] > $terms['max_'.$field])) {
-                return 'This code requires '.($terms['min_'.$field] ?? 1).($terms['max_'.$field] ? '–'.$terms['max_'.$field] : '+').' '.$label.'s.';
+                return 'This discount requires '.($terms['min_'.$field] ?? 1).($terms['max_'.$field] ? '–'.$terms['max_'.$field] : '+').' '.$label.'s.';
             }
         }
         if ($eligibleCents < (int) ($terms['min_eligible_cents'] ?? 0)) {
-            return 'This code needs an eligible itinerary subtotal of at least ₱'.number_format($terms['min_eligible_cents'] / 100, 2).'.';
+            return 'This discount needs an eligible itinerary subtotal of at least ₱'.number_format($terms['min_eligible_cents'] / 100, 2).'.';
         }
 
         return null;

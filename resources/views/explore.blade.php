@@ -117,6 +117,35 @@
                                           x-text="'★ ' + Number(selected.rating).toFixed(1) + ' (' + selected.review_count + ')'"></span>
                                 </template>
                             </div>
+
+                            {{-- Written turn-by-turn directions from the user's location --}}
+                            <div class="space-y-2 border-t border-slate-100 dark:border-slate-800 pt-3">
+                                <h3 class="font-label text-[11px] font-extrabold uppercase tracking-widest text-slate-500 dark:text-slate-400">Directions from you</h3>
+                                <template x-if="!userCoords">
+                                    <button type="button" @click="locate()" :disabled="locating"
+                                        class="inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-xl border border-ocean-200 dark:border-ocean-800 bg-ocean-50 dark:bg-ocean-900/50 px-3 py-2.5 font-body text-xs font-bold text-ocean-700 dark:text-ocean-100 transition hover:bg-ocean-100 dark:hover:bg-ocean-900 disabled:opacity-60 cursor-pointer">
+                                        <span class="material-symbols-outlined text-[16px]" aria-hidden="true">directions_walk</span>
+                                        <span x-text="locating ? 'Locating you…' : 'Get directions from my location'"></span>
+                                    </button>
+                                </template>
+                                <p x-show="directionsStatus === 'loading'" role="status" class="font-body text-xs text-slate-500 dark:text-slate-400">Finding the walking route…</p>
+                                <p x-show="directionsStatus === 'empty'" class="font-body text-xs text-slate-500 dark:text-slate-400">Written directions aren't available for this route. Follow the line on the map.</p>
+                                <ol x-show="directions.length" :aria-label="'Directions to ' + selected.name"
+                                    class="max-h-80 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+                                    <template x-for="(step, index) in directions" :key="index">
+                                        <li>
+                                            <button type="button" @click="focusStep(index)" :aria-current="activeStep === index ? 'step' : null"
+                                                :class="activeStep === index ? 'bg-ocean-50 dark:bg-ocean-900/50' : 'hover:bg-slate-50 dark:hover:bg-slate-800'"
+                                                class="flex min-h-11 w-full items-start gap-2.5 px-3 py-2 text-left transition cursor-pointer">
+                                                <span class="material-symbols-outlined mt-px shrink-0 text-[18px] text-ocean-600 dark:text-ocean-300" aria-hidden="true" x-text="step.icon"></span>
+                                                <span class="flex-1 font-body text-xs text-slate-700 dark:text-slate-300" x-text="step.instruction"></span>
+                                                <span class="shrink-0 font-body text-[11px] font-bold text-slate-500 dark:text-slate-400" x-text="step.distance_label"></span>
+                                            </button>
+                                        </li>
+                                    </template>
+                                </ol>
+                                <p x-show="directions.some(step => step.unnamed)" class="font-body text-[11px] leading-relaxed text-slate-500 dark:text-slate-400">Some paths here have no name on OpenStreetMap, so those steps show only the turn.</p>
+                            </div>
                             <div class="flex flex-wrap gap-2" x-show="selected.type === 'activity'">
                                 <button type="button"
                                         @click="$store.preview.openActivityById(selected.id)"
@@ -160,9 +189,13 @@
                 map: null,
                 layer: null,
                 lineLayer: null,
+                stepLayer: null,
                 markerLayers: new Map(),
                 selected: null,
                 routeRequest: 0,
+                directions: [],
+                directionsStatus: 'idle',
+                activeStep: null,
                 userCoords: null,
                 userMarker: null,
                 locating: false,
@@ -187,6 +220,7 @@
                     });
                     tiles.on('tileerror', () => { this.tilesDown = true; });
                     tiles.addTo(this.map);
+                    this.stepLayer = L.layerGroup().addTo(this.map);
                     this.render();
                     this.$watch('selected', (val) => {
                         if (val && this.map) {
@@ -215,10 +249,12 @@
                     this.locating = true;
                     this.geoError = null;
                     navigator.geolocation.getCurrentPosition(
-                        (pos) => {
+                        async (pos) => {
                             this.userCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
                             this.locating = false;
-                            this.fetchDistances();
+                            await this.fetchDistances();
+                            // render() replaced the route line, so redraw the selected pin's route and directions.
+                            if (this.selected) this.loadRoute(this.selected);
                         },
                         (err) => {
                             this.locating = false;
@@ -355,8 +391,16 @@
                         this.map.flyTo([m.lat, m.lng], 12, { animate: !reduced });
                     }
                     this.highlight(`${m.type}-${m.id}`, true);
+                    await this.loadRoute(m);
+                },
+
+                async loadRoute(m) {
                     const request = ++this.routeRequest;
                     this.lineLayer?.clearLayers();
+                    this.stepLayer?.clearLayers();
+                    this.directions = [];
+                    this.activeStep = null;
+                    this.directionsStatus = this.userCoords ? 'loading' : 'idle';
                     if (!this.userCoords) return;
                     try {
                         const params = new URLSearchParams({ from_lat: this.userCoords.lat, from_lng: this.userCoords.lng, to_lat: m.lat, to_lng: m.lng });
@@ -365,6 +409,7 @@
                         const route = (await response.json()).data;
                         if (request !== this.routeRequest) return;
                         if (!route?.available) {
+                            this.directionsStatus = 'idle';
                             this.geoError = 'A route is unavailable for this location or travel mode.';
                             return;
                         }
@@ -372,9 +417,28 @@
                         m.distance_label = route.distance_km < 1 ? Math.round(route.distance_km * 1000) + ' m' : route.distance_km.toFixed(1) + ' km';
                         m.duration_minutes = route.duration_minutes;
                         L.geoJSON(route.geometry, { style: { color: '#0a78a8', weight: 3 } }).addTo(this.lineLayer);
+                        this.directions = window.routeDirections?.directionRows(route) ?? [];
+                        this.directionsStatus = this.directions.length ? 'ready' : 'empty';
                     } catch (_) {
-                        if (request === this.routeRequest) this.geoError = 'Could not load the road route. Please try again.';
+                        if (request !== this.routeRequest) return;
+                        this.directionsStatus = 'idle';
+                        this.geoError = 'Could not load the road route. Please try again.';
                     }
+                },
+
+                // Highlight one written step: its stretch of the route and the turn point.
+                focusStep(index) {
+                    const step = this.directions[index];
+                    if (!step || !this.map || !this.stepLayer) return;
+                    this.activeStep = index;
+                    this.stepLayer.clearLayers();
+                    if (step.segment.length > 1) {
+                        L.polyline(step.segment, { color: '#111827', weight: 7, opacity: 0.85 }).addTo(this.stepLayer);
+                    }
+                    L.circleMarker(step.location, { radius: 7, color: '#ffffff', weight: 2, fillColor: '#111827', fillOpacity: 1 }).addTo(this.stepLayer);
+                    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+                    this.map.flyTo(step.location, Math.max(this.map.getZoom(), 17), { animate: !reduced });
+                    window.routeDirections?.revealMap(document.getElementById('exploreMap'));
                 },
 
                 setFilter(type) {

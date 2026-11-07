@@ -29,17 +29,34 @@ beforeEach(function () {
     $this->contact = ['contact_name' => 'Ana Reyes', 'contact_email' => $this->user->email, 'contact_phone' => '09171234567', 'guest_manifest' => null];
 });
 
-it('previews the discount on the Lucky group only', function () {
-    $this->postJson(route('checkout.promotion.apply'), ['promotion_code' => strtolower($this->offer->code)])
-        ->assertOk()
-        ->assertJson(['success' => true, 'code' => $this->offer->code, 'discount' => 400, 'eligible_subtotal' => 4000])
-        ->assertJsonMissing(['eligible_line_ids' => [$this->ordinary->id]]);
+it('shows the won discount at checkout on the Lucky items only, with nothing to type', function () {
+    $this->get(route('checkout.index'))->assertOk()
+        ->assertViewHas('luckyDiscount', ['offer' => $this->offer->uuid, 'amount' => 400, 'eligible' => '₱4,000.00', 'notice' => null])
+        ->assertSee('name="lucky_offer"', false)->assertDontSee('promotion-code-input', false)->assertDontSee('Lucky code');
 
     expect(PromotionRedemption::count())->toBe(0);
 });
 
+it('applies no discount to a basket without a won itinerary', function () {
+    $this->offer->update(['promotion_id' => null, 'terms' => null]);
+
+    $this->get(route('checkout.index'))->assertOk()->assertViewHas('luckyDiscount', ['offer' => '', 'amount' => 0, 'eligible' => '', 'notice' => null]);
+});
+
+it('uses the largest won discount when the basket holds more than one', function () {
+    $bigger = LuckyOffer::factory()->create([
+        'user_id' => $this->user->id, 'promotion_id' => $this->promotion->id, 'destination_id' => $this->trip['destination']->id, 'room_id' => $this->trip['room']->id,
+        'nights' => 3, 'pax' => 2, 'check_in_date' => now()->addDays(40)->toDateString(), 'check_out_date' => now()->addDays(43)->toDateString(),
+        'terms' => ['percent_off' => 50] + $this->promotion->termsSnapshot(),
+    ]);
+    CartItem::create(['user_id' => $this->user->id, 'item_type' => 'room', 'item_id' => $this->trip['room']->id, 'is_selected' => true, 'quantity' => 1, 'selected_pax' => 2,
+        'check_in_date' => $bigger->check_in_date, 'check_out_date' => $bigger->check_out_date, 'lucky_offer_id' => $bigger->id]);
+
+    $this->get(route('checkout.index'))->assertOk()->assertViewHas('luckyDiscount', fn (array $discount) => $discount['offer'] === $bigger->uuid && $discount['amount'] === 1500);
+});
+
 it('applies the discount at submission from server prices and ignores forged totals', function () {
-    $this->postJson(route('checkout.process'), $this->contact + ['promotion_code' => $this->offer->code, 'promotion_discount_amount' => 4999, 'net_amount' => 1])->assertOk();
+    $this->postJson(route('checkout.process'), $this->contact + ['lucky_offer' => $this->offer->uuid, 'promotion_discount_amount' => 4999, 'net_amount' => 1])->assertOk();
 
     $booking = Booking::sole();
     $redemption = PromotionRedemption::sole();
@@ -50,16 +67,19 @@ it('applies the discount at submission from server prices and ignores forged tot
         ->and((float) $booking->items->firstWhere('item_id', $this->ordinary->item_id)->promotion_discount_amount)->toBe(0.0);
 });
 
-it('rejects a code that belongs to another traveler', function () {
-    $this->actingAs(onboardedUser())->postJson(route('checkout.promotion.apply'), ['promotion_code' => $this->offer->code])
-        ->assertUnprocessable()->assertJsonValidationErrors(['promotion_code' => 'not valid for your account']);
+it('rejects a discount won by another traveler', function () {
+    $other = onboardedUser();
+    CartItem::create(['user_id' => $other->id, 'item_type' => 'activity', 'item_id' => $this->ordinary->item_id, 'is_selected' => true, 'quantity' => 2, 'selected_pax' => 2]);
+
+    $this->actingAs($other)->postJson(route('checkout.process'), $this->contact + ['lucky_offer' => $this->offer->uuid])
+        ->assertUnprocessable()->assertJsonValidationErrors(['lucky_offer' => 'not available on your account']);
 });
 
-it('rejects expired, not-yet-valid and paused codes', function (Closure $change, string $message) {
+it('explains why an expired, not-yet-valid or paused discount does not apply and keeps the regular price', function (Closure $change, string $message) {
     $change($this->offer, $this->promotion);
 
-    $this->postJson(route('checkout.promotion.apply'), ['promotion_code' => $this->offer->code])
-        ->assertUnprocessable()->assertJsonValidationErrors(['promotion_code' => $message]);
+    $this->get(route('checkout.index'))->assertOk()
+        ->assertViewHas('luckyDiscount', fn (array $discount) => $discount['offer'] === '' && $discount['amount'] === 0 && str_contains($discount['notice'], $message));
 })->with([
     'expired' => [fn ($offer) => $offer->update(['expires_at' => now()->subMinute()]), 'expired'],
     'not yet valid' => [fn ($offer) => $offer->update(['terms' => ['redeem_starts_at' => now()->addDay()->toAtomString()] + $offer->terms]), 'can be used from'],
@@ -69,35 +89,41 @@ it('rejects expired, not-yet-valid and paused codes', function (Closure $change,
 it('requires the complete, unchanged Lucky itinerary', function (Closure $change, string $message) {
     $change($this->offer);
 
-    $this->postJson(route('checkout.promotion.apply'), ['promotion_code' => $this->offer->code])
-        ->assertUnprocessable()->assertJsonValidationErrors(['promotion_code' => $message]);
+    $this->get(route('checkout.index'))->assertOk()
+        ->assertViewHas('luckyDiscount', fn (array $discount) => $discount['amount'] === 0 && str_contains($discount['notice'], $message));
 })->with([
     'activity deselected' => [fn ($offer) => CartItem::where('lucky_offer_id', $offer->id)->where('item_type', 'activity')->first()->update(['is_selected' => false]), 'complete, unchanged'],
     'room dates changed' => [fn ($offer) => CartItem::where('lucky_offer_id', $offer->id)->where('item_type', 'room')->first()->update(['check_out_date' => $offer->check_out_date->addDay()]), 'room or dates'],
     'guest count changed' => [fn ($offer) => CartItem::where('lucky_offer_id', $offer->id)->where('item_type', 'room')->first()->update(['selected_pax' => 3]), 'traveler'],
 ]);
 
-it('lets a code be used once and keeps the last campaign slot for one booking', function () {
-    $this->postJson(route('checkout.process'), $this->contact + ['promotion_code' => $this->offer->code])->assertOk();
+it('books at the regular price when no discount is submitted', function () {
+    $this->postJson(route('checkout.process'), $this->contact)->assertOk();
 
-    $this->postJson(route('checkout.promotion.apply'), ['promotion_code' => $this->offer->code])
-        ->assertUnprocessable()->assertJsonValidationErrors(['promotion_code' => 'already been used']);
+    expect((float) Booking::sole()->net_amount)->toBe(5000.0)->and(PromotionRedemption::count())->toBe(0);
+});
+
+it('lets a discount be used once and keeps the last campaign slot for one booking', function () {
+    $this->postJson(route('checkout.process'), $this->contact + ['lucky_offer' => $this->offer->uuid])->assertOk();
+
+    expect(fn () => app(PromotionService::class)->evaluate($this->user, $this->offer->uuid, collect(), 100000))->toThrow(ValidationException::class, 'already been used');
 
     // A second traveler's evaluation passed before the last slot was taken; the locked reservation rechecks it.
     $this->promotion->update(['total_redemption_limit' => 1]);
     $other = onboardedUser();
-    $otherOffer = LuckyOffer::factory()->create(['user_id' => $other->id, 'promotion_id' => $this->promotion->id, 'code' => 'LUCKY-RACE01', 'terms' => $this->promotion->termsSnapshot()]);
+    $otherOffer = LuckyOffer::factory()->create(['user_id' => $other->id, 'promotion_id' => $this->promotion->id, 'terms' => $this->promotion->termsSnapshot()]);
     $item = BookingItem::factory()->create();
     $evaluation = ['offer' => $otherOffer, 'promotion' => $this->promotion, 'terms' => $otherOffer->terms, 'lines' => collect([new CartItem(['item_type' => 'room'])->forceFill(['id' => 99])]),
         'eligible_cents' => 100000, 'discount_cents' => 10000];
     expect(fn () => app(PromotionService::class)->reserve($item->booking, $other, $evaluation, [99 => $item]))->toThrow(ValidationException::class);
 });
 
-it('refuses a code at submission when the basket changed after Apply', function () {
-    $this->postJson(route('checkout.promotion.apply'), ['promotion_code' => $this->offer->code])->assertOk();
+it('stops the submission so the traveler can review the total when the discount no longer applies', function () {
+    $this->get(route('checkout.index'))->assertViewHas('luckyDiscount', fn (array $discount) => $discount['amount'] === 400);
     CartItem::where('lucky_offer_id', $this->offer->id)->where('item_type', 'activity')->first()->delete();
 
-    $this->postJson(route('checkout.process'), $this->contact + ['promotion_code' => $this->offer->code])->assertUnprocessable();
+    $this->postJson(route('checkout.process'), $this->contact + ['lucky_offer' => $this->offer->uuid])
+        ->assertUnprocessable()->assertJsonValidationErrors(['lucky_offer' => 'complete, unchanged']);
     expect(Booking::count())->toBe(0)->and(PromotionRedemption::count())->toBe(0);
 });
 
@@ -113,7 +139,7 @@ it('rounds percentages half up, honours caps and never goes below the payment mi
 });
 
 it('redeems at the first verified payment and releases an unpaid request that expires', function () {
-    $this->postJson(route('checkout.process'), $this->contact + ['promotion_code' => $this->offer->code]);
+    $this->postJson(route('checkout.process'), $this->contact + ['lucky_offer' => $this->offer->uuid]);
     $booking = Booking::sole();
     $booking->update(['status' => 'approved', 'approved_at' => now(), 'payment_deadline' => now()->addDay()]);
 
@@ -128,7 +154,7 @@ it('redeems at the first verified payment and releases an unpaid request that ex
 });
 
 it('removes the discount when an admin excludes a Lucky item at approval', function () {
-    $this->postJson(route('checkout.process'), $this->contact + ['promotion_code' => $this->offer->code]);
+    $this->postJson(route('checkout.process'), $this->contact + ['lucky_offer' => $this->offer->uuid]);
     $booking = Booking::sole()->load('items');
     $excluded = $booking->items->first(fn ($item) => $item->item_type === 'activity' && ($item->item_snapshot['lucky_offer_id'] ?? null) === $this->offer->id);
     $items = $booking->items->mapWithKeys(fn ($item) => [$item->id => ['include' => $item->id === $excluded->id ? 0 : 1, 'quantity' => $item->quantity]])->all();
@@ -145,7 +171,7 @@ it('removes the discount when an admin excludes a Lucky item at approval', funct
 
 it('bases the installment deposit on the discounted total', function () {
     config(['system_settings.payments.installments_enabled' => true]);
-    $this->postJson(route('checkout.process'), $this->contact + ['promotion_code' => $this->offer->code]);
+    $this->postJson(route('checkout.process'), $this->contact + ['lucky_offer' => $this->offer->uuid]);
     $booking = Booking::sole()->load('items');
     $items = $booking->items->mapWithKeys(fn ($item) => [$item->id => ['include' => 1, 'quantity' => $item->quantity]])->all();
 

@@ -467,9 +467,10 @@ class ItineraryService
      *                      graph snapped far from the real coordinate;
      *   straight_line    - a direct line when the graph cannot connect them at
      *                      all, which is a visual aid only and never a distance.
+     * Written directions (steps) only accompany the routed road geometry.
      *
      * @return array{from: string, to: string, mode: string, distance_km: float|null, duration_minutes: int|null,
-     *     geometry: array|null, geometry_status: string, geometry_kind: string, connectors: list<array>}
+     *     geometry: array|null, geometry_status: string, geometry_kind: string, connectors: list<array>, steps: list<array>}
      */
     private function leg(array $from, array $to, array $matrix, string $mode): array
     {
@@ -478,11 +479,13 @@ class ItineraryService
         $seconds = $matrix['durations'][$from['point_index']][$to['point_index']] ?? null;
         $geometry = $route['geometry'];
         $connectors = [];
+        $steps = [];
         if ($geometry === null) {
             $geometry = $this->routing->straightLine($from['point'], $to['point']);
             $kind = $geometry === null ? 'none' : 'straight_line';
         } else {
             $kind = 'road';
+            $steps = $route['steps'] ?? [];
             $coordinates = $geometry['coordinates'];
             foreach ([[$from, $route['snap_offset_from_meters'] ?? null, $coordinates[0]],
                 [$to, $route['snap_offset_to_meters'] ?? null, $coordinates[count($coordinates) - 1]]] as [$point, $offset, $snapped]) {
@@ -497,7 +500,7 @@ class ItineraryService
             'distance_km' => $distance === null ? null : (float) $distance,
             'duration_minutes' => $seconds === null ? null : (int) ceil($seconds / 60),
             'geometry' => $geometry, 'geometry_status' => $route['status'],
-            'geometry_kind' => $kind, 'connectors' => array_values(array_filter($connectors))];
+            'geometry_kind' => $kind, 'connectors' => array_values(array_filter($connectors)), 'steps' => $steps];
     }
 
     private function reason(array $choice, array $previous, array $candidate, array $leg, string $mode): string

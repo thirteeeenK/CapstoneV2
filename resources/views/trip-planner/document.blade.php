@@ -14,6 +14,7 @@
         .stop { padding: 12px 0; border-bottom: 1px solid #d7e3e6; page-break-inside: avoid; }
         .reason { margin-top: 5px; } .event { margin: 8px 0; } .report { margin-top: 24px; } .report h2 { page-break-after: avoid; }
         .warn { color: #8a4b00; }
+        .directions { margin-top: 5px; } .directions ol { margin: 4px 0 0 16px; padding: 0; } .directions li { margin: 1px 0; }
         table.prices { width: 100%; border-collapse: collapse; margin-top: 8px; page-break-inside: avoid; }
         table.prices th, table.prices td { text-align: left; padding: 5px 6px; border-bottom: 1px solid #d7e3e6; vertical-align: top; }
         table.prices td.amount, table.prices th.amount { text-align: right; white-space: nowrap; }
@@ -34,6 +35,8 @@
             'none' => 'No mapped route between these points',
             default => 'Route basis not recorded for this version',
         };
+        $distances = app(\App\Services\DistanceService::class);
+        $stepDistance = fn (array $step) => $step['maneuver'] !== 'arrive' && (float) $step['distance_m'] > 0 ? ' · '.$distances->format((float) $step['distance_m'] / 1000) : '';
         $booked = isset($booking) && $booking;
         $bookedItems = $booked ? $booking->items->filter(fn ($item) => (isset($itinerary['itinerary_id']) && ($item->item_snapshot['trip_itinerary_id'] ?? null) === $itinerary['itinerary_id'])
             || in_array($item->item_snapshot['trip_plan_item_id'] ?? null, $itinerary['booked_plan_item_ids'] ?? [], true))->values() : collect();
@@ -109,6 +112,9 @@
                     @php($stop = $entry['data'])
                     <article class="stop"><h3>{{ $i + 1 }}. {{ $stop['start'] }}–{{ $stop['end'] }} · {{ $stop['name'] }}</h3>
                         <p class="muted">@if ($stop['travel']['distance_km'] !== null && $stop['travel']['duration_minutes'] !== null){{ number_format($stop['travel']['distance_km'], 2) }} km · {{ $stop['travel']['duration_minutes'] }} min {{ $itinerary['mode'] }} from {{ $stop['travel']['from'] }}@else Distance and travel time from {{ $stop['travel']['from'] }} are unavailable @endif · {{ $routeBasis($stop['travel']) }}</p>
+                        @if (! empty($stop['travel']['steps']) && ! in_array($stop['travel']['geometry_kind'] ?? null, ['straight_line', 'none'], true))
+                            <div class="directions"><strong>Directions from {{ $stop['travel']['from'] }}:</strong><ol>@foreach ($stop['travel']['steps'] as $step)<li>{{ $step['instruction'] }}{{ $stepDistance($step) }}</li>@endforeach</ol></div>
+                        @endif
                         @if (! empty($stop['travel_estimated']))<p class="warn">Location approximate: the exact meeting point is not set, so travel is measured from the destination centre. Confirm it with the operator.</p>@endif
                         @if (isset($itinerary['booked_plan_item_ids']))<p>{{ in_array($stop['plan_item_id'], $itinerary['booked_plan_item_ids'], true) ? 'Included in booking request; current availability and booking status apply.' : 'Planning choice only; not purchased in this booking.' }}</p>@endif
                         <p class="{{ $stop['weather']['provisional'] ? 'warn' : '' }}">{{ $stop['weather']['provisional'] ? 'Provisional forecast: ' : 'Weather: ' }}{{ $stop['weather']['description'] }}</p>

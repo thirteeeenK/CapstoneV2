@@ -56,14 +56,15 @@ final class BookingPaymentPolicy
         if (! $deadlineOverride && $cutoff && $cutoff->lt($initial)) {
             $initial = $cutoff->copy();
         }
+        $manila = fn (Carbon $time) => $time->copy()->timezone('Asia/Manila')->format('M j, Y g:i A');
         if ($initial->gt($windowEnd)) {
-            throw ValidationException::withMessages(['payment_deadline_override' => 'The initial deadline cannot exceed the payment window measured from reservation submission.']);
+            throw ValidationException::withMessages(['payment_deadline_override' => 'Choose a time on or before '.$manila($windowEnd).' (Philippine time), '.$settings['initial_window_hours'].' hours after the traveler submitted. Leave the field blank to use that time.']);
         }
         if ($eligible && $initial->gte($balanceDue)) {
-            throw ValidationException::withMessages(['payment_deadline_override' => 'Choose an initial deadline strictly before the remaining balance deadline.']);
+            throw ValidationException::withMessages(['payment_deadline_override' => 'Choose a time before '.$manila($balanceDue).' (Philippine time), when the remaining balance is due.']);
         }
         if ($initial->lte(now()) || ($start && $initial->gte($start))) {
-            throw ValidationException::withMessages(['payment_deadline_override' => 'No valid payment window remains. The deadline must be in the future, within the submission payment window, and before check-in or the first confirmed service. Review or reschedule this request.']);
+            throw ValidationException::withMessages(['payment_deadline_override' => 'No valid payment window remains. The deadline must be in the future, no later than '.$manila($windowEnd).', and before check-in or the first confirmed service'.($start ? ' ('.$manila($start).')' : '').'. Reject this request and ask the traveler to rebook.']);
         }
 
         return [
@@ -94,6 +95,26 @@ final class BookingPaymentPolicy
                 'service_start' => $start?->toIso8601String(), 'timezone' => 'Asia/Manila', 'deposit_percent' => 50,
             ],
         ];
+    }
+
+    /**
+     * What the approval screen needs before an admin submits: the default terms,
+     * the latest deadline an override may use, and why approval is impossible
+     * when no payment window remains.
+     *
+     * @return array{terms: array<string, mixed>|null, latest: Carbon|null, blocked_reason: string|null}
+     */
+    public function approvalBounds(Booking $booking): array
+    {
+        try {
+            $terms = $this->approvalData($booking);
+        } catch (ValidationException $exception) {
+            return ['terms' => null, 'latest' => null, 'blocked_reason' => collect($exception->errors())->flatten()->first()];
+        }
+        $latest = Carbon::parse($terms['payment_policy']['initial_window_ends_at'])->timezone('Asia/Manila');
+        $start = $terms['payment_policy']['service_start'] ? Carbon::parse($terms['payment_policy']['service_start'])->subMinute() : null;
+
+        return ['terms' => $terms, 'latest' => $start && $start->lt($latest) ? $start->timezone('Asia/Manila') : $latest, 'blocked_reason' => null];
     }
 
     public function depositUnavailableReason(Booking $booking): ?string

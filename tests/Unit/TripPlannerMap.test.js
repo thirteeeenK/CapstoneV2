@@ -855,6 +855,83 @@ test('every scheduled stop gets a visible line and unplaced picks stay on the ma
     }
 });
 
+test('a written step highlights its stretch of the leg and the next map render clears it', async () => {
+    const originalGlobals = new Map(['window', 'document', 'L', 'ResizeObserver', 'requestAnimationFrame', 'cancelAnimationFrame'].map(key => [key, globalThis[key]]));
+    const container = { isConnected: true };
+    const drawn = [];
+    const flights = [];
+    let currentLayers;
+    const layer = (kind, data) => ({ kind, ...data, addTo(group) { assert.equal(group, currentLayers); drawn.push(this); return this; },
+        bindTooltip() { return this; }, on() { return this; } });
+    const leaflet = {
+        map: () => ({ setView() { return this; }, stop() {}, invalidateSize() {}, fitBounds() {}, remove() {}, flyTo(point, zoom) { flights.push({ point, zoom }); } }),
+        tileLayer: () => ({ on() { return this; }, addTo() {} }),
+        featureGroup() {
+            currentLayers = {
+                addTo() { return this; },
+                clearLayers() { drawn.length = 0; },
+                removeLayer(item) { drawn.splice(drawn.indexOf(item), 1); },
+                getLayers: () => drawn, getBounds: () => [],
+            };
+            return currentLayers;
+        },
+        divIcon: options => options,
+        geoJSON: (geometry, options) => layer('route', { geometry, options }),
+        marker: (coordinates, options) => layer('marker', { coordinates, options }),
+        polyline: (coordinates, options) => layer('step', { coordinates, options }),
+        circleMarker: (coordinates, options) => layer('turn', { coordinates, options }),
+    };
+
+    try {
+        globalThis.L = leaflet;
+        globalThis.window = { L: leaflet, addEventListener() {}, removeEventListener() {} };
+        globalThis.document = { createElement: () => ({ textContent: '', style: {}, append() {} }) };
+        globalThis.ResizeObserver = class { observe() {} disconnect() {} };
+        globalThis.requestAnimationFrame = callback => { callback(); return 1; };
+        globalThis.cancelAnimationFrame = () => {};
+        const planner = tripPlanner({ destinations: [], plans: [], destination: 0, emailPreferences: {} });
+        planner.$refs = { map: container };
+        await planner.init();
+
+        const hotel = { name: 'Hotel', lat: 11.96, lng: 121.92 };
+        const leg = { from: 'Hotel', to: 'Taraw Cliff', mode: 'walking', geometry_kind: 'road', connectors: [],
+            geometry: { type: 'LineString', coordinates: [[121.92, 11.96], [121.921, 11.961], [121.9215, 11.9612]] },
+            steps: [
+                { instruction: 'Head north on Main Road', street: 'Main Road', maneuver: 'depart', distance_m: 120, way_points: [0, 1], location: [121.92, 11.96] },
+                { instruction: 'Turn right', street: null, maneuver: 'right', distance_m: 60, way_points: [1, 2], location: [121.921, 11.961] },
+                { instruction: 'Arrive at your destination', street: null, maneuver: 'arrive', distance_m: 0, way_points: [2, 2], location: [121.9215, 11.9612] },
+            ] };
+        const day = (number, legs) => ({ day: number, hotel, events: [], stops: [{ name: 'Taraw Cliff', lat: 11.9612, lng: 121.9215, travel: legs[0] }], legs });
+        planner.destinationId = 2;
+        planner.tab = 'itinerary';
+        planner.itinerary = { snapshot: { days: [day(1, [leg]), day(2, [leg])], unscheduled: [] } };
+        planner.renderMap();
+
+        await planner.focusStep(1, leg, 1);
+        assert.equal(planner.activeDay, 1, 'choosing a step on another day switches to that day');
+        const highlight = () => drawn.filter(item => item.kind === 'step' || item.kind === 'turn');
+        assert.deepEqual(highlight().map(item => item.coordinates), [[[11.961, 121.921], [11.9612, 121.9215]], [11.961, 121.921]]);
+        assert.deepEqual(flights.at(-1), { point: [11.961, 121.921], zoom: 17 });
+
+        await planner.focusStep(1, leg, 2);
+        assert.deepEqual(highlight().map(item => item.kind), ['turn'], 'a single-point arrival replaces the previous highlight');
+
+        planner.renderMap();
+        assert.equal(highlight().length, 0);
+
+        assert.equal(planner.directionsState(leg), 'list');
+        assert.equal(planner.directionsState({ ...leg, steps: undefined }), 'legacy');
+        assert.equal(planner.directionsState({ ...leg, steps: [] }), 'none');
+        assert.equal(planner.directionsState({ ...leg, geometry_kind: 'straight_line' }), 'hidden');
+        planner.destroy();
+    } finally {
+        for (const [key, value] of originalGlobals) {
+            if (value === undefined) delete globalThis[key];
+            else globalThis[key] = value;
+        }
+    }
+});
+
 function plannerWithChoices() {
     const planner = tripPlanner({ destinations: [], plans: [], emailPreferences: {} });
     const room = { type: 'room', id: 3, name: 'Garden Room', base_price: 2000, base_occupancy: 2, extra_person_fee: 500, max_pax: 4 };

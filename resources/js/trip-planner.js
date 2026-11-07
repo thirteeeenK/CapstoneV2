@@ -1,4 +1,5 @@
 import { durationLabel, tripDays, tripEndDate } from './trip-duration.js';
+import { directionRows, revealMap } from './route-directions.js';
 // One colour per itinerary day so overlapping days stay readable. Brand palette
 // only, and no purple, per the SunnyTrips colour rules.
 const dayColors = ['#0a78a8', '#e85e37', '#0f766e', '#085e85', '#b45309', '#15803d', '#be123c'];
@@ -19,6 +20,8 @@ export default (config) => {
     const clockStartedAt = Date.now();
     const serverClock = Date.parse(config.datePolicy?.serverNow || '');
     const previewMarkers = new Map();
+    // The highlighted written step lives in `layers`, so every renderMap() clears it.
+    let stepHighlight = [];
 
     return {
     destinations: config.destinations, savedPlans: config.plans, destinationId: Number(config.destination || 0),
@@ -447,6 +450,28 @@ export default (config) => {
         const lat = Number(stop.lat), lng = Number(stop.lng);
         if (map && stop.lat != null && stop.lng != null && Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180) map.flyTo([lat, lng], 16);
     },
+    /**
+     * Which written-directions block a leg gets: none for a straight line (it already
+     * explains the boat or transfer), a hint for itineraries saved before steps existed.
+     */
+    directionsState(leg) {
+        if (!leg || leg.geometry_kind === 'straight_line' || leg.geometry_kind === 'none' || !leg.geometry) return 'hidden';
+        if (!Array.isArray(leg.steps)) return 'legacy';
+        return directionRows(leg).length ? 'list' : 'none';
+    },
+    legDirections(leg) { return directionRows(leg); },
+    /** Highlight one written step on the map: its stretch of the leg and the turn point. */
+    async focusStep(dayIndex, leg, stepIndex) {
+        const step = directionRows(leg)[stepIndex];
+        if (!map || !layers || !step) return;
+        if (this.activeDay !== dayIndex) await this.selectDay(dayIndex, true);
+        stepHighlight.forEach(layer => layers.removeLayer(layer));
+        stepHighlight = [];
+        if (step.segment.length > 1) stepHighlight.push(L.polyline(step.segment, { color: '#111827', weight: 7, opacity: 0.85 }).addTo(layers));
+        stepHighlight.push(L.circleMarker(step.location, { radius: 7, color: '#ffffff', weight: 2, fillColor: '#111827', fillOpacity: 1 }).addTo(layers));
+        map.flyTo(step.location, 17);
+        revealMap(this.$refs.map);
+    },
     peso(amount) { return '₱' + Number(amount || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); },
     nightsBetween(from, to) {
         if (!from || !to) return 1;
@@ -640,6 +665,7 @@ export default (config) => {
         map.stop();
         map.invalidateSize({ pan: false, debounceMoveend: true });
         layers.clearLayers();
+        stepHighlight = [];
         previewMarkers.clear();
         this.routeNotice = '';
         const viewportParts = [this.destinationId, this.tab, this.activeDay];
@@ -789,7 +815,7 @@ export default (config) => {
         map?.remove();
         if (container?.sunnyTripsMap === map) delete container.sunnyTripsMap;
         if (container) delete container.sunnyTripsResizeFrame;
-        resizeObserver = null; pageShowHandler = null; map = null; layers = null;
+        resizeObserver = null; pageShowHandler = null; map = null; layers = null; stepHighlight = [];
         previewMarkers.clear();
     },
     };

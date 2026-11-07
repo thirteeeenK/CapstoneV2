@@ -11,6 +11,7 @@ use App\Notifications\BookingNotification;
 use App\Notifications\BookingRequestReceived;
 use App\Services\BookingRequestService;
 use App\Services\CartService;
+use App\Services\PromotionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
@@ -88,7 +89,16 @@ class CheckoutController extends Controller
         // Fetch dynamic active category rules from database
         $categoryRules = PassengerCategoryRule::where('is_active', true)->get();
 
-        return view('checkout.index', compact('cartItems', 'totalAmount', 'netAmount', 'categoryRules'));
+        // A won Lucky discount needs no input: the page shows it and submits the offer it was priced from.
+        $lucky = app(PromotionService::class)->forBasket($request->user(), $cartItems, (int) round($cartItems->sum(fn ($item) => $item->subtotal) * 100));
+        $luckyDiscount = [
+            'offer' => $lucky['evaluation']['offer']->uuid ?? '',
+            'amount' => ($lucky['evaluation']['discount_cents'] ?? 0) / 100,
+            'eligible' => $lucky['evaluation'] ? '₱'.number_format($lucky['evaluation']['eligible_cents'] / 100, 2) : '',
+            'notice' => $lucky['notice'],
+        ];
+
+        return view('checkout.index', compact('cartItems', 'totalAmount', 'netAmount', 'categoryRules', 'luckyDiscount'));
     }
 
     /**
@@ -102,7 +112,7 @@ class CheckoutController extends Controller
             'contact_phone' => 'required|string|regex:/^\d{11}$/|max:30',
             'special_requests' => 'nullable|string|max:1000',
             'guest_manifest' => 'nullable|string|max:50000',
-            'promotion_code' => 'nullable|string|max:40',
+            'lucky_offer' => 'nullable|uuid',
         ], [
             'contact_phone.regex' => 'The mobile phone number must be exactly 11 digits.',
         ]);

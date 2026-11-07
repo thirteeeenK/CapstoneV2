@@ -85,7 +85,6 @@
         <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
 
             {{-- Journal masthead --}}
-            @include('trip-planner._booking-itinerary')
             <div class="flex items-center justify-between mb-5">
                 <p class="font-label text-[10px] uppercase font-bold tracking-[0.25em] text-slate-400 dark:text-slate-500">
                     SunnyTrips · Traveler Journal
@@ -449,16 +448,21 @@
 
                     {{-- 1. Expedition Itinerary --}}
                     <section class="bg-white dark:bg-slate-900 rounded-3xl border border-sand-200/80 dark:border-slate-700/80 shadow-xs overflow-hidden">
-                        <header class="px-6 sm:px-8 pt-6 pb-4 border-b border-sand-100 dark:border-slate-800 flex items-center justify-between gap-3">
-                            <h2 class="font-headline text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2.5">
-                                <span class="w-8 h-8 rounded-xl bg-ocean-50 dark:bg-ocean-900/50 text-ocean-600 border border-ocean-100 dark:border-ocean-800 flex items-center justify-center">
-                                    <span class="material-symbols-outlined text-[18px]">luggage</span>
+                        <header class="px-6 sm:px-8 pt-6 pb-4 border-b border-sand-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
+                            <div class="flex items-center gap-3">
+                                <h2 class="font-headline text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2.5">
+                                    <span class="w-8 h-8 rounded-xl bg-ocean-50 dark:bg-ocean-900/50 text-ocean-600 border border-ocean-100 dark:border-ocean-800 flex items-center justify-center">
+                                        <span class="material-symbols-outlined text-[18px]">luggage</span>
+                                    </span>
+                                    Expedition Itinerary
+                                </h2>
+                                <span class="font-label text-[10px] uppercase font-bold tracking-[0.15em] text-slate-400 dark:text-slate-500">
+                                    {{ $booking->items->count() }} {{ Str::plural('item', $booking->items->count()) }}
                                 </span>
-                                Expedition Itinerary
-                            </h2>
-                            <span class="font-label text-[10px] uppercase font-bold tracking-[0.15em] text-slate-400 dark:text-slate-500">
-                                {{ $booking->items->count() }} {{ Str::plural('item', $booking->items->count()) }}
-                            </span>
+                            </div>
+                            @if (count($booking->trip_itineraries ?? []) === 1)
+                                @include('trip-planner._booking-itinerary-links', ['version' => 0])
+                            @endif
                         </header>
 
                         <div class="px-6 sm:px-8 divide-y divide-sand-100 dark:divide-slate-800">
@@ -506,6 +510,9 @@
                                 </div>
                             @endforeach
                         </div>
+
+                        {{-- Day-by-day plan saved at checkout (trip planner bookings only) --}}
+                        @include('trip-planner._booking-itinerary')
                     </section>
 
                     {{-- 2. Ship Manifest --}}
@@ -790,7 +797,7 @@
 
                             @if($booking->promotion_discount_amount > 0)
                                 <div class="flex items-center justify-between text-emerald-700 dark:text-emerald-100 font-semibold">
-                                    <dt>Lucky discount{{ $booking->promotionRedemption ? ' ('.$booking->promotionRedemption->code.')' : '' }}</dt>
+                                    <dt>Lucky discount</dt>
                                     <dd>-₱{{ number_format($booking->promotion_discount_amount, 2) }}</dd>
                                 </div>
                             @endif

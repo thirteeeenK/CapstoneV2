@@ -14,7 +14,7 @@
         <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
                 <h1 class="text-xl sm:text-2xl font-bold text-slate-900 font-headline">Lucky Promotions</h1>
-                <p class="text-xs sm:text-sm text-slate-500 mt-1">Codes are issued to a single traveler for one generated Lucky itinerary and apply only to that itinerary’s room and activities at checkout. Without an active campaign, no discount is promised.</p>
+                <p class="text-xs sm:text-sm text-slate-500 mt-1">Each I’m Feeling Lucky attempt has a chance to win a campaign’s discount. A win applies automatically at checkout to that itinerary’s room and activities, with nothing to type.</p>
             </div>
 
             <a href="{{ route('admin.promotions.create') }}"
@@ -31,10 +31,26 @@
             </div>
         @endif
 
+        <form action="{{ route('admin.settings.update', 'lucky') }}" method="POST" class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs mb-6 flex flex-wrap items-end gap-3">
+            @csrf
+            @method('PATCH')
+            <input type="hidden" name="section" value="lucky">
+            <input type="hidden" name="revision" value="{{ $attemptsRevision }}">
+            <div>
+                <label for="daily-attempts" class="block text-xs font-bold text-slate-800 mb-1">Daily attempts per traveler</label>
+                <input id="daily-attempts" type="number" name="values[daily_attempts]" min="1" max="100" required value="{{ old('values.daily_attempts', $dailyAttempts) }}" aria-describedby="daily-attempts-hint"
+                       class="w-32 px-3 py-2 rounded-xl border border-slate-200 text-sm text-slate-900 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">
+            </div>
+            <button type="submit" class="min-h-11 px-5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs cursor-pointer">Save</button>
+            <p id="daily-attempts-hint" class="text-xs text-slate-500 basis-full">Shared between the Lucky page and the chatbot, and resets at midnight Philippine time.</p>
+            @error('values.daily_attempts')<p class="text-xs text-rose-600 basis-full">{{ $message }}</p>@enderror
+            @error('revision')<p class="text-xs text-rose-600 basis-full">{{ $message }}</p>@enderror
+        </form>
+
         <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
             @foreach ([
                 ['Active campaigns', $stats['active'], 'campaign', 'bg-sky-50 text-sky-600 border-sky-200'],
-                ['Codes issued', $stats['codes'], 'confirmation_number', 'bg-slate-50 text-slate-600 border-slate-200'],
+                ['Discounts won', $stats['wins'], 'emoji_events', 'bg-slate-50 text-slate-600 border-slate-200'],
                 ['Reserved at checkout', $stats['reserved'], 'hourglass_top', 'bg-amber-50 text-amber-600 border-amber-200'],
                 ['Redeemed (paid)', $stats['redeemed'], 'verified', 'bg-emerald-50 text-emerald-600 border-emerald-200'],
             ] as [$label, $value, $icon, $tone])
@@ -55,7 +71,7 @@
                 <div class="relative w-full sm:w-72">
                     <span class="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-sm">search</span>
                     <label for="promotion-search" class="sr-only">Search campaigns</label>
-                    <input id="promotion-search" type="text" name="search" x-model="search" value="{{ $search }}" placeholder="Search name or code prefix..."
+                    <input id="promotion-search" type="text" name="search" x-model="search" value="{{ $search }}" placeholder="Search campaign name..."
                            @input="debouncedSearch()"
                            class="w-full pl-9 pr-4 py-2 rounded-xl border border-slate-200 text-xs font-medium text-slate-900 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">
                 </div>
@@ -73,5 +89,7 @@
             <div x-show="error" x-cloak role="alert" class="mb-4 flex flex-wrap items-center gap-3 rounded-lg bg-rose-50 p-3 text-sm text-rose-800 dark:bg-rose-950 dark:text-rose-200"><p x-text="error" class="flex-1"></p><button type="button" @click="retryResults()" class="min-h-11 px-3 font-bold underline underline-offset-4">Retry</button></div>
             @include('admin.promotions._results', compact('promotions'))
         </div>
+
+        @include('admin.promotions._attempts-exhausted')
     </div>
 @endsection

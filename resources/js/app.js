@@ -8,10 +8,12 @@ import plannerScheduling from './admin-planner-scheduling';
 import adminLiveList from './admin-live-list';
 import { displayChatMessages } from './chat-sections';
 import { durationLabel, tripDays, tripEndDate } from './trip-duration';
+import { directionRows, revealMap } from './route-directions';
 
 window.Alpine = Alpine;
 window.displayChatMessages = displayChatMessages;
 window.tripDuration = { durationLabel, tripDays, tripEndDate };
+window.routeDirections = { directionRows, revealMap };
 
 Alpine.plugin(focus);
 Alpine.data('tripPlanner', tripPlanner);

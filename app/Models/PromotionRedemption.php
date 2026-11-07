@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable([
-    'promotion_id', 'lucky_offer_id', 'booking_id', 'user_id', 'code', 'status', 'eligible_cents', 'discount_cents',
+    'promotion_id', 'lucky_offer_id', 'booking_id', 'user_id', 'status', 'eligible_cents', 'discount_cents',
     'allocations', 'terms', 'status_reason', 'reserved_at', 'redeemed_at', 'released_at',
 ])]
 class PromotionRedemption extends Model

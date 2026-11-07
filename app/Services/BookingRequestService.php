@@ -157,9 +157,9 @@ class BookingRequestService
             $totalAmount += $itemSubtotal;
         }
 
-        // A Lucky code is priced from the server's own line subtotals; the browser only names the code.
-        $promotion = filled($validated['promotion_code'] ?? null) && $request->user()
-            ? $this->promotions->evaluate($request->user(), $validated['promotion_code'], $cartItems,
+        // A Lucky discount is priced from the server's own line subtotals; the browser only names the offer.
+        $promotion = filled($validated['lucky_offer'] ?? null) && $request->user()
+            ? $this->promotions->evaluate($request->user(), $validated['lucky_offer'], $cartItems,
                 BookingQuoteService::payableBeforePromotionCents($totalAmount, $discountAmount, $surchargeAmount), array_map(fn ($calc) => $calc['subtotal'], $calculatedItemSubtotals))
             : null;
         $promotionDiscount = $promotion ? $promotion['discount_cents'] / 100 : 0.00;

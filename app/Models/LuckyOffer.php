@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 #[Fillable([
-    'uuid', 'user_id', 'promotion_id', 'code', 'promotion_revision', 'terms', 'destination_id', 'room_id', 'activity_ids',
+    'uuid', 'user_id', 'promotion_id', 'promotion_revision', 'terms', 'destination_id', 'room_id', 'activity_ids',
     'nights', 'pax', 'check_in_date', 'check_out_date', 'max_budget', 'budget_exceeded', 'quoted_total_cents',
     'estimated_discount_cents', 'selection_signature', 'lucky_group_id', 'accepted_at', 'expires_at',
 ])]
@@ -55,11 +55,6 @@ class LuckyOffer extends Model
     public function redemption(): HasOne
     {
         return $this->hasOne(PromotionRedemption::class);
-    }
-
-    public function hasCode(): bool
-    {
-        return $this->code !== null;
     }
 
     public function isExpired(): bool

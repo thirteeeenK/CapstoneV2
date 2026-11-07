@@ -44,6 +44,9 @@ class UpdateSystemSettingsRequest extends FormRequest
                 'undated_balance_days' => ['required', 'integer', 'between:1,90'],
                 'service_cutoff_hours' => ['required', 'integer', 'between:1,72'],
             ],
+            'lucky' => [
+                'daily_attempts' => ['required', 'integer', 'between:1,100'],
+            ],
             'chatbot' => [
                 'daily_limit' => ['required', 'integer', 'between:1,1000'],
                 'minute_limit' => ['required', 'integer', 'between:1,10'],

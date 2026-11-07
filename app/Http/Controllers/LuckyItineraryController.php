@@ -25,16 +25,17 @@ class LuckyItineraryController extends Controller
     /**
      * Display the "I'm Feeling Lucky" generator page.
      */
-    public function index()
+    public function index(Request $request)
     {
         $destinations = DestinationModel::orderBy('name')->get(['id', 'name', 'region']);
+        $attempts = $this->offers->attempts($request->user());
 
-        return view('lucky.index', compact('destinations'));
+        return view('lucky.index', compact('destinations', 'attempts'));
     }
 
     /**
-     * Generate a random surprise itinerary within the applied filters and save
-     * it as the traveler's offer (with a code when a Lucky promotion applies).
+     * Spend one daily attempt on a random surprise itinerary within the applied
+     * filters, saved as the traveler's offer with any discount it won.
      */
     public function generate(Request $request)
     {
@@ -50,6 +51,10 @@ class LuckyItineraryController extends Controller
             'start_date' => 'nullable|date|after:today',
         ]);
 
+        if ($this->offers->attempts($request->user())['left'] <= 0) {
+            return $this->attemptsUsed($request);
+        }
+
         $result = $this->luckyService->generate($validated);
 
         if (isset($result['message']) && ! isset($result['destination'])) {
@@ -57,15 +62,23 @@ class LuckyItineraryController extends Controller
         }
 
         $offer = $this->offers->issue($request->user(), $result, (float) ($validated['max_budget'] ?? 20000));
+        if (! $offer) {
+            return $this->attemptsUsed($request);
+        }
         $result['offer'] = $this->offers->present($offer);
 
-        return response()->json(['success' => true, 'itinerary' => $result]);
+        return response()->json(['success' => true, 'itinerary' => $result, 'attempts' => $this->offers->attempts($request->user())]);
+    }
+
+    private function attemptsUsed(Request $request): JsonResponse
+    {
+        return response()->json(['success' => false, 'message' => LuckyOfferService::ATTEMPTS_USED_MESSAGE, 'attempts' => $this->offers->attempts($request->user())], 429);
     }
 
     /**
      * Accept a generated itinerary: recompute server-side, then add all items to
      * the cart as a single lucky group. A saved offer is accepted by its id, at
-     * most once; the older field-based payload stays supported without a code.
+     * most once; the older field-based payload stays supported without a discount.
      */
     public function accept(Request $request)
     {
@@ -166,14 +179,14 @@ class LuckyItineraryController extends Controller
         $plan = $this->offers->planFor($request->user(), $offer);
 
         return response()->json(['success' => true, 'plan_id' => $plan->id, 'url' => route('trip-planner.index', ['plan' => $plan->id]),
-            'message' => 'Opened in the Trip Planner. Build the checked schedule there to see routes and weather; your basket and code are unchanged.']);
+            'message' => 'Opened in the Trip Planner. Build the checked schedule there to see routes and weather; your basket and discount are unchanged.']);
     }
 
     private function accepted(Request $request, ?string $groupId, ?LuckyOffer $offer, string $message): JsonResponse
     {
         return response()->json([
             'success' => true,
-            'message' => $message.($offer?->code ? ' Use code '.$offer->code.' at checkout.' : ''),
+            'message' => $message.($offer?->promotion_id ? ' Your Lucky discount applies automatically at checkout.' : ''),
             'group_id' => $groupId,
             'offer' => $offer ? $this->offers->present($offer->refresh()) : null,
             'cart_count' => $this->cartService->getCartQuery($request)->count(),

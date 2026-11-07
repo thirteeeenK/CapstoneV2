@@ -458,12 +458,9 @@
                                                     <p class="text-slate-600 dark:text-slate-400" x-text="'• ' + act.activity_name + ' (' + act.formatted_rate + ')'"></p>
                                                 </template>
                                                 <p class="font-bold text-ocean-700 dark:text-ocean-300" x-text="'Total: ' + msg.lucky.itinerary.formatted_total"></p>
-                                                <template x-if="msg.lucky.offer && msg.lucky.offer.code">
+                                                <template x-if="msg.lucky.offer && msg.lucky.offer.won">
                                                     <div class="rounded-lg bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 p-2 space-y-1">
-                                                        <div class="flex items-center justify-between gap-2">
-                                                            <code class="font-mono font-bold text-emerald-900 dark:text-emerald-100" x-text="msg.lucky.offer.code"></code>
-                                                            <button type="button" @click="copyLuckyCode(msg.lucky.offer.code)" class="min-h-11 px-2 font-bold text-emerald-700 dark:text-emerald-300 underline underline-offset-4">Copy</button>
-                                                        </div>
+                                                        <p class="font-bold text-emerald-900 dark:text-emerald-100">You won a Lucky discount. It applies automatically at checkout.</p>
                                                         <p class="text-emerald-800 dark:text-emerald-200" x-text="msg.lucky.offer.discount_label + ' · est. saving ' + msg.lucky.offer.formatted_estimated_saving + ' · until ' + msg.lucky.offer.formatted_expires_at"></p>
                                                         <details><summary class="cursor-pointer text-emerald-800 dark:text-emerald-200">Terms</summary>
                                                             <ul class="list-disc pl-4 mt-1 space-y-0.5 text-emerald-900/80 dark:text-emerald-100/80"><template x-for="term in msg.lucky.offer.terms" :key="term"><li x-text="term"></li></template></ul>
@@ -1440,14 +1437,6 @@
                     if (found) return found.id === suggestion.id;
                 }
                 return true;
-            },
-
-            async copyLuckyCode(code) {
-                try {
-                    await navigator.clipboard.writeText(code);
-                } catch (err) {
-                    alert('Copy is unavailable here. Your code is ' + code + '.');
-                }
             },
 
             /**

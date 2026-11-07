@@ -1,11 +1,21 @@
 <?php
 
 use App\Models\CartItem;
+use App\Models\DestinationModel;
 use App\Models\LuckyOffer;
 use App\Models\Promotion;
+use App\Models\PromotionRedemption;
 use App\Models\RoomType;
 use App\Models\TripPlan;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Notification;
+
+/** Tests run on UTC while the deployed app runs on Philippine time; timing rules must hold on both. */
+function runAppIn(string $timezone): void
+{
+    config(['app.timezone' => $timezone]);
+    date_default_timezone_set($timezone);
+}
 
 beforeEach(function () {
     Notification::fake();
@@ -20,41 +30,127 @@ it('saves every generated itinerary and promises no discount without an active c
     $itinerary = $this->actingAs($this->user)->postJson(route('lucky.generate'), $this->filters)->assertOk()->json('itinerary');
 
     $offer = LuckyOffer::sole();
-    expect($itinerary['offer']['id'])->toBe($offer->uuid)->and($itinerary['offer']['code'])->toBeNull()
+    expect($itinerary['offer']['id'])->toBe($offer->uuid)->and($itinerary['offer']['won'])->toBeFalse()
         ->and($offer->user_id)->toBe($this->user->id)->and($offer->quoted_total_cents)->toBe(400000)
         ->and($offer->room_id)->toBe($this->trip['room']->id);
 });
 
-it('issues an owner-bound code with its terms, expiry and estimated saving', function () {
+it('awards a discount with its terms, expiry and estimated saving', function () {
     $promotion = Promotion::factory()->create(['name' => 'Rainy Season Lucky', 'percent_off' => 10, 'offer_valid_hours' => 48]);
 
     $offerData = $this->actingAs($this->user)->postJson(route('lucky.generate'), $this->filters)->json('itinerary.offer');
 
     $offer = LuckyOffer::sole();
-    expect($offerData['code'])->toStartWith('LUCKY-')->toBe($offer->code)
+    expect($offerData)->not->toHaveKey('code')->and($offerData['won'])->toBeTrue()->and($offer->promotion_id)->toBe($promotion->id)
         ->and($offerData['formatted_estimated_saving'])->toBe('₱400.00')
         ->and($offerData['terms'])->not->toBeEmpty()
         ->and($offer->terms['percent_off'])->toBe(10)->and($offer->promotion_revision)->toBe($promotion->fresh()->revision)
         ->and($offer->expires_at->diffInHours(now(), true))->toBeGreaterThan(47.9);
 });
 
-it('stops awarding codes once the daily reshuffle allowance is used', function () {
-    Promotion::factory()->create(['codes_per_traveler_per_day' => 1]);
-    $this->actingAs($this->user);
+it('still gives an itinerary at the regular price when an attempt does not win', function () {
+    Promotion::factory()->create(['win_percent' => 0]);
 
-    $first = $this->postJson(route('lucky.generate'), $this->filters)->json('itinerary.offer.code');
-    $second = $this->postJson(route('lucky.generate'), $this->filters)->json('itinerary.offer.code');
+    $response = $this->actingAs($this->user)->postJson(route('lucky.generate'), $this->filters)->assertOk();
 
-    expect($first)->not->toBeNull()->and($second)->toBeNull();
+    expect($response->json('itinerary.total'))->toEqual(4000)->and($response->json('itinerary.offer.won'))->toBeFalse()
+        ->and(LuckyOffer::sole())->promotion_id->toBeNull()->estimated_discount_cents->toBe(0);
 });
 
 it('never awards a campaign with zero weight or outside its conditions', function () {
     Promotion::factory()->create(['award_weight' => 0]);
     Promotion::factory()->create(['min_pax' => 3]);
-    Promotion::factory()->create(['issue_starts_at' => now()->addDay()]);
+    Promotion::factory()->create(['redeem_starts_at' => now()->addDay()]);
+    Promotion::factory()->create(['redeem_ends_at' => now()->subDay()]);
 
-    expect($this->actingAs($this->user)->postJson(route('lucky.generate'), $this->filters)->json('itinerary.offer.code'))->toBeNull();
+    expect($this->actingAs($this->user)->postJson(route('lucky.generate'), $this->filters)->json('itinerary.offer.won'))->toBeFalse();
 });
+
+it('stops awarding a campaign once its redemptions are used up, or to a traveler who already used it', function () {
+    $full = Promotion::factory()->create(['total_redemption_limit' => 1]);
+    PromotionRedemption::factory()->create(['promotion_id' => $full->id]);
+    $used = Promotion::factory()->create();
+    PromotionRedemption::factory()->create(['promotion_id' => $used->id, 'user_id' => $this->user->id]);
+
+    expect($this->actingAs($this->user)->postJson(route('lucky.generate'), $this->filters)->json('itinerary.offer.won'))->toBeFalse();
+});
+
+it('ends a won discount with its campaign', function () {
+    $promotion = Promotion::factory()->create(['redeem_ends_at' => now()->addHours(5)]);
+
+    $this->actingAs($this->user)->postJson(route('lucky.generate'), $this->filters)->assertOk();
+
+    expect(LuckyOffer::sole()->expires_at->equalTo($promotion->redeem_ends_at))->toBeTrue();
+});
+
+it('counts attempts down and refuses more once the daily limit is used', function () {
+    config(['system_settings.lucky.daily_attempts' => 2]);
+    $this->actingAs($this->user);
+    $this->get(route('lucky.index'))->assertOk()->assertViewHas('attempts', ['limit' => 2, 'left' => 2]);
+
+    $this->postJson(route('lucky.generate'), $this->filters)->assertOk()->assertJsonPath('attempts.left', 1);
+    $this->postJson(route('lucky.generate'), $this->filters)->assertOk()->assertJsonPath('attempts.left', 0);
+    $this->postJson(route('lucky.generate'), $this->filters)->assertTooManyRequests()
+        ->assertJsonPath('success', false)->assertJsonPath('attempts.left', 0);
+
+    expect(LuckyOffer::count())->toBe(2);
+    $this->get(route('lucky.index'))->assertViewHas('attempts', ['limit' => 2, 'left' => 0]);
+});
+
+it('keeps each traveler’s attempts separate', function () {
+    config(['system_settings.lucky.daily_attempts' => 1]);
+    $this->actingAs($this->user)->postJson(route('lucky.generate'), $this->filters)->assertOk();
+
+    $this->actingAs(onboardedUser())->postJson(route('lucky.generate'), $this->filters)->assertOk();
+});
+
+it('does not spend an attempt when no itinerary could be built', function () {
+    config(['system_settings.lucky.daily_attempts' => 1]);
+    $this->actingAs($this->user);
+
+    $this->postJson(route('lucky.generate'), array_merge($this->filters, ['destination_id' => DestinationModel::factory()->create()->id]))->assertUnprocessable();
+
+    $this->postJson(route('lucky.generate'), $this->filters)->assertOk();
+});
+
+it('resets attempts at midnight Philippine time', function (string $appTimezone) {
+    runAppIn($appTimezone);
+    config(['system_settings.lucky.daily_attempts' => 1]);
+    $this->actingAs($this->user);
+    $this->travelTo(Carbon::parse('2027-02-01 23:50', 'Asia/Manila'));
+    $this->postJson(route('lucky.generate'), $this->filters)->assertOk();
+
+    $this->travelTo(Carbon::parse('2027-02-01 23:59', 'Asia/Manila'));
+    $this->postJson(route('lucky.generate'), $this->filters)->assertTooManyRequests();
+
+    $this->travelTo(Carbon::parse('2027-02-02 00:01', 'Asia/Manila'));
+    $this->postJson(route('lucky.generate'), $this->filters)->assertOk();
+})->with(['UTC', 'Asia/Manila']);
+
+it('counts an early morning attempt toward that Philippine day', function (string $appTimezone) {
+    runAppIn($appTimezone);
+    config(['system_settings.lucky.daily_attempts' => 1]);
+    $this->actingAs($this->user);
+    $this->travelTo(Carbon::parse('2027-02-02 01:00', 'Asia/Manila'));
+    $this->postJson(route('lucky.generate'), $this->filters)->assertOk();
+
+    $this->travelTo(Carbon::parse('2027-02-02 07:00', 'Asia/Manila'));
+    $this->postJson(route('lucky.generate'), $this->filters)->assertTooManyRequests();
+
+    $this->travelTo(Carbon::parse('2027-02-02 23:00', 'Asia/Manila'));
+    $this->postJson(route('lucky.generate'), $this->filters)->assertTooManyRequests();
+})->with(['UTC', 'Asia/Manila']);
+
+it('does not count yesterday evening toward today', function (string $appTimezone) {
+    runAppIn($appTimezone);
+    config(['system_settings.lucky.daily_attempts' => 1]);
+    $this->actingAs($this->user);
+    $this->travelTo(Carbon::parse('2027-02-01 18:00', 'Asia/Manila'));
+    $this->postJson(route('lucky.generate'), $this->filters)->assertOk();
+
+    $this->travelTo(Carbon::parse('2027-02-02 09:00', 'Asia/Manila'));
+    $this->postJson(route('lucky.generate'), $this->filters)->assertOk();
+})->with(['UTC', 'Asia/Manila']);
 
 it('accepts a saved offer into bound basket lines exactly once', function () {
     $this->actingAs($this->user);

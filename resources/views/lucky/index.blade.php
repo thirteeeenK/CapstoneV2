@@ -171,7 +171,7 @@
 
             {{-- Shuffle Button CTA --}}
             <div class="text-center">
-                <button type="button" @click="shuffle()" :disabled="loading || accepting"
+                <button type="button" @click="shuffle()" :disabled="loading || accepting || attempts.left <= 0"
                     class="inline-flex items-center gap-2.5 px-5 sm:px-12 py-3.5 rounded-2xl bg-ocean-600 hover:bg-ocean-700 text-white font-headline font-bold text-sm sm:text-base shadow-md shadow-ocean-600/20 hover:shadow-lg transition-all duration-200 cursor-pointer whitespace-nowrap disabled:opacity-60 disabled:cursor-wait">
                     <template x-if="loading">
                         <span class="w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin"></span>
@@ -182,6 +182,8 @@
                     <span
                         x-text="loading ? 'Generating surprise package…' : (itinerary ? 'Shuffle New Itinerary' : 'Generate Surprise Itinerary')"></span>
                 </button>
+
+                <p class="mt-3 text-xs font-semibold text-slate-600 dark:text-slate-300" aria-live="polite" x-text="attemptsLabel"></p>
 
                 <template x-if="error">
                     <div
@@ -375,31 +377,25 @@
                             </div>
                         </div>
 
-                        {{-- Lucky offer code: issued by the server for this exact itinerary --}}
-                        <template x-if="itinerary.offer && itinerary.offer.code">
+                        {{-- Lucky discount: won by this attempt and applied automatically at checkout --}}
+                        <template x-if="itinerary.offer && itinerary.offer.won">
                             <div class="rounded-2xl border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/60 p-5 space-y-3">
-                                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                                    <div>
-                                        <p class="text-[11px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300" x-text="itinerary.offer.campaign || 'Lucky offer'"></p>
-                                        <p class="font-headline text-lg font-black text-emerald-900 dark:text-emerald-100" x-text="itinerary.offer.discount_label + ' this itinerary'"></p>
-                                        <p class="text-xs text-emerald-800 dark:text-emerald-200 mt-0.5">
-                                            Estimated saving <span class="font-bold" x-text="itinerary.offer.formatted_estimated_saving"></span>
-                                            on an eligible subtotal of <span x-text="itinerary.offer.formatted_eligible_subtotal"></span>
-                                        </p>
-                                    </div>
-                                    <div class="flex items-center gap-2">
-                                        <code class="px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-emerald-300 dark:border-emerald-700 font-mono text-sm font-bold text-slate-900 dark:text-slate-100" x-text="itinerary.offer.code"></code>
-                                        <button type="button" @click="copyCode()" class="min-h-11 inline-flex items-center gap-1 px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold cursor-pointer">
-                                            <span class="material-symbols-outlined text-[16px]" x-text="copied ? 'check' : 'content_copy'"></span>
-                                            <span x-text="copied ? 'Copied' : 'Copy'"></span>
-                                        </button>
-                                    </div>
+                                <div>
+                                    <p class="text-[11px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300" x-text="itinerary.offer.campaign || 'Lucky discount'"></p>
+                                    <p class="font-headline text-lg font-black text-emerald-900 dark:text-emerald-100" x-text="'You won ' + itinerary.offer.discount_label + ' this itinerary!'"></p>
+                                    <p class="text-xs text-emerald-800 dark:text-emerald-200 mt-0.5">
+                                        Estimated saving <span class="font-bold" x-text="itinerary.offer.formatted_estimated_saving"></span>
+                                        on an eligible subtotal of <span x-text="itinerary.offer.formatted_eligible_subtotal"></span>
+                                    </p>
                                 </div>
-                                <p class="text-[11px] text-emerald-800 dark:text-emerald-200" x-text="'Valid until ' + itinerary.offer.formatted_expires_at + ' (Philippine time). Paste it at checkout and press Apply.'"></p>
+                                <p class="text-[11px] text-emerald-800 dark:text-emerald-200" x-text="'Valid until ' + itinerary.offer.formatted_expires_at + ' (Philippine time). It applies automatically at checkout.'"></p>
                                 <ul class="list-disc pl-5 space-y-0.5 text-[11px] text-emerald-900/80 dark:text-emerald-100/80">
                                     <template x-for="term in itinerary.offer.terms" :key="term"><li x-text="term"></li></template>
                                 </ul>
                             </div>
+                        </template>
+                        <template x-if="itinerary.offer && !itinerary.offer.won">
+                            <p class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-5 py-4 text-sm text-slate-700 dark:text-slate-200">No Lucky discount this time. This itinerary is at the regular price.</p>
                         </template>
 
                         {{-- Total Summary & Acceptance Actions --}}
@@ -411,7 +407,7 @@
                                     x-text="itinerary.formatted_total"></p>
                             </div>
                             <div class="flex flex-wrap justify-center gap-3">
-                                <button type="button" @click="shuffle()" :disabled="loading || accepting"
+                                <button type="button" @click="shuffle()" :disabled="loading || accepting || attempts.left <= 0"
                                     class="inline-flex items-center gap-2 px-4 sm:px-5 py-3.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition cursor-pointer disabled:opacity-60">
                                     <span class="material-symbols-outlined text-[16px]">shuffle</span>
                                     <span>Shuffle Again</span>
@@ -456,7 +452,7 @@
                 },
                 loading: false,
                 accepting: false,
-                copied: false,
+                attempts: @js($attempts),
                 planning: false,
 
                 async planSchedule() {
@@ -483,14 +479,10 @@
                 error: null,
                 itinerary: null,
 
-                async copyCode() {
-                    try {
-                        await navigator.clipboard.writeText(this.itinerary.offer.code);
-                        this.copied = true;
-                        setTimeout(() => this.copied = false, 2000);
-                    } catch (err) {
-                        this.error = 'Copy is unavailable in this browser. Select the code and copy it manually.';
-                    }
+                get attemptsLabel() {
+                    return this.attempts.left > 0
+                        ? this.attempts.left + ' of ' + this.attempts.limit + ' attempts left today'
+                        : 'You have used all ' + this.attempts.limit + ' attempts for today. They reset at midnight Philippine time.';
                 },
 
                 get tomorrowStr() {
@@ -513,6 +505,9 @@
                             body: JSON.stringify(this.filters)
                         });
                         const data = await res.json();
+                        if (data.attempts) {
+                            this.attempts = data.attempts;
+                        }
                         if (data.success && data.itinerary) {
                             this.itinerary = data.itinerary;
                             this.$nextTick(() => {

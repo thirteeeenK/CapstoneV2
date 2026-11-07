@@ -464,7 +464,7 @@ test('approval deadline inputs are shown only before approval and extensions ide
     app(BookingPaymentAccountingService::class)->receipt($request, 'bank_stage_labels', 500000);
     $this->get(route('admin.bookings.show', $booking->id))->assertOk()->assertSee('New remaining-balance deadline');
     $pending = Booking::factory()->create();
-    $this->get(route('admin.bookings.show', $pending->id))->assertOk()->assertSee('Set the initial deadline when approving')->assertSee('Testing automatically enabled');
+    $this->get(route('admin.bookings.show', $pending->id))->assertOk()->assertSee('Payment terms')->assertSee('Test payments · no real money')->assertSee('Use an earlier payment deadline (optional)');
 });
 
 test('sandbox QR can pay a deposit and balance on an explicitly approved local test booking', function () {

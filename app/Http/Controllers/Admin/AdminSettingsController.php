@@ -16,7 +16,7 @@ class AdminSettingsController extends Controller
     public function index(Request $request, SystemSettingsService $settings, AdminTwoFactorService $twoFactor): View
     {
         $sections = [];
-        foreach (SystemSettingsService::SECTIONS as $section) {
+        foreach (array_diff(SystemSettingsService::SECTIONS, ['lucky']) as $section) {
             $sections[$section] = ['values' => $settings->section($section), 'revision' => $settings->revision($section)];
         }
 
@@ -30,6 +30,10 @@ class AdminSettingsController extends Controller
     public function update(UpdateSystemSettingsRequest $request, string $section, SystemSettingsService $settings): RedirectResponse
     {
         $settings->save($section, $request->validated('values'), (int) $request->validated('revision'), $request->user('admin'));
+
+        if ($section === 'lucky') {
+            return redirect()->route('admin.promotions.index')->with('success', 'Daily Lucky attempts saved.');
+        }
 
         return redirect()->to(route('admin.settings.index').'#'.$section)
             ->with('success', ucfirst($section).' settings saved.');

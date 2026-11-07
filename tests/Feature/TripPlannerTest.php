@@ -842,7 +842,60 @@ it('preserves the itinerary and the purchased subset on the booking after checko
     expect($booking->trip_itineraries)->toHaveCount(1)->and($booking->trip_itineraries[0]['booked_plan_item_ids'])->toHaveCount(1)
         ->and($booking->trip_itineraries[0]['days'])->toHaveCount(4);
     $this->deleteJson(route('trip-planner.destroy', $this->plan))->assertOk();
-    $this->get(route('booking.show', $booking->booking_code))->assertOk()->assertSee('Your saved itinerary');
+    $this->get(route('booking.show', $booking->booking_code))->assertOk()->assertSee('Day-by-day plan');
+});
+
+function plannerStepsFixture(): array
+{
+    return [
+        ['instruction' => 'Head north on Main Road', 'street' => 'Main Road', 'maneuver' => 'depart', 'distance_m' => 120.0, 'duration_seconds' => 86.0, 'way_points' => [0, 1], 'location' => [121.927, 11.96]],
+        ['instruction' => 'Arrive at your destination', 'street' => null, 'maneuver' => 'arrive', 'distance_m' => 0.0, 'duration_seconds' => 0.0, 'way_points' => [1, 1], 'location' => [121.925, 11.965]],
+    ];
+}
+
+/** A booking holding the snapshot of an itinerary whose road legs carry written directions. */
+function bookedPlannerItinerary(TripPlan $plan, RoomType $room, DestinationModel $destination, array $overrides = []): Booking
+{
+    plannerRouting(['status' => 'ok', 'steps' => plannerStepsFixture(), 'geometry' => ['type' => 'LineString', 'coordinates' => [[121.927, 11.96], [121.925, 11.965]]]]);
+    plannerAdd($plan, 'room', $room->id);
+    plannerAdd($plan, 'activity', plannerActivity($destination)->id);
+    $itinerary = app(ItineraryService::class)->generate($plan->fresh());
+
+    return Booking::factory()->create(['user_id' => $plan->user_id,
+        'trip_itineraries' => [$itinerary->snapshot + ['itinerary_id' => $itinerary->id, 'booked_plan_item_ids' => []]]] + $overrides);
+}
+
+it('shows the booking status first and merges the saved day-by-day plan, with directions, into the itinerary card', function () {
+    $booking = bookedPlannerItinerary($this->plan, $this->room, $this->destination);
+
+    $this->get(route('booking.show', $booking->booking_code))->assertOk()
+        ->assertSeeInOrder(["Your request is on the captain's desk", 'Expedition Itinerary', 'Download itinerary PDF', 'Day-by-day plan', 'Directions from', 'Head north on Main Road', 'Strategic report'])
+        ->assertSee(route('booking.itinerary', [$booking->booking_code, 0, 'print' => 1]), false)
+        ->assertSee('120 m')
+        ->assertDontSee('SunnyTrips · Saved trip plan');
+});
+
+it('explains that a booking saved before written directions existed has none for its road legs', function () {
+    $booking = bookedPlannerItinerary($this->plan, $this->room, $this->destination);
+    $snapshot = $booking->trip_itineraries;
+    foreach ($snapshot[0]['days'] as &$day) {
+        foreach ($day['stops'] as &$stop) {
+            unset($stop['travel']['steps']);
+        }
+    }
+    unset($day, $stop);
+    $booking->update(['trip_itineraries' => $snapshot]);
+
+    $this->get(route('booking.show', $booking->booking_code))->assertOk()
+        ->assertSee("Turn-by-turn directions weren't saved with this itinerary.", false)
+        ->assertDontSee('Head north on Main Road');
+});
+
+it('prints the written directions for each road leg in the booked itinerary document', function () {
+    $booking = bookedPlannerItinerary($this->plan, $this->room, $this->destination);
+
+    $this->get(route('booking.itinerary', [$booking->booking_code, 0, 'print' => 1]))->assertOk()
+        ->assertSee('Directions from')->assertSee('Head north on Main Road · 120 m')->assertSee('Arrive at your destination');
 });
 
 /**
@@ -883,8 +936,25 @@ it('draws a straight line for a scheduled stop the road graph cannot connect', f
         expect($leg['geometry_kind'])->toBe('straight_line')
             ->and($leg['geometry']['type'])->toBe('LineString')
             ->and($leg['geometry']['coordinates'])->toHaveCount(2)
-            ->and($leg['distance_km'])->toBe(1.25);
+            ->and($leg['distance_km'])->toBe(1.25)
+            ->and($leg['steps'])->toBe([]);
     });
+});
+
+it('saves the written directions with each mapped road leg', function () {
+    $steps = [
+        ['instruction' => 'Head north on Main Road', 'street' => 'Main Road', 'maneuver' => 'depart', 'distance_m' => 120.0, 'duration_seconds' => 86.0, 'way_points' => [0, 1], 'location' => [121.927, 11.96]],
+        ['instruction' => 'Arrive at your destination', 'street' => null, 'maneuver' => 'arrive', 'distance_m' => 0.0, 'duration_seconds' => 0.0, 'way_points' => [1, 1], 'location' => [121.925, 11.965]],
+    ];
+    plannerRouting(['status' => 'ok', 'steps' => $steps, 'geometry' => ['type' => 'LineString', 'coordinates' => [[121.927, 11.96], [121.925, 11.965]]]]);
+    plannerAdd($this->plan, 'room', $this->room->id);
+    plannerAdd($this->plan, 'activity', plannerActivity($this->destination)->id);
+    $itinerary = app(ItineraryService::class)->generate($this->plan->fresh());
+    $legs = plannerLegs($itinerary);
+    expect($legs)->not->toBeEmpty();
+    $legs->each(fn (array $leg) => expect($leg['steps'])->toEqual($steps));
+    $stop = collect($itinerary->fresh()->snapshot['days'])->flatMap(fn (array $day) => $day['stops'])->first();
+    expect($stop['travel']['steps'])->toEqual($steps);
 });
 
 it('connects a route to its own marker when the road graph snapped far away', function () {

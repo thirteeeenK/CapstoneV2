@@ -41,7 +41,25 @@ it('keeps unavailable routes unknown without a distance fallback', function () {
     config(['services.routing.base_url' => 'https://routing.test']);
     Http::fake(['routing.test/route*' => Http::response(['error_code' => 442], 400)]);
     $result = app(RoutingService::class)->route(['lat' => 11.9, 'lng' => 121.9], ['lat' => 12, 'lng' => 122]);
-    expect($result['status'])->toBe('no_route')->and($result['distance_km'])->toBeNull()->and($result['geometry'])->toBeNull();
+    expect($result['status'])->toBe('no_route')->and($result['distance_km'])->toBeNull()->and($result['geometry'])->toBeNull()
+        ->and($result['steps'])->toBe([]);
+});
+
+it('normalizes valhalla maneuvers into written directions', function () {
+    config(['services.routing.base_url' => 'https://routing.test']);
+    Cache::flush();
+    $fixture = routingFixture();
+    $fixture['trip']['legs'] = [['maneuvers' => [
+        ['type' => 1, 'instruction' => 'Walk north on Station Road.', 'street_names' => ['Station Road'], 'length' => 0.5, 'time' => 360, 'begin_shape_index' => 0, 'end_shape_index' => 1],
+        ['type' => 10, 'instruction' => 'Turn right.', 'length' => 0.75, 'time' => 570, 'begin_shape_index' => 1, 'end_shape_index' => 2],
+        ['type' => 4, 'instruction' => 'You have arrived at your destination.', 'length' => 0, 'time' => 0, 'begin_shape_index' => 2, 'end_shape_index' => 2],
+    ]]];
+    Http::fake(['routing.test/route*' => Http::response($fixture)]);
+    $steps = app(RoutingService::class)->route(['lat' => 11.9564, 'lng' => 121.9257], ['lat' => 11.9658, 'lng' => 121.9255])['steps'];
+    expect(array_column($steps, 'maneuver'))->toBe(['depart', 'right', 'arrive'])
+        ->and(array_column($steps, 'distance_m'))->toBe([500.0, 750.0, 0.0])
+        ->and(array_column($steps, 'street'))->toBe(['Station Road', null, null])
+        ->and($steps[1]['location'])->toBe([121.927, 11.96]);
 });
 
 it('handles a failed provider connection without inventing travel time', function () {
@@ -154,6 +172,46 @@ function orsGeojson(array $coordinates): array
         'properties' => ['summary' => ['distance' => 12630, 'duration' => 9000]],
     ]]];
 }
+
+function orsGeojsonWithSteps(array $secondWayPoints = [1, 2]): array
+{
+    $route = orsGeojson([[121.9257, 11.9564], [121.927, 11.96], [121.9255, 11.9658]]);
+    $route['features'][0]['properties']['segments'] = [['steps' => [
+        ['distance' => 98.4, 'duration' => 70.8, 'type' => 11, 'instruction' => 'Head northeast on Sunset Road', 'name' => 'Sunset Road', 'way_points' => [0, 1]],
+        ['distance' => 396.0, 'duration' => 285.1, 'type' => 1, 'instruction' => 'Turn right', 'name' => '-', 'way_points' => $secondWayPoints],
+        ['distance' => 0.0, 'duration' => 0.0, 'type' => 10, 'instruction' => 'Arrive at your destination', 'name' => '-', 'way_points' => [2, 2]],
+    ]]];
+
+    return $route;
+}
+
+it('returns written turn-by-turn steps through the authenticated route endpoint', function () {
+    config(['services.routing.ors_api_key' => 'test-key']);
+    Cache::flush();
+    Http::fake(['*' => Http::response(orsGeojsonWithSteps())]);
+    $this->actingAs(onboardedUser())->getJson(route('api.dss.route', [
+        'from_lat' => 11.9564, 'from_lng' => 121.9257, 'to_lat' => 11.9658, 'to_lng' => 121.9255,
+    ]))->assertOk()
+        ->assertJsonCount(3, 'data.steps')
+        ->assertJsonPath('data.steps.0.maneuver', 'depart')
+        ->assertJsonPath('data.steps.0.street', 'Sunset Road')
+        ->assertJsonPath('data.steps.1.maneuver', 'right')
+        ->assertJsonPath('data.steps.1.street', null)
+        ->assertJsonPath('data.steps.1.instruction', 'Turn right')
+        ->assertJsonPath('data.steps.1.distance_m', 396)
+        ->assertJsonPath('data.steps.1.location', [121.927, 11.96])
+        ->assertJsonPath('data.steps.2.maneuver', 'arrive');
+});
+
+it('keeps drawing a route whose steps do not line up with its geometry, without written directions', function () {
+    config(['services.routing.ors_api_key' => 'test-key']);
+    Cache::flush();
+    Http::fake(['*' => Http::response(orsGeojsonWithSteps([1, 9]))]);
+    $route = app(RoutingService::class)->route(['lat' => 11.9564, 'lng' => 121.9257], ['lat' => 11.9658, 'lng' => 121.9255]);
+    expect($route['status'])->toBe('ok')
+        ->and($route['geometry']['coordinates'])->toHaveCount(3)
+        ->and($route['steps'])->toBe([]);
+});
 
 it('retries an unroutable island point with unlimited snapping before giving up', function () {
     config(['services.routing.ors_api_key' => 'test-key', 'services.routing.snap_radius_meters' => 500]);

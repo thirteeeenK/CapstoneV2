@@ -394,7 +394,7 @@
                 </h3>
                 @if($booking->status === 'pending')
                     <span class="text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1">
-                        Uncheck items that are unavailable, adjust quantities, then approve
+                        Untick unavailable items, check the payment terms, then approve
                     </span>
                 @endif
             </div>
@@ -406,9 +406,9 @@
                         <ul class="mt-2 list-disc pl-5">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>
                     </div>
                 @endif
-                @if($booking->status === 'pending')
-                    @include('admin.bookings._payment-approval', ['deadlineInputId' => 'approval-payment-deadline'])
-                @endif
+                @php
+                    $approvalBounds = $booking->status === 'pending' ? app(\App\Services\Payment\BookingPaymentPolicy::class)->approvalBounds($booking) : null;
+                @endphp
                 @csrf
                 <div class="divide-y divide-slate-100">
                     @foreach($booking->items as $item)
@@ -417,16 +417,17 @@
                             $isUnavailable = $item->availability_status === 'unavailable';
                             $isPending = $item->availability_status === 'pending';
                         @endphp
-                        <div class="py-4 {{ $isUnavailable ? 'opacity-60' : '' }}">
+                        <div class="py-4" x-data="{ included: @js((bool) old('items.'.$item->id.'.include', ! $isUnavailable)) }" :class="included ? '' : 'opacity-60'">
                             <div class="flex items-start gap-4">
                                 @if($booking->status === 'pending')
                                     <input type="hidden" name="items[{{ $item->id }}][include]" value="0">
                                     <input type="checkbox"
+                                           id="include-item-{{ $item->id }}"
                                            name="items[{{ $item->id }}][include]"
                                            value="1"
-                                           @checked(old('items.'.$item->id.'.include', ! $isUnavailable))
-                                           class="mt-1.5 w-4 h-4 accent-sky-600 cursor-pointer"
-                                           onchange="this.closest('div').parentElement.classList.toggle('opacity-60', !this.checked)">
+                                           x-model="included"
+                                           aria-label="Include {{ $item->item_title }} in the approved booking"
+                                           class="mt-1.5 w-4 h-4 accent-sky-600 cursor-pointer">
                                 @endif
 
                                 <div class="flex-1 min-w-0">
@@ -476,14 +477,14 @@
 
                                     @if($booking->status === 'pending')
                                         <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                            <div>
-                                                <label class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block mb-1">Quantity</label>
-                                                <input type="number" name="items[{{ $item->id }}][quantity]" min="1" max="50" value="{{ old('items.'.$item->id.'.quantity', $item->quantity) }}"
+                                            <div x-show="included">
+                                                <label for="item-quantity-{{ $item->id }}" class="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 block mb-1">Quantity</label>
+                                                <input id="item-quantity-{{ $item->id }}" type="number" name="items[{{ $item->id }}][quantity]" min="1" max="50" value="{{ old('items.'.$item->id.'.quantity', $item->quantity) }}"
                                                        class="w-full px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">
                                             </div>
-                                            <div>
-                                                <label class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block mb-1">Admin note (for unavailable items)</label>
-                                                <input type="text" name="items[{{ $item->id }}][admin_note]" value="{{ old('items.'.$item->id.'.admin_note', $item->admin_note) }}"
+                                            <div x-show="! included" x-cloak class="sm:col-span-2">
+                                                <label for="item-note-{{ $item->id }}" class="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 block mb-1">Why is it unavailable? (shown to customer)</label>
+                                                <input id="item-note-{{ $item->id }}" type="text" name="items[{{ $item->id }}][admin_note]" value="{{ old('items.'.$item->id.'.admin_note', $item->admin_note) }}"
                                                        placeholder="e.g. Activity sold out for this date"
                                                        class="w-full px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">
                                             </div>
@@ -516,9 +517,11 @@
                         </div>
                     @endif
                     @if((float)$booking->promotion_discount_amount > 0 || $booking->promotionRedemption)
-                        @php($redemption = $booking->promotionRedemption)
+                        @php
+                            $redemption = $booking->promotionRedemption;
+                        @endphp
                         <div class="flex items-center justify-between text-emerald-700 font-semibold">
-                            <span>Lucky Discount{{ $redemption ? ' · '.$redemption->code.' ('.$redemption->status.')' : '' }}</span>
+                            <span>Lucky Discount{{ $redemption ? ' · '.($redemption->terms['name'] ?? 'Campaign').' ('.$redemption->status.')' : '' }}</span>
                             <span>-₱{{ number_format((float)$booking->promotion_discount_amount, 2) }}</span>
                         </div>
                         @if($redemption)
@@ -543,40 +546,44 @@
                     </div>
 
                     @if($booking->status === 'pending')
-                        <div class="pt-3 border-t border-slate-200">
+                        @php
+                            $adjusting = filled(old('admin_discount_amount')) || filled(old('admin_surcharge_amount')) || filled(old('price_adjustment_reason'));
+                        @endphp
+                        <details class="pt-3 border-t border-slate-200" @if($adjusting) open @endif>
+                            <summary class="min-h-11 py-2 cursor-pointer text-xs font-bold text-sky-700 hover:text-sky-900">Adjust the price (optional)</summary>
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                                 <div>
-                                    <label class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block mb-1">Admin discount (−)</label>
-                                    <input type="number" name="admin_discount_amount" min="0" step="0.01" value="{{ old('admin_discount_amount', '') }}"
-                                           placeholder="0.00"
-                                           class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">
+                                    <label for="admin-discount" class="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 block mb-1">Discount (−₱)</label>
+                                    <input id="admin-discount" type="number" name="admin_discount_amount" min="0" step="0.01" value="{{ old('admin_discount_amount', '') }}" placeholder="0.00" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">
                                 </div>
                                 <div>
-                                    <label class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block mb-1">Additional amount (+)</label>
-                                    <input type="number" name="admin_surcharge_amount" min="0" step="0.01" value="{{ old('admin_surcharge_amount', '') }}"
-                                           placeholder="0.00"
-                                           class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">
+                                    <label for="admin-surcharge" class="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 block mb-1">Extra charge (+₱)</label>
+                                    <input id="admin-surcharge" type="number" name="admin_surcharge_amount" min="0" step="0.01" value="{{ old('admin_surcharge_amount', '') }}" placeholder="0.00" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">
                                 </div>
                             </div>
                             <div class="mt-3">
-                                <label class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block mb-1">Reason for adjustment (shown to customer)</label>
-                                <textarea name="price_adjustment_reason" rows="2" placeholder="e.g. Applied a ₱500 courtesy discount because the room was unavailable on the first night."
+                                <label for="price-adjustment-reason" class="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 block mb-1">Reason (required with an amount, shown to customer)</label>
+                                <textarea id="price-adjustment-reason" name="price_adjustment_reason" rows="2" placeholder="e.g. Applied a ₱500 courtesy discount because the room was unavailable on the first night."
                                           class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">{{ old('price_adjustment_reason', '') }}</textarea>
                             </div>
-                            <p class="text-[10px] text-slate-400 font-medium mt-1.5">A reason is required when either amount is set. Adjustments are locked in at approval.</p>
-                        </div>
+                        </details>
                         <div class="pt-3">
-                            <label class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 block mb-1">Admin notes to customer (optional)</label>
-                            <textarea name="admin_notes" rows="2" placeholder="e.g. Room upgraded to a higher floor at no extra cost."
-                                      class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">{{ old('admin_notes') }}</textarea>
+                            @include('admin.bookings._payment-approval', ['deadlineInputId' => 'approval-payment-deadline', 'approvalBounds' => $approvalBounds])
                         </div>
-                        <button type="submit" :disabled="submitting" class="mt-4 w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-700 text-white font-extrabold text-xs transition-all hover:from-emerald-500 hover:to-teal-600 cursor-pointer shadow-lg shadow-emerald-600/25 flex items-center justify-center gap-2 disabled:opacity-60">
-                            <span class="material-symbols-outlined text-lg">verified</span>
-                            <span x-text="submitting ? 'Approving booking…' : 'Approve Booking & Save Payment Deadline'">Approve Booking &amp; Save Payment Deadline</span>
-                        </button>
-                        <p class="text-[10px] text-center text-slate-400 font-medium pt-2">
-                            Approving sends the customer an email with a secure payment link.
-                        </p>
+                        @unless($approvalBounds['blocked_reason'])
+                            <div class="pt-3">
+                                <label for="admin-notes" class="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 block mb-1">Note to customer (optional)</label>
+                                <textarea id="admin-notes" name="admin_notes" rows="2" placeholder="e.g. Room upgraded to a higher floor at no extra cost."
+                                          class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-900 bg-white focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">{{ old('admin_notes') }}</textarea>
+                            </div>
+                            <button type="submit" :disabled="submitting" class="mt-4 w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-700 text-white font-extrabold text-xs transition-all hover:from-emerald-500 hover:to-teal-600 cursor-pointer shadow-lg shadow-emerald-600/25 flex items-center justify-center gap-2 disabled:opacity-60">
+                                <span class="material-symbols-outlined text-lg" aria-hidden="true">verified</span>
+                                <span x-text="submitting ? 'Approving booking…' : 'Approve booking'">Approve booking</span>
+                            </button>
+                            <p class="text-[10px] text-center text-slate-500 font-medium pt-2">
+                                Approving emails the customer a secure payment link with the terms above.
+                            </p>
+                        @endunless
                     @endif
                 </div>
             </form>

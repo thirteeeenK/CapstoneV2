@@ -34,7 +34,7 @@ class BookingApproved extends BookingNotification
         if ((float) $booking->promotion_discount_amount > 0) {
             $mail->line('Your Lucky discount of **−₱'.number_format((float) $booking->promotion_discount_amount, 2).'** is included in this amount; it applies to your Lucky itinerary items only.');
         } elseif ($booking->promotionRedemption?->status === 'released') {
-            $mail->line('Your Lucky code no longer applies because an item of its itinerary was unavailable or changed during review, so this amount has no Lucky discount.');
+            $mail->line('Your Lucky discount no longer applies because an item of its itinerary was unavailable or changed during review, so this amount has no Lucky discount.');
         }
 
         if ((float) $booking->admin_discount_amount > 0 || (float) $booking->admin_surcharge_amount > 0) {

@@ -181,6 +181,25 @@
                                                         <button type="button" @click="selectDay(index); focusStop(item.stop)" class="text-left min-h-11"><p class="text-xs font-semibold text-ocean-700 dark:text-ocean-300" x-text="item.stop.start + '–' + item.stop.end"></p><h4 class="font-headline font-bold mt-1" x-text="item.stop.name"></h4></button>
                                                         <p class="text-xs text-slate-500 mt-2" x-text="item.stop.travel.distance_km != null ? Number(item.stop.travel.distance_km).toFixed(2) + ' km · ' + item.stop.travel.duration_minutes + ' min from ' + item.stop.travel.from : 'Travel time from ' + item.stop.travel.from + ' is not available'"></p>
                                                         <p x-show="item.stop.travel.geometry_kind === 'straight_line'" class="text-xs text-amber-700 dark:text-amber-300 mt-1">Shown as a straight line on the map — no mapped road connects these two stops, so arrange a boat or transfer.</p>
+                                                        <template x-if="directionsState(item.stop.travel) === 'list'">
+                                                            <details class="mt-2">
+                                                                <summary class="cursor-pointer text-sm font-bold text-ocean-700 dark:text-ocean-300 min-h-11 py-2" x-text="'Directions from ' + item.stop.travel.from"></summary>
+                                                                <ol :aria-label="'Directions from ' + item.stop.travel.from + ' to ' + item.stop.name" class="divide-y divide-sand-200 dark:divide-slate-700 rounded-lg border border-sand-200 dark:border-slate-700">
+                                                                    <template x-for="(step, stepIndex) in legDirections(item.stop.travel)" :key="stepIndex">
+                                                                        <li>
+                                                                            <button type="button" @click="focusStep(index, item.stop.travel, stepIndex)" class="flex min-h-11 w-full items-start gap-2.5 px-3 py-2 text-left text-sm hover:bg-sand-100 dark:hover:bg-slate-800">
+                                                                                <span class="material-symbols-outlined mt-px shrink-0 text-[18px] text-ocean-700 dark:text-ocean-300" aria-hidden="true" x-text="step.icon"></span>
+                                                                                <span class="flex-1 text-slate-700 dark:text-slate-300" x-text="step.instruction"></span>
+                                                                                <span class="shrink-0 text-xs font-semibold text-slate-500 dark:text-slate-400" x-text="step.distance_label"></span>
+                                                                            </button>
+                                                                        </li>
+                                                                    </template>
+                                                                </ol>
+                                                                <p x-show="legDirections(item.stop.travel).some(step => step.unnamed)" class="mt-2 text-xs text-slate-500 dark:text-slate-400">Some paths here have no name on OpenStreetMap, so those steps show only the turn.</p>
+                                                            </details>
+                                                        </template>
+                                                        <p x-show="directionsState(item.stop.travel) === 'legacy'" class="text-xs text-slate-500 dark:text-slate-400 mt-1">Generate again to add written directions for this leg.</p>
+                                                        <p x-show="directionsState(item.stop.travel) === 'none'" class="text-xs text-slate-500 dark:text-slate-400 mt-1">Written directions aren't available for this leg.</p>
                                                         <p x-show="item.stop.travel_estimated" class="text-xs text-amber-700 dark:text-amber-300 mt-1">Estimated travel time — the exact meeting point isn't set yet, so it's measured from the destination centre. Confirm the location with the operator.</p>
                                                         <p class="mt-2 text-sm" :class="item.stop.weather.provisional ? 'text-amber-700 dark:text-amber-300' : 'text-ocean-700 dark:text-ocean-300'" x-text="item.stop.weather.description"></p>
                                                         <details class="mt-3"><summary class="cursor-pointer text-sm font-bold text-ocean-700 dark:text-ocean-300 min-h-11 py-2">Why this time and order?</summary><p class="text-sm leading-relaxed text-slate-600 dark:text-slate-400" x-text="item.stop.reason"></p></details>

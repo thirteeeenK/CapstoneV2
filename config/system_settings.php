@@ -27,6 +27,7 @@ return [
         ]),
     ],
     'chatbot' => ['daily_limit' => 15, 'minute_limit' => 5],
+    'lucky' => ['daily_attempts' => 5],
     'notifications' => [
         'recipient_mode' => 'all',
         'admin_ids' => [],

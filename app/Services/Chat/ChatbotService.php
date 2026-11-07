@@ -1789,10 +1789,15 @@ class ChatbotService
         $again = ['id' => 'lucky-again', 'label' => 'Shuffle again', 'prompt' => 'Surprise me with another Lucky trip'];
         if (! $user) {
             return [
-                'reply' => "I'm Feeling Lucky builds a surprise stay with activities in one destination, within your budget. When a Lucky promotion is running, the itinerary can come with a personal discount code. Sign in so I can create one for your account.",
+                'reply' => "I'm Feeling Lucky builds a surprise stay with activities in one destination, within your budget. When a Lucky promotion is running, each attempt can also win a discount. Sign in so I can make an attempt for your account.",
                 'lucky' => ['requires_login' => true, 'login_url' => route('login'), 'page_url' => route('lucky.index')],
                 'retrieval_outcome' => RetrievalOutcome::make(RetrievalOutcome::NoMatch, 'login_required'),
             ];
+        }
+
+        $offers = app(LuckyOfferService::class);
+        if ($offers->attempts($user)['left'] <= 0) {
+            return $this->luckyAttemptsUsedReply();
         }
 
         $constraints = $this->intentRouter->extractConstraints($message);
@@ -1816,14 +1821,18 @@ class ChatbotService
                 '_constraints' => $filters,
             ];
         }
-        $offers = app(LuckyOfferService::class);
-        $offer = $offers->present($offers->issue($user, $itinerary, (float) ($filters['max_budget'] ?? 20000)));
+        $issued = $offers->issue($user, $itinerary, (float) ($filters['max_budget'] ?? 20000));
+        if (! $issued) {
+            return $this->luckyAttemptsUsedReply();
+        }
+        $offer = $offers->present($issued);
+        $attempts = $offers->attempts($user);
         $text = 'Here is a surprise trip to '.$itinerary['destination']['name'].': '.$itinerary['room']['room_name'].' at '.$itinerary['hotel']['hotel_name']
             .' for '.$itinerary['nights'].' night'.($itinerary['nights'] === 1 ? '' : 's').' ('.$itinerary['check_in_date'].' to '.$itinerary['check_out_date'].'), with '
             .count($itinerary['activities']).' activit'.(count($itinerary['activities']) === 1 ? 'y' : 'ies').', for '.$itinerary['formatted_total'].'.'
             .(! empty($itinerary['budget_notice']) ? ' '.$itinerary['budget_notice'] : '')
-            .($offer['code'] ? ' It comes with Lucky code '.$offer['code'].' ('.$offer['discount_label'].', valid until '.$offer['formatted_expires_at'].' Philippine time). Add it to your Trip Basket and apply the code at checkout.' : ' No Lucky promotion applies to this itinerary.')
-            .$limits;
+            .($offer['won'] ? ' You won '.$offer['discount_label'].' on this itinerary, valid until '.$offer['formatted_expires_at'].' Philippine time. Add it to your Trip Basket and it applies automatically at checkout.' : ' No Lucky discount this time, so this itinerary is at the regular price.')
+            .$limits.' You have '.$attempts['left'].' of '.$attempts['limit'].' Lucky attempts left today.';
 
         return [
             'reply' => $text,
@@ -1831,6 +1840,20 @@ class ChatbotService
             'suggested_actions' => [$again],
             'retrieval_outcome' => RetrievalOutcome::make(RetrievalOutcome::Matched, 'verified_result_found'),
             '_constraints' => $filters,
+        ];
+    }
+
+    /**
+     * The reply when a traveler has spent today's Lucky attempts.
+     *
+     * @return array<string, mixed>
+     */
+    private function luckyAttemptsUsedReply(): array
+    {
+        return [
+            'reply' => LuckyOfferService::ATTEMPTS_USED_MESSAGE,
+            'lucky' => ['page_url' => route('lucky.index')],
+            'retrieval_outcome' => RetrievalOutcome::make(RetrievalOutcome::NoMatch, 'lucky_attempts_used'),
         ];
     }
 

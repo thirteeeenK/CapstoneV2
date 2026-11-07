@@ -113,8 +113,8 @@ class CartController extends Controller
             ->groupBy('basket_group_id');
         $itineraries = TripItinerary::query()->whereIn('id', $items->pluck('trip_itinerary_id')->filter()->unique())
             ->select(['id', 'trip_plan_id'])->with('plan:id,title')->get()->keyBy('id');
-        $offers = LuckyOffer::query()->whereIn('id', $items->pluck('lucky_offer_id')->filter()->unique())->whereNotNull('code')
-            ->get(['id', 'code', 'expires_at', 'terms'])->keyBy('id');
+        $offers = LuckyOffer::query()->whereIn('id', $items->pluck('lucky_offer_id')->filter()->unique())->whereNotNull('promotion_id')
+            ->get(['id', 'expires_at', 'terms'])->keyBy('id');
 
         foreach ($grouped as $groupId => $groupItems) {
             $roomItem = $groupItems->first(fn ($i) => $i->item_type === 'room');
@@ -146,8 +146,7 @@ class CartController extends Controller
                 'is_selected' => $groupItems->count() > 0 && $selectedItems->count() === $groupItems->count(),
                 'subtotal' => $subtotal,
                 'formatted_subtotal' => '₱'.number_format($subtotal, 2),
-                'lucky_code' => $offer?->code,
-                'lucky_code_label' => $offer ? Promotion::describeDiscount($offer->terms).' · valid until '.$offer->expires_at?->timezone('Asia/Manila')->format('M j, g:i A') : null,
+                'lucky_discount_label' => $offer ? Promotion::describeDiscount($offer->terms).' · valid until '.$offer->expires_at?->timezone('Asia/Manila')->format('M j, g:i A') : null,
             ];
         }
 

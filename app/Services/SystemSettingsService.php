@@ -11,7 +11,7 @@ use Illuminate\Validation\ValidationException;
 
 class SystemSettingsService
 {
-    public const SECTIONS = ['business', 'accounts', 'payments', 'support', 'chatbot', 'notifications'];
+    public const SECTIONS = ['business', 'accounts', 'payments', 'support', 'chatbot', 'notifications', 'lucky'];
 
     /** @var Collection<string, SystemSetting>|null */
     private ?Collection $records = null;

@@ -114,8 +114,8 @@
                                     <span x-text="group.label || 'I\'m Feeling Lucky'"></span>
                                 </span>
                                 <h4 class="text-xs font-bold text-white leading-snug mt-1 truncate" x-text="group.title"></h4>
-                                <template x-if="group.lucky_code">
-                                    <p class="text-[11px] text-white/90 truncate">Code <span class="font-mono font-bold" x-text="group.lucky_code"></span> · apply at checkout</p>
+                                <template x-if="group.lucky_discount_label">
+                                    <p class="text-[11px] text-white/90 truncate">Lucky discount applied at checkout</p>
                                 </template>
                                 <p class="text-[11px] text-white/80 truncate">
                                     <span x-text="group.item_count + ' items'"></span>

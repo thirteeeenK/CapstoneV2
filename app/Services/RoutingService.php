@@ -8,6 +8,21 @@ use Illuminate\Support\Facades\Http;
 
 class RoutingService
 {
+    /** OpenRouteService instruction types, normalized to one maneuver vocabulary. */
+    private const ORS_MANEUVERS = [
+        0 => 'left', 1 => 'right', 2 => 'sharp_left', 3 => 'sharp_right', 4 => 'slight_left', 5 => 'slight_right',
+        6 => 'straight', 7 => 'roundabout', 8 => 'roundabout_exit', 9 => 'uturn', 10 => 'arrive', 11 => 'depart',
+        12 => 'keep_left', 13 => 'keep_right',
+    ];
+
+    /** Valhalla maneuver types, normalized to the same vocabulary. */
+    private const VALHALLA_MANEUVERS = [
+        1 => 'depart', 2 => 'depart', 3 => 'depart', 4 => 'arrive', 5 => 'arrive', 6 => 'arrive',
+        9 => 'slight_right', 10 => 'right', 11 => 'sharp_right', 12 => 'uturn', 13 => 'uturn', 14 => 'sharp_left',
+        15 => 'left', 16 => 'slight_left', 18 => 'slight_right', 19 => 'slight_left', 20 => 'slight_right',
+        21 => 'slight_left', 23 => 'keep_right', 24 => 'keep_left', 26 => 'roundabout', 27 => 'roundabout_exit',
+    ];
+
     public function configured(): bool
     {
         return $this->provider() !== 'none';
@@ -92,6 +107,7 @@ class RoutingService
             'duration_seconds' => (float) $route['duration'],
             'duration_minutes' => (int) ceil($route['duration'] / 60),
             'geometry' => $geometry,
+            'steps' => $this->valhallaSteps($native['trip']['legs'][0]['maneuvers'] ?? null, $geometry['coordinates']),
             'snapped_waypoints' => $response['waypoints'] ?? [],
             'graph_version' => config('services.routing.graph_version'),
         ] + $this->snapOffsets($from, $to, $geometry['coordinates']);
@@ -136,6 +152,7 @@ class RoutingService
             'duration_seconds' => (float) $summary['duration'],
             'duration_minutes' => (int) ceil($summary['duration'] / 60),
             'geometry' => $geometry,
+            'steps' => $this->orsSteps($feature['properties']['segments'] ?? null, $geometry['coordinates']),
             'snapped_waypoints' => [],
             'graph_version' => 'openrouteservice',
         ] + $this->snapOffsets($from, $to, $geometry['coordinates']);
@@ -317,7 +334,95 @@ class RoutingService
     private function unavailable(string $status, string $mode): array
     {
         return ['available' => false, 'status' => $status, 'provider' => $this->provider(), 'mode' => $mode, 'distance_km' => null,
-            'duration_seconds' => null, 'duration_minutes' => null, 'geometry' => null, 'snap_offset_from_meters' => null, 'snap_offset_to_meters' => null];
+            'duration_seconds' => null, 'duration_minutes' => null, 'geometry' => null, 'steps' => [], 'snap_offset_from_meters' => null, 'snap_offset_to_meters' => null];
+    }
+
+    /**
+     * Written turn-by-turn steps from an OpenRouteService directions feature.
+     * Its way_points already index the full route geometry.
+     *
+     * @param  list<list<float>>  $coordinates
+     * @return list<array{instruction: string, street: string|null, maneuver: string, distance_m: float, duration_seconds: float, way_points: array{0: int, 1: int}, location: array{0: float, 1: float}}>
+     */
+    private function orsSteps(mixed $segments, array $coordinates): array
+    {
+        $steps = [];
+        foreach (is_array($segments) ? $segments : [] as $segment) {
+            foreach (is_array($segment['steps'] ?? null) ? $segment['steps'] : [] as $step) {
+                $type = $step['type'] ?? null;
+                $name = $step['name'] ?? null;
+                $steps[] = $this->step($step['instruction'] ?? null, $name === '-' ? null : $name,
+                    is_int($type) ? (self::ORS_MANEUVERS[$type] ?? 'straight') : 'straight',
+                    $step['distance'] ?? null, $step['duration'] ?? null,
+                    $step['way_points'][0] ?? null, $step['way_points'][1] ?? null, $coordinates);
+            }
+        }
+
+        return $this->alignedSteps($steps, $coordinates);
+    }
+
+    /**
+     * Written turn-by-turn steps from Valhalla's native maneuvers. Lengths are
+     * kilometres because the request asks for kilometre units.
+     *
+     * @param  list<list<float>>  $coordinates
+     * @return list<array{instruction: string, street: string|null, maneuver: string, distance_m: float, duration_seconds: float, way_points: array{0: int, 1: int}, location: array{0: float, 1: float}}>
+     */
+    private function valhallaSteps(mixed $maneuvers, array $coordinates): array
+    {
+        $steps = [];
+        foreach (is_array($maneuvers) ? $maneuvers : [] as $maneuver) {
+            $type = $maneuver['type'] ?? null;
+            $length = $maneuver['length'] ?? null;
+            $steps[] = $this->step($maneuver['instruction'] ?? null, $maneuver['street_names'][0] ?? null,
+                is_int($type) ? (self::VALHALLA_MANEUVERS[$type] ?? 'straight') : 'straight',
+                $this->validNumber($length) ? (float) $length * 1000 : null, $maneuver['time'] ?? null,
+                $maneuver['begin_shape_index'] ?? null, $maneuver['end_shape_index'] ?? null, $coordinates);
+        }
+
+        return $this->alignedSteps($steps, $coordinates);
+    }
+
+    /**
+     * One normalized step, or null when any field cannot be trusted.
+     *
+     * @param  list<list<float>>  $coordinates
+     * @return array{instruction: string, street: string|null, maneuver: string, distance_m: float, duration_seconds: float, way_points: array{0: int, 1: int}, location: array{0: float, 1: float}}|null
+     */
+    private function step(mixed $instruction, mixed $street, string $maneuver, mixed $distance, mixed $duration, mixed $start, mixed $end, array $coordinates): ?array
+    {
+        if (! is_string($instruction) || trim($instruction) === '' || ! $this->validNumber($distance) || ! $this->validNumber($duration)
+            || ! is_int($start) || ! is_int($end) || $start < 0 || $start > $end || $end >= count($coordinates)) {
+            return null;
+        }
+
+        return [
+            'instruction' => trim($instruction),
+            'street' => is_string($street) && trim($street) !== '' ? trim($street) : null,
+            'maneuver' => $maneuver,
+            'distance_m' => round((float) $distance, 1),
+            'duration_seconds' => round((float) $duration, 1),
+            'way_points' => [$start, $end],
+            'location' => [(float) $coordinates[$start][0], (float) $coordinates[$start][1]],
+        ];
+    }
+
+    /**
+     * Steps are all or nothing: every one must be valid and the last must end on
+     * the final coordinate, which proves the indices match the drawn geometry.
+     * Otherwise the route is still drawn, just without written directions.
+     *
+     * @param  list<array<string, mixed>|null>  $steps
+     * @param  list<list<float>>  $coordinates
+     * @return list<array<string, mixed>>
+     */
+    private function alignedSteps(array $steps, array $coordinates): array
+    {
+        if ($steps === [] || in_array(null, $steps, true) || end($steps)['way_points'][1] !== count($coordinates) - 1) {
+            return [];
+        }
+
+        return $steps;
     }
 
     /**
