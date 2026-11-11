@@ -2,7 +2,7 @@
 
 namespace App\Notifications;
 
-use Barryvdh\DomPDF\Facade\Pdf;
+use App\Services\BookingVoucherService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 
@@ -22,11 +22,12 @@ class BookingPaid extends BookingNotification
             ->line('Your official booking voucher is available below.')
             ->action('View Booking Voucher', route('booking.show', $booking->booking_code))
             ->line('We look forward to hosting you. Thank you for traveling with SunnyTrips!');
-        if (! empty($booking->trip_itineraries)) {
-            $snapshot = $booking->trip_itineraries[0];
-            $message->line('Your saved itinerary and route/weather explanations are attached. Current item availability and booking status apply.')
-                ->attachData(Pdf::loadView('trip-planner.document', ['itinerary' => $snapshot, 'reference' => 'Booking '.$booking->booking_code, 'referenceLabel' => 'Booking reference', 'referenceCode' => $booking->booking_code, 'booking' => $booking->loadMissing('items')])->setPaper('a4')->output(),
-                    'sunnytrips-itinerary.pdf', ['mime' => 'application/pdf']);
+        $vouchers = app(BookingVoucherService::class);
+        if ($vouchers->isAvailable($booking)) {
+            $message->line(empty($booking->trip_itineraries)
+                ? 'Your travel voucher with the full payment breakdown is attached.'
+                : 'Your travel voucher is attached, including your saved itinerary with its route, distance and weather decisions. Current item availability and booking status apply.')
+                ->attachData($vouchers->pdf($booking)->output(), $vouchers->filename($booking), ['mime' => 'application/pdf']);
         }
 
         return $message;

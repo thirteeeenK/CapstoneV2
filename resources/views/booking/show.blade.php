@@ -152,10 +152,20 @@
 
                 {{-- Hero content --}}
                 <div class="relative z-10 px-6 sm:px-10 pt-16 sm:pt-20 pb-9 text-center text-slate-900">
-                    <p class="font-label text-[10px] uppercase font-bold tracking-[0.3em] text-slate-800/70 mb-5">
-                        {{ $paidOrDone ? 'Voucher' : 'Journal' }} No.
-                        <span class="text-slate-900 font-black">{{ $booking->booking_code }}</span>
-                    </p>
+                    <div x-data="{ copied: false }" class="flex flex-col items-center mb-6">
+                        <span class="font-label text-xs uppercase font-bold tracking-[0.3em] text-slate-800/80">
+                            {{ $paidOrDone ? 'Voucher' : 'Journal' }} No.
+                        </span>
+                        <div class="mt-2 inline-flex max-w-full items-center gap-2 rounded-2xl border-2 border-slate-900/80 bg-white/85 backdrop-blur-md px-4 sm:px-5 py-2 shadow-lg shadow-slate-900/10">
+                            <span class="font-mono text-2xl sm:text-3xl font-black tracking-[0.12em] text-slate-900 select-all break-all">{{ $booking->booking_code }}</span>
+                            <button type="button"
+                                @click="navigator.clipboard?.writeText(@js($booking->booking_code)).then(() => { copied = true; setTimeout(() => copied = false, 2000) })"
+                                :aria-label="copied ? 'Booking reference copied' : 'Copy booking reference'"
+                                class="print:hidden shrink-0 inline-flex h-10 w-10 items-center justify-center rounded-xl text-slate-700 hover:bg-slate-900/10 transition cursor-pointer">
+                                <span class="material-symbols-outlined text-[20px]" x-text="copied ? 'check' : 'content_copy'">content_copy</span>
+                            </button>
+                        </div>
+                    </div>
 
                     @if ($status === 'pending')
                         <div class="relative w-20 h-20 mx-auto mb-6">
@@ -313,11 +323,15 @@
                             </form>
                         @endif
 
-                        @if ($status === 'paid')
-                            <button onclick="window.print()" class="px-5 py-3 rounded-2xl bg-slate-900 text-white font-bold text-xs hover:bg-slate-800 transition flex items-center gap-1.5 shadow-lg shadow-slate-900/20 cursor-pointer">
-                                <span class="material-symbols-outlined text-[16px]">print</span>
-                                <span>Print Itinerary Voucher</span>
-                            </button>
+                        @if ($voucherAvailable ?? false)
+                            <a href="{{ route('booking.voucher', $booking->booking_code) }}" class="min-h-11 px-5 py-3 rounded-2xl bg-slate-900 text-white font-bold text-xs hover:bg-slate-800 transition flex items-center gap-1.5 shadow-lg shadow-slate-900/20">
+                                <span class="material-symbols-outlined text-[16px]" aria-hidden="true">download</span>
+                                <span>Download {{ $voucherName }} (PDF)</span>
+                            </a>
+                            <a href="{{ route('booking.voucher', [$booking->booking_code, 'print' => 1]) }}" target="_blank" rel="noopener" class="min-h-11 px-5 py-3 rounded-2xl bg-white/80 backdrop-blur-md border border-slate-900/20 text-slate-900 font-bold text-xs hover:bg-white transition flex items-center gap-1.5">
+                                <span class="material-symbols-outlined text-[16px]" aria-hidden="true">print</span>
+                                <span>Print {{ $voucherName }}</span>
+                            </a>
                         @endif
 
                         @if ($status === 'completed')

@@ -3,7 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\TripItinerary;
-use Barryvdh\DomPDF\Facade\Pdf;
+use App\Services\TravelDocumentPdf;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -48,8 +48,8 @@ class TripItineraryReady extends Notification implements ShouldQueue
     {
         $snapshot = $this->snapshot;
         $view = ($snapshot['kind'] ?? null) === 'chatbot_draft' ? 'trip-planner.draft-document' : 'trip-planner.document';
-        $pdf = Pdf::loadView($view, ['itinerary' => $snapshot, 'reference' => 'Plan '.$this->tripPlanId.' · Version '.$this->itineraryId,
-            'referenceLabel' => 'Plan reference (not a booking)', 'referenceCode' => 'PLAN-'.$this->tripPlanId.'-V'.$this->itineraryId])->setPaper('a4')->output();
+        $pdf = TravelDocumentPdf::render($view, ['itinerary' => $snapshot, 'reference' => 'Plan '.$this->tripPlanId.' · Version '.$this->itineraryId,
+            'referenceLabel' => 'Plan reference (not a booking)', 'referenceCode' => 'PLAN-'.$this->tripPlanId.'-V'.$this->itineraryId])->output();
 
         return (new MailMessage)->subject('Your SunnyTrips itinerary · '.$snapshot['destination'])
             ->greeting('Hi '.$notifiable->name.',')->line(($snapshot['kind'] ?? null) === 'chatbot_draft' ? 'Your draft itinerary is attached. Dates, routes and weather still need review before booking.' : 'Your selected stays and visits are arranged by day in the attached itinerary, with route and weather explanations.')

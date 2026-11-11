@@ -898,6 +898,18 @@ it('prints the written directions for each road leg in the booked itinerary docu
         ->assertSee('Directions from')->assertSee('Head north on Main Road · 120 m')->assertSee('Arrive at your destination');
 });
 
+it('appends the saved itinerary with its distance and weather decisions to the booking voucher', function () {
+    $booking = bookedPlannerItinerary($this->plan, $this->room, $this->destination, ['status' => Booking::STATUS_APPROVED]);
+    $stop = collect($booking->trip_itineraries[0]['days'])->flatMap(fn ($day) => $day['stops'])->first();
+
+    $this->get(route('booking.voucher', [$booking->booking_code, 'print' => 1]))->assertOk()
+        ->assertSeeInOrder(['Booking Summary', $booking->booking_code, 'Payment breakdown', 'Trip Itinerary', 'Trip overview',
+            'How weather and distance shaped this plan', 'Forecast checked', 'Total mapped travel', 'Day-by-day schedule',
+            $stop['name'], 'Why this slot:', $stop['reason'], number_format($stop['travel']['distance_km'], 2).' km', $stop['weather']['description'],
+            'Strategic report', 'Appendix · Turn-by-turn directions', 'Head north on Main Road · 120 m'])
+        ->assertDontSee('No day-by-day itinerary is attached to this booking.');
+});
+
 /**
  * Replaces the default routing double, keeping a reachable matrix so stops still
  * get scheduled while the per-leg geometry comes back exactly as given.

@@ -4,9 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Booking;
 use App\Services\BookingExpiryService;
+use App\Services\BookingVoucherService;
 use App\Services\Payment\GoTymePaymentService;
 use App\Services\Payment\PaymentService;
-use Barryvdh\DomPDF\Facade\Pdf;
+use App\Services\TravelDocumentPdf;
 use Illuminate\Http\Request;
 
 class BookingConfirmationController extends Controller
@@ -27,7 +28,7 @@ class BookingConfirmationController extends Controller
     /**
      * Display the booking status page (request received / awaiting payment / voucher).
      */
-    public function show($bookingCode, Request $request)
+    public function show($bookingCode, Request $request, BookingVoucherService $vouchers)
     {
         $booking = $this->loadOwnedBooking($bookingCode);
 
@@ -42,6 +43,8 @@ class BookingConfirmationController extends Controller
             'paymentSummary' => $this->goTymePaymentService->summary($booking),
             'paymentTransactions' => $booking->payment_plan_version === 2 ? $booking->paymentTransactions()->get() : collect(),
             'canRequestCancellation' => BookingPaymentController::canRequestCancellation($booking),
+            'voucherAvailable' => $vouchers->isAvailable($booking),
+            'voucherName' => $vouchers->isConfirmed($booking) ? 'Voucher' : 'Booking Summary',
         ]);
     }
 
@@ -75,6 +78,21 @@ class BookingConfirmationController extends Controller
             return view('trip-planner.document', $data);
         }
 
-        return Pdf::loadView('trip-planner.document', $data)->setPaper('a4')->download('sunnytrips-'.$booking->booking_code.'-itinerary.pdf');
+        return TravelDocumentPdf::render('trip-planner.document', $data)->download('sunnytrips-'.$booking->booking_code.'-itinerary.pdf');
+    }
+
+    /**
+     * The laid-out travel voucher (or booking summary before payment) as a PDF download,
+     * or as a printable page with ?print=1.
+     */
+    public function voucher(string $code, Request $request, BookingVoucherService $vouchers): mixed
+    {
+        $booking = $this->loadOwnedBooking($code);
+        abort_unless($vouchers->isAvailable($booking), 404);
+        if ($request->boolean('print')) {
+            return view('booking.voucher', $vouchers->viewData($booking) + ['webView' => true]);
+        }
+
+        return $vouchers->pdf($booking)->download($vouchers->filename($booking));
     }
 }

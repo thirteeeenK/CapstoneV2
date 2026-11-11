@@ -12,11 +12,11 @@ use App\Notifications\TripItineraryReady;
 use App\Services\CartService;
 use App\Services\Chat\ChatbotTripPlanService;
 use App\Services\ItineraryService;
+use App\Services\TravelDocumentPdf;
 use App\Services\TripBookingDatePolicy;
 use App\Services\TripDurationPolicy;
 use App\Services\TripPlannerService;
 use App\Services\WeatherService;
-use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -304,7 +304,7 @@ class TripPlannerController extends Controller
             return view($view, $data);
         }
 
-        return Pdf::loadView($view, $data)->setPaper('a4')->download('sunnytrips-itinerary-'.$itinerary->id.'.pdf');
+        return TravelDocumentPdf::render($view, $data)->download('sunnytrips-itinerary-'.$itinerary->id.'.pdf');
     }
 
     private function owned(Request $request, TripPlan $plan): void

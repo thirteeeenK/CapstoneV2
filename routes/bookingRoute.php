@@ -11,6 +11,7 @@ Route::middleware(['auth', 'throttle:users'])->group(function () {
 
     Route::prefix('bookings')->name('booking.')->group(function () {
         Route::get('/{code}', [BookingConfirmationController::class, 'show'])->name('show');
+        Route::get('/{code}/voucher', [BookingConfirmationController::class, 'voucher'])->name('voucher');
         Route::get('/{code}/itinerary/{version}', [BookingConfirmationController::class, 'itinerary'])->whereNumber('version')->name('itinerary');
         Route::post('/{code}/installments', [BookingInstallmentController::class, 'store'])->name('installment.store');
         Route::get('/{code}/payments/{uuid}', [BookingInstallmentController::class, 'show'])->whereUuid('uuid')->name('installment.show');
