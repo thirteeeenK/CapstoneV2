@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Models\HotelModel;
 use App\Models\Review;
 use App\Models\ReviewSummary;
 use App\Services\GeminiService;
@@ -105,6 +106,12 @@ class UpdateEntityReviewSummaryJob implements ShouldQueue
             ['summarizable_type' => $this->entityType, 'summarizable_id' => $this->entityId],
             $summaryData
         );
+
+        // A hotel's search vector includes its guest rating line, which this
+        // summary just changed; refresh it so retrieval sees the new rating.
+        if ($this->entityId !== null && in_array($this->entityType, ['hotel', HotelModel::class], true)) {
+            RegenerateEmbedding::dispatch('hotel', $this->entityId);
+        }
     }
 
     /**

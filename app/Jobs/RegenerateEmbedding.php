@@ -4,6 +4,7 @@ namespace App\Jobs;
 
 use App\Models\ActivityModel;
 use App\Models\AddOnModel;
+use App\Models\Faq;
 use App\Models\HotelModel;
 use App\Models\Package;
 use App\Models\RoomType;
@@ -29,7 +30,7 @@ class RegenerateEmbedding implements ShouldQueue
     private const RETRY_DELAYS = [60, 300, 900, 3600];
 
     /**
-     * @param  'hotel'|'room'|'activity'|'addon'|'package'|'user'  $type
+     * @param  'hotel'|'room'|'activity'|'addon'|'package'|'faq'|'user'  $type
      */
     public function __construct(public string $type, public int $id) {}
 
@@ -49,7 +50,13 @@ class RegenerateEmbedding implements ShouldQueue
             return;
         }
 
-        $record->forceFill([$this->type === 'user' ? 'preferences_embedding' : 'embedding' => $gemini->formatVectorForDb($vector)])->save();
+        $record->forceFill([$this->type === 'user' ? 'preferences_embedding' : 'embedding' => $gemini->formatVectorForDb($vector)]);
+        if ($this->type !== 'user') {
+            // Same bookkeeping as embed:all, so --stale does not embed it again.
+            $model = (string) config('services.gemini.embedding_model');
+            $record->forceFill(['embedding_source_hash' => sha1($text.$model), 'embedding_model' => $model, 'embedded_at' => now()]);
+        }
+        $record->save();
         if ($record instanceof User && $record->userPreference) {
             $explainer->invalidateForUser($record->userPreference);
         }
@@ -63,6 +70,7 @@ class RegenerateEmbedding implements ShouldQueue
             'activity' => ActivityModel::with('destination')->find($this->id),
             'addon' => AddOnModel::find($this->id),
             'package' => Package::with(['destination', 'hotels', 'rooms', 'activities', 'addOns'])->find($this->id),
+            'faq' => Faq::find($this->id),
             'user' => User::with('userPreference')->find($this->id),
         };
     }
@@ -80,6 +88,7 @@ class RegenerateEmbedding implements ShouldQueue
             'activity' => [$gemini->buildActivityEmbeddingText($record, $record->destination?->name), 'RETRIEVAL_DOCUMENT', $record->activity_name],
             'addon' => [$gemini->buildAddOnEmbeddingText($record), 'RETRIEVAL_DOCUMENT', $record->name],
             'package' => [$gemini->buildPackageEmbeddingText($record), 'RETRIEVAL_DOCUMENT', $record->name],
+            'faq' => [$gemini->buildFaqEmbeddingText($record), 'RETRIEVAL_DOCUMENT', $record->question],
             'user' => [$record->userPreference ? $gemini->buildPreferenceEmbeddingText($record->userPreference) : null, 'RETRIEVAL_QUERY', null],
         };
     }

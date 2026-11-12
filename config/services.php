@@ -13,6 +13,31 @@ return [
         'guided_conversation_enabled' => env('CHATBOT_GUIDED_CONVERSATION_ENABLED', false),
         'conversational_enabled' => env('CHATBOT_CONVERSATIONAL_ENABLED', true),
         'planner_enabled' => env('CHATBOT_PLANNER_ENABLED', true),
+        // Questions are asked in prose with quick-reply chips; the trip details
+        // form is offered instead of opened, except while building an itinerary.
+        'forms_on_request' => env('CHATBOT_FORMS_ON_REQUEST', true),
+        // Catalog answers are written by the model from the full retrieved
+        // records plus recent turns, then checked for prices, names and
+        // action claims. Off restores the card-summary composer.
+        'grounded_answers' => env('CHATBOT_GROUNDED_ANSWERS', true),
+        // "under 5000" with no stated basis is read per night for stays and
+        // per person for activities, and the reply states the reading.
+        'assume_budget_basis' => env('CHATBOT_ASSUME_BUDGET_BASIS', true),
+        // One short model call on follow-up turns decides whether the user is
+        // asking about the options on screen or wants a new search.
+        'turn_interpreter' => env('CHATBOT_TURN_INTERPRETER', true),
+        // Share of the saved onboarding profile in the personalized re-rank;
+        // the rest is the current request.
+        'profile_weight' => (float) env('CHATBOT_PROFILE_WEIGHT', 0.3),
+        // FAQ and travel-guidance answers open with a short direct answer the
+        // model writes from the reviewed text, which stays shown underneath.
+        'sourced_leads' => env('CHATBOT_SOURCED_LEADS', true),
+        // Hotel, activity and package search fuses keyword matches with the
+        // vector ranking. Needs the search_tsv migration; without it the
+        // search stays vector-only.
+        'hybrid_search' => env('CHATBOT_HYBRID_SEARCH', true),
+        // Tappable next steps under a result ("Things to do in Boracay").
+        'follow_up_chips' => env('CHATBOT_FOLLOW_UP_CHIPS', true),
         'max_tasks' => (int) env('CHATBOT_MAX_TASKS', 4),
         'cards_per_task' => (int) env('CHATBOT_CARDS_PER_TASK', 3),
         'turn_timeout' => (int) env('CHATBOT_TURN_TIMEOUT', 90),

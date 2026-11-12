@@ -300,6 +300,27 @@ class CoverageScorer
     }
 
     /**
+     * How a reply presents itself, apart from whether it is correct: did it
+     * put an input form in front of the user, fall back to the fixed
+     * "I found N verified options" pointer, or ask a question.
+     *
+     * @param  array<string, mixed>  $reply
+     * @return array{form: bool, canned: bool, question: bool}
+     */
+    public static function conversationSignals(array $reply): array
+    {
+        $question = is_array($reply['clarification'] ?? null) ? $reply['clarification'] : null;
+        $form = is_array($reply['trip_details_form'] ?? null) ? $reply['trip_details_form'] : null;
+
+        return [
+            'form' => ($question !== null && ! empty($question['control']) && ($question['inline_control'] ?? true) !== false)
+                || ($form !== null && ! empty($form['expanded'])),
+            'canned' => (bool) preg_match('/I found \d+ verified options?\.|(?:Still|I am) waiting on/u', (string) ($reply['reply'] ?? '')),
+            'question' => $question !== null,
+        ];
+    }
+
+    /**
      * Aggregate scored cases into the benchmark report.
      *
      * @param  list<array<string, mixed>>  $cases  rows with id, category, split, passed, answerable, turns[]
@@ -356,7 +377,16 @@ class CoverageScorer
         $claimTurns = array_values(array_filter($turns, fn (array $t): bool => $t['forbidden_claims'] !== []));
         $security = array_values(array_filter($cases, fn (array $c): bool => $c['category'] === 'reliability' || in_array($c['id'], ['multi-06', 'multi-15', 'info-09'], true)));
 
+        $styled = array_values(array_filter(array_column($turns, 'style'), 'is_array'));
+        $styleRate = fn (string $key): ?float => $rate(count(array_filter($styled, fn (array $s): bool => ! empty($s[$key]))), count($styled));
+
         return [
+            'conversation' => [
+                'turns' => count($styled),
+                'form_rate' => $styleRate('form'),
+                'canned_reply_rate' => $styleRate('canned'),
+                'question_rate' => $styleRate('question'),
+            ],
             'cases' => count($cases),
             'checked_turns' => count($checked),
             'total_turns' => count($turns),

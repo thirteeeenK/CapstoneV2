@@ -117,6 +117,10 @@ class RoomController extends Controller
             } else {
                 RegenerateEmbedding::dispatch('hotel', $hotel->id);
             }
+        } else {
+            // The hotel's vector describes its room price range, which this
+            // room may have just changed; refresh it off the request.
+            RegenerateEmbedding::dispatch('hotel', $hotel->id);
         }
 
         return redirect()->route('manage-rooms', $hotel->id)->with('success', 'Room details saved successfully!');
@@ -234,6 +238,10 @@ class RoomController extends Controller
             } else {
                 RegenerateEmbedding::dispatch('hotel', $hotel->id);
             }
+        } else {
+            // The hotel's vector describes its room price range, which this
+            // room may have just changed; refresh it off the request.
+            RegenerateEmbedding::dispatch('hotel', $hotel->id);
         }
 
         return redirect()->route('manage-rooms', $hotel->id)->with('success', 'Room information updated successfully!');

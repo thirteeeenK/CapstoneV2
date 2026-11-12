@@ -22,7 +22,9 @@ class ChatbotModerationPolicy
                 'nude',
                 'sexual',
                 'sex',
-                'strip',
+                // "strip" alone is travel talk ("the beach strip", "food strip").
+                'strip club',
+                'striptease',
                 'erotic',
                 'boobs',
                 'penis',
@@ -35,7 +37,13 @@ class ChatbotModerationPolicy
                 'hack bank',
                 'credit card fraud',
                 'illegal drugs',
-                'kill',
+                // Bare "kill" blocks "kill time"; only threats are matched.
+                'kill you',
+                'kill him',
+                'kill her',
+                'kill them',
+                'kill someone',
+                'kill people',
                 'murder',
             ],
             'Prompt Injection' => [
@@ -148,7 +156,8 @@ class ChatbotModerationPolicy
                 'tnt',
                 'tago ng tago',
                 'peke na ticket',
-                'scam',
+                // "Is this a scam?" is a fair trust question, not abuse.
+                'scammer ka',
                 'money laundering',
             ],
         ];

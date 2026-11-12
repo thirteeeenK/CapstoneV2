@@ -1,9 +1,12 @@
 <?php
 
 use App\Jobs\RegenerateEmbedding;
+use App\Jobs\UpdateEntityReviewSummaryJob;
 use App\Models\ActivityModel;
 use App\Models\AdminModel;
 use App\Models\DestinationModel;
+use App\Models\Faq;
+use App\Models\HotelModel;
 use App\Models\User;
 use App\Models\UserPreference;
 use App\Services\GeminiService;
@@ -66,4 +69,37 @@ it('replaces a placeholder profile and its saved explanations once Gemini recove
 
     expect($user->fresh()->preferences_embedding)->toStartWith('[0.02,')
         ->and($preference->fresh()->recommendation_explanations)->toBeNull();
+});
+
+it('records the source hash and model so a stale sweep does not embed the listing again', function () {
+    $activity = ActivityModel::factory()->create(['activity_name' => 'Reef Walk', 'embedding' => null]);
+    $this->partialMock(GeminiService::class, fn ($mock) => $mock->shouldReceive('generateEmbedding')->andReturn(array_fill(0, 3072, 0.02)));
+
+    RegenerateEmbedding::dispatchSync('activity', $activity->id);
+
+    $fresh = $activity->fresh();
+    $model = config('services.gemini.embedding_model');
+    expect($fresh->embedding_model)->toBe($model)
+        ->and($fresh->embedding_source_hash)->toBe(sha1(app(GeminiService::class)->buildActivityEmbeddingText($fresh->load('destination'), $fresh->destination?->name).$model))
+        ->and($fresh->embedded_at)->not->toBeNull();
+});
+
+it('refreshes a hotel vector after its review summary changes', function () {
+    Queue::fake([RegenerateEmbedding::class]);
+    $hotel = HotelModel::factory()->create();
+
+    (new UpdateEntityReviewSummaryJob('hotel', $hotel->id, $hotel->hotel_name))->handle(app(GeminiService::class));
+
+    Queue::assertPushed(RegenerateEmbedding::class, fn (RegenerateEmbedding $job) => $job->type === 'hotel' && $job->id === $hotel->id);
+});
+
+it('embeds an FAQ through the retry job', function () {
+    $faq = Faq::factory()->create(['question' => 'Do you accept GCash?', 'embedding' => null]);
+    $this->partialMock(GeminiService::class, fn ($mock) => $mock->shouldReceive('generateEmbedding')->once()
+        ->withArgs(fn (string $text, string $task, ?string $title) => str_contains($text, 'GCash') && $title === 'Do you accept GCash?')
+        ->andReturn(array_fill(0, 3072, 0.02)));
+
+    RegenerateEmbedding::dispatchSync('faq', $faq->id);
+
+    expect($faq->fresh()->embedding)->toStartWith('[0.02,')->and($faq->fresh()->embedding_model)->toBe(config('services.gemini.embedding_model'));
 });

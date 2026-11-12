@@ -41,8 +41,12 @@ final class ConversationPlanner
         private GeminiService $gemini,
     ) {}
 
-    /** @return array{handle: bool, tasks: list<array<string, mixed>>, source: string} */
-    public function plan(string $message, ChatSession $session): array
+    /**
+     * @param  list<string>|null  $forcedTypes  catalog intents the turn interpreter read from the
+     *                                          message; they replace keyword detection of what is being searched for
+     * @return array{handle: bool, tasks: list<array<string, mixed>>, source: string}
+     */
+    public function plan(string $message, ChatSession $session, ?array $forcedTypes = null): array
     {
         // Planned tasks echo their clause text back in the response; markup
         // never carries travel meaning, so it is removed before planning.
@@ -86,6 +90,18 @@ final class ConversationPlanner
         $excluded = [];
         $excludedTerms = [];
         $excludedNames = [];
+        if ($forcedTypes !== null) {
+            // The whole message is one request for these catalogs; constraints
+            // and exclusions are still extracted by the rules below.
+            $exclusions = $this->router->extractExclusions($message);
+            foreach ($forcedTypes as $type) {
+                $tasks[] = $this->task($type, $message, array_filter([
+                    'clause_excluded_terms' => $exclusions['terms'],
+                    'clause_excluded_names' => $exclusions['names'],
+                ]));
+            }
+            $clauses = [];
+        }
         foreach ($clauses as $clause) {
             // Negation is resolved before positive extraction so a ruled-out
             // feature or catalog item can never become a positive task.
@@ -209,7 +225,9 @@ final class ConversationPlanner
             }
         }
         $pending = $this->conversation->pendingTasks($session);
-        if (count($tasks) === 1 && $groups !== [] && preg_match('/\b(?:available|availability|open)\b/iu', $message)
+        // "open" alone ("is it open all year?") is a question about the place,
+        // not a request to check dated room availability.
+        if (count($tasks) === 1 && $groups !== [] && preg_match('/\b(?:available|availability)\b/iu', $message)
             && in_array($tasks[0]['type'], [IntentRouter::ROOM_SEARCH, IntentRouter::HOTEL_SEARCH], true)) {
             $tasks[0]['type'] = IntentRouter::AVAILABILITY_QUERY;
         }
@@ -424,7 +442,11 @@ final class ConversationPlanner
         $hasScopedExclusions = array_filter($tasks, static fn (array $task): bool => ($task['constraints']['excluded_terms'] ?? []) !== []
             || ($task['constraints']['excluded_names'] ?? []) !== []) !== [];
 
-        return ['handle' => count($tasks) > 1 || $special !== [] || $excluded !== [] || $excludedTerms !== [] || $excludedNames !== [] || $hasScopedExclusions || ($groups !== [] && $reference) || ($pending !== [] && $tasks !== []), 'tasks' => $tasks, 'source' => $source];
+        // An interpreted request is always planned work: handing it back to
+        // keyword classification would undo the reading it was planned from.
+        $interpreted = $forcedTypes !== null && $tasks !== [];
+
+        return ['handle' => $interpreted || count($tasks) > 1 || $special !== [] || $excluded !== [] || $excludedTerms !== [] || $excludedNames !== [] || $hasScopedExclusions || ($groups !== [] && $reference) || ($pending !== [] && $tasks !== []), 'tasks' => $tasks, 'source' => $interpreted ? 'interpreted' : $source];
     }
 
     /**

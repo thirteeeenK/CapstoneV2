@@ -1,5 +1,5 @@
-<template x-if="msg.trip_details_form && msg.trip_details_form.id === activeTripFormId && handoffStatus !== 'active'">
-    <details class="mt-3 rounded-xl border border-slate-200 p-3 dark:border-slate-700 font-body" :open="msg.trip_details_form.expanded"
+<template x-if="msg.trip_details_form && msg.trip_details_form.id === activeTripFormId && handoffStatus !== 'active' && (!msg.trip_details_form.on_request || shownTripFormId === msg.trip_details_form.id)">
+    <details class="mt-3 rounded-xl border border-slate-200 p-3 dark:border-slate-700 font-body" :open="msg.trip_details_form.expanded || shownTripFormId === msg.trip_details_form.id"
         x-data="{ form: msg.trip_details_form,
             values: { destination_id: '', pax: '', days: '', check_in_date: '', check_out_date: '', dates_undecided: false, include_accommodation: true, max_price: '', budget_basis: 'unknown', budget_period: '', budget_coverage: '', preferences: [], notes: '', ...Object.fromEntries(Object.entries(msg.trip_details_form.values).filter(([key]) => ['destination_id','pax','days','check_in_date','check_out_date','dates_undecided','include_accommodation','max_price','budget_basis','budget_period','budget_coverage','preferences','notes'].includes(key))) },
             activityPreferences: [['adventure', 'Adventure'], ['relaxing', 'Relaxing'], ['indoor', 'Indoor activities']],

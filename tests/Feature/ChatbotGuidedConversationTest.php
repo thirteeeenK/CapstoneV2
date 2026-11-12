@@ -236,9 +236,10 @@ test('a new category with multiple prior destinations asks which scope to use', 
     expect($response->json('retrieved_hotels'))->toBeNull();
 });
 
-test('explicit hard ceilings are not relaxed while their basis is unknown', function () {
+test('an explicit hard ceiling with no stated basis is read per night and never relaxed', function () {
     $response = $this->postJson('/chat', ['message' => 'hotels in Boracay under PHP 100 and activities']);
-    $response->assertOk()->assertJsonPath('clarification.field', 'budget_basis')->assertJsonPath('retrieved_activities.0.id', $this->activity->id);
+    $response->assertOk()->assertJsonPath('clarification', null)->assertJsonPath('sections.0.outcome.reason', 'hard_budget_no_match')
+        ->assertJsonPath('retrieved_activities.0.id', $this->activity->id);
     expect($response->json('retrieved_hotels'))->toBeNull();
     $followup = $this->postJson('/chat', ['message' => 'per night', 'session_token' => $response->json('session_token')]);
     $followup->assertOk()->assertJsonPath('sections.0.outcome.reason', 'hard_budget_no_match');
@@ -255,9 +256,11 @@ test('a low target is a labelled preview and hidden inventory remains hidden', f
 
 test('model outages still permit deterministic questions', function () {
     config(['services.groq.key' => null]);
+    Http::fake(['*generateContent*' => Http::response([], 500)]);
     $first = $this->postJson('/chat', ['message' => 'help me plan a trip']);
     $first->assertOk()->assertJsonPath('clarification.field', 'destination');
-    Http::assertNothingSent();
+    // Only the turn reading was attempted; the question itself needs no model.
+    Http::assertSentCount(1);
 });
 
 test('date ranges retain an explicit future year', function () {
@@ -272,14 +275,13 @@ test('unscoped numbers do not become travelers automatically', function () {
     expect($response->json('reply'))->toContain('whether that number means travelers');
 });
 
-test('reported budget previews work while the guided feature flag is disabled', function () {
+test('a budget with no stated basis is applied per night and the reply says so while the guided flag is disabled', function () {
     config(['services.chatbot.guided_conversation_enabled' => false]);
     $first = $this->postJson('/chat', ['message' => 'hotels in Boracay']);
     $response = $this->postJson('/chat', ['message' => 'activities and hotel for 2 pax 10000 budget', 'session_token' => $first->json('session_token')]);
     $response->assertOk()->assertJsonPath('retrieved_hotels.0.id', $this->hotel->id)->assertJsonPath('retrieved_activities.0.id', $this->activity->id)
-        ->assertJsonPath('sections.1.outcome.reason', 'missing_budget_basis')->assertJsonPath('sections.1.data.budget_unverified', true);
-    $this->postJson('/chat', ['message' => 'per night', 'session_token' => $first->json('session_token')])->assertOk()
-        ->assertJsonPath('retrieved_hotels.0.id', $this->hotel->id);
+        ->assertJsonPath('sections.1.outcome.reason', 'verified_result_found');
+    expect($response->json('sections.1.answer'))->toContain('I read your budget as ₱10,000 per night');
 });
 
 test('preview discovery still honors group capacity', function () {
@@ -303,7 +305,8 @@ test('guided questions are suspended while a human support agent controls the se
     SupportInquiry::create(['chat_session_id' => $session->id, 'ticket_number' => 'GUIDED-TEST', 'status' => SupportInquiry::STATUS_HUMAN_ACTIVE]);
     $this->postJson('/chat', ['message' => 'Boracay', 'session_token' => $first->json('session_token')])->assertOk()->assertJsonPath('control', 'admin');
     expect($session->fresh()->metadata['conversation_v2']['dialogue']['active_question'])->toBeNull();
-    Http::assertNothingSent();
+    // The first message was read once; nothing is sent while a human is in control.
+    Http::assertSentCount(1);
 });
 
 test('unsupported actions do not start a booking questionnaire', function () {

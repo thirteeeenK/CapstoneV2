@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\SaveFaqRequest;
+use App\Jobs\RegenerateEmbedding;
 use App\Models\Faq;
 use App\Services\AdminAuditService;
 use App\Services\GeminiService;
@@ -242,6 +243,9 @@ class AdminFaqController extends Controller
             if ($vector) {
                 $faq->embedding = $geminiService->formatVectorForDb($vector);
                 $faq->save();
+            } else {
+                // Gemini gave no vector: retry in the background like listings do.
+                RegenerateEmbedding::dispatch('faq', $faq->id);
             }
         } catch (\Throwable $e) {
             Log::warning('FAQ embedding generation skipped.', [

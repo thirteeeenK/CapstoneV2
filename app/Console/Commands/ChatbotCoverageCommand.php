@@ -303,6 +303,7 @@ class ChatbotCoverageCommand extends Command
                     ], $reply['sections'] ?? []),
                     'outcome_reason' => $reply['retrieval_outcome']['reason'] ?? null,
                     'forbidden_claims' => CoverageScorer::forbiddenClaims($observed['text']),
+                    'style' => CoverageScorer::conversationSignals($reply),
                     'reply_excerpt' => Str::limit(preg_replace('/\s+/u', ' ', $observed['text']), 400),
                     'latency_ms' => $latency,
                 ];
@@ -587,6 +588,8 @@ class ChatbotCoverageCommand extends Command
         $this->line(sprintf('Constraint/correction accuracy: %s · task accounting: %s · unsupported-claim turns: %d · latency p50/p95: %s/%s ms',
             $summary['constraint_correction_accuracy'] ?? '—', $summary['task_accounting_rate'] ?? '—', $summary['unsupported_claim_turns'],
             $summary['latency_p50_ms'] ?? '—', $summary['latency_p95_ms'] ?? '—'));
+        $this->line(sprintf('Conversation style over %d turns · input form shown: %s · fixed "I found N options" reply: %s · asked a question: %s',
+            $summary['conversation']['turns'], $summary['conversation']['form_rate'] ?? '—', $summary['conversation']['canned_reply_rate'] ?? '—', $summary['conversation']['question_rate'] ?? '—'));
         foreach ($rows as $row) {
             if (! $row['passed']) {
                 $turn = collect($row['turns'])->first(fn (array $t): bool => ! $t['passed']);

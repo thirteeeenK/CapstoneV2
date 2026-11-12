@@ -51,7 +51,7 @@ test('hotel search with embedding failure returns visible destination hotels and
     expect($response->json('trace.retrieval_mode'))->toBe('lexical');
 });
 
-test('successful semantic hotel search reports semantic retrieval mode', function () {
+test('a semantic hotel search with no keyword match reports semantic retrieval mode', function () {
     Http::fake([
         '*embedContent*' => Http::response(['embedding' => ['values' => array_fill(0, 3072, 0.01)]]),
     ]);
@@ -62,7 +62,7 @@ test('successful semantic hotel search reports semantic retrieval mode', functio
     ]);
 
     $service = app(GeminiService::class);
-    $results = $service->searchHotels('beach resort', 5, null, $this->boracay->id);
+    $results = $service->searchHotels('tranquil getaway', 5, null, $this->boracay->id);
 
     expect($results)->not->toBeEmpty()
         ->and($service->lastRetrievalMode)->toBe('semantic');
@@ -185,4 +185,46 @@ test('room hybrid search reports lexical retrieval mode when embedding fails', f
 
     expect($results)->not->toBeEmpty()
         ->and($service->lastRetrievalMode)->toBe('lexical');
+});
+
+describe('hybrid keyword and vector search', function () {
+    beforeEach(function () {
+        // The query embedding points at axis 0.
+        Http::fake(['*embedContent*' => Http::response(['embedding' => ['values' => unitVector(0)]])]);
+        $near = '['.implode(',', array_merge([0.5, 0.866], array_fill(0, 3070, 0.0))).']'; // cosine 0.50, under the 0.60 floor
+        $this->close = HotelModel::factory()->create(['hotel_name' => 'Seaview Lodge', 'hotel_description' => 'Rooms facing the water.', 'destination_id' => $this->boracay->id, 'is_shown' => true, 'embedding' => unitVectorString(0)]);
+        $this->named = HotelModel::factory()->create(['hotel_name' => 'Kalipay Hideaway', 'hotel_description' => 'A small garden inn.', 'destination_id' => $this->boracay->id, 'is_shown' => true, 'embedding' => $near]);
+        $this->unrelated = HotelModel::factory()->create(['hotel_name' => 'Hilltop Hostel', 'hotel_description' => 'Dorm beds.', 'destination_id' => $this->boracay->id, 'is_shown' => true, 'embedding' => unitVectorString(5)]);
+    });
+
+    test('a listing that contains the request\'s own words is kept when it sits just under the vector floor', function () {
+        $service = app(GeminiService::class);
+
+        $names = array_map(fn (array $entry): string => $entry['item']->hotel_name, $service->searchHotels('is there a place called Kalipay', 5, null, $this->boracay->id));
+
+        expect($names)->toContain('Kalipay Hideaway', 'Seaview Lodge')->not->toContain('Hilltop Hostel')
+            ->and($service->lastRetrievalMode)->toBe('hybrid');
+    });
+
+    test('without a keyword match the vector floor alone decides', function () {
+        $names = array_map(fn (array $entry): string => $entry['item']->hotel_name, app(GeminiService::class)->searchHotels('somewhere tranquil', 5, null, $this->boracay->id));
+
+        expect($names)->toBe(['Seaview Lodge']);
+    });
+
+    test('a keyword match never rescues a listing far below the floor', function () {
+        $this->unrelated->update(['hotel_name' => 'Kalipay Hostel']);
+
+        $names = array_map(fn (array $entry): string => $entry['item']->hotel_name, app(GeminiService::class)->searchHotels('Kalipay', 5, null, $this->boracay->id));
+
+        expect($names)->toContain('Kalipay Hideaway')->not->toContain('Kalipay Hostel');
+    });
+
+    test('switching hybrid search off restores vector-only results', function () {
+        config(['services.chatbot.hybrid_search' => false]);
+
+        $names = array_map(fn (array $entry): string => $entry['item']->hotel_name, app(GeminiService::class)->searchHotels('is there a place called Kalipay', 5, null, $this->boracay->id));
+
+        expect($names)->toBe(['Seaview Lodge']);
+    });
 });

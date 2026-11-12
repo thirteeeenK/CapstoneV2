@@ -116,7 +116,7 @@
                         </li>
                         <li class="flex items-center gap-2 text-[11px] text-slate-600 dark:text-slate-400 font-body">
                             <span class="material-symbols-outlined text-[15px] text-ocean-500">headset_mic</span>
-                            Hand you to a human agent any time — just click the Talk to Agent button above.
+                            Hand you to a human agent any time — just click the Talk to Admin button above.
                         </li>
                     </ul>
                     <div class="px-4 pb-3 flex flex-wrap gap-2 justify-center">
@@ -207,24 +207,6 @@
                                     </p>
                                 </template>
 
-                                {{-- Response-linked feedback (stored with the trace ID only) --}}
-                                <template x-if="msg.trace_id">
-                                    <div class="mt-2" x-data="{ feedbackOpen: false, feedbackSent: false }">
-                                        <button type="button" x-show="!feedbackSent" @click="feedbackOpen = !feedbackOpen" :aria-expanded="feedbackOpen.toString()"
-                                            class="text-[10px] text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ocean-400 rounded">
-                                            Report a problem with this answer
-                                        </button>
-                                        <div x-show="feedbackOpen && !feedbackSent" class="mt-1.5 flex flex-wrap gap-1.5" role="group" aria-label="What was wrong with this answer?">
-                                            <template x-for="reason in [['wrong_information', 'Wrong information'], ['missing_part', 'Missing part'], ['not_helpful', 'Not helpful']]" :key="reason[0]">
-                                                <button type="button" x-text="reason[1]"
-                                                    @click="sendFeedback(msg, reason[0]).then(ok => { feedbackSent = ok; feedbackOpen = !ok; })"
-                                                    class="px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-600 text-[10px] font-label text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ocean-400"></button>
-                                            </template>
-                                        </div>
-                                        <p x-show="feedbackSent" role="status" class="text-[10px] text-emerald-700 dark:text-emerald-300">Thanks, this was sent to the SunnyTrips team.</p>
-                                    </div>
-                                </template>
-
                                 {{-- Room cards --}}
                                 <template x-if="msg.rooms">
                                     <div class="mt-3 space-y-2">
@@ -255,7 +237,8 @@
                                                             x-text="room.check_in_date + ' → ' + room.check_out_date"></span>
                                                     </div>
                                                 </template>
-                                                <template x-if="!room.check_in_date || !room.check_out_date">
+                                                {{-- The calendar opens on request, so a list of rooms reads as an answer, not a form --}}
+                                                <template x-if="(!room.check_in_date || !room.check_out_date) && room._pickDates">
                                                     <div class="mt-1"
                                                         @date-range-changed.stop="room._checkIn = $event.detail.checkIn; room._checkOut = $event.detail.checkOut; room._available = $event.detail.available">
                                                         <x-frontend.date-range-picker :dynamic-room-id="'room.id'"
@@ -266,10 +249,10 @@
                                                     <button @click="$store.preview.openRoomById(room.id)"
                                                         class="flex-1 text-[11px] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold px-2 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors font-headline cursor-pointer">Preview</button>
                                                     <button
-                                                        @click="addToBasket('room', room.id, room.check_in_date ? { check_in_date: room.check_in_date, check_out_date: room.check_out_date, selected_pax: room.pax || 1 } : { check_in_date: room._checkIn, check_out_date: room._checkOut, selected_pax: 1 })"
-                                                        :disabled="(!room.check_in_date || !room.check_out_date) && (!room._checkIn || !room._checkOut)"
-                                                        class="flex-1 text-[11px] bg-ocean-600 text-white font-bold px-2 py-1.5 rounded-lg hover:bg-ocean-700 transition-colors font-headline disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer">+
-                                                        Trip Basket</button>
+                                                        @click="(!room.check_in_date || !room.check_out_date) && (!room._checkIn || !room._checkOut) ? (room._pickDates = true) : addToBasket('room', room.id, room.check_in_date ? { check_in_date: room.check_in_date, check_out_date: room.check_out_date, selected_pax: room.pax || 1 } : { check_in_date: room._checkIn, check_out_date: room._checkOut, selected_pax: 1 })"
+                                                        :disabled="(!room.check_in_date || !room.check_out_date) && room._pickDates && (!room._checkIn || !room._checkOut)"
+                                                        class="flex-1 text-[11px] bg-ocean-600 text-white font-bold px-2 py-1.5 rounded-lg hover:bg-ocean-700 transition-colors font-headline disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                                                        x-text="(!room.check_in_date || !room.check_out_date) && !room._pickDates ? 'Choose dates' : '+ Trip Basket'"></button>
                                                 </div>
                                             </div>
                                         </template>
@@ -496,7 +479,33 @@
                                     </div>
                                 </template>
 
+                                {{-- The trip details form is offered, not opened, outside itinerary building --}}
+                                <template x-if="msg.trip_details_form && msg.trip_details_form.on_request && msg.trip_details_form.id === activeTripFormId && shownTripFormId !== msg.trip_details_form.id && handoffStatus !== 'active'">
+                                    <button type="button" @click="shownTripFormId = msg.trip_details_form.id"
+                                        class="mt-2 block text-[10px] text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ocean-400 rounded">
+                                        Prefer a form? Edit trip details
+                                    </button>
+                                </template>
+
                                 @include('components.frontend.chat-trip-details')
+
+                                {{-- Response-linked feedback (stored with the trace ID only) --}}
+                                <template x-if="msg.trace_id">
+                                    <div class="mt-2" x-data="{ feedbackOpen: false, feedbackSent: false }">
+                                        <button type="button" x-show="!feedbackSent" @click="feedbackOpen = !feedbackOpen" :aria-expanded="feedbackOpen.toString()"
+                                            class="text-[10px] text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ocean-400 rounded">
+                                            Report a problem with this answer
+                                        </button>
+                                        <div x-show="feedbackOpen && !feedbackSent" class="mt-1.5 flex flex-wrap gap-1.5" role="group" aria-label="What was wrong with this answer?">
+                                            <template x-for="reason in [['wrong_information', 'Wrong information'], ['missing_part', 'Missing part'], ['not_helpful', 'Not helpful']]" :key="reason[0]">
+                                                <button type="button" x-text="reason[1]"
+                                                    @click="sendFeedback(msg, reason[0]).then(ok => { feedbackSent = ok; feedbackOpen = !ok; })"
+                                                    class="px-2 py-1 rounded-lg border border-slate-200 dark:border-slate-600 text-[10px] font-label text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ocean-400"></button>
+                                            </template>
+                                        </div>
+                                        <p x-show="feedbackSent" role="status" class="text-[10px] text-emerald-700 dark:text-emerald-300">Thanks, this was sent to the SunnyTrips team.</p>
+                                    </div>
+                                </template>
 
                                 <template x-if="msg.itinerary_suggestion">
                                     <div data-trip-plan-actions class="mt-3 space-y-2 text-xs font-body" :class="isLatestSuggestion(msg.itinerary_suggestion) ? '' : 'opacity-70'">
@@ -563,7 +572,13 @@
                                 {{-- Question controls: shown only for the question the
                                      server is still waiting on. The composer stays
                                      available for a typed answer at every step. --}}
-                                <template x-if="activeControl(msg)">
+                                {{-- The picker waits behind a link, so the question reads as conversation first --}}
+                                <template x-if="activeControl(msg) && msg.clarification.control_collapsed && openControlId !== msg.clarification.id">
+                                    <button type="button" @click="openControlId = msg.clarification.id"
+                                        class="mt-2 inline-flex items-center gap-1 text-[11px] font-bold font-label text-ocean-700 dark:text-ocean-100 hover:underline underline-offset-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ocean-400 rounded"
+                                        x-text="activeControl(msg).type === 'date_range' ? 'Pick dates on a calendar' : 'Answer with a form'"></button>
+                                </template>
+                                <template x-if="activeControl(msg) && (!msg.clarification.control_collapsed || openControlId === msg.clarification.id)">
                                     <form @submit.prevent="submitControl(msg)"
                                         class="mt-3 rounded-xl border border-ocean-200/80 dark:border-ocean-800 bg-ocean-50/70 dark:bg-ocean-900/40 p-3 space-y-2.5">
                                         <fieldset class="space-y-2.5" :disabled="controlBusy || sending">
@@ -808,6 +823,8 @@
             controlErrors: {},
             controlBusy: false,
             activeTripFormId: null,
+            shownTripFormId: null,
+            openControlId: null,
             savingTripPlan: null,
             acceptingLucky: false,
             savedTripPlans: {},
@@ -1276,9 +1293,9 @@
                         extras.itinerary = data.itinerary;
                     }
                     if (data.lucky) extras.lucky = data.lucky;
-                    if (data.retrieved_hotels) extras.hotels = data.retrieved_hotels;
-                    if (data.retrieved_activities && !data.itinerary_suggestion) extras.activities = data.retrieved_activities;
-                    if (data.retrieved_packages) extras.packages = data.retrieved_packages;
+                    if (data.retrieved_hotels?.length) extras.hotels = data.retrieved_hotels;
+                    if (data.retrieved_activities?.length && !data.itinerary_suggestion) extras.activities = data.retrieved_activities;
+                    if (data.retrieved_packages?.length) extras.packages = data.retrieved_packages;
                     if (data.result_ordering) extras.ordering = data.result_ordering;
                     if (data.map) extras.map = data.map;
                     if (data.ai_notice) extras.ai_notice = data.ai_notice;
@@ -1610,9 +1627,12 @@
              * null. Answered questions render as read-only history instead.
              */
             activeControl(msg) {
-                if (this.activeTripFormId) return null;
+                // A visible trip form already collects this answer.
+                const form = msg.trip_details_form;
+                if (form && form.id === this.activeTripFormId && (!form.on_request || this.shownTripFormId === form.id)) return null;
                 const clarification = msg.clarification;
                 if (!clarification?.control || !clarification.id) return null;
+                if (clarification.inline_control === false) return null;
                 if (clarification.id !== this.activeQuestionId) return null;
                 if (this.handoffStatus === 'active') return null;
                 return clarification.control;

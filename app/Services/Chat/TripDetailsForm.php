@@ -36,14 +36,18 @@ class TripDetailsForm
         }
         $values['dates_undecided'] = ($canonical['slots']['dates']['status'] ?? null) === 'undecided';
         $types = array_column($tasks, 'type');
+        $onRequest = (bool) config('services.chatbot.forms_on_request', true);
 
-        return ['version' => 1, 'id' => (string) Str::uuid(), 'revision' => $state['revision'], 'scope_id' => $selected['scope_id'],
+        return ['version' => 1,
+            // Outside itinerary building the form is only offered: the client
+            // keeps it hidden until the user asks for it.
+            'on_request' => $onRequest && ! in_array(IntentRouter::ITINERARY_QUERY, $types, true), 'id' => (string) Str::uuid(), 'revision' => $state['revision'], 'scope_id' => $selected['scope_id'],
             'request' => implode(' + ', array_unique($types)),
             'needs_dates' => array_intersect($types, [IntentRouter::ITINERARY_QUERY, IntentRouter::AVAILABILITY_QUERY, IntentRouter::ROOM_SEARCH, IntentRouter::HOTEL_SEARCH]) !== [],
             'needs_duration' => in_array(IntentRouter::ITINERARY_QUERY, $types, true),
             'minimum_arrival' => app(TripBookingDatePolicy::class)->minimumArrivalDate(),
             'has_itinerary' => in_array(IntentRouter::ITINERARY_QUERY, $types, true) && collect($tasks)->contains(fn (array $task): bool => $task['type'] === IntentRouter::ITINERARY_QUERY && $task['status'] === 'answered'),
-            'values' => $values, 'expanded' => $state['active_question'] !== null,
+            'values' => $values, 'expanded' => ! $onRequest && $state['active_question'] !== null,
             'destinations' => DestinationModel::query()->orderBy('name')->get(['id', 'name'])->toArray()];
     }
 

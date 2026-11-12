@@ -27,7 +27,11 @@ export function displayChatMessages(messages) {
         return message.sections.map((section, index) => {
             const last = index === message.sections.length - 1;
             const destination = section.constraints?.destination_name;
-            let text = '### ' + section.heading + (destination ? ' — ' + destination : '') + '\n\n' + section.answer;
+            // A heading only helps tell several parts apart; a single answer
+            // reads as conversation without one.
+            let text = message.sections.length > 1
+                ? '### ' + section.heading + (destination ? ' — ' + destination : '') + '\n\n' + section.answer
+                : section.answer;
             if (last) {
                 // Prices sit with the results they qualify; planning notices and
                 // the one open question come last, each rendered once.

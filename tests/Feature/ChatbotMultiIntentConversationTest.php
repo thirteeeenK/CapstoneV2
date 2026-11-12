@@ -26,12 +26,12 @@ beforeEach(function () {
     $this->activity = ActivityModel::factory()->create(['activity_name' => 'Parasailing Adventure', 'destination_id' => $this->destination->id, 'is_shown' => true, 'rate' => '900', 'embedding' => unitVectorString(0)]);
 });
 
-test('returns separate evidence outcomes and cards using one composition call', function () {
+test('returns separate evidence outcomes and cards using one turn reading and one answer call per matched section', function () {
     $response = $this->postJson('/chat', ['message' => 'hotels in Boracay and activities for 2 pax']);
     $response->assertOk()->assertJsonPath('schema_version', 2)->assertJsonCount(2, 'sections');
     expect($response->json('sections.0.data.retrieved_hotels.0.id'))->toBe($this->hotel->id)
         ->and($response->json('sections.1.data.retrieved_activities.0.id'))->toBe($this->activity->id);
-    expect(Http::recorded(fn ($request) => str_contains($request->url(), 'generateContent')))->toHaveCount(1);
+    expect(Http::recorded(fn ($request) => str_contains($request->url(), 'generateContent')))->toHaveCount(3);
     $session = ChatSession::where('session_token', $response->json('session_token'))->firstOrFail();
     expect($session->messages()->count())->toBe(2)
         ->and($session->metadata['conversation_v2']['groups'])->toHaveCount(2);
@@ -209,9 +209,8 @@ test('an excluded activity does not return as a recommendation', function () {
     expect($response->json('retrieved_activities'))->toBeNull();
 });
 
-test('a missing budget basis can be clarified on the next turn', function () {
+test('a budget with no stated basis is read per night and the reply says so', function () {
     $first = $this->postJson('/chat', ['message' => 'hotels in Boracay under PHP 3000 and activities']);
-    $first->assertOk()->assertJsonPath('sections.0.outcome.reason', 'missing_budget_basis');
-    $this->postJson('/chat', ['message' => 'per night', 'session_token' => $first->json('session_token')])->assertOk()
-        ->assertJsonPath('retrieved_hotels.0.id', $this->hotel->id);
+    $first->assertOk()->assertJsonPath('sections.0.outcome.reason', 'verified_result_found')->assertJsonPath('retrieved_hotels.0.id', $this->hotel->id);
+    expect($first->json('sections.0.answer'))->toContain('I read your budget as ₱3,000 per night');
 });

@@ -34,7 +34,7 @@ class EmbedStaleTest extends TestCase
         $hotel->refresh();
 
         $this->assertNotNull($hotel->embedding);
-        $this->assertEquals('text-embedding-001', $hotel->embedding_model);
+        $this->assertEquals(config('services.gemini.embedding_model'), $hotel->embedding_model);
         $this->assertNotNull($hotel->embedding_source_hash);
         $this->assertNotNull($hotel->embedded_at);
 
@@ -90,6 +90,6 @@ class EmbedStaleTest extends TestCase
         Artisan::call('embed:all', ['--stale' => true]);
         $hotel->refresh();
 
-        $this->assertEquals('text-embedding-001', $hotel->embedding_model, 'model should update to current');
+        $this->assertEquals(config('services.gemini.embedding_model'), $hotel->embedding_model, 'model should update to current');
     }
 }

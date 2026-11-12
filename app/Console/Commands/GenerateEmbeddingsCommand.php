@@ -23,7 +23,8 @@ class GenerateEmbeddingsCommand extends Command
         $this->info('Starting AI Embedding Generation...');
         $force = $this->option('force');
         $stale = $this->option('stale');
-        $model = 'text-embedding-001';
+        // The configured model, so switching EMBEDDING_MODEL marks every vector stale.
+        $model = (string) config('services.gemini.embedding_model');
 
         // 1. Process Hotels
         $queryHotels = HotelModel::with('destination');

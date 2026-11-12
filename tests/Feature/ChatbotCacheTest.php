@@ -6,6 +6,10 @@ use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 
+// These tests count the answer call's requests; the separate turn-understanding
+// call is switched off so it does not appear in those counts.
+beforeEach(fn () => config(['services.chatbot.turn_interpreter' => false]));
+
 test('chat uses cachedContent and omits systemInstruction when caching enabled', function () {
     config(['services.gemini.chat_context_cache' => true]);
     Cache::flush();

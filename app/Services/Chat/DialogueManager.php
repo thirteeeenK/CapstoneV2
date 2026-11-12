@@ -59,7 +59,11 @@ final class DialogueManager
             && (bool) preg_match('/^(?:per\s+night|each\s+night|a\s+night|\/night|bawat\s+gabi|kada\s+gabi)[.!]?$/iu', trim($message))
             && array_filter($state['tasks'], static fn (array $task): bool => in_array($task['type'], [IntentRouter::HOTEL_SEARCH, IntentRouter::ROOM_SEARCH, IntentRouter::ITINERARY_QUERY], true)
                 && $task['status'] !== 'cancelled' && ($task['budget_basis'] ?? null) === 'per_person' && ! empty($task['constraints']['max_price'])) !== [];
-        $correction = $periodRefinement || (bool) preg_match('/\b(?:actually|instead|change|make\s+that|same\s+budget|apat\s+kami)\b/iu', $message);
+        // "per person" or "for the whole trip" on its own corrects the basis an
+        // earlier budget was read with; only the budgeted requests run again.
+        $basisCorrection = $question === null && ! $periodRefinement && ! empty($values['budget_basis']) && empty($values['max_price']) && $plan['tasks'] === [] && str_word_count($message) <= 6
+            && array_filter($state['tasks'], static fn (array $task): bool => $task['status'] !== 'cancelled' && ! empty($task['constraints']['max_price'])) !== [];
+        $correction = $periodRefinement || $basisCorrection || (bool) preg_match('/\b(?:actually|instead|change|make\s+that|same\s+budget|apat\s+kami)\b/iu', $message);
         $incoming = $plan['tasks'];
         if ($incoming === [] && preg_match('/\bplan\b.*\b(?:trip|vacation|holiday|bakasyon)\b/iu', $message)) {
             $incoming[] = ['type' => IntentRouter::ITINERARY_QUERY, 'query' => $message, 'constraints' => $values, 'budget_basis' => $values['budget_basis'] ?? 'unknown'];
@@ -93,6 +97,9 @@ final class DialogueManager
                 return ['handle' => true, 'tasks' => [$this->statusTask('There is more than one trip in this conversation. Please name the destination you want to continue.')], 'source' => 'dialogue_scope', 'dialogue' => $state];
             }
             foreach ($state['tasks'] as $task) {
+                if ($basisCorrection && empty($task['constraints']['max_price'])) {
+                    continue;
+                }
                 if ($periodRefinement && (! in_array($task['type'], [IntentRouter::HOTEL_SEARCH, IntentRouter::ROOM_SEARCH, IntentRouter::ITINERARY_QUERY], true)
                     || ($task['budget_basis'] ?? null) !== 'per_person' || empty($task['constraints']['max_price']))) {
                     continue;
@@ -141,6 +148,13 @@ final class DialogueManager
             }));
         } elseif ($question !== null && $incoming === []) {
             $volunteered = $this->volunteered($values);
+            // The user asked something of their own instead of answering. The
+            // open question steps aside so their message gets a real answer;
+            // "continue planning" brings it back.
+            if ($volunteered === [] && config('services.chatbot.forms_on_request', true)
+                && preg_match('/\?\s*$|^(?:what|which|who|where|when|why|how|can|could|is|are|do|does|should|ano|anong|alin|saan|kailan|bakit|paano|pwede|puwede|may)\b/iu', trim($message))) {
+                return [...$plan, 'dialogue' => $this->suspended($state)];
+            }
             foreach ($state['tasks'] as $task) {
                 if (! in_array($task['persistent_id'], $question['task_ids'], true)) {
                     continue;
@@ -825,6 +839,36 @@ final class DialogueManager
     }
 
     /**
+     * Quick replies for a question. Each value is the sentence the user would
+     * have typed, so a tap runs through the same parsing as a typed answer.
+     *
+     * @return list<array{label: string, value: string}>
+     */
+    private function answerChips(string $field): array
+    {
+        return match ($field) {
+            'destination' => array_map(
+                static fn (array $option): array => ['label' => $option['label'], 'value' => $option['label']],
+                array_slice($this->destinationOptions(), 0, 5),
+            ),
+            'budget_scope', 'budget_basis' => [
+                ['label' => 'Per night', 'value' => 'per night'],
+                ['label' => 'Per person', 'value' => 'per person'],
+                ['label' => 'Whole trip', 'value' => 'whole trip total'],
+            ],
+            'budget_period' => [
+                ['label' => 'Per night', 'value' => 'per night'],
+                ['label' => 'Whole stay', 'value' => 'for the whole stay'],
+            ],
+            'budget_coverage' => [
+                ['label' => 'Hotel only', 'value' => 'hotel only'],
+                ['label' => 'Everything', 'value' => 'everything including activities'],
+            ],
+            default => [],
+        };
+    }
+
+    /**
      * Destinations a question may offer, from the visible catalog only.
      *
      * @return list<array{value: string, label: string}>
@@ -1192,6 +1236,14 @@ final class DialogueManager
                 $question['options'][] = ['label' => 'Keep '.$conflict['days'].' days ('.$conflict['check_in_date'].' to '.$kept.')', 'value' => $conflict['days'].' days, '.$conflict['check_in_date'].' to '.$kept];
                 $question['options'][] = ['label' => 'Use '.$conflict['check_in_date'].' to '.$conflict['check_out_date'].' ('.$conflict['range_days'].' days)', 'value' => $conflict['range_days'].' days, '.$conflict['check_in_date'].' to '.$conflict['check_out_date']];
             }
+            $proseQuestions = (bool) config('services.chatbot.forms_on_request', true);
+            if ($proseQuestions) {
+                // Tappable answers stand in for the input control, so the
+                // question reads as conversation rather than as a form.
+                foreach ($this->answerChips($next['field']) as $chip) {
+                    $question['options'][] = $chip;
+                }
+            }
             if (in_array($next['field'], ['dates', 'budget_scope', 'budget_basis', 'budget_period', 'budget_coverage'], true)) {
                 $question['options'][] = ['label' => $next['field'] === 'dates' ? 'Dates undecided' : 'No budget preference', 'value' => $next['field'] === 'dates' ? 'Dates undecided' : 'No budget preference'];
             }
@@ -1199,6 +1251,11 @@ final class DialogueManager
             // data only, never from generated text, and is additive: a client
             // that ignores it still has the prompt and the skip action.
             $question['control'] = $this->questionControl($next, $plan);
+            // Only a date range is worth an inline picker; every other question
+            // is asked in prose and answered by typing or tapping a chip.
+            $question['inline_control'] = ! $proseQuestions || $next['field'] === 'dates';
+            // Even that picker starts closed behind a link.
+            $question['control_collapsed'] = $proseQuestions;
         }
         $state['active_question'] = $question;
         $overflowNotice = count($state['tasks']) > 8;
@@ -1226,8 +1283,9 @@ final class DialogueManager
         $payload['dialogue_revision'] = $state['revision'];
         $payload['_dialogue_state'] = $state;
         $texts = [];
+        $headed = count($payload['sections']) > 1;
         foreach ($payload['sections'] as $section) {
-            $texts[] = '### '.$section['heading'].(! empty($section['constraints']['destination_name']) ? ' — '.$section['constraints']['destination_name'] : '')."\n\n".$section['answer'];
+            $texts[] = ! $headed ? $section['answer'] : '### '.$section['heading'].(! empty($section['constraints']['destination_name']) ? ' — '.$section['constraints']['destination_name'] : '')."\n\n".$section['answer'];
         }
         if ($overflowNotice) {
             $payload['dialogue_notice'] = 'This conversation has reached its saved-task limit. Please repeat any older request you want to continue.';

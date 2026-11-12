@@ -46,6 +46,8 @@ class DatabaseSeeder extends Seeder
             PackageSeeder::class,
             PassengerCategoryRuleSeeder::class,
             FaqSeeder::class,
+            // Needs the destinations above; general guidance the chatbot quotes.
+            KnowledgeArticleSeeder::class,
             // Sole review source: 295 blind sentiment-eval reviews. The old
             // demo pools (ReviewSeeder 55, HotelReviewSeeder md) are manual
             // --class runs only, so bare db:seed never pollutes prod again.

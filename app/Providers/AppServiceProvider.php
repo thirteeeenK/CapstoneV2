@@ -8,6 +8,7 @@ use App\Models\AddOnModel;
 use App\Models\HotelModel;
 use App\Models\Package;
 use App\Models\RoomType;
+use App\Services\GeminiService;
 use App\Services\Support\SupportAvailabilityService;
 use App\Services\SystemSettingsService;
 use Illuminate\Auth\Events\Registered;
@@ -29,6 +30,9 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->scoped(SystemSettingsService::class);
+        // One instance per request: the chat services share its turn deadline,
+        // query-embedding memo, evidence prices and fallback flags.
+        $this->app->scoped(GeminiService::class);
         // SA LARAVEL 12 TOOO!! WALA NA TO SA LARAVEL 13
         // Blueprint::macro('vector',function(string $column, int $dimensions){
         //     return $this->addColumn('vector', $column, ['dimensions' => $dimensions]);

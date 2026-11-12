@@ -95,3 +95,28 @@ test('summary separates substantive answers from abstentions and evaluates gates
         ->and($summary['gates']['security_pricing_ownership_unsupported_actions'])->toBeTrue()
         ->and($summary['gates']['zero_unsupported_claims'])->toBeTrue();
 });
+
+test('conversation signals separate a shown form, a fixed pointer reply and a question in prose', function () {
+    expect(CoverageScorer::conversationSignals(['reply' => 'Palm Beach Resort suits a quiet stay.']))
+        ->toBe(['form' => false, 'canned' => false, 'question' => false])
+        ->and(CoverageScorer::conversationSignals(['reply' => 'I found 3 verified options. Compare their details in the cards below.'])['canned'])->toBeTrue()
+        ->and(CoverageScorer::conversationSignals(['reply' => 'Which destination?', 'clarification' => ['control' => ['type' => 'select'], 'inline_control' => false]]))
+        ->toBe(['form' => false, 'canned' => false, 'question' => true])
+        ->and(CoverageScorer::conversationSignals(['reply' => 'What dates?', 'clarification' => ['control' => ['type' => 'date_range'], 'inline_control' => true]])['form'])->toBeTrue()
+        ->and(CoverageScorer::conversationSignals(['reply' => 'Ok.', 'trip_details_form' => ['expanded' => true]])['form'])->toBeTrue()
+        ->and(CoverageScorer::conversationSignals(['reply' => 'Ok.', 'trip_details_form' => ['expanded' => false, 'on_request' => true]])['form'])->toBeFalse();
+});
+
+test('the summary reports conversation style rates over the turns that carry them', function () {
+    $turn = fn (array $style): array => ['checked' => true, 'passed' => true, 'failure' => null, 'constraint' => false, 'task_checks' => [], 'forbidden_claims' => [], 'latency_ms' => 10.0, 'style' => $style];
+    $summary = CoverageScorer::summarize([
+        ['id' => 'a', 'category' => 'catalog', 'split' => 'dev', 'passed' => true, 'answerable' => true, 'turns' => [
+            $turn(['form' => true, 'canned' => false, 'question' => true]),
+            $turn(['form' => false, 'canned' => true, 'question' => false]),
+            $turn(['form' => false, 'canned' => false, 'question' => false]),
+            $turn(['form' => false, 'canned' => false, 'question' => false]),
+        ]],
+    ]);
+
+    expect($summary['conversation'])->toBe(['turns' => 4, 'form_rate' => 0.25, 'canned_reply_rate' => 0.25, 'question_rate' => 0.25]);
+});
