@@ -59,7 +59,7 @@
                             Moderate Account
                         </button>
 
-                        <!-- Ban Confirmation Modal -->
+                        {{-- Ban Confirmation Modal --}}
                         <div x-show="openBanModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm" x-cloak style="display: none;">
                             <div @click.away="openBanModal = false" class="bg-white rounded-lg p-6 w-full max-w-md border border-slate-200 shadow-lg text-left">
                                 <div class="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center mb-4 text-rose-600">
@@ -150,7 +150,7 @@
             </div>
         @endif
 
-        <!-- User Information Summary Card -->
+        {{-- User Information Summary Card --}}
         <div class="bg-white border border-slate-200 rounded-lg p-6 shadow-sm">
             <h2 class="text-base font-semibold text-slate-900 border-b border-slate-100 pb-3 mb-4 flex items-center gap-2">
                 <span class="inline-block w-1.5 h-4 bg-ocean-600 rounded-full"></span>
@@ -220,7 +220,7 @@
             @endif
         </div>
 
-        <!-- Chatbot Abuse Reports Table -->
+        {{-- Chatbot Abuse Reports Table --}}
         <div class="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
             <div class="p-4 border-b border-slate-100 flex items-center justify-between">
                 <h2 class="text-sm font-bold text-slate-900 flex items-center gap-2">

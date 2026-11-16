@@ -70,9 +70,9 @@
                     @endphp
                     <div class="bg-white border border-slate-200 rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col md:flex-row gap-6 items-start md:items-center justify-between">
                         
-                        <!-- Left: Details -->
+                        {{-- Left: Details --}}
                         <div class="flex items-start sm:items-center gap-5 flex-1">
-                            <!-- Information block -->
+                            {{-- Information block --}}
                             <div class="space-y-1.5 flex-1">
                                 <div class="flex items-center gap-3 flex-wrap">
                                     <h3 class="text-base font-bold text-slate-900">{{ $room->room_name }}</h3>
@@ -153,7 +153,7 @@
                             </div>
                         </div>
 
-                        <!-- Right: Price & Actions -->
+                        {{-- Right: Price & Actions --}}
                         <div class="flex flex-row md:flex-col items-end justify-between w-full md:w-auto border-t md:border-t-0 border-slate-100 pt-4 md:pt-0 gap-4 flex-shrink-0">
                             <div class="text-left md:text-right">
                                 <span class="text-xs text-slate-400 block uppercase font-medium">Base Price</span>

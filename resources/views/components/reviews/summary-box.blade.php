@@ -29,9 +29,9 @@
                 </span>
                 {{ $title }}
             </h2>
-            <!-- <p class="font-label text-[10px] uppercase font-bold tracking-wider text-slate-400">
+            {{-- <p class="font-label text-[10px] uppercase font-bold tracking-wider text-slate-400">
                         AI-assisted · updated {{ $summary->last_analyzed_at?->format('M j, Y') ?? 'recently' }}
-                    </p> -->
+                    </p> --}}
         </header>
 
         <div class="px-5 sm:px-6 py-4 space-y-4">
@@ -49,7 +49,7 @@
                                     style="font-variation-settings: 'FILL' {{ $i <= round((float) $summary->average_rating) ? 1 : 0 }}">star</span>
                             @endfor
                         </div>
-                        <!-- <p class="text-[11px] text-slate-400 font-medium">{{ $summary->total_reviews }} verified {{ Str::plural('review', $summary->total_reviews) }}</p> -->
+                        {{-- <p class="text-[11px] text-slate-400 font-medium">{{ $summary->total_reviews }} verified {{ Str::plural('review', $summary->total_reviews) }}</p> --}}
                     </div>
                 </div>
 

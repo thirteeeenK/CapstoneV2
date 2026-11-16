@@ -45,7 +45,7 @@
                 </div>
                 <div>
                     <h3 class="font-headline text-sm font-black text-white leading-tight">SunnyBot AI</h3>
-                    <!-- <p class="text-[11px] text-slate-300 font-medium">Your Smart Island Guide</p> -->
+                    {{-- <p class="text-[11px] text-slate-300 font-medium">Your Smart Island Guide</p> --}}
                 </div>
             </div>
 
@@ -159,7 +159,7 @@
                         <button @click='input = "Surprise me with a Lucky trip"; send()'
                             class="px-3 py-1.5 rounded-full bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-100 dark:hover:bg-rose-950 text-rose-700 dark:text-rose-100 text-[11px] font-bold border border-rose-200 dark:border-rose-800 transition-colors cursor-pointer">I'm
                             Feeling Lucky</button>
-                        <!-- <button @click='input = "Where to stay in Boracay?"; send()'
+                        {{-- <button @click='input = "Where to stay in Boracay?"; send()'
                             class="px-3 py-1.5 rounded-full bg-ocean-50 hover:bg-ocean-100 text-ocean-700 text-[11px] font-bold border border-ocean-200 transition-colors cursor-pointer">Where
                             to stay in Boracay?</button>
                         <button @click='input = "Budget-friendly hotels in Boracay?"; send()'
@@ -170,7 +170,7 @@
                             to stay in El Nido?</button>
                         <button @click='input = "Best activities in El Nido?"; send()'
                             class="px-3 py-1.5 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-700 text-[11px] font-bold border border-amber-200 transition-colors cursor-pointer">Best
-                            activities in El Nido?</button> -->
+                            activities in El Nido?</button> --}}
                     </div>
                 </div>
             </template>

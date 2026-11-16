@@ -42,7 +42,7 @@
             class="grid grid-cols-12 gap-8 items-start">
             @csrf
             @method('PUT')
-            <!-- Management Form (Wide Column) -->
+            {{-- Management Form (Wide Column) --}}
             <div class="col-span-8 space-y-6">
                 <section class="bg-white rounded-lg p-6 border border-slate-200">
                     <h2
@@ -51,7 +51,7 @@
                         General Information
                     </h2>
                     <div class="space-y-4">
-                        <!-- Hotel Name -->
+                        {{-- Hotel Name --}}
                         <div class="space-y-1.5">
                             <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">Hotel
                                 Name</label>
@@ -77,7 +77,7 @@
                                     </option>
                                 </select>
 
-                                <!-- Custom Dropdown Arrow -->
+                                {{-- Custom Dropdown Arrow --}}
                                 <div
                                     class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-slate-400">
                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
@@ -89,7 +89,7 @@
                             </div>
                         </div>
 
-                        <!-- Hotel Description -->
+                        {{-- Hotel Description --}}
                         <div class="space-y-1.5">
                             <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">Hotel
                                 Description</label>
@@ -99,9 +99,9 @@
                                 placeholder="Describe the property, location, and unique features...">{{ $hotel->hotel_description ?? '' }}</textarea>
                         </div>
 
-                        <!-- Destination & Specific Address -->
+                        {{-- Destination & Specific Address --}}
                         <div class="grid grid-cols-2 gap-4">
-                            <!-- Destination Dropdown -->
+                            {{-- Destination Dropdown --}}
                             <div class="space-y-1.5">
                                 <label
                                     class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">Destination</label>
@@ -117,7 +117,7 @@
                                         @endforeach
 
                                     </select>
-                                    <!-- Custom Dropdown Arrow -->
+                                    {{-- Custom Dropdown Arrow --}}
                                     <div
                                         class="pointer-events-none absolute inset-y-0 right-3 flex items-center text-slate-400">
                                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
@@ -129,7 +129,7 @@
                                 </div>
                             </div>
 
-                            <!-- Specific Address -->
+                            {{-- Specific Address --}}
                             <div class="space-y-1.5">
                                 <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">Specific
                                     Address</label>
@@ -144,7 +144,7 @@
                                 $amenitiesStr = is_array($hotel->featured_amenities) ? implode(', ', $hotel->featured_amenities) : ($hotel->featured_amenities ?? '');
                             @endphp
 
-                            <!-- Vibe Tags -->
+                            {{-- Vibe Tags --}}
                             <div class="space-y-1.5 md:col-span-2">
                                 <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">Hotel
                                     Vibes & Tags (Comma-separated)</label>
@@ -155,7 +155,7 @@
                                     value="{{ old('vibe_tags', $vibeStr) }}" />
                             </div>
 
-                            <!-- Featured Amenities -->
+                            {{-- Featured Amenities --}}
                             <div class="space-y-1.5 md:col-span-2">
                                 <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">Featured
                                     Amenities (Comma-separated)</label>
@@ -167,7 +167,7 @@
                             </div>
                         </div>
 
-                        <!-- Latitude & Longitude -->
+                        {{-- Latitude & Longitude --}}
                         <div class="grid grid-cols-2 gap-4">
                             <div class="space-y-1.5">
                                 <label
@@ -189,7 +189,7 @@
                     </div>
                 </section>
 
-                <!-- Image Gallery -->
+                {{-- Image Gallery --}}
                 <section class="bg-white rounded-lg p-6 border border-slate-200">
                     {{-- Container para sa mga images na gustong burahin ng user --}}
                     <div id="removedImagesContainer"></div>
@@ -246,14 +246,14 @@
                 </section>
             </div>
 
-            <!-- Desktop Save Button (Sticky Sidebar Card) -->
+            {{-- Desktop Save Button (Sticky Sidebar Card) --}}
             <div class="hidden lg:block lg:col-span-4">
                 <div class="sticky top-6 bg-white rounded-lg p-6 border border-slate-200">
                     <h3 class="text-sm font-semibold text-slate-900 mb-2">Publishing</h3>
                     <p class="text-xs text-slate-500 mb-4 leading-relaxed">Review your changes and click the button below to
                         update the hotel listing details.</p>
 
-                    <!-- Public Visibility Toggle -->
+                    {{-- Public Visibility Toggle --}}
                     <div class="mb-6 p-3 rounded-lg bg-slate-50 border border-slate-200 space-y-1.5">
                         <label class="flex items-center justify-between cursor-pointer">
                             <span class="text-xs font-bold text-slate-800">Show to Public Users</span>
@@ -269,7 +269,7 @@
                 </div>
             </div>
 
-            <!-- Mobile Floating Save Button -->
+            {{-- Mobile Floating Save Button --}}
             <div
                 class="fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-t border-slate-200 p-4 lg:hidden">
                 <button type="submit"

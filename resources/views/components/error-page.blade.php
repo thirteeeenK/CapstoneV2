@@ -121,7 +121,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}"/>
     <title>{{ $code }} · {{ $title }} — SunnyTrips</title>
 
-    <!-- Fonts & Icons -->
+    {{-- Fonts & Icons --}}
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,300;1,9..40,400;1,9..40,500&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
 

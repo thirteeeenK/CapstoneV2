@@ -29,7 +29,7 @@
         {{-- Filter Controls (live outside the swapped results region so the input keeps focus) --}}
         <div class="mb-6 bg-white p-4 sm:p-5 border border-slate-200/80 rounded-2xl shadow-xs">
             <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                <!-- Status Tabs -->
+                {{-- Status Tabs --}}
                 <div class="flex items-center gap-2 flex-wrap">
                     <a href="{{ route('admin.users.index', ['tab' => 'pending']) }}" @click.prevent="setTab('pending')"
                         :class="tab === 'pending' ? 'bg-coral-50 text-coral-700 border-coral-300' : 'bg-white text-slate-600 border-slate-200'"
@@ -65,7 +65,7 @@
                     </div>
                 </div>
 
-                <!-- Search Form -->
+                {{-- Search Form --}}
                 <form action="{{ route('admin.users.index') }}" method="GET" @submit.prevent="fetchResults()"
                     class="flex items-center gap-2 w-full sm:w-auto">
                     <input type="hidden" name="tab" value="{{ $tab }}" />

@@ -10,10 +10,10 @@
                 <p class="text-xs text-slate-500 mt-1">Manage the legal documents, policies, and disclosures displayed to
                     users.</p>
             </div>
-            <!-- <a href="{{ route('admin.legal.create') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-ocean-600 text-white rounded-md text-xs font-semibold hover:bg-ocean-700 transition-colors">
+            {{-- <a href="{{ route('admin.legal.create') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-ocean-600 text-white rounded-md text-xs font-semibold hover:bg-ocean-700 transition-colors">
                         <span class="material-symbols-outlined text-[16px]">add</span>
                         Add Legal Document
-                    </a> -->
+                    </a> --}}
         </div>
 
         {{-- Success Banner --}}

@@ -1,7 +1,7 @@
 {{-- Top Navigation Bar Component --}}
 <header class="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-30 sm:pl-64 transition-all">
     <div class="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        <!-- Left: Context / Admin Indicator -->
+        {{-- Left: Context / Admin Indicator --}}
         <div class="flex items-center gap-3">
             <span class="material-symbols-outlined text-ocean-600 text-2xl">admin_panel_settings</span>
             <div class="flex items-center gap-2">
@@ -10,7 +10,7 @@
             </div>
         </div>
 
-        <!-- Right: Logged-in Admin Profile & Actions -->
+        {{-- Right: Logged-in Admin Profile & Actions --}}
         <div class="flex items-center gap-3 sm:gap-4">
             <div class="flex items-center gap-2 text-xs sm:text-sm font-medium text-slate-700">
                 <div class="w-7 h-7 rounded-full bg-ocean-600 text-white font-bold flex items-center justify-center text-xs shrink-0 shadow-sm">

@@ -39,7 +39,7 @@
         {{-- Filter Controls (live outside the swapped results region so the input keeps focus) --}}
         <div class="mb-6 bg-white p-4 border border-slate-200 rounded-lg shadow-sm space-y-3">
             <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                <!-- Location Tabs -->
+                {{-- Location Tabs --}}
                 <div class="flex items-center gap-2 overflow-x-auto pb-1 lg:pb-0">
                     <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider mr-1 flex items-center gap-1 shrink-0">
                         <span class="material-symbols-outlined text-[16px] text-slate-400">location_on</span>
@@ -63,7 +63,7 @@
                     @endforeach
                 </div>
 
-                <!-- Search Form -->
+                {{-- Search Form --}}
                 <form action="{{ route('admin.activities.index') }}" method="GET" @submit.prevent="fetchResults()" class="flex items-center gap-2 w-full lg:w-auto">
                     @if($selectedDestinationId)
                         <input type="hidden" name="destination_id" value="{{ $selectedDestinationId }}" />
@@ -96,7 +96,7 @@
                 </form>
             </div>
 
-            <!-- Activity Level Filter Tabs (5 Levels) -->
+            {{-- Activity Level Filter Tabs (5 Levels) --}}
             <div class="pt-2 border-t border-slate-100 flex items-center gap-2 overflow-x-auto">
                 <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider mr-1 flex items-center gap-1 shrink-0">
                     <span class="material-symbols-outlined text-[16px] text-slate-400">signal_cellular_alt</span>

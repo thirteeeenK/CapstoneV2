@@ -5,10 +5,12 @@ use App\Http\Middleware\CheckUserBan;
 use App\Http\Middleware\CheckUserOnboarding;
 use App\Http\Middleware\EnsureAdminTwoFactor;
 use App\Http\Middleware\NoCacheHeaders;
+use App\Http\Middleware\PreventRequestForgery;
 use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery as BasePreventRequestForgery;
 use Illuminate\Http\Request;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -34,7 +36,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin.2fa' => EnsureAdminTwoFactor::class,
         ]);
 
-        $middleware->web(append: [
+        $middleware->web(replace: [
+            BasePreventRequestForgery::class => PreventRequestForgery::class,
+        ], append: [
             CheckIpBanned::class,
             CheckUserBan::class,
             CheckUserOnboarding::class,

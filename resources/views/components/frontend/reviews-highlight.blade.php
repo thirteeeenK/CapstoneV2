@@ -75,7 +75,7 @@
                 @foreach ($items as $index => $review)
                     <div class="bg-slate-50 dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700/60 rounded-2xl p-8 shadow-sm flex flex-col relative reveal-on-scroll"
                         @if ($index > 0) style="transition-delay: {{ $index * 100 }}ms;" @endif>
-                        <!-- <span class="absolute top-6 right-6 text-slate-200 text-6xl font-serif leading-none select-none">"</span> -->
+                        {{-- <span class="absolute top-6 right-6 text-slate-200 text-6xl font-serif leading-none select-none">"</span> --}}
 
                         <div class="flex items-center justify-between gap-2 mb-5">
                             <div class="flex gap-0.5 text-amber-400">

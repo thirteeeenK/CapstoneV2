@@ -8,9 +8,9 @@
         <span
             class="font-label text-on-primary-fixed-variant tracking-[0.3em] text-[11px] sm:text-xs font-bold mb-6 bg-white/20 backdrop-blur-md px-4 py-1 rounded-full border border-white/30 max-w-full">DISCOVER
             THE UNSEEN</span>
-        <!-- <h1 class="font-headline text-5xl md:text-8xl font-extrabold text-white tracking-tighter max-w-5xl leading-tight mb-12">
+        {{-- <h1 class="font-headline text-5xl md:text-8xl font-extrabold text-white tracking-tighter max-w-5xl leading-tight mb-12">
             Your Legacy of <br/><span class="italic font-light">Extraordinary</span> Travel
-        </h1> -->
+        </h1> --}}
         <h1
             class="font-headline text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-extrabold text-black tracking-tighter max-w-5xl leading-tight mb-6 sm:mb-12">
             Your Legacy of Extraordinary Travel

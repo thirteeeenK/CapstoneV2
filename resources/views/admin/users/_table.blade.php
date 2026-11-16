@@ -3,7 +3,7 @@
     Rendered standalone for AJAX requests (X-Requested-With) and inline for full page loads. --}}
 
 <div id="listings-results">
-    <!-- Users Table -->
+    {{-- Users Table --}}
     <div class="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
         <div class="overflow-x-auto">
             <table class="w-full divide-y divide-slate-200 text-xs">

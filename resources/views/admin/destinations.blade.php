@@ -69,7 +69,7 @@
                                                                                             }
                                                                                         }" class="pb-12">
 
-        <!-- Header Section -->
+        {{-- Header Section --}}
         <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
                 <h1 class="text-xl font-bold text-slate-900">Destinations</h1>
@@ -83,7 +83,7 @@
             </button>
         </div>
 
-        <!-- Alerts -->
+        {{-- Alerts --}}
         @if (session('success'))
             <div x-data="{ show: true }" x-show="show" x-transition
                 class="mb-6 bg-emerald-50 border border-emerald-200/60 rounded-xl px-5 py-4 flex items-start gap-3 shadow-sm">
@@ -133,7 +133,7 @@
             </div>
         @endif
 
-        <!-- Search & Stats Bar -->
+        {{-- Search & Stats Bar --}}
         <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-5">
             <div class="relative flex-1 max-w-md">
                 <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
@@ -161,9 +161,9 @@
             </div>
         </div>
 
-        <!-- Destinations List -->
+        {{-- Destinations List --}}
         <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-            <!-- Table Header -->
+            {{-- Table Header --}}
             <div
                 class="hidden sm:grid grid-cols-[1fr_auto] items-center px-6 py-3.5 bg-slate-50/80 border-b border-slate-200/60">
                 <button @click="toggleSort()"
@@ -183,11 +183,11 @@
                 <span class="text-xs font-semibold text-slate-600 uppercase tracking-wider w-32 text-center">Actions</span>
             </div>
 
-            <!-- Items -->
+            {{-- Items --}}
             <div class="divide-y divide-slate-100">
                 <template x-for="(destination, index) in filteredDestinations" :key="destination.id">
                     <div class="group flex items-center px-6 py-4 hover:bg-slate-50/60 transition-colors duration-150">
-                        <!-- Destination Info -->
+                        {{-- Destination Info --}}
                         <div class="flex-1 min-w-0 flex items-center gap-4">
                             <div
                                 class="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center flex-shrink-0 group-hover:from-blue-50 group-hover:to-indigo-100 transition-all duration-300">
@@ -205,7 +205,7 @@
                             </div>
                         </div>
 
-                        <!-- Actions -->
+                        {{-- Actions --}}
                         <div class="flex items-center gap-1 ml-4">
                             <button type="button" @click="openEdit(destination)"
                                 class="p-2 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200"
@@ -233,7 +233,7 @@
                     </div>
                 </template>
 
-                <!-- Empty State -->
+                {{-- Empty State --}}
                 <template x-if="filteredDestinations.length === 0">
                     <div class="py-16 px-6 text-center">
                         <div class="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-4">
@@ -261,18 +261,18 @@
             </div>
         </div>
 
-        <!-- Modal -->
+        {{-- Modal --}}
     <div x-show="isModalOpen" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0"
         x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150"
         x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
         class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display: none;">
 
-        <!-- Backdrop -->
+        {{-- Backdrop --}}
         <div @click="isModalOpen = false" x-transition:enter="transition ease-out duration-300"
             x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
             class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"></div>
 
-        <!-- Modal Content -->
+        {{-- Modal Content --}}
         <div @click.away="isModalOpen = false" x-transition:enter="transition ease-out duration-300"
             x-transition:enter-start="opacity-0 scale-95 translate-y-2"
             x-transition:enter-end="opacity-100 scale-100 translate-y-0"
@@ -281,7 +281,7 @@
             x-transition:leave-end="opacity-0 scale-95 translate-y-2"
             class="relative bg-white rounded-2xl w-full max-w-md shadow-2xl shadow-slate-900/20 overflow-hidden">
 
-            <!-- Modal Header -->
+            {{-- Modal Header --}}
             <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
                 <div class="flex items-center gap-3">
                     <div
@@ -311,7 +311,7 @@
                 </button>
             </div>
 
-            <!-- Modal Body -->
+            {{-- Modal Body --}}
             <form x-bind:action="formAction" method="POST" enctype="multipart/form-data" class="px-6 py-6">
                 @csrf
 
@@ -370,7 +370,7 @@
                         class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200">
                 </div>
 
-                <!-- Modal Footer -->
+                {{-- Modal Footer --}}
                 <div class="flex items-center justify-end gap-3 mt-8 pt-4 border-t border-slate-100">
                     <button type="button" @click="isModalOpen = false"
                         class="px-4 py-2.5 text-sm font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-xl transition-all">

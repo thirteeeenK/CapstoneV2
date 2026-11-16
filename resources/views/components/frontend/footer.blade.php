@@ -5,7 +5,7 @@
     <div class="max-w-7xl mx-auto relative z-10 space-y-10 sm:space-y-12">
         <div class="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-12">
 
-            <!-- Brand Column -->
+            {{-- Brand Column --}}
             <div class="md:col-span-5 lg:col-span-4 space-y-3.5">
                 <a href="{{ route('landing') }}" class="inline-block text-2xl sm:text-3xl font-headline font-black text-slate-900 dark:text-slate-100 tracking-tight">
                     {{ $business['display_name'] }}
@@ -19,13 +19,13 @@
                 </div>
             </div>
 
-            <!-- Spacer for large screens -->
+            {{-- Spacer for large screens --}}
             <div class="hidden lg:block lg:col-span-1"></div>
 
-            <!-- Navigation Link Columns Grid (2 columns on mobile, 3 on tablet/desktop) -->
+            {{-- Navigation Link Columns Grid (2 columns on mobile, 3 on tablet/desktop) --}}
             <div class="md:col-span-7 lg:col-span-7 grid grid-cols-2 sm:grid-cols-3 gap-6 sm:gap-8">
                 
-                <!-- Column: Explore -->
+                {{-- Column: Explore --}}
                 <div class="space-y-3 sm:space-y-4">
                     <h4 class="font-headline text-slate-900 dark:text-slate-100 text-xs font-extrabold tracking-widest uppercase flex items-center gap-1.5">
                         <span class="material-symbols-outlined text-[15px] text-ocean-600">explore</span>
@@ -43,7 +43,7 @@
                     </div>
                 </div>
 
-                <!-- Column: Concierge -->
+                {{-- Column: Concierge --}}
                 <div class="space-y-3 sm:space-y-4">
                     <h4 class="font-headline text-slate-900 dark:text-slate-100 text-xs font-extrabold tracking-widest uppercase flex items-center gap-1.5">
                         <span class="material-symbols-outlined text-[15px] text-ocean-600">support_agent</span>
@@ -64,7 +64,7 @@
                     </div>
                 </div>
 
-                <!-- Column: The Office / HQ -->
+                {{-- Column: The Office / HQ --}}
                 <div class="col-span-2 sm:col-span-1 space-y-3 sm:space-y-4">
                     <h4 class="font-headline text-slate-900 dark:text-slate-100 text-xs font-extrabold tracking-widest uppercase flex items-center gap-1.5">
                         <span class="material-symbols-outlined text-[15px] text-ocean-600">business</span>

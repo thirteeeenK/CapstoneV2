@@ -18,20 +18,20 @@
     </script>
     <title>{{ $title ?? 'SunnyTrips | Travel Made Easy' }}</title>
 
-    <!-- Fonts & Icons -->
+    {{-- Fonts & Icons --}}
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,300;1,9..40,400;1,9..40,500&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <link rel="icon" type="image/png" href="{{ asset('images/favicon-sun.png') }}">
     
-    <!-- Vite for Tailwind/Local CSS -->
+    {{-- Vite for Tailwind/Local CSS --}}
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @stack('head')
 
-    <!-- Flatpickr Date Picker CDN -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css"/>
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    {{-- Flatpickr Date Picker CDN --}}
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.css" integrity="sha384-RkASv+6KfBMW9eknReJIJ6b3UnjKOKC5bOUaNgIY778NFbQ8MtWq9Lr/khUgqtTt" crossorigin="anonymous" referrerpolicy="no-referrer"/>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr@4.6.13/dist/flatpickr.min.js" integrity="sha384-5JqMv4L/Xa0hfvtF06qboNdhvuYXUku9ZrhZh3bSk8VXF0A/RuSLHpLsSV9Zqhl6" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
-    <!-- Custom inline styles for material icons -->
+    {{-- Custom inline styles for material icons --}}
     <style>
         [x-cloak] {
             display: none !important;
@@ -121,7 +121,7 @@
         <x-frontend.mobile-nav />
     @endunless
 
-    <!-- Scroll Reveal Animation Script -->
+    {{-- Scroll Reveal Animation Script --}}
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             const observer = new IntersectionObserver((entries) => {

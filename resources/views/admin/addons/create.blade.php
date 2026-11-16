@@ -32,9 +32,9 @@
             x-data="addonForm()">
             @csrf
 
-            <!-- Main Form Column (Left) -->
+            {{-- Main Form Column (Left) --}}
             <div class="col-span-12 lg:col-span-8 space-y-6">
-                <!-- General Info -->
+                {{-- General Info --}}
                 <section class="bg-white rounded-lg p-6 border border-slate-200 shadow-sm">
                     <h2
                         class="text-base font-semibold text-slate-900 border-b border-slate-100 pb-3 mb-5 flex items-center gap-2">
@@ -79,7 +79,7 @@
                     </div>
                 </section>
 
-                <!-- Inclusions -->
+                {{-- Inclusions --}}
                 <section class="bg-white rounded-lg p-6 border border-slate-200 shadow-sm">
                     <h2
                         class="text-base font-semibold text-slate-900 border-b border-slate-100 pb-3 mb-5 flex items-center gap-2">
@@ -105,7 +105,7 @@
                     </div>
                 </section>
 
-                <!-- Pricing Tiers -->
+                {{-- Pricing Tiers --}}
                 <section class="bg-white rounded-lg p-6 border border-slate-200 shadow-sm">
                     <h2
                         class="text-base font-semibold text-slate-900 border-b border-slate-100 pb-3 mb-5 flex items-center gap-2">
@@ -149,7 +149,7 @@
                     </div>
                 </section>
 
-                <!-- Surcharges -->
+                {{-- Surcharges --}}
                 <section class="bg-white rounded-lg p-6 border border-slate-200 shadow-sm">
                     <h2
                         class="text-base font-semibold text-slate-900 border-b border-slate-100 pb-3 mb-5 flex items-center gap-2">
@@ -197,7 +197,7 @@
                 </section>
             </div>
 
-            <!-- Sticky Sidebar (Right) -->
+            {{-- Sticky Sidebar (Right) --}}
             <div class="hidden lg:block lg:col-span-4">
                 <div class="sticky top-6 bg-white rounded-lg p-6 border border-slate-200 shadow-sm">
                     <h3 class="text-sm font-semibold text-slate-900 mb-2">Publishing</h3>
@@ -221,7 +221,7 @@
                 </div>
             </div>
 
-            <!-- Mobile Sticky Button -->
+            {{-- Mobile Sticky Button --}}
             <div
                 class="fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-t border-slate-200 p-4 lg:hidden">
                 <button type="submit"
@@ -232,7 +232,7 @@
         </form>
     </div>
 
-    <!-- Alpine Data Component -->
+    {{-- Alpine Data Component --}}
     <script>
         document.addEventListener('alpine:init', () => {
             Alpine.data('addonForm', () => ({

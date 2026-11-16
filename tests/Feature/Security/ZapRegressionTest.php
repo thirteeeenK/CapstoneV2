@@ -38,6 +38,48 @@ it('adds HSTS only to secure production responses', function () {
         ->not->toContain('ws:');
 });
 
+it('restricts the production CSP to an explicit allowlist instead of wildcard schemes', function () {
+    $this->app->instance('env', 'production');
+
+    $response = app(SecurityHeaders::class)->handle(
+        Request::create('https://sunnytrips.test/login'),
+        fn (): Response => new Response,
+    );
+
+    $directives = collect(explode(';', (string) $response->headers->get('Content-Security-Policy')))
+        ->map(fn (string $directive): string => trim($directive))
+        ->filter()
+        ->mapWithKeys(function (string $directive): array {
+            $parts = explode(' ', $directive);
+
+            return [array_shift($parts) => $parts];
+        });
+
+    foreach (['script-src', 'style-src', 'font-src', 'connect-src', 'frame-src', 'media-src', 'form-action'] as $directive) {
+        expect($directives[$directive])->not->toContain('https:')->not->toContain('*');
+    }
+
+    expect($directives['form-action'])->toBe([
+        "'self'",
+        'https://accounts.google.com',
+        'https://checkout.stripe.com',
+        'https://*.paymongo.com',
+    ])->and($directives['script-src'])->toContain('https://challenges.cloudflare.com');
+});
+
+it('does not expose a JavaScript-readable XSRF-TOKEN cookie', function () {
+    $response = $this->get('/login');
+
+    $response->assertOk()->assertCookieMissing('XSRF-TOKEN');
+});
+
+it('sends redirect responses without a body', function () {
+    $response = $this->get('/checkout');
+
+    $response->assertRedirect(route('login'));
+    expect($response->getContent())->toBe('');
+});
+
 it('rejects malformed public resource identifiers without reaching the database', function (string $uri) {
     $this->get($uri)->assertNotFound();
 })->with([

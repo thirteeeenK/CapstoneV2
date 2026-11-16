@@ -40,7 +40,7 @@
         <form action="{{ route('store-room', $hotel->id) }}" method="POST" enctype="multipart/form-data"
             class="grid grid-cols-12 gap-8 items-start">
             @csrf
-            <!-- Management Form (Wide Column) -->
+            {{-- Management Form (Wide Column) --}}
             <div class="col-span-8 space-y-6">
                 <section class="bg-white rounded-lg p-6 border border-slate-200">
                     <h2
@@ -49,7 +49,7 @@
                         General Room Information
                     </h2>
                     <div class="space-y-4">
-                        <!-- Room Name -->
+                        {{-- Room Name --}}
                         <div class="space-y-1.5">
                             <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">Room
                                 Name</label>
@@ -59,7 +59,7 @@
                                 value="{{ old('room_name') }}" />
                         </div>
 
-                        <!-- View Type -->
+                        {{-- View Type --}}
                         <div class="space-y-1.5">
                             <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">View
                                 Type</label>
@@ -69,7 +69,7 @@
                                 value="{{ old('view_type') }}" />
                         </div>
 
-                        <!-- Ideal Guest -->
+                        {{-- Ideal Guest --}}
                         <div class="space-y-1.5">
                             <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">Ideal
                                 Guest</label>
@@ -79,7 +79,7 @@
                                 value="{{ old('ideal_guest', old('ideal_for')) }}" />
                         </div>
 
-                        <!-- Description -->
+                        {{-- Description --}}
                         <div class="space-y-1.5">
                             <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">Detailed Room
                                 Description</label>
@@ -89,7 +89,7 @@
                                 placeholder="Describe the room layout, luxury features, and unique perks...">{{ old('description') }}</textarea>
                         </div>
 
-                        <!-- Additional Notes for RAG Chatbot -->
+                        {{-- Additional Notes for RAG Chatbot --}}
                         <div class="space-y-1.5">
                             <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">Additional Notes & Policies (RAG Context)</label>
                             <textarea
@@ -158,7 +158,7 @@
                             </div>
                         </div>
 
-                        <!-- Room Amenities -->
+                        {{-- Room Amenities --}}
                         <div class="space-y-1.5">
                             <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider">Room
                                 Amenities</label>
@@ -176,7 +176,7 @@
                     </div>
                 </section>
 
-                <!-- Image Gallery -->
+                {{-- Image Gallery --}}
                 <section class="bg-white rounded-lg p-6 border border-slate-200">
                     {{-- Hidden file input --}}
                     <input type="file" id="hotelImageUpload" name="images[]" multiple accept="image/*" class="hidden"
@@ -229,14 +229,14 @@
                 </section>
             </div>
 
-            <!-- Desktop Save Button (Sticky Sidebar Card) -->
+            {{-- Desktop Save Button (Sticky Sidebar Card) --}}
             <div class="hidden lg:block lg:col-span-4">
                 <div class="sticky top-6 bg-white rounded-lg p-6 border border-slate-200">
                     <h3 class="text-sm font-semibold text-slate-900 mb-2">Publishing</h3>
                     <p class="text-xs text-slate-500 mb-4 leading-relaxed">Review your changes and click the button below to
                         save the room details for this hotel.</p>
 
-                    <!-- Public Visibility Toggle -->
+                    {{-- Public Visibility Toggle --}}
                     <div class="mb-6 p-3 rounded-lg bg-slate-50 border border-slate-200 space-y-1.5">
                         <label class="flex items-center justify-between cursor-pointer">
                             <span class="text-xs font-bold text-slate-800">Show to Public Users</span>
@@ -252,7 +252,7 @@
                 </div>
             </div>
 
-            <!-- Mobile Floating Save Button -->
+            {{-- Mobile Floating Save Button --}}
             <div
                 class="fixed bottom-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-md border-t border-slate-200 p-4 lg:hidden">
                 <button type="submit"

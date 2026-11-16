@@ -3,7 +3,7 @@
     Rendered standalone for AJAX requests (X-Requested-With) and inline for full page loads. --}}
 
 <div id="listings-results">
-    <!-- Inventory Navigation Tabs -->
+    {{-- Inventory Navigation Tabs --}}
     <div class="mb-6 border-b border-slate-200 bg-white px-4 pt-3 rounded-t-xl">
         <nav class="flex space-x-6 overflow-x-auto">
             <a href="{{ route('admin.inventory.index', array_filter(['tab' => 'hotels', 'destination_id' => $selectedDestinationId, 'visibility' => $visibility, 'search' => $search])) }}"
@@ -33,7 +33,7 @@
         </nav>
     </div>
 
-    <!-- TAB CONTENT -->
+    {{-- TAB CONTENT --}}
     <div class="bg-white rounded-b-xl border border-slate-200 shadow-sm overflow-hidden">
         @if ($activeTab === 'hotels')
             {{-- HOTELS TABLE --}}

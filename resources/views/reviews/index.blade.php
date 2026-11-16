@@ -39,9 +39,9 @@
                 <p class="font-label text-[10px] uppercase font-bold tracking-[0.25em] text-slate-400 dark:text-slate-500">
                     SunnyTrips · Traveler Insights Hub
                 </p>
-                <!-- <p class="font-label text-[10px] uppercase font-bold tracking-[0.2em] text-slate-400 dark:text-slate-500">
+                {{-- <p class="font-label text-[10px] uppercase font-bold tracking-[0.2em] text-slate-400 dark:text-slate-500">
                     {{ now()->format('M j, Y') }}
-                </p> -->
+                </p> --}}
             </div>
 
             <header class="mb-8 animate-fade-up">

@@ -1,7 +1,7 @@
 <aside onwheel="event.stopPropagation()"
     class="h-screen w-64 fixed left-0 top-0 bg-white border-r border-slate-200 flex flex-col py-6 z-40 transition-all duration-200 shadow-sm">
 
-    <!-- Brand Header -->
+    {{-- Brand Header --}}
     <div class="px-6 mb-6">
         <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-1.5">
             <span class="font-headline font-black text-xl text-slate-900 tracking-tight">Sunny<span
@@ -52,7 +52,7 @@
         ];
     @endphp
 
-    <!-- Navigation Links -->
+    {{-- Navigation Links --}}
     <nav class="flex-1 overflow-y-auto overscroll-contain px-3 space-y-6">
         @foreach ($navGroups as $groupLabel => $items)
             <div>

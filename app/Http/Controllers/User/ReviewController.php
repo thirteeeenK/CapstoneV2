@@ -31,14 +31,14 @@ class ReviewController extends Controller
             $sentiment = null;
         }
 
-        $minRating = (int) $request->query('rating', 0);
+        $minRating = max(0, min(5, (int) $request->query('rating', 0)));
 
         $sort = $request->query('sort', 'recent');
         if (! in_array($sort, ['recent', 'highest', 'lowest', 'helpful'], true)) {
             $sort = 'recent';
         }
 
-        $search = trim((string) $request->query('search', ''));
+        $search = mb_substr(trim((string) $request->query('search', '')), 0, 100);
 
         $paginator = $this->reviewService->feedPaginated($tab, $sentiment, $minRating, $sort, $search !== '' ? $search : null, 12);
         $reviews = $paginator->getCollection();

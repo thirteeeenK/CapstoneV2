@@ -3,7 +3,7 @@
     Rendered standalone for AJAX requests (X-Requested-With) and inline for full page loads. --}}
 
 <div id="listings-results">
-    <!-- Activities Table -->
+    {{-- Activities Table --}}
     <div class="overflow-hidden bg-white border border-slate-200 rounded-lg shadow-sm">
         <table class="w-full divide-y divide-slate-200">
             <thead class="bg-slate-50">
@@ -145,7 +145,7 @@
                                         Delete
                                     </button>
 
-                                    <!-- Delete Modal -->
+                                    {{-- Delete Modal --}}
                                     <div x-show="openModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm" x-cloak style="display: none;">
                                         <div @click.away="openModal = false" class="bg-white rounded-lg p-6 w-full max-w-sm border border-slate-200 shadow-lg whitespace-normal text-left">
                                             <h3 class="text-sm font-semibold text-slate-900">Delete Activity</h3>
