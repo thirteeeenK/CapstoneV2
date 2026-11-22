@@ -26,7 +26,7 @@ class BookingConfirmationController extends Controller
     }
 
     /**
-     * Display the booking status page (request received / awaiting payment / voucher).
+     * Display the booking status page (request received / awaiting payment / confirmed).
      */
     public function show($bookingCode, Request $request, BookingVoucherService $vouchers)
     {
@@ -44,7 +44,7 @@ class BookingConfirmationController extends Controller
             'paymentTransactions' => $booking->payment_plan_version === 2 ? $booking->paymentTransactions()->get() : collect(),
             'canRequestCancellation' => BookingPaymentController::canRequestCancellation($booking),
             'voucherAvailable' => $vouchers->isAvailable($booking),
-            'voucherName' => $vouchers->isConfirmed($booking) ? 'Voucher' : 'Booking Summary',
+            'voucherName' => $vouchers->isConfirmed($booking) ? 'Booking Confirmation' : 'Booking Summary',
         ]);
     }
 
@@ -82,7 +82,7 @@ class BookingConfirmationController extends Controller
     }
 
     /**
-     * The laid-out travel voucher (or booking summary before payment) as a PDF download,
+     * The laid-out booking confirmation (or booking summary before payment) as a PDF download,
      * or as a printable page with ?print=1.
      */
     public function voucher(string $code, Request $request, BookingVoucherService $vouchers): mixed

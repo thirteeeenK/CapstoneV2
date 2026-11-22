@@ -1,4 +1,4 @@
-<x-frontend.layout :title="'Journal ' . $booking->booking_code . ' — SunnyTrips'">
+<x-frontend.layout :title="'Booking ' . $booking->booking_code . ' — SunnyTrips'">
     @php
         $status = $booking->status;
         $paidOrDone = in_array($status, ['paid', 'completed'], true);
@@ -84,10 +84,10 @@
 
         <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
 
-            {{-- Journal masthead --}}
+            {{-- Booking masthead --}}
             <div class="flex items-center justify-between mb-5">
                 <p class="font-label text-[10px] uppercase font-bold tracking-[0.25em] text-slate-400 dark:text-slate-500">
-                    SunnyTrips · Traveler Journal
+                    SunnyTrips · Booking Details
                 </p>
                 <p class="font-label text-[10px] uppercase font-bold tracking-[0.2em] text-slate-400 dark:text-slate-500">
                     {{ now()->format('M j, Y') }}
@@ -154,7 +154,7 @@
                 <div class="relative z-10 px-6 sm:px-10 pt-16 sm:pt-20 pb-9 text-center text-slate-900">
                     <div x-data="{ copied: false }" class="flex flex-col items-center mb-6">
                         <span class="font-label text-xs uppercase font-bold tracking-[0.3em] text-slate-800/80">
-                            {{ $paidOrDone ? 'Voucher' : 'Journal' }} No.
+                            {{ $paidOrDone ? 'Confirmation' : 'Booking' }} No.
                         </span>
                         <div class="mt-2 inline-flex max-w-full items-center gap-2 rounded-2xl border-2 border-slate-900/80 bg-white/85 backdrop-blur-md px-4 sm:px-5 py-2 shadow-lg shadow-slate-900/10">
                             <span class="font-mono text-2xl sm:text-3xl font-black tracking-[0.12em] text-slate-900 select-all break-all">{{ $booking->booking_code }}</span>
@@ -215,7 +215,7 @@
                                     Your payment options and any deposit restrictions are explained below.
                                 @endif
                             @else
-                            Every item in your journal checked out. Complete payment of
+                            Every item in your booking checked out. Complete payment of
                             <strong class="text-slate-900">₱{{ number_format((float)$booking->net_amount, 2) }}</strong>
                             before
                             <strong class="text-slate-900">{{ $booking->payment_deadline?->format('M j, Y · g:i A') }}</strong>
@@ -234,7 +234,7 @@
                         </h1>
                         <p class="text-sm sm:text-[15px] text-slate-800/80 mt-3 max-w-xl mx-auto font-medium leading-relaxed">
                             {{ $status === 'paid'
-                                ? 'Payment received — your itinerary is locked in. Keep this voucher handy for check-in.'
+                                ? 'Payment received — your itinerary is locked in. Keep this confirmation handy for check-in.'
                                 : 'Your trip has been completed. Thank you for traveling with SunnyTrips — until the next island.' }}
                         </p>
                     @elseif ($status === 'rejected')
@@ -334,11 +334,13 @@
                             </a>
                         @endif
 
-                        @if ($status === 'completed')
+                        @php
+                            $reviewService = app(\App\Services\ReviewService::class);
+                        @endphp
+                        @if ($reviewService->reviewWindowOpen($booking) && $booking->items->contains(fn($item) => $reviewService->itemReviewable($booking, $item)))
                                 @php
-                                    $reviewableTypes = ['room', 'activity', 'package'];
                                     $hasUnreviewed = $booking->items
-                                        ->filter(fn($item) => in_array($item->item_type, $reviewableTypes))
+                                        ->filter(fn($item) => $reviewService->itemReviewable($booking, $item))
                                         ->some(fn($item) => !$booking->reviews->contains('booking_item_id', $item->id));
                                 @endphp
                                 <div id="booking-reviews" x-data="{ reviewed: @js(!$hasUnreviewed) }"
@@ -454,7 +456,7 @@
                 </section>
             @endif
 
-            {{-- ============ JOURNAL BODY ============ --}}
+            {{-- ============ BOOKING BODY ============ --}}
             <div class="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
 
                 {{-- LEFT: itinerary + manifest --}}
@@ -569,7 +571,7 @@
                     @if (in_array($status, ['pending', 'approved'], true))
                         @php
                             $journey = [
-                                ['label' => 'Request received', 'desc' => 'Your journal landed on our desk.', 'state' => 'done'],
+                                ['label' => 'Request received', 'desc' => 'Your request landed on our desk.', 'state' => 'done'],
                                 ['label' => 'Availability check', 'desc' => 'Crew verifies dates, rooms & tours.', 'state' => $status === 'pending' ? 'current' : 'done'],
                                 ['label' => 'Approved & notified', 'desc' => 'You\'ll get an email with your payment link.', 'state' => $status === 'pending' ? 'todo' : 'done'],
                                 ['label' => 'Pay to confirm', 'desc' => 'Pay before the agreed payment deadline.', 'state' => $status === 'pending' ? 'todo' : 'current'],
@@ -867,7 +869,7 @@
                             <ul class="space-y-3 text-xs">
                                 <li class="flex items-start gap-2.5">
                                     <span class="material-symbols-outlined text-[16px] text-amber-600 mt-0.5">calendar_month</span>
-                                    <span class="text-amber-900/90 dark:text-amber-100/90 font-medium leading-relaxed">Dates are open for every room, tour & add-on in your journal.</span>
+                                    <span class="text-amber-900/90 dark:text-amber-100/90 font-medium leading-relaxed">Dates are open for every room, tour & add-on in your booking.</span>
                                 </li>
                                 <li class="flex items-start gap-2.5">
                                     <span class="material-symbols-outlined text-[16px] text-amber-600 mt-0.5">scale</span>
@@ -965,14 +967,14 @@
                     </section>
                 @endif
 
-                {{-- Journal timeline --}}
+                {{-- Booking timeline --}}
                 @if($booking->history->isNotEmpty())
                     <section class="bg-white dark:bg-slate-900 rounded-3xl border border-sand-200/80 dark:border-slate-700/80 shadow-xs p-6 sm:p-8">
                         <h2 class="font-headline text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2.5 mb-6">
                             <span class="w-8 h-8 rounded-xl bg-ocean-50 dark:bg-ocean-900/50 text-ocean-600 border border-ocean-100 dark:border-ocean-800 flex items-center justify-center">
                                 <span class="material-symbols-outlined text-[18px]">history</span>
                             </span>
-                            Journal Timeline
+                            Booking Timeline
                         </h2>
                         <ol class="relative border-l-2 border-dashed border-sand-300 dark:border-slate-600 ml-3 space-y-5">
                             @foreach($booking->history as $event)

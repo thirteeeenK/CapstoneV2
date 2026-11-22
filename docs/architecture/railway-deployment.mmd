@@ -1,0 +1,133 @@
+flowchart LR
+  %% ------------------------------------------------------------
+  %% Clients
+  %% ------------------------------------------------------------
+  subgraph CLIENTS["Client Tier"]
+    TRAVELER["Traveler / Guest<br/>Desktop & mobile browser"]
+    ADMIN["Admin / Support Staff<br/>Browser"]
+  end
+
+  %% ------------------------------------------------------------
+  %% Railway platform
+  %% ------------------------------------------------------------
+  subgraph RAILWAY["Railway Platform - amusing-success / production"]
+    EDGE["Railway Edge Proxy<br/>TLS termination<br/>sunnytripsv2.up.railway.app"]
+
+    subgraph WEBSVC["Web Service · CapstoneV2"]
+      WEB["Laravel 13 · PHP 8.5<br/>Blade + Tailwind + Alpine + Vite<br/>HTTP · auth · catalog · cart · checkout<br/>chatbot · admin · payment webhooks"]
+    end
+
+    subgraph WORKERSVC["Worker Service · brave-cooperation"]
+      WORKER["bash scripts/railway-worker.sh<br/>php artisan queue:work database<br/>php artisan schedule:work<br/>no public domain"]
+    end
+
+    DB[("PostgreSQL + pgvector<br/>vector(3072) embeddings<br/>app data · sessions · cache · jobs")]
+
+    subgraph ROUTESVC["Valhalla Service"]
+      VALHALLA["Valhalla routing engine<br/>Western Visayas OSM graph<br/>persistent volume: /custom_files<br/>private only"]
+    end
+
+    NOTE["No Redis · no WebSocket<br/>sessions, cache & queues live in PostgreSQL<br/>chat/support use polling"]
+  end
+
+  %% ------------------------------------------------------------
+  %% External services
+  %% ------------------------------------------------------------
+  subgraph EXTERNAL["External Services"]
+    subgraph AI["AI"]
+      GEMINI["Google Gemini API<br/>embeddings · chat · sentiment"]
+      GROQ["Groq API<br/>chat fallback"]
+    end
+
+    subgraph PAYMENTS["Payments"]
+      PAYMONGO["PayMongo<br/>QR Ph live + sandbox"]
+      STRIPE["Stripe<br/>Checkout Sessions"]
+    end
+
+    subgraph PLATFORM["Identity · Weather · Email"]
+      GOOGLE["Google OAuth 2.0"]
+      TURNSTILE["Cloudflare Turnstile"]
+      WEATHER["OpenWeatherMap<br/>5-day forecast"]
+      RESEND["Resend<br/>transactional email"]
+    end
+
+    subgraph OPTIONAL["Optional integrations"]
+      ORS["OpenRouteService<br/>optional routing provider"]
+      R2["Cloudflare R2<br/>optional review media"]
+    end
+  end
+
+  GITHUB["GitHub · thirteeeenK/CapstoneV2<br/>branch: fixMapIssueV2"]
+
+  %% ------------------------------------------------------------
+  %% Client traffic
+  %% ------------------------------------------------------------
+  TRAVELER -->|"HTTPS 443"| EDGE
+  ADMIN -->|"HTTPS 443"| EDGE
+  EDGE -->|"HTTP · trusted proxy"| WEB
+
+  %% ------------------------------------------------------------
+  %% Internal data + routing
+  %% ------------------------------------------------------------
+  WEB -->|"SQL · private :5432"| DB
+  WORKER -->|"SQL · private :5432"| DB
+
+  WEB -->|"HTTP · private :8080"| VALHALLA
+  WEB -.->|"optional provider"| ORS
+
+  %% ------------------------------------------------------------
+  %% AI
+  %% ------------------------------------------------------------
+  WEB -->|"HTTPS"| GEMINI
+  WORKER -->|"HTTPS · embeddings / sentiment"| GEMINI
+  WEB -.->|"fallback"| GROQ
+
+  %% ------------------------------------------------------------
+  %% Payments
+  %% ------------------------------------------------------------
+  WEB -->|"HTTPS · Payment Intents"| PAYMONGO
+  WORKER -->|"HTTPS · reconcile QR Ph"| PAYMONGO
+  PAYMONGO -->|"signed webhook<br/>/webhook/payment/paymongo<br/>/webhook/payment/qrph"| EDGE
+
+  WEB -->|"HTTPS · Checkout Session"| STRIPE
+  STRIPE -->|"signed webhook<br/>/webhook/payment/stripe"| EDGE
+
+  %% ------------------------------------------------------------
+  %% Identity / weather / email
+  %% ------------------------------------------------------------
+  WEB -->|"HTTPS · forecast"| WEATHER
+  WEB -->|"HTTPS · OAuth"| GOOGLE
+  GOOGLE -->|"browser redirect<br/>/auth/google/callback"| EDGE
+  WEB -->|"HTTPS · siteverify"| TURNSTILE
+  WEB -->|"HTTPS · API"| RESEND
+  WORKER -->|"HTTPS · API"| RESEND
+
+  %% ------------------------------------------------------------
+  %% Optional storage
+  %% ------------------------------------------------------------
+  WEB -.->|"S3 API · optional"| R2
+
+  %% ------------------------------------------------------------
+  %% Deployment pipeline
+  %% ------------------------------------------------------------
+  GITHUB -.->|"auto-deploy"| WEB
+  GITHUB -.->|"auto-deploy"| WORKER
+
+  %% ------------------------------------------------------------
+  %% Styling
+  %% ------------------------------------------------------------
+  classDef actor fill:#ffffff,stroke:#111827,stroke-width:2px,color:#111827;
+  classDef edge fill:#dbeafe,stroke:#1d4ed8,stroke-width:2px,color:#1e3a8a;
+  classDef compute fill:#e0e7ff,stroke:#4338ca,stroke-width:1.5px,color:#1e1b4b;
+  classDef data fill:#dcfce7,stroke:#15803d,stroke-width:1.5px,color:#14532d;
+  classDef ext fill:#ffffff,stroke:#6b7280,stroke-width:1.5px,stroke-dasharray: 5 5,color:#111827;
+  classDef pipeline fill:#fef9c3,stroke:#a16207,stroke-width:1.5px,color:#422006;
+  classDef note fill:#f9fafb,stroke:#9ca3af,stroke-width:1.5px,stroke-dasharray: 5 5,color:#374151;
+
+  class TRAVELER,ADMIN actor;
+  class EDGE edge;
+  class WEB,WORKER,VALHALLA compute;
+  class DB data;
+  class GEMINI,GROQ,PAYMONGO,STRIPE,GOOGLE,TURNSTILE,WEATHER,RESEND,ORS,R2 ext;
+  class GITHUB pipeline;
+  class NOTE note;

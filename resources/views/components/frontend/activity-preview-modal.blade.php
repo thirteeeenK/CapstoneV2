@@ -241,7 +241,7 @@
             <button type="button" x-show="$store.preview.context !== 'planner'" @click="$store.preview.addActivityToCart()"
                 class="flex-1 py-2.5 px-4 rounded-2xl bg-gradient-to-r from-sky-600 to-sky-700 hover:from-sky-500 hover:to-sky-600 text-white font-bold text-xs sm:text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer">
                 <span class="material-symbols-outlined text-[17px]">shopping_cart</span>
-                <span>Add to Trip Basket</span>
+                <span>Add to Trip</span>
             </button>
             <p x-show="$store.preview.context === 'planner'" class="flex-1 text-xs text-slate-500 dark:text-slate-400 text-center sm:text-right">Use <span class="font-semibold">Add to my trip</span> on the planner to include this activity.</p>
         </div>

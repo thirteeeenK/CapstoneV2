@@ -14,7 +14,7 @@
                 <div style="margin-top:18px"><h2 style="font-size:15px">Date to be arranged</h2>@foreach($payload['undated'] as $name)<p style="margin:4px 0;font-size:14px">{{ $name }}</p>@endforeach</div>
             @endif
             @if(!empty($payload['url']))
-                <p style="margin:28px 0"><a href="{{ $payload['url'] }}" style="background:#006b91;color:white;text-decoration:none;padding:13px 20px;border-radius:5px;font-weight:bold">{{ $payload['action'] }}</a></p>
+                <p style="margin:28px 0"><a href="{{ $payload['url'] }}" style="background:#006b91;color:white;text-decoration:none;padding:13px 20px;border-radius:5px;font-weight:bold">{{ $payload['action'] }}</a>@if(!empty($payload['secondary_url']))<a href="{{ $payload['secondary_url'] }}" style="display:inline-block;margin-left:10px;border:2px solid #006b91;color:#006b91;text-decoration:none;padding:11px 18px;border-radius:5px;font-weight:bold">{{ $payload['secondary_action'] }}</a>@endif</p>
             @endif
             @if(!empty($payload['support']))<p style="line-height:1.6">Questions about this booking? Contact {{ $payload['support'] }}. Quote your booking reference so we can help.</p>@endif
             <p style="font-size:12px;color:#5c707b;line-height:1.6">Your booking’s current status and item availability determine confirmed services. Saved weather forecasts and travel times are estimates; check updates before traveling.</p>

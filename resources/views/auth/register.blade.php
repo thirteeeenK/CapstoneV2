@@ -403,6 +403,30 @@
                 <div data-error-for="ai_disclosure_accepted" class="px-1">
                     <x-input-error :messages="$errors->get('ai_disclosure_accepted')" />
                 </div>
+
+                {{-- Optional marketing consent: unticked by default and never required to sign up --}}
+                <label
+                    class="group flex cursor-pointer items-start gap-3 sm:gap-3.5 rounded-xl border border-dashed border-ink-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3 sm:p-3.5 transition-all duration-150 hover:border-ocean-300 dark:hover:border-ocean-700 has-[:checked]:border-ocean-500 dark:has-[:checked]:border-ocean-500 has-[:checked]:bg-ocean-50/60 dark:has-[:checked]:bg-ocean-900/60">
+                    <span
+                        class="mt-0.5 inline-flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg bg-sand-100 dark:bg-slate-800 text-ink-600 dark:text-slate-300 ring-1 ring-sand-200 dark:ring-slate-700 transition-colors group-has-[:checked]:bg-ocean-500 group-has-[:checked]:text-white">
+                        <span class="material-symbols-outlined text-[20px]">mail</span>
+                    </span>
+                    <span class="min-w-0 flex-1">
+                        <span class="block font-headline text-[13px] font-bold text-ink-900 dark:text-slate-100">Deals and destination ideas <span class="font-body font-normal text-ink-500 dark:text-slate-400">(optional)</span></span>
+                        <span class="mt-0.5 block text-[13px] font-body text-ink-500 dark:text-slate-400 leading-relaxed">
+                            Send me promotions, new tour packages and Lucky discounts by email. I can unsubscribe at any time.
+                        </span>
+                    </span>
+                    <span class="relative mt-1 inline-flex h-5 w-5 shrink-0">
+                        <input type="checkbox" name="marketing_opt_in" value="1" form="register-form"
+                            class="peer h-5 w-5 cursor-pointer appearance-none rounded-md border border-ink-300 dark:border-slate-700 bg-white dark:bg-slate-900 transition-colors checked:border-ocean-500 checked:bg-ocean-500 focus:outline-none focus:ring-2 focus:ring-ocean-400/40 focus:ring-offset-1"
+                            {{ old('marketing_opt_in') ? 'checked' : '' }}>
+                        <span
+                            class="pointer-events-none absolute inset-0 flex items-center justify-center text-white opacity-0 peer-checked:opacity-100 transition-opacity">
+                            <span class="material-symbols-outlined text-[14px]">check</span>
+                        </span>
+                    </span>
+                </label>
             </div>
 
             <div class="mt-4 space-y-2">

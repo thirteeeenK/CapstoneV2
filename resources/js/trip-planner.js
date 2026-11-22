@@ -31,6 +31,7 @@ export default (config) => {
     tab: 'hotels', busy: false, error: '', notice: '', mapError: '', routeNotice: '', search: '', activeDay: 0, editing: null,
     title: '', startDate: '', endDate: '', durationDays: '', pax: 2, mode: 'walking', optionIn: '', optionOut: '', optionDate: '', optionPax: 2, optionQuantity: 1,
     viewportSignature: '', loadSequence: 0, activeHotelId: 0, savedPlanId: '', deleting: false, customStayDates: false,
+    documentPreview: null,
     previewPlaces: [], previewKey: '', previewError: '', previewStatus: '', previewImageFailed: false,
     itineraryMapContext: false, catalogLoading: false,
     reminders: config.emailPreferences.reminders, marketing: config.emailPreferences.marketing,
@@ -172,7 +173,7 @@ export default (config) => {
         const reloadCatalog = this.catalogLoading;
         this.loadSequence++; this.catalogLoading = false; this.closeMapPreview(false); this.itineraryMapContext = false; this.search = '';
         this.plan = null; this.selections = []; this.itinerary = null; this.draftItinerary = null; this.tab = 'hotels'; this.error = ''; this.notice = '';
-        this.savedPlanId = ''; this.activeHotelId = 0; this.editing = null; this.deleting = false;
+        this.savedPlanId = ''; this.activeHotelId = 0; this.editing = null; this.deleting = false; this.documentPreview = null;
         this.title = 'Trip to ' + (this.destination()?.name || 'the islands'); this.renderMap();
         if (reloadCatalog && !this.busy) this.chooseDestination(this.destinationId);
     },
@@ -387,7 +388,32 @@ export default (config) => {
             } }));
         });
     },
-    documentUrl(print = false) { const current = this.itinerary || this.draftItinerary; return current ? config.base + '/plans/' + this.plan.id + '/itineraries/' + current.id + '/document' + (print ? '?print=1' : '') : '#'; },
+    documentUrl(print = false, query = '') { const current = this.itinerary || this.draftItinerary; return current ? config.base + '/plans/' + this.plan.id + '/itineraries/' + current.id + '/document' + (query ? '?' + query : (print ? '?print=1' : '')) : '#'; },
+    /**
+     * Preview the itinerary PDF in a dialog before downloading or printing it.
+     * Browsers without an inline PDF viewer (most phones) preview the same
+     * document as its print view instead.
+     */
+    openDocumentPreview(trigger = null) {
+        if (!(this.itinerary || this.draftItinerary)) return;
+        const mode = navigator.pdfViewerEnabled === false ? 'html' : 'pdf';
+        this.documentPreview = { mode, loading: true, trigger, src: this.documentUrl(false, mode === 'pdf' ? 'preview=1' : 'print=1&embed=1') };
+        this.$nextTick(() => this.$refs.documentPreviewHeading?.focus());
+    },
+    closeDocumentPreview() {
+        const trigger = this.documentPreview?.trigger;
+        this.documentPreview = null;
+        this.$nextTick(() => trigger?.focus());
+    },
+    printDocumentPreview() {
+        try {
+            const frame = this.$refs.documentPreviewFrame.contentWindow;
+            frame.focus();
+            frame.print();
+        } catch (error) {
+            window.open(this.documentUrl(true), '_blank', 'noopener');
+        }
+    },
     async email() {
         await this.run(async () => { this.notice = (await this.api('/plans/' + this.plan.id + '/itineraries/' + (this.itinerary || this.draftItinerary).id + '/email', 'POST')).message; });
     },

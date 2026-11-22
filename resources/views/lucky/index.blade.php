@@ -243,8 +243,19 @@
                                         Within Budget
                                     </span>
                                 </template>
+                                <template x-if="hasDiscount">
+                                    <p class="text-sm font-semibold text-slate-400 line-through decoration-2"
+                                        :aria-label="'Regular price ' + itinerary.formatted_total"
+                                        x-text="itinerary.formatted_total"></p>
+                                </template>
                                 <p class="font-headline text-3xl font-black text-emerald-400"
-                                    x-text="itinerary.formatted_total"></p>
+                                    x-text="hasDiscount ? itinerary.offer.formatted_discounted_total : itinerary.formatted_total"></p>
+                                <template x-if="hasDiscount">
+                                    <p class="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 px-2.5 py-0.5 text-[11px] font-bold text-emerald-300">
+                                        <span class="material-symbols-outlined text-[13px]" aria-hidden="true">casino</span>
+                                        <span x-text="'Lucky discount −' + itinerary.offer.formatted_estimated_saving"></span>
+                                    </p>
+                                </template>
                                 <p class="text-[11px] text-slate-400 font-medium"
                                     x-text="'Target budget: ' + itinerary.formatted_budget"></p>
                             </div>
@@ -383,12 +394,22 @@
                                 <div>
                                     <p class="text-[11px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300" x-text="itinerary.offer.campaign || 'Lucky discount'"></p>
                                     <p class="font-headline text-lg font-black text-emerald-900 dark:text-emerald-100" x-text="'You won ' + itinerary.offer.discount_label + ' this itinerary!'"></p>
-                                    <p class="text-xs text-emerald-800 dark:text-emerald-200 mt-0.5">
-                                        Estimated saving <span class="font-bold" x-text="itinerary.offer.formatted_estimated_saving"></span>
-                                        on an eligible subtotal of <span x-text="itinerary.offer.formatted_eligible_subtotal"></span>
-                                    </p>
                                 </div>
-                                <p class="text-[11px] text-emerald-800 dark:text-emerald-200" x-text="'Valid until ' + itinerary.offer.formatted_expires_at + ' (Philippine time). It applies automatically at checkout.'"></p>
+                                <dl class="grid grid-cols-3 gap-2 rounded-xl bg-white/70 dark:bg-slate-900/60 border border-emerald-200/80 dark:border-emerald-800/80 p-3 text-xs">
+                                    <div>
+                                        <dt class="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Regular price</dt>
+                                        <dd class="mt-0.5 font-bold text-slate-700 dark:text-slate-300 line-through" x-text="itinerary.offer.formatted_eligible_subtotal"></dd>
+                                    </div>
+                                    <div>
+                                        <dt class="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">You save</dt>
+                                        <dd class="mt-0.5 font-bold text-emerald-700 dark:text-emerald-300" x-text="'−' + itinerary.offer.formatted_estimated_saving"></dd>
+                                    </div>
+                                    <div>
+                                        <dt class="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">You pay</dt>
+                                        <dd class="mt-0.5 font-headline text-sm font-black text-emerald-900 dark:text-emerald-100" x-text="itinerary.offer.formatted_discounted_total"></dd>
+                                    </div>
+                                </dl>
+                                <p class="text-[11px] text-emerald-800 dark:text-emerald-200" x-text="'Already applied to the price above. It carries into your Trip Basket and checkout automatically while the itinerary stays unchanged — valid until ' + itinerary.offer.formatted_expires_at + ' (Philippine time).'"></p>
                                 <ul class="list-disc pl-5 space-y-0.5 text-[11px] text-emerald-900/80 dark:text-emerald-100/80">
                                     <template x-for="term in itinerary.offer.terms" :key="term"><li x-text="term"></li></template>
                                 </ul>
@@ -402,9 +423,15 @@
                         <div
                             class="rounded-2xl bg-slate-900 text-white p-6 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg">
                             <div class="text-center sm:text-left">
-                                <p class="text-xs text-slate-400 font-medium">Estimated Itinerary Total</p>
-                                <p class="font-headline text-3xl font-black text-emerald-400 mt-0.5"
-                                    x-text="itinerary.formatted_total"></p>
+                                <p class="text-xs text-slate-400 font-medium" x-text="hasDiscount ? 'Your Price with Lucky Discount' : 'Estimated Itinerary Total'"></p>
+                                <p class="mt-0.5 flex flex-wrap items-baseline justify-center sm:justify-start gap-x-2">
+                                    <span class="font-headline text-3xl font-black text-emerald-400"
+                                        x-text="hasDiscount ? itinerary.offer.formatted_discounted_total : itinerary.formatted_total"></span>
+                                    <template x-if="hasDiscount">
+                                        <span class="text-sm font-semibold text-slate-400 line-through" :aria-label="'Regular price ' + itinerary.formatted_total" x-text="itinerary.formatted_total"></span>
+                                    </template>
+                                </p>
+                                <p class="mt-1 text-[11px] text-slate-400">Before guest-list adjustments (extra guests, passenger discounts) made at checkout.</p>
                             </div>
                             <div class="flex flex-wrap justify-center gap-3">
                                 <button type="button" @click="shuffle()" :disabled="loading || accepting || attempts.left <= 0"
@@ -426,7 +453,7 @@
                                     <template x-if="!accepting">
                                         <span class="material-symbols-outlined text-[16px]">shopping_cart</span>
                                     </template>
-                                    <span x-text="accepting ? 'Adding to basket…' : 'Add to Trip Basket'"></span>
+                                    <span x-text="accepting ? 'Claiming your trip…' : 'Claim This Trip'"></span>
                                 </button>
                             </div>
                         </div>
@@ -478,6 +505,11 @@
                 },
                 error: null,
                 itinerary: null,
+
+                /** A won Lucky discount that takes something off, shown in every price on the page. */
+                get hasDiscount() {
+                    return Boolean(this.itinerary?.offer?.won && Number(this.itinerary.offer.estimated_saving) > 0);
+                },
 
                 get attemptsLabel() {
                     return this.attempts.left > 0

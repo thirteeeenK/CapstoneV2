@@ -60,13 +60,16 @@ class SecurityHeaders
             header_remove('X-Powered-By');
         }
 
+        // Framing is denied unless a response opts itself in to same-origin framing (an in-page document preview).
+        $allowsSameOriginFraming = $response->headers->get('X-Frame-Options') === 'SAMEORIGIN';
+
         $response->headers->remove('X-Powered-By');
         $response->headers->set('X-Content-Type-Options', 'nosniff');
-        $response->headers->set('X-Frame-Options', 'DENY');
+        $response->headers->set('X-Frame-Options', $allowsSameOriginFraming ? 'SAMEORIGIN' : 'DENY');
         $response->headers->set('X-Permitted-Cross-Domain-Policies', 'none');
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
         $response->headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(self)');
-        $response->headers->set('Content-Security-Policy', $this->contentSecurityPolicy());
+        $response->headers->set('Content-Security-Policy', $this->contentSecurityPolicy($allowsSameOriginFraming));
 
         if (app()->isProduction() && $request->isSecure()) {
             $response->headers->set('Strict-Transport-Security', 'max-age=31536000');
@@ -79,7 +82,7 @@ class SecurityHeaders
         return $response;
     }
 
-    private function contentSecurityPolicy(): string
+    private function contentSecurityPolicy(bool $allowsSameOriginFraming = false): string
     {
         $isProduction = app()->isProduction();
 
@@ -92,7 +95,7 @@ class SecurityHeaders
             "default-src 'self';",
             "base-uri 'self';",
             "object-src 'none';",
-            "frame-ancestors 'none';",
+            $allowsSameOriginFraming ? "frame-ancestors 'self';" : "frame-ancestors 'none';",
             "form-action 'self' ".implode(' ', self::ALLOWED_SOURCES['form-action']).';',
             "script-src 'self' 'unsafe-inline' 'unsafe-eval' {$sources('script-src')};",
             "style-src 'self' 'unsafe-inline' {$sources('style-src')};",

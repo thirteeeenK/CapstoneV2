@@ -28,6 +28,8 @@ return [
     ],
     'chatbot' => ['daily_limit' => 15, 'minute_limit' => 5],
     'lucky' => ['daily_attempts' => 5],
+    // Promotional email limits. 100 a day matches Resend's free plan.
+    'marketing' => ['daily_cap' => 100, 'frequency_days' => 3],
     'notifications' => [
         'recipient_mode' => 'all',
         'admin_ids' => [],

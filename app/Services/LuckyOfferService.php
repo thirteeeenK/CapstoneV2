@@ -124,6 +124,7 @@ final class LuckyOfferService
     public function present(LuckyOffer $offer): array
     {
         $terms = $offer->terms;
+        $discountedCents = max(0, $offer->quoted_total_cents - $offer->estimated_discount_cents);
 
         return [
             'id' => $offer->uuid,
@@ -136,6 +137,8 @@ final class LuckyOfferService
             'formatted_eligible_subtotal' => '₱'.number_format($offer->quoted_total_cents / 100, 2),
             'estimated_saving' => $offer->estimated_discount_cents / 100,
             'formatted_estimated_saving' => '₱'.number_format($offer->estimated_discount_cents / 100, 2),
+            'discounted_total' => $discountedCents / 100,
+            'formatted_discounted_total' => '₱'.number_format($discountedCents / 100, 2),
             'terms' => $terms ? $this->termsSummary($terms) : [],
         ];
     }

@@ -295,7 +295,7 @@
                                     :class="(!roomAvailable || !roomCheckIn || !roomCheckOut) ? 'opacity-50 cursor-not-allowed bg-slate-400' : 'bg-gradient-to-r from-sky-600 to-sky-700 hover:from-sky-500 hover:to-sky-600 shadow-md shadow-sky-600/20 hover:shadow-lg cursor-pointer'"
                                     class="w-full py-3 px-4 rounded-xl text-white font-bold text-sm transition-all flex items-center justify-center gap-2">
                                     <span class="material-symbols-outlined text-[18px]">shopping_cart</span>
-                                    <span x-text="(!roomCheckIn || !roomCheckOut) ? 'Select Dates to Add' : 'Add to Trip Basket'"></span>
+                                    <span x-text="(!roomCheckIn || !roomCheckOut) ? 'Select Dates to Add' : 'Add to Trip'"></span>
                                 </button>
                             </div>
                         </template>

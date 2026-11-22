@@ -87,3 +87,5 @@ require __DIR__.'/adminFaqRoute.php';
 require __DIR__.'/adminKnowledgeArticleRoute.php';
 require __DIR__.'/adminOnboardingOptionRoute.php';
 require __DIR__.'/adminAuditRoute.php';
+require __DIR__.'/adminEmailCampaignRoute.php';
+require __DIR__.'/marketingRoute.php';

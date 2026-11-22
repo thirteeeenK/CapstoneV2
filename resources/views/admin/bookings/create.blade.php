@@ -836,7 +836,7 @@
                         </div>
                         <input type="radio" name="initial_status" value="paid" x-model="initialStatus" class="text-ocean-600">
                     </div>
-                    <p class="text-[11px] text-slate-500">For over-the-counter payments (Cash, POS Terminal, Bank transfer). Issues official booking voucher right away.</p>
+                    <p class="text-[11px] text-slate-500">For over-the-counter payments (Cash, POS Terminal, Bank transfer). Issues the official booking confirmation right away.</p>
                 </label>
             </div>
 

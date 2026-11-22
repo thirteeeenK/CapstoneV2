@@ -44,6 +44,8 @@ class RegisteredUserController extends Controller
             'terms_accepted' => ['required', 'accepted'],
             'privacy_accepted' => ['required', 'accepted'],
             'ai_disclosure_accepted' => ['required', 'accepted'],
+            // Optional and unticked by default: marketing consent is never a condition of signing up.
+            'marketing_opt_in' => ['nullable', 'boolean'],
         ]);
 
         $turnstile->verify($request->input('cf-turnstile-response'));
@@ -67,6 +69,10 @@ class RegisteredUserController extends Controller
             'consent_ip_address' => $request->ip(),
             'consent_user_agent' => $request->userAgent(),
         ]);
+
+        if ($request->boolean('marketing_opt_in')) {
+            $user->setMarketingConsent(true);
+        }
 
         event(new Registered($user));
 

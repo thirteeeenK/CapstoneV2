@@ -421,3 +421,45 @@ it('keeps assessing a booking whose recorded extension runs past the reminder ho
 
     expect($service->diagnostics()['bookings'])->toBe(1)->and($this->booking->fresh()->status)->toBe('paid');
 });
+
+it('opens reviews on the last day of the trip and invites one in the departure email', function () {
+    Queue::fake();
+    $this->booking->update(['trip_itineraries' => null]);
+    $this->item->update(['check_in_date' => '2026-10-11', 'check_out_date' => '2026-10-13']);
+
+    app(TripJourneyService::class)->process();
+    $payload = journeyPayloads()[0];
+    $html = (new TripJourneyMail($payload, 'test'))->render();
+
+    expect($payload['kind'])->toBe('departure')->and($payload['secondary_action'])->toBe('Leave a review')
+        ->and($payload['secondary_url'])->toBe(route('booking.show', $this->booking->booking_code).'#booking-reviews')
+        ->and($html)->toContain('Leave a review');
+    $this->actingAs($this->user)->get(route('booking.show', $this->booking->booking_code))->assertOk()->assertSee('id="booking-reviews"', false);
+    $this->postJson(route('reviews.store'), ['booking_id' => $this->booking->id, 'booking_item_id' => $this->item->id, 'rating' => 5,
+        'comment' => 'A restful stay with a lovely view of the bay.'])->assertCreated();
+});
+
+it('keeps reviews closed before the last day and for a no-show service', function (Closure $change, string $message) {
+    Queue::fake();
+    $this->booking->update(['trip_itineraries' => null]);
+    $change($this);
+
+    $this->actingAs($this->user)->postJson(route('reviews.store'), ['booking_id' => $this->booking->id, 'booking_item_id' => $this->item->id, 'rating' => 5,
+        'comment' => 'A restful stay with a lovely view of the bay.'])->assertUnprocessable()->assertJsonFragment(['message' => $message]);
+    $this->get(route('booking.show', $this->booking->booking_code))->assertOk()->assertDontSee('id="booking-reviews"', false);
+})->with([
+    'trip not started' => [fn () => null, 'Reviews open on the last day of your trip.'],
+    'trip under way, more than a day left' => [fn ($test) => $test->item->update(['check_in_date' => '2026-10-12', 'check_out_date' => '2026-10-15']), 'Reviews open on the last day of your trip.'],
+    'no-show on the last day' => [fn ($test) => $test->item->update(['check_in_date' => '2026-10-11', 'check_out_date' => '2026-10-13', 'fulfillment_status' => 'no_show']), 'This service can be reviewed once it has started.'],
+]);
+
+it('leaves the review link out of a guest booking’s departure email', function () {
+    Queue::fake([SendTripJourneyMail::class]);
+    $admin = AdminModel::create(['name' => 'Desk Admin', 'email' => 'desk@example.com', 'password' => 'password']);
+    $this->booking->update(['user_id' => null, 'booked_by_admin_id' => $admin->id, 'booking_source' => 'admin_walk_in', 'contact_email' => 'walkin@example.com', 'trip_itineraries' => null]);
+    $this->item->update(['check_in_date' => '2026-10-11', 'check_out_date' => '2026-10-13']);
+
+    app(TripJourneyService::class)->process();
+
+    expect(journeyPayloads()[0]['secondary_url'] ?? null)->toBeNull();
+});

@@ -45,6 +45,20 @@
                         @include('profile.partials.update-password-form')
                     </section>
 
+                    {{-- Email preferences --}}
+                    <section id="email-preferences" class="bg-white dark:bg-slate-900 border border-sand-200 dark:border-slate-700 rounded-3xl p-6 sm:p-8 shadow-sm">
+                        <div class="flex items-center gap-4 mb-6">
+                            <div class="w-11 h-11 rounded-2xl bg-ocean-50 dark:bg-ocean-900/50 border border-ocean-100 dark:border-ocean-800 flex items-center justify-center text-ocean-600 dark:text-ocean-100 shrink-0">
+                                <span class="material-symbols-outlined text-[22px]">mail</span>
+                            </div>
+                            <div class="space-y-0.5">
+                                <h2 class="font-headline font-bold text-lg text-ink-900 dark:text-slate-100 tracking-tight">Email preferences</h2>
+                                <p class="font-body text-xs text-ink-500 dark:text-slate-400">Choose which optional emails you get from us.</p>
+                            </div>
+                        </div>
+                        @include('profile.partials.email-preferences-form')
+                    </section>
+
                     {{-- Danger zone --}}
                     <section id="danger" class="bg-white dark:bg-slate-900 border border-coral-200 rounded-3xl p-6 sm:p-8 shadow-sm">
                         <div class="flex items-center gap-4 mb-6">

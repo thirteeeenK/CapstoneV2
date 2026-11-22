@@ -157,7 +157,7 @@
                                         @click="window.addToCart('activity', selected.id, { selected_pax: 1 })"
                                         class="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-ocean-600 px-3 py-2.5 text-xs font-bold text-white transition hover:bg-ocean-700 cursor-pointer">
                                     <span class="material-symbols-outlined text-[15px]">shopping_cart</span>
-                                    <span>Add to Basket</span>
+                                    <span>Add to Trip</span>
                                 </button>
                             </div>
 

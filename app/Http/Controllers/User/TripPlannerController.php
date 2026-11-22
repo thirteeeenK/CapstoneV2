@@ -300,11 +300,19 @@ class TripPlannerController extends Controller
         abort_unless($itinerary->trip_plan_id === $plan->id, 404);
         $data = ['itinerary' => $itinerary->snapshot, 'reference' => 'Plan '.$plan->id.' · Version '.$itinerary->id, 'referenceLabel' => 'Plan reference (not a booking)', 'referenceCode' => 'PLAN-'.$plan->id.'-V'.$itinerary->id];
         $view = ($itinerary->snapshot['kind'] ?? null) === 'chatbot_draft' ? 'trip-planner.draft-document' : 'trip-planner.document';
+        $filename = 'sunnytrips-itinerary-'.$itinerary->id.'.pdf';
+        // An embedded preview (the planner's preview dialog) is the only same-origin framing this document allows.
+        $embedded = $request->boolean('embed');
         if ($request->boolean('print')) {
-            return view($view, $data);
+            $response = response()->view($view, $data + ['embedded' => $embedded]);
+
+            return $embedded ? $response->header('X-Frame-Options', 'SAMEORIGIN') : $response;
+        }
+        if ($request->boolean('preview')) {
+            return TravelDocumentPdf::render($view, $data)->stream($filename)->header('X-Frame-Options', 'SAMEORIGIN');
         }
 
-        return TravelDocumentPdf::render($view, $data)->download('sunnytrips-itinerary-'.$itinerary->id.'.pdf');
+        return TravelDocumentPdf::render($view, $data)->download($filename);
     }
 
     private function owned(Request $request, TripPlan $plan): void
@@ -326,8 +334,8 @@ class TripPlannerController extends Controller
         $data = $request->validate(['reminders' => ['required', 'boolean'], 'marketing' => ['required', 'boolean']]);
         $user = $request->user();
         $user->trip_reminders_enabled = $data['reminders'];
-        $user->trip_marketing_enabled = $data['marketing'];
         $user->save();
+        $user->setMarketingConsent((bool) $data['marketing']);
 
         return response()->json(['message' => 'Email preferences saved. Booking and payment confirmations remain available.']);
     }

@@ -26,6 +26,8 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->validateCsrfTokens(except: [
             'webhook/*',
+            // One-click unsubscribe (RFC 8058): mail clients post without a session; the signed URL protects it.
+            'email/unsubscribe/*',
         ]);
 
         $middleware->alias([

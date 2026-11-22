@@ -43,6 +43,7 @@ it('awards a discount with its terms, expiry and estimated saving', function () 
     $offer = LuckyOffer::sole();
     expect($offerData)->not->toHaveKey('code')->and($offerData['won'])->toBeTrue()->and($offer->promotion_id)->toBe($promotion->id)
         ->and($offerData['formatted_estimated_saving'])->toBe('₱400.00')
+        ->and($offerData['formatted_discounted_total'])->toBe('₱3,600.00')
         ->and($offerData['terms'])->not->toBeEmpty()
         ->and($offer->terms['percent_off'])->toBe(10)->and($offer->promotion_revision)->toBe($promotion->fresh()->revision)
         ->and($offer->expires_at->diffInHours(now(), true))->toBeGreaterThan(47.9);

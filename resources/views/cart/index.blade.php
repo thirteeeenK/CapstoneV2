@@ -183,7 +183,13 @@
                                     </div>
                                     <h3 class="font-display text-[15px] sm:text-lg font-bold text-white mt-1" x-text="group.title"></h3>
                                     <template x-if="group.lucky_discount_label">
-                                        <p class="mt-1 text-xs text-white/90">Lucky discount: <span x-text="group.lucky_discount_label + '. Applied automatically at checkout.'"></span></p>
+                                        <p class="mt-1 text-xs text-white/90">Lucky discount: <span x-text="group.lucky_discount_label + (group.has_lucky_saving ? '. Saving ' + group.formatted_lucky_saving + ', carried into checkout.' : '.')"></span></p>
+                                    </template>
+                                    <template x-if="group.lucky_discount_label && !group.has_lucky_saving && group.lucky_notice">
+                                        <p class="mt-1 inline-flex items-start gap-1 rounded-lg bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-900">
+                                            <span class="material-symbols-outlined text-[14px] shrink-0" aria-hidden="true">info</span>
+                                            <span x-text="group.lucky_notice"></span>
+                                        </p>
                                     </template>
                                     <p class="text-xs text-white/80 mt-0.5">
                                         <span x-text="group.item_count + ' ' + (group.item_count === 1 ? 'item' : 'items')"></span>
@@ -191,8 +197,11 @@
                                     </p>
                                 </div>
                                 <div class="text-right">
-                                    <span class="block text-[11px] font-semibold text-white/70 uppercase tracking-wide">Itinerary total</span>
-                                    <span class="block font-display text-lg font-bold text-white" x-text="group.formatted_subtotal"></span>
+                                    <span class="block text-[11px] font-semibold text-white/70 uppercase tracking-wide" x-text="group.has_lucky_saving ? 'With Lucky discount' : 'Itinerary total'"></span>
+                                    <span class="block font-display text-lg font-bold text-white" x-text="group.has_lucky_saving ? group.formatted_lucky_discounted_subtotal : group.formatted_subtotal"></span>
+                                    <template x-if="group.has_lucky_saving">
+                                        <span class="block text-xs font-semibold text-white/70 line-through" :aria-label="'Regular price ' + group.formatted_subtotal" x-text="group.formatted_subtotal"></span>
+                                    </template>
                                 </div>
                             </div>
                             <div class="divide-y divide-sand-200/80 dark:divide-slate-700/80">
@@ -224,6 +233,13 @@
                                 <span>Subtotal</span>
                                 <span class="font-semibold text-ink-700" x-text="formattedSelectedSubtotal"></span>
                             </div>
+                            <div x-show="luckySaving > 0" x-cloak class="flex justify-between text-emerald-700 dark:text-emerald-300">
+                                <span class="inline-flex items-center gap-1">
+                                    <span class="material-symbols-outlined text-[15px]" aria-hidden="true">casino</span>
+                                    <span>Lucky discount</span>
+                                </span>
+                                <span class="font-semibold" x-text="'−' + formatPeso(luckySaving)"></span>
+                            </div>
                             <div class="flex justify-between items-center text-ink-500">
                                 <span>Service & booking fee</span>
                                 <span class="inline-flex items-center rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-100 border border-emerald-100 dark:border-emerald-800 px-2.5 py-0.5 text-xs font-semibold">
@@ -234,8 +250,9 @@
 
                         <div class="pt-4 border-t border-sand-200 dark:border-slate-700 flex justify-between items-baseline">
                             <span class="font-display text-sm font-bold text-ink-900">Estimated total</span>
-                            <span class="font-display text-2xl font-bold text-ocean-700 dark:text-ocean-100" x-text="formattedSelectedSubtotal"></span>
+                            <span class="font-display text-2xl font-bold text-ocean-700 dark:text-ocean-100" x-text="formattedEstimatedTotal"></span>
                         </div>
+                        <p x-show="luckySaving > 0" x-cloak class="-mt-2 text-[11px] text-ink-400 leading-relaxed">One Lucky discount per booking request, the same amount checkout applies. Guest-list adjustments are added at checkout.</p>
 
                         <a href="{{ route('checkout.index') }}" @click.prevent="proceedToCheckout()"
                            class="w-full py-3.5 rounded-full bg-ocean-600 hover:bg-ocean-500 text-white text-sm font-semibold shadow-sm shadow-ocean-600/25 transition flex items-center justify-center gap-2 cursor-pointer">
@@ -259,7 +276,7 @@
                         <span class="block text-[11px] font-semibold text-ink-500">
                             <span x-text="selectedCount"></span> of <span x-text="totalCount"></span> selected
                         </span>
-                        <span class="block font-display text-lg font-bold text-ocean-700 dark:text-ocean-100 truncate" x-text="formattedSelectedSubtotal"></span>
+                        <span class="block font-display text-lg font-bold text-ocean-700 dark:text-ocean-100 truncate" x-text="formattedEstimatedTotal"></span>
                     </a>
                     <a href="{{ route('checkout.index') }}" @click.prevent="proceedToCheckout()"
                        class="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-ocean-600 hover:bg-ocean-500 active:bg-ocean-700 text-white text-sm font-semibold px-5 py-3 shadow-sm shadow-ocean-600/25 transition cursor-pointer">
@@ -285,14 +302,17 @@
                     const gItems = this.items.filter(i => i.group_id === g.id);
                     const selected = gItems.filter(i => i.is_selected);
                     const subtotal = selected.reduce((sum, i) => sum + Number(i.subtotal), 0);
+                    const isComplete = gItems.length > 0 && selected.length === gItems.length;
                     return {
                         ...g,
                         items: gItems,
-                        is_selected: gItems.length > 0 && selected.length === gItems.length,
+                        is_selected: isComplete,
                         item_count: gItems.length,
                         selected_count: selected.length,
                         subtotal,
                         formatted_subtotal: '₱' + subtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                        // The server priced the saving for this exact selection; a local change not yet synced hides it.
+                        has_lucky_saving: Number(g.lucky_saving) > 0 && isComplete && Math.abs(subtotal - Number(g.subtotal)) < 0.005,
                     };
                 });
             },
@@ -322,7 +342,20 @@
             },
 
             get formattedSelectedSubtotal() {
-                return '₱' + this.selectedSubtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                return this.formatPeso(this.selectedSubtotal);
+            },
+
+            /** Checkout applies one Lucky discount per booking request: the largest that qualifies. */
+            get luckySaving() {
+                return this.displayGroups.reduce((best, g) => g.has_lucky_saving ? Math.max(best, Number(g.lucky_saving)) : best, 0);
+            },
+
+            get formattedEstimatedTotal() {
+                return this.formatPeso(Math.max(0, this.selectedSubtotal - this.luckySaving));
+            },
+
+            formatPeso(amount) {
+                return '₱' + Number(amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
             },
 
             proceedToCheckout() {

@@ -11,7 +11,7 @@
     $code = $referenceCode ?? $reference;
 @endphp
 <body class="{{ $webView ? 'web' : '' }}">
-    @if ($webView)<div class="print-controls"><button type="button" onclick="window.print()">Print itinerary</button></div>@endif
+    @if ($webView && ! ($embedded ?? false))<div class="print-controls"><button type="button" onclick="window.print()">Print itinerary</button></div>@endif
     @unless ($webView)
         <div class="page-footer"><table><tr><td>SunnyTrips · {{ $code }} · {{ $itinerary['title'] }}</td></tr></table></div>
     @endunless

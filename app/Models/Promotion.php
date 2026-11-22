@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\EmailCampaignService;
 use Database\Factories\PromotionFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -20,6 +21,20 @@ class Promotion extends Model
 {
     /** @use HasFactory<PromotionFactory> */
     use HasFactory;
+
+    /**
+     * A promotion created active, switched on or given a new start fires any
+     * automatic "promotion goes live" email campaign once it is live; one that
+     * starts later is picked up by the scheduler when its start time passes.
+     */
+    protected static function booted(): void
+    {
+        static::saved(function (Promotion $promotion): void {
+            if ($promotion->wasRecentlyCreated || $promotion->wasChanged(['is_active', 'redeem_starts_at'])) {
+                app(EmailCampaignService::class)->promotionWentLive($promotion);
+            }
+        });
+    }
 
     public const TYPE_PERCENT = 'percent';
 

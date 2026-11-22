@@ -47,6 +47,10 @@ class UpdateSystemSettingsRequest extends FormRequest
             'lucky' => [
                 'daily_attempts' => ['required', 'integer', 'between:1,100'],
             ],
+            'marketing' => [
+                'daily_cap' => ['required', 'integer', 'between:1,50000'],
+                'frequency_days' => ['required', 'integer', 'between:0,30'],
+            ],
             'chatbot' => [
                 'daily_limit' => ['required', 'integer', 'between:1,1000'],
                 'minute_limit' => ['required', 'integer', 'between:1,10'],

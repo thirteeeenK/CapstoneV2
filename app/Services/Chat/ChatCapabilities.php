@@ -8,13 +8,13 @@ final class ChatCapabilities
     public function operations(): array
     {
         return [
-            'book' => 'I can help you find a room, but I cannot complete a booking directly in chat. Use Add to Trip Basket on a room card, then continue through checkout.',
+            'book' => 'I can help you find a room, but I cannot complete a booking directly in chat. Use Add to Trip on a room card, then continue through checkout.',
             'cancel' => 'I cannot cancel a reservation directly in chat. Open your booking details or request a human support agent to check the available options.',
             'pay' => 'I cannot make a payment directly in chat. Continue through the checkout and payment options shown for your booking.',
             'refund' => 'I cannot issue a refund directly in chat. Request a human support agent to review your booking and the applicable refund policy.',
             'contact' => 'I cannot send messages or call a hotel directly from chat. I can help draft a message for you to send.',
             'monitor' => 'I cannot keep checking prices or send a notification after this conversation. I can check the current catalog when you ask again.',
-            'basket' => 'I cannot add an item to your basket through a chat command. Use Add to Trip Basket on the relevant result card.',
+            'basket' => 'I cannot add an item to your basket through a chat command. Use Add to Trip on the relevant result card.',
             'trip_plan' => 'Use Add to Trip Plan below a suggested itinerary to save it under Itinerary (From Chatbot). You can save an undated draft and set dates later.',
             'account' => 'I cannot change your account details directly in chat. Use your account settings or request a human support agent.',
         ];

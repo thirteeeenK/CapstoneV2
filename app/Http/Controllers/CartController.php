@@ -11,10 +11,12 @@ use App\Models\Promotion;
 use App\Models\RoomType;
 use App\Models\TripItinerary;
 use App\Services\CartService;
+use App\Services\PromotionService;
 use App\Services\RoomAvailabilityService;
 use App\Services\TripBookingDatePolicy;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -114,7 +116,8 @@ class CartController extends Controller
         $itineraries = TripItinerary::query()->whereIn('id', $items->pluck('trip_itinerary_id')->filter()->unique())
             ->select(['id', 'trip_plan_id'])->with('plan:id,title')->get()->keyBy('id');
         $offers = LuckyOffer::query()->whereIn('id', $items->pluck('lucky_offer_id')->filter()->unique())->whereNotNull('promotion_id')
-            ->get(['id', 'expires_at', 'terms'])->keyBy('id');
+            ->get(['id', 'uuid', 'expires_at', 'terms'])->keyBy('id');
+        $luckySavings = $this->luckySavings($offers, $items);
 
         foreach ($grouped as $groupId => $groupItems) {
             $roomItem = $groupItems->first(fn ($i) => $i->item_type === 'room');
@@ -133,6 +136,8 @@ class CartController extends Controller
             $isPlanner = str_starts_with((string) $groupId, 'tp-');
             $plannerTitle = $isPlanner ? $itineraries->get($groupItems->first()->trip_itinerary_id)?->plan?->title : null;
             $offer = $offers->get($groupItems->first()->lucky_offer_id);
+            $luckySaving = $offer ? ($luckySavings[$offer->id] ?? ['cents' => 0, 'notice' => null]) : ['cents' => 0, 'notice' => null];
+            $discountedSubtotal = max(0, $subtotal - $luckySaving['cents'] / 100);
 
             $groups[] = [
                 'id' => $groupId,
@@ -147,10 +152,45 @@ class CartController extends Controller
                 'subtotal' => $subtotal,
                 'formatted_subtotal' => '₱'.number_format($subtotal, 2),
                 'lucky_discount_label' => $offer ? Promotion::describeDiscount($offer->terms).' · valid until '.$offer->expires_at?->timezone('Asia/Manila')->format('M j, g:i A') : null,
+                'lucky_saving' => $luckySaving['cents'] / 100,
+                'formatted_lucky_saving' => '₱'.number_format($luckySaving['cents'] / 100, 2),
+                'lucky_discounted_subtotal' => $discountedSubtotal,
+                'formatted_lucky_discounted_subtotal' => '₱'.number_format($discountedSubtotal, 2),
+                'lucky_notice' => $luckySaving['notice'],
             ];
         }
 
         return $groups;
+    }
+
+    /**
+     * The saving each won Lucky itinerary gets at checkout right now, priced by
+     * the same evaluation checkout runs against the selected basket lines, so
+     * the basket never shows a different discount from the one that is charged.
+     *
+     * @param  Collection<int, LuckyOffer>  $offers  won offers keyed by id
+     * @param  Collection<int, CartItem>  $items
+     * @return array<int, array{cents: int, notice: ?string}>
+     */
+    protected function luckySavings(Collection $offers, Collection $items): array
+    {
+        $user = auth()->user();
+        if ($offers->isEmpty() || ! $user) {
+            return [];
+        }
+        $selected = $items->where('is_selected', true)->values();
+        $payableCents = (int) round($selected->sum(fn ($item) => $item->subtotal) * 100);
+        $promotions = app(PromotionService::class);
+        $savings = [];
+        foreach ($offers as $offer) {
+            try {
+                $savings[$offer->id] = ['cents' => $promotions->evaluate($user, $offer->uuid, $selected, $payableCents)['discount_cents'], 'notice' => null];
+            } catch (ValidationException $exception) {
+                $savings[$offer->id] = ['cents' => 0, 'notice' => $exception->errors()['lucky_offer'][0] ?? null];
+            }
+        }
+
+        return $savings;
     }
 
     /**

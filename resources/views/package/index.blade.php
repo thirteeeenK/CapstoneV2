@@ -236,7 +236,7 @@
                                     @click="window.addToCart('package', {{ $pkg->id }}, { quantity: {{ $pkg->min_pax ?: 2 }}, selected_pax: {{ $pkg->min_pax ?: 2 }} })"
                                     class="w-full py-2.5 px-2 sm:px-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs transition-colors flex items-center justify-center gap-1 shadow-xs cursor-pointer">
                                     <span class="material-symbols-outlined text-[16px]">shopping_cart</span>
-                                    <span class="truncate">Add to Basket</span>
+                                    <span class="truncate">Add to Trip</span>
                                 </button>
                             </div>
                         </div>

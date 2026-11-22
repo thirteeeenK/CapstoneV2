@@ -49,7 +49,23 @@ class User extends Authenticatable
             'terms_accepted_at' => 'datetime',
             'privacy_accepted_at' => 'datetime',
             'ai_disclosure_accepted_at' => 'datetime',
+            'marketing_consent_at' => 'datetime',
+            'marketing_unsubscribed_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Give or withdraw consent to marketing email, recording when, as the
+     * consent trail the Data Privacy Act asks for. Trip reminders are separate.
+     */
+    public function setMarketingConsent(bool $consents): void
+    {
+        if ($consents === (bool) $this->trip_marketing_enabled && ($consents ? $this->marketing_consent_at : true)) {
+            return;
+        }
+        $this->forceFill($consents
+            ? ['trip_marketing_enabled' => true, 'marketing_consent_at' => now(), 'marketing_unsubscribed_at' => null]
+            : ['trip_marketing_enabled' => false, 'marketing_unsubscribed_at' => now()])->save();
     }
 
     /**

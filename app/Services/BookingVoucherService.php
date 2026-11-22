@@ -71,7 +71,7 @@ class BookingVoucherService
 
     public function filename(Booking $booking): string
     {
-        return 'sunnytrips-'.$booking->booking_code.'-voucher.pdf';
+        return 'sunnytrips-'.$booking->booking_code.'-confirmation.pdf';
     }
 
     /**
@@ -93,10 +93,10 @@ class BookingVoucherService
         };
 
         return [
-            'title' => $confirmed ? 'Travel Voucher' : 'Booking Summary',
+            'title' => $confirmed ? 'Booking Confirmation' : 'Booking Summary',
             'subtitle' => $confirmed
-                ? 'Present this voucher, printed or on your phone, when you check in and join your activities.'
-                : 'Not yet confirmed. This becomes your travel voucher once your payment is verified.',
+                ? 'Present this confirmation, printed or on your phone, when you check in and join your activities.'
+                : 'Not yet confirmed. This becomes your booking confirmation once your payment is verified.',
             'badge' => $badge,
             'tone' => $tone,
             'confirmed' => $confirmed,

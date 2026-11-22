@@ -15,7 +15,7 @@
     $settled = $summary['remaining_cents'] <= 0;
 @endphp
 <body class="{{ $webView ? 'web' : '' }}">
-    @if ($webView)<div class="print-controls"><button type="button" onclick="window.print()">Print voucher</button></div>@endif
+    @if ($webView)<div class="print-controls"><button type="button" onclick="window.print()">Print {{ $document['confirmed'] ? 'confirmation' : 'summary' }}</button></div>@endif
     @unless ($webView)
         <div class="page-footer"><table><tr><td>SunnyTrips · {{ $document['title'] }} · Booking reference {{ $booking->booking_code }}</td></tr></table></div>
     @endunless
@@ -173,7 +173,7 @@
             <div class="section-title">Good to know</div>
             <div class="notice">
                 <ul>
-                    <li>Show this {{ $document['confirmed'] ? 'voucher' : 'summary' }} and a valid ID when you check in and join your activities. Quote booking reference <strong>{{ $booking->booking_code }}</strong> whenever you contact us.</li>
+                    <li>Show this {{ $document['confirmed'] ? 'confirmation' : 'summary' }} and a valid ID when you check in and join your activities. Quote booking reference <strong>{{ $booking->booking_code }}</strong> whenever you contact us.</li>
                     <li>We email payment-deadline reminders to {{ $booking->contact_email }}, plus a pre-trip reminder when trip reminders are on in your account settings.</li>
                     <li>Need to cancel? Request it from your booking page. Refundable amounts follow the booking terms and are confirmed with a reference; you can also rebook at current prices and availability.</li>
                     @if ($itineraries === [])<li>No day-by-day itinerary is attached to this booking. Plan one in the SunnyTrips Trip Planner to get routes, distances and weather for each day.</li>@endif

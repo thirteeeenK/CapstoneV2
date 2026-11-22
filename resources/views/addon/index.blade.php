@@ -171,7 +171,7 @@
                                 <button type="button" @click="window.addToCart('addon', {{ $addon->id }})"
                                     class="w-full py-2.5 px-3 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs transition-colors flex items-center justify-center gap-1 shadow-xs cursor-pointer">
                                     <span class="material-symbols-outlined text-[15px]">shopping_cart</span>
-                                    <span>Add to Trip Basket</span>
+                                    <span>Add to Trip</span>
                                 </button>
                             </div>
                         </div>
@@ -328,7 +328,7 @@
                         @click="window.addToCart('addon', previewAddon.id, { selected_pax: modalPax }); previewAddon = null;"
                         class="px-6 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs shadow-md transition-colors flex items-center gap-1.5 cursor-pointer">
                         <span class="material-symbols-outlined text-sm">shopping_cart</span>
-                        <span>Add to Trip Basket</span>
+                        <span>Add to Trip</span>
                     </button>
                 </div>
 

@@ -10,6 +10,7 @@ use App\Models\Promotion;
 use App\Models\PromotionRedemption;
 use App\Services\BookingExpiryService;
 use App\Services\BookingQuoteService;
+use App\Services\LuckyOfferService;
 use App\Services\PromotionService;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
@@ -35,6 +36,29 @@ it('shows the won discount at checkout on the Lucky items only, with nothing to 
         ->assertSee('name="lucky_offer"', false)->assertDontSee('promotion-code-input', false)->assertDontSee('Lucky code');
 
     expect(PromotionRedemption::count())->toBe(0);
+});
+
+it('shows the Lucky page, basket and checkout the same discounted price', function () {
+    $quoted = $this->offer->quoted_total_cents / 100;
+    $offered = app(LuckyOfferService::class)->present($this->offer);
+    $checkoutSaving = $this->get(route('checkout.index'))->viewData('luckyDiscount')['amount'];
+
+    $group = collect($this->get(route('cart.index'))->assertOk()->viewData('groups'))->firstWhere('id', $this->offer->lucky_group_id);
+    $drawerGroup = collect($this->getJson(route('cart.data'))->assertOk()->json('groups'))->firstWhere('id', $this->offer->lucky_group_id);
+
+    expect($offered['estimated_saving'])->toEqual($checkoutSaving)->and($offered['discounted_total'])->toEqual($quoted - $checkoutSaving)
+        ->and($group['lucky_saving'])->toEqual($checkoutSaving)
+        ->and($group['formatted_lucky_discounted_subtotal'])->toBe('₱'.number_format($quoted - $checkoutSaving, 2))
+        ->and($group['lucky_notice'])->toBeNull()
+        ->and($drawerGroup['lucky_saving'])->toEqual($checkoutSaving);
+});
+
+it('drops the basket saving with the reason checkout gives once the Lucky itinerary is incomplete', function () {
+    CartItem::where('lucky_offer_id', $this->offer->id)->where('item_type', 'activity')->first()->update(['is_selected' => false]);
+
+    $group = collect($this->get(route('cart.index'))->assertOk()->viewData('groups'))->firstWhere('id', $this->offer->lucky_group_id);
+
+    expect($group['lucky_saving'])->toEqual(0)->and($group['lucky_notice'])->toBe($this->get(route('checkout.index'))->viewData('luckyDiscount')['notice']);
 });
 
 it('applies no discount to a basket without a won itinerary', function () {

@@ -41,10 +41,10 @@
 
             <header class="mb-8 animate-fade-up">
                 <h1 class="font-headline text-3xl sm:text-4xl font-black tracking-tight text-slate-900 dark:text-slate-100">
-                    My Booking Journals
+                    My Bookings
                 </h1>
                 <p class="font-body text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-relaxed mt-2 max-w-xl">
-                    Every request, approval, and confirmation lives here — open a journal to track status,
+                    Every request, approval, and confirmation lives here — open a booking to track status,
                     complete payment, or rebook.
                 </p>
             </header>
@@ -55,7 +55,7 @@
                     <div class="w-20 h-20 rounded-3xl bg-sand-100 dark:bg-slate-800 border border-sand-200 dark:border-slate-700 flex items-center justify-center mx-auto mb-6">
                         <span class="material-symbols-outlined text-4xl text-slate-400 dark:text-slate-500">auto_stories</span>
                     </div>
-                    <h2 class="font-headline text-lg font-bold text-slate-900 dark:text-slate-100">No journals yet</h2>
+                    <h2 class="font-headline text-lg font-bold text-slate-900 dark:text-slate-100">No bookings yet</h2>
                     <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-2 max-w-md mx-auto leading-relaxed">
                         Your booking history will appear here once you submit your first itinerary.
                         Everything is verified by our crew before any payment is taken.
@@ -140,7 +140,7 @@
                                         @endif
                                     </p>
                                     <p class="font-label text-[9px] uppercase tracking-[0.15em] text-slate-400 dark:text-slate-500 font-bold mt-1.5">
-                                        Journaled {{ $bookingList->created_at->format('M j, Y') }}
+                                        Requested {{ $bookingList->created_at->format('M j, Y') }}
                                     </p>
                                 </div>
 

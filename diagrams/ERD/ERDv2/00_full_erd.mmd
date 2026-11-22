@@ -1,0 +1,133 @@
+%% =============================================================================
+%% SunnyTrips Capstone V2 - FULL ERD (Mermaid)
+%% Derived from diagrams/ERD/ERDv2/00_full_erd.sql: 49 application tables, 73 foreign keys.
+%% Laravel system tables (password_reset_tokens, sessions, cache, cache_locks, jobs,
+%% job_batches, failed_jobs, notifications) are omitted.
+%% Entities and enforced FK relationships only; attributes live in the data dictionary.
+%% Polymorphic / unenforced references (item_type+item_id, reviewable_*, notifiable_*,
+%% auditable_*, reviews.hotel_id etc., lucky_offers.room_id, sessions.user_id) are omitted.
+%% Notation: ||--o{ required FK, |o--o{ nullable FK, ||--o| unique FK (one-to-zero-or-one).
+%% =============================================================================
+erDiagram
+
+    %% ---------------------------------------------------------------------------
+    %% 1) CORE - Identity & Admin (standalone auth tables)
+    %% ---------------------------------------------------------------------------
+    admin_password_reset_tokens
+
+    %% ---------------------------------------------------------------------------
+    %% 2) DESTINATIONS & INVENTORY
+    %% ---------------------------------------------------------------------------
+    destinations ||--o{ hotels : "has"
+    destinations ||--o{ activities : "has"
+    hotels ||--o{ rooms : "has"
+    weather_cache
+
+    %% ---------------------------------------------------------------------------
+    %% 3) PACKAGES & ADD-ONS
+    %% ---------------------------------------------------------------------------
+    destinations ||--o{ packages : "has"
+    destinations ||--o{ add_ons : "has"
+    packages ||--o{ package_hotel : "includes"
+    hotels ||--o{ package_hotel : "included in"
+    rooms |o--o{ package_hotel : "room type for"
+    packages ||--o{ package_activity : "includes"
+    activities ||--o{ package_activity : "included in"
+    packages ||--o{ package_addon : "includes"
+    add_ons ||--o{ package_addon : "included in"
+
+    %% ---------------------------------------------------------------------------
+    %% 4) COMMERCE - Cart, Bookings, Payments
+    %% ---------------------------------------------------------------------------
+    users |o--o{ cart_items : "owns"
+    bookings |o--o{ cart_items : "rebooked into"
+    trip_itineraries |o--o{ cart_items : "transferred to"
+    trip_plan_items |o--o{ cart_items : "sourced from"
+    lucky_offers |o--o{ cart_items : "accepted into"
+
+    users |o--o{ bookings : "places"
+    admins |o--o{ bookings : "reviews"
+    admins |o--o{ bookings : "books walk-in"
+    bookings |o--o{ bookings : "rebooked from"
+
+    bookings ||--o{ booking_items : "contains"
+    admins |o--o{ booking_items : "fulfills"
+    bookings ||--o{ booking_attachments : "has"
+    booking_items |o--o{ booking_attachments : "has"
+    admins |o--o{ booking_attachments : "uploads"
+    bookings ||--o{ booking_status_history : "logs"
+
+    bookings ||--o{ booking_payment_requests : "requests"
+    bookings ||--o{ booking_payments : "receives"
+    admins |o--o{ booking_payments : "verifies"
+    booking_payment_requests |o--o{ booking_payments : "settled by"
+    bookings ||--o{ booking_payment_transactions : "records"
+    booking_payment_requests |o--o{ booking_payment_transactions : "settled by"
+    booking_payment_transactions |o--o{ booking_payment_transactions : "reverses"
+    admins |o--o{ booking_payment_transactions : "verifies"
+    bookings ||--o{ booking_payment_notices : "notifies"
+    booking_payment_transactions |o--o{ booking_payment_notices : "triggers"
+    bookings ||--o{ qrph_payment_attempts : "attempts"
+    booking_payment_requests |o--o{ qrph_payment_attempts : "paid via"
+
+    passenger_category_rules
+    payment_webhook_events
+
+    %% ---------------------------------------------------------------------------
+    %% 5) PROMOTIONS & LUCKY REWARDS
+    %% ---------------------------------------------------------------------------
+    admins |o--o{ promotions : "creates"
+    admins |o--o{ promotions : "updates"
+    users ||--o{ lucky_offers : "receives"
+    promotions |o--o{ lucky_offers : "awards"
+    destinations ||--o{ lucky_offers : "targets"
+    promotions ||--o{ promotion_redemptions : "redeemed as"
+    lucky_offers ||--o| promotion_redemptions : "redeemed as"
+    bookings ||--o{ promotion_redemptions : "applies"
+    users |o--o{ promotion_redemptions : "redeems"
+
+    %% ---------------------------------------------------------------------------
+    %% 6) CHATBOT & HUMAN HANDOFF
+    %% ---------------------------------------------------------------------------
+    users |o--o{ chat_sessions : "starts"
+    chat_sessions ||--o{ chat_messages : "contains"
+    chat_sessions ||--o{ support_inquiries : "escalates to"
+    users |o--o{ support_inquiries : "raises"
+    admins |o--o{ support_inquiries : "handles"
+    users ||--o{ chatbot_abuse_reports : "flagged in"
+    admins |o--o{ chatbot_abuse_reports : "reviews"
+    chat_sessions |o--o{ chat_feedback : "rated in"
+    users |o--o{ chat_feedback : "gives"
+    destinations |o--o{ knowledge_articles : "described by"
+    faqs
+
+    %% ---------------------------------------------------------------------------
+    %% 7) REVIEWS, SUMMARIES & ONBOARDING / DSS
+    %% ---------------------------------------------------------------------------
+    users ||--o| user_preferences : "has"
+    bookings |o--o{ reviews : "reviewed in"
+    booking_items |o--o{ reviews : "reviewed in"
+    users |o--o{ reviews : "writes"
+    users ||--o{ recommendation_hits : "receives"
+    onboarding_options
+    review_summaries
+
+    %% ---------------------------------------------------------------------------
+    %% 8) TRIP PLANNER & JOURNEY
+    %% ---------------------------------------------------------------------------
+    users |o--o{ trip_plans : "plans"
+    destinations ||--o{ trip_plans : "planned for"
+    trip_plans ||--o{ trip_plan_items : "contains"
+    trip_plans ||--o{ trip_itineraries : "snapshots"
+    users |o--o{ trip_journey_messages : "receives"
+    bookings |o--o{ trip_journey_messages : "triggers"
+    trip_plans |o--o{ trip_journey_messages : "triggers"
+
+    %% ---------------------------------------------------------------------------
+    %% 9) PLATFORM - Legal, Cache, Jobs, Audit, Security
+    %% ---------------------------------------------------------------------------
+    admins |o--o{ admin_audit_logs : "performs"
+    admins |o--o{ ip_bans : "issues"
+    admins |o--o{ system_settings : "updates"
+    legal_documents
+    failed_login_attempts

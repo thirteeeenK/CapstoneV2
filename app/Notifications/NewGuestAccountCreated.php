@@ -29,7 +29,7 @@ class NewGuestAccountCreated extends Notification implements ShouldQueue
             ->subject('Welcome to SunnyTrips — Your Account & Booking Details')
             ->greeting("Hi {$this->booking->contact_name},")
             ->line("An administrator at SunnyTrips has created a reservation on your behalf for booking **{$this->booking->booking_code}**.")
-            ->line('An account has been automatically created for you so you can easily view your booking, manage your trip, and download vouchers.')
+            ->line('An account has been automatically created for you so you can easily view your booking, manage your trip, and download booking confirmations.')
             ->line('**Your Login Credentials:**')
             ->line("- Email: **{$notifiable->email}**")
             ->line("- Temporary Password: **{$this->temporaryPassword}**");

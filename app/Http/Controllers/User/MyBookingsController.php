@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Auth;
 class MyBookingsController extends Controller
 {
     /**
-     * List the authenticated user's bookings (journal archive).
+     * List the authenticated user's bookings.
      */
     public function index()
     {

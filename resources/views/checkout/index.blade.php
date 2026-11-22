@@ -152,7 +152,7 @@
                                 </div>
                                 <div>
                                     <h3 class="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 font-headline">Lead Guest Contact Details</h3>
-                                    <p class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400">We will send your voucher, payment updates, and itinerary here.</p>
+                                    <p class="text-[11px] sm:text-xs text-slate-500 dark:text-slate-400">We will send your booking confirmation, payment updates, and itinerary here.</p>
                                 </div>
                             </div>
                             <span

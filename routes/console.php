@@ -17,3 +17,4 @@ Schedule::command('accounts:delete-expired')->everyMinute()->withoutOverlapping(
 Schedule::command('trips:prune-guest-plans')->dailyAt('03:30')->withoutOverlapping();
 Schedule::command('trips:prune-itineraries')->dailyAt('03:45')->withoutOverlapping();
 Schedule::command('lucky:prune-offers')->dailyAt('04:00')->withoutOverlapping();
+Schedule::command('campaigns:dispatch-due')->everyMinute()->withoutOverlapping();

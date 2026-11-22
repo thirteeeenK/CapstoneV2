@@ -115,11 +115,14 @@
                                 </span>
                                 <h4 class="text-xs font-bold text-white leading-snug mt-1 truncate" x-text="group.title"></h4>
                                 <template x-if="group.lucky_discount_label">
-                                    <p class="text-[11px] text-white/90 truncate">Lucky discount applied at checkout</p>
+                                    <p class="text-[11px] text-white/90 truncate" x-text="group.has_lucky_saving ? 'Lucky discount −' + group.formatted_lucky_saving + ' applied' : (group.lucky_notice || 'Lucky discount applies to the complete itinerary')"></p>
                                 </template>
                                 <p class="text-[11px] text-white/80 truncate">
                                     <span x-text="group.item_count + ' items'"></span>
-                                    <span x-text="' • ' + group.formatted_subtotal"></span>
+                                    <span x-text="' • ' + (group.has_lucky_saving ? group.formatted_lucky_discounted_subtotal : group.formatted_subtotal)"></span>
+                                    <template x-if="group.has_lucky_saving">
+                                        <span class="line-through text-white/60" :aria-label="'Regular price ' + group.formatted_subtotal" x-text="group.formatted_subtotal"></span>
+                                    </template>
                                 </p>
                             </div>
                         </div>
@@ -191,12 +194,15 @@ function cartDrawer() {
                 const gItems = this.items.filter(i => i.group_id === g.id);
                 const selected = gItems.filter(i => i.is_selected);
                 const subtotal = selected.reduce((sum, i) => sum + Number(i.subtotal), 0);
+                const isComplete = gItems.length > 0 && selected.length === gItems.length;
                 return {
                     ...g,
                     items: gItems,
-                    is_selected: gItems.length > 0 && selected.length === gItems.length,
+                    is_selected: isComplete,
                     item_count: gItems.length,
                     formatted_subtotal: '₱' + subtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+                    // The server priced the saving for this exact selection; a local change not yet synced hides it.
+                    has_lucky_saving: Number(g.lucky_saving) > 0 && isComplete && Math.abs(subtotal - Number(g.subtotal)) < 0.005,
                 };
             });
         },

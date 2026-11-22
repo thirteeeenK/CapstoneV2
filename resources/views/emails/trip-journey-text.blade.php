@@ -25,6 +25,7 @@ Date to be arranged:
 @endforeach
 @endif
 @if(!empty($payload['url'])){{ $payload['action'] }}: {{ $payload['url'] }}@endif
+@if(!empty($payload['secondary_url'])){{ $payload['secondary_action'] }}: {{ $payload['secondary_url'] }}@endif
 
 @if(!empty($payload['support']))Questions about this booking? Contact {{ $payload['support'] }}. Quote your booking reference so we can help.
 @endif

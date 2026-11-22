@@ -77,6 +77,7 @@ class OnboardingController extends Controller
             'activities' => 'nullable|array|max:5',
             'amenities' => 'nullable|array|max:5',
             'notes' => 'nullable|string|max:500',
+            'marketing_opt_in' => 'nullable|boolean',
         ]);
 
         $user = Auth::user();
@@ -102,6 +103,10 @@ class OnboardingController extends Controller
                 $user->preferences_embedding = $geminiService->formatVectorForDb($zeroVector);
             }
             $user->save();
+            // Ticking the optional box opts in; leaving it unticked never withdraws an earlier opt-in.
+            if ($request->boolean('marketing_opt_in')) {
+                $user->setMarketingConsent(true);
+            }
 
             $explainer->invalidateForUser($preference);
             if (! $vector) {

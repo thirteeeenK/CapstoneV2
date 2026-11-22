@@ -35,6 +35,46 @@ class ReviewService
         'package' => Package::class,
     ];
 
+    /** Booking statuses of a trip still under way, which open for reviews on its last day. */
+    private const IN_TRIP_STATUSES = [Booking::STATUS_PAID, Booking::STATUS_APPROVED, Booking::STATUS_CANCELLATION_DENIED];
+
+    /**
+     * Whether the traveler can review this booking now: once it is completed,
+     * or from 24 hours before a secured trip ends (its last day), so the review
+     * invitation can go out while the trip is still fresh.
+     */
+    public function reviewWindowOpen(Booking $booking): bool
+    {
+        if ($booking->status === Booking::STATUS_COMPLETED) {
+            return true;
+        }
+        if (! in_array($booking->status, self::IN_TRIP_STATUSES, true)) {
+            return false;
+        }
+        $context = BookingJourneyContext::for($booking);
+        $end = $context->tripEnd();
+
+        return $context->reservationSecured() && $end !== null && $end->copy()->subDay()->lte(now());
+    }
+
+    /**
+     * Whether one included item can be reviewed: after completion, a fulfilled
+     * service (for planner bookings); on the last day, a service that has
+     * already started and was not recorded as a no-show.
+     */
+    public function itemReviewable(Booking $booking, BookingItem $item): bool
+    {
+        if (! array_key_exists($item->item_type, self::REVIEWABLE_ITEM_TYPES) || $item->availability_status === 'unavailable') {
+            return false;
+        }
+        if ($booking->status === Booking::STATUS_COMPLETED) {
+            return ! $booking->trip_itineraries || $item->fulfillment_status === 'fulfilled';
+        }
+
+        return $item->fulfillment_status !== 'no_show' && $item->check_in_date !== null
+            && $item->check_in_date->toDateString() <= now(BookingJourneyContext::TIMEZONE)->toDateString();
+    }
+
     /**
      * Resolve the reviewable entity + direct FK columns from a booking item.
      *
@@ -82,12 +122,14 @@ class ReviewService
     public function assertEligible(User $user, Booking $booking, ?int $bookingItemId = null): void
     {
         abort_unless($booking->user_id === $user->id, 403, 'This booking does not belong to you.');
-        abort_unless($booking->status === Booking::STATUS_COMPLETED, 422, 'Only completed bookings can be reviewed.');
+        abort_unless($this->reviewWindowOpen($booking), 422, 'Reviews open on the last day of your trip.');
 
         if ($bookingItemId) {
             $item = $booking->items()->whereKey($bookingItemId)->first();
             abort_unless($item && array_key_exists($item->item_type, self::REVIEWABLE_ITEM_TYPES) && $item->availability_status !== 'unavailable', 422, 'Choose an included reviewable item from this booking.');
-            abort_if($booking->trip_itineraries && $item->fulfillment_status !== 'fulfilled', 422, 'This service has not been recorded as fulfilled.');
+            abort_unless($this->itemReviewable($booking, $item), 422, $booking->status === Booking::STATUS_COMPLETED
+                ? 'This service has not been recorded as fulfilled.'
+                : 'This service can be reviewed once it has started.');
             abort_if(
                 Review::where('booking_id', $booking->id)->where('booking_item_id', $bookingItemId)->exists(),
                 422,
@@ -114,11 +156,7 @@ class ReviewService
         }
 
         if (! $item) {
-            $item = $booking->items()
-                ->whereIn('item_type', array_keys(self::REVIEWABLE_ITEM_TYPES))
-                ->where('availability_status', '!=', 'unavailable')
-                ->when($booking->trip_itineraries, fn ($q) => $q->where('fulfillment_status', 'fulfilled'))
-                ->first();
+            $item = $booking->items()->get()->first(fn (BookingItem $candidate) => $this->itemReviewable($booking, $candidate));
         }
 
         abort_unless($item !== null, 422, 'This booking has no reviewable items.');
@@ -312,15 +350,15 @@ class ReviewService
      */
     public function eligibleBookings(User $user): Collection
     {
-        return Booking::with(['items'])
+        return Booking::with(['items', 'user'])
             ->where('user_id', $user->id)
-            ->where('status', Booking::STATUS_COMPLETED)
+            ->whereIn('status', [Booking::STATUS_COMPLETED, ...self::IN_TRIP_STATUSES])
             ->latest()
             ->get()
+            ->filter(fn (Booking $booking) => $this->reviewWindowOpen($booking))
             ->map(function (Booking $booking) {
                 $items = $booking->items
-                    ->filter(fn ($item) => array_key_exists($item->item_type, self::REVIEWABLE_ITEM_TYPES) && $item->availability_status !== 'unavailable'
-                        && (! $booking->trip_itineraries || $item->fulfillment_status === 'fulfilled'))
+                    ->filter(fn ($item) => $this->itemReviewable($booking, $item))
                     ->map(function (BookingItem $item) {
                         $review = Review::where('booking_id', $item->booking_id)
                             ->where('booking_item_id', $item->id)

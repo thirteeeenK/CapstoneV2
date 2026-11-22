@@ -24,6 +24,7 @@ class CheckUserOnboarding
                 ! $request->routeIs('logout') &&
                 ! $request->routeIs('admin.*') &&
                 ! $request->routeIs('account.suspended') &&
+                ! $request->routeIs('marketing.unsubscribe*') &&
                 ! $request->is('admin*') &&
                 ! $request->expectsJson()
             ) {

@@ -361,7 +361,7 @@
                                                     <button
                                                         @click="addToBasket('package', pkg.id, { quantity: pkg.min_pax || 2, selected_pax: pkg.min_pax || 2 })"
                                                         class="flex-1 text-[11px] bg-amber-500 text-slate-950 font-bold px-2 py-1.5 rounded-lg hover:bg-amber-600 transition-colors font-headline cursor-pointer">+
-                                                        Add to Trip Basket</button>
+                                                        Add to Trip</button>
                                                 </div>
                                             </div>
                                         </template>
@@ -452,7 +452,7 @@
                                                 </template>
                                                 <div class="flex flex-wrap gap-2 pt-1">
                                                     <button type="button" @click="acceptLucky(msg.lucky)" :disabled="acceptingLucky"
-                                                        class="min-h-11 rounded-lg bg-ocean-700 px-3 py-2 font-bold text-white disabled:opacity-60">Add to Trip Basket</button>
+                                                        class="min-h-11 rounded-lg bg-ocean-700 px-3 py-2 font-bold text-white disabled:opacity-60">Add to Trip</button>
                                                     <button type="button" x-show="msg.lucky.plan_url" @click="planLucky(msg.lucky)" class="min-h-11 px-2 font-bold text-ocean-700 dark:text-ocean-300 underline underline-offset-4">Check daily schedule</button>
                                                     <a :href="msg.lucky.page_url" class="inline-flex min-h-11 items-center px-2 font-bold text-ocean-700 dark:text-ocean-300">Open Lucky page</a>
                                                 </div>

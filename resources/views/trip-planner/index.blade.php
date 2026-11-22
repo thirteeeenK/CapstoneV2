@@ -146,20 +146,21 @@
                                 <button type="button" @click="updateDraft(choice.type + ':' + choice.id)" :disabled="busy" class="min-h-11 px-3 text-sm font-bold text-coral-700 dark:text-coral-300" :aria-label="'Remove ' + choice.name">Remove</button>
                             </div></template>
                             <p class="text-xs text-slate-500">Saving does not reserve rooms or activities. Estimates may change before booking.</p>
-                            <div class="flex flex-wrap gap-3"><a :href="documentUrl()" class="min-h-11 py-2 text-sm font-bold text-ocean-700 dark:text-ocean-300">Download draft PDF</a><a :href="documentUrl(true)" target="_blank" rel="noopener" class="min-h-11 py-2 text-sm font-bold text-ocean-700 dark:text-ocean-300">Print draft</a><button type="button" @click="email()" :disabled="busy" class="min-h-11 py-2 text-sm font-bold text-ocean-700 dark:text-ocean-300">Email draft</button></div>
+                            <div class="flex flex-wrap gap-3"><button type="button" @click="openDocumentPreview($el)" class="min-h-11 py-2 text-sm font-bold text-ocean-700 dark:text-ocean-300">Preview draft PDF</button><a :href="documentUrl()" class="min-h-11 py-2 text-sm font-bold text-ocean-700 dark:text-ocean-300">Download draft PDF</a><a :href="documentUrl(true)" target="_blank" rel="noopener" class="min-h-11 py-2 text-sm font-bold text-ocean-700 dark:text-ocean-300">Print draft</a><button type="button" @click="email()" :disabled="busy" class="min-h-11 py-2 text-sm font-bold text-ocean-700 dark:text-ocean-300">Email draft</button></div>
                         </div></template>
                         <template x-if="itinerary"><div>
                             <h2 class="font-headline text-xl font-bold">Your day-by-day Suggested Itinerary</h2>
                             <p class="mt-1 text-sm text-slate-500">This is a suggested plan. Weather, travel times and activity availability may change. Recheck conditions and confirm details with providers before departure.</p>
                             <div class="mt-4 flex flex-wrap gap-2">
+                                <button type="button" @click="openDocumentPreview($el)" class="min-h-11 inline-flex items-center gap-1.5 rounded-lg border border-ocean-600 bg-ocean-50 px-4 py-2.5 text-sm font-bold text-ocean-800 dark:border-ocean-400 dark:bg-ocean-950/60 dark:text-ocean-100"><span class="material-symbols-outlined text-[18px]" aria-hidden="true">preview</span>Preview PDF</button>
                                 <a :href="documentUrl()" class="min-h-11 rounded-lg border border-sand-300 px-4 py-2.5 text-sm font-bold">Download PDF</a>
                                 <a :href="documentUrl(true)" target="_blank" rel="noopener" class="min-h-11 rounded-lg border border-sand-300 px-4 py-2.5 text-sm font-bold">Print view</a>
                                 <button type="button" @click="email()" :disabled="busy" class="min-h-11 rounded-lg border border-sand-300 px-4 py-2.5 text-sm font-bold">Email itinerary</button>
-                            <button type="button" @click="transfer()" :disabled="busy || arrivalTooSoon(startDate)" aria-describedby="trip-booking-date-hint" class="min-h-11 rounded-lg bg-ocean-700 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50">Add to Trip Basket</button>
+                            <button type="button" @click="transfer()" :disabled="busy || arrivalTooSoon(startDate)" aria-describedby="trip-booking-date-hint" class="min-h-11 rounded-lg bg-ocean-700 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50">Add to Trip</button>
                                 <a href="{{ route('cart.index') }}" class="min-h-11 px-3 py-2.5 text-sm font-bold text-ocean-700 dark:text-ocean-300">Open Trip Basket →</a>
                             </div>
-                            <div aria-label="What Add to Trip Basket includes" class="mt-3 rounded-lg bg-sand-100 dark:bg-slate-800 p-3 text-sm">
-                                <p class="font-semibold">Add to Trip Basket includes</p>
+                            <div aria-label="What Add to Trip includes" class="mt-3 rounded-lg bg-sand-100 dark:bg-slate-800 p-3 text-sm">
+                                <p class="font-semibold">Add to Trip includes</p>
                                 <p class="mt-1 text-slate-600 dark:text-slate-300" x-text="basketPreview().added.join(', ') || 'Nothing bookable yet — add a room or an activity that fits on a day.'"></p>
                                 <p x-show="basketPreview().skipped.length" class="mt-2 text-amber-800 dark:text-amber-300" x-text="'Not added because they are not on a day: ' + basketPreview().skipped.join(', ')"></p>
                                 <p class="mt-2 text-xs text-slate-500">Hotel bases are planning choices and are not booked.</p>
@@ -290,6 +291,25 @@
                     <p x-show="error" x-text="error" role="alert" class="text-sm text-rose-700 dark:text-rose-300"></p>
                     <button type="submit" :disabled="busy" class="w-full min-h-11 rounded-lg bg-ocean-700 p-3 font-bold text-white disabled:opacity-50">Save to my trip</button>
                 </form>
+            </section>
+        </div>
+        <div x-show="documentPreview" x-cloak x-trap.inert.noscroll="documentPreview" @keydown.escape.window="documentPreview && closeDocumentPreview()" @click.self="closeDocumentPreview()" class="fixed inset-0 z-[90] bg-ink-900/60 flex items-center justify-center p-2 sm:p-6">
+            <section role="dialog" aria-modal="true" aria-labelledby="document-preview-heading" class="flex h-[92dvh] w-full max-w-4xl flex-col overflow-hidden rounded-xl bg-white dark:bg-slate-900 shadow-xl">
+                <header class="flex flex-wrap items-center gap-2 border-b border-sand-200 dark:border-slate-700 px-4 py-3">
+                    <div class="min-w-0 flex-1">
+                        <h2 id="document-preview-heading" x-ref="documentPreviewHeading" tabindex="-1" class="font-headline text-lg font-bold" x-text="draftItinerary && !itinerary ? 'Draft itinerary preview' : 'Itinerary PDF preview'"></h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400" x-text="documentPreview?.mode === 'html' ? 'Showing the print layout — your device cannot display PDFs inline. The download is the same document as a PDF.' : 'This is the exact PDF you will download or print.'"></p>
+                    </div>
+                    <a :href="documentUrl()" class="min-h-11 inline-flex items-center gap-1.5 rounded-lg border border-sand-300 dark:border-slate-600 px-3 py-2 text-sm font-bold"><span class="material-symbols-outlined text-[18px]" aria-hidden="true">download</span>Download</a>
+                    <button type="button" @click="printDocumentPreview()" :disabled="documentPreview?.loading" class="min-h-11 inline-flex items-center gap-1.5 rounded-lg bg-ocean-700 px-3 py-2 text-sm font-bold text-white disabled:opacity-50"><span class="material-symbols-outlined text-[18px]" aria-hidden="true">print</span>Print</button>
+                    <button type="button" @click="closeDocumentPreview()" aria-label="Close preview" class="min-h-11 min-w-11 text-xl">×</button>
+                </header>
+                <div class="relative flex-1 bg-sand-100 dark:bg-slate-800">
+                    <p x-show="documentPreview?.loading" role="status" class="absolute inset-0 grid place-items-center text-sm font-semibold text-slate-500 dark:text-slate-400">Preparing your itinerary…</p>
+                    <template x-if="documentPreview">
+                        <iframe x-ref="documentPreviewFrame" :src="documentPreview.src" @load="documentPreview && (documentPreview.loading = false)" title="Itinerary document preview" :class="documentPreview.loading && 'invisible'" class="relative h-full w-full border-0 bg-white"></iframe>
+                    </template>
+                </div>
             </section>
         </div>
         <div x-show="deleting" x-cloak x-trap.inert.noscroll="deleting" @keydown.escape.window="deleting = false; $nextTick(() => $refs.deleteTrigger.focus())" class="fixed inset-0 z-[90] bg-ink-900/50 flex items-center justify-center p-4">

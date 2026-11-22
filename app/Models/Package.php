@@ -2,12 +2,26 @@
 
 namespace App\Models;
 
+use App\Services\EmailCampaignService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Package extends Model
 {
     use HasFactory;
+
+    /**
+     * Publishing a package (creating it active, or switching it on) fires any
+     * automatic "new package" email campaign; each package is announced once.
+     */
+    protected static function booted(): void
+    {
+        static::saved(function (Package $package): void {
+            if ($package->is_active && ($package->wasRecentlyCreated || $package->wasChanged('is_active'))) {
+                app(EmailCampaignService::class)->packagePublished($package);
+            }
+        });
+    }
 
     protected $fillable = [
         'destination_id',

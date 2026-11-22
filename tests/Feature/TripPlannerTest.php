@@ -320,6 +320,7 @@ it('protects another users plan and its documents and rejects cross destination 
     $this->postJson(route('trip-planner.generate', $other))->assertNotFound();
     $itinerary = TripItinerary::factory()->create(['trip_plan_id' => $other->id]);
     $this->get(route('trip-planner.document', [$other, $itinerary]))->assertNotFound();
+    $this->get(route('trip-planner.document', [$other, $itinerary, 'preview' => 1]))->assertNotFound();
     $foreign = ActivityModel::factory()->create();
     $this->postJson(route('trip-planner.add', $this->plan), ['item_type' => 'activity', 'item_id' => $foreign->id])->assertUnprocessable();
     $this->room->update(['is_shown' => false]);
@@ -592,6 +593,24 @@ it('offers protected print and PDF documents and queues itinerary email to the o
     Notification::assertSentTo($this->user, TripItineraryReady::class, fn (TripItineraryReady $notification) => $notification->itineraryId === $itinerary->id
         && $notification->tripPlanId === $this->plan->id
         && $notification->snapshot['destination'] === 'Boracay');
+});
+
+it('previews the itinerary PDF inline in a same-origin frame while the download and print view stay unframeable', function () {
+    plannerAdd($this->plan, 'room', $this->room->id);
+    $itinerary = app(ItineraryService::class)->generate($this->plan->fresh());
+
+    $preview = $this->get(route('trip-planner.document', [$this->plan, $itinerary, 'preview' => 1]))->assertOk()
+        ->assertHeader('content-type', 'application/pdf')->assertHeader('X-Frame-Options', 'SAMEORIGIN');
+    expect($preview->headers->get('content-disposition'))->toStartWith('inline')
+        ->and($preview->headers->get('content-security-policy'))->toContain("frame-ancestors 'self'");
+
+    $this->get(route('trip-planner.document', [$this->plan, $itinerary, 'print' => 1, 'embed' => 1]))->assertOk()
+        ->assertHeader('X-Frame-Options', 'SAMEORIGIN')->assertSee($this->room->room_name)->assertDontSee('Print itinerary');
+
+    $download = $this->get(route('trip-planner.document', [$this->plan, $itinerary]))->assertOk()->assertHeader('X-Frame-Options', 'DENY');
+    expect($download->headers->get('content-disposition'))->toStartWith('attachment')
+        ->and($download->headers->get('content-security-policy'))->toContain("frame-ancestors 'none'");
+    $this->get(route('trip-planner.document', [$this->plan, $itinerary, 'print' => 1]))->assertOk()->assertHeader('X-Frame-Options', 'DENY');
 });
 
 it('records itemized estimates with each version and prints them under a prominent plan reference', function () {

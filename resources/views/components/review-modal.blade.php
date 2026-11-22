@@ -77,7 +77,7 @@
                                 <div class="flex items-center justify-between gap-3">
                                     <div class="min-w-0">
                                         <p class="font-headline text-sm font-bold text-slate-900 dark:text-slate-100"
-                                            x-text="'Journal ' + b.booking_code"></p>
+                                            x-text="'Booking ' + b.booking_code"></p>
                                         <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate"
                                             x-text="b.reviewable_items.map(i => i.item_title).join(' · ')"></p>
                                     </div>
@@ -96,7 +96,7 @@
                         <span class="material-symbols-outlined text-[14px]">arrow_back</span> Back
                     </button>
                     <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">
-                        Items in <strong x-text="'Journal ' + (selectedBooking?.booking_code || '')" class="text-slate-700 dark:text-slate-300"></strong> — review each separately:
+                        Items in <strong x-text="'Booking ' + (selectedBooking?.booking_code || '')" class="text-slate-700 dark:text-slate-300"></strong> — review each separately:
                     </p>
                     <div class="space-y-3">
                         <template x-for="item in (selectedBooking?.reviewable_items || [])" :key="item.id">

@@ -1862,7 +1862,7 @@ class ChatbotService
         $reply = $this->geminiChatResponse($prompt, $session, $conversational);
 
         // Carry the previous turn's recommendation cards so the widget can
-        // keep them clickable (image, preview, Add to Trip Basket) while the
+        // keep them clickable (image, preview, Add to Trip) while the
         // user refines or asks follow-ups about the same items.
         $carry = [];
         if ($lastBot) {

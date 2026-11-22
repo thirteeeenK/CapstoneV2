@@ -250,10 +250,18 @@ class TripJourneyService
             'repeat' => route('trip-planner.index'),
             default => $url,
         };
+        // Reviews open on the trip's last day, so the departure message already invites one.
+        $reviews = app(ReviewService::class);
+        $reviewNow = $kind === 'departure' && ! $context->isGuest && $reviews->reviewWindowOpen($booking)
+            && $context->included->contains(fn ($item) => $reviews->itemReviewable($booking, $item));
+        if ($reviewNow) {
+            $message .= ' Enjoyed your stay and activities so far? You can already review them.';
+        }
         $undated = ($group['undated'] ?? collect())->merge($context->undated)->unique('id');
 
         return ['subject' => $title.' · '.$booking->booking_code, 'title' => $title, 'name' => $context->recipientName,
             'message' => $message, 'url' => $url, 'action' => $action, 'reference' => $booking->booking_code,
+            'secondary_url' => $reviewNow ? $url.'#booking-reviews' : null, 'secondary_action' => $reviewNow ? 'Leave a review' : null,
             'schedule' => $group ? $this->schedule($context, $group) : [],
             'services' => $group ? $group['items']->map(fn ($item) => ['label' => $this->serviceDate($item), 'name' => $item->item_title, 'detail' => $item->hotel_name])->all() : [],
             'undated' => in_array($kind, [...self::WINDOW_KINDS, 'date_confirmation'], true) ? $undated->map(fn ($item) => $item->item_title)->values()->all() : [],
@@ -353,7 +361,7 @@ class TripJourneyService
             if ($recentSameCategory()) {
                 return 0;
             }
-            $payload['preferences_url'] = $user ? route('trip-planner.index') : null;
+            $payload['preferences_url'] = $user ? route('profile.edit').'#email-preferences' : null;
             $inserted = DB::table('trip_journey_messages')->insertOrIgnore(['user_id' => $user?->id, 'recipient_email' => $email, 'booking_id' => $bookingId, 'trip_plan_id' => $planId,
                 'service_group' => $group, 'dedupe_key' => $key, 'kind' => $kind, 'date_signature' => $signature, 'payload' => json_encode($payload), 'status' => 'pending', 'created_at' => now(), 'updated_at' => now()]);
             if ($inserted) {

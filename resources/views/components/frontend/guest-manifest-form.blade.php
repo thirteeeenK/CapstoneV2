@@ -47,7 +47,7 @@
                 </div>
                 <div>
                     <h3 class="text-[13px] sm:text-[15px] font-bold text-slate-900 font-headline">Lead Guest Contact Details</h3>
-                    <p class="text-[10px] sm:text-[11px] text-slate-500">We will send your voucher, payment updates, and itinerary here.</p>
+                    <p class="text-[10px] sm:text-[11px] text-slate-500">We will send your booking confirmation, payment updates, and itinerary here.</p>
                 </div>
             </div>
             <span class="text-[10px] font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded-full border border-sky-100 shrink-0">Primary</span>

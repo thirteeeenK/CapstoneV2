@@ -575,6 +575,17 @@
                                 </template>
                             </div>
                         </div>
+
+                        @unless (auth()->user()?->trip_marketing_enabled)
+                            {{-- Optional marketing consent: unticked by default, never required --}}
+                            <label class="flex items-start gap-3 rounded-xl border border-dashed border-sand-200 dark:border-slate-700 p-3.5 cursor-pointer has-[:checked]:border-ocean-500 has-[:checked]:bg-ocean-50/60 dark:has-[:checked]:bg-ocean-900/40">
+                                <input type="checkbox" name="marketing_opt_in" value="1" class="mt-0.5 h-5 w-5 shrink-0 rounded accent-ocean-600">
+                                <span class="font-body text-sm text-ink-700 dark:text-slate-300">
+                                    <span class="font-bold text-ink-900 dark:text-slate-100">Email me deals for trips like these</span> <span class="text-ink-500 dark:text-slate-400">(optional)</span>
+                                    <span class="block text-xs text-ink-500 dark:text-slate-400 mt-0.5">Promotions, new tour packages and Lucky discounts. Unsubscribe any time.</span>
+                                </span>
+                            </label>
+                        @endunless
                     </div>
 
                     {{-- ══════════════════════════════════════════
