@@ -23,7 +23,7 @@ class SuggestedItineraryBuilder
     /**
      * @param  Collection<int, HotelModel>  $hotels  ranked best-first
      * @param  Collection<int, ActivityModel>  $activities  ranked best-first
-     * @return array{destination: DestinationModel, pax: int, nights: int, hotel: HotelModel, room: ?RoomType, days: list<array{day: int, title: string, activities: list<array{activity: ActivityModel, price: float, leg: ?array}>}>, prices: array{stay: float, activities: float, total: float}, weather: ?array, personalized: bool}|null
+     * @return array{destination: DestinationModel, pax: int, nights: int, hotel: HotelModel, room: ?RoomType, room_quantity: int, room_pax: int, nightly_rate: float, days: list<array{day: int, title: string, activities: list<array{activity: ActivityModel, price: float, leg: ?array}>}>, prices: array{stay: float, activities: float, total: float}, weather: ?array, personalized: bool}|null
      */
     public function build(DestinationModel $destination, Collection $hotels, Collection $activities, ?UserPreference $preference, bool $personalized): ?array
     {
@@ -33,7 +33,8 @@ class SuggestedItineraryBuilder
         }
 
         $pax = $this->paxFor($preference?->traveler_type);
-        $room = $this->roomFor($hotel, $pax);
+        ['room' => $room, 'quantity' => $roomQuantity, 'room_pax' => $roomPax] = $this->roomPlanFor($hotel, $pax);
+        $nightlyRate = $room ? round($room->calculateNightlyRate($roomPax), 2) : 0.0;
         $picks = $activities->take(3)->values();
         $insights = $this->insights->forStay($destination, $hotel, $picks);
 
@@ -52,7 +53,7 @@ class SuggestedItineraryBuilder
             ];
         }
 
-        $stay = $room ? round($room->calculateNightlyRate($pax) * self::NIGHTS, 2) : 0.0;
+        $stay = round($nightlyRate * $roomQuantity * self::NIGHTS, 2);
         $activityTotal = round((float) collect($days)->flatMap(fn (array $day) => $day['activities'])->sum('price'), 2);
 
         return [
@@ -61,6 +62,9 @@ class SuggestedItineraryBuilder
             'nights' => self::NIGHTS,
             'hotel' => $hotel,
             'room' => $room,
+            'room_quantity' => $roomQuantity,
+            'room_pax' => $roomPax,
+            'nightly_rate' => $nightlyRate,
             'days' => $days,
             'prices' => ['stay' => $stay, 'activities' => $activityTotal, 'total' => round($stay + $activityTotal, 2)],
             'weather' => $insights['weather'],
@@ -83,14 +87,27 @@ class SuggestedItineraryBuilder
     }
 
     /**
-     * Cheapest visible room that sleeps the party, else the cheapest visible room.
+     * The cheapest way to sleep the whole party in one room type: one room
+     * when it fits everyone, otherwise enough rooms of a smaller type, with
+     * guests spread evenly so no room is over its capacity.
+     *
+     * @return array{room: ?RoomType, quantity: int, room_pax: int}
      */
-    private function roomFor(HotelModel $hotel, int $pax): ?RoomType
+    public function roomPlanFor(HotelModel $hotel, int $pax): array
     {
-        $rooms = $hotel->rooms->filter(fn (RoomType $room) => $room->is_shown !== false && (float) $room->base_price > 0);
+        $plans = $hotel->rooms
+            ->filter(fn (RoomType $room) => $room->is_shown !== false && (float) $room->base_price > 0 && (int) $room->max_occupancy > 0)
+            ->map(function (RoomType $room) use ($pax): array {
+                $quantity = (int) ceil($pax / (int) $room->max_occupancy);
+                $roomPax = (int) ceil($pax / $quantity);
 
-        return $rooms->filter(fn (RoomType $room) => (int) $room->max_occupancy >= $pax)->sortBy('base_price')->first()
-            ?? $rooms->sortBy('base_price')->first();
+                return ['room' => $room, 'quantity' => $quantity, 'room_pax' => $roomPax, 'cost' => $room->calculateNightlyRate($roomPax) * $quantity];
+            })
+            ->sortBy([['cost', 'asc'], ['quantity', 'asc']]);
+
+        $plan = $plans->first();
+
+        return $plan ? ['room' => $plan['room'], 'quantity' => $plan['quantity'], 'room_pax' => $plan['room_pax']] : ['room' => null, 'quantity' => 1, 'room_pax' => $pax];
     }
 
     private function activityPrice(ActivityModel $activity, int $pax): float

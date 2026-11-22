@@ -79,13 +79,13 @@ it('saves a campaign from only its name and discount, filling the win chance and
         ->per_traveler_limit->toBe(1)->offer_valid_hours->toBe(72)->award_weight->toBe(1);
 });
 
-it('shows the essential fields with no code to manage', function () {
+it('shows the essential fields with an optional promo code', function () {
     $promotion = Promotion::factory()->create(['win_percent' => 35]);
     $this->actingAs($this->admin, 'admin');
 
     $this->get(route('admin.promotions.create'))->assertOk()
-        ->assertSeeInOrder(['Campaign name', 'Win chance', 'Discount', 'Campaign validity', 'Optional limits'])
-        ->assertDontSee('Promo code')->assertDontSee('name="award_weight"', false);
+        ->assertSeeInOrder(['Campaign name', 'Promo code (optional)', 'Win chance', 'Discount', 'Campaign validity', 'Optional limits'])
+        ->assertDontSee('name="award_weight"', false);
 
     $this->get(route('admin.promotions.edit', $promotion))->assertOk()->assertSee('Maximum redemptions');
     $this->get(route('admin.promotions.index'))->assertOk()->assertSee('35% win chance');

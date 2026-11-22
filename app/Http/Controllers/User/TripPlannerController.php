@@ -233,34 +233,47 @@ class TripPlannerController extends Controller
             'activity_ids' => ['nullable', 'array', 'max:5'],
             'activity_ids.*' => ['integer', 'distinct'],
             'pax' => ['required', 'integer', 'between:1,4'],
+            'room_quantity' => ['nullable', 'integer', 'between:1,4'],
             'nights' => ['required', 'integer', 'between:1,7'],
         ]);
+        // Form posts arrive as strings; Carbon and the plan's unique key need real integers.
+        $data['room_quantity'] ??= 1;
+        foreach (['destination_id', 'room_id', 'pax', 'room_quantity', 'nights'] as $field) {
+            $data[$field] = (int) $data[$field];
+        }
+        // Guests are spread evenly across the rooms, so each room stays within its capacity.
+        $guestsPerRoom = (int) ceil($data['pax'] / $data['room_quantity']);
         $user = $request->user();
         $start = Carbon::parse($dates->minimumArrivalDate());
         $end = $start->copy()->addDays($data['nights']);
         $activityIds = array_values(array_map('intval', $data['activity_ids'] ?? []));
         $suggestionUuid = Uuid::uuid5(Uuid::NAMESPACE_URL, 'sunnytrips:dashboard-suggestion:'.json_encode([
-            $user->id, $data['destination_id'], $data['room_id'], $activityIds, $data['pax'], $start->toDateString(), $end->toDateString(),
+            $user->id, $data['destination_id'], $data['room_id'], $data['room_quantity'], $activityIds, $data['pax'], $start->toDateString(), $end->toDateString(),
         ]))->toString();
 
         $plan = TripPlan::query()->where('user_id', $user->id)->where('source_suggestion_uuid', $suggestionUuid)->first();
         if (! $plan) {
             $destination = DestinationModel::query()->findOrFail($data['destination_id']);
-            $plan = DB::transaction(function () use ($user, $destination, $data, $start, $end, $activityIds, $suggestionUuid, $planner): TripPlan {
-                $plan = TripPlan::create([
-                    'user_id' => $user->id, 'destination_id' => $destination->id, 'title' => 'Suggested trip to '.$destination->name,
-                    'start_date' => $start->toDateString(), 'end_date' => $end->toDateString(), 'pax' => $data['pax'], 'mode' => 'walking',
-                    'revision' => 1, 'source' => 'suggested', 'status' => 'dated', 'duration_days' => $data['nights'] + 1,
-                    'source_suggestion_uuid' => $suggestionUuid,
-                ]);
-                $planner->add($plan->refresh(), ['item_type' => 'room', 'item_id' => (int) $data['room_id'], 'quantity' => 1, 'pax' => $data['pax'],
-                    'check_in' => $start->toDateString(), 'check_out' => $end->toDateString()]);
-                foreach ($activityIds as $activityId) {
-                    $planner->add($plan->refresh(), ['item_type' => 'activity', 'item_id' => $activityId, 'pax' => $data['pax']]);
-                }
+            try {
+                $plan = DB::transaction(function () use ($user, $destination, $data, $start, $end, $activityIds, $suggestionUuid, $planner, $guestsPerRoom): TripPlan {
+                    $plan = TripPlan::create([
+                        'user_id' => $user->id, 'destination_id' => $destination->id, 'title' => 'Suggested trip to '.$destination->name,
+                        'start_date' => $start->toDateString(), 'end_date' => $end->toDateString(), 'pax' => $data['pax'], 'mode' => 'walking',
+                        'revision' => 1, 'source' => 'suggested', 'status' => 'dated', 'duration_days' => $data['nights'] + 1,
+                        'source_suggestion_uuid' => $suggestionUuid,
+                    ]);
+                    $planner->add($plan->refresh(), ['item_type' => 'room', 'item_id' => (int) $data['room_id'], 'quantity' => $data['room_quantity'], 'pax' => $guestsPerRoom,
+                        'check_in' => $start->toDateString(), 'check_out' => $end->toDateString()]);
+                    foreach ($activityIds as $activityId) {
+                        $planner->add($plan->refresh(), ['item_type' => 'activity', 'item_id' => $activityId, 'pax' => $data['pax']]);
+                    }
 
-                return $plan->refresh();
-            });
+                    return $plan->refresh();
+                });
+            } catch (ValidationException $exception) {
+                // Land on the suggestion card so the reason is visible, not at the top of the dashboard.
+                return redirect()->to(route('dashboard').'#suggested-itinerary')->withErrors($exception->errors());
+            }
         }
 
         $hasSchedule = $plan->itineraries()->exists();

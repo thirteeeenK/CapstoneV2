@@ -12,6 +12,7 @@ use App\Notifications\BookingRequestReceived;
 use App\Services\BookingRequestService;
 use App\Services\CartService;
 use App\Services\PromotionService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
@@ -102,6 +103,31 @@ class CheckoutController extends Controller
     }
 
     /**
+     * Check a typed promo code against the selected basket and preview its
+     * discount. The booking submission validates the code again on server prices.
+     */
+    public function applyPromoCode(Request $request, PromotionService $promotions): JsonResponse
+    {
+        $validated = $request->validate(['promo_code' => 'required|string|max:32']);
+        $cartItems = $this->getCartQuery($request)->with(['itemable' => fn ($morphTo) => $morphTo->morphWith([RoomType::class => ['hotel']])])->get();
+        if ($cartItems->isEmpty()) {
+            throw ValidationException::withMessages(['promo_code' => 'Select at least one item in your Trip Basket first.']);
+        }
+
+        $evaluation = $promotions->evaluateCode($request->user(), $validated['promo_code'], $cartItems,
+            (int) round($cartItems->sum(fn ($item) => $item->subtotal) * 100));
+
+        return response()->json([
+            'success' => true,
+            'code' => $evaluation['promotion']->code,
+            'discount' => $evaluation['discount_cents'] / 100,
+            'eligible' => '₱'.number_format($evaluation['eligible_cents'] / 100, 2),
+            'label' => $evaluation['promotion']->discountLabel(),
+            'message' => 'Promo code '.$evaluation['promotion']->code.' applied: '.$evaluation['promotion']->discountLabel().'.',
+        ]);
+    }
+
+    /**
      * Submit a booking request from the selected cart items.
      */
     public function process(Request $request)
@@ -113,6 +139,7 @@ class CheckoutController extends Controller
             'special_requests' => 'nullable|string|max:1000',
             'guest_manifest' => 'nullable|string|max:50000',
             'lucky_offer' => 'nullable|uuid',
+            'promo_code' => 'nullable|string|max:32',
         ], [
             'contact_phone.regex' => 'The mobile phone number must be exactly 11 digits.',
         ]);

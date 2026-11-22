@@ -87,7 +87,9 @@ it('opens the suggested itinerary as a dated trip plan with its room and activit
     [$destination, $hotel, $activities] = suggestionFixture();
     $user = onboardedUser();
     $room = $hotel->rooms->firstWhere('room_name', 'Garden Twin');
-    $payload = ['destination_id' => $destination->id, 'room_id' => $room->id, 'activity_ids' => $activities->pluck('id')->all(), 'pax' => 2, 'nights' => 2];
+    // Strings, exactly as the dashboard's HTML form submits them.
+    $payload = ['destination_id' => (string) $destination->id, 'room_id' => (string) $room->id,
+        'activity_ids' => $activities->pluck('id')->map(fn ($id) => (string) $id)->all(), 'pax' => '2', 'nights' => '2'];
 
     $response = $this->actingAs($user)->post(route('trip-planner.suggested'), $payload);
 
@@ -116,4 +118,41 @@ it('does not create a plan from a room outside the suggested destination', funct
 it('auto-builds the schedule when the planner opens a suggested plan', function () {
     $this->actingAs(onboardedUser())->get(route('trip-planner.index', ['plan' => 5, 'generate' => 1]))
         ->assertOk()->assertSee('autoGenerate: true', false);
+});
+
+it('sends a GET to the suggested itinerary URL back to the dashboard instead of failing', function () {
+    $this->actingAs(onboardedUser())->get(route('trip-planner.suggested.show'))
+        ->assertRedirect(route('dashboard'))->assertSessionHas('info');
+});
+
+it('books enough rooms when no single room sleeps the whole party', function () {
+    [$destination, $hotel, $activities] = suggestionFixture();
+    $preference = new UserPreference(['traveler_type' => 'Friends Group']);
+
+    $suggestion = app(SuggestedItineraryBuilder::class)->build($destination, collect([$hotel]), $activities, $preference, true);
+
+    // Four travelers: four Solo Pods (₱4,800/night) cost less than two Garden Twins (₱6,000/night).
+    expect($suggestion)->pax->toBe(4)->room_quantity->toBe(4)->room_pax->toBe(1)
+        ->and($suggestion['room']->room_name)->toBe('Solo Pod')
+        ->and($suggestion['prices']['stay'])->toBe(9600.0);
+
+    $user = onboardedUser();
+    $this->actingAs($user)->post(route('trip-planner.suggested'), [
+        'destination_id' => (string) $destination->id, 'room_id' => (string) $suggestion['room']->id, 'room_quantity' => (string) $suggestion['room_quantity'], 'pax' => '4', 'nights' => '2',
+        'activity_ids' => $activities->pluck('id')->map(fn ($id) => (string) $id)->all(),
+    ])->assertRedirect();
+
+    $room = TripPlan::query()->where('user_id', $user->id)->sole()->items->firstWhere('item_type', 'room');
+    expect($room->options)->toMatchArray(['quantity' => 4, 'pax' => 1]);
+});
+
+it('returns to the suggestion card with the reason when the plan cannot be created', function () {
+    [$destination, $hotel] = suggestionFixture();
+    $tooSmall = $hotel->rooms->firstWhere('room_name', 'Solo Pod');
+
+    $this->actingAs(onboardedUser())->post(route('trip-planner.suggested'), [
+        'destination_id' => (string) $destination->id, 'room_id' => (string) $tooSmall->id, 'room_quantity' => '1', 'pax' => '4', 'nights' => '2',
+    ])->assertRedirect(route('dashboard').'#suggested-itinerary')->assertSessionHasErrors('room');
+
+    expect(TripPlan::query()->count())->toBe(0);
 });

@@ -27,7 +27,7 @@ class AdminPromotionController extends Controller
 
         $promotions = Promotion::query()
             ->withCount(Promotion::usageCounts())
-            ->when($search, fn ($q) => $q->where('name', 'ilike', "%{$search}%"))
+            ->when($search, fn ($q) => $q->where(fn ($query) => $query->where('name', 'ilike', "%{$search}%")->orWhere('code', 'ilike', "%{$search}%")))
             ->when($visibility === 'active', fn ($q) => $q->where('is_active', true))
             ->when($visibility === 'inactive', fn ($q) => $q->where('is_active', false))
             ->orderByDesc('is_active')->orderByDesc('id')->paginate(15)->withQueryString();

@@ -1,5 +1,5 @@
 {{-- Shared create/edit fields. Money is entered in pesos and stored in centavos; times are Philippine time.
-     Travelers never type anything: a winning Lucky attempt carries the discount to checkout. --}}
+     Without a code the promotion is a Lucky prize carried to checkout; with a code travelers type it at checkout. --}}
 @php
     $manila = fn ($value) => $value?->timezone('Asia/Manila')->format('Y-m-d\TH:i');
     $pesos = fn ($cents) => $cents !== null ? number_format($cents / 100, 2, '.', '') : null;
@@ -10,6 +10,7 @@
     $initial = [
         'type' => old('discount_type', $promotion->discount_type ?? 'percent'),
         'name' => old('name', $promotion->name ?? ''),
+        'code' => old('code', $promotion->code ?? ''),
         'win' => old('win_percent', $promotion->win_percent),
         'percent' => old('percent_off', $promotion->percent_off),
         'cap' => old('max_discount', $pesos($promotion->max_discount_cents)),
@@ -38,6 +39,10 @@
                 ? (this.percent ? this.percent + '% off' + (this.cap ? ' (up to ' + this.peso(this.cap) + ')' : '') : null)
                 : (this.fixed ? this.peso(this.fixed) + ' off' : null);
             if (! off) return 'Enter a discount to see what travelers can win.';
+            if (this.code) {
+                const codeReach = this.maxUsers ? 'up to ' + Number(this.maxUsers).toLocaleString('en-US') + ' uses' : 'no limit on uses';
+                return 'Travelers who type ' + this.code.toUpperCase() + ' at checkout get ' + off + ' · ' + codeReach + ' · one use per traveler.';
+            }
             const reach = this.maxUsers ? 'up to ' + Number(this.maxUsers).toLocaleString('en-US') + ' users can redeem it' : 'no limit on how many users can redeem it';
             const uses = Number(this.perTraveler) === 1 ? 'one use per traveler' : (this.perTraveler || 1) + ' uses per traveler';
             return 'Each attempt has a ' + (this.win === '' || this.win === null ? 80 : this.win) + '% chance to win ' + off + ' · ' + reach + ' · ' + uses + '.';
@@ -50,6 +55,11 @@
             <input id="name" name="name" required maxlength="120" x-model="name" placeholder="e.g. Summer Splash" class="{{ $input }}">
         </div>
         <div>
+            <label for="code" class="{{ $label }}">Promo code (optional)</label>
+            <input id="code" name="code" maxlength="32" x-model="code" placeholder="e.g. SUMMER10" aria-describedby="code-hint" class="{{ $input }} uppercase">
+            <p id="code-hint" class="{{ $hint }}">Leave blank for an “I'm Feeling Lucky” prize. With a code, travelers type it at checkout and it is never awarded by Lucky.</p>
+        </div>
+        <div x-show="!code">
             <label for="win_percent" class="{{ $label }}">Win chance (%)</label>
             <input id="win_percent" name="win_percent" type="number" min="0" max="100" x-model="win" aria-describedby="win-chance-hint" class="{{ $input }}">
             <p id="win-chance-hint" class="{{ $hint }}">The chance a Lucky attempt wins this discount. Travelers who don't win still get the itinerary at the regular price.</p>

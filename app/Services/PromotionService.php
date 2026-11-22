@@ -37,7 +37,7 @@ final class PromotionService
      */
     public function awardFor(User $user, array $selection, int $eligibleCents): ?Promotion
     {
-        $candidates = Promotion::query()->where('is_active', true)->where('award_weight', '>', 0)->where('win_percent', '>', 0)->orderBy('id')->get()
+        $candidates = Promotion::query()->whereNull('code')->where('is_active', true)->where('award_weight', '>', 0)->where('win_percent', '>', 0)->orderBy('id')->get()
             ->filter(fn (Promotion $promotion) => $promotion->status() === Promotion::STATUS_ACTIVE
                 && $this->selectionProblem($promotion->termsSnapshot(), $selection, $eligibleCents) === null
                 && $this->redemptionsBy($promotion, $user) < $promotion->per_traveler_limit)
@@ -229,6 +229,83 @@ final class PromotionService
     }
 
     /**
+     * Normalise a typed promo code the way codes are stored: trimmed, uppercase.
+     */
+    public static function normalizeCode(?string $code): string
+    {
+        return mb_strtoupper(trim((string) $code));
+    }
+
+    /**
+     * Validate a promo code the traveler typed against their selected basket
+     * lines. The code covers every line in its destinations and travel window;
+     * the discount comes from the campaign's current terms, never the browser.
+     *
+     * @param  Collection<int, CartItem>  $cartItems  the selected basket lines
+     * @param  array<int, float>|null  $subtotals  authoritative line subtotals by cart line id (submission); cart prices otherwise
+     * @return array{offer: null, promotion: Promotion, terms: array<string, mixed>, lines: Collection<int, CartItem>, eligible_cents: int, discount_cents: int}
+     *
+     * @throws ValidationException
+     */
+    public function evaluateCode(User $user, string $code, Collection $cartItems, int $payableCents, ?array $subtotals = null): array
+    {
+        $reject = fn (string $message) => throw ValidationException::withMessages(['promo_code' => $message]);
+        $normalized = self::normalizeCode($code);
+        $promotion = $normalized === '' ? null : Promotion::query()->where('code', $normalized)->first();
+        if (! $promotion) {
+            $reject('This promo code is not valid.');
+        }
+        match ($promotion->status()) {
+            Promotion::STATUS_PAUSED => $reject('This promo code is not active right now.'),
+            Promotion::STATUS_SCHEDULED => $reject('This promo code can be used from '.$promotion->redeem_starts_at->timezone('Asia/Manila')->format('M j, Y g:i A').'.'),
+            Promotion::STATUS_EXPIRED => $reject('This promo code has expired.'),
+            Promotion::STATUS_LIMIT_REACHED => $reject('This promo code has reached its redemption limit.'),
+            default => null,
+        };
+        $terms = $promotion->termsSnapshot();
+
+        $lines = $cartItems->filter(fn (CartItem $line) => $this->codeCoversLine($terms, $line))->values();
+        if ($lines->isEmpty()) {
+            $reject('This promo code does not cover the destinations or travel dates in your booking.');
+        }
+        $eligibleCents = (int) round($lines->sum(fn (CartItem $line) => (float) ($subtotals[$line->id] ?? $line->subtotal)) * 100);
+        if ($eligibleCents < (int) ($terms['min_eligible_cents'] ?? 0)) {
+            $reject('This promo code needs an eligible subtotal of at least ₱'.number_format($terms['min_eligible_cents'] / 100, 2).'.');
+        }
+        if ($this->redemptionsBy($promotion, $user) >= (int) ($terms['per_traveler_limit'] ?? 1)) {
+            $reject('You have already used this promo code the maximum number of times.');
+        }
+        $discount = $this->discountCents($terms, $eligibleCents, $payableCents);
+        if ($discount <= 0) {
+            $reject('This promo code gives nothing off the current total.');
+        }
+
+        return ['offer' => null, 'promotion' => $promotion, 'terms' => $terms, 'lines' => $lines, 'eligible_cents' => $eligibleCents, 'discount_cents' => $discount];
+    }
+
+    /**
+     * Whether a basket line falls inside a code campaign's destinations and travel window.
+     *
+     * @param  array<string, mixed>  $terms
+     */
+    private function codeCoversLine(array $terms, CartItem $line): bool
+    {
+        if (! empty($terms['destination_ids'])) {
+            $item = $line->itemable;
+            $destinationId = $line->item_type === 'room' ? $item?->hotel?->destination_id : ($item->destination_id ?? null);
+            if ($destinationId === null || ! in_array((int) $destinationId, array_map('intval', $terms['destination_ids']), true)) {
+                return false;
+            }
+        }
+        $date = $line->check_in_date?->toDateString();
+        if ($date !== null && ((! empty($terms['travel_starts_on']) && $date < $terms['travel_starts_on']) || (! empty($terms['travel_ends_on']) && $date > $terms['travel_ends_on']))) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
      * Reserve the redemption for a booking being created, inside its
      * transaction, and allocate the discount across the eligible items.
      *
@@ -237,16 +314,19 @@ final class PromotionService
      */
     public function reserve(Booking $booking, User $user, array $evaluation, array $bookingItems): PromotionRedemption
     {
+        $field = $evaluation['offer'] ? 'lucky_offer' : 'promo_code';
         $promotion = Promotion::query()->lockForUpdate()->findOrFail($evaluation['promotion']->id);
-        LuckyOffer::query()->lockForUpdate()->findOrFail($evaluation['offer']->id);
+        if ($evaluation['offer']) {
+            LuckyOffer::query()->lockForUpdate()->findOrFail($evaluation['offer']->id);
+        }
         if (! $promotion->is_active || ! $this->hasCapacity($promotion) || $this->redemptionsBy($promotion, $user) >= (int) ($evaluation['terms']['per_traveler_limit'] ?? 1)) {
-            throw ValidationException::withMessages(['lucky_offer' => 'This Lucky promotion is no longer available.']);
+            throw ValidationException::withMessages([$field => $evaluation['offer'] ? 'This Lucky promotion is no longer available.' : 'This promo code is no longer available.']);
         }
         $items = $evaluation['lines']->map(fn (CartItem $line) => $bookingItems[$line->id]);
         $allocations = $this->allocate($items, $evaluation['discount_cents']);
         try {
             $redemption = PromotionRedemption::create([
-                'promotion_id' => $promotion->id, 'lucky_offer_id' => $evaluation['offer']->id, 'booking_id' => $booking->id, 'user_id' => $user->id,
+                'promotion_id' => $promotion->id, 'lucky_offer_id' => $evaluation['offer']?->id, 'booking_id' => $booking->id, 'user_id' => $user->id,
                 'status' => PromotionRedemption::STATUS_RESERVED, 'eligible_cents' => $evaluation['eligible_cents'],
                 'discount_cents' => $evaluation['discount_cents'], 'allocations' => $allocations, 'terms' => $evaluation['terms'], 'reserved_at' => now(),
             ]);
@@ -291,6 +371,9 @@ final class PromotionService
             return ['discount' => (float) $booking->promotion_discount_amount, 'note' => null];
         }
         $items = $booking->items->filter(fn (BookingItem $item) => collect($redemption->allocations)->contains('booking_item_id', $item->id))->values();
+        if ($redemption->lucky_offer_id === null) {
+            return $this->repriceCodeForApproval($booking, $redemption, $items, $payableCents);
+        }
         $changed = $items->contains(fn (BookingItem $item) => $item->availability_status === BookingItem::AVAIL_UNAVAILABLE
             || $item->quantity !== (int) (collect($redemption->allocations)->firstWhere('booking_item_id', $item->id)['quantity'] ?? $item->quantity));
         if ($changed) {
@@ -309,6 +392,36 @@ final class PromotionService
 
         return ['discount' => $discount / 100, 'note' => $discount !== $previous
             ? 'Lucky discount recalculated to ₱'.number_format($discount / 100, 2).' after availability review.' : null];
+    }
+
+    /**
+     * Reprice a promo code discount over the items still included after the
+     * admin's availability review; it is removed only when nothing eligible is left.
+     *
+     * @param  Collection<int, BookingItem>  $items
+     * @return array{discount: float, note: ?string}
+     */
+    private function repriceCodeForApproval(Booking $booking, PromotionRedemption $redemption, Collection $items, int $payableCents): array
+    {
+        $included = $items->reject(fn (BookingItem $item) => $item->availability_status === BookingItem::AVAIL_UNAVAILABLE)->values();
+        $excluded = $items->diff($included);
+        $eligible = (int) round($included->sum(fn (BookingItem $item) => (float) $item->subtotal) * 100);
+        $label = 'promo code '.($redemption->promotion?->code ?? '');
+        if ($included->isEmpty() || $eligible < (int) ($redemption->terms['min_eligible_cents'] ?? 0)) {
+            $this->releaseForBooking($booking, 'The '.$label.' no longer applies after availability review.');
+            $this->applyAllocations($items, $items->map(fn (BookingItem $item) => ['booking_item_id' => $item->id, 'discount_cents' => 0])->all());
+
+            return ['discount' => 0.0, 'note' => 'The '.$label.' no longer applies after availability review; its ₱'.number_format($redemption->discount_cents / 100, 2).' discount was removed.'];
+        }
+        $discount = $this->discountCents($redemption->terms, $eligible, $payableCents);
+        $previous = $redemption->discount_cents;
+        $allocations = $this->allocate($included, $discount);
+        $redemption->update(['eligible_cents' => $eligible, 'discount_cents' => $discount, 'allocations' => $allocations]);
+        $this->applyAllocations($included, $allocations);
+        $this->applyAllocations($excluded, $excluded->map(fn (BookingItem $item) => ['booking_item_id' => $item->id, 'discount_cents' => 0])->all());
+
+        return ['discount' => $discount / 100, 'note' => $discount !== $previous
+            ? 'The '.$label.' discount was recalculated to ₱'.number_format($discount / 100, 2).' after availability review.' : null];
     }
 
     /**

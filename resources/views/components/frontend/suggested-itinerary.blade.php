@@ -5,7 +5,7 @@
     $peso = fn ($amount) => '₱'.number_format((float) $amount, 2);
 @endphp
 
-<section aria-labelledby="suggested-itinerary-heading" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-3xl p-5 sm:p-7 shadow-sm">
+<section id="suggested-itinerary" aria-labelledby="suggested-itinerary-heading" class="scroll-mt-20 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-3xl p-5 sm:p-7 shadow-sm">
     <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
         <div class="space-y-1">
             <p class="font-label text-[11px] uppercase font-bold tracking-[0.15em] text-ocean-700 dark:text-ocean-300 flex items-center gap-1.5">
@@ -39,6 +39,7 @@
                     <input type="hidden" name="destination_id" value="{{ $suggestion['destination']->id }}">
                     <input type="hidden" name="room_id" value="{{ $suggestion['room']->id }}">
                     <input type="hidden" name="pax" value="{{ $suggestion['pax'] }}">
+                    <input type="hidden" name="room_quantity" value="{{ $suggestion['room_quantity'] }}">
                     <input type="hidden" name="nights" value="{{ $suggestion['nights'] }}">
                     @foreach ($suggestion['days'] as $day)
                         @foreach ($day['activities'] as $stop)
@@ -61,6 +62,10 @@
         </div>
     </div>
 
+    @if (session('info'))
+        <p role="status" class="mt-4 rounded-xl border border-sky-200 dark:border-sky-800 bg-sky-50 dark:bg-sky-950/50 px-4 py-3 text-xs text-sky-900 dark:text-sky-100">{{ session('info') }}</p>
+    @endif
+
     @if ($errors->any())
         <p role="alert" class="mt-4 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/50 px-4 py-3 text-xs text-amber-900 dark:text-amber-100">
             We couldn't open this itinerary in the Trip Planner: {{ $errors->first() }}
@@ -74,7 +79,7 @@
                     <p class="text-[10px] uppercase tracking-wider font-bold text-slate-400 dark:text-slate-500">Your stay · {{ $suggestion['nights'] }} nights</p>
                     <a href="{{ route('hotels.show', $suggestion['hotel']->id) }}" class="mt-1 block font-headline font-bold text-slate-900 dark:text-slate-100 hover:text-ocean-700">{{ $suggestion['hotel']->hotel_name }}</a>
                     @if ($suggestion['room'])
-                        <p class="text-xs text-slate-500 dark:text-slate-400">{{ $suggestion['room']->room_name }} · {{ $peso($suggestion['room']->calculateNightlyRate($suggestion['pax'])) }}/night</p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">{{ $suggestion['room_quantity'] > 1 ? $suggestion['room_quantity'].' × ' : '' }}{{ $suggestion['room']->room_name }} · {{ $peso($suggestion['nightly_rate']) }}/night{{ $suggestion['room_quantity'] > 1 ? ' per room · '.$suggestion['room_pax'].' guests each' : '' }}</p>
                     @endif
                 </div>
 

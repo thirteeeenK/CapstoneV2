@@ -13,7 +13,7 @@
                 <p style="line-height:1.7">{!! nl2br(e($paragraph)) !!}</p>
             @endforeach
             <p style="margin:28px 0"><a href="{{ $payload['cta_url'] }}" style="background:#006b91;color:white;text-decoration:none;padding:13px 20px;border-radius:5px;font-weight:bold">{{ $payload['cta_label'] }}</a></p>
-            <p style="font-size:12px;color:#5c707b;line-height:1.6">Prices, availability and Lucky discounts are subject to the terms shown on SunnyTrips at the time you book.</p>
+            <p style="font-size:12px;color:#5c707b;line-height:1.6">Prices, availability Lucky discounts and promo codes are subject to the terms shown on SunnyTrips at the time you book.</p>
             <p style="font-size:12px;color:#5c707b;line-height:1.6">
                 You are receiving this because you opted in to deals and destination ideas from {{ $payload['business'] }}.
                 @if(!empty($payload['unsubscribe_url']))

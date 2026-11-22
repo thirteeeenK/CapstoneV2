@@ -211,6 +211,29 @@ class Booking extends Model
     }
 
     /**
+     * How the booking's promotion discount is named: the promo code the traveler typed, or the Lucky prize.
+     */
+    public function promotionDiscountLabel(): string
+    {
+        $redemption = $this->promotionRedemption;
+        if ($redemption && $redemption->lucky_offer_id === null && filled($redemption->promotion?->code)) {
+            return 'Promo code '.$redemption->promotion->code;
+        }
+
+        return 'Lucky discount';
+    }
+
+    /**
+     * Short per-item name for the same discount: the promo code itself, or "Lucky".
+     */
+    public function promotionShortLabel(): string
+    {
+        $redemption = $this->promotionRedemption;
+
+        return $redemption && $redemption->lucky_offer_id === null && filled($redemption->promotion?->code) ? $redemption->promotion->code : 'Lucky';
+    }
+
+    /**
      * Whether this booking currently holds inventory.
      */
     public function isHoldStatus(): bool

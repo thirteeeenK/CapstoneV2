@@ -3,9 +3,11 @@
 namespace App\Http\Requests\Admin;
 
 use App\Models\Promotion;
+use App\Services\PromotionService;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Carbon;
+use Illuminate\Validation\Rule;
 
 class StorePromotionRequest extends FormRequest
 {
@@ -26,6 +28,23 @@ class StorePromotionRequest extends FormRequest
     }
 
     /**
+     * Codes are stored trimmed and uppercase, so "summer10" and "SUMMER10" are one code.
+     */
+    protected function prepareForValidation(): void
+    {
+        $code = PromotionService::normalizeCode($this->input('code'));
+        $this->merge(['code' => $code === '' ? null : $code]);
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return ['code.regex' => 'The promo code may only use letters, numbers, dashes and underscores.', 'code.unique' => 'Another promotion already uses this promo code.'];
+    }
+
+    /**
      * Get the validation rules that apply to the request.
      *
      * @return array<string, ValidationRule|array<mixed>|string>
@@ -34,6 +53,7 @@ class StorePromotionRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:120'],
+            'code' => ['nullable', 'string', 'min:3', 'max:32', 'regex:/^[A-Z0-9_-]+$/', Rule::unique('promotions', 'code')->ignore($this->route('promotion'))],
             'is_active' => ['sometimes', 'boolean'],
             'win_percent' => ['nullable', 'integer', 'between:0,100'],
             'discount_type' => ['required', 'in:'.Promotion::TYPE_PERCENT.','.Promotion::TYPE_FIXED],
@@ -65,7 +85,7 @@ class StorePromotionRequest extends FormRequest
         $manila = fn (string $key) => ! empty($data[$key]) ? Carbon::parse($data[$key], 'Asia/Manila') : null;
 
         return [
-            'name' => $data['name'], 'is_active' => (bool) ($data['is_active'] ?? false), 'win_percent' => (int) ($data['win_percent'] ?? Promotion::DEFAULT_WIN_PERCENT),
+            'name' => $data['name'], 'code' => $data['code'] ?? null, 'is_active' => (bool) ($data['is_active'] ?? false), 'win_percent' => (int) ($data['win_percent'] ?? Promotion::DEFAULT_WIN_PERCENT),
             'discount_type' => $data['discount_type'],
             'percent_off' => $percent ? (int) $data['percent_off'] : null,
             'fixed_off_cents' => $percent ? null : $cents('fixed_off'),

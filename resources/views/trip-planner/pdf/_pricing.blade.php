@@ -17,7 +17,7 @@
                         <td><span class="strong">{{ $item->item_title }}</span>@if ($item->hotel_name)<br><span class="muted">{{ $item->hotel_name }}</span>@endif</td>
                         <td>{{ $item->check_in_date?->format('M j, Y') ?? 'Date to be arranged' }}{{ $item->check_out_date ? ' – '.$item->check_out_date->format('M j, Y') : '' }}<br><span class="muted">{{ $item->quantity }} × · {{ $item->selected_pax }} guests</span></td>
                         <td>@if ($item->availability_status === 'unavailable')<span class="chip chip-slate">Excluded at review — not charged</span>@else<span class="chip chip-green">Included in booking</span>@endif</td>
-                        <td class="amount">{{ $item->availability_status === 'unavailable' ? '—' : $peso($item->subtotal) }}@if ((float) $item->promotion_discount_amount > 0)<br><span class="muted">Lucky −{{ $peso($item->promotion_discount_amount) }}</span>@endif</td>
+                        <td class="amount">{{ $item->availability_status === 'unavailable' ? '—' : $peso($item->subtotal) }}@if ((float) $item->promotion_discount_amount > 0)<br><span class="muted">{{ $booking->promotionShortLabel() }} −{{ $peso($item->promotion_discount_amount) }}</span>@endif</td>
                     </tr>
                 @endforeach
             </tbody>
@@ -27,7 +27,7 @@
                 <tr><td>Booking subtotal (all services in {{ $booking->booking_code }})</td><td class="amount">{{ $peso($booking->total_amount) }}</td></tr>
                 @if ((float) $booking->discount_amount > 0)<tr><td>Passenger discounts</td><td class="amount">−{{ $peso($booking->discount_amount) }}</td></tr>@endif
                 @if ((float) $booking->tax_amount > 0)<tr><td>Passenger surcharges</td><td class="amount">+{{ $peso($booking->tax_amount) }}</td></tr>@endif
-                @if ((float) $booking->promotion_discount_amount > 0)<tr><td>Lucky discount</td><td class="amount">−{{ $peso($booking->promotion_discount_amount) }}</td></tr>@endif
+                @if ((float) $booking->promotion_discount_amount > 0)<tr><td>{{ $booking->promotionDiscountLabel() }}</td><td class="amount">−{{ $peso($booking->promotion_discount_amount) }}</td></tr>@endif
                 @if ((float) $booking->admin_discount_amount > 0)<tr><td>Admin discount</td><td class="amount">−{{ $peso($booking->admin_discount_amount) }}</td></tr>@endif
                 @if ((float) $booking->admin_surcharge_amount > 0)<tr><td>Additional amount</td><td class="amount">+{{ $peso($booking->admin_surcharge_amount) }}</td></tr>@endif
                 <tr class="grand"><td>Booking total (PHP) · {{ $booking->payment_status === 'paid' ? 'paid in full' : ($booking->payment_status === 'partial' ? 'partially paid; a balance remains' : ($booking->payment_status === 'refunded' ? 'refunded' : 'not yet paid')) }}</td><td class="amount">{{ $peso($booking->net_amount) }}</td></tr>

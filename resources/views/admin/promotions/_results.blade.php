@@ -5,7 +5,7 @@
     @if($promotions->isEmpty())
         <div class="bg-white p-12 rounded-3xl border border-slate-200/80 text-center text-slate-400">
             <span class="material-symbols-outlined text-4xl mb-2 text-slate-300">campaign</span>
-            <p class="text-sm font-bold text-slate-700">No Lucky campaigns match your filters.</p>
+            <p class="text-sm font-bold text-slate-700">No promotions match your filters.</p>
             <a href="{{ route('admin.promotions.create') }}" class="mt-3 inline-block text-xs font-bold text-sky-600 hover:underline">Create a campaign</a>
         </div>
     @else
@@ -28,7 +28,14 @@
                             <tr class="border-b border-slate-50 hover:bg-slate-50/50 transition align-top">
                                 <td class="py-4 px-4">
                                     <p class="font-bold text-slate-900">{{ $promotion->name }}</p>
-                                    <p class="text-[11px] text-slate-500 mt-1">{{ $promotion->win_percent }}% win chance</p>
+                                    @if($promotion->isCodePromotion())
+                                        <p class="mt-1 inline-flex items-center gap-1 rounded-md bg-sky-50 border border-sky-200 px-2 py-0.5 font-mono text-[11px] font-bold text-sky-800">
+                                            <span class="material-symbols-outlined text-[13px]" aria-hidden="true">sell</span>{{ $promotion->code }}
+                                        </p>
+                                        <p class="text-[11px] text-slate-500 mt-1">Promo code at checkout</p>
+                                    @else
+                                        <p class="text-[11px] text-slate-500 mt-1">{{ $promotion->win_percent }}% win chance · I'm Feeling Lucky prize</p>
+                                    @endif
                                 </td>
                                 <td class="py-4 px-4 text-xs text-slate-700">
                                     <p class="font-bold">{{ $promotion->discountLabel() }}</p>

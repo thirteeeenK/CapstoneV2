@@ -474,6 +474,33 @@
 
                     {{-- Lucky discount: found by the server, validated again on submission --}}
                     <input type="hidden" name="lucky_offer" :value="appliedOffer">
+                    <input type="hidden" name="promo_code" :value="appliedCode">
+
+                    {{-- Promo code: checked by the server now and again on submission; one discount per booking --}}
+                    <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-3 space-y-2">
+                        <label for="promo-code-input" class="font-label text-[10px] uppercase font-bold tracking-[0.15em] text-slate-500 dark:text-slate-400 block">Promo code</label>
+                        <template x-if="!appliedCode">
+                            <div class="flex gap-2">
+                                <input id="promo-code-input" type="text" x-model="promoCodeInput" maxlength="32" autocomplete="off" placeholder="e.g. SUMMER10"
+                                       @keydown.enter.prevent="applyPromoCode()"
+                                       class="min-w-0 flex-1 px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs uppercase text-slate-900 dark:text-slate-100 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20">
+                                <button type="button" @click="applyPromoCode()" :disabled="promoChecking || !promoCodeInput.trim()"
+                                        class="min-h-10 px-4 rounded-lg bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 text-xs font-bold disabled:opacity-50 cursor-pointer"
+                                        x-text="promoChecking ? 'Checking…' : 'Apply'"></button>
+                            </div>
+                        </template>
+                        <template x-if="appliedCode">
+                            <div class="flex items-center justify-between gap-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 px-3 py-2">
+                                <span class="flex items-center gap-1.5 text-xs font-bold text-emerald-800 dark:text-emerald-100">
+                                    <span class="material-symbols-outlined text-[15px]" aria-hidden="true">sell</span>
+                                    <span x-text="appliedCode + ' · ' + promoCodeLabel"></span>
+                                </span>
+                                <button type="button" @click="removePromoCode()" class="text-[11px] font-bold text-emerald-800 dark:text-emerald-200 underline cursor-pointer">Remove</button>
+                            </div>
+                        </template>
+                        <p x-show="promoCodeError" x-cloak role="alert" class="text-[11px] font-medium text-rose-600" x-text="promoCodeError"></p>
+                        <p x-show="luckyBackup.offer && !appliedCode" x-cloak class="text-[10.5px] text-slate-500 dark:text-slate-400">One discount applies per booking. A promo code replaces your Lucky discount.</p>
+                    </div>
                     <p x-show="promoNotice" x-cloak role="status" class="rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/60 px-3 py-2 text-[11px] font-medium text-amber-800 dark:text-amber-200" x-text="promoNotice"></p>
 
                     {{-- Totals Calculation --}}
@@ -535,8 +562,8 @@
                         <div x-show="promoDiscount > 0" x-cloak
                             class="flex items-center justify-between py-1 px-2 rounded-lg border text-[10.5px] font-semibold bg-emerald-50/70 dark:bg-emerald-950/60 border-emerald-200/80 dark:border-emerald-800/80 text-emerald-800 dark:text-emerald-100">
                             <span class="flex items-center gap-1.5 min-w-0 pr-2 truncate">
-                                <span class="material-symbols-outlined text-[13px] shrink-0 text-emerald-600 dark:text-emerald-400">casino</span>
-                                <span class="truncate" x-text="'Lucky discount on ' + promoEligibleLabel"></span>
+                                <span class="material-symbols-outlined text-[13px] shrink-0 text-emerald-600 dark:text-emerald-400" x-text="appliedCode ? 'sell' : 'casino'"></span>
+                                <span class="truncate" x-text="(appliedCode ? 'Promo code ' + appliedCode : 'Lucky discount') + ' on ' + promoEligibleLabel"></span>
                             </span>
                             <span class="font-extrabold shrink-0" x-text="'-₱' + Number(promoDiscount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })"></span>
                         </div>
@@ -604,6 +631,51 @@
                 promoDiscount: @js($luckyDiscount['amount']),
                 promoEligibleLabel: @js($luckyDiscount['eligible']),
                 promoNotice: @js($luckyDiscount['notice'] ?? ''),
+                luckyBackup: { offer: @js($luckyDiscount['offer']), amount: @js($luckyDiscount['amount']), eligible: @js($luckyDiscount['eligible']) },
+                promoCodeInput: '',
+                appliedCode: '',
+                promoCodeLabel: '',
+                promoCodeError: '',
+                promoChecking: false,
+
+                async applyPromoCode() {
+                    const code = this.promoCodeInput.trim();
+                    if (!code || this.promoChecking) return;
+                    this.promoChecking = true;
+                    this.promoCodeError = '';
+                    try {
+                        const res = await fetch(@js(route('checkout.promo-code')), {
+                            method: 'POST',
+                            headers: { 'X-CSRF-TOKEN': @js(csrf_token()), 'Accept': 'application/json', 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ promo_code: code }),
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok || !data.success) {
+                            this.promoCodeError = data.errors?.promo_code?.[0] || data.message || 'This promo code could not be applied.';
+                            return;
+                        }
+                        this.appliedCode = data.code;
+                        this.promoCodeLabel = data.label;
+                        this.appliedOffer = '';
+                        this.promoDiscount = data.discount;
+                        this.promoEligibleLabel = data.eligible;
+                        this.promoNotice = '';
+                    } catch (err) {
+                        this.promoCodeError = 'Could not check the promo code. Please try again.';
+                    } finally {
+                        this.promoChecking = false;
+                    }
+                },
+
+                removePromoCode() {
+                    this.appliedCode = '';
+                    this.promoCodeLabel = '';
+                    this.promoCodeInput = '';
+                    this.promoCodeError = '';
+                    this.appliedOffer = this.luckyBackup.offer;
+                    this.promoDiscount = this.luckyBackup.amount;
+                    this.promoEligibleLabel = this.luckyBackup.eligible;
+                },
 
                 get extraPersonFeeTotal() {
                     let fee = 0;
@@ -740,6 +812,11 @@
                         const data = await res.json();
                         if (data.success) {
                             window.location.href = data.redirect_url;
+                        } else if (data.errors?.promo_code) {
+                            this.removePromoCode();
+                            this.promoCodeError = data.errors.promo_code[0];
+                            alert(data.errors.promo_code[0] + ' The code was removed and your total updated. Please review it before submitting again.');
+                            this.isSubmitting = false;
                         } else if (data.errors?.lucky_offer) {
                             this.appliedOffer = '';
                             this.promoDiscount = 0;

@@ -157,11 +157,16 @@ class BookingRequestService
             $totalAmount += $itemSubtotal;
         }
 
-        // A Lucky discount is priced from the server's own line subtotals; the browser only names the offer.
-        $promotion = filled($validated['lucky_offer'] ?? null) && $request->user()
-            ? $this->promotions->evaluate($request->user(), $validated['lucky_offer'], $cartItems,
-                BookingQuoteService::payableBeforePromotionCents($totalAmount, $discountAmount, $surchargeAmount), array_map(fn ($calc) => $calc['subtotal'], $calculatedItemSubtotals))
-            : null;
+        // Discounts are priced from the server's own line subtotals; the browser only names the code or offer.
+        // One discount per booking: a typed promo code takes the place of a Lucky discount.
+        $payableBeforePromotion = BookingQuoteService::payableBeforePromotionCents($totalAmount, $discountAmount, $surchargeAmount);
+        $serverSubtotals = array_map(fn ($calc) => $calc['subtotal'], $calculatedItemSubtotals);
+        $promotion = match (true) {
+            ! $request->user() => null,
+            filled($validated['promo_code'] ?? null) => $this->promotions->evaluateCode($request->user(), $validated['promo_code'], $cartItems, $payableBeforePromotion, $serverSubtotals),
+            filled($validated['lucky_offer'] ?? null) => $this->promotions->evaluate($request->user(), $validated['lucky_offer'], $cartItems, $payableBeforePromotion, $serverSubtotals),
+            default => null,
+        };
         $promotionDiscount = $promotion ? $promotion['discount_cents'] / 100 : 0.00;
         $netAmount = BookingQuoteService::net($totalAmount, $discountAmount, $surchargeAmount, $promotionDiscount, (float) ($validated['admin_discount_amount'] ?? 0), (float) ($validated['admin_surcharge_amount'] ?? 0));
 

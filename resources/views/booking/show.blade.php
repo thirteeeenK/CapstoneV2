@@ -823,7 +823,7 @@
 
                             @if($booking->promotion_discount_amount > 0)
                                 <div class="flex items-center justify-between text-emerald-700 dark:text-emerald-100 font-semibold">
-                                    <dt>Lucky discount</dt>
+                                    <dt>{{ $booking->promotionDiscountLabel() }}</dt>
                                     <dd>-₱{{ number_format($booking->promotion_discount_amount, 2) }}</dd>
                                 </div>
                             @endif

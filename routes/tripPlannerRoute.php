@@ -18,6 +18,8 @@ Route::middleware(['auth', 'throttle:dss'])->prefix('trip-planner')->name('trip-
     Route::get('/weather/{destination}', [TripPlannerController::class, 'weather'])->name('weather');
     Route::post('/plans', [TripPlannerController::class, 'store'])->name('store');
     Route::post('/suggested', [TripPlannerController::class, 'storeSuggested'])->name('suggested');
+    // A GET here comes from a post-login "intended" redirect, the back button or a copied link; the suggestion lives on the dashboard.
+    Route::get('/suggested', fn () => redirect()->route('dashboard')->with('info', 'Click “Open this itinerary in Trip Planner” on your suggested itinerary to open it.'))->name('suggested.show');
     Route::get('/plans', [TripPlannerController::class, 'plans'])->name('plans');
     Route::patch('/email-preferences', [TripPlannerController::class, 'preferences'])->name('preferences');
     Route::get('/plans/{plan}', [TripPlannerController::class, 'show'])->name('show');

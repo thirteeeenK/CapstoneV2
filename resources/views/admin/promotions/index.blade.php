@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', 'Lucky Promotions | SunnyTrips Admin')
+@section('title', 'Promotions | SunnyTrips Admin')
 
 @section('content')
     <div class="pb-12 font-body"
@@ -13,8 +13,8 @@
 
         <div class="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-                <h1 class="text-xl sm:text-2xl font-bold text-slate-900 font-headline">Lucky Promotions</h1>
-                <p class="text-xs sm:text-sm text-slate-500 mt-1">Each I’m Feeling Lucky attempt has a chance to win a campaign’s discount. A win applies automatically at checkout to that itinerary’s room and activities, with nothing to type.</p>
+                <h1 class="text-xl sm:text-2xl font-bold text-slate-900 font-headline">Promotions &amp; Promo Codes</h1>
+                <p class="text-xs sm:text-sm text-slate-500 mt-1">Each I’m Feeling Lucky attempt has a chance to win a campaign’s discount. A win applies automatically at checkout to that itinerary’s room and activities, with nothing to type. Give a promotion a promo code instead, and travelers type it at checkout for any booking.</p>
             </div>
 
             <a href="{{ route('admin.promotions.create') }}"

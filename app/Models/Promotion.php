@@ -11,7 +11,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 #[Fillable([
-    'name', 'is_active', 'win_percent', 'discount_type', 'percent_off', 'fixed_off_cents', 'max_discount_cents',
+    'name', 'code', 'is_active', 'win_percent', 'discount_type', 'percent_off', 'fixed_off_cents', 'max_discount_cents',
     'min_eligible_cents', 'redeem_starts_at', 'redeem_ends_at', 'duration_days',
     'travel_starts_on', 'travel_ends_on', 'destination_ids', 'min_nights', 'max_nights', 'min_pax', 'max_pax',
     'total_redemption_limit', 'per_traveler_limit', 'offer_valid_hours', 'award_weight',
@@ -179,6 +179,14 @@ class Promotion extends Model
         }
 
         return $terms + ['name' => $this->name, 'revision' => $this->revision];
+    }
+
+    /**
+     * Whether travelers type this promotion's code at checkout instead of winning it on a Lucky attempt.
+     */
+    public function isCodePromotion(): bool
+    {
+        return filled($this->code);
     }
 
     public function discountLabel(): string
