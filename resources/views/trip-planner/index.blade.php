@@ -3,7 +3,7 @@
         <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha384-sHL9NAb7lN7rfvG5lfHpm643Xkcjzp4jFvuavGOndn6pjVqS6ny56CAt3nsEVT4H" crossorigin="anonymous" referrerpolicy="no-referrer">
         <style>.planner-map-icon{display:grid;place-items:center}.planner-map-number{box-sizing:border-box;display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:#006b91;color:white;border:2px solid white;font:700 14px 'DM Sans',sans-serif;box-shadow:0 2px 8px #0003}.planner-map-pending{background:#fdfaf4;color:#b45309;border:2px dashed #b45309;box-shadow:none}</style>
     @endpush
-    <div x-data="tripPlanner({ destinations: @js($destinations), plans: @js($plans), initialPlan: @js($initialPlan), destination: @js($initialDestination), emailPreferences: @js($emailPreferences), datePolicy: @js($datePolicy), base: @js(route('trip-planner.index')), csrf: @js(csrf_token()) })"
+    <div x-data="tripPlanner({ destinations: @js($destinations), plans: @js($plans), initialPlan: @js($initialPlan), autoGenerate: @js($autoGenerate ?? false), destination: @js($initialDestination), emailPreferences: @js($emailPreferences), datePolicy: @js($datePolicy), base: @js(route('trip-planner.index')), csrf: @js(csrf_token()) })"
          class="mx-auto max-w-screen-2xl bg-sand-50 text-ink-900 dark:bg-slate-900 dark:text-slate-100 font-body">
         <div class="grid lg:grid-cols-2">
             <section class="min-w-0 border-r border-sand-200 dark:border-slate-700">

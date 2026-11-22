@@ -17,6 +17,7 @@ Route::middleware(['auth', 'throttle:dss'])->prefix('trip-planner')->name('trip-
     Route::get('/catalog/{destination}', [TripPlannerController::class, 'catalog'])->name('catalog');
     Route::get('/weather/{destination}', [TripPlannerController::class, 'weather'])->name('weather');
     Route::post('/plans', [TripPlannerController::class, 'store'])->name('store');
+    Route::post('/suggested', [TripPlannerController::class, 'storeSuggested'])->name('suggested');
     Route::get('/plans', [TripPlannerController::class, 'plans'])->name('plans');
     Route::patch('/email-preferences', [TripPlannerController::class, 'preferences'])->name('preferences');
     Route::get('/plans/{plan}', [TripPlannerController::class, 'show'])->name('show');

@@ -81,8 +81,14 @@ export default (config) => {
             container.sunnyTripsPageShowHandler = pageShowHandler;
             window.addEventListener('pageshow', pageShowHandler);
         } catch { this.mapError = 'The map could not load. You can still plan from the listings.'; }
-        if (config.initialPlan) await this.openPlan(config.initialPlan);
-        else if (this.destinationId) await this.chooseDestination(this.destinationId);
+        if (config.initialPlan) {
+            await this.openPlan(config.initialPlan);
+            // Arriving from the dashboard suggestion: build its schedule straight away.
+            if (config.autoGenerate) {
+                window.history.replaceState(null, '', config.base + '?plan=' + config.initialPlan);
+                if (this.plan && !this.itinerary && this.selections.length && this.plan.start_date) await this.generate();
+            }
+        } else if (this.destinationId) await this.chooseDestination(this.destinationId);
         else this.renderMap();
     },
     async api(path, method = 'GET', data) {

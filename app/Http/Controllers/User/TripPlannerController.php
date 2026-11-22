@@ -18,11 +18,13 @@ use App\Services\TripDurationPolicy;
 use App\Services\TripPlannerService;
 use App\Services\WeatherService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Ramsey\Uuid\Uuid;
 
 class TripPlannerController extends Controller
 {
@@ -36,6 +38,7 @@ class TripPlannerController extends Controller
             'destinations' => DestinationModel::query()->orderBy('name')->get(['id', 'name', 'latitude', 'longitude']),
             'plans' => TripPlan::query()->where('user_id', $request->user()->id)->latest('updated_at')->orderByDesc('id')->limit(20)->get(),
             'initialPlan' => $request->integer('plan'),
+            'autoGenerate' => $request->boolean('generate'),
             'initialDestination' => $request->integer('destination'),
             'emailPreferences' => ['reminders' => (bool) $request->user()->trip_reminders_enabled, 'marketing' => (bool) $request->user()->trip_marketing_enabled],
             'datePolicy' => $dates->frontendConfig(),
@@ -215,6 +218,54 @@ class TripPlannerController extends Controller
         $plan = TripPlan::create(['duration_days' => TripDurationPolicy::days($data['start_date'], $data['end_date'])] + $data + ['user_id' => $request->user()->id]);
 
         return response()->json(['data' => $plan], 201);
+    }
+
+    /**
+     * Turn the dashboard's suggested itinerary into a dated trip plan with its
+     * room and activities already chosen, then open it so the planner builds
+     * the day-by-day schedule. Clicking again for the same trip reopens it.
+     */
+    public function storeSuggested(Request $request, TripBookingDatePolicy $dates, TripPlannerService $planner): RedirectResponse
+    {
+        $data = $request->validate([
+            'destination_id' => ['required', 'integer', 'exists:destinations,id'],
+            'room_id' => ['required', 'integer'],
+            'activity_ids' => ['nullable', 'array', 'max:5'],
+            'activity_ids.*' => ['integer', 'distinct'],
+            'pax' => ['required', 'integer', 'between:1,4'],
+            'nights' => ['required', 'integer', 'between:1,7'],
+        ]);
+        $user = $request->user();
+        $start = Carbon::parse($dates->minimumArrivalDate());
+        $end = $start->copy()->addDays($data['nights']);
+        $activityIds = array_values(array_map('intval', $data['activity_ids'] ?? []));
+        $suggestionUuid = Uuid::uuid5(Uuid::NAMESPACE_URL, 'sunnytrips:dashboard-suggestion:'.json_encode([
+            $user->id, $data['destination_id'], $data['room_id'], $activityIds, $data['pax'], $start->toDateString(), $end->toDateString(),
+        ]))->toString();
+
+        $plan = TripPlan::query()->where('user_id', $user->id)->where('source_suggestion_uuid', $suggestionUuid)->first();
+        if (! $plan) {
+            $destination = DestinationModel::query()->findOrFail($data['destination_id']);
+            $plan = DB::transaction(function () use ($user, $destination, $data, $start, $end, $activityIds, $suggestionUuid, $planner): TripPlan {
+                $plan = TripPlan::create([
+                    'user_id' => $user->id, 'destination_id' => $destination->id, 'title' => 'Suggested trip to '.$destination->name,
+                    'start_date' => $start->toDateString(), 'end_date' => $end->toDateString(), 'pax' => $data['pax'], 'mode' => 'walking',
+                    'revision' => 1, 'source' => 'suggested', 'status' => 'dated', 'duration_days' => $data['nights'] + 1,
+                    'source_suggestion_uuid' => $suggestionUuid,
+                ]);
+                $planner->add($plan->refresh(), ['item_type' => 'room', 'item_id' => (int) $data['room_id'], 'quantity' => 1, 'pax' => $data['pax'],
+                    'check_in' => $start->toDateString(), 'check_out' => $end->toDateString()]);
+                foreach ($activityIds as $activityId) {
+                    $planner->add($plan->refresh(), ['item_type' => 'activity', 'item_id' => $activityId, 'pax' => $data['pax']]);
+                }
+
+                return $plan->refresh();
+            });
+        }
+
+        $hasSchedule = $plan->itineraries()->exists();
+
+        return redirect()->route('trip-planner.index', array_filter(['plan' => $plan->id, 'generate' => $hasSchedule ? null : 1]));
     }
 
     public function show(Request $request, TripPlan $plan): JsonResponse

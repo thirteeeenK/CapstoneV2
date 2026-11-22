@@ -4,8 +4,10 @@ use App\Models\ActivityModel;
 use App\Models\DestinationModel;
 use App\Models\HotelModel;
 use App\Models\RoomType;
+use App\Models\TripPlan;
 use App\Models\UserPreference;
 use App\Services\Recommendations\SuggestedItineraryBuilder;
+use App\Services\TripBookingDatePolicy;
 use Illuminate\Support\Facades\Http;
 
 beforeEach(function () {
@@ -76,5 +78,42 @@ it('shows the suggested itinerary and the Lucky entry point on the dashboard', f
         ->assertSee('3 days in '.$destination->name.' for 2 travelers')
         ->assertSee($hotel->hotel_name, false)
         ->assertSee('Estimated cost')
-        ->assertSee(route('lucky.index'));
+        ->assertSee(route('lucky.index'))
+        ->assertSee(route('trip-planner.suggested'))
+        ->assertSee('Open this itinerary in Trip Planner');
+});
+
+it('opens the suggested itinerary as a dated trip plan with its room and activities already chosen', function () {
+    [$destination, $hotel, $activities] = suggestionFixture();
+    $user = onboardedUser();
+    $room = $hotel->rooms->firstWhere('room_name', 'Garden Twin');
+    $payload = ['destination_id' => $destination->id, 'room_id' => $room->id, 'activity_ids' => $activities->pluck('id')->all(), 'pax' => 2, 'nights' => 2];
+
+    $response = $this->actingAs($user)->post(route('trip-planner.suggested'), $payload);
+
+    $plan = TripPlan::query()->where('user_id', $user->id)->sole();
+    $response->assertRedirect(route('trip-planner.index', ['plan' => $plan->id, 'generate' => 1]));
+    expect($plan)->source->toBe('suggested')->status->toBe('dated')->pax->toBe(2)->duration_days->toBe(3)
+        ->and($plan->start_date->toDateString())->toBe(app(TripBookingDatePolicy::class)->minimumArrivalDate())
+        ->and($plan->items->where('item_type', 'room')->pluck('item_id')->all())->toBe([$room->id])
+        ->and($plan->items->where('item_type', 'activity')->pluck('item_id')->sort()->values()->all())->toBe($activities->pluck('id')->sort()->values()->all());
+
+    $this->post(route('trip-planner.suggested'), $payload)->assertRedirect(route('trip-planner.index', ['plan' => $plan->id, 'generate' => 1]));
+    expect(TripPlan::query()->where('user_id', $user->id)->count())->toBe(1);
+});
+
+it('does not create a plan from a room outside the suggested destination', function () {
+    [$destination] = suggestionFixture();
+    $otherRoom = RoomType::factory()->create();
+
+    $this->actingAs(onboardedUser())->post(route('trip-planner.suggested'), [
+        'destination_id' => $destination->id, 'room_id' => $otherRoom->id, 'pax' => 2, 'nights' => 2,
+    ])->assertSessionHasErrors('item_id');
+
+    expect(TripPlan::query()->count())->toBe(0);
+});
+
+it('auto-builds the schedule when the planner opens a suggested plan', function () {
+    $this->actingAs(onboardedUser())->get(route('trip-planner.index', ['plan' => 5, 'generate' => 1]))
+        ->assertOk()->assertSee('autoGenerate: true', false);
 });

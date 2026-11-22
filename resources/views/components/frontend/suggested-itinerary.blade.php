@@ -33,13 +33,39 @@
                 <span class="material-symbols-outlined text-[16px]" aria-hidden="true">casino</span>
                 I'm Feeling Lucky — win a discount
             </a>
-            <a href="{{ route('trip-planner.index', $suggestion ? ['destination' => $suggestion['destination']->id] : []) }}"
-               class="min-h-11 inline-flex items-center gap-1.5 rounded-xl border border-ocean-600 bg-ocean-50 dark:bg-ocean-950/60 px-4 py-2.5 text-xs font-bold text-ocean-800 dark:text-ocean-100 transition hover:bg-ocean-100">
-                <span class="material-symbols-outlined text-[16px]" aria-hidden="true">map</span>
-                Customize in Trip Planner
-            </a>
+            @if ($suggestion && $suggestion['room'])
+                <form method="POST" action="{{ route('trip-planner.suggested') }}">
+                    @csrf
+                    <input type="hidden" name="destination_id" value="{{ $suggestion['destination']->id }}">
+                    <input type="hidden" name="room_id" value="{{ $suggestion['room']->id }}">
+                    <input type="hidden" name="pax" value="{{ $suggestion['pax'] }}">
+                    <input type="hidden" name="nights" value="{{ $suggestion['nights'] }}">
+                    @foreach ($suggestion['days'] as $day)
+                        @foreach ($day['activities'] as $stop)
+                            <input type="hidden" name="activity_ids[]" value="{{ $stop['activity']->id }}">
+                        @endforeach
+                    @endforeach
+                    <button type="submit"
+                            class="min-h-11 inline-flex items-center gap-1.5 rounded-xl border border-ocean-600 bg-ocean-50 dark:bg-ocean-950/60 px-4 py-2.5 text-xs font-bold text-ocean-800 dark:text-ocean-100 transition hover:bg-ocean-100 cursor-pointer">
+                        <span class="material-symbols-outlined text-[16px]" aria-hidden="true">map</span>
+                        Open this itinerary in Trip Planner
+                    </button>
+                </form>
+            @else
+                <a href="{{ route('trip-planner.index', $suggestion ? ['destination' => $suggestion['destination']->id] : []) }}"
+                   class="min-h-11 inline-flex items-center gap-1.5 rounded-xl border border-ocean-600 bg-ocean-50 dark:bg-ocean-950/60 px-4 py-2.5 text-xs font-bold text-ocean-800 dark:text-ocean-100 transition hover:bg-ocean-100">
+                    <span class="material-symbols-outlined text-[16px]" aria-hidden="true">map</span>
+                    Build your own in Trip Planner
+                </a>
+            @endif
         </div>
     </div>
+
+    @if ($errors->any())
+        <p role="alert" class="mt-4 rounded-xl border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/50 px-4 py-3 text-xs text-amber-900 dark:text-amber-100">
+            We couldn't open this itinerary in the Trip Planner: {{ $errors->first() }}
+        </p>
+    @endif
 
     @if ($suggestion)
         <div class="mt-5 grid grid-cols-1 lg:grid-cols-3 gap-5">
