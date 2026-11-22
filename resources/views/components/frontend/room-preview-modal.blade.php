@@ -197,11 +197,11 @@
             </button>
             <button type="button" x-show="$store.preview.context !== 'planner'"
                 @click="$store.preview.addRoomToCart()"
-                :disabled="!$store.preview.roomDates.available || !$store.preview.roomDates.checkIn || !$store.preview.roomDates.checkOut"
-                :class="(!$store.preview.roomDates.available || !$store.preview.roomDates.checkIn || !$store.preview.roomDates.checkOut) ? 'opacity-50 cursor-not-allowed bg-slate-400' : 'bg-gradient-to-r from-sky-600 to-sky-700 hover:from-sky-500 hover:to-sky-600 shadow-md shadow-sky-600/20 hover:shadow-lg cursor-pointer'"
+                :disabled="$store.preview.roomDates.checking || !$store.preview.roomDates.available || !$store.preview.roomDates.checkIn || !$store.preview.roomDates.checkOut"
+                :class="($store.preview.roomDates.checking || !$store.preview.roomDates.available || !$store.preview.roomDates.checkIn || !$store.preview.roomDates.checkOut) ? 'opacity-50 cursor-not-allowed bg-slate-400' : 'bg-gradient-to-r from-sky-600 to-sky-700 hover:from-sky-500 hover:to-sky-600 shadow-md shadow-sky-600/20 hover:shadow-lg cursor-pointer'"
                 class="w-full sm:w-auto px-6 py-2.5 rounded-xl text-white font-bold text-xs transition-all flex items-center justify-center gap-2">
                 <span class="material-symbols-outlined text-[18px]">shopping_cart</span>
-                <span x-text="(!$store.preview.roomDates.checkIn || !$store.preview.roomDates.checkOut) ? 'Select Dates to Add' : 'Add to Trip'"></span>
+                <span x-text="$store.preview.roomDates.checking ? 'Checking Availability...' : ((!$store.preview.roomDates.checkIn || !$store.preview.roomDates.checkOut) ? 'Select Dates to Add' : 'Add to Trip')"></span>
             </button>
         </div>
 

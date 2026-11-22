@@ -34,7 +34,9 @@
         selectedPax: 2,
         roomCheckIn: '',
         roomCheckOut: '',
-        roomAvailable: true,
+        roomAvailable: false,
+        roomChecking: false,
+        pickerEpoch: 0,
         activeModalImg: null,
         activeModalImgIndex: 0,
         galleryImages: {{ json_encode($galleryImages) }},
@@ -74,7 +76,9 @@
             this.selectedPax = Number(room.base_occupancy) || 2;
             this.roomCheckIn = '';
             this.roomCheckOut = '';
-            this.roomAvailable = true;
+            this.roomAvailable = false;
+            this.roomChecking = false;
+            this.pickerEpoch++;
             this.$nextTick(() => {
                 const el = document.getElementById('selected-room-sidebar');
                 if (el) {
@@ -284,18 +288,20 @@
                                 </div>
 
                                 {{-- Date Range Picker Component --}}
-                                <div class="pt-2" @date-range-changed.stop="roomCheckIn = $event.detail.checkIn; roomCheckOut = $event.detail.checkOut; roomAvailable = $event.detail.available">
-                                    <x-frontend.date-range-picker :dynamic-room-id="'selectedRoom?.id'" :dynamic-base-price="'selectedRoom?.base_price || 0'" />
+                                <div class="pt-2" @date-range-changed.stop="roomCheckIn = $event.detail.checkIn; roomCheckOut = $event.detail.checkOut; roomAvailable = $event.detail.available; roomChecking = !!$event.detail.checking">
+                                    <template x-for="n in [pickerEpoch]" :key="'sidebar-drp-' + n">
+                                        <x-frontend.date-range-picker :dynamic-room-id="'selectedRoom?.id'" :dynamic-base-price="'selectedRoom?.base_price || 0'" />
+                                    </template>
                                 </div>
 
                                 {{-- Action Button --}}
                                 <button type="button" 
                                     @click="if (!roomCheckIn || !roomCheckOut) { alert('Please select your stay check-in and check-out dates first!'); return; } window.addToCart('room', selectedRoom.id, { check_in_date: roomCheckIn, check_out_date: roomCheckOut, selected_pax: selectedPax })"
-                                    :disabled="!roomAvailable || !roomCheckIn || !roomCheckOut"
-                                    :class="(!roomAvailable || !roomCheckIn || !roomCheckOut) ? 'opacity-50 cursor-not-allowed bg-slate-400' : 'bg-gradient-to-r from-sky-600 to-sky-700 hover:from-sky-500 hover:to-sky-600 shadow-md shadow-sky-600/20 hover:shadow-lg cursor-pointer'"
+                                    :disabled="roomChecking || !roomAvailable || !roomCheckIn || !roomCheckOut"
+                                    :class="(roomChecking || !roomAvailable || !roomCheckIn || !roomCheckOut) ? 'opacity-50 cursor-not-allowed bg-slate-400' : 'bg-gradient-to-r from-sky-600 to-sky-700 hover:from-sky-500 hover:to-sky-600 shadow-md shadow-sky-600/20 hover:shadow-lg cursor-pointer'"
                                     class="w-full py-3 px-4 rounded-xl text-white font-bold text-sm transition-all flex items-center justify-center gap-2">
                                     <span class="material-symbols-outlined text-[18px]">shopping_cart</span>
-                                    <span x-text="(!roomCheckIn || !roomCheckOut) ? 'Select Dates to Add' : 'Add to Trip'"></span>
+                                    <span x-text="roomChecking ? 'Checking Availability...' : ((!roomCheckIn || !roomCheckOut) ? 'Select Dates to Add' : 'Add to Trip')"></span>
                                 </button>
                             </div>
                         </template>

@@ -34,6 +34,7 @@ Alpine.data('dateRangePicker', (config = {}) => ({
     checking: false,
     available: false,
     availabilityMessage: 'Select a room to check availability',
+    availabilityRequest: 0,
 
     initFlatpickr() {
         this.$nextTick(() => {
@@ -87,15 +88,10 @@ Alpine.data('dateRangePicker', (config = {}) => ({
                         this.subtotal = 0;
                         this.formattedDateRange = '';
                         this.available = false;
+                        this.checking = false;
+                        this.availabilityRequest++;
+                        this.notifyParent();
                     }
-
-                    this.$dispatch('date-range-changed', {
-                        checkIn: this.checkIn,
-                        checkOut: this.checkOut,
-                        nights: this.nights,
-                        subtotal: this.subtotal,
-                        available: this.available
-                    });
                 }
             });
         });
@@ -105,13 +101,27 @@ Alpine.data('dateRangePicker', (config = {}) => ({
         if (this.picker) {
             this.picker.clear();
         }
+        this.availabilityRequest++;
         this.checkIn = '';
         this.checkOut = '';
         this.nights = 0;
         this.subtotal = 0;
         this.formattedDateRange = '';
         this.available = false;
-        this.$dispatch('date-range-changed', { checkIn: '', checkOut: '', nights: 0, subtotal: 0, available: false });
+        this.checking = false;
+        this.notifyParent();
+    },
+
+    notifyParent() {
+        this.$dispatch('date-range-changed', {
+            checkIn: this.checkIn,
+            checkOut: this.checkOut,
+            nights: this.nights,
+            subtotal: this.subtotal,
+            available: this.available,
+            checking: this.checking,
+            availabilityMessage: this.availabilityMessage
+        });
     },
 
     effectiveRoomId() {
@@ -128,11 +138,29 @@ Alpine.data('dateRangePicker', (config = {}) => ({
 
     async verifyAvailability() {
         const effectiveRoomId = this.effectiveRoomId();
-        if (!effectiveRoomId || !this.checkIn || !this.checkOut) return;
+
+        if (!effectiveRoomId || !this.checkIn || !this.checkOut) {
+            this.checking = false;
+            this.available = false;
+            this.notifyParent();
+            return;
+        }
+
+        const requestId = ++this.availabilityRequest;
+
         this.checking = true;
+        this.available = false;
+        this.availabilityMessage = 'Checking room availability...';
+        this.notifyParent();
+
         try {
             const res = await fetch(`/rooms/${effectiveRoomId}/availability?check_in=${this.checkIn}&check_out=${this.checkOut}`);
             const data = await res.json();
+
+            if (requestId !== this.availabilityRequest) {
+                return;
+            }
+
             if (data.success) {
                 this.available = data.available;
                 this.availabilityMessage = data.message;
@@ -143,9 +171,16 @@ Alpine.data('dateRangePicker', (config = {}) => ({
                 this.availabilityMessage = data.message || 'Selected dates unavailable.';
             }
         } catch (err) {
-            console.error('Error verifying availability:', err);
+            if (requestId === this.availabilityRequest) {
+                console.error('Error verifying availability:', err);
+                this.available = false;
+                this.availabilityMessage = 'Could not check availability. Please try again.';
+            }
         } finally {
-            this.checking = false;
+            if (requestId === this.availabilityRequest) {
+                this.checking = false;
+                this.notifyParent();
+            }
         }
     }
 }));

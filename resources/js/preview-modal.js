@@ -13,7 +13,7 @@ Alpine.store('preview', {
     pkgImgIndex: 0,
     pax: 1,
     activityPax: 1,
-    roomDates: { checkIn: '', checkOut: '', nights: 0, available: true, availabilityMessage: '', subtotal: 0 },
+    roomDates: { checkIn: '', checkOut: '', nights: 0, available: true, checking: false, availabilityMessage: '', subtotal: 0 },
     pickerEpoch: 0,
     loading: false,
     loadingActivity: false,
@@ -38,7 +38,7 @@ Alpine.store('preview', {
         this.context = context;
         this.roomImgIndex = 0;
         this.pax = Number(payload.base_occupancy) || 2;
-        this.roomDates = { checkIn: '', checkOut: '', nights: 0, available: true, availabilityMessage: '', subtotal: 0 };
+        this.roomDates = { checkIn: '', checkOut: '', nights: 0, available: true, checking: false, availabilityMessage: '', subtotal: 0 };
         this.pickerEpoch++;
     },
 
@@ -67,6 +67,7 @@ Alpine.store('preview', {
             checkOut: detail.checkOut || '',
             nights: detail.nights || 0,
             available: detail.available !== false,
+            checking: !!detail.checking,
             availabilityMessage: detail.availabilityMessage || '',
             subtotal: detail.subtotal || 0,
         };
@@ -75,12 +76,12 @@ Alpine.store('preview', {
     addRoomToCart() {
         const room = this.room;
         if (!room) return;
-        const { checkIn, checkOut, available } = this.roomDates;
+        const { checkIn, checkOut, available, checking } = this.roomDates;
         if (!checkIn || !checkOut) {
             alert('Please select your stay check-in and check-out dates first!');
             return;
         }
-        if (!available) return;
+        if (!available || checking) return;
         if (typeof window.addToCart === 'function') {
             window.addToCart('room', room.id, { check_in_date: checkIn, check_out_date: checkOut, selected_pax: this.pax });
         }
