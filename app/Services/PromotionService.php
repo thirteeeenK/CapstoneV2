@@ -371,7 +371,8 @@ final class PromotionService
             return ['discount' => (float) $booking->promotion_discount_amount, 'note' => null];
         }
         $items = $booking->items->filter(fn (BookingItem $item) => collect($redemption->allocations)->contains('booking_item_id', $item->id))->values();
-        if ($redemption->lucky_offer_id === null) {
+        // A redemption whose Lucky offer was deleted with its account also has no offer, so the promotion's code decides.
+        if ($redemption->lucky_offer_id === null && filled($redemption->promotion?->code)) {
             return $this->repriceCodeForApproval($booking, $redemption, $items, $payableCents);
         }
         $changed = $items->contains(fn (BookingItem $item) => $item->availability_status === BookingItem::AVAIL_UNAVAILABLE

@@ -169,6 +169,14 @@ class TripPlannerService
                 $model = $this->inventory($item->item_type, $item->item_id, $locked->destination_id);
                 $item->update(['options' => $this->options($locked, ['item_type' => $item->item_type] + ($item->options ?? []), $model)]);
             }
+            // Drafts and older plans may carry a party larger than an activity takes.
+            foreach ($locked->items()->where('item_type', 'activity')->get() as $item) {
+                $model = $this->inventory('activity', $item->item_id, $locked->destination_id);
+                $pax = (int) ($item->options['pax'] ?? $locked->pax);
+                if (! $model->fitsParty($pax)) {
+                    throw ValidationException::withMessages(['items' => $model->capacityMessage($pax)]);
+                }
+            }
         });
     }
 
@@ -194,8 +202,8 @@ class TripPlannerService
                     throw ValidationException::withMessages(['room' => 'Not enough rooms or guest capacity for this selection.']);
                 }
             }
-        } elseif ($type === 'activity' && $pax > $model->getMaxCapacityInt()) {
-            throw ValidationException::withMessages(['pax' => 'The number of guests exceeds this activity’s capacity.']);
+        } elseif ($type === 'activity' && ! $model->fitsParty($pax)) {
+            throw ValidationException::withMessages(['pax' => $model->capacityMessage($pax)]);
         }
         if (! empty($data['date'])) {
             $date = Carbon::parse($data['date'])->startOfDay();
@@ -242,6 +250,9 @@ class TripPlannerService
                 }
                 $model = $this->inventory($item->item_type, $item->item_id, $plan->destination_id);
                 $options = $item->options;
+                if ($item->item_type === 'activity' && ! $model->fitsParty((int) $options['pax'])) {
+                    throw ValidationException::withMessages(['items' => $model->capacityMessage((int) $options['pax'])]);
+                }
                 if ($item->item_type === 'room') {
                     $model = RoomType::query()->lockForUpdate()->findOrFail($model->id);
                     if ($this->availability->check($model, Carbon::parse($options['check_in']), Carbon::parse($options['check_out']))['remaining'] < $options['quantity']) {

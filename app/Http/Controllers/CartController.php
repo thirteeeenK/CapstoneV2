@@ -506,6 +506,10 @@ class CartController extends Controller
                     $cartItem->quantity = $newPax;
                 }
             }
+            if ($cartItem->item_type === 'activity' && $cartItem->isDirty(['quantity', 'selected_pax']) && $cartItem->itemable
+                && ! $cartItem->itemable->fitsParty((int) $cartItem->selected_pax)) {
+                throw ValidationException::withMessages(['selected_pax' => $cartItem->itemable->capacityMessage((int) $cartItem->selected_pax)]);
+            }
             if (array_key_exists('check_in_date', $validated)) {
                 $cartItem->check_in_date = $validated['check_in_date'];
             }

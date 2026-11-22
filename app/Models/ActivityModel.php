@@ -178,6 +178,24 @@ class ActivityModel extends Model
     }
 
     /**
+     * Whether one booking of this activity can take the whole party.
+     */
+    public function fitsParty(int $pax): bool
+    {
+        return $pax <= $this->getMaxCapacityInt();
+    }
+
+    /**
+     * The traveler-facing reason a party is too large, naming the activity.
+     */
+    public function capacityMessage(int $pax): string
+    {
+        $max = $this->getMaxCapacityInt();
+
+        return $this->activity_name.' takes up to '.$max.' '.($max === 1 ? 'guest' : 'guests').' per booking; your group has '.$pax.'. Lower the number of travelers for it or choose another activity.';
+    }
+
+    /**
      * Get maximum allowable capacity integer from capacity string.
      */
     public function getMaxCapacityInt(): int

@@ -245,6 +245,12 @@ class ChatbotTripPlanService
                 if ($choice['type'] === 'activity') {
                     $environment = $inventory->scheduling['environment'] ?? null;
                     $choice['weather_dependent'] = $environment === null ? null : $environment !== 'indoor';
+                    if (! $inventory->fitsParty((int) $plan->pax)) {
+                        $choice['available'] = false;
+                        $choice['notice'] = $inventory->capacityMessage((int) $plan->pax);
+
+                        continue;
+                    }
                 }
                 $item = $plan->items()->firstOrCreate(['item_type' => $choice['type'], 'item_id' => $choice['id']],
                     ['options' => ['pax' => $plan->pax, 'quantity' => 1, 'day' => $choice['day']]]);

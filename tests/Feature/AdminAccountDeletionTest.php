@@ -3,6 +3,8 @@
 use App\Models\AdminAuditLog;
 use App\Models\Booking;
 use App\Models\ChatSession;
+use App\Models\LuckyOffer;
+use App\Models\PromotionRedemption;
 use App\Models\SupportInquiry;
 use App\Models\User;
 use App\Models\UserPreference;
@@ -76,6 +78,22 @@ test('permanent deletion removes access and preferences while retaining booking 
     $this->get(route('admin.users.index'))->assertOk()->assertDontSee($user->email);
 });
 
+test('an admin can permanently delete a traveler who booked with a Lucky discount', function () {
+    $user = onboardedUser();
+    $booking = Booking::factory()->paid()->create(['user_id' => $user->id]);
+    $offer = LuckyOffer::factory()->create(['user_id' => $user->id]);
+    $redemption = PromotionRedemption::factory()->create(['lucky_offer_id' => $offer->id, 'booking_id' => $booking->id, 'user_id' => $user->id,
+        'status' => PromotionRedemption::STATUS_REDEEMED]);
+
+    $this->actingAs(settingsAdmin(), 'admin')->delete(route('admin.users.destroy', $user->id), [
+        'mode' => 'permanent', 'confirm_email' => $user->email, 'reason' => 'Customer request',
+    ])->assertSessionHasNoErrors()->assertRedirect(route('admin.users.index'));
+
+    $this->assertDatabaseMissing('users', ['id' => $user->id]);
+    expect($booking->refresh()->user_id)->toBeNull()
+        ->and($redemption->refresh())->lucky_offer_id->toBeNull()->booking_id->toBe($booking->id);
+});
+
 test('wrong confirmation email or mode does not delete a customer', function (array $payload, string $error) {
     $user = onboardedUser(['email' => 'delete-me@example.com']);
     $this->actingAs(settingsAdmin(), 'admin')->delete(route('admin.users.destroy', $user->id), $payload)
@@ -105,6 +123,24 @@ test('self service deletion uses the saved admin policy and matching messages', 
     $this->assertGuest();
     $this->assertDatabaseMissing('users', ['id' => $user->id]);
     $this->get('/')->assertOk()->assertSee('Account permanently deleted')->assertDontSee('Log in to cancel');
+});
+
+test('a traveler who booked with a Lucky discount can delete their account immediately', function () {
+    app(SystemSettingsService::class)->save('accounts', ['grace_period' => false], 0, settingsAdmin());
+    $user = onboardedUser();
+    $offer = LuckyOffer::factory()->create(['user_id' => $user->id]);
+    $booking = Booking::factory()->paid()->create(['user_id' => $user->id, 'promotion_discount_amount' => 1200]);
+    $redemption = PromotionRedemption::factory()->create(['lucky_offer_id' => $offer->id, 'booking_id' => $booking->id, 'user_id' => $user->id,
+        'status' => PromotionRedemption::STATUS_REDEEMED]);
+
+    $this->actingAs($user)->delete('/profile', ['password' => 'password'])->assertRedirect('/')->assertSessionHas('account_permanently_deleted', true);
+
+    $this->assertDatabaseMissing('users', ['id' => $user->id]);
+    $this->assertDatabaseMissing('lucky_offers', ['id' => $offer->id]);
+    // The booking's discount record is kept for accounting; only its link to the deleted offer is cleared.
+    expect($redemption->refresh())->lucky_offer_id->toBeNull()->user_id->toBeNull()->booking_id->toBe($booking->id)
+        ->status->toBe(PromotionRedemption::STATUS_REDEEMED)
+        ->and($booking->refresh()->promotionDiscountLabel())->toBe('Lucky discount');
 });
 
 test('customer deletion preserves admin-only sessions with overlapping account IDs', function (bool $encrypted) {

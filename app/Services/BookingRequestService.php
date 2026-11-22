@@ -120,6 +120,9 @@ class BookingRequestService
         foreach ($cartItems as $item) {
             $itemSubtotal = $item->subtotal;
             $effectivePax = max(1, (int) $item->selected_pax);
+            if ($item->item_type === 'activity' && $item->itemable && ! $item->itemable->fitsParty($effectivePax)) {
+                throw ValidationException::withMessages(['items' => $item->itemable->capacityMessage($effectivePax)]);
+            }
 
             if ($item->item_type === 'room' && $item->itemable && method_exists($item->itemable, 'calculateNightlyRate')) {
                 $nights = ($item->check_in_date && $item->check_out_date)

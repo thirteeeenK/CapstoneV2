@@ -140,6 +140,9 @@ class CartService
             $paxVal = max($quantity, $selectedPax);
             $quantity = $paxVal;
             $selectedPax = $paxVal;
+            if ($itemType === 'activity' && ! $listing->fitsParty($paxVal)) {
+                throw new \RuntimeException($listing->capacityMessage($paxVal));
+            }
         } elseif ($itemType === 'package') {
             // min_pax only gates booking eligibility at checkout, never inflates pax
             $paxVal = max(1, $quantity, $selectedPax);
@@ -166,6 +169,10 @@ class CartService
                 if (in_array($existingItem->item_type, ['activity', 'addon'])) {
                     $existingItem->selected_pax = max($existingItem->quantity, $existingItem->selected_pax);
                     $existingItem->quantity = $existingItem->selected_pax;
+                    $existingItem->load('itemable');
+                    if ($existingItem->item_type === 'activity' && $existingItem->itemable && ! $existingItem->itemable->fitsParty($existingItem->selected_pax)) {
+                        throw new \RuntimeException($existingItem->itemable->capacityMessage($existingItem->selected_pax));
+                    }
                 }
                 if ($luckyGroupId) {
                     $existingItem->lucky_group_id = $luckyGroupId;

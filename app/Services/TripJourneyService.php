@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Jobs\SendTripJourneyMail;
+use App\Mail\TripJourneyMail;
 use App\Models\Booking;
 use App\Models\BookingItem;
 use App\Models\Review;
@@ -11,6 +12,8 @@ use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Str;
 
 class TripJourneyService
 {
@@ -226,6 +229,33 @@ class TripJourneyService
 
         return $this->enqueue($booking->user, $context->recipientEmail, $kind, 'booking:'.$booking->id.':'.$groupKey.':'.$kind.':'.$signature,
             $this->bookingPayload($context, $kind, $groupKey), $booking->id, null, $signature, $groupKey);
+    }
+
+    /**
+     * Send a trip-window email for a booking to any address right now, for
+     * demos and checks. It skips the "due now" eligibility the scheduler uses,
+     * writes no journey row (so the real reminder is never suppressed) and uses
+     * a unique idempotency key so Resend never drops a repeat send.
+     *
+     * @return array<string, mixed> the payload that was sent
+     *
+     * @throws \InvalidArgumentException when the kind is not a trip-window email or the booking has no dated services
+     */
+    public function forceSend(Booking $booking, string $kind, string $email): array
+    {
+        if (! in_array($kind, self::WINDOW_KINDS, true)) {
+            throw new \InvalidArgumentException('Only '.implode(' and ', self::WINDOW_KINDS).' trip emails can be force-sent.');
+        }
+        $context = BookingJourneyContext::for($booking);
+        $groupKey = array_key_first($context->groups);
+        if ($groupKey === null) {
+            throw new \InvalidArgumentException('This booking has no dated services; choose one with hotel/activity dates.');
+        }
+
+        $payload = $this->bookingPayload($context, $kind, (string) $groupKey);
+        Mail::to($email)->send(new TripJourneyMail($payload, 'force-'.$booking->id.'-'.$kind.'-'.Str::uuid()));
+
+        return $payload;
     }
 
     private function bookingPayload(BookingJourneyContext $context, string $kind, string $groupKey): array
