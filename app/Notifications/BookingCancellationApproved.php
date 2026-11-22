@@ -22,7 +22,11 @@ class BookingCancellationApproved extends BookingNotification
             ->line(in_array($booking->payment_status, ['paid', 'partial'], true)
                 ? 'Your recorded payments stay on file. Cancelling does not issue a refund automatically: our team reviews any refundable amount under the booking terms and will confirm the outcome with its reference.'
                 : 'No payment was taken for this booking.')
-            ->line('You may rebook at any time; a rebooking is a new request at current prices and availability.')
+            ->line(match ($booking->cancellation_preference) {
+                'refund' => 'You asked for a refund. Our team will confirm the refundable amount and send you its reference once it is processed.',
+                'rebook' => 'You asked to rebook. Open your booking and choose "Add Back to Trip Basket" to pick new dates; a rebooking is a new request at current prices and availability.',
+                default => 'You may rebook at any time; a rebooking is a new request at current prices and availability.',
+            })
             ->action('View Booking', route('booking.show', $booking->booking_code))
             ->line('Thank you. — SunnyTrips Team');
     }

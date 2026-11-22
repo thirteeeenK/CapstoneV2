@@ -198,17 +198,37 @@ class WeatherService
         $current = $slots[0] ?? null;
 
         $daily = [];
+        $dayRanges = [];
         foreach ($slots as $slot) {
             $date = Carbon::parse($slot['time']);
             $day = $date->format('Y-m-d');
             if (! isset($daily[$day]) || abs($date->hour - 12) < abs(Carbon::parse($daily[$day]['time'])->hour - 12)) {
                 $daily[$day] = $slot;
             }
+            $dayRanges[$day]['min'] = min($dayRanges[$day]['min'] ?? PHP_INT_MAX, $slot['temp_min']);
+            $dayRanges[$day]['max'] = max($dayRanges[$day]['max'] ?? PHP_INT_MIN, $slot['temp_max']);
+            $dayRanges[$day]['pop'] = max($dayRanges[$day]['pop'] ?? 0, (float) $slot['pop']);
         }
+
+        foreach ($daily as $day => $slot) {
+            $daily[$day]['day_min'] = $dayRanges[$day]['min'];
+            $daily[$day]['day_max'] = $dayRanges[$day]['max'];
+            $daily[$day]['day_pop'] = $dayRanges[$day]['pop'];
+        }
+
+        $suitability = $this->bookingSuitability($raw);
 
         return [
             'current' => $current,
             'daily' => array_values($daily),
+            'outlook' => [
+                'level' => $suitability['level'],
+                'label' => $suitability['label'],
+                'score' => $suitability['score'],
+                'reasons' => $suitability['reasons'],
+                'driest_date' => $suitability['driestDate'],
+            ],
+            'advice' => $this->advice(['current' => $current]),
             'summary_at' => $current['time'] ?? null,
             'slots' => $slots,
             'fetched_at' => $raw['_fetched_at'] ?? null,

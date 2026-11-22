@@ -325,6 +325,44 @@
                             </div>
                         </div>
 
+                        {{-- Weather outlook for the destination --}}
+                        <div class="space-y-3">
+                            <div class="flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-2.5">
+                                <span class="material-symbols-outlined text-[18px] text-ocean-600">partly_cloudy_day</span>
+                                <h3 class="font-headline text-xs font-bold text-slate-900 dark:text-slate-100 uppercase tracking-wider">
+                                    Weather Forecast
+                                </h3>
+                            </div>
+                            <template x-if="itinerary.weather">
+                                <div class="rounded-2xl border p-4" :class="weatherClass(itinerary.weather.level)">
+                                    <div class="flex items-center gap-2">
+                                        <template x-if="itinerary.weather.icon">
+                                            <img :src="'https://openweathermap.org/img/wn/' + itinerary.weather.icon + '.png'" alt="" class="h-8 w-8">
+                                        </template>
+                                        <div>
+                                            <p class="text-xs font-bold" x-text="'Weather outlook: ' + itinerary.weather.label"></p>
+                                            <p class="text-[11px] opacity-80 capitalize" x-text="(itinerary.weather.temp != null ? Math.round(itinerary.weather.temp) + '°C · ' : '') + (itinerary.weather.description || '')"></p>
+                                        </div>
+                                    </div>
+                                    <p x-show="itinerary.weather.reason" class="mt-1.5 text-[11px] opacity-80" x-text="itinerary.weather.reason + '.'"></p>
+                                    <div class="mt-2 grid grid-cols-5 gap-1 text-center">
+                                        <template x-for="day in itinerary.weather.days" :key="day.date">
+                                            <div class="rounded-lg bg-white/70 dark:bg-slate-900/60 px-1 py-1">
+                                                <p class="text-[10px] font-semibold" x-text="new Date(day.date + 'T00:00:00').toLocaleDateString('en-PH', { weekday: 'short' })"></p>
+                                                <p class="text-[10px] font-bold" x-text="day.max != null ? Math.round(day.max) + '°' : '—'"></p>
+                                                <p class="text-[9px] opacity-80" x-text="'☔ ' + Math.round(day.pop * 100) + '%'"></p>
+                                            </div>
+                                        </template>
+                                    </div>
+                                    <p x-show="!itinerary.forecast_covers_trip" class="mt-2 text-[11px] opacity-80"
+                                       x-text="'The forecast covers the next 5 days only; your trip starts ' + itinerary.check_in_date + '. Check again closer to departure.'"></p>
+                                </div>
+                            </template>
+                            <template x-if="!itinerary.weather">
+                                <p class="text-xs text-slate-500 dark:text-slate-400">Weather forecast unavailable right now — check again closer to your trip.</p>
+                            </template>
+                        </div>
+
                         {{-- Experiences List --}}
                         <div class="space-y-3">
                             <div class="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
@@ -369,6 +407,10 @@
                                                         x-text="activity.duration"></span>
                                                 </template>
                                             </div>
+                                            <p class="mt-1.5 flex items-center gap-1 text-[11px] text-ocean-700 dark:text-ocean-300">
+                                                <span class="material-symbols-outlined text-[14px]" aria-hidden="true">route</span>
+                                                <span x-text="travelLabel(activity)"></span>
+                                            </p>
                                         </div>
                                         <div class="text-right shrink-0">
                                             <template x-if="activity.is_per_person">
@@ -509,6 +551,27 @@
                 /** A won Lucky discount that takes something off, shown in every price on the page. */
                 get hasDiscount() {
                     return Boolean(this.itinerary?.offer?.won && Number(this.itinerary.offer.estimated_saving) > 0);
+                },
+
+                /** Mapped road distance and time from the hotel to an activity. */
+                travelLabel(activity) {
+                    const travel = activity.travel;
+                    if (!travel || !travel.distance_label) {
+                        return 'Distance from hotel unavailable';
+                    }
+                    const time = travel.duration_minutes != null
+                        ? ' · ' + travel.duration_minutes + (travel.mode === 'driving' ? ' min drive' : ' min walk')
+                        : '';
+
+                    return travel.distance_label + time + ' from ' + this.itinerary.hotel.hotel_name + (travel.estimated ? ' (approx.)' : '');
+                },
+
+                weatherClass(level) {
+                    return {
+                        good: 'bg-emerald-50 dark:bg-emerald-950/50 border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-100',
+                        okay: 'bg-amber-50 dark:bg-amber-950/50 border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-100',
+                        poor: 'bg-rose-50 dark:bg-rose-950/50 border-rose-200 dark:border-rose-800 text-rose-900 dark:text-rose-100',
+                    }[level] || 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-100';
                 },
 
                 get attemptsLabel() {

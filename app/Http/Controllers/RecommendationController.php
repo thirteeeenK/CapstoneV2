@@ -10,6 +10,7 @@ use App\Models\RecommendationHit;
 use App\Services\GeminiService;
 use App\Services\MapService;
 use App\Services\Recommendations\RecommendationExplainer;
+use App\Services\Recommendations\SuggestedItineraryBuilder;
 use App\Services\WeatherService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -20,7 +21,7 @@ class RecommendationController extends Controller
     /**
      * Display the user dashboard with AI Recommendations and Default Listings tabs.
      */
-    public function index(GeminiService $geminiService, MapService $mapService, WeatherService $weatherService, RecommendationExplainer $explainer)
+    public function index(GeminiService $geminiService, MapService $mapService, WeatherService $weatherService, RecommendationExplainer $explainer, SuggestedItineraryBuilder $suggestionBuilder)
     {
         $user = Auth::user();
         $userVector = $user ? $this->parseVector($user->preferences_embedding) : null;
@@ -107,6 +108,14 @@ class RecommendationController extends Controller
             }
         }
 
+        // Starter itinerary for the preferred destination, built from the same ranked picks.
+        $suggestionSource = collect($isPersonalized ? $aiRecommendations : $defaultRecommendations)
+            ->firstWhere('destination.id', $preferredDestId)
+            ?? collect($isPersonalized ? $aiRecommendations : $defaultRecommendations)->first();
+        $suggestedItinerary = $suggestionSource
+            ? $suggestionBuilder->build($suggestionSource['destination'], $suggestionSource['hotels'], $suggestionSource['activities'], $userPreference, $isPersonalized)
+            : null;
+
         // DSS overview markers (one per destination with weather + listing counts)
         $mapMarkers = $mapService->destinationMarkers();
         $weatherCards = [];
@@ -147,7 +156,7 @@ class RecommendationController extends Controller
             }
         }
 
-        return view('dashboard', compact('user', 'isPersonalized', 'aiRecommendations', 'defaultRecommendations', 'mapMarkers', 'weatherCards', 'preferredDestId', 'recSessionToken'));
+        return view('dashboard', compact('user', 'isPersonalized', 'aiRecommendations', 'defaultRecommendations', 'mapMarkers', 'weatherCards', 'preferredDestId', 'recSessionToken', 'suggestedItinerary'));
     }
 
     /**

@@ -21,6 +21,21 @@ it('uses a daytime daily preview while retaining every forecast slot', function 
     expect($normalized['daily'][0]['temp'])->toBe(29.0)->and($normalized['slots'])->toHaveCount(3);
 });
 
+it('adds each day high, low and rain chance plus a booking outlook to the summary', function () {
+    $raw = ['list' => [
+        ['dt_txt' => '2026-10-15 00:00:00', 'main' => ['temp' => 25, 'temp_min' => 24, 'temp_max' => 26], 'pop' => 0.1],
+        ['dt_txt' => '2026-10-15 03:00:00', 'main' => ['temp' => 30, 'temp_min' => 29, 'temp_max' => 31], 'pop' => 0.7],
+        ['dt_txt' => '2026-10-15 06:00:00', 'main' => ['temp' => 28, 'temp_min' => 27, 'temp_max' => 28], 'pop' => 0.2],
+    ]];
+
+    $normalized = app(WeatherService::class)->normalize($raw);
+
+    expect($normalized['daily'][0])->day_min->toEqual(24)->day_max->toEqual(31)->day_pop->toEqual(0.7)
+        ->and($normalized['outlook']['level'])->toBeIn(['good', 'okay', 'poor'])
+        ->and($normalized['outlook']['label'])->not->toBeEmpty()
+        ->and($normalized['advice'])->toBeArray();
+});
+
 it('requires forecast coverage across the whole scheduled window', function () {
     $service = app(WeatherService::class);
     $raw = ['list' => [

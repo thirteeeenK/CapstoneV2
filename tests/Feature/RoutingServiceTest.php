@@ -33,8 +33,21 @@ it('rejects invalid coordinates and modes before querying Valhalla', function ()
     Http::assertNothingSent();
 });
 
-it('requires authentication for the routing endpoint', function () {
-    $this->getJson(route('api.dss.route'))->assertUnauthorized();
+it('lets guests on public hotel pages fetch road routes within a tighter rate limit', function () {
+    config(['services.routing.base_url' => 'https://routing.test']);
+    Http::fake(['routing.test/route*' => Http::response(routingFixture())]);
+    $query = ['from_lat' => 11.9564, 'from_lng' => 121.9257, 'to_lat' => 11.9658, 'to_lng' => 121.9255];
+
+    $this->getJson(route('api.dss.route', $query))->assertOk()->assertJsonPath('data.distance_km', 1.25);
+
+    foreach (range(2, 20) as $attempt) {
+        $this->getJson(route('api.dss.route', $query))->assertOk();
+    }
+    $this->getJson(route('api.dss.route', $query))->assertTooManyRequests();
+});
+
+it('keeps the other map data endpoints behind authentication', function () {
+    $this->getJson(route('api.dss.markers'))->assertUnauthorized();
 });
 
 it('keeps unavailable routes unknown without a distance fallback', function () {

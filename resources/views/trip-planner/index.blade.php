@@ -212,6 +212,21 @@
                                     <p x-show="day.stops.length === 0" class="mt-3 text-sm text-slate-500">No visits are scheduled for this day. Keep it open for spontaneous activities, your own plans, or simply to rest.</p>
                                 </section>
                             </template>
+                            <section aria-label="Estimated prices" class="mt-7 border-t border-sand-200 dark:border-slate-700 pt-5">
+                                <h3 class="font-headline text-lg font-bold">Estimated prices</h3>
+                                <template x-if="itinerary.snapshot.pricing?.lines?.length"><div>
+                                    <p class="mt-1 text-sm text-slate-500" x-text="'Estimated when this itinerary was generated (' + new Date(itinerary.snapshot.pricing.estimated_at).toLocaleString('en-PH', { dateStyle: 'medium', timeStyle: 'short' }) + '). Prices and availability are checked again at checkout.'"></p>
+                                    <template x-for="line in itinerary.snapshot.pricing.lines" :key="line.plan_item_id">
+                                        <div class="mt-3 flex items-start justify-between gap-3 text-sm">
+                                            <div class="min-w-0"><p class="font-semibold" x-text="line.name"></p><p class="text-xs text-slate-500" x-text="line.detail"></p></div>
+                                            <p class="shrink-0 font-semibold tabular-nums" x-text="peso(line.subtotal)"></p>
+                                        </div>
+                                    </template>
+                                    <p class="mt-3 pt-3 border-t border-sand-200 dark:border-slate-700 flex justify-between gap-3 font-bold"><span>Estimated total</span><span class="tabular-nums" x-text="peso(itinerary.snapshot.pricing.total)"></span></p>
+                                    <p class="mt-2 text-xs text-slate-500" x-text="itinerary.snapshot.pricing.exclusions"></p>
+                                </div></template>
+                                <p x-show="!itinerary.snapshot.pricing?.lines?.length" class="mt-1 text-sm text-slate-500">This saved version has no price estimate. Generate again to record prices with the schedule.</p>
+                            </section>
                             <div x-show="itinerary.snapshot.unscheduled.length" class="mt-7 border-t border-sand-200 dark:border-slate-700 pt-5">
                                 <h3 class="font-headline text-lg font-bold">Other picks to arrange yourself</h3>
                                 <p class="mt-1 text-sm text-slate-500">We couldn't fit these onto a specific day. They still appear on the map as hollow pins, but they won't be added to your Trip Basket. Each one says what stopped it and what to change — your scheduled days are unaffected.</p>

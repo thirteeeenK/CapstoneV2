@@ -77,6 +77,9 @@
                     :default-recommendations="$defaultRecommendations" :preferred-dest-id="$preferredDestId ?? null" :rec-session-token="$recSessionToken ?? null" />
             </div>
 
+            {{-- Suggested itinerary + I'm Feeling Lucky entry point --}}
+            <x-frontend.suggested-itinerary :suggestion="$suggestedItinerary ?? null" />
+
             {{-- DSS Destination Overview Map Section (Below Recommendations) --}}
             @if(!empty($mapMarkers))
                 <section class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-700/80 rounded-3xl p-6 sm:p-8 shadow-sm space-y-5">

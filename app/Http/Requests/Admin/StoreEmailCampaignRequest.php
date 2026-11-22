@@ -72,6 +72,7 @@ class StoreEmailCampaignRequest extends FormRequest
     {
         return [
             'cta_path.regex' => 'The button link must be a page on this site starting with "/", for example /destinations.',
+            'cta_target_id.required' => 'Choose which destination or tour package the button opens.',
             'trigger.required_if' => 'Choose what makes this automatic campaign send.',
             'scheduled_at.required' => 'Choose when this campaign should send.',
             'audience.destinations.*.in' => 'Choose destinations from the list.',

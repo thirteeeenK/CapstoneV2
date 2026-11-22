@@ -488,6 +488,7 @@
                                          alt="" class="h-9 w-9 object-contain">
                                 @endif
                                 <div class="text-sm">
+                                    <p class="text-[10px] uppercase font-bold tracking-wider text-ocean-700 dark:text-ocean-300 leading-none mb-1">Forecast now</p>
                                     <p class="font-bold text-slate-900 dark:text-slate-100 leading-none">
                                         {{ round($weatherSummary['current']['temp']) }}°C
                                     </p>
@@ -529,7 +530,7 @@
                                             Trip Distance Estimator
                                         </h3>
                                         <span class="px-2 py-0.5 rounded-full bg-ocean-100/80 dark:bg-ocean-900/50 text-ocean-700 dark:text-ocean-100 text-[10px] font-bold border border-ocean-200/60 dark:border-ocean-800">
-                                            Approximate Direct
+                                            Mapped road route
                                         </span>
                                     </div>
                                     <template x-if="routeHistory.length">
@@ -553,14 +554,14 @@
                                                 From <span class="font-bold text-slate-900 dark:text-slate-100" x-text="r.hotel"></span>
                                                 to <span class="font-bold text-slate-900 dark:text-slate-100" x-text="r.activity"></span>
                                             </span>
-                                            <span class="font-black text-ocean-700 dark:text-ocean-100 shrink-0" x-text="r.distance_label + (r.duration_minutes != null ? ' · ' + r.duration_minutes + ' min walk' : '')"></span>
+                                            <span class="font-black text-ocean-700 dark:text-ocean-100 shrink-0" x-text="r.distance_label + (r.duration_minutes != null ? ' · ' + r.duration_minutes + (r.mode === 'driving' ? ' min drive' : ' min walk') : '')"></span>
                                         </p>
                                     </template>
                                     <p x-show="userHotel" x-cloak class="flex items-center justify-between gap-2 bg-white/80 dark:bg-slate-900/80 px-3 py-1.5 rounded-lg border border-ocean-100/60 dark:border-ocean-800">
                                         <span class="truncate">
                                             From your current location to <span class="font-bold text-slate-900 dark:text-slate-100" x-text="userHotel?.hotel"></span>
                                         </span>
-                                        <span class="font-black text-ocean-700 dark:text-ocean-100 shrink-0" x-text="userHotel?.distance_label + (userHotel?.duration_minutes != null ? ' · ' + userHotel.duration_minutes + ' min walk' : '')"></span>
+                                        <span class="font-black text-ocean-700 dark:text-ocean-100 shrink-0" x-text="userHotel?.distance_label + (userHotel?.duration_minutes != null ? ' · ' + userHotel.duration_minutes + (userHotel.mode === 'driving' ? ' min drive' : ' min walk') : '')"></span>
                                     </p>
                                 </div>
 
@@ -569,6 +570,13 @@
                                     <span class="material-symbols-outlined text-[13px] text-amber-600 shrink-0 mt-0.5">info</span>
                                     <span><strong>Route information:</strong> Distances follow mapped walking paths. Times are estimates and exclude live traffic, weather delays, and boat transfers. Unreachable locations are marked unavailable.</span>
                                 </div>
+                                @if($hotel->destination_id)
+                                    <a href="{{ auth()->check() ? route('trip-planner.index', ['destination' => $hotel->destination_id]) : route('login') }}"
+                                       class="min-h-11 inline-flex items-center gap-1.5 rounded-xl bg-ocean-700 hover:bg-ocean-800 px-4 py-2.5 text-xs font-bold text-white transition">
+                                        <span class="material-symbols-outlined text-[16px]" aria-hidden="true">map</span>
+                                        {{ auth()->check() ? 'Plan a day-by-day trip here' : 'Sign in to plan a day-by-day trip' }}
+                                    </a>
+                                @endif
                             </div>
                         </div>
 

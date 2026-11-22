@@ -7,7 +7,6 @@ use App\Http\Requests\Admin\StoreEmailCampaignRequest;
 use App\Models\DestinationModel;
 use App\Models\EmailCampaign;
 use App\Models\EmailCampaignRecipient;
-use App\Models\OnboardingOption;
 use App\Models\Package;
 use App\Models\Promotion;
 use App\Services\AdminAuditService;
@@ -241,7 +240,6 @@ class AdminEmailCampaignController extends Controller
             'destinations' => DestinationModel::query()->orderBy('name')->get(['id', 'name']),
             'packages' => Package::query()->where('is_active', true)->orderBy('name')->get(['id', 'name']),
             'promotions' => Promotion::query()->orderByDesc('is_active')->orderByDesc('id')->get(['id', 'name', 'is_active']),
-            'travelerTypes' => OnboardingOption::query()->where('type', 'traveler_type')->orderBy('name')->pluck('name'),
         ];
     }
 

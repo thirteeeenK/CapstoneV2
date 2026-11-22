@@ -7,6 +7,7 @@ use App\Models\DestinationModel;
 use App\Models\HotelModel;
 use App\Models\RoomType;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
 
 beforeEach(function () {
@@ -456,4 +457,30 @@ it('charges a genuine flat hourly activity rate once for 2 pax on both sides', f
     // room 2000 + flat 400 = 2400 on both sides
     expect($activityItem->subtotal)->toBe(400.0)
         ->and((float) $response->json('cart_total'))->toBe(2400.0);
+});
+
+it('includes the destination weather outlook and mapped hotel-to-activity distances', function () {
+    config([
+        'services.openweather.api_key' => 'test-key',
+        'services.openweather.base_url' => 'https://weather.test',
+        'services.routing.provider' => 'valhalla',
+        'services.routing.base_url' => 'https://routing.test',
+    ]);
+    Http::fake([
+        'weather.test/*' => Http::response(['list' => [
+            ['dt_txt' => now()->addDay()->format('Y-m-d').' 03:00:00', 'main' => ['temp' => 30, 'temp_min' => 28, 'temp_max' => 32], 'weather' => [['description' => 'clear sky', 'icon' => '01d']], 'pop' => 0.05],
+        ]]),
+        'routing.test/sources_to_targets*' => Http::response(['sources_to_targets' => [[['distance' => 2.5, 'time' => 1800], ['distance' => 4.0, 'time' => 3000]]]]),
+    ]);
+    ['destination' => $destination, 'activities' => $activities] = createLuckyDestination('Coron');
+    HotelModel::where('destination_id', $destination->id)->update(['latitude' => 12.0, 'longitude' => 120.2]);
+    ActivityModel::whereIn('id', $activities->pluck('id'))->update(['latitude' => 12.01, 'longitude' => 120.21]);
+
+    $response = $this->actingAs($this->user)->postJson(route('lucky.generate'), [
+        'destination_id' => $destination->id, 'max_budget' => 50000, 'activity_count' => 2, 'nights' => 2, 'pax' => 2,
+    ])->assertOk();
+
+    expect($response->json('itinerary.weather.label'))->toBe('Good to book')
+        ->and($response->json('itinerary.weather.days.0.max'))->toEqual(32)
+        ->and(collect($response->json('itinerary.activities'))->pluck('travel.distance_label')->sort()->values()->all())->toBe(['2.5 km', '4 km']);
 });

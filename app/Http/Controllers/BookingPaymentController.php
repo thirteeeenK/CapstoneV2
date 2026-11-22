@@ -20,6 +20,7 @@ use App\Services\Payment\QrphPaymentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class BookingPaymentController extends Controller
@@ -396,16 +397,25 @@ class BookingPaymentController extends Controller
     {
         $booking = $this->loadOwnedBooking($bookingCode);
 
-        $validated = $request->validate([
-            'reason' => 'required|string|min:10|max:2000',
-        ]);
-
         if (! $this->canRequestCancellation($booking)) {
             return redirect()->route('booking.show', $booking->booking_code)
                 ->with('error', $booking->hasDeniedCancellationRequest()
                     ? 'A cancellation request for this booking was already reviewed. Contact support if you still need to cancel.'
                     : 'This booking can no longer be cancelled.');
         }
+
+        $hasPayments = in_array($booking->payment_status, [Booking::PAYMENT_PAID, Booking::PAYMENT_PARTIAL], true);
+        $allowedPreferences = $hasPayments
+            ? [Booking::CANCELLATION_PREFERENCE_REBOOK, Booking::CANCELLATION_PREFERENCE_REFUND]
+            : [Booking::CANCELLATION_PREFERENCE_REBOOK];
+
+        $validated = $request->validate([
+            'reason' => 'required|string|min:10|max:2000',
+            'preference' => [$hasPayments ? 'required' : 'nullable', 'string', Rule::in($allowedPreferences)],
+        ], [
+            'preference.required' => 'Choose whether you want to rebook or get a refund.',
+            'preference.in' => 'Choose whether you want to rebook or get a refund.',
+        ]);
 
         $reason = trim($validated['reason']);
         $from = $booking->status;
@@ -417,8 +427,9 @@ class BookingPaymentController extends Controller
                 'cancellation_request_reason' => $reason,
                 'cancellation_requested_at' => now(),
                 'cancellation_requested_from' => $from,
+                'cancellation_preference' => $validated['preference'] ?? null,
             ],
-            'Cancellation requested: '.$reason
+            'Cancellation requested: '.$reason.(isset($validated['preference']) ? ' (prefers '.$validated['preference'].')' : '')
         );
 
         if (! $updated) {
@@ -484,7 +495,7 @@ class BookingPaymentController extends Controller
         $updated = $booking->transitionTo(
             $restoreTo,
             [Booking::STATUS_CANCELLATION_REQUESTED],
-            ['cancellation_request_reason' => null, 'cancellation_requested_at' => null, 'cancellation_requested_from' => null],
+            ['cancellation_request_reason' => null, 'cancellation_requested_at' => null, 'cancellation_requested_from' => null, 'cancellation_preference' => null],
             'Cancellation request withdrawn by customer.'
         );
 

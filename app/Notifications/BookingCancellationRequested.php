@@ -30,6 +30,7 @@ class BookingCancellationRequested extends Notification implements ShouldQueue
             ->line("A cancellation has been requested for booking **{$booking->booking_code}**.")
             ->line("Guest: {$booking->contact_name} ({$booking->contact_email})")
             ->line("Reason: {$reason}")
+            ->line('Customer wants: '.($booking->cancellationPreferenceLabel() ?? 'Just cancel'))
             ->action('Review Request', route('admin.bookings.show', $booking->id))
             ->line('Please approve or deny the request from the booking detail page.');
     }

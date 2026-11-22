@@ -165,3 +165,17 @@ test('budget wording is parsed into an amount and a ceiling or target reading', 
     'Taglish only' => ['20k lang', 20000, 'ceiling'],
     'a guest count is not a price' => ['room for max 4 guests', null, null],
 ]);
+
+test('a generated itinerary carries the destination weather outlook to the reply context and the card', function () {
+    config(['services.openweather.api_key' => 'test-key', 'services.openweather.base_url' => 'https://weather.test']);
+    Http::fake(['weather.test/*' => Http::response(['list' => [
+        ['dt_txt' => now()->addDay()->format('Y-m-d').' 03:00:00', 'main' => ['temp' => 30, 'temp_min' => 28, 'temp_max' => 32], 'weather' => [['description' => 'clear sky', 'icon' => '01d']], 'pop' => 0.05],
+    ]])]);
+
+    $response = planItinerary('Plan a 3-day itinerary in Boracay for 2 pax with a ₱13,000 budget');
+
+    expect($response['itinerary']['weather']['label'])->toBe('Good to book')
+        ->and($response['itinerary_suggestion']['weather']['label'])->toBe('Good to book')
+        ->and($response['itinerary_suggestion']['weather_status'])->toBe('outlook');
+    Http::assertSent(fn ($request) => str_contains($request->url(), 'generateContent') && str_contains($request->body(), 'Weather outlook (5-day forecast): Good to book'));
+});

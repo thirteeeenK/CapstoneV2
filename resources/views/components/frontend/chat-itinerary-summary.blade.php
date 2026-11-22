@@ -13,6 +13,21 @@
         </section>
     </template>
     <p x-show="suggestion.accommodation_notice" x-text="suggestion.accommodation_notice"></p>
+    <template x-if="suggestion.weather">
+        <section class="rounded-lg border p-3"
+                 :class="{ 'border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-100': suggestion.weather.level === 'good', 'border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-100': suggestion.weather.level === 'okay', 'border-rose-200 bg-rose-50 text-rose-900 dark:border-rose-800 dark:bg-rose-950/50 dark:text-rose-100': suggestion.weather.level === 'poor', 'border-sand-200 dark:border-slate-700': !['good', 'okay', 'poor'].includes(suggestion.weather.level) }">
+            <h4 class="font-headline font-bold" x-text="'Weather outlook: ' + suggestion.weather.label"></h4>
+            <p class="text-xs capitalize" x-text="(suggestion.weather.temp != null ? Math.round(suggestion.weather.temp) + '°C · ' : '') + (suggestion.weather.description || '') + (suggestion.weather.reason ? ' — ' + suggestion.weather.reason : '')"></p>
+        </section>
+    </template>
+    <template x-if="(suggestion.choices || []).some(choice => choice.travel && choice.travel.distance_label)">
+        <section class="space-y-1 rounded-lg border border-sand-200 p-3 dark:border-slate-700">
+            <h4 class="font-headline font-bold">Distance from your hotel</h4>
+            <template x-for="choice in suggestion.choices.filter(item => item.travel && item.travel.distance_label)" :key="'travel:' + choice.id">
+                <p class="flex justify-between gap-2 text-xs"><span x-text="choice.name"></span><span class="shrink-0 font-semibold" x-text="choice.travel.distance_label + (choice.travel.duration_minutes != null ? ' · ' + choice.travel.duration_minutes + (choice.travel.mode === 'driving' ? ' min drive' : ' min walk') : '') + (choice.travel.estimated ? ' (approx.)' : '')"></span></p>
+            </template>
+        </section>
+    </template>
     <template x-if="suggestion.cost">
         <section class="space-y-1 rounded-lg border border-sand-200 p-3 dark:border-slate-700" x-data="{ get cost() { return suggestion.cost; }, peso(value) { return '₱' + Number(value).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); } }">
             <h4 class="font-headline font-bold">Estimated cost</h4>

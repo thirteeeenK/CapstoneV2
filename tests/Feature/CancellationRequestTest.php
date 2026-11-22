@@ -84,11 +84,59 @@ it('lets a paid traveler request cancellation review without issuing a refund', 
 
     $this->actingAs($user)->post(route('booking.cancel', $booking->booking_code), [
         'reason' => 'Our flight was cancelled, so we cannot travel on these dates.',
+        'preference' => Booking::CANCELLATION_PREFERENCE_REFUND,
     ])->assertRedirect()->assertSessionHas('success');
 
     expect($booking->fresh())->status->toBe(Booking::STATUS_CANCELLATION_REQUESTED)
         ->cancellation_requested_from->toBe(Booking::STATUS_PAID)
+        ->cancellation_preference->toBe(Booking::CANCELLATION_PREFERENCE_REFUND)
         ->payment_status->toBe(Booking::PAYMENT_PAID);
+});
+
+it('requires a paid traveler to choose between rebooking and a refund', function () {
+    $user = onboardedUser();
+    $booking = Booking::factory()->paid()->create(['user_id' => $user->id]);
+    BookingItem::factory()->create(['booking_id' => $booking->id, 'check_in_date' => now()->addDays(10), 'check_out_date' => now()->addDays(12), 'availability_status' => 'available']);
+
+    $this->actingAs($user)->post(route('booking.cancel', $booking->booking_code), [
+        'reason' => 'Our flight was cancelled, so we cannot travel on these dates.',
+    ])->assertSessionHasErrors('preference');
+
+    expect($booking->fresh()->status)->toBe(Booking::STATUS_PAID);
+});
+
+it('does not offer a refund when no payment was taken', function () {
+    $user = onboardedUser();
+    $booking = Booking::factory()->create(['user_id' => $user->id, 'status' => Booking::STATUS_PENDING]);
+
+    $this->actingAs($user)->post(route('booking.cancel', $booking->booking_code), [
+        'reason' => 'My travel dates changed and I need to cancel this booking.',
+        'preference' => Booking::CANCELLATION_PREFERENCE_REFUND,
+    ])->assertSessionHasErrors('preference');
+
+    $this->post(route('booking.cancel', $booking->booking_code), [
+        'reason' => 'My travel dates changed and I need to cancel this booking.',
+        'preference' => Booking::CANCELLATION_PREFERENCE_REBOOK,
+    ])->assertSessionHas('success');
+
+    expect($booking->fresh()->cancellation_preference)->toBe(Booking::CANCELLATION_PREFERENCE_REBOOK);
+});
+
+it('shows the traveler preference to the admin and in the approval email', function () {
+    $user = onboardedUser();
+    $admin = AdminModel::create(['name' => 'Admin Preference', 'email' => 'admin-preference@test.com', 'password' => 'password']);
+    $booking = Booking::factory()->paid()->cancellationRequested(Booking::STATUS_PAID)->create([
+        'user_id' => $user->id,
+        'cancellation_preference' => Booking::CANCELLATION_PREFERENCE_REFUND,
+    ]);
+
+    $this->actingAs($admin, 'admin')->get(route('admin.bookings.show', $booking->id))
+        ->assertSee('Customer wants')
+        ->assertSee('Refund of recorded payments');
+
+    $this->post(route('admin.bookings.cancel-request.approve', $booking->id), ['admin_message' => 'Approved.']);
+
+    Notification::assertSentTo($user, BookingCancellationApproved::class, fn ($notification) => str_contains(implode(' ', $notification->toMail($user)->introLines), 'You asked for a refund'));
 });
 
 it('prevents cancellation requests once a paid trip has ended', function () {
@@ -224,6 +272,7 @@ it('lets a user withdraw a cancellation request', function () {
 
     expect($booking->status)->toBe(Booking::STATUS_APPROVED)
         ->and($booking->cancellation_requested_at)->toBeNull()
+        ->and($booking->cancellation_preference)->toBeNull()
         ->and($booking->hasDeniedCancellationRequest())->toBeFalse();
 });
 

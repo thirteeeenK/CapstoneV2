@@ -15,7 +15,13 @@ Route::middleware(['auth', 'verified', 'throttle:dss'])->group(function () {
     Route::get('/api/dss/weather', [DssController::class, 'weather'])->name('api.dss.weather');
     Route::get('/api/dss/destinations', [DssController::class, 'destinations'])->name('api.dss.destinations');
     Route::get('/api/dss/markers', [DssController::class, 'markers'])->name('api.dss.markers');
+    Route::get('/api/dss/nearby', [DssController::class, 'nearby'])->name('api.dss.nearby');
+});
+
+// Road routes and distances back the public hotel page map, so guests may use
+// them too. The 'dss' limiter gives guests a tighter per-IP budget, and results
+// are cached by RoutingService.
+Route::middleware(['throttle:dss'])->group(function () {
     Route::get('/api/dss/route', [DssController::class, 'route'])->name('api.dss.route');
     Route::post('/api/dss/distances', [DssController::class, 'distances'])->name('api.dss.distances');
-    Route::get('/api/dss/nearby', [DssController::class, 'nearby'])->name('api.dss.nearby');
 });

@@ -47,6 +47,10 @@ class Booking extends Model
 
     public const PAYMENT_REFUNDED = 'refunded';
 
+    public const CANCELLATION_PREFERENCE_REBOOK = 'rebook';
+
+    public const CANCELLATION_PREFERENCE_REFUND = 'refund';
+
     protected $fillable = [
         'payment_plan_version', 'payment_plan', 'payment_environment', 'payment_policy',
         'deposit_required_cents', 'deposit_secured_at', 'balance_due_at', 'balance_overdue_at',
@@ -63,6 +67,7 @@ class Booking extends Model
         'cancellation_request_reason',
         'cancellation_requested_at',
         'cancellation_requested_from',
+        'cancellation_preference',
         'expired_at',
         'admin_notes',
         'reviewed_by_admin_id',
@@ -151,6 +156,18 @@ class Booking extends Model
         return $this->status === self::STATUS_CANCELLATION_DENIED
             || ($this->cancellation_requested_at !== null && $this->cancellation_reason !== null
                 && ! in_array($this->status, [self::STATUS_CANCELLATION_REQUESTED, self::STATUS_CANCELLED], true));
+    }
+
+    /**
+     * Human-readable label for what the traveler asked for after cancelling.
+     */
+    public function cancellationPreferenceLabel(): ?string
+    {
+        return match ($this->cancellation_preference) {
+            self::CANCELLATION_PREFERENCE_REBOOK => 'Rebook with new dates',
+            self::CANCELLATION_PREFERENCE_REFUND => 'Refund of recorded payments',
+            default => null,
+        };
     }
 
     public function isAgentBooked(): bool

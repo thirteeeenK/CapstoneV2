@@ -98,43 +98,41 @@
                         </div>
                         <p class="text-slate-800 dark:text-slate-200 text-xs font-bold font-headline">Mabuhay! I'm SunnyBot, your travel
                             assistant.</p>
-                        <p class="text-slate-500 dark:text-slate-400 text-[11px] font-body leading-relaxed">How can I help you today?
-                            Here's what I can do:</p>
+                        <p class="text-slate-500 dark:text-slate-400 text-[11px] font-body leading-relaxed">I'll guide you through
+                            booking your Philippine trip, one step at a time:</p>
                     </div>
-                    <ul class="px-4 pb-3 space-y-1.5 text-left">
-                        <li class="flex items-center gap-2 text-[11px] text-slate-600 dark:text-slate-400 font-body">
-                            <span class="material-symbols-outlined text-[15px] text-ocean-500">hotel</span>
-                            Find sanctuary hotel and rooms to stay
-                        </li>
-                        <li class="flex items-center gap-2 text-[11px] text-slate-600 dark:text-slate-400 font-body">
-                            <span class="material-symbols-outlined text-[15px] text-ocean-500">king_bed</span>
-                            Check rooms and rates
-                        </li>
-                        <li class="flex items-center gap-2 text-[11px] text-slate-600 dark:text-slate-400 font-body">
-                            <span class="material-symbols-outlined text-[15px] text-ocean-500">explore</span>
-                            Recommend activities and packages
-                        </li>
-                        <li class="flex items-center gap-2 text-[11px] text-slate-600 dark:text-slate-400 font-body">
-                            <span class="material-symbols-outlined text-[15px] text-ocean-500">headset_mic</span>
-                            Hand you to a human agent any time — just click the Talk to Admin button above.
-                        </li>
-                    </ul>
-                    <div class="px-4 pb-3 flex flex-wrap gap-2 justify-center">
-                        <button @click='input = "Plan a 3-day Boracay trip for 2"; send()'
-                            class="px-3 py-1.5 rounded-full bg-ocean-50 dark:bg-ocean-900/50 hover:bg-ocean-100 dark:hover:bg-ocean-900 text-ocean-700 dark:text-ocean-100 text-[11px] font-bold border border-ocean-200 dark:border-ocean-800 transition-colors cursor-pointer">Plan
-                            a 3-day Boracay trip</button>
-                        <button @click='input = "Where to stay in El Nido?"; send()'
-                            class="px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-950 text-emerald-700 dark:text-emerald-100 text-[11px] font-bold border border-emerald-200 dark:border-emerald-800 transition-colors cursor-pointer">Where
-                            to stay in El Nido?</button>
-                        <button @click='input = "Best activities in El Nido?"; send()'
-                            class="px-3 py-1.5 rounded-full bg-amber-50 dark:bg-amber-950/60 hover:bg-amber-100 dark:hover:bg-amber-950 text-amber-700 dark:text-amber-100 text-[11px] font-bold border border-amber-200 dark:border-amber-800 transition-colors cursor-pointer">Best
-                            activities in El Nido?</button>
-                        <button @click='input = "Surprise me with a Lucky trip"; send()'
-                            class="px-3 py-1.5 rounded-full bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-100 dark:hover:bg-rose-950 text-rose-700 dark:text-rose-100 text-[11px] font-bold border border-rose-200 dark:border-rose-800 transition-colors cursor-pointer">I'm
-                            Feeling Lucky</button>
-                        <button @click='input = "What is the weather like in Boracay?"; send()'
-                            class="px-3 py-1.5 rounded-full bg-sky-50 dark:bg-sky-950/60 hover:bg-sky-100 dark:hover:bg-sky-950 text-sky-700 dark:text-sky-100 text-[11px] font-bold border border-sky-200 dark:border-sky-800 transition-colors cursor-pointer">Boracay
-                            weather today?</button>
+                    <ol class="px-4 pb-3 space-y-1.5 text-left">
+                        @foreach ([
+                            ['icon' => 'location_on', 'text' => 'Pick your destination, travel dates and number of travelers'],
+                            ['icon' => 'hotel', 'text' => 'Find a stay that fits your budget'],
+                            ['icon' => 'explore', 'text' => 'Add activities and see a day-by-day itinerary'],
+                            ['icon' => 'shopping_cart', 'text' => 'Send your booking request; once approved, pay in full or 50% to reserve'],
+                        ] as $step)
+                            <li class="flex items-center gap-2 text-[11px] text-slate-600 dark:text-slate-400 font-body">
+                                <span class="w-5 h-5 shrink-0 rounded-full bg-ocean-600 text-white text-[10px] font-bold flex items-center justify-center">{{ $loop->iteration }}</span>
+                                <span class="material-symbols-outlined text-[15px] text-ocean-500" aria-hidden="true">{{ $step['icon'] }}</span>
+                                {{ $step['text'] }}
+                            </li>
+                        @endforeach
+                    </ol>
+                    <div class="px-4 pb-3 space-y-2">
+                        <p class="text-[10px] uppercase tracking-wider font-bold text-slate-400 dark:text-slate-500 text-center font-label">Try asking</p>
+                        <div class="flex flex-col gap-1.5">
+                            <button @click='input = "Budget hotel in Boracay for a solo traveler"; send()'
+                                class="w-full px-3 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-950 text-emerald-700 dark:text-emerald-100 text-[11px] font-bold border border-emerald-200 dark:border-emerald-800 transition-colors cursor-pointer text-left">“Budget hotel in Boracay for a solo traveler”</button>
+                            <button @click='input = "Plan a 3-day Boracay trip for 2"; send()'
+                                class="w-full px-3 py-2 rounded-xl bg-ocean-50 dark:bg-ocean-900/50 hover:bg-ocean-100 dark:hover:bg-ocean-900 text-ocean-700 dark:text-ocean-100 text-[11px] font-bold border border-ocean-200 dark:border-ocean-800 transition-colors cursor-pointer text-left">“Plan a 3-day Boracay trip for 2”</button>
+                        </div>
+                        <div class="flex items-center justify-center gap-2 pt-1">
+                            <span class="text-[11px] text-slate-500 dark:text-slate-400">No plans yet?</span>
+                            <button @click='input = "Surprise me with a Lucky trip"; send()'
+                                class="px-3 py-1.5 rounded-full bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-100 dark:hover:bg-rose-950 text-rose-700 dark:text-rose-100 text-[11px] font-bold border border-rose-200 dark:border-rose-800 transition-colors cursor-pointer">I'm
+                                Feeling Lucky</button>
+                        </div>
+                        <p class="text-[10px] text-slate-400 dark:text-slate-500 text-center flex items-center justify-center gap-1">
+                            <span class="material-symbols-outlined text-[13px]" aria-hidden="true">headset_mic</span>
+                            Need a person? Tap Talk to Admin above any time.
+                        </p>
                     </div>
                     <button @click="dismissGuide()"
                         class="w-full py-2 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border-t border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 text-[11px] font-bold font-headline transition-colors cursor-pointer">Got
@@ -152,25 +150,18 @@
                     </div>
                     <p class="text-slate-800 dark:text-slate-200 text-xs font-bold font-headline">Mabuhay! I'm SunnyBot, your travel
                         assistant.</p>
-                    <p class="text-slate-500 dark:text-slate-400 text-[11px] font-body leading-relaxed">How can I help you today? Ask me
-                        about
-                        hotels, island activities, room rates, or custom itineraries.</p>
-                    <div class="flex flex-wrap gap-2 justify-center pt-2">
+                    <p class="text-slate-500 dark:text-slate-400 text-[11px] font-body leading-relaxed">Tell me where and when
+                        you want to go, and I'll help you find a stay, add activities, and book.</p>
+                    <div class="flex flex-col gap-1.5 pt-2">
+                        <button @click='input = "Budget hotel in Boracay for a solo traveler"; send()'
+                            class="w-full px-3 py-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-950 text-emerald-700 dark:text-emerald-100 text-[11px] font-bold border border-emerald-200 dark:border-emerald-800 transition-colors cursor-pointer">“Budget hotel in Boracay for a solo traveler”</button>
+                        <button @click='input = "Plan a 3-day Boracay trip for 2"; send()'
+                            class="w-full px-3 py-2 rounded-xl bg-ocean-50 dark:bg-ocean-900/50 hover:bg-ocean-100 dark:hover:bg-ocean-900 text-ocean-700 dark:text-ocean-100 text-[11px] font-bold border border-ocean-200 dark:border-ocean-800 transition-colors cursor-pointer">“Plan a 3-day Boracay trip for 2”</button>
+                    </div>
+                    <div class="flex justify-center pt-1">
                         <button @click='input = "Surprise me with a Lucky trip"; send()'
                             class="px-3 py-1.5 rounded-full bg-rose-50 dark:bg-rose-950/60 hover:bg-rose-100 dark:hover:bg-rose-950 text-rose-700 dark:text-rose-100 text-[11px] font-bold border border-rose-200 dark:border-rose-800 transition-colors cursor-pointer">I'm
                             Feeling Lucky</button>
-                        {{-- <button @click='input = "Where to stay in Boracay?"; send()'
-                            class="px-3 py-1.5 rounded-full bg-ocean-50 hover:bg-ocean-100 text-ocean-700 text-[11px] font-bold border border-ocean-200 transition-colors cursor-pointer">Where
-                            to stay in Boracay?</button>
-                        <button @click='input = "Budget-friendly hotels in Boracay?"; send()'
-                            class="px-3 py-1.5 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[11px] font-bold border border-emerald-200 transition-colors cursor-pointer">Budget-friendly
-                            hotels in Boracay?</button>
-                        <button @click='input = "Where to stay in El Nido?"; send()'
-                            class="px-3 py-1.5 rounded-full bg-ocean-50 hover:bg-ocean-100 text-ocean-700 text-[11px] font-bold border border-ocean-200 transition-colors cursor-pointer">Where
-                            to stay in El Nido?</button>
-                        <button @click='input = "Best activities in El Nido?"; send()'
-                            class="px-3 py-1.5 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-700 text-[11px] font-bold border border-amber-200 transition-colors cursor-pointer">Best
-                            activities in El Nido?</button> --}}
                     </div>
                 </div>
             </template>
@@ -438,8 +429,10 @@
                                                 <p class="font-bold text-slate-900 dark:text-slate-100" x-text="msg.lucky.itinerary.destination.name + ' · ' + msg.lucky.itinerary.nights + 'N · ' + msg.lucky.itinerary.pax + ' guest' + (msg.lucky.itinerary.pax > 1 ? 's' : '')"></p>
                                                 <p class="text-slate-600 dark:text-slate-400" x-text="msg.lucky.itinerary.hotel.hotel_name + ' — ' + msg.lucky.itinerary.room.room_name"></p>
                                                 <template x-for="act in msg.lucky.itinerary.activities" :key="act.id">
-                                                    <p class="text-slate-600 dark:text-slate-400" x-text="'• ' + act.activity_name + ' (' + act.formatted_rate + ')'"></p>
+                                                    <p class="text-slate-600 dark:text-slate-400" x-text="'• ' + act.activity_name + ' (' + act.formatted_rate + ')' + (act.travel && act.travel.distance_label ? ' · ' + act.travel.distance_label + (act.travel.duration_minutes != null ? ', ' + act.travel.duration_minutes + ' min' : '') + ' from hotel' : '')"></p>
                                                 </template>
+                                                <p x-show="msg.lucky.itinerary.weather" class="text-slate-600 dark:text-slate-400"
+                                                   x-text="msg.lucky.itinerary.weather ? '☀ Weather outlook: ' + msg.lucky.itinerary.weather.label + (msg.lucky.itinerary.weather.temp != null ? ' · ' + Math.round(msg.lucky.itinerary.weather.temp) + '°C' : '') : ''"></p>
                                                 <p class="font-bold text-ocean-700 dark:text-ocean-300" x-text="'Total: ' + msg.lucky.itinerary.formatted_total"></p>
                                                 <template x-if="msg.lucky.offer && msg.lucky.offer.won">
                                                     <div class="rounded-lg bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 p-2 space-y-1">

@@ -302,7 +302,17 @@
                                     </div>
                                 @endif
                                 <p class="text-sm sm:text-[15px] text-slate-800/70 mt-3 max-w-xl mx-auto font-medium leading-relaxed">
-                                    No payment was taken.
+                                    @if($booking->payment_status === 'refunded')
+                                        Your refund has been recorded by our team.
+                                    @elseif($booking->cancellation_preference === 'refund')
+                                        You asked for a refund. Our team reviews the refundable amount under the booking terms and will confirm it with a reference.
+                                    @elseif($booking->cancellation_preference === 'rebook')
+                                        You asked to rebook. Add these items back to your Trip Basket below and choose new dates.
+                                    @elseif(in_array($booking->payment_status, ['paid', 'partial'], true))
+                                        Your recorded payments stay on file while our team reviews any refundable amount.
+                                    @else
+                                        No payment was taken.
+                                    @endif
                                 </p>
                             @else
                                 <p class="text-sm sm:text-[15px] text-slate-800/70 mt-3 max-w-xl mx-auto font-medium leading-relaxed">
@@ -915,6 +925,39 @@
                                     <p class="text-[11px] text-rose-600 mt-1">{{ $message }}</p>
                                 @enderror
                             </div>
+                            @php
+                                $hasRecordedPayments = in_array($booking->payment_status, ['paid', 'partial'], true);
+                                $preferenceOptions = array_filter([
+                                    'rebook' => ['icon' => 'event_repeat', 'title' => 'Rebook with new dates', 'body' => 'Once approved, put these items back in your Trip Basket and choose new dates.'],
+                                    'refund' => $hasRecordedPayments ? ['icon' => 'currency_exchange', 'title' => 'Refund my payment', 'body' => 'Our team reviews the refundable amount under the booking terms and confirms it with a reference.'] : null,
+                                ]);
+                            @endphp
+                            <fieldset>
+                                <legend class="font-label text-[11px] uppercase font-bold tracking-[0.15em] text-slate-500 dark:text-slate-400 block mb-1.5">
+                                    After cancelling, I'd like to @if($hasRecordedPayments)<span class="text-rose-600">*</span>@endif
+                                </legend>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    @foreach($preferenceOptions as $value => $option)
+                                        <label class="flex items-start gap-3 p-3 rounded-2xl border border-sand-200 dark:border-slate-700 cursor-pointer has-[:checked]:border-rose-300 has-[:checked]:bg-rose-50/60 dark:has-[:checked]:bg-rose-950/40 transition">
+                                            <input type="radio" name="preference" value="{{ $value }}" class="mt-0.5 text-rose-600 focus:ring-rose-500/30"
+                                                   @checked(old('preference') === $value) @required($hasRecordedPayments)>
+                                            <span class="min-w-0">
+                                                <span class="flex items-center gap-1.5 text-xs font-bold text-slate-900 dark:text-slate-100">
+                                                    <span class="material-symbols-outlined text-[16px] text-rose-600" aria-hidden="true">{{ $option['icon'] }}</span>
+                                                    {{ $option['title'] }}
+                                                </span>
+                                                <span class="block text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">{{ $option['body'] }}</span>
+                                            </span>
+                                        </label>
+                                    @endforeach
+                                </div>
+                                @unless($hasRecordedPayments)
+                                    <p class="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5">No payment was taken, so there is nothing to refund. Leave this blank to just cancel.</p>
+                                @endunless
+                                @error('preference')
+                                    <p class="text-[11px] text-rose-600 mt-1">{{ $message }}</p>
+                                @enderror
+                            </fieldset>
                             <div class="flex justify-end">
                                 <button type="submit" class="px-6 py-3 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition flex items-center gap-1.5 cursor-pointer shadow-md shadow-rose-600/20">
                                     <span class="material-symbols-outlined text-[16px]">send</span>
@@ -935,6 +978,10 @@
                                 <div class="mt-3 bg-white dark:bg-slate-900 border border-orange-200 dark:border-orange-800 rounded-2xl p-4">
                                     <p class="font-label text-[10px] uppercase font-bold tracking-[0.15em] text-slate-400 dark:text-slate-500 mb-1">Your reason</p>
                                     <p class="text-xs text-slate-700 dark:text-slate-200 leading-relaxed">"{{ $booking->cancellation_request_reason }}"</p>
+                                    @if($booking->cancellationPreferenceLabel())
+                                        <p class="font-label text-[10px] uppercase font-bold tracking-[0.15em] text-slate-400 dark:text-slate-500 mt-3 mb-1">Your preference</p>
+                                        <p class="text-xs font-semibold text-slate-800 dark:text-slate-100">{{ $booking->cancellationPreferenceLabel() }}</p>
+                                    @endif
                                 </div>
                             </div>
                         </div>

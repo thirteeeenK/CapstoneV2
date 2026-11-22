@@ -87,6 +87,7 @@ class ChatbotTripPlanService
         foreach ($bundle['activities'] ?? [] as $activity) {
             $day = isset($activity['day']) && $activity['day'] >= 1 && $activity['day'] <= $count ? (int) $activity['day'] : null;
             $choice = ['type' => 'activity', 'id' => (int) $activity['id'], 'name' => $activity['activity_name'], 'day' => $day, 'weather_dependent' => $activity['weather_dependent'] ?? null,
+                'travel' => $activity['travel'] ?? null,
                 'detail' => ['category' => $activity['category'] ?? null, 'duration' => $activity['duration'] ?? null, 'image' => $activity['image'] ?? null,
                     'price' => $activity['price_quote']['display'] ?? $activity['rate'] ?? null, 'total' => $activity['price_quote']['total'] ?? null]];
             $choices[] = $choice;
@@ -123,7 +124,8 @@ class ChatbotTripPlanService
             'estimate' => $bundle['grand_total'] ?? null, 'estimate_recorded_at' => now()->toIso8601String(),
             'cost' => $bundle['cost'] ?? null,
             'context' => array_intersect_key($constraints, array_flip(['max_price', 'budget_mode', 'itinerary_budget_basis', 'itinerary_budget_period', 'itinerary_budget_scope', 'preferences', 'excluded_terms', 'excluded_names'])),
-            'weather_notice' => self::WEATHER_NOTICE, 'weather_status' => 'not_assessed',
+            'weather' => $bundle['weather'] ?? null,
+            'weather_notice' => self::WEATHER_NOTICE, 'weather_status' => empty($bundle['weather']) ? 'not_assessed' : 'outlook',
             'notice' => 'Draft only. Availability, opening times, routes and weather have not been checked for this saved schedule.',
             'generated_at' => now()->toIso8601String(),
         ];

@@ -2827,8 +2827,8 @@ class GeminiService
                 : 'Missing, expired or out-of-range forecasts remain provisional.');
 
         $travel = $stopCount > 0
-            ? "Valhalla {$mode} estimates total about {$distance} km and {$travelMinutes} minutes of mapped travel, including return trips to your hotel. No live traffic, transport fares, boat journeys or operator safety clearance is inferred."
-            : 'Valhalla road/path estimates include return travel to the selected hotel. No live traffic, transport fares, boat journeys or operator safety clearance is inferred.';
+            ? "Mapped {$mode} routes total about {$distance} km and {$travelMinutes} minutes of travel, including return trips to your hotel. No live traffic, transport fares, boat journeys or operator safety clearance is inferred."
+            : 'Mapped road/path estimates include return travel to the selected hotel. No live traffic, transport fares, boat journeys or operator safety clearance is inferred.';
 
         $assumptions = 'A 15-minute buffer separates visits; lunch is reserved from 12:00 to 13:00. Unknown hours, durations and hotel times are disclosed with each visit. Only rooms and activities selected for checkout become booking requests.';
         if ($unscheduled !== []) {

@@ -19,6 +19,7 @@ use App\Models\User;
 use App\Models\UserPreference;
 use App\Services\DistanceService;
 use App\Services\GeminiService;
+use App\Services\ItineraryInsightsService;
 use App\Services\LuckyItineraryService;
 use App\Services\LuckyOfferService;
 use App\Services\RoomAvailabilityService;
@@ -4515,6 +4516,10 @@ class ChatbotService
         if (! $dated) {
             $itinerary['data']['available'] = null;
         }
+        $itinerary['data'] = $this->withItineraryInsights($itinerary['data']);
+        if ($insightContext = $this->itineraryInsightContext($itinerary['data'])) {
+            $itinerary['context'] .= "\n".$insightContext;
+        }
         $itinerary['context'] .= $dated
             ? "\nArrival/check-in: ".$checkIn->toDateString().' | Departure/check-out: '.$checkOut->toDateString().'. Availability must be reconfirmed before booking.'
             : "\nDates pending. Nights are tentative. Availability has not been checked; do not claim rooms are available.";
@@ -4529,6 +4534,55 @@ class ChatbotService
             'itinerary' => $itinerary['data'],
             'itinerary_suggestion' => $this->tripPlans->suggestion($itinerary['data'], $constraints),
         ];
+    }
+
+    /**
+     * Attach the destination forecast outlook and mapped hotel-to-activity
+     * distances to a generated itinerary, so the card and narration can use them.
+     *
+     * @param  array<string, mixed>  $itinerary
+     * @return array<string, mixed>
+     */
+    protected function withItineraryInsights(array $itinerary): array
+    {
+        $destination = DestinationModel::find($itinerary['destination']['id'] ?? null);
+        if (! $destination) {
+            return $itinerary;
+        }
+        $hotel = ! empty($itinerary['hotel']['id']) ? HotelModel::find($itinerary['hotel']['id']) : null;
+        $activityIds = array_values(array_filter(array_map(fn ($activity) => $activity['id'] ?? null, $itinerary['activities'] ?? [])));
+        $activities = $activityIds === [] ? collect() : ActivityModel::with('destination')->whereIn('id', $activityIds)->get();
+
+        $insights = app(ItineraryInsightsService::class)->forStay($destination, $hotel, $activities);
+        $itinerary['weather'] = $insights['weather'];
+        foreach ($itinerary['activities'] ?? [] as $index => $activity) {
+            $itinerary['activities'][$index]['travel'] = $insights['legs'][$activity['id'] ?? 0] ?? null;
+        }
+
+        return $itinerary;
+    }
+
+    /**
+     * Grounding lines for the narration: forecast outlook and travel from the hotel.
+     *
+     * @param  array<string, mixed>  $itinerary
+     */
+    protected function itineraryInsightContext(array $itinerary): string
+    {
+        $lines = [];
+        if (! empty($itinerary['weather'])) {
+            $weather = $itinerary['weather'];
+            $lines[] = 'Weather outlook (5-day forecast): '.$weather['label'].($weather['reason'] ? ' — '.$weather['reason'] : '').'.';
+        }
+        foreach ($itinerary['activities'] ?? [] as $activity) {
+            if (! empty($activity['travel']['distance_label'])) {
+                $lines[] = 'From the hotel to '.($activity['activity_name'] ?? 'this activity').': '.$activity['travel']['distance_label']
+                    .($activity['travel']['duration_minutes'] !== null ? ', about '.$activity['travel']['duration_minutes'].' min '.($activity['travel']['mode'] === 'driving' ? 'by vehicle' : 'on foot') : '')
+                    .($activity['travel']['estimated'] ? ' (approximate)' : '').'.';
+            }
+        }
+
+        return implode("\n", $lines);
     }
 
     /**

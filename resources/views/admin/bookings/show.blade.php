@@ -189,6 +189,11 @@
                         <div class="mt-3 bg-white border border-orange-200 rounded-2xl p-4">
                             <p class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-1">Customer reason</p>
                             <p class="text-xs text-slate-800 leading-relaxed">"{{ $booking->cancellation_request_reason }}"</p>
+                            <p class="text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mt-3 mb-1">Customer wants</p>
+                            <p class="text-xs font-bold text-slate-900">{{ $booking->cancellationPreferenceLabel() ?? 'Just cancel (no rebook or refund requested)' }}</p>
+                            @if($booking->cancellation_preference === 'refund')
+                                <p class="text-[11px] text-slate-500 mt-1">After approving, record the refund with its reference using “Mark Refunded” on this page.</p>
+                            @endif
                         </div>
                         <p class="text-[11px] text-orange-800/70 mt-2">Rooms/activities for this booking are still held (counted against availability) until you decide.</p>
                     </div>

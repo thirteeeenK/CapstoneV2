@@ -14,7 +14,7 @@ class LuckyItineraryService
 {
     use ResolvesImages;
 
-    public function __construct(private RoomAvailabilityService $availability) {}
+    public function __construct(private RoomAvailabilityService $availability, private ItineraryInsightsService $insights) {}
 
     public const MAX_ATTEMPTS = 40;
 
@@ -282,6 +282,8 @@ class LuckyItineraryService
         }
         $roomRaw = is_array($roomImages) && count($roomImages) > 0 ? $roomImages[0] : null;
         $hotelRaw = is_array($hotelImages) && count($hotelImages) > 0 ? $hotelImages[0] : null;
+        $insights = $this->insights->forStay($destination, $hotel, $activities);
+        $forecastDays = array_column($insights['weather']['days'] ?? [], 'date');
 
         return [
             'destination' => [
@@ -305,7 +307,7 @@ class LuckyItineraryService
                 'bed_configuration' => $room->bed_configuration,
                 'image' => self::resolveImg($roomRaw ?: $hotelRaw),
             ],
-            'activities' => $activities->map(function (ActivityModel $activity) use ($pax) {
+            'activities' => $activities->map(function (ActivityModel $activity) use ($pax, $insights) {
                 $images = $activity->images;
                 if (is_string($images)) {
                     $images = json_decode($images, true);
@@ -324,8 +326,11 @@ class LuckyItineraryService
                     'is_per_person' => $activity->isPerPersonRate(),
                     'formatted_rate' => '₱'.number_format($this->activityCost($activity, $pax), 2),
                     'image' => self::resolveActivityImage($raw, $activity->activity_name, $activity->category),
+                    'travel' => $insights['legs'][$activity->id] ?? null,
                 ];
             })->values()->all(),
+            'weather' => $insights['weather'],
+            'forecast_covers_trip' => $forecastDays !== [] && $checkIn->format('Y-m-d') <= max($forecastDays),
             'nights' => $nights,
             'pax' => $pax,
             'check_in_date' => $checkIn->format('Y-m-d'),

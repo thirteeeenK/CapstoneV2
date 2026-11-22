@@ -125,9 +125,11 @@ class AppServiceProvider extends ServiceProvider
         // -- DSS PAGES / EXPLORER MAP APIs (DB reads + cached weather; guards
         //    against map-drag hammering without touching the LLM budget) --
         RateLimiter::for('dss', function (Request $request) {
-            $key = $request->user()?->getAuthIdentifier() ?: $request->ip();
+            $userId = $request->user()?->getAuthIdentifier();
 
-            return Limit::perMinute(60)->by('dss:'.$key);
+            return $userId
+                ? Limit::perMinute(60)->by('dss:'.$userId)
+                : Limit::perMinute(20)->by('dss:guest:'.$request->ip());
         });
 
         // -- CHATBOT GUEST LIMITER (IP-keyed burst; daily cap enforced in middleware) --

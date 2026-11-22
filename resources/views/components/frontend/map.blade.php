@@ -298,6 +298,7 @@
                                     distance_km: roadRoute?.distance_km ?? null,
                                     distance_label: roadRoute ? formatKm(roadRoute.distance_km) : 'Route unavailable',
                                     duration_minutes: roadRoute?.duration_minutes ?? null,
+                                    mode: roadRoute?.mode ?? null,
                                 },
                             }));
                         }
@@ -451,6 +452,7 @@
                             distance_km: roadRoute?.distance_km ?? null,
                             distance_label: roadRoute ? formatKm(roadRoute.distance_km) : 'Route unavailable',
                             duration_minutes: roadRoute?.duration_minutes ?? null,
+                            mode: roadRoute?.mode ?? null,
                         },
                     }));
                 }
